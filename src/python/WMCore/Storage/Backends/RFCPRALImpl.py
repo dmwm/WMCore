@@ -46,7 +46,7 @@ class RFCPRALImpl(StageOutImpl):
         print "Check dir existence : %s" %checkdircmd
         try:
             checkdirexitCode = self.run(checkdircmd)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Warning: Exception while invoking command:\n"
             msg += "%s\n" % checkdircmd
             msg += "Exception: %s\n" % str(ex)
@@ -59,7 +59,7 @@ class RFCPRALImpl(StageOutImpl):
             print "=> creating the dir : %s" %mkdircmd
             try:
                 self.run(mkdircmd)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircmd
                 msg += "Exception: %s\n" % str(ex)

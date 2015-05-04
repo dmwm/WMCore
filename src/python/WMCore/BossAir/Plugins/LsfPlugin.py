@@ -154,7 +154,7 @@ class LsfPlugin(BasePlugin):
                         try:
                             os.mkdir(lsfLogDir)
                             logging.debug("Created directory %s" % lsfLogDir)
-                        except OSError, err:
+                        except OSError as err:
                             # suppress LSF log unless it's about an already exisiting directory
                             if err.errno != errno.EEXIST or not os.path.isdir(lsfLogDir):
                                 logging.error("Can't create directory %s, turning off LSF log" % lsfLogDir)
@@ -173,7 +173,7 @@ class LsfPlugin(BasePlugin):
                             logging.debug("Priority for job %i not castable to an int\n" % job['id'])
                             logging.debug("Not setting priority")
                             logging.debug("Priority: %s" % job['priority'])
-                        except Exception, ex:
+                        except Exception as ex:
                             logging.debug("Got unhandled exception while setting priority for job %i\n" % job['id'])
                             logging.debug(str(ex))
                             logging.debug("Not setting priority")

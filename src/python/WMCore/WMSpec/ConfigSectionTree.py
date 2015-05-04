@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=E1101, W0212
+# pylint: disable=E1101, W0212
 """
 _ConfigSectionTree_
 

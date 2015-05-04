@@ -34,6 +34,6 @@ class CouchDBCleanup(CherryPyPeriodicTask):
                 jobData = wmstatsDB.getLatestJobInfoByRequests(requestNames)
                 DataCache.setlatestJobData(jobData)
             
-        except Exception, ex:
+        except Exception as ex:
             cherrypy.log.error(str(ex))
         return

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142
+#pylint: disable=E1101, W6501, W0142
 # E1101:  Doesn't recognize section_() as defining objects
 # W6501:  String formatting in log output
 # W0142:  Dave likes himself some ** magic
@@ -162,7 +162,7 @@ class StageOut(Executor):
                         # Then this goes direct to merge
                         try:
                             file = self.handleLFNForMerge(mergefile = file, step = step)
-                        except Exception, ex:
+                        except Exception as ex:
                             logging.error("Encountered error while handling LFN for merge due to size.\n")
                             logging.error(str(ex))
                             logging.debug(file)
@@ -179,7 +179,7 @@ class StageOut(Executor):
                             # straight to merge
                             try:
                                 file = self.handleLFNForMerge(mergefile = file, step = step)
-                            except Exception, ex:
+                            except Exception as ex:
                                 logging.error("Encountered error while handling LFN for merge due to events.\n")
                                 logging.error(str(ex))
                                 logging.debug(file)
@@ -218,7 +218,7 @@ class StageOut(Executor):
                     stepReport.addError(self.stepName, 60403,
                                         "StageOutTimeout", msg)
                     stepReport.persist("Report.pkl")
-                except Exception, ex:
+                except Exception as ex:
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307,
                                         "StageOutFailure", str(ex))

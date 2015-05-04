@@ -17,7 +17,7 @@ import StageOut.Impl
 valid = ['input-pfn=', 'protocol=', "impl=", "target-pfn=", "cleanup"]
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
-except getopt.GetoptError, ex:
+except getopt.GetoptError as ex:
     print usage
     print str(ex)
     sys.exit(1)
@@ -58,7 +58,7 @@ if targetPfn == None:
 
 try:
     implInstance = retrieveStageOutImpl(implName)
-except StageOutError, ex:
+except StageOutError as ex:
     print "Error retrieving plugin from registry named: %s" % implName
     print str(ex)
     sys.exit(1)

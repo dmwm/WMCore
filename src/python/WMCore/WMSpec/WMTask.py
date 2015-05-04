@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101
+#pylint: disable=E1101
 # E1101:  Doesn't recognize section_() as defining objects
 """
 _WMTask_

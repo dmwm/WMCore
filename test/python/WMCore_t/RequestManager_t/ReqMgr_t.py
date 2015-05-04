@@ -385,7 +385,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # Next, test
         try:
             result = self.jsonSender.get('%s/%s' % (cls, badName))
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, exitCode)
             self.assertTrue(message in ex.result)
@@ -435,7 +435,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/%s?status=negotiating' % requestName)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 403)
             self.assertTrue('Failed to change status' in ex.result)
@@ -446,7 +446,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/%s?status=bogus' % requestName)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 403)
             self.assertTrue('Failed to change status' in ex.result)
@@ -472,7 +472,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             self.changeStatusAndCheck(requestName = requestName,
                                       statusName  = 'assigned')
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertTrue('Cannot change status without a team' in ex.result)
         self.assertTrue(raises)
@@ -561,7 +561,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             print ex.result
@@ -575,7 +575,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument RunWhitelist type is incorrect in schema." in ex.result)
@@ -586,7 +586,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             raises = True
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Error in Workload Validation: Argument RunWhitelist doesn't pass validation." in ex.result)
@@ -611,7 +611,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('group/%s/%s' % (groupName, userName))
-        except HTTPException, ex:
+        except HTTPException as ex:
             self.assertTrue("User/Group Already Linked in DB" in ex.result)
             self.assertEqual(ex.status, 400)
             raises = True

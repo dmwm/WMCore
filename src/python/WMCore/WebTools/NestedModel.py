@@ -41,7 +41,7 @@ class NestedModel(RESTModel):
             data = basemethod[method]['call'](*args[1:], **kwargs)
         # in case sanitise_input is not called with in the method, if args doesn't
         # match throws the 400 error
-        except TypeError, e:
+        except TypeError as e:
             raise HTTPError(400, str(e))
 
         if 'expires' in basemethod[method].keys():

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-# pylint: disable-msg=C0301,W0142
+# pylint: disable=C0301,W0142
 
 from WMCore.Lexicon import couchurl, identifier, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase

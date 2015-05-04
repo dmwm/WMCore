@@ -29,13 +29,13 @@ def loads(idict, **kwargs):
     if  _module == 'json':
         try:
             return json.loads(idict, **kwargs)
-        except ValueError, ex:
+        except ValueError as ex:
             ex.args = ("%s: %s" % (ex.args[0], idict),)
             raise ex
     elif _module == 'cjson':
         try:
             return cjson.decode(idict)
-        except cjson.DecodeError, ex:
+        except cjson.DecodeError as ex:
             ex.args = ("%s: %s" % (ex.args[0], idict),)
             raise ex
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env
-#pylint: disable-msg=W0613
+#pylint: disable=W0613
 """
 Filesets and Feeders manager
 """
@@ -185,7 +185,7 @@ filesetId = fileset.id, feederType = feederId, \
             feeder = factory.loadObject( classname = "Feeder", getFromCache = False )
             feeder(fileset)
 
-        except Exception,e :
+        except Exception as e :
 
             msg = "Feeder plugin \'%s\' unknown" \
               % (fileset.name).split(":")[1]

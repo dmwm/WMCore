@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501, E1103, C0103
+#pylint: disable=W6501, E1103, C0103
 # E1103: Attach methods to threads
 # W6501: Allow logging messages to have string formatting
 # C0103: Internal method names start with '_'
@@ -98,7 +98,7 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
         # Now kill them
         try:
             bossAir.kill(jobs = killableJobs)
-        except BossAirException, ex:
+        except BossAirException as ex:
             # Something's gone wrong
             # Jobs not killed!
             logging.error("Error while trying to kill running jobs in workflow!\n")
@@ -359,7 +359,7 @@ class WMBSHelper(WMConnectionBase):
                     self.logger.info('Skipping MonteCarlo injection to site "%s" as unknown to wmbs' % site)
                     continue
                 locations.add(siteInfo[0]['se_name'])
-            except StandardError, ex:
+            except StandardError as ex:
                 self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
         if not locations:
             raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"

@@ -162,7 +162,7 @@ class BasePoller(threading.Thread):
                 try:
                     logging.debug("Poller %s check ..." % self.__class__.__name__)
                     self.check()
-                except Exception, ex:
+                except Exception as ex:
                     self._handleFailedPolling(ex)
             counter -= self._threadSleepTime
             if counter <= 0:

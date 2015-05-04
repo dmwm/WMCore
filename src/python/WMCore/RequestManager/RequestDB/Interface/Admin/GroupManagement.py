@@ -48,7 +48,7 @@ def addUserToGroup(userName, groupName):
     try:
         newAssoc = factory(classname = "Requestor.NewAssociation")
         newAssoc.execute(userId, groupId)
-    except SQLAlchemyIntegrityError, ex:
+    except SQLAlchemyIntegrityError as ex:
         if "Duplicate entry" in str(ex) or "unique constraint" in  str(ex):
             raise cherrypy.HTTPError(400, "User/Group Already Linked in DB")
         raise

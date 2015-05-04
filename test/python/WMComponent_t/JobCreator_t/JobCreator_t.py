@@ -1,5 +1,5 @@
 #!/bin/env python
-#pylint: disable-msg=E1101, W0201, W0142, E1103
+#pylint: disable=E1101, W0201, W0142, E1103
 # E1101: reference config file variables
 # W0142: ** magic
 # W0201: Don't much around with __init__

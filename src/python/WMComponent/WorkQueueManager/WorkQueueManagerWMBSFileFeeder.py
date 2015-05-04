@@ -47,7 +47,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         if self.checkJobCreation():
             try:
                 self.getWorks()
-            except Exception, ex:
+            except Exception as ex:
                 self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
 
     def getWorks(self):

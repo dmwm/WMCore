@@ -42,10 +42,10 @@ class GeneratorFactory(WMFactory):
         try:
             return self.factory.loadObject(generatorName,
                                            args)
-        except WMException, wmEx:
+        except WMException as wmEx:
             msg = "GeneratorFactory Unable to load Object: %s" % generatorName
             raise GeneratorFactoryException(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error creating object %s in GeneratorFactory:\n" % generatorName
             msg += str(ex)
             raise GeneratorFactoryException(msg)

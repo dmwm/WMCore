@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W1201, E1101
+#pylint: disable=W1201, E1101
 # W1201: Allow string formatting in logging messages
 # E1101: Allow imports from currentThread
 """
@@ -50,7 +50,7 @@ class ExecuteMaster:
         except WMException:
             self.toTaskDirectory()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Encountered unhandled exception while starting monitors:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
@@ -72,13 +72,13 @@ class ExecuteMaster:
                 result = self.doExecution(executor, step, wmbsJob)
                 if not result == None:
                     skipToStep = result
-            except WMException, ex:
+            except WMException as ex:
                 msg = "Encountered error while running ExecuteMaster:\n"
                 msg += str(ex) + "\n"
                 logging.error(msg)
                 self.toTaskDirectory()
                 break
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Encountered error while running ExecuteMaster:\n"
                 msg += str(ex) + "\n"
                 msg += str(traceback.format_exc()) + "\n"
@@ -91,7 +91,7 @@ class ExecuteMaster:
             myThread.watchdogMonitor.notifyJobEnd(task)
         except WMException:
             self.toTaskDirectory()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Encountered unhandled exception while ending the job:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
@@ -139,10 +139,10 @@ class ExecuteMaster:
             executor.report.setStepStartTime(stepName = executor.stepName)
             executionObject.execute()
             executor.report.setStepStopTime(stepName = executor.stepName)
-        except WMExecutionFailure, ex:
+        except WMExecutionFailure as ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
             error = True
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Exception occured when executing step")
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")

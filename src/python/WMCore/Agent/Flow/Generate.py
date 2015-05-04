@@ -229,7 +229,7 @@ test.summaryText()
                         stfile.write('from ' + self.config.General.pythonPrefix + '.' )
                         stfile.write(componentName +'.Handler.' + self.convert(handlerName) +' import')
                         stfile.write(' ' + self.convert(handlerName)+'\n')
-            except Exception, ex:
+            except Exception as ex:
                 print('No messages for component: '+ componentName)
             msg = """
 class %s(Harness):
@@ -267,7 +267,7 @@ class %s(Harness):
                         stfile.write(msg)
                     else:
                         stfile.write("        self.messages['"+handlerName+"'] = "+ self.convert(handlerName)+"(self)\n\n")
-            except Exception,ex:
+            except Exception as ex:
                 print('is this an ERROR? :'+str(ex))
             stfile.flush()
             stfile.close()

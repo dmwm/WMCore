@@ -7,9 +7,9 @@ A REST formatter that appends the DAS headers to the result data
 
 
 # expires is used by the decorator to set the expires header
-# pylint: disable-msg=W0613
+# pylint: disable=W0613
 # I want dasjson and plist to be methods instead of functions
-# pylint: disable-msg=R0201
+# pylint: disable=R0201
 
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 import plistlib

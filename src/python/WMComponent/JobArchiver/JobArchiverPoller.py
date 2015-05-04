@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: pass information to logging using string arguments
 """
 The actual jobArchiver algorithm
@@ -73,7 +73,7 @@ class JobArchiverPoller(BaseWorkerThread):
                 os.makedirs(self.logDir)
             if not os.path.isdir(self.uploadPublishDir):
                 os.makedirs(self.uploadPublishDir)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while setting up logDir and/or uploadPublishDir!\n"
             msg += str(ex)
             logging.error(msg)
@@ -88,7 +88,7 @@ class JobArchiverPoller(BaseWorkerThread):
         try:
             from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
             self.workQueue = queueFromConfig(self.config)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Could not load workQueue"
             msg += str(ex)
             logging.error(msg)
@@ -136,7 +136,7 @@ class JobArchiverPoller(BaseWorkerThread):
                    and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             myThread = threading.currentThread()
             msg = "Caught exception in JobArchiver\n"
             msg += str(ex)
@@ -279,7 +279,7 @@ class JobArchiverPoller(BaseWorkerThread):
                                    workflow, jobFolder)
             if not os.path.exists(logDir):
                 os.makedirs(logDir)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Exception while trying to make output logDir\n"
             msg += str("logDir: %s\n" % (logDir))
             msg += str(ex)
@@ -300,7 +300,7 @@ class JobArchiverPoller(BaseWorkerThread):
                 except IOError:
                     logging.error('Cannot read %s, skipping' % fullFile)
             tarball.close()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Exception while opening and adding to a tarfile\n"
             msg += "Tarfile: %s\n" % os.path.join(logDir, tarName)
             msg += str(ex)
@@ -311,7 +311,7 @@ class JobArchiverPoller(BaseWorkerThread):
 
         try:
             shutil.rmtree('%s' % (cacheDir), ignore_errors=True)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error while removing the old cache dir.\n"
             msg += "CacheDir: %s\n" % cacheDir
             msg += str(ex)
@@ -347,7 +347,7 @@ class JobArchiverPoller(BaseWorkerThread):
             except WorkQueueNoMatchingElements:
                 # workflow not known - free to cleanup
                 injected.append(name)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Injection status checking failed, investigate: %s" % str(ex))
                 logging.debug("Traceback: %s" % traceback.format_exc())
 
@@ -389,7 +389,7 @@ class JobArchiverPoller(BaseWorkerThread):
             wf.load()
             try:
                 uploadPublishWorkflow(self.config, wf, ufcEndpoint=self.userFileCacheURL, workDir=self.uploadPublishDir)
-            except Exception, ex:
+            except Exception as ex:
                 logging.error('Upload failed for workflow, task: %s, %s' % (workflow, task))
                 logging.error(str(ex))
 

@@ -127,7 +127,7 @@ class CMSSW_t(unittest.TestCase):
             self.assertEqual(2, len(executor.report.getAllFiles()))
             # Check that the executable was really executed
             self.assertTrue(os.path.isfile(os.path.join(self.step.builder.workingDir, "BogusFile.txt")))
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:
             os.chdir(self.oldCwd)
@@ -153,13 +153,13 @@ class CMSSW_t(unittest.TestCase):
             try:
                 executor.execute()
                 self.fail("An exception should have been raised")
-            except WMExecutionFailure, ex:
+            except WMExecutionFailure as ex:
                 executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
                 self.assertEqual(8001, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
                 self.assertEqual(8001, report.getExitCode())
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:
             os.chdir(self.oldCwd)
@@ -186,13 +186,13 @@ class CMSSW_t(unittest.TestCase):
             try:
                 executor.execute()
                 self.fail("An exception should have been raised")
-            except WMExecutionFailure, ex:
+            except WMExecutionFailure as ex:
                 executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
                 self.assertEqual(134, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
                 self.assertEqual(134, report.getExitCode())
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:
             os.chdir(self.oldCwd)
@@ -218,7 +218,7 @@ class CMSSW_t(unittest.TestCase):
             executor.execute()
             executor.post()
             self.assertEqual(60450, executor.report.getExitCode())
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
         finally:
             os.chdir(self.oldCwd)

@@ -66,7 +66,7 @@ def main():
             else:
                 print "Failed to clone WMCore ", -retcode
                 sys.exit(1)
-        except OSError, e:
+        except OSError as e:
             print "Execution failed:", e
             sys.exit(2)
 

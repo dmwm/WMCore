@@ -73,7 +73,7 @@ def HTTPpost(params, url, onFailureFile = None):
         logging.debug("received http code: %s, message: %s, response: %s" \
                       % (response.code, response.msg, str(response.read())))
 
-    except IOError, ex:
+    except IOError as ex:
         #record the report that failed then rethrow
 
         if onFailureFile != None:
@@ -235,7 +235,7 @@ class DashboardInterface(object):
         jobDoc.appendChild(instance_node)
         try:
             self.createInstanceDocument(instance = instance_node)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error while trying to create instances\n"
             msg += str(traceback.format_exc())
             msg += str(ex)
@@ -336,7 +336,7 @@ class DashboardInterface(object):
         try:
             HTTPpost(contents, self.url,
                      onFailureFile = os.path.join(os.getcwd(), "Failed.txt"))
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error exporting data to external monitoring: "
             msg += str(traceback.format_exc())
             msg += str(ex)

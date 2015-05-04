@@ -1,5 +1,5 @@
 #!/bin/env python
-#pylint: disable-msg=E1103, C0103
+#pylint: disable=E1103, C0103
 # E1103: Threads have things attached to them
 # C0103: We use readable names for method names
 """

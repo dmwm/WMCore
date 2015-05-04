@@ -5,7 +5,7 @@ def couch_request_error(func):
     def wrapperFunc(*args, **kwargs):
         try:
             func(*args, **kwargs)
-        except CouchError, ex:
+        except CouchError as ex:
             #msg = ("ERROR: Query of CouchDB database %s,  couchapp %s view %s failed."
             #        % (db_name, app_name, view_name))
             #cherrypy.log("%s Reason: %s" % (msg, ex))

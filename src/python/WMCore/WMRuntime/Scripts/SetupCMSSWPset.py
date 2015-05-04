@@ -184,7 +184,7 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 from Configuration.DataProcessing.Merge import mergeProcess
                 self.process = mergeProcess(**funcArgs)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Failed to create a merge process."
                 print msg
                 return None
@@ -192,7 +192,7 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 from Configuration.DataProcessing.Repack import repackProcess
                 self.process = repackProcess(**funcArgs)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Failed to create a repack process."
                 print msg
                 return None
@@ -201,7 +201,7 @@ class SetupCMSSWPset(ScriptInterface):
                 from Configuration.DataProcessing.GetScenario import getScenario
                 scenarioInst = getScenario(scenario)
                 self.process = getattr(scenarioInst, funcName)(**funcArgs)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Failed to retrieve the Scenario named "
                 msg += str(scenario)
                 msg += "\nWith Error:"
@@ -224,7 +224,7 @@ class SetupCMSSWPset(ScriptInterface):
         try:
             processMod = __import__(psetModule, globals(), locals(), ["process"], -1)
             self.process = processMod.process
-        except ImportError, ex:
+        except ImportError as ex:
             msg = "Unable to import process from %s:\n" % psetModule
             msg += str(ex)
             print msg
@@ -532,14 +532,14 @@ class SetupCMSSWPset(ScriptInterface):
                 funcArgs = {}
             try:
                 self.createProcess(scenario, funcName, funcArgs)
-            except Exception, ex:
+            except Exception as ex:
                 print "Error creating process for Config/DataProcessing:"
                 print traceback.format_exc()
                 raise ex
         else:
             try:
                 self.loadPSet()
-            except Exception, ex:
+            except Exception as ex:
                 print "Error loading PSet:"
                 print traceback.format_exc()
                 raise ex
@@ -645,7 +645,7 @@ class SetupCMSSWPset(ScriptInterface):
             handle.write("handle = open('%s', 'rb')\n" % configPickle)
             handle.write("process = pickle.load(handle)\n")
             handle.write("handle.close()\n")
-        except Exception, ex:
+        except Exception as ex:
             print "Error writing out PSet:"
             print traceback.format_exc()
             raise ex

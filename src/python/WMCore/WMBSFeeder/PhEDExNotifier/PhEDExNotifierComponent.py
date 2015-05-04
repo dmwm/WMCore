@@ -45,7 +45,7 @@ class PhEDExNotifierComponent(FeederImpl):
             #(opts,args) = optManager.getOpt()
             #opts[ 'url' ] = dbsURL
             self.dbsapi = DbsApi( {'url': dbsURL } )#opts.__dict__)
-        except DbsApiException, ex:
+        except DbsApiException as ex:
             print "Caught API Exception %s: %s "  % (ex.getClassName(), ex.getErrorMessage() )
             if ex.getErrorCode() not in (None, ""):
                 print "DBS Exception Error Code: ", ex.getErrorCode()
@@ -128,7 +128,7 @@ class PhEDExNotifierComponent(FeederImpl):
                 print "LFN doesn't map to single file in DBS! lfn=%s" % lfn
             return files[0][ 'NumberOfEvents' ]
 
-        except DbsDatabaseError,e:
+        except DbsDatabaseError as e:
             print e
 
 
@@ -139,7 +139,7 @@ class PhEDExNotifierComponent(FeederImpl):
             # List all lumi sections of the file
             lumiSections = self.dbsapi.listFileLumiArray( lfn )
 
-        except DbsDatabaseError,e:
+        except DbsDatabaseError as e:
             print e
 
         lumiSecNumbers = []

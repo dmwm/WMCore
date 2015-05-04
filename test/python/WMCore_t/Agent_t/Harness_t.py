@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,C0103,R0902
+#pylint: disable=E1101,C0103,R0902
 """
 Component test TestComponent module and the harness
 """
@@ -87,7 +87,7 @@ class HarnessTest(unittest.TestCase):
         errorMsg = ''
         try:
             testComponent.handleMessage('NonExistingMessageType','')
-        except Exception,ex:
+        except Exception as ex:
             errorMsg = str(ex)
         self.assertTrue(errorMsg.startswith('Message NonExistingMessageType with payload'))
 

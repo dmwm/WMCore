@@ -155,7 +155,7 @@ class JobTest(unittest.TestCase):
 
         try:
             baggage = self.dummyJob.getBaggage()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Job.getBaggage()\n"
             msg += str(ex)
             self.fail(msg)

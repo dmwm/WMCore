@@ -79,7 +79,7 @@ class CouchObject(dict):
         try:
             self.cdb_server = CMSCouch.CouchServer(self.cdb_url)
             self.couch = self.cdb_server.connectDatabase(self.cdb_database)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Exception instantiating couch services for :\n"
             msg += " url = %s\n database = %s\n" % (self.cdb_url, self.cdb_database)
             msg += " Exception: %s" % str(ex)

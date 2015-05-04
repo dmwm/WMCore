@@ -1,5 +1,5 @@
 #!/usr/bin/env
-#pylint: disable-msg=C0301
+#pylint: disable=C0301
 """
 The workflow manager itself, set up event listeners and work event thread
 """

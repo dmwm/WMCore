@@ -291,7 +291,7 @@ class DBS3Reader:
                 summary = self.dbs.listFileSummaries(block_name = block)
             else: # dataset case dataset shouldn't be None
                 summary = self.dbs.listFileSummaries(dataset = dataset)
-        except DBSReaderError, ex:
+        except DBSReaderError as ex:
             msg = "Error in DBSReader.listDatasetSummary(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx(ex)
             raise DBSReaderError(msg)
@@ -322,4 +322,4 @@ class DBS3Reader:
 
         return list(result)
 
-# pylint: enable-msg=W0613,R0201
+# pylint: enable=W0613,R0201

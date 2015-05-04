@@ -16,7 +16,7 @@ import sys
 #py2.6 compatibility
 try:
     import json
-except ImportError, ex:
+except ImportError as ex:
     import simplejson as json
 
 

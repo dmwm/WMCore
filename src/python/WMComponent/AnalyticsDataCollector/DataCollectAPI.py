@@ -135,7 +135,7 @@ class LocalCouchDBData():
     def getHeartbeat(self):
         try:
             return self.jobCouchDB.info();
-        except Exception, ex:
+        except Exception as ex:
             return {'error_message': str(ex)}
 
 @emulatorHook

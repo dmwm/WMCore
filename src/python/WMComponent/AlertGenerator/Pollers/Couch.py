@@ -72,7 +72,7 @@ class CouchPoller(PeriodPoller):
             else:
                 pidStr = open(pidFileDefault, 'r').read()
                 pid = int(pidStr)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("%s: could not get CouchDB PID, reason: %s" %
                           (self.__class__.__name__, ex))
             raise
@@ -130,7 +130,7 @@ class CouchDbSizePoller(DirectorySizePoller):
             couch = CouchServer(couchURL)
             r = couch.makeRequest(self._query)
             dataDir = r["couchdb"]["database_dir"]
-        except Exception, ex:
+        except Exception as ex:
             msg = ("%s: could not find out database directory, reason: %s "
                    "couchURL: '%s'" % (self.__class__.__name__, ex, couchURL))
             raise Exception(msg)
@@ -208,7 +208,7 @@ class CouchErrorsPoller(BasePoller):
             self.couch = CouchServer(couchURL)
             # retrieves result which is not used during this set up
             r = self.couch.makeRequest(self._query)
-        except Exception, ex:
+        except Exception as ex:
             msg = ("%s: could not connect to CouchDB, reason: %s" %
                    (self.__class__.__name__, ex))
             raise Exception(msg)

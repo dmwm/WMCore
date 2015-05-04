@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: Allow logging messages to have string formatting
 """
 _DBSInterface_
@@ -58,7 +58,7 @@ def createPrimaryDataset(primaryName, primaryDatasetType = 'mc', apiRef = None):
     if apiRef:
         try:
             apiRef.insertPrimaryDataset(primary)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createPrimaryDataset(%s)\n" % primaryName
             msg += formatEx(ex)
             logging.error(msg)
@@ -98,7 +98,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     if apiRef != None:
         try:
             apiRef.insertProcessedDataset(processedDataset)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createProcessedDataset(%s)\n" % processedName
             msg += formatEx(ex)
             logging.error(msg)
@@ -110,7 +110,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     return processedDataset
 
 
-# pylint: disable-msg=C0103
+# pylint: disable=C0103
 def createAlgorithm(apiRef, appName, appVer, appFam,
                     PSetHash = None, PSetContent = None):
     """
@@ -145,14 +145,14 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
     if apiRef:
         try:
             apiRef.insertAlgorithm(algorithmInstance)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createAlgorithm(%s)\n" % appVer
             msg += formatEx(ex)
             logging.error(msg)
             raise DBSInterfaceError(msg)
     return algorithmInstance
 
-# pylint: enable-msg=C0103
+# pylint: enable=C0103
 
 
 def createUncheckedBlock(apiRef, name, datasetPath, seName):
@@ -168,7 +168,7 @@ def createUncheckedBlock(apiRef, name, datasetPath, seName):
                                           block = name,
                                           storage_element_list = [seName])
 
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.createUncheckedBlock(%s)\n" % name
         msg += formatEx(ex)
         logging.error(msg)
@@ -217,7 +217,7 @@ def createFileBlock(apiRef, datasetPath, seName):
                 msg += newBlockName
                 raise DBSInterfaceError(msg)
             blockRef = blocks[0]
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createFileBlock(%s)\n" % datasetPath
             msg += formatEx(ex)
             logging.error(msg)
@@ -252,7 +252,7 @@ def insertFiles(apiRef, datasetPath, files, block, maxFiles = 10):
     for fileList in listOfFileLists:
         try:
             apiRef.insertFiles(datasetPath, fileList, block)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.insertFiles(%s)\n" % datasetPath
             msg += "%s\n" % formatEx(ex)
             msg += str(traceback.format_exc())
@@ -273,7 +273,7 @@ def closeBlock(apiRef, block):
     try:
         apiRef.closeBlock(block)
         logging.info("Back from closeBlock()")
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.closeBlock(%s)\n" % block
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -301,7 +301,7 @@ def listPrimaryDatasets(apiRef, match = "*"):
     """
     try:
         result = apiRef.listPrimaryDatasets(match)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listPrimaryDataset(%s)\n" % match
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -321,7 +321,7 @@ def listProcessedDatasets(apiRef, primary, dataTier = "*"):
 
     try:
         result = apiRef.listProcessedDatasets(primary, dataTier)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listProcessedDatasets(%s)\n" % primary
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -351,7 +351,7 @@ def listAlgorithms(apiRef, patternVer="*", patternFam="*",
                                        patternFam = patternFam,
                                        patternExe = patternExe,
                                        patternPS  = patternPS)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listPrimaryDataset()\n"
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -370,7 +370,7 @@ def listBlocks(apiRef, datasetPath = None, blockName = "*", seName = "*"):
         blocks = apiRef.listBlocks(datasetPath,
                                    block_name = blockName,
                                    storage_element_name = seName)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listBlocks(%s)\n" % datasetPath
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -506,7 +506,7 @@ class DBSInterface:
             self.dbs       = DbsApi(args)
             if self.globalDBSUrl:
                 self.globalDBS = DbsApi(globalArgs)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             logging.error(msg)
@@ -740,7 +740,7 @@ class DBSInterface:
                                          srcVersion = self.version,
                                          dstVersion = self.config.globalDBSVersion)
                 block['open'] = 'InGlobalDBS'
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSInterface.migrateClosedBlocks()\n"
                 msg += "%s\n" % formatEx(ex)
                 msg += str(traceback.format_exc())

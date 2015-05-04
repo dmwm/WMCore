@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613
+#pylint: disable=W0613
 """
 _Feeder_
 """
@@ -93,7 +93,7 @@ class Feeder(FeederImpl):
 
                 break
 
-            except DBSReaderError, ex:
+            except DBSReaderError as ex:
                 logging.error("DBS error: %s, cannot get files for %s" % \
                       (str(ex), filesetToProcess.name))
                 # Close fileset
@@ -101,7 +101,7 @@ class Feeder(FeederImpl):
                 return
 
             # connection error, retry
-            except DbsConnectionError, ex:
+            except DbsConnectionError as ex:
                 logging.error("Unable to connect to DBS, retrying: " + \
                       str(ex))
                 if tries > self.connectionAttempts: #too many errors - bail out

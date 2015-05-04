@@ -85,7 +85,7 @@ class ReqMgrBrowser(WebAPI):
         """ Checks if alphanumeric, tolerating spaces """
         try:
             WMCore.Lexicon.identifier(v)
-        except AssertionError, ex:
+        except AssertionError as ex:
             raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
@@ -223,7 +223,7 @@ class ReqMgrBrowser(WebAPI):
     def _getConfigCache(self, requestName, processMethod):
         try:
             request = Utilities.requestDetails(requestName)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Cannot find request %s, check logs." % requestName
             logging.error("%s, reason: %s" % (msg, ex))
             return msg
@@ -232,7 +232,7 @@ class ReqMgrBrowser(WebAPI):
             configCache = ConfigCache(url, self.configDBName)
             configDocId = request["ConfigCacheID"]
             configCache.loadByID(configDocId)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Cannot find ConfigCache document %s on %s." % (configDocId, url)
             logging.error("%s, reason: %s" % (msg, ex))
             return msg

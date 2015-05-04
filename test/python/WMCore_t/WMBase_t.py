@@ -21,7 +21,7 @@ class WMBaseTest(unittest.TestCase):
 
         try:
             getWMBASE()
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failed to call getWMBASE")
 
         return

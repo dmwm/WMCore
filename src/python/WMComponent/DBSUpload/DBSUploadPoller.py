@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: Allow logging messages to have string formatting
 
 """
@@ -119,7 +119,7 @@ def createAlgoFromInfo(info):
             configCache = ConfigCache(cacheURL, cacheDB)
             configCache.loadByID(configID)
             algo['PSetContent'] = configCache.getConfig()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Exception in getting configCache from DB\n"
             msg += "Ignoring this exception and continuing without config.\n"
             msg += str(ex)
@@ -276,7 +276,7 @@ class DBSUploadPoller(BaseWorkerThread):
             self.uploadBlocks()
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception in DBSUploadPoller\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -356,7 +356,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     readyBlocks.extend(locBlocks)
             except WMException:
                 raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Unhandled exception while sorting files into blocks for DAS %i\n" % dasID
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -539,7 +539,7 @@ class DBSUploadPoller(BaseWorkerThread):
                     myThread.transaction.rollbackForError()
                 pass
                 #raise
-            except Exception, ex:
+            except Exception as ex:
                 msg =  'Error in committing files to DBS\n'
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -672,11 +672,11 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.debug("Committing transaction at the end of DBSBuffer insertion.")
             myThread.transaction.commit()
 
-        except WMException, ex:
+        except WMException as ex:
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  'Error in committing blocks to DBSBuffer\n'
             msg += str(ex)
             msg += str(traceback.format_exc())

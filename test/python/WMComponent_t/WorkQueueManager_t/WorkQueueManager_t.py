@@ -31,7 +31,7 @@ from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
+    # pylint: disable=E1101,E1103
     return wmspec.taskIterator().next()
 
 class WorkQueueManagerTest(WorkQueueTestCase):
@@ -66,7 +66,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         config = self.testInit.getConfiguration()
         # http://www.logilab.org/ticket/8961
-        # pylint: disable-msg=E1101, E1103
+        # pylint: disable=E1101, E1103
         config.component_("WorkQueueManager")
         config.section_("General")
         config.General.workDir = "."

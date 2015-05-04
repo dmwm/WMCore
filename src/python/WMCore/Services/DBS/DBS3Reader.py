@@ -52,7 +52,7 @@ class DBS3Reader:
         # instantiate dbs api object
         try:
             self.dbs = DbsApi(url, **contact)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -71,7 +71,7 @@ class DBS3Reader:
                 lumiLists = []
                 for slfn in slicedIterator(lfns, 50):
                     lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name = slfn))
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
             msg += "%s\n" % formatEx3(ex)
@@ -96,7 +96,7 @@ class DBS3Reader:
         """
         try:
             result = self.dbs.listPrimaryDatasets(primary_ds_name = match)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listPrimaryDataset(%s)\n" % match
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -113,7 +113,7 @@ class DBS3Reader:
         result = []
         try:
             datasets = self.dbs.listDatasets(primary_ds_name = primary, data_tier_name = tier, detail = True)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listProcessedDatasets(%s)\n" % primary
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -148,7 +148,7 @@ class DBS3Reader:
                 results = self.dbs.listRuns(block_name = block)
             else:
                 results = self.dbs.listRuns(dataset = dataset)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -176,7 +176,7 @@ class DBS3Reader:
                 results = self.dbs.listRuns(block_name = block)
             else:
                 results = self.dbs.listRuns(dataset = dataset)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listRuns(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -202,7 +202,7 @@ class DBS3Reader:
         """
         try:
             result = self.dbs.listDatasets(primary_ds_name = primary, data_tier_name = dataTier)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listProcessedDatasets(%s)\n" % primary
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -314,7 +314,7 @@ class DBS3Reader:
                 summary = self.dbs.listFileSummaries(block_name = block, validFileOnly = 1)
             else: # dataset case dataset shouldn't be None
                 summary = self.dbs.listFileSummaries(dataset = dataset, validFileOnly = 1)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listDatasetSummary(%s, %s)\n" % (dataset, block)
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -336,7 +336,7 @@ class DBS3Reader:
             args['block_name'] = blockName
         try:
             blocks = self.dbs.listBlocks(**args)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.getFileBlocksInfo(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -371,7 +371,7 @@ class DBS3Reader:
             args['detail'] = True
         try:
             blocks = self.dbs.listBlocks(**args)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -397,7 +397,7 @@ class DBS3Reader:
         self.checkDatasetPath(dataset)
         try:
             blocks = self.dbs.listBlocks(dataset = dataset, detail = True)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in DBSReader.listFileBlocks(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
@@ -425,7 +425,7 @@ class DBS3Reader:
         try:
 
             blocks = self.dbs.listBlocks(block_name = fileBlockName)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.blockExists(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
@@ -453,7 +453,7 @@ class DBS3Reader:
 
         try:
             files = self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = 1, detail = True)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
@@ -489,7 +489,7 @@ class DBS3Reader:
             files = self.dbs.listFileParents(block_name = fileBlockName)
             fileDetails = self.listFilesInBlock(fileBlockName, lumis)
 
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlockWithParents(%s)\n" % (
                 fileBlockName,)
@@ -542,7 +542,7 @@ class DBS3Reader:
         try:
             lfns =  self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = 1, detail = False)
             return lfns
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
             msg += "%s\n" % formatEx3(ex)
@@ -564,7 +564,7 @@ class DBS3Reader:
         if not dbsOnly:
             try:
                 blockInfo = self.phedex.getReplicaSEForBlocks(phedexNodes=phedexNodes, block=blockNames, complete='y')
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
                 raise Exception(msg)
@@ -579,7 +579,7 @@ class DBS3Reader:
                     res = self.dbs.listBlockOrigin(block_name = block)
                     if res:
                         blockInfo[block] = [res[0]['origin_site_name']]
-            except dbsClientException, ex:
+            except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % formatEx3(ex)
                 raise DBSReaderError(msg)
@@ -727,7 +727,7 @@ class DBS3Reader:
         self.checkBlockName(blockName)
         try:
             blocks = self.dbs.listBlocks(block_name = blockName, detail = True)
-        except dbsClientException, ex:
+        except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.blockToDataset(%s)\n" % blockName
             msg += "%s\n" % formatEx3(ex)
@@ -751,7 +751,7 @@ class DBS3Reader:
         if not dbsOnly:
             try:
                 blocksInfo = self.phedex.getReplicaSEForBlocks(dataset=[datasetName],complete='y')
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error while getting block location from PhEDEx for dataset=%s)\n" % datasetName
                 msg += "%s\n" % str(ex)
                 raise Exception(msg)
@@ -766,7 +766,7 @@ class DBS3Reader:
         if dbsOnly:
             try:
                 blocksInfo = self.dbs.listBlockOrigin(dataset = datasetName)
-            except dbsClientException, ex:
+            except dbsClientException as ex:
                 msg = "Error in DBSReader: dbsApi.listBlocks(dataset=%s)\n" % datasetName
                 msg += "%s\n" % formatEx3(ex)
                 raise DBSReaderError(msg)

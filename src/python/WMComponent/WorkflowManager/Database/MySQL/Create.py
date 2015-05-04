@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103
+#pylint: disable=E1103
 """
 _Create_
 

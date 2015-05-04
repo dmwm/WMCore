@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613, W6501
+#pylint: disable=W0613, W6501
 # W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm
@@ -250,7 +250,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
                 cooloffJobs.append(job)
 
-            except Exception, ex:
+            except Exception as ex:
                 logging.warning("Exception while trying to check jobs for failures!")
                 logging.warning(str(ex))
                 logging.warning("Ignoring and sending job to cooloff")
@@ -375,18 +375,18 @@ class ErrorHandlerPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         try:
             self.handleErrors()
-        except WMException, ex:
+        except WMException as ex:
             try:
                 myThread.transaction.rollback()
             except:
                 pass
             raise
-        except CouchConnectionError, ex:
+        except CouchConnectionError as ex:
             msg = "Caught CouchConnectionError exception in ErrorHandler\n"
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Caught exception in ErrorHandler\n"
             msg += str(ex)
             msg += str(traceback.format_exc())

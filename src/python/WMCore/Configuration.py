@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=C0321,C0103
+# pylint: disable=C0321,C0103
 """
 _Configuration_
 
@@ -550,7 +550,7 @@ def loadConfigurationFile(filename):
     try:
         modRef = imp.load_module(cfgBaseName, modPath[0],
                                  modPath[1], modPath[2])
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to load Configuration File:\n"
         msg += "%s\n" % filename
         msg += "Due to error:\n"

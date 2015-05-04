@@ -19,6 +19,8 @@ can_lint = False
 can_coverage = False
 can_nose = False
 
+sys.setrecursionlimit(10000) # Eliminates recursion exceptions with nose
+
 try:
     from pylint.lint import Run
     from pylint.lint import preprocess_options, cb_init_hook
@@ -285,12 +287,12 @@ if can_nose:
                                              '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
                                              '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
                                              '--cover-package=' + moduleList, '--cover-inclusive',
-                                             self.testingRoot],
+                                             testPath],
                                              paths = testPath)
                 else:
                     retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
                          '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
-                         '--stop', self.testingRoot],
+                         '--stop', testPath],
                          paths = testPath)
                     
             threadCount = len(threading.enumerate())
@@ -623,7 +625,7 @@ class ReportCommand(Command):
                refactor += stats['refactor']
                convention += stats['convention']
                statement += stats['statement']
-       except Exception,e:
+       except Exception as e:
            # and restore the stdout/stderr
            sys.stderr = sys.__stderr__
            sys.stdout = sys.__stderr__

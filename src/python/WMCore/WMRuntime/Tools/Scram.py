@@ -178,7 +178,7 @@ class Scram:
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
                 )
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error thrown while invoking subprocess for scram runtime\n"
             msg += "%s\n" % str(ex)
             msg += "Opening subprocess shell in %s" % self.projectArea
@@ -204,7 +204,7 @@ class Scram:
                 l = l.replace("export ", "")
                 try:
                     var, val = l.split("=", 1)
-                except ValueError, ex:
+                except ValueError as ex:
                     raise ValueError, "Couldn't split line: %s" % l
 
                 self.runtimeEnv[var] = val

@@ -1612,7 +1612,7 @@ class WMWorkloadTest(unittest.TestCase):
             testWorkload.setSiteWildcardsLists(siteBlacklist = ['T3*'],
                                                siteWhitelist = [],
                                                wildcardDict = wildcardSites)
-        except WMWorkloadException, ex:
+        except WMWorkloadException as ex:
             raises = True
             self.assertTrue("Invalid wildcard site T3* in site blacklist!" in str(ex))
             pass

@@ -44,7 +44,7 @@ class PYDCCPImpl(StageOutImplV2):
         """
         try:
             import dcap
-        except ImportError, ie:
+        except ImportError as ie:
             raise StageOutError("Python dCap wrappers not found on this host.")
         ourCommand = \
             self.generateCommandFromPreAndPostParts(\

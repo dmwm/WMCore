@@ -52,7 +52,7 @@ class MySQLPoller(PeriodPoller):
             pid = int(pidStr)
             logging.info("MySQL server PID: %s" % pid)
             return pid
-        except Exception, ex:
+        except Exception as ex:
             msg = ("%s: could not read MySQL PID, reason: %s" %
                    (self.__class__.__name__, ex))
             raise Exception(msg)
@@ -110,7 +110,7 @@ class MySQLDbSizePoller(DirectorySizePoller):
             proxy = myThread.dbi.connection().execute(self._query)
             result = proxy.fetchone()
             dataDir = result[1]
-        except Exception, ex:
+        except Exception as ex:
             msg = ("%s: could not find out database directory, reason: %s" %
                    (self.__class__.__name__, ex))
             raise Exception(msg)

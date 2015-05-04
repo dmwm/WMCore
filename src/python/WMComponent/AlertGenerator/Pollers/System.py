@@ -159,7 +159,7 @@ class DiskSpacePoller(BasePoller):
                                  stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             rc = p.wait()
             out, err = p.communicate()
-        except OSError, ex:
+        except OSError as ex:
             err += "exception while running command '%s', reason: %s" % (c, ex)
 
         if rc != 0:
@@ -211,7 +211,7 @@ class DiskSpacePoller(BasePoller):
                         self.sender(a)
                         break # send only one alert, critical threshold tested first
                 percs.append(percStr)
-        except (ValueError, IndexError), ex:
+        except (ValueError, IndexError) as ex:
             logging.error("Could not check available disk space, reason: %s" % ex)
         m = "%s: measurements results: %s" % (self.__class__.__name__, percs)
         logging.debug(m)
@@ -251,7 +251,7 @@ class DirectorySizePoller(BasePoller):
                                  stdout = subprocess.PIPE, stderr = subprocess.PIPE)
             rc = p.wait()
             out, err = p.communicate()
-        except OSError, ex:
+        except OSError as ex:
             err += "exception while running command '%s', reason: %s" % (c, ex)
 
         if rc != 0:
@@ -269,7 +269,7 @@ class DirectorySizePoller(BasePoller):
             desired = lines[-2]
             size = desired.split()[0]
             size = int(size)
-        except Exception, ex:
+        except Exception as ex:
             m = ("%s: could not get directory space usage, reason: %s. du output: '%s"'' %
                  (self._myName, ex, out))
             logging.error(m)

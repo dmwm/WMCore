@@ -132,12 +132,12 @@ class ReportIntegrationTest(unittest.TestCase):
         try:
             os.remove(os.path.join(self.tempDir, "ProcReport.pkl"))
             os.remove(os.path.join(self.tempDir, "MergeReport.pkl"))
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         try:
             os.rmdir(self.tempDir)
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         return

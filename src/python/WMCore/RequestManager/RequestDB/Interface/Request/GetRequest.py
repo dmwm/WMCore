@@ -89,7 +89,7 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
         # add ProcessingVersion and ProcessingString in the response (#4561)
         request["ProcessingVersion"] = str(helper.getProcessingVersion())
         request["ProcessingString"] = str(helper.getProcessingString())
-    except Exception, ex:
+    except Exception as ex:
         logging.error("Could not check workload for %s, reason: %s" %
                       (request["RequestName"], ex))
     

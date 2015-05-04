@@ -75,7 +75,7 @@ class WorkQueueBackend(object):
                                       continuous = continuous,
                                       cancel = cancel,
                                       useReplicator = True)
-        except Exception, ex:
+        except Exception as ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
     def sendToParent(self, continuous = True, cancel = False):
@@ -89,7 +89,7 @@ class WorkQueueBackend(object):
                                       continuous = continuous,
                                       cancel = cancel,
                                       useReplicator = True)
-        except Exception, ex:
+        except Exception as ex:
             self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
 
@@ -442,7 +442,7 @@ class WorkQueueBackend(object):
             if compacting:
                 self.logger.info("CouchDB compacting - try again later.")
                 return False
-        except Exception, ex:
+        except Exception as ex:
             self.logger.error("CouchDB unavailable: %s" % str(ex))
             return False
         return True
@@ -480,7 +480,7 @@ class WorkQueueBackend(object):
                     fixed_elements = fixElementConflicts(*conflicting_elements)
                     if self.saveElements(fixed_elements[0]):
                         self.saveElements(*fixed_elements[1:]) # delete others (if merged value update accepted)
-                except Exception, ex:
+                except Exception as ex:
                     self.logger.error("Error resolving conflict for %s: %s" % (element_id, str(ex)))
 
     def recordTaskActivity(self, taskname, comment = ''):
@@ -495,7 +495,7 @@ class WorkQueueBackend(object):
         record['tasks'][taskname]['comment'] = comment
         try:
             self.db.commitOne(record)
-        except StandardError, ex:
+        except StandardError as ex:
             self.logger.error("Unable to update task %s freshness: %s" % (taskname, str(ex)))
 
     def getWMBSInjectStatus(self, request = None):

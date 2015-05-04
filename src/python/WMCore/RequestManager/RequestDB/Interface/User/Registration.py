@@ -50,7 +50,7 @@ def registerUser(hnUsername, emailAddress, dnName = None):
     newUser = factory(classname = "Requestor.New")
     try:
         newUser.execute(hnUsername, emailAddress,dnName , 1)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to register user:\n%s" % str(ex)
         raise RuntimeError, msg
 

@@ -38,7 +38,7 @@ class CMSSWTemplateTest(unittest.TestCase):
         # first up, create the template
         try:
             template = CMSSWTemplate()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate the CMSSW Step Template"
             msg += str(ex)
             self.fail(msg)
@@ -46,7 +46,7 @@ class CMSSWTemplateTest(unittest.TestCase):
         # now apply it to the step
         try:
             template(step)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to apply template to step"
             msg += str(ex)
             self.fail(msg)
@@ -72,7 +72,7 @@ class CMSSWTemplateTest(unittest.TestCase):
         template(step)
         try:
             helper = template.helper(step)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure to create CMSSW Step Helper"
             msg += str(ex)
             self.fail(msg)

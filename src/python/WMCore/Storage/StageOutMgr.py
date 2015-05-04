@@ -111,7 +111,7 @@ class StageOutMgr:
             self.tfc = self.siteCfg.trivialFileCatalog()
             msg += "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
@@ -148,7 +148,7 @@ class StageOutMgr:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(ex)
             raise StageOutInitError(msg)
@@ -194,11 +194,11 @@ class StageOutMgr:
 
                 print "===> Stage Out Successful: %s" % fileToStage
                 return fileToStage
-            except WMException, ex:
+            except WMException as ex:
                 lastException = ex
                 print "===> Local Stage Out Failure for file:"
                 print "======>  %s\n" % fileToStage['LFN']
-            except Exception, ex:
+            except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
                                                 error = str(ex))
                 print "===> Local Stage Out Failure for file:\n"
@@ -222,7 +222,7 @@ class StageOutMgr:
 
                 print "===> Stage Out Successful: %s" % fileToStage
                 return fileToStage
-            except Exception, ex:
+            except Exception as ex:
                 lastException = ex
                 continue
 
@@ -246,7 +246,7 @@ class StageOutMgr:
 
         try:
             impl = retrieveStageOutImpl(fbParams['command'])
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for fallback stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: "
             msg += "%s\n" % fbParams['command']
@@ -258,7 +258,7 @@ class StageOutMgr:
 
         try:
             impl(fbParams['command'], localPfn, pfn, fbParams.get("option", None), checksums)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure for fallback stage out:\n"
             msg += str(ex)
             raise StageOutFailure(msg, Command = fbParams['command'],
@@ -286,7 +286,7 @@ class StageOutMgr:
 
         try:
             impl = retrieveStageOutImpl(command)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for local stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
@@ -297,13 +297,13 @@ class StageOutMgr:
 
         try:
             impl(protocol, localPfn, pfn, options, checksums)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failure for local stage out:\n"
             msg += str(ex)
             try:
                 import traceback
                 msg += traceback.format_exc()
-            except AttributeError, ex:
+            except AttributeError as ex:
                 msg += "Traceback unavailable\n"
             raise StageOutFailure(msg, Command = command, Protocol = protocol,
                                   LFN = lfn, InputPFN = localPfn,
@@ -333,7 +333,7 @@ class StageOutMgr:
             delManager = DeleteMgr(**self.overrideConf)
             try:
                 delManager.deletePFN(pfn, lfn, command)
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 msg = "Failed to cleanup staged out file after error:"
                 msg += " %s\n%s" % (lfn, str(ex))
                 print msg

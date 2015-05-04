@@ -60,9 +60,9 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         try:
             try:
                 raise RequestCheckInError("Error in Request check-in: blah")
-            except RequestCheckInError, ex:
+            except RequestCheckInError as ex:
                 raise ex
-        except RequestCheckInError, ex:
+        except RequestCheckInError as ex:
             print str(ex)
             
 if __name__=='__main__':

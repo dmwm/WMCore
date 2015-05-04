@@ -213,7 +213,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         try:
             priority = sys.maxint + 1
             self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             self.assertTrue("Priority must have abs() less then MAXINT!" in ex.result)
@@ -223,7 +223,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         try:
             priority = -1 - sys.maxint
             self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
             print ex.result

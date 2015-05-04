@@ -124,7 +124,7 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
             DataUploadTime.setInfo(self, uploadTime, "ok")
             
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
             DataUploadTime.setInfo(self, False, str(ex))

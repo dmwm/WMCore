@@ -333,7 +333,7 @@ class RESTDaemon(RESTMain):
                     os.killpg(pid, sig)
                     time.sleep(grace)
                     os.killpg(pid, 0)
-                except OSError, e:
+                except OSError as e:
                     if e.errno == errno.ESRCH:
                         dead = True
                         break
@@ -385,7 +385,7 @@ class RESTDaemon(RESTMain):
         error = False
         try:
             self.run()
-        except Exception, e:
+        except Exception as e:
             error = True
             trace = StringIO()
             traceback.print_exc(file=trace)

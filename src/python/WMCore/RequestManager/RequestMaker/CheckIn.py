@@ -93,7 +93,7 @@ def checkIn(request, requestType = 'None'):
         request.get('PrepID', None),
         request.get('RequestPriority', None)
     )
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error creating new request:\n"
         msg += str(ex)
         raise RequestCheckInError( msg )
@@ -117,7 +117,7 @@ def checkIn(request, requestType = 'None'):
                 MakeRequest.associateInputDataset(requestName, ds)
         else:
             MakeRequest.associateInputDataset(requestName, request['InputDatasets'])
-    except Exception, ex:
+    except Exception as ex:
         _raiseCheckInError(request, ex, "Unable to Associate input datasets to request")
     try:
         for ds in request['OutputDatasets']:
@@ -129,13 +129,13 @@ def checkIn(request, requestType = 'None'):
                     MakeRequest.associateOutputDataset(requestName, dss)
             else:
                 MakeRequest.associateOutputDataset(requestName, ds)
-    except Exception, ex:
+    except Exception as ex:
         _raiseCheckInError(request, ex, "Unable to Associate output datasets to request")
 
     try:
         for sw in request['SoftwareVersions']:
             MakeRequest.associateSoftware(requestName, sw)
-    except Exception, ex:
+    except Exception as ex:
         _raiseCheckInError(request, ex, "Unable to associate software for this request")
 
     MakeRequest.updateRequestSize(requestName, request.get("RequestNumEvents", 0),

@@ -97,7 +97,7 @@ class CleanCouchPoller(BaseWorkerThread):
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
             logging.info("archive rejected %s workflows" % numUpdated)
 
-        except Exception, ex:
+        except Exception as ex:
             logging.error(str(ex))
             logging.error("Error occurred, will try again next cycle")
     
@@ -143,13 +143,13 @@ class CleanCouchPoller(BaseWorkerThread):
         if view == None:
             try:
                 committed = couchDB.delete_doc(workflowName)
-            except CouchNotFoundError, ex:
+            except CouchNotFoundError as ex:
                 return {'status': 'warning', 'message': "%s: %s" % (workflowName, str(ex))}
         else:
             options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
             try:
                 jobs = couchDB.loadView(db, view, options = options)['rows']
-            except Exception, ex:
+            except Exception as ex:
                 errorMsg = "Error on loading jobs for %s" % workflowName
                 logging.warning("%s/n%s" % (str(ex), errorMsg))
                 return {'status': 'error', 'message': errorMsg}

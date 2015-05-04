@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501, C0301
+#pylint: disable=W0102, W6501, C0301
 # W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
 # W6501: pass information to logging using string arguments
@@ -76,6 +76,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
+        self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
 
         # BossAir
         self.bossAir = BossAirAPI(config = self.config)
@@ -108,7 +109,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.exists(self.packageDir):
                 os.makedirs(self.packageDir)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
@@ -281,7 +282,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 jobHandle = open(pickledJobPath, "r")
                 loadedJob = cPickle.load(jobHandle)
                 jobHandle.close()
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error while loading pickled job object %s\n" % pickledJobPath
                 msg += str(ex)
                 logging.error(msg)
@@ -478,7 +479,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             try:
                 job['fwjr'].save(fwjrPath)
                 fwjrBinds.append({"jobid" : job["id"], "fwjrpath" : fwjrPath})
-            except IOError, ioer:
+            except IOError as ioer:
                 logging.error("Failed to write FWJR for submit failed job %d, message: %s" % (job['id'], str(ioer)))
         self.changeState.propagate(badJobs, "submitfailed", "created")
         self.setFWJRPathAction.execute(binds = fwjrBinds)
@@ -559,8 +560,12 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         jobsToSubmit = {}
         jobsToPrune = {}
+        jobsCount = 0
+        exitLoop = False 
 
         for siteName in self.sortedSites:
+            if exitLoop:
+                break
 
             totalPending = None
             if siteName not in self.cachedJobs:
@@ -573,12 +578,14 @@ class JobSubmitterPoller(BaseWorkerThread):
                 totalRunning        = self.currentRcThresholds[siteName]["total_running_jobs"]
                 totalPending        = self.currentRcThresholds[siteName]["total_pending_jobs"]
                 state               = self.currentRcThresholds[siteName]["state"]
-            except KeyError, ex:
+            except KeyError as ex:
                 msg =  "Had invalid site info %s\n" % siteName['thresholds']
                 msg += str(ex)
                 logging.error(msg)
                 continue
             for threshold in self.currentRcThresholds[siteName].get('thresholds', []):
+                if exitLoop:
+                    break
                 try:
                     # Pull basic info for the threshold
                     taskType            = threshold["task_type"]
@@ -587,7 +594,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     taskRunning         = threshold["task_running_jobs"]
                     taskPending         = threshold["task_pending_jobs"]
                     taskPriority        = threshold["priority"]
-                except KeyError, ex:
+                except KeyError as ex:
                     msg =  "Had invalid threshold %s\n" % threshold
                     msg += str(ex)
                     logging.error(msg)
@@ -732,6 +739,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)
+                    jobsCount += 1
+                    if jobsCount >= self.maxJobsPerPoll:
+                        breakLoop, exitLoop = True, True
 
                     # Deal with accounting
                     if len(possibleSites) == 1:
@@ -777,6 +787,10 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobList   = []
         idList    = []
 
+        if len(jobsToSubmit) == 0:
+            logging.debug("There are no packages to submit.")
+            return
+
         for package in jobsToSubmit.keys():
 
             sandbox = self.sandboxPackage[package]
@@ -797,17 +811,22 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
+        logging.info("Jobs that succeeded/failed submission: %d/%d." % (len(successList),len(failList)))
 
         # Propagate states in the WMBS database
+        logging.debug("Propagating success state to WMBS.")
         self.changeState.propagate(successList, 'executing', 'created')
+        logging.debug("Propagating fail state to WMBS.")
         self.changeState.propagate(failList, 'submitfailed', 'created')
 
         # At the end we mark the locations of the jobs
         # This applies even to failed jobs, since the location
         # could be part of the failure reason.
+        logging.debug("Updating job location...")
         self.setLocationAction.execute(bulkList = idList, conn = myThread.transaction.conn,
                                        transaction = True)
         myThread.transaction.commit()
+        logging.info("Transaction cycle successfully completed.")
 
         return
 
@@ -848,7 +867,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg = 'Fatal error in JobSubmitter:\n'
             msg += str(ex)
             #msg += str(traceback.format_exc())

@@ -98,7 +98,7 @@ class SiteLocalConfig:
             tfcProto = tfcProtocol(tfcUrl)
             tfcInstance = readTFC(tfcFile)
             tfcInstance.preferredProtocol = tfcProto
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
             msg += "URL = %s\n" % tfcUrl
             raise SiteConfigError, msg
@@ -141,7 +141,7 @@ class SiteLocalConfig:
         """
         try:
             node = xmlFileToNode(self.siteConfigFile)
-        except StandardError, ex:
+        except StandardError as ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
             raise SiteConfigError, msg

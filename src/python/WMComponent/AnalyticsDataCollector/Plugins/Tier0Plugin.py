@@ -181,12 +181,12 @@ class Tier0Plugin(PluginInterface):
                 if workflowStatus is not None:
                     centralRequestCouchDB.updateRequestStatus(workflowName, workflowStatus)
 
-            except Exception, ex:
+            except Exception as ex:
                 # Plugins are meant to be not-critical
                 # If something fails then just keep going
                 self.logger.error('Error occurred while processing docs:\n%s' % str(ex))
                 self.logger.error(traceback.format_exc())
-            except Tier0PluginError, t0ex:
+            except Tier0PluginError as t0ex:
                 # More specific exception, just log it anyway
                 self.logger.error('Error ocurred while processing a doc:\n%s' % str(t0ex))
 
@@ -209,7 +209,7 @@ class Tier0Plugin(PluginInterface):
             workloadHelper.load(spec)
             tasks = workloadHelper.listAllTaskPathNames()
             self.taskCache[workflowName] = tasks
-        except IOError, ex:
+        except IOError as ex:
             msg = "Failed to load spec file %s\n" % spec
             msg += "Original IOError: %s" % str(ex)
             raise Tier0PluginError(msg)

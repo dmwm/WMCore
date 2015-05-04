@@ -32,7 +32,7 @@ class TwoFileAndEventBased(JobFactory):
 
         try:
             selectionAlgorithm = kwargs['selection_algorithm']
-        except KeyError, e:
+        except KeyError as e:
             selectionAlgorithm = None
         carryOver = 0
 

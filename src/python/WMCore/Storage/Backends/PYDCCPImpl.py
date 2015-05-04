@@ -42,7 +42,7 @@ class PYDCCPImpl(StageOutImpl):
         """
         try:
             import dcap
-        except ImportError, ie:
+        except ImportError as ie:
             raise StageOutError("Python dCap wrappers not found on this host.")
 
         optionsStr = ""

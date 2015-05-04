@@ -63,7 +63,7 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         try:
             res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/iAmNotThere/')
             self.fail()
-        except HTTPException,he:
+        except HTTPException as he:
             self.assertEqual(he.status, 404)
         self.assertFalse( os.path.isfile(uploadedFilename))
 

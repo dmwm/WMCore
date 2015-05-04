@@ -21,6 +21,6 @@ def emulatorSwitch(name):
                 return True
         return False
 
-    except Exception, e:
+    except Exception as e:
         logging.warning("Emulator Config is not set:  %s"  % str(e))
         return False

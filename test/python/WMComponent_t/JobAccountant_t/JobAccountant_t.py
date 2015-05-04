@@ -1333,7 +1333,7 @@ class JobAccountantTest(unittest.TestCase):
 
         try:
             accountant.algorithm()
-        except Exception, ex:
+        except Exception as ex:
             pass
 
         sql = "SELECT COUNT(*) FROM wmbs_file_details"

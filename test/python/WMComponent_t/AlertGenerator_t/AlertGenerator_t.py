@@ -200,7 +200,7 @@ class AlertGeneratorTest(unittest.TestCase):
             # self.proc.startDaemon() no good for this either ... puts everything
             # on background
             self.generator.prepareToStart() # is method of Harness
-        except Exception, ex:
+        except Exception as ex:
             print ex
             self.fail(str(ex))
         logging.debug("AlertGenerator and its sub-components should be running now ...")
@@ -211,7 +211,7 @@ class AlertGeneratorTest(unittest.TestCase):
         # stop via component method
         try:
             self.generator.stopAlertGenerator()
-        except Exception, ex:
+        except Exception as ex:
             logging.error(ex)
             self.fail(str(ex))
         logging.debug("AlertGenerator should be stopped now.")

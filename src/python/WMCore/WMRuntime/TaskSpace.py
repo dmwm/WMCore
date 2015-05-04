@@ -64,7 +64,7 @@ class TaskSpace:
             return self.workload
         try:
             import WMSandbox
-        except ImportError, ex:
+        except ImportError as ex:
             msg = "Error importing WMSandbox module"
             msg += str(ex)
             raise RuntimeError, msg
@@ -126,7 +126,7 @@ class TaskSpace:
                 #space = __import__(modName, globals(), locals(), ['stepSpace'], -1)
                 space = __import__(modName, globals(), locals(), ['stepSpace'])
 
-            except ImportError, ex:
+            except ImportError as ex:
                 # TODO: Dedicated exception class
                 msg = "Unable to import StepSpace from %s:\n" % modName
                 msg += str(ex)

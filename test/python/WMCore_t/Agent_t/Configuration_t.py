@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,C0103,R0902
+#pylint: disable=E1101,C0103,R0902
 
 import unittest
 import os
@@ -33,7 +33,7 @@ class ConfigurationTest(unittest.TestCase):
         """ctor"""
         try:
             config = Configuration()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Configuration\n"
             msg += str(ex)
             self.fail(msg)
@@ -72,7 +72,7 @@ class ConfigurationTest(unittest.TestCase):
         # dictionary format:
         try:
             section1Dict = config.Section1.dictionary_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error converting section to dictionary:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
@@ -165,26 +165,26 @@ class ConfigurationTest(unittest.TestCase):
 
         try:
             config.Section1.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.Section1.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
         try:
             config.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)

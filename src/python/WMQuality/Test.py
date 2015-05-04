@@ -53,7 +53,7 @@ class Test:
                 testResult = unittest.TestResult()
                 self.testResult = testSuite.run(testResult)
                 self.summarizeTest()
-            except Exception, ex:
+            except Exception as ex:
                 customReport = {}
                 customReport['developer'] = test[1]
                 customReport['class'] = test[0].__class__.__name__

@@ -83,10 +83,10 @@ def processWorker(input, results):
                 #myJSONDecoder.decodeStatus( stdout )
             else:
                 jsout = stdout
-        except ValueError, val:
+        except ValueError as val:
             print val, stdout, stderr
             jsout = stdout
-        except Exception, err:
+        except Exception as err:
             jsout = str(work) + '\n' + str(err)
             stderr = stdout + '\n' + stderr
 
@@ -195,7 +195,7 @@ def getDefaultDelegation(config, vo, myproxy, logger, manualenvprefix=''):
                 logging.debug("proxyDir not found: creating it...")
                 try:
                     os.mkdir(config.BossAir.proxyDir)
-                except Exception, ex:
+                except Exception as ex:
                     msg = "Error: problem when creating proxyDir " + \
                           "directory - '%s'" % str(ex)
                     raise BossAirPluginException( msg )
@@ -319,7 +319,7 @@ class gLitePlugin(BasePlugin):
                 logging.debug("loggingInfoDir not found: creating it...")
                 try:
                     os.mkdir(self.config.BossAir.loggingInfoDir)
-                except Exception, ex:
+                except Exception as ex:
                     msg = "Error: problem when creating loggingInfoDir " + \
                           "directory - '%s'" % str(ex)
                     raise BossAirPluginException( msg )
@@ -382,7 +382,7 @@ class gLitePlugin(BasePlugin):
             else:
                 try:
                     os.remove(reportName)
-                except Exception, ex:
+                except Exception as ex:
                     logging.error("Cannot remove and replace empty report %s" % reportName)
                     logging.error("Report continuing without error!")
                     return
@@ -406,7 +406,7 @@ class gLitePlugin(BasePlugin):
             try:
                 logging.debug("Shutting down %s " % str(x))
                 input.put( ('-1', 'STOP', 'control') )
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -529,7 +529,7 @@ class gLitePlugin(BasePlugin):
                     dest      = []
                     try:
                         dest = self.getDestinations( [], jobsReady[0][groupbysite] )
-                    except Exception, ex:
+                    except Exception as ex:
                         import traceback
                         msg = str(traceback.format_exc())
                         msg += str(ex)
@@ -786,7 +786,7 @@ class gLitePlugin(BasePlugin):
                 out = None
                 try:
                     out = json.loads(jsout)
-                except ValueError, va:
+                except ValueError as va:
                     msg = 'Error parsing JSON:\n\terror: %s\n\t:exception: %s' \
                            % (error, str(va))
                     raise BossAirPluginException( msg )

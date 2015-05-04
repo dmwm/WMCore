@@ -112,7 +112,7 @@ def concatenateFiles(filelist, fileName):
         from subprocess import call
         print destPath
         call(["uglifyjs", destPath, "-o", destPath])
-    except Exception, ex:
+    except Exception as ex:
         print "%s" % str(ex)
         pass
     

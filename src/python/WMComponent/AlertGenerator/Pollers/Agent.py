@@ -88,7 +88,7 @@ class ComponentsPoller(PeriodPoller):
             self._compMeasurements.append(Measurements(self.numOfMeasurements))
             m = ("%s: loaded process information on %s:%s" % (myName, compName, compPID))
             logging.info(m)
-        except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
+        except (psutil.error.NoSuchProcess, psutil.error.AccessDenied) as ex:
             logging.error("%s: component %s ignored, reason: %s" % (myName, compName, ex))
 
 
@@ -146,7 +146,7 @@ class ComponentsPoller(PeriodPoller):
                         index = self._components.index(processDetail)
                         self._components[index] = pd
                         measurements.clear()
-                    except (psutil.error.NoSuchProcess, psutil.error.AccessDenied), ex:
+                    except (psutil.error.NoSuchProcess, psutil.error.AccessDenied) as ex:
                         logging.error("%s: component %s ignored, reason: %s" % (myName, processDetail.name, ex))
                         removeItems(processDetail, measurements)
             except KeyError:

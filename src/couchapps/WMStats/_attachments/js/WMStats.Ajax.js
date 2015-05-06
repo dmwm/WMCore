@@ -67,5 +67,5 @@ WMStats.Ajax = (function($){
     return {
         requestMgr: reqMgrFuncs,
         phedex: phedexFuncs
-    };
+        };
 })(jQuery);

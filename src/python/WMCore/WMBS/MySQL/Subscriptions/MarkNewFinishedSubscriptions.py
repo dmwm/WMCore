@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 """
-_GetAndMarkNewFinishedSubscriptions_
+_MarkNewFinishedSubscriptions_
 
-MySQL implementation of Subscriptions.GetAndMarkNewFinishedSubscriptions
+MySQL implementation of SubscriptionsMarkNewFinishedSubscriptions
 """
 
 import time
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-class GetAndMarkNewFinishedSubscriptions(DBFormatter):
+class MarkNewFinishedSubscriptions(DBFormatter):
     """
 
     Searches for all subscriptions where the fileset is closed,
@@ -73,26 +73,9 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
              SELECT id FROM (
                     SELECT complete_subscription.id
                         FROM ( %s ) complete_subscription 
-
-                        INNER JOIN wmbs_fileset ON
-                            wmbs_fileset.id = complete_subscription.fileset
-                        LEFT OUTER JOIN wmbs_fileset_files ON
-                            wmbs_fileset_files.fileset = wmbs_fileset.id
-                        LEFT OUTER JOIN wmbs_file_parent ON
-                            wmbs_file_parent.parent = wmbs_fileset_files.fileid
-                        LEFT OUTER JOIN wmbs_fileset_files child_fileset ON
-                            child_fileset.fileid = wmbs_file_parent.child
-                        LEFT OUTER JOIN wmbs_subscription child_subscription ON
-                            child_subscription.fileset = child_fileset.fileset AND
-                            child_subscription.finished = 0
-                        LEFT OUTER JOIN wmbs_workflow child_workflow ON
-                            child_subscription.workflow = child_workflow.id AND
-                            child_workflow.name != complete_subscription.name
-
                     WHERE complete_subscription.id
                         NOT IN ( %s )
-                    GROUP BY complete_subscription.id
-                    HAVING COUNT(child_workflow.name) = 0) deletable_subscriptions )""" % (
+                    GROUP BY complete_subscription.id) deletable_subscriptions )""" % (
                                                         completeNonJobSQL, subWithUnfinishedJobSQL)
 
 
@@ -110,3 +93,4 @@ class GetAndMarkNewFinishedSubscriptions(DBFormatter):
                              transaction = transaction)
 
         return
+

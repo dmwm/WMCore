@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """
-_GetAndMarkNewFinishedSubscriptions_
+_MarkNewFinishedSubscriptions_
 
-Oracle implementation of Subscription.GetAndMarkNewFinishedSubscriptions
+Oracle implementation of Subscription.MarkNewFinishedSubscriptions
 """
 
-from WMCore.WMBS.MySQL.Subscriptions.GetAndMarkNewFinishedSubscriptions \
-        import GetAndMarkNewFinishedSubscriptions as MySQLGetAndMarkNewFinishedSubscriptions
+from WMCore.WMBS.MySQL.Subscriptions.MarkNewFinishedSubscriptions \
+        import MarkNewFinishedSubscriptions as MySQLMarkNewFinishedSubscriptions
 
-class GetAndMarkNewFinishedSubscriptions(MySQLGetAndMarkNewFinishedSubscriptions):
+class MarkNewFinishedSubscriptions(MySQLMarkNewFinishedSubscriptions):
     
     completeNonJobSQLSubQuery = """
                    WITH
@@ -51,22 +51,6 @@ class GetAndMarkNewFinishedSubscriptions(MySQLGetAndMarkNewFinishedSubscriptions
                     
                     SELECT complete_subscription.id
                         FROM complete_subscription 
-
-                        INNER JOIN wmbs_fileset ON
-                            wmbs_fileset.id = complete_subscription.fileset
-                        LEFT OUTER JOIN wmbs_fileset_files ON
-                            wmbs_fileset_files.fileset = wmbs_fileset.id
-                        LEFT OUTER JOIN wmbs_file_parent ON
-                            wmbs_file_parent.parent = wmbs_fileset_files.fileid
-                        LEFT OUTER JOIN wmbs_fileset_files child_fileset ON
-                            child_fileset.fileid = wmbs_file_parent.child
-                        LEFT OUTER JOIN wmbs_subscription child_subscription ON
-                            child_subscription.fileset = child_fileset.fileset AND
-                            child_subscription.finished = 0
-                        LEFT OUTER JOIN wmbs_workflow child_workflow ON
-                            child_subscription.workflow = child_workflow.id AND
-                            child_workflow.name != complete_subscription.name
-
                     WHERE complete_subscription.id
                         NOT IN (
                           %s

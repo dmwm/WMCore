@@ -55,7 +55,7 @@ class EventBased(JobFactory):
                 logging.error(msg)
                 return
 
-        totalJobs    = 0
+        totalJobs = 0
 
         locationDict = self.sortByLocation()
         for location in locationDict:
@@ -69,13 +69,13 @@ class EventBased(JobFactory):
                     break
             if getRunLumiInformation:
                 if self.package == 'WMCore.WMBS':
-                    loadRunLumi = self.daoFactory(
-                                        classname = "Files.GetBulkRunLumi")
+                    loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
                     fileLumis = loadRunLumi.execute(files = fileList)
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
                         for run in lumiDict.keys():
                             f.addRun(run = Run(run, *lumiDict[run]))
+
             for f in fileList:
                 currentEvent = f['first_event']
                 eventsInFile = f['events']
@@ -89,9 +89,14 @@ class EventBased(JobFactory):
                         parent = File(lfn = lfn)
                         f['parents'].add(parent)
 
-                if not f['lfn'].startswith("MCFakeFile"):
-                    #Then we know for sure it is not a MCFakeFile, so process
-                    #it as usual
+                if acdcFileList:
+                    if f['lfn'] in [x['lfn'] for x in acdcFileList]:
+                        totalJobs = self.createACDCJobs(f, acdcFileList,
+                                                        timePerEvent, sizePerEvent, memoryRequirement,
+                                                        lheInput, eventsPerJob, eventsPerLumi, totalJobs)
+                    continue
+                elif not f['lfn'].startswith("MCFakeFile"):
+                    # Very very uncommon, but it has real input dataset
                     if eventsInFile >= eventsPerJob:
                         while currentEvent < eventsInFile:
                             self.newJob(name = self.getJobName(length=totalJobs))
@@ -108,6 +113,7 @@ class EventBased(JobFactory):
                             self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                                  memory = memoryRequirement,
                                                                  disk = diskRequired)
+                            logging.debug("Job created for real input with %s" % self.currentJob)
                             currentEvent += eventsPerJob
                             totalJobs    += 1
                     else:
@@ -118,14 +124,9 @@ class EventBased(JobFactory):
                         self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                              memory = memoryRequirement,
                                                              disk = diskRequired)
+                        logging.debug("Last job created for real input with %s" % self.currentJob)
                         totalJobs += 1
                 else:
-                    if acdcFileList:
-                        if f['lfn'] in [x['lfn'] for x in acdcFileList]:
-                            totalJobs = self.createACDCJobs(f, acdcFileList,
-                                                            timePerEvent, sizePerEvent, memoryRequirement,
-                                                            lheInput, eventsPerJob, eventsPerLumi, totalJobs)
-                        continue
                     #This assumes there's only one run which is the case for MC
                     lumis = runs[0].lumis
                     (firstLumi, lastLumi) = (min(lumis), max(lumis))
@@ -193,9 +194,10 @@ class EventBased(JobFactory):
         """
         for acdcFile in acdcFileInfo:
             if fakeFile['lfn'] == acdcFile['lfn']:
-                eventsToRun = eventsPerLumi * (len(acdcFile["lumis"]) - 1)
+                eventsToRun = acdcFile["events"]
                 currentEvent = acdcFile["first_event"]
                 currentLumi = acdcFile["lumis"][0]
+                lumisPerJob = 0
                 while eventsToRun:
                     self.newJob(name = self.getJobName(length = totalJobs))
                     self.currentJob.addFile(fakeFile)
@@ -204,23 +206,22 @@ class EventBased(JobFactory):
                     if (currentEvent + eventsPerJob) > (2**32 - 1):
                         currentEvent = 1
                     if eventsToRun >= eventsPerJob:
-                        lumisPerJob = int(ceil(float(eventsPerJob)/eventsPerLumi))
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob,
-                                                                    currentEvent)
-                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
-                                                                   currentLumi)
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
+                        if fakeFile['lfn'].startswith("MCFakeFile"):
+                            lumisPerJob = int(ceil(float(eventsPerJob)/eventsPerLumi))
+                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                     else:
-                        lumisPerJob = int(ceil(float(eventsToRun)/eventsPerLumi))
-                        self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun,
-                                                                    currentEvent)
-                        self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
-                                                                   currentLumi)
+                        self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun, currentEvent)
+                        if fakeFile['lfn'].startswith("MCFakeFile"):
+                            lumisPerJob = int(ceil(float(eventsToRun)/eventsPerLumi))
+                            self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                         eventsToRun = eventsPerJob
                     jobTime = eventsPerJob * timePerEvent
                     diskRequired = eventsPerJob * sizePerEvent
                     self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                          memory = memoryRequirement,
                                                          disk = diskRequired)
+                    logging.info("ACDC job created with %s" % self.currentJob)
                     eventsToRun  -= eventsPerJob
                     currentEvent += eventsPerJob
                     currentLumi  += lumisPerJob

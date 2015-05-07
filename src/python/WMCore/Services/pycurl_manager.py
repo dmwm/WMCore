@@ -10,6 +10,7 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 
+import json
 import time
 import pycurl
 import urllib
@@ -78,6 +79,10 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
+        if params:
+            if  isinstance(params, dict):
+                params = json.dumps(params)
+
         if  verb == 'GET':
             encoded_data = urllib.urlencode(params, doseq=doseq)
             url = url + '?' + encoded_data
@@ -128,9 +133,11 @@ class RequestHandler(object):
             try:
                 res = json.loads(data)
             except ValueError as exc:
-                msg = 'Unable to load JSON data\n%s' % data
-                raise ValueError(exc)
-            return res
+                msg = 'Unable to load JSON data, err=%s, data type=%s' \
+                        % (str(exc), type(data))
+                print msg
+                return data
+            return data
         else:
             return data
 

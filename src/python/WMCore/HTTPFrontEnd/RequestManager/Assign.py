@@ -23,7 +23,7 @@ import WMCore.Lexicon
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-
+from WMCore.WMSpec.WMWorkloadTools import strToBool
 
 
 class Assign(WebAPI):
@@ -349,8 +349,9 @@ class Assign(WebAPI):
                                           int(kwargs.get("GracePeriod", 300)))
 
         # Check whether we should check location for the data
-        if "useSiteListAsLocation" in kwargs:
-            helper.setLocationDataSourceFlag()
+        useAAA = strToBool(kwargs.get("useSiteListAsLocation", False))
+        if useAAA:
+            helper.setLocationDataSourceFlag(flag = useAAA)
 
         # Set phedex subscription information
         custodialList = kwargs.get("CustodialSites", [])

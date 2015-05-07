@@ -1675,7 +1675,7 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-    def setLocationDataSourceFlag(self):
+    def setLocationDataSourceFlag(self, flag = False):
         """
         _setLocationDataSourceFlag_
 
@@ -1684,7 +1684,7 @@ class WMWorkloadHelper(PersistencyHelper):
         used as location data
         """
         for task in self.getTopLevelTask():
-            task.setInputLocationFlag()
+            task.setInputLocationFlag(flag)
         return
 
     def locationDataSourceFlag(self):
@@ -1787,7 +1787,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Check whether we should check location for the data
         if self._checkKeys(kwargs, "useSiteListAsLocation"):
-            self.setLocationDataSourceFlag()
+            self.setLocationDataSourceFlag(flag = kwargs["useSiteListAsLocation"])
 
         # Set phedex subscription information
 

@@ -64,12 +64,16 @@ class McM():
             c.close()
             raise(IOError, 'Was not able to fetch or decode URL from McM')
 
-        body = b.getvalue()
-        res = json.loads(body)
-        c.close()
+        try:
+            body = b.getvalue()
+            res = json.loads(body)
+        except ValueError:
+            c.close()
+            raise(IOError, 'Was not able to decode JSON from McM')
 
+        c.close()
         return res
-	
+
     def getHistory(self, prepID):
         try:
             url = 'search?db_name=batches&contains=%s&get_raw' % prepID

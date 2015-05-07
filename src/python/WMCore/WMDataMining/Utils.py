@@ -88,6 +88,8 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                 not oldCouchDoc.has_key('mcmApprovalTime') or
                 oldCouchDoc.get('mcmTotalEvents', 'Unknown') == 'Unknown' or
                 oldCouchDoc.get('mcmApprovalTime', 'Unknown') == 'Unknown'):
+                log("INFO: Trying to update McM info for %s" % wf)
+
                 prepID = oldCouchDoc.get('prepID', None)
                 if prepID and nMCMCalls <= maxMCMCalls:
                     # Get information from McM. Don't call too many times, can take a long time
@@ -96,12 +98,17 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                         mcmHistory = mcm.getHistory(prepID = prepID)
                         if not oldCouchDoc.has_key('mcmApprovalTime'):
                             report[wf].update({'mcmApprovalTime':'NoMcMData'})
+                        found = False
                         for entry in mcmHistory:
                             if entry['action'] == 'set status' and entry['step'] == 'announced':
                                 dateString = entry['updater']['submission_date']
                                 dt = datetime.strptime(dateString, '%Y-%m-%d-%H-%M')
                                 report[wf].update({'mcmApprovalTime':time.mktime(dt.timetuple())})
+                                found = True
+                        if not found:
+                            log("ERROR: History found but no approval time for %s" % wf)
                     except McMNoDataError:
+                        log("ERROR: Setting NoMcMData for %s" % wf)
                         report[wf].update({'mcmApprovalTime':'NoMcMData'})
                     except (RuntimeError, IOError):
                         exc_type, exc_value, exc_traceback = sys.exc_info()

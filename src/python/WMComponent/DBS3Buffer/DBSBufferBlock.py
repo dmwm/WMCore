@@ -125,8 +125,6 @@ class DBSBlock:
         fileDict['logical_file_name']      = dbsFile['lfn']
         fileDict['file_size']              = dbsFile['size']
         fileDict['event_count']            = dbsFile['events']
-        fileDict['adler32'] = "NOTSET"
-        fileDict['md5'] = "NOTSET"
         fileDict['last_modified_by'] = "WMAgent"
         fileDict['last_modification_date'] = int(time.time())
         fileDict['auto_cross_section'] = 0.0

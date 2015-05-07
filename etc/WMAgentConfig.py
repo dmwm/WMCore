@@ -389,7 +389,7 @@ config.AlertProcessor.critical.sinks.section_("email")
 # undeliverable since the wmagent machine doesn't run any email service,
 # with noreply@ it goes to /dev/null 
 config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
-config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.critical.sinks.email.toAddr = ["alan.malta@cern.ch"] # add more in the list
 config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.critical.sinks.email.smtpUser = None
 config.AlertProcessor.critical.sinks.email.smtpPass = None
@@ -398,7 +398,7 @@ config.AlertProcessor.soft.sinks.section_("email")
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
 config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
-config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.soft.sinks.email.toAddr = ["alan.malta@cern.ch"] # add more in the list
 config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.soft.sinks.email.smtpUser = None
 config.AlertProcessor.soft.sinks.email.smtpPass = None
@@ -435,8 +435,8 @@ config.AlertGenerator.namespace = "WMComponent.AlertGenerator.AlertGenerator"
 config.AlertGenerator.componentDir = os.path.join(config.General.workDir, "AlertGenerator")
 # configuration for overall machine load monitor: cpuPoller (percentage values)
 config.AlertGenerator.section_("cpuPoller")
-config.AlertGenerator.cpuPoller.soft = 8 # [percent]
-config.AlertGenerator.cpuPoller.critical = 10 # [percent]
+config.AlertGenerator.cpuPoller.soft = 80 # [percent]
+config.AlertGenerator.cpuPoller.critical = 100 # [percent]
 config.AlertGenerator.cpuPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering 
 config.AlertGenerator.cpuPoller.period = 300 # [second]
@@ -449,7 +449,7 @@ config.AlertGenerator.memPoller.pollInterval = 60 # [second]
 config.AlertGenerator.memPoller.period = 300 # [second]
 # configuration for available disk space monitor: diskSpacePoller (percentage usage per partition)
 config.AlertGenerator.section_("diskSpacePoller")
-config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
+config.AlertGenerator.diskSpacePoller.soft = 80 # [percent]
 config.AlertGenerator.diskSpacePoller.critical = 90 # [percent]
 config.AlertGenerator.diskSpacePoller.pollInterval = 600 # [second]
 # configuration for particular components CPU usage: componentCPUPoller (percentage values)
@@ -461,16 +461,16 @@ config.AlertGenerator.componentsCPUPoller.pollInterval = 60 # [second]
 config.AlertGenerator.componentsCPUPoller.period = 300 # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
-config.AlertGenerator.componentsMemPoller.soft = 3 # [percent]
-config.AlertGenerator.componentsMemPoller.critical = 5 # [percent] 
+config.AlertGenerator.componentsMemPoller.soft = 25 # [percent]
+config.AlertGenerator.componentsMemPoller.critical = 50 # [percent] 
 config.AlertGenerator.componentsMemPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.componentsMemPoller.period = 300 # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL
-config.AlertGenerator.couchDbSizePoller.soft = 600 # GB
-config.AlertGenerator.couchDbSizePoller.critical = 650 # GB
+config.AlertGenerator.couchDbSizePoller.soft = 900 # GB
+config.AlertGenerator.couchDbSizePoller.critical = 1250 # GB
 config.AlertGenerator.couchDbSizePoller.pollInterval = 600 # [second]
 # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
 config.AlertGenerator.section_("couchCPUPoller")
@@ -483,8 +483,8 @@ config.AlertGenerator.couchCPUPoller.period = 300 # [second]
 # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
 config.AlertGenerator.section_("couchMemPoller")
 config.AlertGenerator.couchMemPoller.couchURL = couchURL
-config.AlertGenerator.couchMemPoller.soft = 7 # [percent]
-config.AlertGenerator.couchMemPoller.critical = 10 # [percent]
+config.AlertGenerator.couchMemPoller.soft = 20 # [percent]
+config.AlertGenerator.couchMemPoller.critical = 50 # [percent]
 config.AlertGenerator.couchMemPoller.pollInterval = 60 # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.couchMemPoller.period = 300 # [second]

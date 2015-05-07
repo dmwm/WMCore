@@ -1666,11 +1666,11 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
-    def testGetAndMarkNewFinishedSubscriptions(self):
+    def testMarkNewFinishedSubscriptions(self):
         """
-        _testGetAndMarkNewFinishedSubscriptions_
+        _testMarkNewFinishedSubscriptions_
 
-        Verify that the GetAndMarkNewFinishedSubscriptions DAO works correctly for
+        Verify that the MarkNewFinishedSubscriptions DAO works correctly for
         workflows that don't produce any files.
         """
         testOutputFileset1 = Fileset(name = "TestOutputFileset1")
@@ -1737,7 +1737,7 @@ class SubscriptionTest(unittest.TestCase):
         injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
         injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)
         #The first subscription is finished since the input fileset is closed and no jobs are present
-        newFinishedDAO = daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
+        newFinishedDAO = daoFactory(classname = "Subscriptions.MarkNewFinishedSubscriptions")
         newFinishedDAO.execute(self.stateID)
         finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         finishedSubs = finishedDAO.execute()
@@ -1762,9 +1762,9 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
-    def testGetAndMarkNewFinishedSubscriptionsTimeout(self):
+    def testMarkNewFinishedSubscriptionsTimeout(self):
         """
-        _testGetAndMarkNewFinishedSubscriptionsTimeout_
+        _testMarkNewFinishedSubscriptionsTimeout_
 
         Verify that the finished subscriptions timeout works correctly and that
         it only returns subscriptions for workflows that are fully injected.
@@ -1787,7 +1787,7 @@ class SubscriptionTest(unittest.TestCase):
         changeJobState = self.daofactory(classname = "Jobs.ChangeState")
         changeJobState.execute([testJobA])
 
-        newFinishedDAO = self.daofactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
+        newFinishedDAO = self.daofactory(classname = "Subscriptions.MarkNewFinishedSubscriptions")
         finishedDAO = self.daofactory(classname = "Subscriptions.GetFinishedSubscriptions")
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
@@ -1824,9 +1824,9 @@ class SubscriptionTest(unittest.TestCase):
 
         return
 
-    def testGetAndMarkNewFinishedSubscriptionsParentage(self):
+    def testMarkNewFinishedSubscriptionsParentage(self):
         """
-        _testGetAndMarkNewFinishedSubscriptionsTimeout_
+        _testMarkNewFinishedSubscriptionsTimeout_
 
         Verify that the finished subscriptions DAO can handle the scenario
         when an input file for a subscription which matches all the criteria
@@ -1850,15 +1850,21 @@ class SubscriptionTest(unittest.TestCase):
         subscription1 = elements['Subscriptions'][0]
         subscription1.completeFiles([fileA, fileB])
 
-        newFinishedDAO = self.daofactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
+        newFinishedDAO = self.daofactory(classname = "Subscriptions.MarkNewFinishedSubscriptions")
         finishedDAO = self.daofactory(classname = "Subscriptions.GetFinishedSubscriptions")
+        deletableWorkflowDAO = self.daofactory(classname = "Workflow.GetDeletableWorkflows")
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
-
+        
+        self.assertEqual(len(finishedSubs), 1,
+                         "Error: There should be one finished subs. but %s found" % len(finishedSubs))
+        
         #Marking the subscription 1 as finished would trigger the deletion of
         #file B which is an error since it is the parent of C.
-        self.assertEqual(len(finishedSubs), 0,
-                         "Error: There should be no finished subs.")
+        dwf = deletableWorkflowDAO.execute()
+        self.assertEqual(len(dwf), 0,
+                         "Error: There should be no deletable workflow. but %s found" % len(dwf))
+        
 
         #Now let's finish the second subscription
         workflow2 = elements['Workflows'][1]
@@ -1871,13 +1877,17 @@ class SubscriptionTest(unittest.TestCase):
         subscription2 = elements['Subscriptions'][1]
         subscription2.completeFiles([fileC])
 
-        #This first cycle only the second subscription should be picked up
+        #Now both workflow is finished
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
 
-        self.assertEqual(len(finishedSubs), 1,
-                         "Error: There should be one finished sub.")
-        self.assertEqual(finishedSubs[0]['id'], subscription2['id'],
+        dwf = deletableWorkflowDAO.execute()
+        self.assertEqual(len(dwf), 2,
+                        "Error: There should be two deletable workflow. but %s found" % len(dwf))
+        
+        self.assertEqual(len(finishedSubs), 2,
+                         "Error: There should be two finished sub.")
+        self.assertEqual(finishedSubs[1]['id'], subscription2['id'],
                          "Error: The finished sub is not the right one")
 
         #After another pass we pick up the first subscription

@@ -64,6 +64,8 @@ class RequestDBTest(unittest.TestCase):
         result = self.requestReader.getRequestByStatus(["failed"], False, 1)
         self.assertEquals(len(result), 1, "should be 1")
         
+        result = self.requestReader.getStatusAndTypeByRequest([schema[0]['RequestName']])
+        self.assertEquals(result[schema[0]['RequestName']][0], 'failed', "should be failed")
         
         result =  self.requestWriter.insertGenericRequest(schema[1])
         time.sleep(2)

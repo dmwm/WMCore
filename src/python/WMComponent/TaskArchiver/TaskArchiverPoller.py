@@ -7,7 +7,7 @@ The actual taskArchiver algorithm
 
 Procedure:
 a) Find and marks a finished all newly finished subscriptions
-      This is defined by the Subscriptions.GetAndMarkNewFinishedSubscriptions DAO
+      This is defined by the Subscriptions.MarkNewFinishedSubscriptions DAO
 b) Look for finished workflows as defined in the Workflow.GetFinishedWorkflows DAO
 c) Upload couch summary information
 d) Call WMBS.Subscription.deleteEverything() on all the associated subscriptions
@@ -298,6 +298,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         try:
             self.findAndMarkFinishedSubscriptions()
             self.archiveTasks()
+            self.deleteWorkflowFromWMBSAndDisk()
         except WMException:
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
@@ -327,7 +328,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         #Get the subscriptions that are now finished and mark them as such
         logging.info("Polling for finished subscriptions")
-        finishedSubscriptions = self.daoFactory(classname = "Subscriptions.GetAndMarkNewFinishedSubscriptions")
+        finishedSubscriptions = self.daoFactory(classname = "Subscriptions.MarkNewFinishedSubscriptions")
         finishedSubscriptions.execute(self.stateID, timeOut = self.timeout)
         logging.info("Finished subscriptions updated")
 
@@ -351,7 +352,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         finishedwfs = finishedWorkflowsDAO.execute()
 
         #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion: %s" % (len(finishedwfs),finishedwfs.keys()))
+        logging.info("Found %d candidate workflows for archiving: %s" % (len(finishedwfs),finishedwfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) ==0:
@@ -374,7 +375,6 @@ class TaskArchiverPoller(BaseWorkerThread):
             logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
         
         if centralCouchAlive:
-            wfsToDelete = {}
             for workflow in finishedwfs:
                 try:
                     #Upload summary to couch
@@ -424,10 +424,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                                 self.reqmgrSvc.updateRequestStatus(workflow, newState)
                             
                         logging.info("status updated to '%s' : %s" % (newState, workflow))
-    
-                    wfsToDelete[workflow] = {"spec" : spec, "workflows": finishedwfs[workflow]["workflows"]}
-    
+        
                 except TaskArchiverPollerException as ex:
+
                     #Something didn't go well when notifying the workqueue, abort!!!
                     logging.error("Something bad happened while archiving tasks.")
                     logging.error(str(ex))
@@ -438,14 +437,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                     msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow
                     msg += "Nothing will be deleted until the summary is in couch\n"
                     msg += "Exception message: %s" % str(ex)
-                    print traceback.format_exc()
+                    msg += "\nTraceback: %s" % traceback.format_exc()
                     logging.error(msg)
                     self.sendAlert(3, msg = msg)
                     continue
-
-            logging.info("Time to kill %d workflows." % len(wfsToDelete))
-            self.killWorkflows(wfsToDelete)
-
         return
 
     def notifyWorkQueue(self, subList):
@@ -470,6 +465,47 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         return
 
+    
+    def deleteWorkflowFromWMBSAndDisk(self):
+        #Get the finished workflows, in descending order
+        deletableWorkflowsDAO = self.daoFactory(classname = "Workflow.GetDeletableWorkflows")
+        deletablewfs = deletableWorkflowsDAO.execute()
+
+        #Only delete those where the upload and notification succeeded
+        logging.info("Found %d candidate workflows for deletion: %s" % (len(deletablewfs),deletablewfs.keys()))
+        # update the completed flag in dbsbuffer_workflow table so blocks can be closed
+        # create updateDBSBufferWorkflowComplete DAO
+        if len(deletablewfs) ==0:
+            return
+        safeStatesToDelete = ["completed", "aborted-completed", "rejected", 
+                              "normal-archived", "aborted-archived", "rejected-archived"]
+        wfsToDelete = {}
+        for workflow in deletablewfs:
+            try:
+                spec = retrieveWMSpec(wmWorkloadURL = deletablewfs[workflow]["spec"])
+                if not spec:
+                    raise Exception(msg = "Couldn't load spec for %s" % workflow)
+                # check workfow is alredy completed or archived (which means
+                
+                #This is used both tier0 and normal agent case
+                result = self.centralCouchDBWriter.getStatusAndTypeByRequest(workflow)
+                wfStatus = result[workflow][0]
+                if wfStatus in safeStatesToDelete:
+                    wfsToDelete[workflow] = {"spec" : spec, "workflows": deletablewfs[workflow]["workflows"]}
+                else:
+                    logging.error("%s is in %s, will be deleted later" % (workflow, wfStatus))
+            
+            except Exception, ex:
+                #Something didn't go well on couch, abort!!!
+                msg = "Couldn't delete %s " % workflow
+                msg += "Exception message: %s" % str(ex)
+                msg += "\nTraceback: %s" % traceback.format_exc()
+                logging.error(msg)
+                continue
+
+        logging.info("Time to kill %d workflows." % len(wfsToDelete))
+        self.killWorkflows(wfsToDelete)
+        
     def killWorkflows(self, workflows):
         """
         _killWorkflows_

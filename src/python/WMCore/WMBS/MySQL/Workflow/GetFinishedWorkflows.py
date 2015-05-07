@@ -14,9 +14,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetFinishedWorkflows(DBFormatter):
     """
     A workflow is finished when all subscriptions associated to it are finished
-    and all the other workflows using the same spec are finished as well,
-    this DAO searches such workflows. It assumes that a spec is not shared by
-    two workflows of the same name.
+    It assumes that a spec is not shared by two workflows of the same name.
     """
 
     sql = """SELECT wmbs_workflow.name, wmbs_workflow.spec,

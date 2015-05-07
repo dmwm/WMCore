@@ -169,5 +169,5 @@ class RequestDBReader():
         if len(requestNames) == 0:
             return {}
         data = self._getCouchView("byrequest", {}, requestNames)
-        requestInfo = self._formatCouchData(data, returnDict = False)
+        requestInfo = self._formatCouchData(data, returnDict = True)
         return requestInfo

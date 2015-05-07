@@ -1303,16 +1303,15 @@ class WMTaskHelper(TreeHelper):
 
         return {}
 
-    def setInputLocationFlag(self, flag = True):
+    def setInputLocationFlag(self, flag):
         """
         _setInputLocationFlag_
 
-        Store a flag that indicates that the site
-        whitelist/blacklist should be used
-        as the location for the input data.
-        Trust it blindly and don't check PhEDEx.
+        Does not check PhEDEx for input data location
+        in case it's set to True, blindly trust the site
+        whitelist/blacklist.
         """
-        self.data.input.trustSiteLists = True
+        self.data.input.trustSiteLists = flag
 
     def inputLocationFlag(self):
         """

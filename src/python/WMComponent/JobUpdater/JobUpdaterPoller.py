@@ -139,10 +139,10 @@ class JobUpdaterPoller(BaseWorkerThread):
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)
                     continue
-            requestPriority = priorityCache[workflow]
-            if requestPriority != workflowEntry['workflow_priority']:
+            requestPriority = int(priorityCache[workflow])
+            if requestPriority != int(workflowEntry['workflow_priority']):
                 # Update the workqueue priority for the Available elements
-                self.workqueue.updatePriority(workflow, priorityCache[workflow])
+                self.workqueue.updatePriority(workflow, requestPriority)
                 # Check if there are executing jobs for this particular task
                 if self.executingJobsDAO.execute(workflow, workflowEntry['task']) > 0:
                     self.bossAir.updateJobInformation(workflow, workflowEntry['task'],

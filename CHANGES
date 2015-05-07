@@ -1,3 +1,32 @@
+1.0.6 to 1.0.7.pre1:
+  - Merge pull request #5862 from ticoann/fix_cmssw_pset
+  - Merge pull request #5865 from ericvaandering/improve_datamining
+  - Add some log messages and a new exception
+  - Merge pull request #5855 from hufnagel/checksum-crc-remove
+  - Merge pull request #5826 from ticoann/separate_cleanup_complete
+  - Add unittest
+  - seperate complete workflow and deleting workflow
+  - initialize funcName
+  - Merge pull request #5860 from amaltaro/acdc-eventBased
+  - Correctly upload and create jobs for ACDC EventBased - master
+  - do both adler32 and crc checksum calculation in one file read
+  - Merge commit '331bb4287cfb228c6533ed3e2a04159bbb0cbddd'
+  - Merge pull request #5838 from ericvaandering/make_tests_run
+  - Merge pull request #5859 from amaltaro/limit-jobs-submit
+  - Merge pull request #5827 from ericvaandering/remove_import_md5
+  - Merge pull request #5828 from ericvaandering/remove_glite
+  - Merge pull request #5840 from ericvaandering/fix_pylint_disable
+  - Merge pull request #5842 from ericvaandering/fix_except
+  - Merge pull request #5852 from ticoann/fix_jobprio_call
+  - Limit amount of jobs to be submitted by JobSubmitter - master version
+  - Only change jobPrio when it has a diff prio
+  - Fix except to use python 2.6 recommendation
+  - Fix for enable in all directories
+  - Pylint disable messages with sed
+  - Make it so all tests run
+  - Remove code that can't possibly work
+  - Remove instances of import md5 which is deprecated
+
 1.0.5 to 1.0.6:
   - Merge pull request #5850 from ticoann/unittest_fix
   - fix ReqMgr_t unit test

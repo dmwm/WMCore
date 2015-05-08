@@ -78,7 +78,7 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        if params:
+        if params and verb != 'GET':
             if  isinstance(params, dict):
                 params = json.dumps(params)
 

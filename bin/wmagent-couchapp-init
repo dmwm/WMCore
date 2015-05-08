@@ -290,7 +290,7 @@ if __name__ == "__main__":
         jobDumpName = urllib.quote_plus("%s/jobs" % wmagentConfig.JobStateMachine.couchDBName)
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, fwjrDumpName, "FWJRDump")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, jobDumpName, "JobDump")
-        installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName, "WMStats")
+        installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.jobSummaryDBName, "WMStatsAgent")
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.summaryStatsDBName, "SummaryStats")
         if options.cron:
             setupCron(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.JobStateMachine.couchDBName)

@@ -75,7 +75,7 @@ class WMStatsReader():
         else:
             self.reqDB = None
         
-    def _commonInit(self, couchURL):
+    def _commonInit(self, couchURL, appName = "WMStats"):
         """
         setting up comon variables for inherited class.
         inherited class should call this in their init function
@@ -84,7 +84,7 @@ class WMStatsReader():
         self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
         self.couchServer = CouchServer(self.couchURL)
         self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
-        self.couchapp = "WMStats"
+        self.couchapp = appName
         self.defaultStale = {"stale": "update_after"}
         
     

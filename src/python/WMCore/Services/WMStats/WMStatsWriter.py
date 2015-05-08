@@ -40,10 +40,10 @@ def monitorDocFromRequestSchema(schema):
 
 class WMStatsWriter(WMStatsReader):
 
-    def __init__(self, couchURL):
+    def __init__(self, couchURL, appName= "WMStats"):
         # set the connection for local couchDB call
         # inherited from WMStatsReader
-        self._commonInit(couchURL)
+        self._commonInit(couchURL, appName)
 
     def uploadData(self, docs):
         """

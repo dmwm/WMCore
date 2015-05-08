@@ -80,8 +80,6 @@ class AgentStatusPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
-        # set the connection for local couchDB call
-        #self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
         self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         
         self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)

@@ -116,7 +116,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                 teams = self.teamNames.split(',')
                 agentsCount = []
                 for team in teams:
-                    if self.agentsByTeam[team] == 0:
+                    if  team not in self.agentsByTeam:
                         agentsCount.append(1)
                     else:
                         agentsCount.append(self.agentsByTeam[team])

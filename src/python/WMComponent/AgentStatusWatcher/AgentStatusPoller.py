@@ -9,6 +9,7 @@ import threading
 import logging
 import time
 import traceback
+from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
@@ -31,7 +32,45 @@ class AgentStatusPoller(BaseWorkerThread):
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
+    
+    def setUpCouchDBReplication(self):
+        
+        self.replicatorDocs = []
+        #TODO: tier0 specific code - need to make it generic 
+        if hasattr(self.config, "Tier0Feeder"):
+            t0Source = self.config.Tier0Feeder.requestDBName
+            t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
+            self.replicatorDocs.append({'source': t0Source, 'target': t0Target, 
+                                        'filter': "T0Request/repfilter"})
+        else: # set up workqueue replication
+            #TODO: tier0 specific code - need to make it generic 
+            wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
+            wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
             
+            self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget, 
+                                        'filter':  "WMStats/repfilter"})
+            
+            wqfilter = 'WorkQueue/queueFilter'
+            parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
+            localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
+            query_params = {'childUrl' : sanitizeURL(localQInboxURL)['url'], 'parentUrl' : sanitizeURL(parentQURL)['url']}
+            
+            self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL, 
+                                        'filter': wqfilter, 'query_params': query_params})       
+            self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL, 
+                                        'filter': wqfilter, 'query_params': query_params})
+        
+        # delete or replicator docs befor setting up
+        self.localCouchMonitor.deleteReplicatorDocs()
+        
+        for rp in self.replicatorDocs:
+            self.localCouchMonitor.couchServer.replicate(
+                                           rp['source'], rp['target'], filter = rp['filter'], 
+                                           query_params = rp.get('query_params', False),
+                                           continuous = True, useReplicator = True)
+        # First cicle need to be skipped since document is not updated that fast
+        self.skipReplicationCheck = True
+                     
     def setup(self, parameters):
         """
         set db connection(couchdb, wmbs) to prepare to gather information
@@ -45,7 +84,8 @@ class AgentStatusPoller(BaseWorkerThread):
         #self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL)
         self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         
-        self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
+        self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)
+        self.setUpCouchDBReplication()
 
     def algorithm(self, parameters):
         """
@@ -69,26 +109,28 @@ class AgentStatusPoller(BaseWorkerThread):
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
     
+     
+    def collectCouchDBInfo(self):
+        
+        couchInfo = {'status': 'ok', 'error_message': ""}
+        
+        if self.skipReplicationCheck:
+            # skipping the check this round set if False so it can be checked next round.
+            self.skipReplicationCheck = False
+            return couchInfo
+        
+        msg = ""
+        for rp in self.replicatorDocs:
+            cInfo = self.localCouchMonitor.checkCouchServerStatus(rp['source'], 
+                                                        rp['target'], checkUpdateSeq = False)
+            if cInfo['status'] != 'ok':
+                couchInfo['status'] = 'error'
+        
+        couchInfo['error_message'] = msg
+        return couchInfo
+        
     def collectAgentInfo(self):
-        #TODO: agent info (need to include job Slots for the sites)
-        # always checks couch first
-        # Replication checking part need to be moved AgentWatcher
-        source = self.config.JobStateMachine.jobSummaryDBName
-        target = self.config.AnalyticsDataCollector.centralWMStatsURL
         
-        #TODO: tier0 specific code - need to make it generic 
-        if hasattr(self.config, "Tier0Feeder"):
-            t0Source = self.config.Tier0Feeder.requestDBName
-            t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
-            self.localCouchServer.recoverReplicationErrors(t0Source, t0Target, 
-                                                            filter = "T0Request/repfilter")
-            
-        couchInfo = self.localCouchServer.recoverReplicationErrors(source, target, 
-                                                                   filter = "WMStats/repfilter")
-        logging.info("getting couchdb replication status: %s" % couchInfo)
-        
-        
-            
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         
@@ -99,6 +141,8 @@ class AgentStatusPoller(BaseWorkerThread):
         
         else:
             agentInfo['drain_mode'] = False
+        
+        couchInfo = self.collectCouchDBInfo()
         
         if (couchInfo['status'] != 'ok'):
             agentInfo['down_components'].append("CouchServer")

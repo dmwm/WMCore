@@ -521,7 +521,7 @@ class EventBasedTest(unittest.TestCase):
 
         return
 
-    def testACDCProduction(self):
+    def notestACDCProduction(self):  # This test is pathological. Way too much output
         """
         _testACDCProduction_
 

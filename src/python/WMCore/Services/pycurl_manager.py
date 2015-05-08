@@ -13,6 +13,7 @@ underlying data-services.
 import time
 import pycurl
 import urllib
+import logging
 from httplib import HTTPException
 from WMCore.Wrappers import JsonWrapper as json
 try:
@@ -55,7 +56,7 @@ class RequestHandler(object):
     RequestHandler provides APIs to fetch single/multiple
     URL requests based on pycurl library
     """
-    def __init__(self, config=None):
+    def __init__(self, config=None, logger=None):
         super(RequestHandler, self).__init__()
         if  not config:
             config = {}
@@ -64,6 +65,7 @@ class RequestHandler(object):
         self.connecttimeout = config.get('connecttimeout', 30)
         self.followlocation = config.get('followlocation', 1)
         self.maxredirs = config.get('maxredirs', 5)
+        self.logger = logger if logger else logging.getLogger()
 
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
@@ -132,9 +134,9 @@ class RequestHandler(object):
             try:
                 res = json.loads(data)
             except ValueError as exc:
-                msg = 'Unable to load JSON data, err=%s, data type=%s' \
+                msg = 'Unable to load JSON data, %s, data type=%s, pass as is' \
                         % (str(exc), type(data))
-                print msg
+                logging.warning(msg)
                 return data
             return data
         else:

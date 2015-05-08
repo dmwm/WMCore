@@ -88,10 +88,10 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                 not oldCouchDoc.has_key('mcmApprovalTime') or
                 oldCouchDoc.get('mcmTotalEvents', 'Unknown') == 'Unknown' or
                 oldCouchDoc.get('mcmApprovalTime', 'Unknown') == 'Unknown'):
-                log("INFO: Trying to update McM info for %s" % wf)
 
                 prepID = oldCouchDoc.get('prepID', None)
                 if prepID and nMCMCalls <= maxMCMCalls:
+                    log("INFO: Trying to update McM info for %s, PREPID %s" % (wf, prepID))
                     # Get information from McM. Don't call too many times, can take a long time
                     nMCMCalls += 1
                     try:

@@ -278,7 +278,7 @@ class ChangeState(WMObject, WMConnectionBase):
             # doc is already in couch
             if updatesummary:
                 jobSummaryId = job["name"]
-                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobSummaryState/" + jobSummaryId
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStatsAgent/_update/jobSummaryState/" + jobSummaryId
                 # map retrydone state to jobfailed state for monitoring
                 if newstate == "retrydone":
                     monitorState = "jobfailed"
@@ -288,7 +288,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)
                 
-                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStats/_update/jobStateTransition/" + jobSummaryId
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStatsAgent/_update/jobStateTransition/" + jobSummaryId
                 updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
                                                                                     monitorState,
                                                                                     job["location"],

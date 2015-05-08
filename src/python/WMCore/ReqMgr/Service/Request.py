@@ -424,14 +424,13 @@ class Request(RESTEntity):
         if multi_update_flag:
             return self.put(workload_pair_list)
             
-        request_args_list = []
+        out = []
         for workload, request_args in workload_pair_list:
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
-            request_args_list.append(request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)
-        #TODO should return something else instead on whole schema
-        return request_args_list
+            out.append({'request':workload.name()})
+        return out
         
 
 class RequestStatus(RESTEntity):

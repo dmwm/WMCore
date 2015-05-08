@@ -10,7 +10,6 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 
-import json
 import time
 import pycurl
 import urllib

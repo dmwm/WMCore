@@ -69,7 +69,16 @@ def json2table(jsondata, web_ui_map):
     table = """<table class="table-bordered width-100">\n"""
     table += "<thead><tr><th>Field</th><th>Value</th></tr></thead>\n"
     keys = sorted(jsondata.keys())
+    # move up keys whose values have REPLACE prefix
+    priority_keys = []
+    rest_keys = []
     for key in keys:
+        val = jsondata[key]
+        if  isinstance(val, basestring) and val.startswith('REPLACE-'):
+            priority_keys.append(key)
+        else:
+            rest_keys.append(key)
+    for key in priority_keys+rest_keys:
         val = jsondata[key]
         if  isinstance(val, list) and not val: # empty list replace with input text tag
             val = ""

@@ -51,8 +51,9 @@ function ajaxRequest(path, parameters, verb) {
             doc.className='tools-alert tools-alert-blue confirmation fadeout shadow';
         }
     });
-    request.done(function(data) {
-        $('response').html(data);
+    request.done(function(data, msg, xhr) {
+        //$('response').html(data);
+        confirmationMessage(JSON.stringify(arg1));
     });
     request.fail(function(xhr, msg, err) {
         var doc = document.getElementById('confirmation');
@@ -67,10 +68,10 @@ function ajaxRequest(path, parameters, verb) {
         // for failed events the input parameters are (xhr, msg, err)
         var doc = document.getElementById('confirmation');
         if  (arg2.status==200 || arg2.status==201 || msg=='success') {
-            doc.innerHTML='SUCCESS! Your request has been processed with code '+arg2.status;
-            doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
-            setTimeout(cleanConfirmation, 5000);
-            confirmationMessage(arg1);
+            //doc.innerHTML='SUCCESS! Your request has been processed with code '+arg2.status;
+            //doc.className='tools-alert tools-alert-green confirmation fadeout shadow';
+            //setTimeout(cleanConfirmation, 5000);
+            confirmationMessage(JSON.stringify(arg1));
         } else {
             //doc.innerHTML='WARNING! Your request has been processed with status code '+ arg1.status+' and '+msg+' '+arg2;
             //doc.className='tools-alert tools-alert-yellow confirmation fadeout shadow';

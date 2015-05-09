@@ -52,9 +52,9 @@ class AgentStatusPoller(BaseWorkerThread):
             
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
+            childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
+            query_params = {'childUrl' : childURL, 'parentUrl' : sanitizeURL(parentQURL)['url']}
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
-            query_params = {'childUrl' : sanitizeURL(localQInboxURL)['url'], 'parentUrl' : sanitizeURL(parentQURL)['url']}
-            
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL, 
                                         'filter': wqfilter, 'query_params': query_params})       
             self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL, 

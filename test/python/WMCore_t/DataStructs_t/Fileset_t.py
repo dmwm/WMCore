@@ -64,22 +64,22 @@ class FilesetTest (unittest.TestCase):
         #First test - Add file and check if its there
         testfile = File('/tmp/lfntest',9999,9,9)
         self.fileset.addFile(testfile)
-        assert(testfile in self.fileset.listNewFiles(), 'Couldn\'t add file '
+        assertTrue(testfile in self.fileset.listNewFiles(), 'Couldn\'t add file '
                 'to fileset - fileset.addfile method not working')
         #Second test - Add file that was already at Fileset.files ,
         # and check if it gets updated
         testFileSame = File('/tmp/lfntest',9999,9,9)
         testFileSame.setLocation(set('dummyse.dummy.com'))
         self.fileset.addFile(testFileSame)
-        assert(testFileSame in  self.fileset.getFiles(),'Same file copy '
+        assertTrue(testFileSame in  self.fileset.getFiles(),'Same file copy '
                'failed - fileset.addFile not updating location of already '
                'existing files' )
-        assert(testfile in self.fileset.getFiles(),'Same file copy '
+        assertTrue(testfile in self.fileset.getFiles(),'Same file copy '
                'failed - fileset.addFile unable to remove previous file '
                'from list')
         #Third test - Add file that was already at Fileset.newfiles ,
         #and check if it gets updated
-        assert(testFileSame in  self.fileset.listNewFiles(),'Same file copy '
+        assertTrue(testFileSame in  self.fileset.listNewFiles(),'Same file copy '
                'failed - fileset.addFile not adding file to fileset.newFiles')
 
     def testListFiles(self):

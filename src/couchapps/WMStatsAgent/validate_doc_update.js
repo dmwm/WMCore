@@ -8,10 +8,35 @@ function(newDoc, oldDoc, userCtx) {
      throw({forbidden: 'Do not create deleted docs'});
    }
 
-   var allowed = (userCtx.name === null);
-   //---------------------------------
-     // Throw if user not validated
+   // Function to get the user list of site/groups for the given role
+   var getRole = function(role) {
+      var roles = userCtx.roles;
+      for (i in roles) {
+         if(typeof(roles[i]) == "object" && roles[i][0] === role)
+            return roles[i][1]; // Request comes from backend auth handler
+         if(typeof(roles[i]) == "string" && roles[i] === role)
+            return []; // Request comes from other handlers (i.e. host auth)
+      }
+      return null;
+   };
+   // Function to check if user has the role for a given group or site
+   var matchesRole = function(role, grpsite) {
+      var r = getRole(role);
+      if (r != null)
+         if (grpsite === "" || r.indexOf(grpsite) != -1)
+            return true;
+      return false;
+   };
+
+   // Gets whether the user is a global admin
+   // name=null means requests coming from the local replicator, so we must allow
+   // (the cms couch auth does not allow name=null, so it affects only internal
+   // replication requests)
+   var allowed = (userCtx.name === null) || matchesRole("_admin","");
+
+   // Throw if user not validated
    if(!allowed) {
-      throw {forbidden: "User not authorized for action. only local update allowed"};
+      log(toJSON(userCtx));
+      throw {forbidden: "User not authorized for action."};
    }
-};
+}

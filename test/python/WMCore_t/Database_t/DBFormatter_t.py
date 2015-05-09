@@ -15,6 +15,8 @@ import unittest
 import os
 import threading
 
+from nose.plugins.attrib import attr
+
 from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.Transaction import Transaction

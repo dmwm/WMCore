@@ -48,7 +48,7 @@ class AgentStatusPoller(BaseWorkerThread):
             wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
             
             self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget, 
-                                        'filter':  "WMStats/repfilter"})
+                                        'filter':  "WMStatsAgent/repfilter"})
             
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]

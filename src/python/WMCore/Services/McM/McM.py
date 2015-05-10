@@ -1,5 +1,11 @@
 #! /bin/env python
 
+"""
+A service class for retrieving data from McM using
+an SSO cookie since it sits behind CERN SSO
+'key' must be unencrypted
+"""
+
 import json
 import os
 import pycurl
@@ -19,7 +25,7 @@ class McMNoDataError(WMException):
     def __init__(self):
         WMException.__init__(self, 'McM responded correctly but has no data')
 
-class McM():
+class McM(object):
     def __init__(self, cert, key, url='https://cms-pdmv.cern.ch/mcm', tmpDir='/tmp'):
         self.url = url
         self.tmpDir = tmpDir
@@ -29,7 +35,9 @@ class McM():
 
     def __enter__(self):
         self.cookieFile = os.path.join(self.tmpDir, 'ssoCookie.txt')
-        process = subprocess.Popen(["cern-get-sso-cookie", "--cert", self.cert, "--key", self.key, "-u", self.url, "-o", self.cookieFile], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        process = subprocess.Popen(["cern-get-sso-cookie", "--cert", self.cert, "--key", self.key,
+                                    "-u", self.url, "-o", self.cookieFile],
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         strout = process.communicate()[0]
         if process.returncode != 0:
             raise RuntimeError(" FATAL -- could not generate SSO cookie\nError msg: %s" % (str(strout)))
@@ -62,14 +70,14 @@ class McM():
                 raise IOError
         except:
             c.close()
-            raise(IOError, 'Was not able to fetch or decode URL from McM')
+            raise IOError('Was not able to fetch or decode URL from McM')
 
         try:
             body = b.getvalue()
             res = json.loads(body)
         except ValueError:
             c.close()
-            raise(IOError, 'Was not able to decode JSON from McM')
+            raise IOError('Was not able to decode JSON from McM')
 
         c.close()
         return res
@@ -89,7 +97,7 @@ class McM():
         return res['results']
 
 if __name__ == '__main__':
-    with McM(cert = '.globus/usercert.pem', key = '.globus/nopasskey.pem') as mcm:
+    with McM(cert='.globus/usercert.pem', key='.globus/nopasskey.pem') as mcm:
         import pdb
         history = mcm.getHistory(prepID = 'BTV-Upg2023SHCAL14DR-00002')
         request = mcm.getRequest(prepID = 'BTV-Upg2023SHCAL14DR-00002')

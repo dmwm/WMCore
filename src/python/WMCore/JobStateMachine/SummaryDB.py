@@ -14,15 +14,14 @@ from WMCore.Database.CMSCouch import CouchNotFoundError
 
 def fwjr_parser(doc):
     """
-    Parse FWJR document and yeild the following structure:
+    Parse FWJR document and yield the following structure:
     {"id": "requestName",
         "tasks": {
             "taskName1": {
                 "sites": {
                     "siteName1":  {
                         "wrappedTotalJobTime": 1612,
-                        "cmsRunCPUPerformance": 
-                           {"totalJobCPU": 20, "totalJobTime": 42, "totalEventCPU": 4},
+                        "cmsRunCPUPerformance": {"totalJobCPU": 20, "totalJobTime": 42, "totalEventCPU": 4},
                         "inputEvents": 0,
                         "dataset": {}
                     }
@@ -81,8 +80,11 @@ def fwjr_parser(doc):
             perf = val['performance']
             pdict['totalJobCPU'] += float(perf['cpu']['TotalJobCPU'])
             pdict['totalJobTime'] += float(perf['cpu']['TotalJobTime'])
-            pdict['totalEventCPU'] += float(perf['cpu']['TotalEventCPU'])
-            
+            if 'TotalEventCPU' in perf['cpu']:
+                pdict['totalEventCPU'] += float(perf['cpu']['TotalEventCPU'])
+            else:
+                pdict['totalEventCPU'] += float(perf['cpu']['TotalLoopCPU'])
+
             odict = val['output']
             for kkk, vvv in odict.items():
                 for row in vvv:

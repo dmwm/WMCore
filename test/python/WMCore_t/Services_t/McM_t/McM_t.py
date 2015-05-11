@@ -3,10 +3,8 @@
 Test case for McM service
 """
 
-import time
 import unittest
 
-from datetime import datetime
 from nose.plugins.attrib import attr
 
 from WMCore.Services.McM.McM import McM
@@ -15,6 +13,7 @@ prepID = 'BTV-Upg2023SHCAL14DR-00002'
 
 cert = 'This must be a X509 certificate registered with CERN SSO with access to McM'
 key = 'This must be the corresponding key unprotected by a password'
+
 
 class McMTest(unittest.TestCase):
     """
@@ -28,8 +27,8 @@ class McMTest(unittest.TestCase):
         """
 
         history = None
-        with McM(cert = cert, key = key) as mcm:
-            history = mcm.getHistory(prepID = prepID)
+        with McM(cert=cert, key=key) as mcm:
+            history = mcm.getHistory(prepID=prepID)
 
         isAnnounced = False
         for entry in history:
@@ -44,10 +43,10 @@ class McMTest(unittest.TestCase):
         Test that the request URL is working
         """
         request = None
-        with McM(cert = cert, key = key) as mcm:
-            request = mcm.getRequest(prepID = prepID)
+        with McM(cert=cert, key=key) as mcm:
+            request = mcm.getRequest(prepID=prepID)
 
-        self.assertTrue(request.has_key('total_events'))
+        self.assertTrue('total_events' in request)
 
 
 if __name__ == '__main__':

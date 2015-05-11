@@ -3,7 +3,6 @@
 """
 A service class for retrieving data from McM using
 an SSO cookie since it sits behind CERN SSO
-'key' must be unencrypted
 """
 
 import json
@@ -26,6 +25,12 @@ class McMNoDataError(WMException):
         WMException.__init__(self, 'McM responded correctly but has no data')
 
 class McM(object):
+    """
+    A service class for retrieving data from McM using
+    an SSO cookie since it sits behind CERN SSO
+    'key' must be unencrypted
+    """
+
     def __init__(self, cert, key, url='https://cms-pdmv.cern.ch/mcm', tmpDir='/tmp'):
         self.url = url
         self.tmpDir = tmpDir
@@ -43,7 +48,7 @@ class McM(object):
             raise RuntimeError(" FATAL -- could not generate SSO cookie\nError msg: %s" % (str(strout)))
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback):
         if self.cookieFile:
             try:
                 os.remove(self.cookieFile)
@@ -52,6 +57,11 @@ class McM(object):
         return
 
     def _getURL(self, extendURL):
+        """
+        Fetch an MCM URL with CURL using the SSO cookie.
+        Only intended to be used internally
+        """
+
         try:
             b = StringIO()
             c = pycurl.Curl()
@@ -83,6 +93,10 @@ class McM(object):
         return res
 
     def getHistory(self, prepID):
+        """
+        Get the history record which has who did what to an McM request
+        """
+
         try:
             url = 'search?db_name=batches&contains=%s&get_raw' % prepID
             res = self._getURL(url)
@@ -92,13 +106,16 @@ class McM(object):
             raise McMNoDataError
 
     def getRequest(self, prepID):
+        """
+        Get the request record which has, among other things,
+        the number of requested events
+        """
+
         url = 'public/restapi/requests/get/%s' % prepID
         res = self._getURL(url)
         return res['results']
 
 if __name__ == '__main__':
     with McM(cert='.globus/usercert.pem', key='.globus/nopasskey.pem') as mcm:
-        import pdb
         history = mcm.getHistory(prepID = 'BTV-Upg2023SHCAL14DR-00002')
         request = mcm.getRequest(prepID = 'BTV-Upg2023SHCAL14DR-00002')
-        pdb.set_trace()

@@ -10,7 +10,7 @@
     "FilterEfficiency": 0.02715,
     "ScramArch": "slc5_amd64_gcc462",
     "RequestType": "MonteCarlo",
-    "RequestNumEvents": 2000,
+    "RequestNumEvents": 270,
     "ConfigCacheID": "a09fa7ea98f8c88bdae47b19ed049d44",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",

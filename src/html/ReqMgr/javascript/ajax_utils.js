@@ -2,6 +2,10 @@ function cleanConfirmation () {
     var doc = document.getElementById('confirmation');
     doc.innerHTML='';
     doc.className='';
+    // clean-up checked input attributes
+    $(".request-id").prop("checked", false);
+    $(".request-id").attr("checked", false);
+    $(".request-id").removeAttr("disabled");
 }
 function errorMessage(err) {
     // extract X-Error-Detail from server error

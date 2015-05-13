@@ -232,7 +232,7 @@ class LumiBased(JobFactory):
                 f['lowestRun'] = f['runs'][0]
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = float(f['events']) / f['lumiCount']
+                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']

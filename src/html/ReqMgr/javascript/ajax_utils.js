@@ -56,8 +56,8 @@ function ajaxRequest(path, parameters, verb) {
         }
     });
     request.done(function(data, msg, xhr) {
-        //$('response').html(data);
-        confirmationMessage(JSON.stringify(arg1));
+        $('response').html(data);
+        //confirmationMessage(JSON.stringify(arg1));
     });
     request.fail(function(xhr, msg, err) {
         var doc = document.getElementById('confirmation');

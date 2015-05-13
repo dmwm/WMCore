@@ -181,6 +181,9 @@ class ReqMgrService(TemplatedPage):
 
         # initialize access to reqmgr2 APIs
         self.reqmgr = ReqMgr(config.reqmgr.reqmgr2_url)
+        # only gets current view (This might cause to reponse time much longer, 
+        # If upto date view is not needed overwrite Fale)
+        self.reqmgr._noStale = True
 
         # admin helpers
         self.admin_info = Info(app, api, config.reqmgr, mount=mount+'/info')

@@ -12,7 +12,7 @@ from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, \
                         loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.Lexicon import lfnBase, sanitizeURL
+from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
@@ -610,7 +610,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateLFNsAndDatasets(self, initialTask = None, runNumber = None):
+    def updateLFNsAndDatasets(self, runNumber = None):
         """
         _updateLFNsAndDatasets_
 
@@ -618,78 +618,10 @@ class WMWorkloadHelper(PersistencyHelper):
         This needs to be called after updating the acquisition era, processing
         version or merged/unmerged lfn base.
         """
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            taskType = task.taskType()
-            for stepName in task.listAllStepNames():
-                stepHelper = task.getStepHelper(stepName)
-
-                if stepHelper.stepType() == "CMSSW":
-                    for outputModuleName in stepHelper.listOutputModules():
-                        outputModule = stepHelper.getOutputModule(outputModuleName)
-                        filterName = getattr(outputModule, "filterName", None)
-                        if task.getProcessingString():
-                            processingEra = "%s-v%i" % (task.getProcessingString(), task.getProcessingVersion())
-                        else:
-                            processingEra = "v%i" % task.getProcessingVersion()
-                        if filterName:
-                            processedDataset = "%s-%s-%s" % (task.getAcquisitionEra(),
-                                                             filterName,
-                                                             processingEra)
-                            processingString = "%s-%s" % (filterName,
-                                                          processingEra)
-                        else:
-                            processedDataset = "%s-%s" % (task.getAcquisitionEra(),
-                                                          processingEra)
-                            processingString = processingEra
-
-                        unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
-                                                          task.getAcquisitionEra(),
-                                                          getattr(outputModule, "primaryDataset"),
-                                                          getattr(outputModule, "dataTier"),
-                                                          processingString)
-                        mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
-                                                        task.getAcquisitionEra(),
-                                                        getattr(outputModule, "primaryDataset"),
-                                                        getattr(outputModule, "dataTier"),
-                                                        processingString)
-
-                        if runNumber != None and runNumber > 0:
-                            runString = str(runNumber).zfill(9)
-                            lfnSuffix = "/%s/%s/%s" % (runString[0:3],
-                                                       runString[3:6],
-                                                       runString[6:9])
-                            unmergedLFN += lfnSuffix
-                            mergedLFN += lfnSuffix
-
-                        lfnBase(unmergedLFN)
-                        lfnBase(mergedLFN)
-                        setattr(outputModule, "processedDataset", processedDataset)
-
-                        #Once we change an output module we must update the subscription information
-                        task.updateSubscriptionDataset(outputModuleName, outputModule)
-
-                        # For merge tasks, we want all output to go to the merged LFN base.
-                        if taskType == "Merge":
-                            setattr(outputModule, "lfnBase", mergedLFN)
-                            setattr(outputModule, "mergedLFNBase", mergedLFN)
-
-                            if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
-                                datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
-                                                             processedDataset,
-                                                             getattr(outputModule, "dataTier"))
-                                self.updateDatasetName(task, datasetName)
-                        else:
-                            setattr(outputModule, "lfnBase", unmergedLFN)
-                            setattr(outputModule, "mergedLFNBase", mergedLFN)
-
-            task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
-            self.updateLFNsAndDatasets(task, runNumber = runNumber)
-
+            task.updateLFNsAndDatasets(runNumber)
         return
 
     def updateDatasetName(self, mergeTask, datasetName):
@@ -710,8 +642,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setAcquisitionEra(self, acquisitionEras, initialTask = None,
-                          parentAcquisitionEra = None):
+    def setAcquisitionEra(self, acquisitionEras, parentAcquisitionEra = None):
         """
         _setAcquistionEra_
 
@@ -719,102 +650,55 @@ class WMWorkloadHelper(PersistencyHelper):
         all of the output LFNs and datasets to use the new acquisition era.
         """
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        for task in self.taskIterator():
+            task.setAcquisitionEra(acquisitionEras)
 
-        for task in taskIterator:
-            if type(acquisitionEras) == dict:
-                task.setAcquisitionEra(acquisitionEras.get(task.name(),
-                                       parentAcquisitionEra))
-                self.setAcquisitionEra(acquisitionEras, task,
-                                       acquisitionEras.get(task.name(),
-                                       parentAcquisitionEra))
-            else:
-                task.setAcquisitionEra(acquisitionEras)
-                self.setAcquisitionEra(acquisitionEras, task)
-
-        if not initialTask:
-            self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets()
         #set acquistionEra for workload (need to refactor)
         self.acquisitionEra = acquisitionEras
         return
 
-    def setProcessingVersion(self, processingVersions, initialTask = None,
-                             parentProcessingVersion = None):
+    def setProcessingVersion(self, processingVersions, parentProcessingVersion = 0):
         """
         _setProcessingVersion_
 
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            if type(processingVersions) == dict:
-                task.setProcessingVersion(processingVersions.get(task.name(),
-                                          parentProcessingVersion))
-                self.setProcessingVersion(processingVersions, task,
-                                          processingVersions.get(task.name(),
-                                          parentProcessingVersion))
-            else:
-                task.setProcessingVersion(processingVersions)
-                self.setProcessingVersion(processingVersions, task)
+            task.setProcessingVersion(processingVersions)
 
-        if not initialTask:
-            self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets()
         self.processingVersion = processingVersions
         return
 
-    def setProcessingString(self, processingStrings, initialTask = None,
-                             parentProcessingString = None):
+    def setProcessingString(self, processingStrings, parentProcessingString = None):
         """
         _setProcessingString_
 
         Change the processing string for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            if type(processingStrings) == dict:
-                task.setProcessingString(processingStrings.get(task.name(),
-                                          parentProcessingString))
-                self.setProcessingString(processingStrings, task,
-                                          processingStrings.get(task.name(),
-                                          parentProcessingString))
-            else:
-                task.setProcessingString(processingStrings)
-                self.setProcessingString(processingStrings, task)
+            task.setProcessingString(processingStrings)
 
-        if not initialTask:
-            self.updateLFNsAndDatasets()
+        self.updateLFNsAndDatasets()
         self.processingString = processingStrings
         return
 
-    def setLumiList(self, lumiLists, initialTask = None,
-                          parentLumiList = None):
+    def setLumiList(self, lumiLists,  parentLumiList = None):
         """
         _setLumiList_
 
         Change the lumi mask for all tasks in the spec
         """
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
-
-        for task in taskIterator:
+        for task in self.taskIterator() :
             task.setLumiMask(lumiLists, override=False)
-            self.setLumiList(lumiLists, task)
 
         #set lumiList for workload (need to refactor)
         self.lumiList = lumiLists
@@ -834,6 +718,7 @@ class WMWorkloadHelper(PersistencyHelper):
             return topTasks[0].getAcquisitionEra()
 
         return None
+    
     def getRequestType(self):
         """
         _getRequestType_
@@ -943,6 +828,10 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.mergedLFNBase = mergedLFNBase
         self.data.properties.unmergedLFNBase = unmergedLFNBase
+        
+        # set all child tasks lfn base.
+        for task in self.taskIterator():
+            task.setLFNBase(mergedLFNBase, unmergedLFNBase)
         self.updateLFNsAndDatasets(runNumber = runNumber)
         return
 

@@ -242,10 +242,9 @@ class TaskChainWorkloadFactory(StdBase):
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
-
+                
             task = self.makeTask(taskConf, parentTask)
-            #sets the prepID for the task (overwrite initial PrepID if it is set by workflow
-            task.setPrepID(taskConf["PrepID"])
+            
             if i == 1:
                 # First task will either be generator or processing
                 self.workload.setDashboardActivity("relval")
@@ -268,9 +267,6 @@ class TaskChainWorkloadFactory(StdBase):
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
 
-        # setting the parameters which need to be set for all the tasks
-        # sets acquisitionEra, processingVersion, processingString
-        self.workload.setTaskPropertiesFromWorkload()
         return self.workload
 
 
@@ -289,6 +285,21 @@ class TaskChainWorkloadFactory(StdBase):
             task = parentTask.addTask(taskConf['TaskName'])
         return task
 
+    def _updateCommonParams(self, task, taskConf):
+    # sets the prepID  all the properties need to be set by
+            # self.workload.setTaskPropertiesFromWorkload manually for the task
+        task.setPrepID(taskConf.get("PrepID", self.workload.getPrepID()))
+        task.setAcquisitionEra(taskConf.get("AcquisitionEra", self.workload.acquisitionEra))
+        task.setProcessingString(taskConf.get("ProcessingString", self.workload.processingString))
+        task.setProcessingVersion(taskConf.get("ProcessingVersion", self.workload.processingVersion))
+        lumiMask = taskConf.get("LumiList", self.workload.lumiList)
+        if lumiMask:
+            task.setLumiMask(lumiMask)
+        
+        if taskConf["PileupConfig"]:
+            self.setupPileup(task, taskConf['PileupConfig'])
+        
+        
     @ParameterStorage
     def setupGeneratorTask(self, task, taskConf):
         """
@@ -314,9 +325,9 @@ class TaskChainWorkloadFactory(StdBase):
                                               forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
                                               memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
 
-        if taskConf["PileupConfig"]:
-            self.setupPileup(task, taskConf['PileupConfig'])
-
+        # this need to be called after setpuProcessingTask since it will overwrite some values
+        self._updateCommonParams(task, taskConf)
+        
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
 
         # Do the output module merged/unmerged association
@@ -324,7 +335,7 @@ class TaskChainWorkloadFactory(StdBase):
                              keepOutput, transientModules)
 
         return
-
+        
     @ParameterStorage
     def setupTask(self, task, taskConf):
         """
@@ -340,7 +351,6 @@ class TaskChainWorkloadFactory(StdBase):
         splitArguments = taskConf["SplittingArguments"]
         keepOutput     = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
-        lumiMask = taskConf.get('LumiList', None)
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
         # in case the initial task is a processing task, we have an input dataset, otherwise
@@ -392,13 +402,10 @@ class TaskChainWorkloadFactory(StdBase):
                                               timePerEvent = self.timePerEvent,
                                               memoryReq = self.memory,
                                               sizePerEvent = self.sizePerEvent)
-
-
-        if taskConf["PileupConfig"]:
-            self.setupPileup(task, taskConf['PileupConfig'])
-        if lumiMask:
-            task.setLumiMask(lumiMask)
-
+        
+        # this need to be called after setpuProcessingTask since it will overwrite some values
+        self._updateCommonParams(task, taskConf)
+        
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         self.setUpMergeTasks(task, outputMods, splitAlgorithm,
                              keepOutput, transientModules)
@@ -406,7 +413,8 @@ class TaskChainWorkloadFactory(StdBase):
         self.inputPrimaryDataset = currentPrimaryDataset
 
         return
-
+    
+        
     def setUpMergeTasks(self, parentTask, outputModules, splittingAlgo,
                         keepOutput, transientOutputModules):
         """

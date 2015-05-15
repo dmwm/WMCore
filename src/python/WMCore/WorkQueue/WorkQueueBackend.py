@@ -348,6 +348,8 @@ class WorkQueueBackend(object):
         if teams:
             options['teams'] = teams
             self.logger.info("setting teams %s" % teams)
+        self.logger.warning("ALEX_WQB1: wfs = %s" % wfs)
+        self.logger.warning("ALEX_WQB2: self.db = %r" % self.db)
         if wfs:
             result = []
             for i in xrange(0, len(wfs), 20):
@@ -362,7 +364,7 @@ class WorkQueueBackend(object):
             if len(result) == 0:
                 self.logger.info("""No available work in WQ or didn't pass workqueue restriction 
                                     - check Pileup, site white list, etc""")
-            self.logger.debug("Available Work:\n %s \n for resources\n %s" % (result, thresholds))
+            self.logger.warning("Available Work:\n %s \n for resources\n %s" % (result, thresholds))
         # Iterate through the results; apply whitelist / blacklist / data
         # locality restrictions.  Only assign jobs if they are high enough
         # priority.
@@ -374,16 +376,20 @@ class WorkQueueBackend(object):
             sites = thresholds.keys()
             random.shuffle(sites)
             for site in sites:
+                print "WorkQueueBackend", site, element.passesSiteRestriction(site)
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
                     prio = element['Priority']
                     curJobCount = sum(map(lambda x : x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
                     self.logger.debug("Job Count: %s, site: %s threshods: %s" % (curJobCount, site, thresholds[site]))
+                    print "WorkQueueBackend", curJobCount, thresholds[site]
                     if curJobCount < thresholds[site]:
                         possibleSite = site
                         break
 
+            print "WorkQueueBackend", possibleSite
             if possibleSite:
+                self.logger.info("Possible site exists %s" % str(possibleSite))
                 elements.append(element)
                 if site not in siteJobCounts:
                     siteJobCounts[site] = {}

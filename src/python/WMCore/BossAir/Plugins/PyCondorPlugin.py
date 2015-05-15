@@ -858,7 +858,7 @@ class PyCondorPlugin(BasePlugin):
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
             try:
                 sd.edit('WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s'% (classad.quote(str(task)),classad.quote(str(workflow))),
-                        "JobPrio", classad.ExprTree('"%s"'% priority))
+                        "JobPrio", classad.ExprTree('"%i"'% priority))
             except:
                 msg = "Couldn\'t edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % (classad.quote(str(task)), classad.quote(str(workflow)))
                 logging.debug(msg)
@@ -1011,8 +1011,8 @@ class PyCondorPlugin(BasePlugin):
 
             jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
-            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
-            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
+#            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
+#            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
             jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")

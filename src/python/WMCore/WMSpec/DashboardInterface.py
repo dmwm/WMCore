@@ -272,8 +272,8 @@ class DashboardInterface(object):
                     "exit_code", str(self.report.taskSuccessful()))
 
 
-        # Do output files and then set seName
-        seName = None
+        # Do output files and then set phedex node name (pnn)
+        pnn = None
         output_node = self.document.createElement("output_files")
         instance.appendChild(output_node)
         outLFNs = []
@@ -281,13 +281,13 @@ class DashboardInterface(object):
 
         # Get output files
         for outfile in self.report.getAllFiles():
-            seName = outfile.get('location', 'None')
+            pnn = outfile.get('location', 'None')
             eventsWritten += outfile.get('events', 0)
             addTextNode(self.document, output_node, "LFN",
                         str(outfile.get('lfn', 'None')))
 
-        # Add SEName and events written
-        resource.setAttribute("se_name", seName)
+        # Add PNN and events written
+        resource.setAttribute("pnn", pnn)
         addTextNode(self.document, instance,
                     "events_written", str(eventsWritten))
 

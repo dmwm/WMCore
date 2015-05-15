@@ -67,7 +67,7 @@ def sortedFilesFromMergeUnits(mergeUnits):
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set(file["se_name"])
+            newFile["locations"] = set(file["pnn"])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             sortedFiles.append(newFile)
 
@@ -101,13 +101,13 @@ class WMBSMergeBySize(JobFactory):
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if not mergeUnits.has_key(newMergeFile["se_name"]):
-                mergeUnits[newMergeFile["se_name"]] = {}
+            if not mergeUnits.has_key(newMergeFile["pnn"]):
+                mergeUnits[newMergeFile["pnn"]] = {}
 
-            if not mergeUnits[newMergeFile["se_name"]].has_key(newMergeFile["file_run"]):
-                mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]] = []
+            if not mergeUnits[newMergeFile["pnn"]].has_key(newMergeFile["file_run"]):
+                mergeUnits[newMergeFile["pnn"]][newMergeFile["file_run"]] = []
 
-            for mergeUnit in mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]]:
+            for mergeUnit in mergeUnits[newMergeFile["pnn"]][newMergeFile["file_run"]]:
                 if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
                     mergeUnit["files"].append(newMergeFile)
                     mergeUnit["total_size"] += newMergeFile["file_size"]
@@ -129,7 +129,7 @@ class WMBSMergeBySize(JobFactory):
                 newMergeUnit["lumi"] = newMergeFile["file_lumi"]
                 newMergeUnit["files"] = []
                 newMergeUnit["files"].append(newMergeFile)
-                mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]].append(newMergeUnit)
+                mergeUnits[newMergeFile["pnn"]][newMergeFile["file_run"]].append(newMergeUnit)
 
         return mergeUnits
 

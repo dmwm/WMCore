@@ -50,18 +50,18 @@ class ParentlessMergeBySize(JobFactory):
             else:
                 continue
 
-            if not fileGroups.has_key(mergeableFile["se_name"]):
+            if not fileGroups.has_key(mergeableFile["pnn"]):
                 if self.mergeAcrossRuns:
-                    fileGroups[mergeableFile["se_name"]] = []
+                    fileGroups[mergeableFile["pnn"]] = []
                 else:
-                    fileGroups[mergeableFile["se_name"]] = {}
+                    fileGroups[mergeableFile["pnn"]] = {}
 
             if self.mergeAcrossRuns:
-                fileGroups[mergeableFile["se_name"]].append(mergeableFile)
+                fileGroups[mergeableFile["pnn"]].append(mergeableFile)
             else:
-                if not fileGroups[mergeableFile["se_name"]].has_key(mergeableFile["file_run"]):
-                    fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]] = []
-                fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]].append(mergeableFile)
+                if not fileGroups[mergeableFile["pnn"]].has_key(mergeableFile["file_run"]):
+                    fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]] = []
+                fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]].append(mergeableFile)
 
         return fileGroups
 
@@ -86,7 +86,7 @@ class ParentlessMergeBySize(JobFactory):
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([file["se_name"]])
+            newFile["locations"] = set([file["pnn"]])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
             self.currentJob.addFile(newFile)
             self.currentJob.addResourceEstimates(disk = float(file["file_size"])/1024)

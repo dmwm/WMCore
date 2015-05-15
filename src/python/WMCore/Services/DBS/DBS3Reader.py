@@ -5,6 +5,7 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+import logging
 from collections import defaultdict
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
@@ -756,8 +757,9 @@ class DBS3Reader:
             if not blocksInfo: # if we couldnt get data location from PhEDEx, try to look into origin site location from dbs
                 dbsOnly = True
             else:
+                logging.warning("ALEX DBS3Reader1: %s" % blocksInfo.values())
                 for blockSites in blocksInfo.values():
-                    locations.intersection_update(blockSites)
+                    locations.update(blockSites)
 
         if dbsOnly:
             try:
@@ -770,6 +772,7 @@ class DBS3Reader:
             if not blocksInfo: # no data location from dbs
                 return list()
 
+            logging.warning("ALEX DBS3Reader2: %s" % [b['origin_site_name'] for b in blocksInfo])
             for blockInfo in blocksInfo:
                 locations.update([blockInfo['origin_site_name']])
 

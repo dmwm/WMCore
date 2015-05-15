@@ -804,7 +804,7 @@ class CondorPlugin(BasePlugin):
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'])*self.maxTaskPriority)
             command = 'condor_qedit -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"\' ' %(task, workflow)
-            command += 'JobPrio %s' % priority
+            command += 'JobPrio %i' % priority
             command = shlex.split(command)
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE)
@@ -970,8 +970,8 @@ class CondorPlugin(BasePlugin):
 
             jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
-            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
-            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
+#            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
+#            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
 
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 

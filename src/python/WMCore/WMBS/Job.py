@@ -14,6 +14,7 @@ Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
+import logging
 import datetime
 
 from WMCore.DataStructs.Job     import Job as WMJob
@@ -297,7 +298,7 @@ class Job(WMBSBase, WMJob):
 
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(thunker._thunk(inputFile))
-
+        logging.warning("ALEX WMBS.Job1: jobDict['input_files']= %s" % jobDict["input_files"])
         # These attributes are added to the job object by the ChangeState
         # code, and we want to store them in couch.
         if self.has_key("_id"):
@@ -416,6 +417,8 @@ class Job(WMBSBase, WMJob):
 
         for file in self['input_files']:
             job['input_files'].append(file.returnDataStructsFile())
+
+        logging.warning("ALEX WMBS.Job2: job['input_files']= %s" % job.get("input_files", []))
 
         job['mask'] = WMMask()
         for key in self["mask"].keys():

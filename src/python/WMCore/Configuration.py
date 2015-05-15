@@ -26,13 +26,15 @@ _SimpleTypes = [
     types.IntType,
     ]
 
-_SupportedTypes = [
+_ComplexTypes = [
     types.DictType,
     types.ListType,
     types.TupleType,
     ]
 
+_SupportedTypes = []
 _SupportedTypes.extend(_SimpleTypes)
+_SupportedTypes.extend(_ComplexTypes)
 
 
 def format(value):
@@ -93,12 +95,30 @@ class ConfigSection(object):
         else:
             return (id(self) == id(other))
 
+    def _complexTypeCheck(self, name, value):
+        
+        if type(value) in _SimpleTypes:
+            return
+        elif type(value) in _ComplexTypes:
+            vallist = value
+            if type(value) == types.DictType:
+                vallist = value.values()
+            for val in vallist:
+                self._complexTypeCheck(name, val)
+        else:
+            msg = "Not supported type in sequence:"
+            msg += "%s\n" % type(value)
+            msg += "for name: %s and value: %s\n" % (name, value)
+            msg += "Added to WMAgent Configuration"
+            raise RuntimeError, msg
+                
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
             # skip test for internal setting
             object.__setattr__(self, name, value)
             return
+
         if isinstance(value, ConfigSection):
             # child ConfigSection
             self._internal_children.add(name)
@@ -107,23 +127,11 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) not in _SupportedTypes:
-            msg = "Unsupported Type: %s\n" % type(value)
-            msg += "Added to WMAgent Configuration"
-            raise RuntimeError, msg
         if type(value) == types.UnicodeType:
             value = str(value)
-        if type(value) in (types.ListType, types.TupleType, types.DictType):
-            vallist = value
-            if type(value) == types.DictType:
-                vallist = value.values()
-            for val in vallist:
-                if type(val) not in _SimpleTypes:
-                    msg = "Complex Value type in sequence:"
-                    msg += "%s\n" % type(val)
-                    msg += "for name: %s and value: %s\n" % (name, value)
-                    msg += "Added to WMAgent Configuration"
-                    raise RuntimeError, msg
+        
+        self._complexTypeCheck(name, value)
+        
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return

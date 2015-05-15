@@ -41,6 +41,7 @@ class EventAwareLumiBased(JobFactory):
 
         avgEventsPerJob = int(kwargs.get('events_per_job', 5000))
         eventLimit      = int(kwargs.get('max_events_per_lumi', 20000))
+        totalEvents     = int(kwargs.get('total_events', 0))
         splitOnFile     = bool(kwargs.get('halt_job_on_file_boundaries', True))
         ignoreACDC      = bool(kwargs.get('ignore_acdc_except', False))
         collectionName  = kwargs.get('collectionName', None)
@@ -138,7 +139,9 @@ class EventAwareLumiBased(JobFactory):
         firstLumi      = None
         lastRun        = None
         lumisInJob     = 0
+        totalAvgEventCount = 0
         currentJobAvgEventCount = 0
+        stopTask = False
         for location in locationDict:
 
             # For each location, we need a new jobGroup
@@ -275,9 +278,15 @@ class EventAwareLumiBased(JobFactory):
                         lastLumi = lumi
                         stopJob = False
                         lastRun = run.run
+                        totalAvgEventCount += f['avgEvtsPerLumi']
 
                         if self.currentJob and not f in self.currentJob['input_files']:
                             self.currentJob.addFile(f)
+
+                        # We stop here if there are more total events than requested.
+                        if totalEvents > 0 and totalAvgEventCount >= totalEvents:
+                            stopTask = True
+                            break
 
                     if firstLumi != None and lastLumi != None:
                         # Add this run to the mask
@@ -290,7 +299,16 @@ class EventAwareLumiBased(JobFactory):
                         firstLumi = None
                         lastLumi = None
 
+                    if stopTask:
+                        break
+
                 if not splitOnFile:
                     currentJobAvgEventCount += f['avgEvtsPerLumi'] * lumisInJobInFile
+
+                if stopTask:
+                    break
+
+            if stopTask:
+                break
 
         return

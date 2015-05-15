@@ -152,6 +152,7 @@ class EventAwareLumiBased(JobFactory):
                         parent = File(lfn = lfn)
                         f['parents'].add(parent)
 
+                lumisInJobInFile = 0
                 updateSplitOnJobStop = False
                 failNextJob          = False
                 #If the number of events per lumi is higher than the limit
@@ -252,6 +253,7 @@ class EventAwareLumiBased(JobFactory):
                             failNextJob = False
                             firstLumi = lumi
                             lumisInJob = 0
+                            lumisInJobInFile = 0
                             currentJobAvgEventCount = 0
                             totalJobs += 1
 
@@ -269,6 +271,7 @@ class EventAwareLumiBased(JobFactory):
                                     lumisPerJob = f['lumiCount']
 
                         lumisInJob += 1
+                        lumisInJobInFile += 1
                         lastLumi = lumi
                         stopJob = False
                         lastRun = run.run
@@ -288,6 +291,6 @@ class EventAwareLumiBased(JobFactory):
                         lastLumi = None
 
                 if not splitOnFile:
-                    currentJobAvgEventCount += f['avgEvtsPerLumi'] * min(lumisInJob, f['lumiCount'])
+                    currentJobAvgEventCount += f['avgEvtsPerLumi'] * lumisInJobInFile
 
         return

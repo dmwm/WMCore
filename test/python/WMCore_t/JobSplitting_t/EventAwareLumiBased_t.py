@@ -215,6 +215,76 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         # in it.
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+
+        # Test total_events limit. (The algorithm cuts off after the lumi that
+        # brings the total average event count over -or equal to- total_events.)
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               events_per_job = 60,
+                               total_events = 10,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 0L]]})
+
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               events_per_job = 60,
+                               total_events = 179,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
+
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               events_per_job = 60,
+                               total_events = 180,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
+
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               events_per_job = 60,
+                               total_events = 181,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 4)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
+        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1L: [[9L, 9L]]})
+
         return
 
     def testC_FileSplitNoHardLimit(self):
@@ -279,6 +349,27 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 25, "There should be 5 jobs")
 
+        # Test total_events limit. (The algorithm cuts off after the lumi that
+        # brings the total average event count over -or equal to- total_events.)
+        testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 3, twoSites = False,
+                                                   nEventsPerFile = 300)
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(halt_job_on_file_boundaries = True,
+                               splitOnRun = True,
+                               events_per_job = 250,
+                               total_events = 750,
+                               performance = self.performanceParams)
+        self.assertEqual(len(jobGroups), 1, "There should be only one job group")
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 5, "There should be 5 jobs")
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[2L, 2L]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[3L, 4L]]})
+        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1L: [[5L, 5L]]})
+        self.assertEqual(jobs[4]['mask'].getRunAndLumis(), {2L: [[6L, 7L]]})
+
+        return
 
     def testD_NoFileSplitNoHardLimit(self):
         """
@@ -473,6 +564,67 @@ class EventAwareLumiBasedTest(unittest.TestCase):
                           "The reason for the failure is not accurate")
 
         return
+
+    def testG_LumiMask(self):
+        """
+        _testG_LumiMask_
+
+        Test that we can use a lumi-mask to filter good runs/lumis.
+        """
+        splitter = SplitterFactory()
+
+        # Create 3 files with 100 events per lumi:
+        # - file1 with 1 run  of 8 lumis
+        # - file2 with 2 runs of 2 lumis each
+        # - file3 with 1 run  of 5 lumis
+        fileA = File(lfn = "/this/is/file1", size = 1000, events = 800)
+        fileB = File(lfn = "/this/is/file2", size = 1000, events = 400)
+        fileC = File(lfn = "/this/is/file3", size = 1000, events = 500)
+
+        lumiListA = []
+        for lumi in range(8):
+            lumiListA.append(10 + lumi)
+        fileA.addRun(Run(1, *lumiListA))
+        fileA.setLocation("somese.cern.ch")
+        lumiListB1 = []
+        lumiListB2 = []
+        for lumi in range(2):
+            lumiListB1.append(20 + lumi)
+            lumiListB2.append(30 + lumi)
+        fileB.addRun(Run(2, *lumiListB1))
+        fileB.addRun(Run(3, *lumiListB2))
+        fileB.setLocation("somese.cern.ch")
+        lumiListC = []
+        for lumi in range(5):
+            lumiListC.append(40 + lumi)
+        fileC.addRun(Run(4, *lumiListC))
+        fileC.setLocation("somese.cern.ch")
+
+        testFileset = Fileset(name = 'Fileset')
+        testFileset.addFile(fileA)
+        testFileset.addFile(fileB)
+        testFileset.addFile(fileC)
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = self.testWorkflow,
+                                        split_algo = "EventAwareLumiBased",
+                                        type = "Processing")
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        # Use a lumi-mask = {1: [[10,14]], 2: [[20,21]], 4: [[40,41]]}
+        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               events_per_job = 850,
+                               runs = ['1', '2', '4'],
+                               lumis = ['10,14', '20,21', '40,41'],
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1, "There should be only one job group")
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2, "Two jobs must be in the jobgroup")
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1L: [[10L, 14L]], 2L: [[20L, 21L]], 4L: [[40L, 40L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {4L: [[41L, 41L]]})
 
 
 if __name__ == '__main__':

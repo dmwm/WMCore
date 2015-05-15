@@ -261,8 +261,8 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
         if hasattr(config.AlertGenerator, "couchErrorsPoller"):
             config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
-
-    # custom global workqueue
+            
+    # custom test global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
         urlObj = urlparse(config.WorkQueueManager.couchurl)
         if urlObj.port:
@@ -277,7 +277,8 @@ def modifyConfiguration(config, **args):
         reqMgrSvc = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
         config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
         config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
-        config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = reqMgrSvc
+        config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = args["reqmgr2_url"]
+        config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
         config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
@@ -301,6 +302,7 @@ def modifyConfiguration(config, **args):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
         
+        config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
 

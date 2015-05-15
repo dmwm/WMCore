@@ -8,9 +8,8 @@
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "EnableHarvesting": "True",
-    "DQMHarvestUnit": "multiRun",
     "DQMConfigCacheID": "e554f238a2ee8bb969248a343f6195d1",
+    "DQMHarvestUnit": "multiRun",
     "InputDataset": "/MinimumBias/CMSSW_7_3_1_patch1-GR_R_73_V0A_RelVal_run2010A-v1/DQMIO",
     "RunWhitelist": [138937, 138934, 138924, 138923, 139790, 139789, 139788, 139787, 144086, 144085, 144084, 144083, 144011],
     "BlockBlacklist": [],
@@ -27,9 +26,7 @@
     "TimePerEvent": 2,
     "mergedLFNBase": "/store/relval",
     "unmergedLFNBase": "/store/unmerged",
-    "ProcessingString": "GR_R_73_V0A_TEST_RelVal_jetHT2012c",
-    "LumisPerJob": 4,
-    "SplittingAlgo": "LumiBased"
+    "ProcessingString": "GR_R_73_V0A_TEST_RelVal_jetHT2012c"
 },
 "assignRequest":
 {

@@ -182,6 +182,19 @@ def validatePhEDExSubscription(arguments):
         msg = "Validation failed: Auto-approval to MSS endpoint not allowed: %s" % notAllowedSites
         raise WMSpecFactoryException(msg)
     return 
+
+def validateSiteLists(arguments):
+    whiteList = arguments.get("SiteWhitelist", [])
+    blackList = arguments.get("SiteBlacklist", [])
+    if not isinstance(whiteList, list):
+        whiteList = [whiteList]
+    if not isinstance(blackList, list):
+        blackList = [blackList]
+    res = (set(whiteList) & set(blackList))
+    if len(res):
+        msg = "Validation failed: The same site cannot be white and blacklisted: %s" % list(res)
+        raise WMSpecFactoryException(msg)
+    return
             
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -196,6 +209,7 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     _validateArgumentOptions(arguments, argumentDefinition, "optional")
     validateInputDatasSetAndParentFlag(arguments)
     validatePhEDExSubscription(arguments)
+    validateSiteLists(arguments)
     return
 
 def validateArgumentsUpdate(arguments, argumentDefinition):
@@ -209,6 +223,7 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     """
     _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
     validatePhEDExSubscription(arguments)
+    validateSiteLists(arguments)
     return
 
 

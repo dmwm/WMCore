@@ -321,6 +321,9 @@ class Assign(WebAPI):
             blackList = [blackList]
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
+        res = set(whiteList) & set(blackList)
+        if len(res):
+            raise cherrypy.HTTPError(400, "White and blacklist the same site is not allowed %s" % list(res))
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])

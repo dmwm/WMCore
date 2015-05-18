@@ -971,6 +971,9 @@ class CondorPlugin(BasePlugin):
 
             jdl.append("priority = %i\n" % (task_priority + prio*self.maxTaskPriority))
 
+            jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
+            jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
+
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
 
             jdl.append("Queue 1\n")

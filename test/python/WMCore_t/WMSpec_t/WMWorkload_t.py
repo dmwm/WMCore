@@ -10,6 +10,7 @@ import unittest
 
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper, WMWorkloadException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 class WMWorkloadTest(unittest.TestCase):
     def setUp(self):
@@ -899,16 +900,71 @@ class WMWorkloadTest(unittest.TestCase):
         subInformation = testWorkload.getSubscriptionInformation()
 
         outputDatasets = testWorkload.listOutputDatasets()
-
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
             self.assertEquals(datasetSub["CustodialSites"], ["CMSSite_1"], "Wrong custodial sites for %s" % outputDataset)
             self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_2"], "Wrong non-custodial sites for %s" % outputDataset)
             self.assertEquals(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEquals(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
-            self.assertEquals(datasetSub["CustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+            self.assertEquals(datasetSub["CustodialSubType"], "Replica", "Wrong custodial subscription type for %s" % outputDataset)
             self.assertEquals(datasetSub["NonCustodialSubType"], "Replica", "Wrong custodial subscription type for %s" % outputDataset)
 
+        testWorkload.setSubscriptionInformation(custodialSites = ["CMSSite_1","CMSSite_2"], nonCustodialSites = ["CMSSite_3"],
+                                                autoApproveSites = ["CMSSite_2"], custodialSubType = "Move",
+                                                nonCustodialSubType = "Move", priority = "Normal")
+        subInformation = testWorkload.getSubscriptionInformation()
+        for outputDataset in outputDatasets:
+            datasetSub = subInformation[outputDataset]
+            self.assertEquals(set(datasetSub["CustodialSites"]), set(["CMSSite_1","CMSSite_2"]), "Wrong custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_3"], "Wrong non-custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["AutoApproveSites"], ["CMSSite_2"], "Wrong auto-approve sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
+            self.assertEquals(datasetSub["CustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+        return
+
+    def testValidatePhEDExSubscription(self):
+        """
+        _testValidatePhEDExSubscription_
+
+        Verify that we cannot auto-approve subscriptions to MSS endpoints
+        """
+        from WMCore.WMSpec.WMWorkloadTools import validatePhEDExSubscription
+        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN','T2_CH_CERN','T1_US_FNAL_Disk']}
+        self.assertEqual(validatePhEDExSubscription(args), None)
+
+        # test an invalid case
+        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN','T2_CH_CERN','T1_IT_CNAF_MSS','T1_US_FNAL_Disk']}
+        raises = False
+        try:
+            validatePhEDExSubscription(args)
+        except WMSpecFactoryException as ex:
+            raises = True
+            pass
+        self.assertTrue(raises, "Auto-approval to 'T1_IT_CNAF_MSS' is not allowed.")
+
+    def testValidateSiteLists(self):
+        """
+        _testValidateSiteLists_
+
+        Verify we cannot set a site to the white and blacklist
+        """
+        from WMCore.WMSpec.WMWorkloadTools import validateSiteLists
+        args = {'SiteWhitelist': ['T1_CH_CERN'], 'SiteBlacklist': ['T2_CH_CERN']}
+        self.assertEqual(validateSiteLists(args), None)
+        
+        args = {'SiteWhitelist': 'T1_US_FNAL', 'SiteBlacklist': 'T2_CH_CERN'}
+        self.assertEqual(validateSiteLists(args), None)
+
+        # test an invalid case
+        args = {'SiteWhitelist': ['T1_CH_CERN','T1_US_FNAL','T2_CH_CERN','T1_UK_RAL'], 'SiteBlacklist': ['T2_CH_CERN']}
+        raises = False
+        try:
+            validateSiteLists(args)
+        except WMSpecFactoryException as ex:
+            raises = True
+            pass
+        self.assertTrue(raises, "'T2_CH_CERN' cannot be in both site white and black lists")
 
     def testUpdatingSplitParameters(self):
         """

@@ -14,6 +14,7 @@ import os.path
 import time
 
 from WMCore.Configuration import ConfigSection
+from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -1183,14 +1184,21 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
-    def setProcessingVersion(self, procVer):
+    def setProcessingVersion(self, procVer, parentProcessingVersion = 0):
         """
         _setProcessingVersion_
 
         Set the task processing version
         """
-
-        self.data.parameters.processingVersion = int(procVer)
+        
+        if type(procVer) == dict:
+            taskProcVer = procVer.get(self.name(), parentProcessingVersion)
+        else:
+            taskProcVer = procVer
+        
+        self.data.parameters.processingVersion = int(taskProcVer)
+        for task in self.childTaskIterator():
+            task.setProcessingVersion(procVer, taskProcVer)
         return
 
     def getProcessingVersion(self):
@@ -1201,14 +1209,22 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingVersion', 0)
 
-    def setProcessingString(self, procString):
+    def setProcessingString(self, procString, parentProcessingString = None):
         """
         _setProcessingString_
 
         Set the task processing string
         """
-
-        self.data.parameters.processingString = procString
+        
+        if type(procString) == dict:
+            taskProcString = procString.get(self.name(), parentProcessingString)
+        else:
+            taskProcString = procString
+        
+        self.data.parameters.processingString = taskProcString
+        
+        for task in self.childTaskIterator():
+            task.setProcessingString(procString, taskProcString)
         return
 
     def getProcessingString(self):
@@ -1219,14 +1235,22 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingString', None)
 
-    def setAcquisitionEra(self, era):
+    def setAcquisitionEra(self, era, parentAcquisitionEra = None):
         """
         _setAcquistionEra_
 
         Set the task acquisition era
         """
-
-        self.data.parameters.acquisitionEra = era
+        
+        if type(era) == dict:
+            taskEra = era.get(self.name(), parentAcquisitionEra)
+        else:
+            taskEra = era
+        
+        self.data.parameters.acquisitionEra = taskEra
+        
+        for task in self.childTaskIterator():
+            task.setAcquisitionEra(era, taskEra)
         return
 
     def getAcquisitionEra(self):
@@ -1262,6 +1286,10 @@ class WMTaskHelper(TreeHelper):
 
         self.data.input.splitting.runs = runs
         self.data.input.splitting.lumis = lumis
+        
+        for task in self.childTaskIterator():
+            task.setLumiMask(lumiMask, override)
+
         return
 
     def getLumiMask(self):
@@ -1327,6 +1355,127 @@ class WMTaskHelper(TreeHelper):
         Get the prepID for the workflow
         """
         return getattr(self.data, 'prepID', None)
+    
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+        """
+        _setLFNBase_
+
+        Set the merged and unmerged base LFNs for all tasks.
+        """
+        self.data.mergedLFNBase = mergedLFNBase
+        self.data.unmergedLFNBase = unmergedLFNBase
+        for task in self.childTaskIterator():
+            task.setLFNBase(mergedLFNBase, unmergedLFNBase)
+
+        return
+    
+    def _getLFNBase(self):
+        """
+        private method getting lfn base.
+        lfn base should be set by workflow
+        """
+        return (getattr(self.data, 'mergedLFNBase', "/store/data"), 
+                getattr(self.data, 'unmergedLFNBase', "/store/unmerged"))
+    
+    
+    def updateLFNsAndDatasets(self, initialTask = None, runNumber = None):
+        """
+        _updateLFNsAndDatasets_
+
+        Update all the output LFNs and data names for all tasks in the workflow.
+        This needs to be called after updating the acquisition era, processing
+        version or merged/unmerged lfn base.
+        """
+        mergedLFNBase, unmergedLFNBase = self._getLFNBase()
+            
+        taskType = self.taskType()
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+
+            if stepHelper.stepType() == "CMSSW":
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    filterName = getattr(outputModule, "filterName", None)
+                    if self.getProcessingString():
+                        processingEra = "%s-v%i" % (self.getProcessingString(), self.getProcessingVersion())
+                    else:
+                        processingEra = "v%i" % self.getProcessingVersion()
+                    if filterName:
+                        processedDataset = "%s-%s-%s" % (self.getAcquisitionEra(),
+                                                         filterName,
+                                                         processingEra)
+                        processingString = "%s-%s" % (filterName,
+                                                      processingEra)
+                    else:
+                        processedDataset = "%s-%s" % (self.getAcquisitionEra(),
+                                                      processingEra)
+                        processingString = processingEra
+
+                    unmergedLFN = "%s/%s/%s/%s/%s" % (unmergedLFNBase,
+                                                      self.getAcquisitionEra(),
+                                                      getattr(outputModule, "primaryDataset"),
+                                                      getattr(outputModule, "dataTier"),
+                                                      processingString)
+                    mergedLFN = "%s/%s/%s/%s/%s" % (mergedLFNBase,
+                                                    self.getAcquisitionEra(),
+                                                    getattr(outputModule, "primaryDataset"),
+                                                    getattr(outputModule, "dataTier"),
+                                                    processingString)
+
+                    if runNumber != None and runNumber > 0:
+                        runString = str(runNumber).zfill(9)
+                        lfnSuffix = "/%s/%s/%s" % (runString[0:3],
+                                                   runString[3:6],
+                                                   runString[6:9])
+                        unmergedLFN += lfnSuffix
+                        mergedLFN += lfnSuffix
+
+                    lfnBase(unmergedLFN)
+                    lfnBase(mergedLFN)
+                    setattr(outputModule, "processedDataset", processedDataset)
+
+                    #Once we change an output module we must update the subscription information
+                    self.updateSubscriptionDataset(outputModuleName, outputModule)
+
+                    # For merge tasks, we want all output to go to the merged LFN base.
+                    if taskType == "Merge":
+                        setattr(outputModule, "lfnBase", mergedLFN)
+                        setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+                        if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
+                            datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
+                                                         processedDataset,
+                                                         getattr(outputModule, "dataTier"))
+                            self.updateDatasetName(datasetName)
+                    else:
+                        setattr(outputModule, "lfnBase", unmergedLFN)
+                        setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+        self.setTaskLogBaseLFN(unmergedLFNBase)
+        
+        # do the samething for all the child
+        for task in self.childTaskIterator():
+            task.updateLFNsAndDatasets(runNumber = runNumber)
+
+        return
+    
+    def updateDatasetName(self, datasetName):
+        """
+        _updateDatasetName_
+
+        Updates the dataset name argument of the mergeTask's harvesting
+        children tasks
+        """
+        for task in self.childTaskIterator():
+            if task.taskType() == "Harvesting":
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+
+                    if stepHelper.stepType() == "CMSSW":
+                        cmsswHelper = stepHelper.getTypeHelper()
+                        cmsswHelper.setDatasetName(datasetName)
+
+        return
 
 class WMTask(ConfigSectionTree):
     """

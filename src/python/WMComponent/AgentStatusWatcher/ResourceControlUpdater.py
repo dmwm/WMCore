@@ -44,6 +44,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         # forced site list
         self.forcedSiteList = config.AgentStatusWatcher.forcedSiteList
+        self.forcedSiteDown = getattr(config.AgentStatusWatcher, 'forcedSiteDown', [])
         
         # agent teams (for dynamic threshold) and queueParams (drain mode)
         self.teamNames = config.Agent.teamName
@@ -132,7 +133,14 @@ class ResourceControlUpdater(BaseWorkerThread):
                 else:
                     listSites = self.forcedSiteList
                     logging.warn("Forcing site list: %s. Some site(s) are not in SSB" % (', '.join(self.forcedSiteList)))
-                    
+
+            # HLT is an example, since it cannot run from FNAL agents
+            if self.forcedSiteDown:
+                listSites = list(set(listSites) - set(self.forcedSiteDown))
+                for site in self.forcedSiteDown:
+                    self.updateSiteInfo(site, 'Down', 0, 0, self.agentsNumByTeam)
+                    logging.info("Forcing site %s to Down" % site)
+
             for site in listSites:
                 if site in currentSites:
                     sitestate = stateBySite.get(site,'Normal')

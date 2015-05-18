@@ -8,6 +8,7 @@ dependencies = {'wmc-rest':{
                         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
                         'packages' : ['WMCore.REST'],
                         'modules': ['WMCore.Configuration'],
+                        'systems':['wmc-base']
                         },
                 'wmc-base':{
                         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],

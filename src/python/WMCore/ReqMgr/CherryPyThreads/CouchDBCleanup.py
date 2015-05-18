@@ -3,7 +3,6 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
-import cherrypy
 
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
@@ -49,11 +48,11 @@ class CouchDBCleanup(CherryPyPeriodicTask):
             try:
                 deleted = acdcService.removeFilesetsByCollectionName(req)
                 if deleted == None:
-                    cherrypy.log.error("request alread deleted %s" % req)
+                    self.logger.warning("request alread deleted %s" % req)
                 else:
                     total += len(deleted)
-                    cherrypy.log("request %s deleted" % req)
+                    self.logger.info("request %s deleted" % req)
             except:
-                cherrypy.log.error("request deleted failed: will try again %s" % req)
-        cherrypy.log("total %s requests deleted" % total)        
+                self.logger.error("request deleted failed: will try again %s" % req)
+        self.logger.info("total %s requests deleted" % total)        
         return

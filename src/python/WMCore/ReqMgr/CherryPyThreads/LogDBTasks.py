@@ -3,9 +3,6 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
-import cherrypy
-
-from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
@@ -29,5 +26,5 @@ class LogDBTasks(CherryPyPeriodicTask):
         logdb = LogDB(config.central_logdb_url, config.log_reporter)
         logdb.cleanup(config.logDBCleanDuration)
         
-        cherrypy.log("cleaned up log db")        
+        self.logger.info("cleaned up log db")        
         return

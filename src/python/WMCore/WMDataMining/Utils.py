@@ -38,7 +38,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     else:
         funcName = "Active Requests"
 
-    log("INFO: %s: Getting job information from %s and %s. Please wait." % (
+    log.info("%s: Getting job information from %s and %s. Please wait." % (
                   funcName, wmstatsUrl, reqmgrUrl))
 
     if archived:
@@ -52,7 +52,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     requestCollection = RequestInfoCollection(requests)
     result = requestCollection.getJSONData()
     requestsDict = requestCollection.getData()
-    log("INFO: %s: Total %s requests retrieved\n" % (funcName, len(result)))
+    log.info("%s: Total %s requests retrieved\n" % (funcName, len(result)))
 
     report = {}
     nMCMCalls = 0
@@ -76,7 +76,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                 runWhiteList = []
                 filterEfficiency = None
                 try:
-                    #log("DEBUG: Looking up %s in ReqMgr" % wf)
+                    #log.debug("Looking up %s in ReqMgr" % wf)
                     rmDoc = reqMgr.document(wf)
                     runWhiteList = rmDoc.get('RunWhiteList', [])
                     filterEfficiency = rmDoc.get('FilterEfficiency', None)
@@ -91,7 +91,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
 
                 prepID = oldCouchDoc.get('prepID', None)
                 if prepID and nMCMCalls <= maxMCMCalls:
-                    log("INFO: Trying to update McM info for %s, PREPID %s" % (wf, prepID))
+                    log.info("Trying to update McM info for %s, PREPID %s" % (wf, prepID))
                     # Get information from McM. Don't call too many times, can take a long time
                     nMCMCalls += 1
                     try:
@@ -106,17 +106,17 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                                 report[wf].update({'mcmApprovalTime':time.mktime(dt.timetuple())})
                                 found = True
                         if not found:
-                            log("ERROR: History found but no approval time for %s" % wf)
+                            log.error("History found but no approval time for %s" % wf)
                     except McMNoDataError:
-                        log("ERROR: Setting NoMcMData for %s" % wf)
+                        log.error("Setting NoMcMData for %s" % wf)
                         report[wf].update({'mcmApprovalTime':'NoMcMData'})
                     except (RuntimeError, IOError):
                         exc_type, exc_value, exc_traceback = sys.exc_info()
-                        log("ERROR: %s getting history from McM for PREP ID %s. May be transient and/or SSO problem." %
+                        log.error("%s getting history from McM for PREP ID %s. May be transient and/or SSO problem." %
                             (exc_type, prepID))
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
-                        log("ERROR: %s getting history from McM for PREP ID %s. Unknown error." %
+                        log.error("%s getting history from McM for PREP ID %s. Unknown error." %
                             (exc_type, prepID))
 
                     try:
@@ -124,11 +124,11 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                         report[wf].update({'mcmTotalEvents': mcmRequest.get('total_events', 'NoMcMData')})
                     except (RuntimeError, IOError):
                         exc_type, exc_value, exc_traceback = sys.exc_info()
-                        log("ERROR: %s getting request from McM for PREP ID %s. May be transient and/or SSO problem." %
+                        log.error("%s getting request from McM for PREP ID %s. May be transient and/or SSO problem." %
                             (exc_type, prepID))
                     except:
                         exc_type, exc_value, exc_traceback = sys.exc_info()
-                        log("ERROR: %s getting request from McM for PREP ID %s. Unknown error." %
+                        log.error("%s getting request from McM for PREP ID %s. Unknown error." %
                             (exc_type, prepID))
 
             # Basic parameters of the workflow
@@ -142,7 +142,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             statuses = requests[wf].get('request_status', [])
 
             if not statuses:
-                log("ERROR: Could not find any status from workflow: %s" % wf) # Should not happen but it does.
+                log.error("Could not find any status from workflow: %s" % wf) # Should not happen but it does.
 
             # Can be an empty list, full list, empty string, or non-empty string!
             inputdataset = requests[wf].get('inputdataset', "")
@@ -161,7 +161,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                     else:
                         outputTiers.append(ds.split('/')[-1])
             except:
-                log("ERROR: Could not decode outputdatasets: %s" % outputdatasets) # Sometimes is a list of lists, not just a list. Bail
+                log.error("Could not decode outputdatasets: %s" % outputdatasets) # Sometimes is a list of lists, not just a list. Bail
             if inputdataset:
                 inputTier = inputdataset.split('/')[-1]
                 if inputTier in ['GEN']:
@@ -314,10 +314,10 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             # Queue the updated document for addition if it's changed.
             if ancientCouchDoc != newCouchDoc:
                 if wfExists:
-                    #log("DEBUG: Workflow updated: %s" % wf)
+                    #log.debug("Workflow updated: %s" % wf)
                     pass
                 else:
-                    #log("DEBUG Workflow created: %s" % wf)
+                    #log.debug("Workflow created: %s" % wf)
                     pass
 
                 try:
@@ -326,8 +326,8 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                     cjson.encode(newCouchDoc) # Make sure it encodes before trying to queue
                     couchdb.queue(newCouchDoc)
                 except:
-                    log("ERROR: Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))
+                    log.error("Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))
 
-    log("INFO: %s: Finished getting job. wait for the next Cycle" % funcName)
+    log.info("%s: Finished getting job. wait for the next Cycle" % funcName)
     # Commit all changes to CouchDB
     couchdb.commit()

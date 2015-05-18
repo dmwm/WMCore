@@ -168,7 +168,7 @@ class CleanCouchPoller(BaseWorkerThread):
             deleted = 0
             status = "ok"
             for data in committed:
-                if data.has_key('error'):
+                if 'error' in data:
                     errorReport.setdefault(data['error'], 0)
                     errorReport[data['error']] += 1
                     status = "error"

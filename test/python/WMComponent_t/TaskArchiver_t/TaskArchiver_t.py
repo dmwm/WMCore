@@ -625,7 +625,7 @@ class TaskArchiverTest(unittest.TestCase):
         workloadSummary = workdatabase.document(id = workload.name())
 
         self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
-        self.assertTrue(workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'].has_key('99999'))
+        self.assertTrue('99999' in workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'])
 
         failedRunInfo = workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs']
         for key, value in failedRunInfo.items():

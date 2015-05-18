@@ -278,7 +278,7 @@ class FileManager:
         regardless of whether or not there's an override involved
         """
 
-        if currentMethod.has_key( 'lfn-prefix' ):
+        if 'lfn-prefix' in currentMethod:
             seName   = currentMethod['se-name']
             command  = currentMethod['command']
             options  = currentMethod.get('option', None)

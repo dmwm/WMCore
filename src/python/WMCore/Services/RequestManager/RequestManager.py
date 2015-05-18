@@ -19,7 +19,7 @@ class RequestManager(Service):
         responseType will be either xml or json
         """
 
-        if not dict.has_key('endpoint'):
+        if 'endpoint' not in dict:
             #TODO needs to change proper default location
             dict['endpoint'] = "%scmssrv49.fnal.gov:8585/reqMgr/" % \
                                 ((secure and "https://" or "http://"))

@@ -251,7 +251,7 @@ class ReportIntegrationTest(unittest.TestCase):
                 fwjrRuns[run.run] = run.lumis
 
             for run in outputFile["runs"]:
-                assert fwjrRuns.has_key(run.run), \
+                assert run.run in fwjrRuns, \
                        "Error: Extra run in output: %s" % run.run
 
                 for lumi in run:

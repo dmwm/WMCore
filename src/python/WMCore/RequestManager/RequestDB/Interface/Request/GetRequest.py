@@ -113,9 +113,9 @@ def percentages(updates):
     percent_complete = 0
     percent_success = 0
     for update in updates:
-        if update.has_key('percent_complete'):
+        if 'percent_complete' in update:
             percent_complete = update['percent_complete']
-        if update.has_key('percent_success'):
+        if 'percent_success' in update:
             percent_success = update['percent_success']
     return percent_complete, percent_success
 
@@ -150,9 +150,9 @@ def getRequestDetails(requestName):
     request['percent_success'] = 0
     for update in request['RequestUpdates']:
         update['update_time'] = str(update['update_time'])
-        if update.has_key('percent_complete'):
+        if 'percent_complete' in update:
             request['percent_complete'] = update['percent_complete']
-        if update.has_key('percent_success'):
+        if 'percent_success' in update:
             request['percent_success'] = update['percent_success']
     return request
 

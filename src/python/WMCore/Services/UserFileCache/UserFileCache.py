@@ -25,7 +25,7 @@ class UserFileCache(Service):
         Service.__init__(self, dict)
         self['requests']['accept_type'] = 'application/json'
 
-        if dict.has_key('proxyfilename'):
+        if 'proxyfilename' in dict:
             #in case there is some code I have not updated in ticket #3780. Should not be required... but...
             self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more'
                                    ' general (ckey/cert) pair.')

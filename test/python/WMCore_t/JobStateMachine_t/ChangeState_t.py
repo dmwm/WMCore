@@ -270,8 +270,8 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA], "new", "none")
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
-        self.assertTrue(testJobADoc.has_key("states"))
-        self.assertTrue(testJobADoc["states"].has_key("1"))
+        self.assertTrue("states" in testJobADoc)
+        self.assertTrue("1" in testJobADoc["states"])
         return
 
     def testPersist(self):

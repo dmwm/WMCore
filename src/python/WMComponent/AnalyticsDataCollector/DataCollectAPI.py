@@ -251,7 +251,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
     result = {}
     result.update(a)
     for key, value in b.items():
-        if not result.has_key(key):
+        if key not in result:
             result[key] = value
         else:
             if not combineFunc and (type(value) != dict or type(result[key]) != dict):
@@ -273,15 +273,15 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
         doc['sites'] = {}
         # this will set doc['status'], and doc['sites']
         if summaryLevel == 'task':
-            if status.has_key('tasks'):
+            if 'tasks' in status:
                 tempData = _convertToStatusSiteFormat(status['tasks'], summaryLevel)
                 doc['tasks'] = tempData["tasks"]
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
             #TODO need to handle this correctly by task
-            if status.has_key('inWMBS'):
+            if 'inWMBS' in status:
                 doc['status']['inWMBS'] = status['inWMBS']
-            if status.has_key('inQueue'):
+            if 'inQueue' in status:
                 doc['status']['inQueue'] = status['inQueue']
         else:
             tempData = _convertToStatusSiteFormat(status, summaryLevel)

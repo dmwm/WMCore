@@ -89,7 +89,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
-            if not self.seMap.has_key(node["kind"]):
+            if node["kind"] not in self.seMap:
                 self.seMap[node["kind"]] = {}
 
             logging.info("Adding mapping %s -> %s" % (node["se"], node["name"]))
@@ -176,24 +176,24 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 location = siteName
             else:
                 if siteName in self.diskSites:
-                    if self.seMap.has_key("Disk") and \
-                           self.seMap["Disk"].has_key(siteName):
+                    if "Disk" in self.seMap and \
+                           siteName in self.seMap["Disk"]:
                         location = self.seMap["Disk"][siteName]
-                    elif self.seMap.has_key("Buffer") and \
-                             self.seMap["Buffer"].has_key(siteName):
+                    elif "Buffer" in self.seMap and \
+                             siteName in self.seMap["Buffer"]:
                         location = self.seMap["Buffer"][siteName]
-                    elif self.seMap.has_key("MSS") and \
-                             self.seMap["MSS"].has_key(siteName):
+                    elif "MSS" in self.seMap and \
+                             siteName in self.seMap["MSS"]:
                         location = self.seMap["MSS"][siteName]
                 else:
-                    if self.seMap.has_key("Buffer") and \
-                           self.seMap["Buffer"].has_key(siteName):
+                    if "Buffer" in self.seMap and \
+                           siteName in self.seMap["Buffer"]:
                         location = self.seMap["Buffer"][siteName]
-                    elif self.seMap.has_key("MSS") and \
-                             self.seMap["MSS"].has_key(siteName):
+                    elif "MSS" in self.seMap and \
+                             siteName in self.seMap["MSS"]:
                         location = self.seMap["MSS"][siteName]
-                    elif self.seMap.has_key("Disk") and \
-                             self.seMap["Disk"].has_key(siteName):
+                    elif "Disk" in self.seMap and \
+                             siteName in self.seMap["Disk"]:
                         location = self.seMap["Disk"][siteName]
 
             if location == None:
@@ -226,7 +226,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 raise PhEDExInjectorPassableError(msg)
             logging.info("Injection result: %s" % injectRes)
 
-            if not injectRes.has_key("error"):
+            if "error" not in injectRes:
                 for datasetName in uninjectedFiles[siteName]:
                     for blockName in uninjectedFiles[siteName][datasetName]:
                         for file in uninjectedFiles[siteName][datasetName][blockName]["files"]:
@@ -263,14 +263,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if siteName in self.nodeNames:
                 location = siteName
             else:
-                if self.seMap.has_key("Buffer") and \
-                       self.seMap["Buffer"].has_key(siteName):
+                if "Buffer" in self.seMap and \
+                       siteName in self.seMap["Buffer"]:
                     location = self.seMap["Buffer"][siteName]
-                elif self.seMap.has_key("MSS") and \
-                         self.seMap["MSS"].has_key(siteName):
+                elif "MSS" in self.seMap and \
+                         siteName in self.seMap["MSS"]:
                     location = self.seMap["MSS"][siteName]
-                elif self.seMap.has_key("Disk") and \
-                         self.seMap["Disk"].has_key(siteName):
+                elif "Disk" in self.seMap and \
+                         siteName in self.seMap["Disk"]:
                     location = self.seMap["Disk"][siteName]
 
             if location == None:
@@ -308,7 +308,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 logging.debug("Traceback: %s" % str(traceback.format_exc()))
                 raise PhEDExInjectorPassableError(msg)
 
-            if not injectRes.has_key("error"):
+            if "error" not in injectRes:
                 for datasetName in migratedBlocks[siteName]:
                     for blockName in migratedBlocks[siteName][datasetName]:
                         logging.debug("Closing block %s" % blockName)

@@ -154,7 +154,7 @@ class CouchFileset(Fileset):
 
         commitInfo = self.couchdb.commitOne(document)
         document['_id'] = commitInfo[0]['id']
-        if commitInfo[0].has_key('rev'):
+        if 'rev' in commitInfo[0]:
             document['_rev'] = commitInfo[0]['rev']
         else:
             if commitInfo[0]['reason'].find('{exit_status,0}') != -1:

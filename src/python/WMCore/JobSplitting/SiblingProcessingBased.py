@@ -56,7 +56,7 @@ class SiblingProcessingBased(JobFactory):
             else:
                 continue
 
-            if not fileSites.has_key(completeFile["se_name"]):
+            if completeFile["se_name"] not in fileSites:
                 fileSites[completeFile["se_name"]] = []
 
             fileSites[completeFile["se_name"]].append(completeFile)

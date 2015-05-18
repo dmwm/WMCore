@@ -106,7 +106,7 @@ class SplitFileBased(JobFactory):
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if not mergeUnits.has_key(newMergeFile["file_run"]):
+            if newMergeFile["file_run"] not in mergeUnits:
                 mergeUnits[newMergeFile["file_run"]] = []
 
             for mergeUnit in mergeUnits[newMergeFile["file_run"]]:

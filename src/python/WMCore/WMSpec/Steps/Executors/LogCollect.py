@@ -74,7 +74,7 @@ class LogCollect(Executor):
         #Okay, we need a stageOut Manager
         useNewStageOutCode = False
         if getattr(self.step, 'newStageout', False) or \
-            (overrides.has_key('newStageOut') and overrides.get('newStageOut')):
+            ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
         try:
             if not useNewStageOutCode:

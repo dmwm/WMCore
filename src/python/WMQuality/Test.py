@@ -114,7 +114,7 @@ Test framework error! Did you use the proper test classes? """
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
-                            if not self.testFile.has_key(moduleName) and \
+                            if moduleName not in self.testFile and \
                                 index > pathCut + self.moduleCut and\
                                 index == (len(parts)-1):
                                 self.testFile[moduleName] = {}
@@ -135,7 +135,7 @@ Test framework error! Did you use the proper test classes? """
                         state = 'file'
                 if state != 'file':
                     # start voting:
-                    if not self.testFile[curFile].has_key(author):
+                    if author not in self.testFile[curFile]:
                         self.testFile[curFile][author] = 0
                     self.testFile[curFile][author] += 1
                     # we voted
@@ -207,7 +207,7 @@ from WMQuality.Test import Test
                     if not errorLine:
                         break
                     errorMsg += errorLine
-                if not losers.has_key(winner):
+                if winner not in losers:
                     losers[winner] = []
                     losersCum[winner] = 0
                 losers[winner].append( [testFile, importStmt, errorMsg] )
@@ -310,7 +310,7 @@ test.summaryText()
         """
         if customReport != {}:
             self.totalFailures += 1
-            if not self.failures.has_key(customReport['developer']):
+            if customReport['developer'] not in self.failures:
                 self.failures[customReport['developer']] = []
             self.failures[customReport['developer']].append(\
                 [customReport['class'], customReport['msg']])
@@ -318,7 +318,7 @@ test.summaryText()
             for i in self.testResult.failures:
                 obj, msg = i
                 self.totalFailures += 1
-                if not self.failures.has_key(obj.developer):
+                if obj.developer not in self.failures:
                     self.failures[obj.developer] = []
                 self.failures[obj.developer].append([obj.__class__.__name__, \
                     msg])
@@ -326,7 +326,7 @@ test.summaryText()
             for i in self.testResult.errors:
                 obj, msg = i
                 self.totalErrors += 1
-                if not self.errors.has_key(obj.developer):
+                if obj.developer not in self.errors:
                     self.errors[obj.developer] = []
                 self.errors[obj.developer].append([obj.__class__.__name__, \
                     msg])

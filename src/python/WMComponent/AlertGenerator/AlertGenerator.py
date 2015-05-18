@@ -89,7 +89,7 @@ class AlertGenerator(Harness):
         """
         configuredPollers = []
         for poller in self.config.AlertGenerator.listSections_():
-            if configSectionsToPollersMap.has_key(poller):
+            if poller in configSectionsToPollersMap:
                 pollerConf = getattr(self.config.AlertGenerator, poller)
                 configuredPollers.append(poller)
                 pollerClass = configSectionsToPollersMap[poller]

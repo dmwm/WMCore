@@ -61,7 +61,7 @@ class RunTransferNotifier(FeederImpl):
             """
             Adds an entry to Dataset : CompleteLocation tracking
             """
-            if not self.datasetCompletion.has_key(dataset):
+            if dataset not in self.datasetCompletion:
                 self.datasetCompletion[dataset] = set()
                 self.accessTime = int(time())
 

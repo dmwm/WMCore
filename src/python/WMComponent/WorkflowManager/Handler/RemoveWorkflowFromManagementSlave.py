@@ -25,7 +25,7 @@ class RemoveWorkflowFromManagementSlave(DefaultSlave):
         myThread = threading.currentThread()
 
         # Validate arguments
-        if args.has_key("FilesetMatch") and args.has_key("WorkflowId"):
+        if "FilesetMatch" in args and "WorkflowId" in args:
             try:
                 myThread.transaction.begin()
                 self.removeManagedWorkflow.execute(workflow = args['WorkflowId'], \

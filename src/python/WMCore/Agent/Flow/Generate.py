@@ -78,10 +78,10 @@ Inheritance is preferred.
             self.synchronizers[synchro['ID']]['components'] = []
         for handler in self.config.General.handlers:
             hndlr = cPickle.loads(handler)
-            if not self.components.has_key(hndlr['component']):
+            if hndlr['component'] not in self.components:
                 self.components[hndlr['component']] = {}
             self.components[hndlr['component']][hndlr['messageIn']] = hndlr
-            if hndlr.has_key('synchronize'):
+            if 'synchronize' in hndlr:
                 self.synchronizers[hndlr['synchronize']]['components'].\
                     append(hndlr['component'])
         for plugin in self.config.General.plugins:
@@ -219,7 +219,7 @@ test.summaryText()
             try:
                 for handlerName in self.components[componentName].keys():
                     handler = self.components[componentName][handlerName]
-                    if handler.has_key('configurable') and handler['configurable'] == 'yes':
+                    if 'configurable' in handler and handler['configurable'] == 'yes':
                         if not importFact:
                             stfile.write("# we do not import handler " + self.convert(handlerName) + " as they are dynamicly\n")
                             stfile.write("# loaded from the config file.\n")
@@ -251,7 +251,7 @@ class %s(Harness):
             try:
                 for handlerName in self.components[componentName].keys():
                     handler = self.components[componentName][handlerName]
-                    if handler.has_key('configurable') and \
+                    if 'configurable' in handler and \
                         handler['configurable'] == 'yes':
                         msg = """
         # in case nothing was configured we have a fallback.
@@ -295,7 +295,7 @@ config.%s.logLevel = "INFO"
         # check if we need a thread parameter
         threadParam = False
         for handler in self.components[componentName].values():
-            if handler.has_key('threading') and handler['threading'] == 'yes':
+            if 'threading' in handler and handler['threading'] == 'yes':
                 threadParam = True
         if threadParam:
             stfile.write('# maximum number of threads we want to deal\n')
@@ -303,7 +303,7 @@ config.%s.logLevel = "INFO"
             stfile.write('config.'+componentName+'.maxThreads = 30\n')
         for handlerName in self.components[componentName].keys():
             handler = self.components[componentName][handlerName]
-            if handler.has_key('configurable') and handler['configurable'] == 'yes':
+            if 'configurable' in handler and handler['configurable'] == 'yes':
                 stfile.write('config.'+componentName+'.'+self.convert(handlerName)+'Handler =\\\n')
                 stfile.write('    "'+self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName)+'"\n')
 
@@ -328,7 +328,7 @@ config.%s.logLevel = "INFO"
             # check if we need to create a threaded version
             handler = self.components[componentName][handlerName]
             threaded = False
-            if handler.has_key('threading'):
+            if 'threading' in handler:
                 if handler['threading'] == 'yes':
                     threaded = True
 
@@ -455,7 +455,7 @@ class %s(BaseHandler):
 
         handler = self.components[componentName][handlerName]
 
-        if handler.has_key('createSynchronizer'):
+        if 'createSynchronizer' in handler:
             stfile.write('        flags = []\n')
             for synchronizer in self.synchronizers[handler['createSynchronizer']]['components']:
                 flag = "{'trigger_id' : '"+handler['createSynchronizer']+ "',\\\n" + \
@@ -470,7 +470,7 @@ class %s(BaseHandler):
                      "                  'payload' : yourActionPayload}"
             stfile.write('        action = '+action+'\n')
             stfile.write('        myThread.trigger.setAction(action)\n')
-        if self.components[componentName][handlerName].has_key('synchronize'):
+        if 'synchronize' in self.components[componentName][handlerName]:
             flag = "{'trigger_id' : '"+handler['synchronize']+ "'," + \
                     "'id' : yourTaskId,"+ \
                     "'flag_id' : '"+componentName+"'}"

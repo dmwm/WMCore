@@ -148,15 +148,15 @@ class SiteLocalConfig:
 
         nodeResult =  nodeReader(node)
 
-        if not nodeResult.has_key('siteName'):
+        if 'siteName' not in nodeResult:
             msg = "Unable to find site name in SiteConfigFile:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        if not nodeResult.has_key('catalog'):
+        if 'catalog' not in nodeResult:
             msg = "Unable to find catalog entry for event data in SiteConfigFile:\n"
             msg += self.siteConfigFile
             raise SiteConfigError, msg
-        if not nodeResult.has_key('localStageOut'):
+        if 'localStageOut' not in nodeResult:
             msg = "Error:Unable to find any local-stage-out"
             msg += "information in:\n"
             msg += self.siteConfigFile

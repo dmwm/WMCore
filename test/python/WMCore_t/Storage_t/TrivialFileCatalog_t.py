@@ -49,11 +49,11 @@ class TrivialFileCatalogTest(unittest.TestCase):
         # Look for similarities in each node of the TFC file
         for mapping in ['lfn-to-pfn', 'pfn-to-lfn']:
             for x in tfcInstance[mapping]:
-                self.assertEqual(x.has_key('path-match-expr'), True)
-                self.assertEqual(x.has_key('path-match'), True)
-                self.assertEqual(x.has_key('protocol'), True)
-                self.assertEqual(x.has_key('result'), True)
-                self.assertEqual(x.has_key('chain'), True)
+                self.assertEqual('path-match-expr' in x, True)
+                self.assertEqual('path-match' in x, True)
+                self.assertEqual('protocol' in x, True)
+                self.assertEqual('result' in x, True)
+                self.assertEqual('chain' in x, True)
                 self.assertEqual(x['protocol'] in ['direct', 'dcap', 'srm', 'srmv2'],
                                  True, 'Could not find protocol %s' % (x['protocol']))
                 self.assertEqual(x['chain'], None, 'Invalid chain %s' % (x['chain']))

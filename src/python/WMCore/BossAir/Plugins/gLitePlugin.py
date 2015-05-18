@@ -619,21 +619,21 @@ class gLitePlugin(BasePlugin):
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
-                if jsout.has_key('parent'):
+                if 'parent' in jsout:
                     parent = jsout['parent']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
-                if jsout.has_key('endpoint'):
+                if 'endpoint' in jsout:
                     endpoint = jsout['endpoint']
                 else:
                     failedJobs.extend(jobsub)
                     for job in jobsub:
                         self.fakeReport("SubmissionFailure", reporterror, -1, job, putReportInJob = True)
                     continue
-                if jsout.has_key('children'):
+                if 'children' in jsout:
                     logging.info("WMS endpoint used: %s" % jsout["endpoint"])
                     jobnames = jsout['children'].keys()
                     for jj in jobsub:
@@ -720,7 +720,7 @@ class gLitePlugin(BasePlugin):
         dnjobs = {}
 
         for jj in jobs:
-            if dnjobs.has_key( jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ):
+            if jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] in dnjobs:
                 dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ].append(jj)
             else:
                 dnjobs[ jj['userdn']+":"+jj['usergroup']+":"+jj['userrole'] ] = [ jj ]
@@ -1264,7 +1264,7 @@ class gLitePlugin(BasePlugin):
         commonFiles = ''
         ind = 0
         ## this should include tgz file
-        if jobList[0].has_key('sandbox') and jobList[0]['sandbox'] is not None:
+        if 'sandbox' in jobList[0] and jobList[0]['sandbox'] is not None:
             isb += '"%s%s",' % ( startdir, jobList[0]['sandbox'] )
             commonFiles += "root.inputsandbox[%i]," % ind
             ind += 1
@@ -1304,7 +1304,7 @@ class gLitePlugin(BasePlugin):
             jdl += '[\n'
             jdl += 'NodeName   = "Job_%i_%s";\n' % (job['id'], jobretry)
             jdl += 'Executable = "%s";\n' % os.path.basename(self.submitFile)
-            if job.has_key('sandbox') and job['sandbox'] is not None:
+            if 'sandbox' in job and job['sandbox'] is not None:
                 jdl += 'Arguments  = "%s %s";\n' \
                             % (os.path.basename(job['sandbox']), jobid)
             jdl += 'StdOutput  = "%s_%s.stdout";\n' % (jobid, jobretry)
@@ -1334,9 +1334,9 @@ class gLitePlugin(BasePlugin):
             jdl += 'InputSandbox = {%s};\n' % isb
 
         jdl += 'Requirements = '
-        if jobList[0].has_key('swVersion') and jobList[0]['swVersion'] is not None:
+        if 'swVersion' in jobList[0] and jobList[0]['swVersion'] is not None:
             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['swVersion']
-        if jobList[0].has_key('scramArch') and jobList[0]['scramArch'] is not None:
+        if 'scramArch' in jobList[0] and jobList[0]['scramArch'] is not None:
             jdl += 'Member("VO-cms-%s", other.GlueHostApplicationSoftwareRunTimeEnvironment) && ' % jobList[0]['scramArch']
 
         jdl += '(other.GlueHostNetworkAdapterOutboundIP) ' + \

@@ -478,11 +478,11 @@ cms::Exception caught in EventProcessor and rethrown
 
         perfSection = myReport.__to_json__(thunker = None)["steps"]["cmsRun1"]["performance"]
 
-        self.assertTrue(perfSection.has_key("storage"),
+        self.assertTrue("storage" in perfSection,
                         "Error: Storage section is missing.")
-        self.assertTrue(perfSection.has_key("memory"),
+        self.assertTrue("memory" in perfSection,
                         "Error: Memory section is missing.")
-        self.assertTrue(perfSection.has_key("cpu"),
+        self.assertTrue("cpu" in perfSection,
                         "Error: CPU section is missing.")
 
         self.assertEqual(perfSection["cpu"]["AvgEventCPU"], "0.626105",

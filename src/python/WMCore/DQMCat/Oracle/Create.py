@@ -34,9 +34,9 @@ class Create(CreateWMBSBase):
         tablespaceIndex = ""
 
         if params:
-            if params.has_key("tablespace_table"):
+            if "tablespace_table" in params:
                 tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
-            if params.has_key("tablespace_index"):
+            if "tablespace_index" in params:
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         self.create = {}

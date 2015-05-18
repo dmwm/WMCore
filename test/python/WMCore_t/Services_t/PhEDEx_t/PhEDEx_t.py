@@ -70,7 +70,7 @@ class PhEDExTest(unittest.TestCase):
 
         self.assertEqual(len(requestIDs), 1,
                          "Error: Wrong number of request IDs")
-        self.assertTrue(requestIDs[0].has_key("id"),
+        self.assertTrue("id" in requestIDs[0],
                         "Error: Missing request ID")
         return
 

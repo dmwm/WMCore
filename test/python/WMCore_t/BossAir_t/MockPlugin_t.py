@@ -54,7 +54,7 @@ class MockPluginTest(unittest.TestCase):
         currentTime = datetime.now()
         #id is the only required parameter in the job dictionary
         res = mp.track( jobList, currentTime )
-        self.assertTrue( mp.jobsScheduledEnd.has_key(1L) )
+        self.assertTrue( 1L in mp.jobsScheduledEnd )
         #check scheduled end (N.B. this includes 20% of random time)
         scheduledEnd = mp.jobsScheduledEnd[1L]
         timeTillJob = scheduledEnd - currentTime

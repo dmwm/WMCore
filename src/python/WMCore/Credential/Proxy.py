@@ -105,7 +105,7 @@ def myProxyEnvironment(userDN, serverCert, serverKey, myproxySrv, proxyDir, logg
         # host certs can be taken first, get rid of them
         deleteKeys = ['X509_USER_CERT', 'X509_USER_KEY', 'X509_HOST_CERT', 'X509_HOST_KEY']
         for key in deleteKeys:
-            if os.environ.has_key(key):
+            if key in os.environ:
                 del os.environ[key]
         yield filename
     finally:
@@ -224,7 +224,7 @@ class Proxy(Credential):
         if serverRenewer:
             proxyFilename = os.path.join( self.credServerPath, sha1(
             self.userDN + self.vo + self.group + self.role ).hexdigest() )
-        elif os.environ.has_key('X509_USER_PROXY'):
+        elif 'X509_USER_PROXY' in os.environ:
             proxyFilename = os.environ['X509_USER_PROXY']
         else:
             proxyFilename = '/tmp/x509up_u'+str(os.getuid())

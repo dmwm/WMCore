@@ -167,7 +167,7 @@ def queueConfigFromConfigObject(config):
         Add a WorkQueueManager.queueParams.WMBSUrl setting."""
         raise RuntimeError, msg
 
-    if not qConfig.has_key('Teams') and hasattr(config.Agent, 'teamName'):
+    if 'Teams' not in qConfig and hasattr(config.Agent, 'teamName'):
         qConfig['Teams'] = config.Agent.teamName
     if not 'logger' in qConfig:
         import threading

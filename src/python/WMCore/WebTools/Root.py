@@ -145,7 +145,7 @@ class Root(Harness):
         for key in must_have_keys:
             msg  = "Application configuration '%s' does not contain '%s' key"\
                     % (self.app, key)
-            assert config_dict.has_key(key), msg
+            assert key in config_dict, msg
 
     def _configureCherryPy(self):
         """
@@ -302,7 +302,7 @@ class Root(Harness):
                 view_config.section_('security')
                 view_config.security = security_cfg.section_(instance)
 
-        if view_config.dictionary_().has_key('database'):
+        if 'database' in view_config.dictionary_():
             if not type(view_config.database) == str:
                 if len(view_config.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:

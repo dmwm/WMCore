@@ -50,7 +50,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     del request_args["RequestType"]
 
     #validate the status
-    if request_args.has_key("RequestStatus"):
+    if "RequestStatus" in request_args:
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
         # delete request_args since it is not part of spec argument sand validation
         args_without_status = {}

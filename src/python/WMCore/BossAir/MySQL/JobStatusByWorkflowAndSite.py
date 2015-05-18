@@ -56,7 +56,7 @@ class JobStatusByWorkflowAndSite(DBFormatter):
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
             state = self.MONITOR_STATE_MAP[plugIn.stateMap().get(data['status'])]
-            if not commonStates.has_key(data['workflow']):
+            if data['workflow'] not in commonStates:
                 commonStates[data['workflow']] = {}
 
             commonStates[data['workflow']].setdefault(state, {})

@@ -8,7 +8,7 @@ global _BLOCK_LOCATIONS
 _BLOCK_LOCATIONS = {}
 
 def getSites(block):
-    if _BLOCK_LOCATIONS.has_key(block):
+    if block in _BLOCK_LOCATIONS:
         return _BLOCK_LOCATIONS[block]
 
     if block.split('#')[0] == PILEUP_DATASET:

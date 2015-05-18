@@ -66,7 +66,7 @@ class RequestManager(dict):
         request = {'RequestName' : requestName,
                    'RequestStatus' : self.status[requestName],
                    'RequestPriority' : 100}
-        if self.progress.has_key(requestName):
+        if requestName in self.progress:
             request.update(self.progress[requestName])
         request.setdefault('percent_complete', 0)
         request.setdefault('percent_success', 0)

@@ -131,7 +131,7 @@ class ReceiverTest(unittest.TestCase):
         # check the content of the queue - 5 alert messages
         self.assertEqual(len(alertList), numAlertMsgs)
         for alert in alertList:
-            self.failUnless(alert.has_key("Type"))
+            self.failUnless("Type" in alert)
             self.assertEqual(alert["Type"], "Alert")
 
 

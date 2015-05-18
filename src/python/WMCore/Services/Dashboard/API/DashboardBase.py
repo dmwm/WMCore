@@ -173,7 +173,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
             SE = SE + "_success"
 
 
-        if self.FILES.has_key(SE):
+        if SE in self.FILES:
             self.FILES[SE].append(lfn)
         else:
             self.FILES[SE] = [lfn]

@@ -100,7 +100,7 @@ class XMLDataset(list):
         return it
 
         """
-        if self.fileblocks.has_key(fileblockName):
+        if fileblockName in self.fileblocks:
             return self.fileblocks[fileblockName]
 
         newFileblock = XMLFileblock(fileblockName, isOpen)
@@ -165,7 +165,7 @@ class XMLInjectionSpec:
         _getDataset_
 
         """
-        if self.datasetPaths.has_key(datasetName):
+        if datasetName in self.datasetPaths:
             return self.datasetPaths[datasetName]
 
         newDataset = XMLDataset(datasetName, isOpen, isTransient)

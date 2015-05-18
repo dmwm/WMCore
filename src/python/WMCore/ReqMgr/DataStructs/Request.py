@@ -59,7 +59,7 @@ def initialize_request_args(request, config, clone = False):
         # TODO
         # do we need InputDataset and InputDatasets? when one is just a list
         # containing the other? ; could be related to #3743 problem
-        if request.has_key("InputDataset"):
+        if "InputDataset" in request:
             request["InputDatasets"] = [request["InputDataset"]]
 
 def generateRequestName(request):

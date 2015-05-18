@@ -382,7 +382,7 @@ def stream_compress(reply, available, compress_level, max_chunk):
             vary_by('Accept-Encoding')
 
             # Compress contents at original chunk boundaries.
-            if cherrypy.response.headers.has_key('Content-Length'):
+            if 'Content-Length' in cherrypy.response.headers:
                 del cherrypy.response.headers['Content-Length']
             cherrypy.response.headers['Content-Encoding'] = enc.value
             return _stream_compressor[enc.value](reply, compress_level, max_chunk)

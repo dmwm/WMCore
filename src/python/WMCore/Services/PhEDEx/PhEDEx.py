@@ -27,7 +27,7 @@ class PhEDEx(Service):
 
         dict["timeout"] = 300
 
-        if not dict.has_key('endpoint'):
+        if 'endpoint' not in dict:
             dict['endpoint'] = "https://cmsweb.cern.ch/phedex/datasvc/%s/prod/" % self.responseType
 
         dict.setdefault('cacheduration', 0)
@@ -266,7 +266,7 @@ class PhEDEx(Service):
                 for dset in response['dataset']:
                     if dset['name'] != dsname:
                         continue
-                    if dset.has_key('subscription'):
+                    if 'subscription' in dset:
                         # dataset level subscription
                         nodes = [x['node'] for x in dset['subscription']
                                  if kwargs['suspended'] == 'either' or \
@@ -279,7 +279,7 @@ class PhEDEx(Service):
 
                     #if we have a block we must check for block level subscription also
                     # combine with original query when can give both dataset and block
-                    if dset.has_key('block'):
+                    if 'block' in dset:
                         for block in dset['block']:
                             nodes = [x['node'] for x in block['subscription']
                                      if kwargs['suspended'] == 'either' or \

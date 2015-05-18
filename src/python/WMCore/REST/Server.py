@@ -784,7 +784,7 @@ class MiniRESTApi:
             if cpcfg and 'tools.expires.on' in cpcfg:
                 expires = cpcfg.get('tools.expires.secs', expires)
             expires = apiobj.get('expires', expires)
-            if response.headers.has_key('Cache-Control'):
+            if 'Cache-Control' in response.headers:
                 pass
             elif expires < 0:
                 response.headers['Pragma'] = 'no-cache'

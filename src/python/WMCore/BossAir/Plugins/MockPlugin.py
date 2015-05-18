@@ -172,7 +172,7 @@ class MockPlugin(BasePlugin):
             f.close()
 
         for jj in jobs:
-            if not self.jobsScheduledEnd.has_key(jj['id']):
+            if jj['id'] not in self.jobsScheduledEnd:
                 self._scheduleJob(jj, currentTime)
             oldState = jj['status']
             jobEnded = datetime.now() > self.jobsScheduledEnd[jj['id']]

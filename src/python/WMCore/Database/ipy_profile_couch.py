@@ -209,7 +209,7 @@ def couch_views():
             print PM.msg_blue("view name: ") + view_name
             print PM.msg_blue("map:")
             print PM.msg_green(view_dict['map'])
-            if  view_dict.has_key('reduce'):
+            if  'reduce' in view_dict:
                 print PM.msg_blue("reduce:")
                 print PM.msg_green(view_dict['reduce'])
 

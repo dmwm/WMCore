@@ -140,7 +140,7 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     uploadFiles = findFiles.execute(workflowName = workflow.name)
     for file in uploadFiles:
         datasetName = file['datasetPath']
-        if not uploadDatasets.has_key(datasetName):
+        if datasetName not in uploadDatasets:
             uploadDatasets[datasetName] = []
         uploadDatasets[datasetName].append(file)
 
@@ -1061,7 +1061,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             return False     
 
         try:
-            if responseJSON["hist"]["bins"].has_key("content"):
+            if "content" in responseJSON["hist"]["bins"]:
                 return responseJSON
         except Exception as ex:                    
             logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"

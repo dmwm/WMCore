@@ -55,13 +55,13 @@ def dict_diff(first, second):
     diff = {}
     # Check all keys in first dict
     for key in first.keys():
-        if (not second.has_key(key)):
+        if (key not in second):
             diff[key] = (first[key], KEYNOTFOUND)
         elif (first[key] != second[key]):
             diff[key] = (first[key], second[key])
     # Check all keys in second dict to find missing
     for key in second.keys():
-        if (not first.has_key(key)):
+        if (key not in first):
             diff[key] = (KEYNOTFOUND, second[key])
     return diff
 ## end of http://code.activestate.com/recipes/576644/ }}}

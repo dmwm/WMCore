@@ -22,7 +22,7 @@ def setHttpProxy(url):
     Use frontier to figure out the http_proxies.
     Pick one deterministically based on the url and loadbalance settings
     """
-    if os.environ.has_key('http_proxy'):
+    if 'http_proxy' in os.environ:
         return os.environ['http_proxy']
 
     status, output = commands.getstatusoutput('cmsGetFnConnect frontier://smallfiles')
@@ -44,7 +44,7 @@ def getRetriever(scheme):
     with certificates taken from the X509_USER_PROXY variable. If certificates are not available return
     urllib.urlretrieve as for the http case.
     """
-    if os.environ.has_key('X509_USER_PROXY') and os.path.isfile(os.environ['X509_USER_PROXY']):
+    if 'X509_USER_PROXY' in os.environ and os.path.isfile(os.environ['X509_USER_PROXY']):
         certfile = os.environ['X509_USER_PROXY']
     else:
         if scheme == 'https':

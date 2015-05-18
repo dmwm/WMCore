@@ -298,7 +298,7 @@ class DataCollectionService(CouchService):
 
         for fileInfo in files:
             for run in fileInfo["runs"]:
-                if not allRuns.has_key(run["run_number"]):
+                if run["run_number"] not in allRuns:
                     allRuns[run["run_number"]] = []
                 allRuns[run["run_number"]].extend(run["lumis"])
 

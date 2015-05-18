@@ -152,7 +152,7 @@ class StageOutMgr:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(ex)
             raise StageOutInitError(msg)
-        if overrideConf.has_key('option'):
+        if 'option' in overrideConf:
             if len(overrideConf['option']) > 0:
                 overrideParams['option'] = overrideConf['option']
             else:
@@ -217,7 +217,7 @@ class StageOutMgr:
                 fileToStage['StageOutCommand'] = fallback['command']
                 print "attempting fallback"
                 self.completedFiles[fileToStage['LFN']] = fileToStage
-                if self.failed.has_key(lfn):
+                if lfn in self.failed:
                     del self.failed[lfn]
 
                 print "===> Stage Out Successful: %s" % fileToStage

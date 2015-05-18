@@ -73,12 +73,12 @@ class DeleteFiles(Executor):
         # Pull out StageOutMgr Overrides
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+        if 'newStageOut' in overrides and overrides.get('newStageOut'):
             useNewStageOutCode = True
 
         stageOutCall = {}
-        if overrides.has_key("command") and overrides.has_key("option") \
-               and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
+        if "command" in overrides and "option" in overrides \
+               and "se-name" in overrides and "lfn-prefix" in overrides:
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')

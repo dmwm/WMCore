@@ -312,7 +312,7 @@ def applyTweak(process, tweak, fixup = None):
     making sure all the necessary PSets and configuration values exist).
     """
     for param, value in tweak:
-        if fixup and fixup.has_key(param):
+        if fixup and param in fixup:
             fixup[param](process)
 
         setParameter(process, param, value)
@@ -386,9 +386,9 @@ def makeTaskTweak(stepSection):
         if hasattr(stepSection.application, "configuration"):
             if hasattr(stepSection.application.configuration, "pickledarguments"):
                 args = pickle.loads(stepSection.application.configuration.pickledarguments)
-                if args.has_key('globalTag'):
+                if 'globalTag' in args:
                     result.addParameter("process.GlobalTag.globaltag", args['globalTag'])
-                if args.has_key('globalTagTransaction'):
+                if 'globalTagTransaction' in args:
                     result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
 
     return result

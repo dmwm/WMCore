@@ -91,7 +91,7 @@ class HarnessCouchBackend_t(unittest.TestCase):
         myThread.workerThreadManager.terminateWorkers()
         query = {'key':"TestComponent"}
         workers = self.agent_db.loadView('Agent', 'existWorkers', query)['rows']
-        assert workers[0]['value'].has_key('TestComponentPoller') == True
+        assert ('TestComponentPoller' in workers[0]['value']) == True
 
 if __name__ == '__main__':
     unittest.main()

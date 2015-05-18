@@ -167,7 +167,7 @@ class RESTModel(WebAPI):
         receives sanitised input and is marked as 'restexposed'.
         """
 
-        if not self.methods.has_key(verb):
+        if verb not in self.methods:
             self.methods[verb] = {}
         @wraps(function)
         def wrapper(*input_args, **input_kwargs):

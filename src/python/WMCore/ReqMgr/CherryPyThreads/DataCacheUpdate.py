@@ -1,15 +1,13 @@
 '''
 
 '''
-import cherrypy
-
 from WMCore.ReqMgr.DataStructs.DataCache import DataCache
 from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
-class CouchDBCleanup(CherryPyPeriodicTask):
+class DataCacheUpdate(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
@@ -35,5 +33,5 @@ class CouchDBCleanup(CherryPyPeriodicTask):
                 DataCache.setlatestJobData(jobData)
             
         except Exception as ex:
-            cherrypy.log.error(str(ex))
+            self.logger.error(str(ex))
         return

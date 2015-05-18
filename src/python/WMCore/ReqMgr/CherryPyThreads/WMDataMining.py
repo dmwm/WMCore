@@ -3,7 +3,6 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
-import cherrypy
 from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMDataMining.Utils import gatherWMDataMiningStats
 
@@ -27,7 +26,7 @@ class WMDataMining(CherryPyPeriodicTask):
         gatherWMDataMiningStats(wmstatsUrl=config.wmstats_url, reqmgrUrl=config.reqmgrdb_url,
                                 wmMiningUrl=config.wmdatamining_url, mcmUrl=config.mcm_url,
                                 mcmCert=config.mcm_cert, mcmKey=config.mcm_key, tmpDir=config.mcm_tmp_dir,
-                                archived = False, log = cherrypy.log)
+                                archived = False, log = self.logger)
         return
 
     def gatherArchivedDataStats(self, config):
@@ -37,5 +36,5 @@ class WMDataMining(CherryPyPeriodicTask):
         gatherWMDataMiningStats(wmstatsUrl=config.wmstats_url, reqmgrUrl=config.reqmgrdb_url,
                                 wmMiningUrl=config.wmdatamining_url, mcmUrl=config.mcm_url,
                                 mcmCert=config.mcm_cert, mcmKey=config.mcm_key, tmpDir=config.mcm_tmp_dir,
-                                archived = True, log = cherrypy.log)
+                                archived = True, log = self.logger)
         return

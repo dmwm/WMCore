@@ -6,7 +6,7 @@ Logging facilities used in WMCore.
 """
 
 import logging
-from logging.handlers import HTTPHandler, RotatingFileHandler
+from logging.handlers import HTTPHandler, RotatingFileHandler, TimedRotatingFileHandler
 
 # a new log level which is lower than debug
 # to prevent a tsunami of log messages in debug
@@ -31,6 +31,18 @@ def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
     handler = RotatingFileHandler(fileName, "a", maxBytes, backupCount)
     logging.getLogger().addHandler(handler)
     return
+
+
+def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
+    """ Set the logger for time based lotaing. 
+    """
+    logger = logging.getLogger(name)
+    handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)
+    formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    return logger
 
 class CouchHandler(logging.handlers.HTTPHandler):
     def __init__(self, host, database):

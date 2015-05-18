@@ -4,8 +4,9 @@ Created on Jul 31, 2014
 @author: sryu
 '''
 import cherrypy
-import logging
 import traceback
+from WMCore.WMLogging import getTimeRotatingLogger
+
 from threading import Thread, Condition
 
 class CherryPyPeriodicTask(object):
@@ -21,10 +22,11 @@ class CherryPyPeriodicTask(object):
     
         :arg config  WMCore.Configuration object. which need to contain in duration attr.
         TODO: add validation for config.duration
-        """
+        """ 
+        self.logger = getTimeRotatingLogger(config._internal_name, config.log_file)
         self.setConcurrentTasks(config)
         for task in self.concurrentTasks:
-            PeriodicWorker(task['func'], config, task['duration'])
+            PeriodicWorker(task['func'], config, task['duration'], logger = self.logger)
         
     def setConcurrentTasks(self, config):
         """
@@ -40,7 +42,7 @@ class CherryPyPeriodicTask(object):
 
 class PeriodicWorker(Thread):
     
-    def __init__(self, func, config, duration = 600):
+    def __init__(self, func, config, duration = 600, logger = cherrypy.log):
         # use default RLock from condition
         # Lock wan't be shared between the instance used  only for wait
         # func : function or callable object pointer
@@ -49,6 +51,7 @@ class PeriodicWorker(Thread):
         self.taskFunc = func
         self.config = config
         self.duration = duration
+        self.logger = logger
         try: 
             name = func.__class__.__name__
             print name
@@ -73,11 +76,11 @@ class PeriodicWorker(Thread):
             try:
                 self.taskFunc(self.config)
             except Exception as e:
-                cherrypy.log("Periodic Thread ERROR %s.%s %s"
+                self.logger.error("Periodic Thread ERROR %s.%s %s"
                 % (getattr(e, "__module__", "__builtins__"),
                 e.__class__.__name__, str(e)))
                 for line in traceback.format_exc().rstrip().split("\n"):
-                    cherrypy.log(" " + line)
+                    self.logger.error(" " + line)
                 
             self.wakeUp.wait(self.duration)
             self.wakeUp.release()
@@ -97,8 +100,7 @@ class SequentialTaskBase(object):
             except Exception as ex:
                 #log the excpeiotn and break. 
                 #SequencialTasks are interconnected between functions  
-                print (str(ex))
-                logging.error(str(ex))
+                self.logger.error(str(ex))
                 break
             
     def setCallSequence(self):

@@ -115,10 +115,13 @@ class ConfigurationTest(unittest.TestCase):
             RuntimeError, setattr,
             config.Section2, "BadList", badList)
 
-        badDict = { "dict" : {}, "list": [], "tuple" : () }
+        badDict = { "dict" : {}, "list": [DummyObject()], "tuple" : () }
         self.assertRaises(
             RuntimeError, setattr,
             config.Section2, "BadDict", badDict)
+        
+        goodDict = { "dict" : {}, "list": [], "tuple" : () }
+        config.Section2.GoodDict = goodDict
 
 
     def testC(self):

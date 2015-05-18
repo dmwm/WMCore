@@ -23,8 +23,8 @@ class AddWorkflowToManageSlave(DefaultSlave):
         myThread = threading.currentThread()
 
         # Validate arguments
-        if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
-        and args.has_key("SplitAlgo") and args.has_key("Type"):
+        if "FilesetMatch" in args and "WorkflowId" in args \
+        and "SplitAlgo" in args and "Type" in args:
             try:
                 myThread.transaction.begin()
                 self.addManagedWorkflow.execute(workflow = args['WorkflowId'], \

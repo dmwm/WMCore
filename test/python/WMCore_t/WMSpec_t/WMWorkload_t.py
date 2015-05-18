@@ -954,9 +954,9 @@ class WMWorkloadTest(unittest.TestCase):
                          "Errror: Wrong slice type.")
         self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 2,
                          "Errror: Wrong slice size.")
-        self.assertFalse(testWorkload.startPolicyParameters().has_key("SubSliceType"),
+        self.assertFalse("SubSliceType" in testWorkload.startPolicyParameters(),
                          "Error: Shouldn't have sub-slice type.")
-        self.assertFalse(testWorkload.startPolicyParameters().has_key("SubSliceSize"),
+        self.assertFalse("SubSliceSize" in testWorkload.startPolicyParameters(),
                          "Error: Shouldn't have sub-slice size.")
         procSplitParams = procTask.jobSplittingParameters(performance = False)
         self.assertEqual(len(procSplitParams.keys()), 6,

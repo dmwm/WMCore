@@ -117,7 +117,7 @@ class FNALImpl(StageOutImpl):
             print "Local File Size is: %s" % original_size
             pfnWithoutChecksum = stripPrefixTOUNIX(targetPFN)
             
-            useChecksum = (checksums != None and checksums.has_key('adler32') and not self.stageIn)
+            useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
             if useChecksum:
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
                 # non-functional in 3.3.1 xrootd clients due to bug

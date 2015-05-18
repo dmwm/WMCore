@@ -135,7 +135,7 @@ class StageInMgr:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(overrideConf)
             raise StageOutInitError(msg)
-        if overrideConf.has_key('option'):
+        if 'option' in overrideConf:
             if len(overrideConf['option']) > 0:
                 overrideParams['option'] = overrideConf['option']
             else:

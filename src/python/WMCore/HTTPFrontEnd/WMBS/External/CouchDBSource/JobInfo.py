@@ -34,7 +34,7 @@ def getJobInfo(jobID, couchConfig):
                                     options)
 
     for row in result["rows"]:
-        if not transitionDocs.has_key(row["value"]["timestamp"]):
+        if row["value"]["timestamp"] not in transitionDocs:
             transitionDocs[row["value"]["timestamp"]] = []
 
         transitionDocs[row["value"]["timestamp"]].append(row["value"])

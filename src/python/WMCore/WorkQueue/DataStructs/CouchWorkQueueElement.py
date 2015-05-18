@@ -30,13 +30,13 @@ class CouchWorkQueueElement(WorkQueueElement):
         self._couch = couchDB
 
     rev = property(
-        lambda x: str(x._document[u'_rev']) if x._document.has_key(u'_rev') else x._document.__getitem__('_rev'),
+        lambda x: str(x._document[u'_rev']) if u'_rev' in x._document else x._document.__getitem__('_rev'),
         lambda x, newid: x._document.__setitem__('_rev', newid))
     timestamp = property(
-        lambda x: str(x._document[u'timestamp']) if x._document.has_key(u'timestamp') else x._document.__getitem__('timestamp')
+        lambda x: str(x._document[u'timestamp']) if u'timestamp' in x._document else x._document.__getitem__('timestamp')
         )
     updatetime = property(
-        lambda x: str(x._document[u'updatetime']) if x._document.has_key(u'updatetime') else 0
+        lambda x: str(x._document[u'updatetime']) if u'updatetime' in x._document else 0
         )
 
 

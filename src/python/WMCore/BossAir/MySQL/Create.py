@@ -33,7 +33,7 @@ class Create(DBCreator):
 
         tablespaceIndex = ""
         if params:
-            if params.has_key("tablespace_index"):
+            if "tablespace_index" in params:
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         DBCreator.__init__(self, logger, dbi)

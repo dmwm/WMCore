@@ -72,7 +72,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             report[wf] = oldCouchDoc
             # FIXME: remove report, only have two instances of couchDoc
 
-            if not oldCouchDoc.has_key('filterEfficiency') or not oldCouchDoc.has_key('runWhiteList'):
+            if 'filterEfficiency' not in oldCouchDoc or 'runWhiteList' not in oldCouchDoc:
                 runWhiteList = []
                 filterEfficiency = None
                 try:
@@ -84,8 +84,8 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                     pass # ReqMgr no longer has the workflow
                 report[wf].update({'filterEfficiency':filterEfficiency, 'runWhiteList':runWhiteList})
 
-            if (not oldCouchDoc.has_key('mcmTotalEvents') or
-                not oldCouchDoc.has_key('mcmApprovalTime') or
+            if ('mcmTotalEvents' not in oldCouchDoc or
+                'mcmApprovalTime' not in oldCouchDoc or
                 oldCouchDoc.get('mcmTotalEvents', 'Unknown') == 'Unknown' or
                 oldCouchDoc.get('mcmApprovalTime', 'Unknown') == 'Unknown'):
 
@@ -96,7 +96,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                     nMCMCalls += 1
                     try:
                         mcmHistory = mcm.getHistory(prepID = prepID)
-                        if not oldCouchDoc.has_key('mcmApprovalTime'):
+                        if 'mcmApprovalTime' not in oldCouchDoc:
                             report[wf].update({'mcmApprovalTime':'NoMcMData'})
                         found = False
                         for entry in mcmHistory:

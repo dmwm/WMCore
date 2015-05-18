@@ -259,7 +259,7 @@ class AgentTest(unittest.TestCase):
 
         """
         # check if the live agent configuration was loaded (above this class)
-        if globals().has_key("config"):
+        if "config" in globals():
             self.config = config
             # AlertProcessor values - values for Level soft, resp. critical
             # are also needed by this AlertGenerator test

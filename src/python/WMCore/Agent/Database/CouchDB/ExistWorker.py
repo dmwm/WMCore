@@ -23,7 +23,7 @@ class ExistWorker(DBFormatter):
         worker_doc_id = ''
 
         res = service.load(query, 'Agent','existWorkers')
-        if res[0]['value'].has_key(workerName):
+        if workerName in res[0]['value']:
             worker_doc_id = componentName
 
         return worker_doc_id

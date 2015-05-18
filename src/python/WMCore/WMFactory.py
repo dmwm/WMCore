@@ -52,7 +52,7 @@ namespace (package): %s """ % (name, str(namespace))
         thread, you set cache to False.
         """
         if getFromCache:
-            if self.objectList.has_key(classname):
+            if classname in self.objectList:
                 logging.debug("Object in cache")
                 return self.objectList[classname]
 

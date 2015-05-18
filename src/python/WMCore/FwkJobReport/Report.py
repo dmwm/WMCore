@@ -425,25 +425,25 @@ class Report:
         keyList = file.keys()
 
         fileRef.section_("runs")
-        if file.has_key("runs"):
+        if "runs" in file:
             for run in file["runs"]:
                 addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
-        if file.has_key("parents"):
+        if "parents" in file:
             setattr(fileRef, 'parents', list(file['parents']))
             keyList.remove('parents')
 
-        if file.has_key("locations"):
+        if "locations" in file:
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
-        elif file.has_key("SEName"):
+        elif "SEName" in file:
             fileRef.location = [file["SEName"]]
 
-        if file.has_key("LFN"):
+        if "LFN" in file:
             fileRef.lfn = file["LFN"]
             keyList.remove("LFN")
-        if file.has_key("PFN"):
+        if "PFN" in file:
             fileRef.lfn = file["PFN"]
             keyList.remove("PFN")
 
@@ -489,14 +489,14 @@ class Report:
         keyList = attrs.keys()
 
         fileRef.section_("runs")
-        if attrs.has_key("runs"):
+        if "runs" in attrs:
             for run in attrs["runs"]:
                 addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
-        if attrs.has_key("parents"):
+        if "parents" in attrs:
             keyList.remove('parents')
-        if attrs.has_key("locations"):
+        if "locations" in attrs:
             keyList.remove('locations')
 
         # All right, the rest should be JSONalizable python primitives

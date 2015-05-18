@@ -862,7 +862,7 @@ def processRequestArgs(intputConfigFile, commandLineJson):
         cliJson = json.loads(commandLineJson)
         # if a key exists in cliJson, update values in the main requestArgs dict
         for k in requestArgs.keys():
-            if cliJson.has_key(k):
+            if k in cliJson:
                 requestArgs[k].update(cliJson[k])            
     else:
         logging.warn("No request arguments to override (--json)? Some values will be wrong.")

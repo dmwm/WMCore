@@ -481,7 +481,7 @@ class DBSBlock:
         # delete nested key dictionary
         for nestedKey in nestedKeyToRemove:
             firstkey, subkey = nestedKey.split('.', 1)
-            if block.has_key(firstkey) and block[firstkey].has_key(subkey):
+            if firstkey in block and subkey in block[firstkey]:
                 del block[firstkey][subkey]
                 
         return block

@@ -75,7 +75,7 @@ class Code:
                     if absRating < self.threshold:
                         fileRating = (str(absRating), packageDir)
                         authors = self.packages[packageDir]
-                        if not self.lowQuality.has_key(authors):
+                        if authors not in self.lowQuality:
                             self.lowQuality[self.packages[packageDir]] = []
                             # add the low rating
                         self.lowQuality[authors].append(fileRating)
@@ -126,7 +126,7 @@ class Code:
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
-                            if not self.module.has_key(moduleName) and \
+                            if moduleName not in self.module and \
                                 index > pathCut + moduleCut:
                                 self.module[moduleName] = {}
                                 vote2.append(moduleName)
@@ -138,7 +138,7 @@ class Code:
                 author = nl.split(' ')[6].split(';')[0]
                 # start voting:
                 for moduleName in vote2:
-                    if not self.module[moduleName].has_key(author):
+                    if author not in self.module[moduleName]:
                         self.module[moduleName][author] = 0
                     self.module[moduleName][author] += 1
                 # we voted
@@ -173,7 +173,7 @@ class Code:
         # find module lengths first
         for moduleName in self.module.keys():
             parts = moduleName.split('/')
-            if not moduleLength.has_key(len(parts)):
+            if len(parts) not in moduleLength:
                 moduleLength[len(parts)] = []
             moduleLength[len(parts)].append(moduleName)
         lengths = moduleLength.keys()
@@ -188,7 +188,7 @@ class Code:
                     # group all parts of same length.
                     if len(parts) == length:
                         parent = moduleName.rsplit('/',1)[0]
-                        if not parents.has_key(parent):
+                        if parent not in parents:
                             parents[parent] = []
                         parents[parent].append([moduleName, self.module[moduleName]])
                 # check if all the children have the same developer as parent. If so remove the children.

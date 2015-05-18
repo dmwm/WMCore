@@ -76,4 +76,4 @@ class LogCollect(Diagnostic):
 
 
         catchAll = LCExceptionHandler()
-        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]
+        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers ]

@@ -101,10 +101,10 @@ class WMBSMergeBySize(JobFactory):
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if not mergeUnits.has_key(newMergeFile["se_name"]):
+            if newMergeFile["se_name"] not in mergeUnits:
                 mergeUnits[newMergeFile["se_name"]] = {}
 
-            if not mergeUnits[newMergeFile["se_name"]].has_key(newMergeFile["file_run"]):
+            if newMergeFile["file_run"] not in mergeUnits[newMergeFile["se_name"]]:
                 mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]] = []
 
             for mergeUnit in mergeUnits[newMergeFile["se_name"]][newMergeFile["file_run"]]:

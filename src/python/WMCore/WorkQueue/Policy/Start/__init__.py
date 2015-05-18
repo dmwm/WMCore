@@ -14,7 +14,7 @@ def startPolicy(name, startMap):
     """Load a start policy"""
     # Take splitting policy from workload & load specific policy for this queue
     # Workload may also directly specify specific splitter implementation
-    if startMap.has_key(name):
+    if name in startMap:
         # take mapping from queue
         policyName = startMap[name]['name']
     else:

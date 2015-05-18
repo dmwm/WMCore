@@ -41,7 +41,7 @@ class DbsQueryHelper:
             but different lumi section each time
             """
             for key in secondary:
-                if primary.has_key(key):
+                if key in primary:
                     for valKey in primary[key]:
                         primary[key][valKey].update(secondary[key][valKey])
                 else:

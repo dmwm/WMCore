@@ -41,7 +41,7 @@ class JobStatusByLocation(DBFormatter):
         """
         commonStates = {}
         for data in results:
-            if not commonStates.has_key(data['site_name']):
+            if data['site_name'] not in commonStates:
                 commonStates[data['site_name']] = {}
 
             module = __import__("WMCore.BossAir.Plugins.%s" % data['plugin'],

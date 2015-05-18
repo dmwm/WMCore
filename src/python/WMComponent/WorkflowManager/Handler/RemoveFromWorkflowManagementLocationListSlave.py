@@ -28,8 +28,8 @@ class RemoveFromWorkflowManagementLocationListSlave(DefaultSlave):
         myThread = threading.currentThread()
 
         # Validate arguments
-        if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
-        and args.has_key("Locations"):
+        if "FilesetMatch" in args and "WorkflowId" in args \
+        and "Locations" in args:
             locations = args['Locations'].split(",")
             try:
                 myThread.transaction.begin()

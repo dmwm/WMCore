@@ -15,7 +15,7 @@ class WorkQueueElement(dict):
     def __init__(self, **kwargs):
         dict.__init__(self)
 
-        if kwargs.has_key('Status') and kwargs['Status'] not in STATES:
+        if 'Status' in kwargs and kwargs['Status'] not in STATES:
             msg = 'Invalid Status: %s' % kwargs['Status']
             raise ValueError, msg
 
@@ -182,7 +182,7 @@ class WorkQueueElement(dict):
                    'PercentComplete' : 'percent_complete',
                    'PercentSuccess' : 'percent_success'}
         for ourkey, wmbskey in mapping.items():
-            if wmbsStatus.has_key(wmbskey) and self[ourkey] != wmbsStatus[wmbskey]:
+            if wmbskey in wmbsStatus and self[ourkey] != wmbsStatus[wmbskey]:
                 self['Modified'] = True
                 self[ourkey] = wmbsStatus[wmbskey]
 

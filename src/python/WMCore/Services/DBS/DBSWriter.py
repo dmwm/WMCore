@@ -564,7 +564,7 @@ class DBSWriter:
             # // Convert each file into a DBS File object
             #//
             seName = None
-            if outFile.has_key("SEName"):
+            if "SEName" in outFile:
                 if outFile['SEName'] :
                     seName = outFile['SEName']
                     logging.debug("SEname associated to file is: %s"%seName)
@@ -608,7 +608,7 @@ class DBSWriter:
                 datasetName = makeDBSDSName(f)
                 hashName = "%s-%s" % (seName, datasetName)
 
-                if not insertLists.has_key(hashName):
+                if hashName not in insertLists:
                     insertLists[hashName] = _InsertFileList(seName,
                                                             datasetName)
                 insertLists[hashName].append(f)

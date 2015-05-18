@@ -361,7 +361,7 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEquals(2, len(self.db.allDocs({'startkey': "2"})['rows']))
         self.assertEquals(2, len(self.db.allDocs(keys = ["1", "3"])['rows']))
         self.assertEquals(1, len(self.db.allDocs({'limit':1}, ["1", "3"])['rows']))
-        self.assertEquals(True, self.db.allDocs(keys = ["1", "4"])['rows'][1].has_key('error'))
+        self.assertEquals(True, 'error' in self.db.allDocs(keys = ["1", "4"])['rows'][1])
 
 if __name__ == "__main__":
     if len(sys.argv) >1 :

@@ -75,10 +75,10 @@ class ConfigurationTest(unittest.TestCase):
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
-        self.failUnless( section1Dict.has_key("Parameter1"))
-        self.failUnless( section1Dict.has_key("Parameter2"))
-        self.failUnless( section1Dict.has_key("Parameter3"))
-        self.failUnless( section1Dict.has_key("Parameter4"))
+        self.failUnless( "Parameter1" in section1Dict)
+        self.failUnless( "Parameter2" in section1Dict)
+        self.failUnless( "Parameter3" in section1Dict)
+        self.failUnless( "Parameter4" in section1Dict)
 
         self.assertEqual(section1Dict['Parameter1'],
                          config.Section1.Parameter1)

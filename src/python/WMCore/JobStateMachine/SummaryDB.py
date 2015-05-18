@@ -51,7 +51,7 @@ def fwjr_parser(doc):
     else:
         raise Exception('Document does not contain FWJR part')
     
-    if not fwjr.has_key('task'):
+    if 'task' not in fwjr:
         return dataCollectedFlag
     
     task_name = fwjr['task']

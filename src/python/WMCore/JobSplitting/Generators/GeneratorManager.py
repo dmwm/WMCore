@@ -48,7 +48,7 @@ class GeneratorManager:
         """
         if generatorName == None:
             return
-        if self.generators.has_key(generatorName):
+        if generatorName in self.generators:
             return
 
         #TODO: Exception check

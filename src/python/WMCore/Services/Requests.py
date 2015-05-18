@@ -398,24 +398,24 @@ class Requests(dict):
         key = None
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
-        if self.has_key('cert') and self.has_key('key' ) \
+        if 'cert' in self and 'key' in self \
              and self['cert'] and self['key']:
             key = self['key']
             cert = self['cert']
 
         # Now we're trying to guess what the right cert/key combo is...
         # First preference to HOST Certificate, This is how it set in Tier0
-        elif os.environ.has_key('X509_HOST_CERT'):
+        elif 'X509_HOST_CERT' in os.environ:
             cert = os.environ['X509_HOST_CERT']
             key = os.environ['X509_HOST_KEY']
         # Second preference to User Proxy, very common
-        elif (os.environ.has_key('X509_USER_PROXY')) and \
+        elif ('X509_USER_PROXY' in os.environ) and \
                 (os.path.exists( os.environ['X509_USER_PROXY'])):
             cert = os.environ['X509_USER_PROXY']
             key = cert
 
         # Third preference to User Cert/Proxy combinition
-        elif os.environ.has_key('X509_USER_CERT'):
+        elif 'X509_USER_CERT' in os.environ:
             cert = os.environ['X509_USER_CERT']
             key = os.environ['X509_USER_KEY']
 
@@ -452,9 +452,9 @@ class Requests(dict):
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
         cacert = None
-        if self.has_key('capath'):
+        if 'capath' in self:
             cacert = self['capath']
-        elif os.environ.has_key("X509_CERT_DIR"):
+        elif "X509_CERT_DIR" in os.environ:
             cacert = os.environ["X509_CERT_DIR"]
         return cacert
 

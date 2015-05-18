@@ -140,7 +140,7 @@ class WMStatsWriter(WMStatsReader):
             errorReport = {}
             deleted = 0
             for data in committed:
-                if data.has_key('error'):
+                if 'error' in data:
                     errorReport.setdefault(data['error'], 0)
                     errorReport[data['error']] += 1
                 else:

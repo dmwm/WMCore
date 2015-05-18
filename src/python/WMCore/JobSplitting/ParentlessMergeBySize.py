@@ -50,7 +50,7 @@ class ParentlessMergeBySize(JobFactory):
             else:
                 continue
 
-            if not fileGroups.has_key(mergeableFile["se_name"]):
+            if mergeableFile["se_name"] not in fileGroups:
                 if self.mergeAcrossRuns:
                     fileGroups[mergeableFile["se_name"]] = []
                 else:
@@ -59,7 +59,7 @@ class ParentlessMergeBySize(JobFactory):
             if self.mergeAcrossRuns:
                 fileGroups[mergeableFile["se_name"]].append(mergeableFile)
             else:
-                if not fileGroups[mergeableFile["se_name"]].has_key(mergeableFile["file_run"]):
+                if mergeableFile["file_run"] not in fileGroups[mergeableFile["se_name"]]:
                     fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]] = []
                 fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]].append(mergeableFile)
 

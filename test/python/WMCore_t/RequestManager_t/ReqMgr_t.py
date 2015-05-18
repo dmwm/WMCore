@@ -553,8 +553,8 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.blacklist, schema['BlockBlacklist'])
 
         req = self.jsonSender.get('request/%s' % requestName)
-        self.assertTrue(req[0].has_key('Site Blacklist'))
-        self.assertTrue(req[0].has_key('Site Whitelist'))
+        self.assertTrue('Site Blacklist' in req[0])
+        self.assertTrue('Site Whitelist' in req[0])
 
         schema['BlockBlacklist'] = {'1': '/dataset/dataset/dataset#beta'}
 

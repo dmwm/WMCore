@@ -20,7 +20,7 @@ class LoadOutput(DBFormatter):
 
         outputMap = {}
         for result in self.formatDict(results):
-            if not outputMap.has_key(result["wf_output_id"]):
+            if result["wf_output_id"] not in outputMap:
                 outputMap[result["wf_output_id"]] = []
 
             outputMap[result["wf_output_id"]].append({"output_fileset": result["wf_output_fset"],

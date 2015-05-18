@@ -255,7 +255,7 @@ class LsfPlugin(BasePlugin):
             for job in jobs:
 
                 # if LSF doesn't know anything about the job, mark it complete
-                if not jobInfo.has_key(job['gridid']):
+                if job['gridid'] not in jobInfo:
                     completeList.append(job)
 
                 # otherwise act on LSF job status

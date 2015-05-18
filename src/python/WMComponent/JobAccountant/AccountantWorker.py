@@ -345,7 +345,7 @@ class AccountantWorker(WMConnectionBase):
         this will not return the JobGroup output fileset as all jobs will have
         their output placed there.
         """
-        if not outputMap.has_key(moduleLabel):
+        if moduleLabel not in outputMap:
             logging.info("Output module label missing from output map.")
             return []
 

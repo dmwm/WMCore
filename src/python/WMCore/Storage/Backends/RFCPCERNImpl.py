@@ -111,7 +111,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         isRemoteEOS = self.isEOS(remotePFN)
 
-        useChecksum = ( checksums != None and checksums.has_key('adler32') and not self.stageIn )
+        useChecksum = ( checksums != None and 'adler32' in checksums and not self.stageIn )
         removeCommand = self.createRemoveFileCommand(targetPFN)
 
         if isRemoteEOS:

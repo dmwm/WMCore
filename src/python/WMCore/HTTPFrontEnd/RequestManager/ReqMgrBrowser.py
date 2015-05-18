@@ -38,7 +38,7 @@ def biggestUpdate(field, request):
     """ Finds which of the updates has the biggest number """
     biggest = 0
     for update in request["RequestUpdates"]:
-        if update.has_key(field):
+        if field in update:
             biggest = update[field]
     return "%i%%" % biggest
 
@@ -172,7 +172,7 @@ class ReqMgrBrowser(WebAPI):
                 splitParams["halt_job_on_file_boundaries"] = False
         elif splittingAlgo == "EventBased":
             splitParams["events_per_job"] = int(submittedParams["events_per_job"])
-            if submittedParams.has_key("events_per_lumi"):
+            if "events_per_lumi" in submittedParams:
                 splitParams["events_per_lumi"] = int(submittedParams["events_per_lumi"])
             if "lheInputFiles" in submittedParams:
                 if str(submittedParams["lheInputFiles"]) == "True":
@@ -296,10 +296,10 @@ class ReqMgrBrowser(WebAPI):
             if field in self.calculatedFields:
                 method = getattr(self, self.calculatedFields[field])
                 entry = method(request)
-            elif self.adminMode and self.adminFields.has_key(field):
+            elif self.adminMode and field in self.adminFields:
                 method = getattr(self, self.adminFields[field])
                 entry = method(requestName, value)
-            elif self.linkedFields.has_key(field):
+            elif field in self.linkedFields:
                 entry = linkedTableEntry(self.linkedFields[field], entry)
             html += '<td>%s</td>' % entry
         html += '</tr>\n'
@@ -309,11 +309,11 @@ class ReqMgrBrowser(WebAPI):
         """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
-            if update.has_key("events_written") and request["RequestNumEvents"] != 0:
+            if "events_written" in update and request["RequestNumEvents"] != 0:
                 percent = update["events_written"] / request["RequestNumEvents"]
                 if percent > maxPercent:
                     maxPercent = percent
-            if update.has_key("files_written") and request["RequestSizeFiles"] != 0:
+            if "files_written" in update and request["RequestSizeFiles"] != 0:
                 percent = update["files_written"] / request["RequestSizeFiles"]
                 if percent > maxPercent:
                     maxPercent = percent
@@ -323,11 +323,11 @@ class ReqMgrBrowser(WebAPI):
         """ Finds the biggest percentage among all the updates """
         maxPercent = 0
         for update in request["RequestUpdates"]:
-            if update.has_key("events_merged") and request["RequestNumEvents"] != 0:
+            if "events_merged" in update and request["RequestNumEvents"] != 0:
                 percent = update["events_merged"] / request["RequestNumEvents"]
                 if percent > maxPercent:
                     maxPercent = percent
-            if update.has_key("files_merged") and request["RequestSizeFiles"] != 0:
+            if "files_merged" in update and request["RequestSizeFiles"] != 0:
                 percent = update["files_merged"] / request["RequestSizeFiles"]
                 if percent > maxPercent:
                     maxPercent = percent

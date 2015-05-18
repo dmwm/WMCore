@@ -323,7 +323,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         binds = []
         for location in self["newlocations"]:
-            if not nameMap or not nameMap.has_key(location):
+            if not nameMap or location not in nameMap:
                 nameMap = insertAction.execute(siteName = self["newlocations"],
                                                conn = self.getDBConn(),
                                                transaction = self.existingTransaction())

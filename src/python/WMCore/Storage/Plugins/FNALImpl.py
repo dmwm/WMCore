@@ -265,7 +265,7 @@ class FNALImpl(StageOutImplV2):
                 optionsStr = str(options)
 
             original_size = os.stat(sourcePFN)[6]
-            useChecksum = (checksum != None and checksum.has_key('adler32') and not self.stageIn)
+            useChecksum = (checksum != None and 'adler32' in checksum and not self.stageIn)
             if useChecksum:    
                 checksum['adler32'] = "%08x" % int(checksum['adler32'], 16)
 

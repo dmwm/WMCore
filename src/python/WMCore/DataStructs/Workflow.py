@@ -36,7 +36,7 @@ class Workflow(Pickleable):
         mappingDict = {"output_fileset": outputFileset,
                        "merged_output_fileset": mergedOutputFileset}
 
-        if self.outputMap.has_key(outputIdentifier):
+        if outputIdentifier in self.outputMap:
             self.outputMap[outputIdentifier].append(mappingDict)
         else:
             self.outputMap[outputIdentifier] = [mappingDict]

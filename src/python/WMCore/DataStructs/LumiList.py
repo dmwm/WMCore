@@ -65,7 +65,7 @@ class LumiList(object):
             runsAndLumis = {}
             for (run, lumi) in lumis:
                 run = str(run)
-                if not runsAndLumis.has_key(run):
+                if run not in runsAndLumis:
                     runsAndLumis[run] = []
                 runsAndLumis[run].append(lumi)
 
@@ -307,7 +307,7 @@ class LumiList(object):
         '''
         for run in runList:
             run = str(run)
-            if self.compactList.has_key (run):
+            if run in self.compactList:
                 del self.compactList[run]
 
         return
@@ -338,7 +338,7 @@ class LumiList(object):
         if lumiSection is None:
             # if this is an integer or a string, see if the run exists
             if isinstance (run, int) or isinstance (run, str):
-                return self.compactList.has_key( str(run) )
+                return str(run) in self.compactList
             # if we're here, then run better be a tuple or list
             try:
                 lumiSection = run[1]

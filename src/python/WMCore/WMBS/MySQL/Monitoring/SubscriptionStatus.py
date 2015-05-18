@@ -78,11 +78,11 @@ class SubscriptionStatus(DBFormatter):
 
         workflows = {}
         for result in results:
-            if not workflows.has_key(result["workflow_name"]):
+            if result["workflow_name"] not in workflows:
                 workflows[result["workflow_name"]] = {}
 
             workflowDict = workflows[result["workflow_name"]]
-            if not workflowDict.has_key(result["fileset_name"]):
+            if result["fileset_name"] not in workflowDict:
                 workflowDict[result["fileset_name"]] = {"success": 0, "running": 0,
                                                        "failure": 0,
                                                        "subId": result["subscription_id"]}

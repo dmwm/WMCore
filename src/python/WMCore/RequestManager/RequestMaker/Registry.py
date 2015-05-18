@@ -50,7 +50,7 @@ def retrieveRequestMaker(typename):
     Retrieve a request maker instance for the named type.
 
     """
-    if not _Registry._Makers.has_key(typename):
+    if typename not in _Registry._Makers:
         print _Registry._Makers.keys()
         msg = "No RequestMaker implementation registered with name:"
         msg += " %s" % typename

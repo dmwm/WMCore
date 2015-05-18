@@ -245,7 +245,7 @@ def changeStatus(requestName, status, wmstatUrl, acdcUrl):
     request = GetRequest.getRequestByName(requestName)
     if not status in RequestStatus.StatusList:
         raise RuntimeError, "Bad status code " + status
-    if not request.has_key('RequestStatus'):
+    if 'RequestStatus' not in request:
         raise RuntimeError, "Cannot find status for request " + requestName
     oldStatus = request['RequestStatus']
     if not status in RequestStatus.NextStatus[oldStatus]:
@@ -459,7 +459,7 @@ def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
     # Should it default to something else??
     reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
 
-    if reqInputArgs.has_key("InputDataset"):
+    if "InputDataset" in reqInputArgs:
         reqSchema["InputDatasets"] = [reqInputArgs["InputDataset"]]
 
     # Get the DN

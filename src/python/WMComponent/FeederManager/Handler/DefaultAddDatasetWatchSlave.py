@@ -61,7 +61,7 @@ class DefaultAddDatasetWatchSlave(DefaultSlave):
             feederType = message["FeederType"]
 
             # Check if there is a running feeder
-            if myThread.runningFeeders.has_key(feederType):
+            if feederType in myThread.runningFeeders:
                 logging.info("HAVE FEEDER " + feederType + " RUNNING")
                 logging.info(myThread.runningFeeders[feederType])
 

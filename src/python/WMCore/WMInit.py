@@ -40,7 +40,7 @@ def connectToDB():
 
     Connect to the database specified in the WMAgent config.
     """
-    if not os.environ.has_key("WMAGENT_CONFIG"):
+    if "WMAGENT_CONFIG" not in os.environ:
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
         sys.exit(1)
 

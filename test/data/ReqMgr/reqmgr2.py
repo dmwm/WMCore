@@ -383,7 +383,7 @@ def process_request_args(intput_config_file, command_line_json):
         cli_json = json.loads(command_line_json)
         # if a key exists in cli_json, update values in the main request_args dict
         for k in request_args.keys():
-            if cli_json.has_key(k):
+            if k in cli_json:
                 request_args[k].update(cli_json[k])            
     else:
         logging.warn("No request arguments to override (--json)? Some values will be wrong.")

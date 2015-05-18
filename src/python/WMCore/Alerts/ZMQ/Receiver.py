@@ -86,19 +86,19 @@ class ReceiverLogic(object):
 
         """
         # direct shutdown command, shutdown the receiver -> terminate start()
-        if data.has_key(ShutdownMsg.key):
+        if ShutdownMsg.key in data:
             logging.warn("Received Shutdown message, setting flag ...")
             self._doShutdown = True
         # new sender registers itself
-        if data.has_key(RegisterMsg.key):
+        if RegisterMsg.key in data:
             senderId = data[RegisterMsg.key]
-            if self._registSenders.has_key(senderId):
+            if senderId in self._registSenders:
                 logging.warn("Sender '%s' is already registered, ignored." % senderId)
             else:
                 self._registSenders[senderId] = time.time()
                 logging.info("Registered %s@%s" % (senderId, self._registSenders[senderId]))
         # sender unregisters itself
-        if data.has_key(UnregisterMsg.key):
+        if UnregisterMsg.key in data:
             # get the label of the sender
             senderId = data[UnregisterMsg.key]
             try:

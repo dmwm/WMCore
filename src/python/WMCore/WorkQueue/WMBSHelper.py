@@ -729,7 +729,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if type(f) == type("") or not f.has_key("LumiList"):
+            if type(f) == type("") or "LumiList" not in f:
                 results.append(f)
                 continue
 

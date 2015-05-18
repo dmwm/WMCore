@@ -35,7 +35,7 @@ def getSyncCE(default = socket.gethostname()):
 
     result = socket.gethostname()
 
-    if os.environ.has_key('GLOBUS_GRAM_JOB_CONTACT'):
+    if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
         #  //
         # // OSG, Sync CE from Globus ID
         #//
@@ -48,7 +48,7 @@ def getSyncCE(default = socket.gethostname()):
             pass
         return result
 
-    if os.environ.has_key('NORDUGRID_CE'):
+    if 'NORDUGRID_CE' in os.environ:
         #  //
         # // ARC, Sync CE from env. var. submitted with the job by JobSubmitter
         #//

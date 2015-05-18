@@ -185,7 +185,7 @@ class ConfigSection(object):
         returns a ConfigSection instance
 
         """
-        if self.__dict__.has_key(sectionName):
+        if sectionName in self.__dict__:
             return self.__dict__[sectionName]
         newSection = ConfigSection(sectionName)
         self.__setattr__(sectionName, newSection)
@@ -229,7 +229,7 @@ class ConfigSection(object):
                 result.extend(getattr(self, attr).pythonise_(
                     document = document, comment = comment, prefix = myName))
                 continue
-            if self._internal_docstrings.has_key(attr):
+            if attr in self._internal_docstrings:
                 if comment:
                     result.append("# %s.%s: %s" % (
                         myName, attr,
@@ -240,7 +240,7 @@ class ConfigSection(object):
                 attr, format(getattr(self, attr))
                 ))
 
-            if self._internal_docstrings.has_key(attr):
+            if attr in self._internal_docstrings:
                 if document:
                     result.append(
                         "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
@@ -446,7 +446,7 @@ class Configuration(object):
         returns a ConfigSection instance
 
         """
-        if self.__dict__.has_key(sectionName):
+        if sectionName in self.__dict__:
             return self.__dict__[sectionName]
         newSection = ConfigSection(sectionName)
         self.__setattr__(sectionName, newSection)

@@ -357,13 +357,13 @@ class ApMon:
         destination = (host, port, passwd)
         if not alreadyAdded:
             self.logger.debug("Adding destination "+host+':'+`port`+' '+passwd)
-            if(self.destinations.has_key(destination)):
+            if(destination in self.destinations):
                 tempDestinations[destination] = self.destinations[destination]  # reuse previous options
             else:
                 tempDestinations[destination] = copy.deepcopy(self.__defaultOptions)  # have a different set of options for each dest
-            if not self.destPrevData.has_key(destination):
+            if destination not in self.destPrevData:
                 self.destPrevData[destination] = {}    # set it empty only if it's really new
-            if not self.senderRef.has_key(destination):
+            if destination not in self.senderRef:
                 self.senderRef[destination] = copy.deepcopy(self.__defaultSenderRef) # otherwise, don't reset this nr.
             if options != self.__defaultOptions:
                 # we have to overwrite defaults with given options

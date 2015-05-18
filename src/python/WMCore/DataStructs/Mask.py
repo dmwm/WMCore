@@ -95,7 +95,7 @@ class Mask(dict):
 
         """
 
-        if not self.has_key('First%s' %(type)):
+        if 'First%s' %(type) not in self:
             return None
         if (self['First%s'%(type)] == None) or (self['Last%s'%(type)] == None):
             return None
@@ -201,7 +201,7 @@ class Mask(dict):
 
         runDict = {}
         for r in runs:
-            if runDict.has_key(r.run):
+            if r.run in runDict:
                 runDict[r.run].lumis.extend(r.lumis)
             else:
                 runDict[r.run] = r

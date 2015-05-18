@@ -178,7 +178,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         to the cache and before they are actually submitted to make sure all the
         job packages have been written to disk.
         """
-        if not self.jobsToPackage.has_key(loadedJob["workflow"]):
+        if loadedJob["workflow"] not in self.jobsToPackage:
             # First, let's pull all the information from the loadedJob
             batchid    = "%s-%s" % (loadedJob["id"], loadedJob["retry_count"])
             sandboxDir = os.path.dirname(loadedJob["sandbox"])
@@ -370,18 +370,18 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.cachedJobIDs.add(jobID)
 
             for possibleLocation in possibleLocations:
-                if not self.cachedJobs.has_key(possibleLocation):
+                if possibleLocation not in self.cachedJobs:
                     self.cachedJobs[possibleLocation] = {}
-                if not self.cachedJobs[possibleLocation].has_key(newJob["type"]):
+                if newJob["type"] not in self.cachedJobs[possibleLocation]:
                     self.cachedJobs[possibleLocation][newJob["type"]] = {}
 
                 locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
                 workflowName = newJob['workflow']
                 timestamp    = newJob['timestamp']
                 prio         = newJob['task_priority']
-                if not locTypeCache.has_key(workflowName):
+                if workflowName not in locTypeCache:
                     locTypeCache[workflowName] = set()
-                if not self.jobDataCache.has_key(workflowName):
+                if workflowName not in self.jobDataCache:
                     self.jobDataCache[workflowName] = {}
                 if not workflowName in self.workflowTimestamps:
                     self.workflowTimestamps[workflowName] = timestamp
@@ -671,7 +671,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                         # Remove the entry in the cache for the workflow if it is empty.
                         if len(self.cachedJobs[siteName][taskType][workflow]) == 0:
                             del self.cachedJobs[siteName][taskType][workflow]
-                        if self.jobDataCache.has_key(workflow) and len(self.jobDataCache[workflow].keys()) == 0:
+                        if workflow in self.jobDataCache and len(self.jobDataCache[workflow].keys()) == 0:
                             del self.jobDataCache[workflow]
 
                         if cachedJob:
@@ -693,7 +693,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     self.cachedJobIDs.remove(cachedJob[0])
 
-                    if not jobsToPrune.has_key(cachedJobWorkflow):
+                    if cachedJobWorkflow not in jobsToPrune:
                         jobsToPrune[cachedJobWorkflow] = set()
 
                     jobsToPrune[cachedJobWorkflow].add(cachedJob[0])

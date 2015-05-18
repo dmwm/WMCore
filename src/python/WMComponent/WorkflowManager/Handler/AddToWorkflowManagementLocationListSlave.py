@@ -26,8 +26,8 @@ class AddToWorkflowManagementLocationListSlave(DefaultSlave):
         myThread = threading.currentThread()
 
         # Validate arguments
-        if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
-        and args.has_key("Locations") and args.has_key("Valid"):
+        if "FilesetMatch" in args and "WorkflowId" in args \
+        and "Locations" in args and "Valid" in args:
             locations = args['Locations'].split(",")
             try:
                 myThread.transaction.begin()

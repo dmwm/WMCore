@@ -42,7 +42,7 @@ def createPrimaryDataset(datasetInfo, apiRef = None):
     DBS
 
     """
-    if datasetInfo.has_key('PrimaryDatasetType'):
+    if 'PrimaryDatasetType' in datasetInfo:
         PrimaryDatasetType = datasetInfo['PrimaryDatasetType']
     else:
         PrimaryDatasetType = 'mc'
@@ -269,7 +269,7 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
     #  //
     # // Set FileType
     #//
-    if fjrFileInfo.has_key('FileType'):
+    if 'FileType' in fjrFileInfo:
         fileType = fjrFileInfo['FileType']
     else:
         fileType = 'EDM'

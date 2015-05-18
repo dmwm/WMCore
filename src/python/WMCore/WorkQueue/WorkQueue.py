@@ -345,7 +345,7 @@ class WorkQueue(WorkQueueBase):
         for match in matches:
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
-                if not wmspecCache.has_key(match['RequestName']):
+                if match['RequestName'] not in wmspecCache:
                     wmspec = self.backend.getWMSpec(match['RequestName'])
                     wmspecCache[match['RequestName']] = wmspec
                 else:

@@ -239,8 +239,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         while attempts < 15:
             result = self.phedex.getReplicaInfoForFiles(block = blockName)
 
-            if result.has_key("phedex"):
-                if result["phedex"].has_key("block"):
+            if "phedex" in result:
+                if "block" in result["phedex"]:
                     if len(result["phedex"]["block"]) != 0:
                         return result["phedex"]["block"][0]
 

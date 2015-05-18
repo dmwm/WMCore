@@ -32,7 +32,7 @@ class RequestDBReader():
     def setDefaultStaleOptions(self, options):
         if not options:
             options = {}  
-        if not options.has_key('stale'):
+        if 'stale' not in options:
             options.update(self.defaultStale)
         return options
     
@@ -63,9 +63,9 @@ class RequestDBReader():
                          returnDict = False):
         result = {}
         for row in data['rows']:
-            if row.has_key('error'):
+            if 'error' in row:
                 continue
-            if row.has_key("doc"):
+            if "doc" in row:
                 if filterCouch:
                     self._filterCouchInfo(row["doc"])
                 result[row[key]] = row["doc"]

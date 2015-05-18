@@ -18,7 +18,7 @@ def addSoftware(softwareName, scramArch = None):
     """
     factory = DBConnect.getConnection()
     checkDict = listSoftware()
-    if checkDict.has_key(scramArch) and softwareName in checkDict[scramArch]:
+    if scramArch in checkDict and softwareName in checkDict[scramArch]:
         return
     else:
         addSw = factory(classname = "Software.New")

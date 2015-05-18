@@ -273,7 +273,7 @@ class ResourceControl(WMConnectionBase):
                                 seName = SE, runningSlots = runningSlots,
                                 ceName = ceName, cmsName = cmsName, plugin = plugin)
                 for task in taskList:
-                    if not task.has_key('maxSlots') or not task.has_key('taskType'):
+                    if 'maxSlots' not in task or 'taskType' not in task:
                         msg =  "Incomplete task in taskList for ResourceControl.insertAllSEs\n"
                         msg += task
                         raise ResourceControlException(msg)

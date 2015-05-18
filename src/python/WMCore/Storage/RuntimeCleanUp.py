@@ -200,7 +200,7 @@ class CleanUpManager:
 
                 self.failed.append(deleteFile)
 
-                if not (ex.details.has_key('TFC')):
+                if not ('TFC' in ex.details):
 
                     self.jobFail = True
 

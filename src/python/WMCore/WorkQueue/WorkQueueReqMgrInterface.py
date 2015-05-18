@@ -278,7 +278,7 @@ class WorkQueueReqMgrInterface():
                          'CancelRequested' : 'aborted',
                          'Done' : 'completed'
                          }
-        if statusMapping.has_key(status):
+        if status in statusMapping:
             return statusMapping[status]
         else:
             return None

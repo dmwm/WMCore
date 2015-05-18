@@ -50,7 +50,7 @@ class TaskSummaryByWorkflow(DBFormatter):
         workflow = {}
         tran = Transitions()
         for result in results:
-            if not workflow.has_key(result["task"]):
+            if result["task"] not in workflow:
                 workflow[result["task"]] = {}
                 for state in tran.states():
                     workflow[result["task"]][state] = 0

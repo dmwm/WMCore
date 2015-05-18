@@ -230,7 +230,7 @@ def runHandler():
 
                 lumis = [ int(lumi.attrs['ID'])
                           for lumi in subnode.children
-                          if lumi.attrs.has_key("ID")]
+                          if "ID" in lumi.attrs]
 
                 runInfo = Run(runNumber = runId)
                 runInfo.lumis.extend(lumis)

@@ -146,7 +146,7 @@ class Processor(object):
         def getFunctions(config):
             r = {}
             for sink in config.sinks.listSections_():
-                if sinksMap.has_key(sink):
+                if sink in sinksMap:
                     sinkConfig = getattr(config.sinks, sink)
                     # create and store sink instance
                     logging.info("Instantiating '%s' sink ..." % sink)

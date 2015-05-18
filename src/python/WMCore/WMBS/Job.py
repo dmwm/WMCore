@@ -300,11 +300,11 @@ class Job(WMBSBase, WMJob):
 
         # These attributes are added to the job object by the ChangeState
         # code, and we want to store them in couch.
-        if self.has_key("_id"):
+        if "_id" in self:
             jobDict["_id"] = self["_id"]
-        if self.has_key("state_changes"):
+        if "state_changes" in self:
             jobDict["state_changes"] = self["state_changes"]
-        if self.has_key("fwkjrs"):
+        if "fwkjrs" in self:
             jobDict["fwkjrs"] = []
             for fwkjr in self["fwkjrs"]:
                 jobDict["fwkjrs"].append(thunker._thunk(fwkjr))

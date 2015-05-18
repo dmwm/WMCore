@@ -110,9 +110,9 @@ class StdBase(object):
                 for output in scenarioArgs.get('outputs', []):
                     moduleLabel = output['moduleLabel']
                     outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
-                    if output.has_key('primaryDataset'):
+                    if 'primaryDataset' in output:
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
-                    if output.has_key('filterName'):
+                    if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
             elif 'writeTiers' in scenarioArgs and scenarioFunc == "promptReco":
@@ -331,7 +331,7 @@ class StdBase(object):
         procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                        scramArch = self.scramArch)
 
-        if newSplitArgs.has_key("events_per_lumi"):
+        if "events_per_lumi" in newSplitArgs:
             eventsPerLumi = newSplitArgs["events_per_lumi"]
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 

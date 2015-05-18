@@ -289,10 +289,10 @@ class PhEDEx(dict):
                             'dataset' : []}}
         # different structure depending on whether we ask for dataset or blocks
 
-        if args.has_key('dataset') and args['dataset']:
+        if 'dataset' in args and args['dataset']:
             blockList = self.dataBlocks.getBlocks(args['dataset'])
             _blockInfoGenerator(blockList)
-        elif args.has_key('block') and args['block']:
+        elif 'block' in args and args['block']:
             _blockInfoGenerator(args['block'])
 
         return data
@@ -330,7 +330,7 @@ class PhEDEx(dict):
             for dset in response['dataset']:
                 if dset['name'] != item.split('#')[0]:
                     continue
-                if dset.has_key('subscription'):
+                if 'subscription' in dset:
                     # dataset level subscription
                     nodes = [x['node'] for x in dset['subscription']
                              if x['suspended'] == 'n']
@@ -338,7 +338,7 @@ class PhEDEx(dict):
 
                 #if we have a block we must check for block level subscription also
                 # combine with original query when can give both dataset and block
-                if dset.has_key('block'):
+                if 'block' in dset:
                     for block in dset['block']:
                         nodes = [x['node'] for x in block['subscription']
                                  if x['suspended'] == 'n']

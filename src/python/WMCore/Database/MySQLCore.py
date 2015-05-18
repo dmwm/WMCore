@@ -86,7 +86,7 @@ class MySQLInterface(DBInterface):
                 if bindPosition == -1:
                     break
 
-                if not bindPositions.has_key(bindPosition):
+                if bindPosition not in bindPositions:
                     bindPositions[bindPosition] = 0
                     bindVarPositionList.append((bindName, bindPosition))
                 searchPosition = bindPosition + 1

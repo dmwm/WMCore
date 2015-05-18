@@ -209,7 +209,7 @@ class ReqMgrRESTModel(RESTModel):
     def isalnumExceptStats(self, index):
         """ Validates that all input is alphanumeric,
             with spaces and underscores tolerated"""
-        if index.has_key('stats'):
+        if 'stats' in index:
             return index
         return self.isalnum(index);
 
@@ -226,7 +226,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def intpriority(self, index):
         """ Casts priority to an integer """
-        if index.has_key('priority'):
+        if 'priority' in index:
             value = int(index['priority'])
             if math.fabs(value) >= sys.maxint:
                 msg = "Invalid priority!  Priority must have abs() less then MAXINT!"
@@ -241,7 +241,7 @@ class ReqMgrRESTModel(RESTModel):
         Sets request priority to an integer.
         Also makes sure it's within a certain value.
         """
-        if not index.has_key('priority'):
+        if 'priority' not in index:
             return index
 
         index = self.intpriority(index = index)
@@ -699,7 +699,7 @@ class ReqMgrRESTModel(RESTModel):
     def validateStats(self, index):
         """ Check the values for the updates """
 
-        if not index.has_key('stats'):
+        if 'stats' not in index:
             return index
         index['stats'] = Utilities.unidecode(JsonWrapper.loads(index['stats']))
         for k in ['input_lummis', 'input_num_files',

@@ -191,7 +191,7 @@ class Workflow(WMBSBase, WMWorkflow):
                 else:
                     mergedOutputFileset = None
 
-                if not self.outputMap.has_key(outputID):
+                if outputID not in self.outputMap:
                     self.outputMap[outputID] = []
 
                 self.outputMap[outputID].append({"output_fileset": outputFileset,
@@ -212,7 +212,7 @@ class Workflow(WMBSBase, WMWorkflow):
         if self.id == False:
             self.create()
 
-        if not self.outputMap.has_key(outputIdentifier):
+        if outputIdentifier not in self.outputMap:
             self.outputMap[outputIdentifier] = []
 
         self.outputMap[outputIdentifier].append({"output_fileset": outputFileset,

@@ -26,7 +26,7 @@ class JobSummary(object):
                 self.jobStatus[key] += jobStatus.get(key, 0)
             elif type(value) == dict:
                 for secondKey, secondValue in value.items():
-                    if jobStatus.has_key(key) and jobStatus[key].has_key(secondKey):
+                    if key in jobStatus and secondKey in jobStatus[key]:
                         self.jobStatus[key][secondKey] += jobStatus[key][secondKey]
     
     def addJobSummary(self, jobSummary):
@@ -151,15 +151,15 @@ class RequestInfo(object):
         self.tasks = {}
         self.tasksByAgent = {}
         self.jobSummary = JobSummary()
-        if data.has_key('AgentJobInfo'):
+        if 'AgentJobInfo' in data:
             for agentUrl, agentRequestInfo in data['AgentJobInfo'].items():
                 self.jobSummary.addJobStatusInfo(agentRequestInfo.get('status', {}))
                 self.jobSummaryByAgent[agentUrl] = JobSummary(agentRequestInfo.get('status', {}))
                 
-                if agentRequestInfo.has_key('tasks'):
+                if 'tasks' in agentRequestInfo:
                     self.tasksByAgent[agentUrl] = {}
                     for taskName, data in agentRequestInfo['tasks'].items():
-                        if not self.tasks.has_key(taskName):
+                        if taskName not in self.tasks:
                             self.tasks[taskName] = TaskInfo(self.requestName, taskName, data)
                         else:
                             self.tasks[taskName].addTaskInfo(TaskInfo(self.requestName, taskName, data))
@@ -189,7 +189,7 @@ class RequestInfo(object):
     
     def getTotalTopLevelJobsInWMBS(self):
         inWMBS = 0
-        if self.data.has_key("AgentJobInfo"):
+        if "AgentJobInfo" in self.data:
             for agentRequestInfo in self.data["AgentJobInfo"].values():
                 inWMBS += agentRequestInfo['status'].get('inWMBS', 0)
         return inWMBS
@@ -206,7 +206,7 @@ class RequestInfo(object):
         """
         datasets = {};
 
-        if not self.data.has_key("AgentJobInfo"):
+        if "AgentJobInfo" not in self.data:
             #ther is no report yet (no agent has reported)
             return datasets
         

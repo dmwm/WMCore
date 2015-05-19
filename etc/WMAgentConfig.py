@@ -530,6 +530,7 @@ config.AgentStatusWatcher.runningExpressPercent = 30 # [percent] Only used for t
 config.AgentStatusWatcher.runningRepackPercent = 10 # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.t1SitesCores = 30 # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.forcedSiteList = [] # [site list] List sites to force Resource Control
+config.AgentStatusWatcher.forcedSiteDown = [] # List of sites to be forced to Down status
 config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)
 config.AgentStatusWatcher.enabled = True # switch to enable or not this component
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5

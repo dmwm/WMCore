@@ -80,7 +80,11 @@ class AgentStatusPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
-        self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
+        
+        if hasattr(self.config, "Tier0Feeder"):
+            self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL, appName= "WMStats")
+        else:
+            self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         
         self.localCouchMonitor = CouchMonitor(self.config.JobStateMachine.couchurl)
         self.setUpCouchDBReplication()

@@ -162,6 +162,23 @@ class PyCondorPlugin(BasePlugin):
 
         return stateDict
 
+    @staticmethod
+    def exitCodeMap():
+        """
+        Exit Codes and their meaing
+        https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
+        """
+        exitCodeMap = { 0 : "Unknown", 
+                        1 : "Idle",
+                        2 : "Running",
+                        3 : "Removed",
+                        4 : "Complete",
+                        5 : "Held",
+                        6 : "Running" }
+
+        return exitCodeMap
+
+
     def __init__(self, config):
 
         self.config = config
@@ -573,133 +590,19 @@ class PyCondorPlugin(BasePlugin):
         if len(jobInfo.keys()) == 0:
             noInfoFlag = True
 
-        ###  Exit Codes and their meaing
-        ###  https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
-        exitCodeMap = { 0 : "Unknown", 
-                        1 : "Idle",
-                        2 : "Running",
-                        3 : "Removed",
-                        4 : "Complete",
-                        5 : "Held",
-                        6 : "Running" }
-
+        # Now go over the jobs from WMBS and see what we have
         for job in jobs:
-            # Now go over the jobs from WMBS and see what we have
             if not job['jobid'] in jobInfo.keys():
-                # Two options here, either put in removed, or not
-                # Only cycle through Removed if condor_q is sending
-                # us no information
                 if noInfoFlag:
-                    if not job['status'] == 'Removed':
-                        logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s" % (job['jobid'], job['status']))
-                        # If the job is not in removed, move it to removed
-                        job['status']      = 'Removed'
-                        job['status_time'] = int(time.time())
-                        changeList.append(job)
-                    elif time.time() - float(job['status_time']) > self.removeTime:
-                        logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s" % (job['jobid'], job['status']))
-                        # If the job is in removed, and it's been missing for more
-                        # then self.removeTime, remove it.
-                        completeList.append(job)
+                    self.procJobNoInfo(job, changeList, completeList, runningList)
                 else:
-                    ### There could be multiple condor log files under the same cache_dir
-                    ### Get the one that corresponds to [jobid] ==> WMAgent_JobID
-                    jobLogInfo = self.readCondorLog(job)
-                    jobAd = jobLogInfo.get(job['jobid'])
-                    if jobAd is None :
-                        ## If neither jobAd and no jobLog, assume job is complete
-                        logging.debug("No job log Info for jobid=%i. Assume it is Complete. Check DB." % job['jobid'])
-                        completeList.append(job)
-                        break
-
-                    jobStatus = int(jobAd.get('JobStatus',100))
-
-                    statName  = 'Unknown'
-                    if jobStatus in exitCodeMap.keys():
-                        statName = exitCodeMap[jobStatus]
-                        
-                    if statName == "Unknown" :
-                        logging.info("jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
-
-                    # Get the global state
-                    job['globalState'] = PyCondorPlugin.stateMap()[statName]
-                    logging.debug("JobLogInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
-                    if statName != job['status']:
-                        job['status']      = statName
-                        job['status_time'] = 0
-                        logging.debug("JobLogInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
-                        
-                    #Check if we have a valid status time
-                    #Do not catch exception here, Wait for next polling cycle
-                    if not job['status_time']:
-                        if job['status'] == 'Running':
-                            job['status_time'] = int(jobAd.get('runningTime', 0))
-
-                            # Check location for THIS running Job
-                            job['location'] = jobAd.get('runningCMSSite', None)
-                            if job['location'] is None:
-                                logging.debug('Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
-
-                        elif job['status'] == 'Idle':
-                            job['status_time'] = int(jobAd.get('submitTime', 0))
-                        else:
-                            job['status_time'] = int(jobAd.get('stateTime', 0))
-                            
-                        changeList.append(job)
-
-                    ## Add the job to Complete list if the status is Removed
-                    if job['status'] == "Complete" or job['status'] == "Removed" :
-                        completeList.append(job)
-                        break
-
-                    runningList.append(job) 
+                    self.procCondorLog(job, changeList, completeList, runningList)
             else:
-                jobAd     = jobInfo.get(job['jobid'])
+                self.procClassAd(job, jobInfo, changeList, completeList, runningList)
 
-                ### Make it concise
-                jobStatus = int(jobAd.get('JobStatus',100))
-
-                statName  = 'Unknown'
-                if jobStatus in exitCodeMap.keys():
-                    statName = exitCodeMap[jobStatus]
-                    
-                if statName == "Unknown" :
-                    logging.info("jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
-
-                # Get the global state
-                job['globalState'] = PyCondorPlugin.stateMap()[statName]
-
-                logging.debug("JobAdInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
-                if statName != job['status']:
-                    # Then the status has changed
-                    job['status']      = statName
-                    job['status_time'] = 0
-                    logging.debug("JobAdInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
-
-                #Check if we have a valid status time
-                #Do not catch exception here, wait for the next polling cycle
-                if not job['status_time']:
-                    if job['status'] == 'Running':
-                        job['status_time'] = int(jobAd.get('runningTime', 0))
-
-                        # Check location for THIS running Job
-                        job['location'] = jobAd.get('runningCMSSite', None)
-                        if job['location'] is None:
-                            logging.debug('Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
-
-                    elif job['status'] == 'Idle':
-                        job['status_time'] = int(jobAd.get('submitTime', 0))
-                    else:
-                        job['status_time'] = int(jobAd.get('stateTime', 0))
-                    
-                    changeList.append(job)
-
-                ## Add the job to Complete list if the status is Removed
-                if job['status'] == "Complete" or job['status'] == "Removed" :
-                    completeList.append(job)
-                    break
-
-                runningList.append(job)
+        logging.debug("PyCondorPlugin tracking : %i/%i/%i (Running/Changing/Complete)" %( len(runningList), 
+                                                                                          len(changeList), 
+                                                                                          len(completeList)))
 
         return runningList, changeList, completeList
 
@@ -1171,7 +1074,7 @@ class PyCondorPlugin(BasePlugin):
             ### Map it back to Schedd Status
             ### Mapping done using the exit codes from condor website,
             ### https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
-            LogExitCode={0:1,1:1,2:0,3:2,4:3,5:4,6:2,7:0,8:0,9:0,10:0,11:1,12:5,13:2}
+            LogExitCode={0:1,1:1,2:0,3:2,4:3,5:4,6:2,7:0,8:0,9:4,10:0,11:1,12:5,13:2}
             n = LogExitCode.get(x) if LogExitCode.get(x) is not None else 100
             return n
 
@@ -1216,3 +1119,128 @@ class PyCondorPlugin(BasePlugin):
         return jobLogInfo
 
         
+
+    def procJobNoInfo(self, job, changeList, completeList, runningList):
+        """
+        Process jobs where No ClassAd info is received from schedd
+        
+        """
+        if not job['status'] == 'Removed':
+            logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s" % (job['jobid'], job['status']))
+            # If the job is not in removed, move it to removed
+            job['status']      = 'Removed'
+            job['status_time'] = int(time.time())
+            changeList.append(job)
+        elif time.time() - float(job['status_time']) > self.removeTime:
+            logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s" % (job['jobid'], job['status']))
+            # If the job is in removed, and it's been missing for more
+            # then self.removeTime, remove it.
+            completeList.append(job)
+    
+            
+    def procCondorLog(self, job, changeList, completeList, runningList):
+        """
+        Process jobs where classad for jobs are not received
+        """
+        ### There could be multiple condor log files under the same cache_dir
+        ### Get the one that corresponds to [jobid] ==> WMAgent_JobID
+        jobLogInfo = self.readCondorLog(job)
+        jobAd = jobLogInfo.get(job['jobid'])
+        if jobAd is None :
+            ## If neither jobAd and no jobLog, assume job is complete
+            logging.debug("No job log Info for jobid=%i. Assume it is Complete. Check DB." % job['jobid'])
+            completeList.append(job)
+            return
+
+        jobStatus = int(jobAd.get('JobStatus',100))
+        
+        statName  = 'Unknown'
+        if jobStatus in PyCondorPlugin.exitCodeMap().keys():
+            statName = PyCondorPlugin.exitCodeMap()[jobStatus]
+            
+        if statName == "Unknown" :
+            logging.info("JobLogInfo: jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
+            
+        # Get the global state
+        job['globalState'] = PyCondorPlugin.stateMap()[statName]
+        logging.debug("JobLogInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
+        if statName != job['status']:
+            job['status']      = statName
+            job['status_time'] = 0
+            logging.debug("JobLogInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
+                        
+        #Check if we have a valid status time
+        #Do not catch exception here, Wait for next polling cycle
+        if not job['status_time']:
+            if job['status'] == 'Running':
+                job['status_time'] = int(jobAd.get('runningTime', 0))
+
+                # Check location for THIS running Job
+                job['location'] = jobAd.get('runningCMSSite', None)
+                if job['location'] is None:
+                    logging.debug('JobLogInfo: Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
+
+            elif job['status'] == 'Idle':
+                job['status_time'] = int(jobAd.get('submitTime', 0))
+            else:
+                job['status_time'] = int(jobAd.get('stateTime', 0))
+                
+            changeList.append(job)
+
+        ## Add the job to Complete list if the status is Removed
+        if job['status'] == "Complete" or job['status'] == "Removed" :
+            completeList.append(job)
+            return
+            
+        runningList.append(job) 
+
+    
+    def procClassAd(self, job, jobInfo, changeList, completeList, runningList):
+        """
+        Process jobs that have classAd info from schedd
+        """
+        jobAd = jobInfo.get(job['jobid'])
+        jobStatus = int(jobAd.get('JobStatus',100))
+
+        statName  = 'Unknown'
+        if jobStatus in PyCondorPlugin.exitCodeMap().keys():
+            statName = PyCondorPlugin.exitCodeMap()[jobStatus]
+            
+        if statName == "Unknown" :
+            logging.info("JobAdInfo: jobid=%i in unknown state %i" % (job['jobid'], jobStatus))
+
+        # Get the global state
+        job['globalState'] = PyCondorPlugin.stateMap()[statName]
+
+        logging.debug("JobAdInfo: JobStatus for jobid=%i is %s" % (job['jobid'],job['status']))
+        if statName != job['status']:
+            # Then the status has changed
+            job['status']      = statName
+            job['status_time'] = 0
+            logging.debug("JobAdInfo: JobStatus for jobid=%i changed to %s" % (job['jobid'],job['status']))
+
+        #Check if we have a valid status time
+        #Do not catch exception here, wait for the next polling cycle
+        if not job['status_time']:
+            if job['status'] == 'Running':
+                job['status_time'] = int(jobAd.get('runningTime', 0))
+                
+                # Check location for THIS running Job
+                job['location'] = jobAd.get('runningCMSSite', None)
+                if job['location'] is None:
+                    logging.debug('JobAdInfo: Something IS NOT right here, a job (%s) is running with no CMS site' % str(jobAd))
+
+            elif job['status'] == 'Idle':
+                job['status_time'] = int(jobAd.get('submitTime', 0))
+            else:
+                job['status_time'] = int(jobAd.get('stateTime', 0))
+                    
+            changeList.append(job)
+
+        ## Add the job to Complete list if the status is Removed
+        if job['status'] == "Complete" or job['status'] == "Removed" :
+            completeList.append(job)
+            return
+
+        runningList.append(job)
+

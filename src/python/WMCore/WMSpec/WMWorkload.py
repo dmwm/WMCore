@@ -621,7 +621,7 @@ class WMWorkloadHelper(PersistencyHelper):
         taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            task.updateLFNsAndDatasets(runNumber)
+            task.updateLFNsAndDatasets(runNumber = runNumber)
         return
 
     def updateDatasetName(self, mergeTask, datasetName):

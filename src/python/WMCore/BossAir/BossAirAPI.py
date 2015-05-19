@@ -413,10 +413,8 @@ class BossAirAPI(WMConnectionBase):
         successJobs  = []
         failureJobs  = []
 
-
         #TODO: Add plugin and user to input via JobSubmitter
         # IMPORTANT IMPORTANT IMPORTANT
-
 
         # Put job into RunJob format
         runJobs = []

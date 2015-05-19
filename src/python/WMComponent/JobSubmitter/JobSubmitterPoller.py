@@ -411,7 +411,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        newJob['task_name'],
                        frozenset(potentialLocations),
                        loadedJob.get("numberOfCores", 1),
-                      )
+                       newJob['task_id']
+                       )
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -725,6 +726,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'taskPriority' : self.workflowPrios[workflow],
                                'taskName' : cachedJob[17],
                                'numberOfCores' : cachedJob[19],
+                               'taskID' : cachedJob[20],
                                'potentialSites' : potentialSites}
 
                     # Add to jobsToSubmit

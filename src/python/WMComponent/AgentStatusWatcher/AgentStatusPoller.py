@@ -82,7 +82,8 @@ class AgentStatusPoller(BaseWorkerThread):
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         
         if hasattr(self.config, "Tier0Feeder"):
-            self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL, appName= "WMStats")
+            self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL, 
+                                                       appName= "WMStatsAgent")
         else:
             self.centralWMStatsCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.centralWMStatsURL)
         

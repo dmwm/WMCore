@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {		 
-    "Comments": "ReReco wf with one skim processing. Two runs whitelisted. 10l per job. Two hours opened",
+    "Comments": "ReReco wf with one skim processing. Two runs whitelisted. 10l per job. Two hours opened. Xrootd enabled",
     "CMSSWVersion": "CMSSW_5_3_7_patch5",
     "GlobalTag": "FT_R_53_V18::All",
     "Campaign": "Campaign-OVERRIDE-ME",		
@@ -52,6 +52,7 @@
     "CustodialSites": [],
     "NonCustodialSites": [],
     "AutoApproveSubscriptionSites": [],
+    "useSiteListAsLocation" : "True",
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
     "BlockCloseMaxWaitTime" : 72000,

@@ -36,6 +36,12 @@ class AgentStatusPoller(BaseWorkerThread):
     def setUpCouchDBReplication(self):
         
         self.replicatorDocs = []
+        # set up common replication code
+        wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
+        wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
+        
+        self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget, 
+                                    'filter':  "WMStatsAgent/repfilter"})
         #TODO: tier0 specific code - need to make it generic 
         if hasattr(self.config, "Tier0Feeder"):
             t0Source = self.config.Tier0Feeder.requestDBName
@@ -43,13 +49,6 @@ class AgentStatusPoller(BaseWorkerThread):
             self.replicatorDocs.append({'source': t0Source, 'target': t0Target, 
                                         'filter': "T0Request/repfilter"})
         else: # set up workqueue replication
-            #TODO: tier0 specific code - need to make it generic 
-            wmstatsSource = self.config.JobStateMachine.jobSummaryDBName
-            wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
-            
-            self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget, 
-                                        'filter':  "WMStatsAgent/repfilter"})
-            
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
             childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
@@ -60,7 +59,8 @@ class AgentStatusPoller(BaseWorkerThread):
             self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL, 
                                         'filter': wqfilter, 'query_params': query_params})
         
-        # delete or replicator docs befor setting up
+        
+    # delete or replicator docs befor setting up
         self.localCouchMonitor.deleteReplicatorDocs()
         
         for rp in self.replicatorDocs:

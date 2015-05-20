@@ -1,3 +1,126 @@
+1.0.6 to 1.0.7.pre6:
+  - Merge pull request #5899 from amaltaro/deterministic-pileup
+  - Merge pull request #5931 from ticoann/fix_tier0_replication
+  - fix tier0 wmstats replication
+  - 1.0.7.pre5
+  - Merge pull request #5928 from ticoann/clean_reject_abort
+  - add thread for moving to archived status
+  - Merge pull request #5927 from ticoann/agent_watcher_fix
+  - fix couchapp name
+  - Do not shuffle PU files for deterministicPileup
+  - Merge pull request #5926 from ticoann/missing_couch_t0
+  - fixes AgentStatusWatcher tier0 case
+  - add missing view
+  - Merge pull request #5925 from tsarangi/FixPyCondorLag
+  - Debugging session to find out why PyCondor and BossAir lacking communication during job tracking
+  - Merge pull request #5924 from ticoann/run_number_lfn
+  - fix run number in lfn
+  - 1.0.7.pre4
+  - Merge pull request #5863 from amaltaro/trust-site-list
+  - Merge pull request #5920 from ticoann/reqmgr2_compatibilty
+  - create the separate log for the each thread
+  - Merge pull request #5919 from amaltaro/migrate-has-key
+  - Merge pull request #5905 from ticoann/taskchain_fix
+  - fix taskchain acquisiton and lumilist
+  - Merge pull request #5915 from ticoann/add_more_complex_config
+  - Merge pull request #5916 from amaltaro/validate-site-lists
+  - Futurize: migrate dict has_key() to in
+  - Validate site white and black lists
+  - allow nested dict/list structure in Config
+  - Merge pull request #5355 from ticoann/remove_delete_wq_replication
+  - Merge pull request #5911 from amaltaro/dqmHarvest-spec
+  - DQMHarvest spec remake; Template updated
+  - don't replicate the deleted documents
+  - Merge pull request #5903 from ticoann/unittest_script
+  - add options on unittest script
+  - Merge pull request #5901 from vkuznet/ajax-bug
+  - Fix bug in AJAX done function
+  - Merge pull request #5900 from ticoann/nostale_reqmgr2
+  - update view right away
+  - Merge pull request #5894 from amaltaro/multiRun-harvest
+  - Merge pull request #5897 from ticoann/unittest_setup
+  - add unittest script
+  - 1.0.7.pre3
+  - Merge pull request #5895 from vkuznet/reqmgr2-issue5876
+  - Merge pull request #5893 from hufnagel/cmssw74-performancedata
+  - Fix issue 5876
+  - Fix for multiRun harvesting job creation
+  - Merge pull request #5890 from amaltaro/test-less-jobs
+  - Merge pull request #5889 from ericvaandering/fix_raise_mcm
+  - Merge pull request #5891 from ericvaandering/less_trivial_tests
+  - Fix pylint/pycharm stuff on McM_t as well
+  - Merge branch 'master' into fix_raise_mcm
+  - Reduce to ~20 jobs; fix harvesting parameter
+  - Try to fix remaining pylint issues with this code
+  - Merge pull request #5888 from ericvaandering/fix_raise_mcm
+  - Raise an exception not a tuple
+  - Merge pull request #5886 from ericvaandering/remove_coverage
+  - Merge pull request #5885 from ericvaandering/fix_trivial_tests
+  - Assert of a non-empty tuple is always true
+  - Hopefully speed up tests
+  - Add import from nose
+  - Add import from nose
+  - WMCore/HTTPFrontEnd/GlobalMonitor no longer exists. Hard to test.
+  - Merge pull request #5882 from ticoann/fix_update_validation
+  - fix update validation couch doc
+  - Merge pull request #5881 from ticoann/fix_queue_url
+  - fix child url
+  - Merge pull request #5880 from ticoann/fix_new_wmagent_couch
+  - fix couchapp on WMAgent
+  - 1.0.7.pre2
+  - Merge pull request #5854 from ticoann/remove_view_wmagent_deployment
+  - remove unnecessary views from wmagent wmstats view
+  - Merge pull request #5628 from ticoann/remove_auto_replication_fix
+  - Merge pull request #5868 from vkuznet/pycurl-fix
+  - remove automatic recovery from replication failure
+  - Merge pull request #5879 from vkuznet/reqmgr2-issue5875
+  - Changes to show created request name in web UI
+  - Merge pull request #5878 from ericvaandering/no_test_acdc_prod
+  - Remove a test completely
+  - Merge pull request #5873 from ericvaandering/improve_datamining
+  - Change printout statement with logging
+  - Add confirmationMessage; remove obsolete ajaxRequestPrototype
+  - Merge pull request #5877 from vkuznet/reqmgr2-attrs
+  - Change order of table attributes, mandatory fields will be shown at the top of the table
+  - Slightly improved
+  - json'ize params for non GET calls
+  - Remove json import
+  - Merge pull request #5870 from amaltaro/prio-comparison
+  - Merge pull request #5869 from ticoann/separate_complete_clean
+  - Fix workflow prio comparison
+  - temp fix for Oracle queury
+  - Fixx issue with pycurl
+  - 1.0.7.pre1
+  - Merge pull request #5862 from ticoann/fix_cmssw_pset
+  - Merge pull request #5865 from ericvaandering/improve_datamining
+  - Add some log messages and a new exception
+  - Merge pull request #5855 from hufnagel/checksum-crc-remove
+  - workaround to be able to handle cmssw74 performance data
+  - Fix useSiteListAsLocation usage
+  - Merge pull request #5826 from ticoann/separate_cleanup_complete
+  - Add unittest
+  - seperate complete workflow and deleting workflow
+  - initialize funcName
+  - Merge pull request #5860 from amaltaro/acdc-eventBased
+  - Correctly upload and create jobs for ACDC EventBased - master
+  - do both adler32 and crc checksum calculation in one file read
+  - Merge commit '331bb4287cfb228c6533ed3e2a04159bbb0cbddd'
+  - Merge pull request #5838 from ericvaandering/make_tests_run
+  - Merge pull request #5859 from amaltaro/limit-jobs-submit
+  - Merge pull request #5827 from ericvaandering/remove_import_md5
+  - Merge pull request #5828 from ericvaandering/remove_glite
+  - Merge pull request #5840 from ericvaandering/fix_pylint_disable
+  - Merge pull request #5842 from ericvaandering/fix_except
+  - Merge pull request #5852 from ticoann/fix_jobprio_call
+  - Limit amount of jobs to be submitted by JobSubmitter - master version
+  - Only change jobPrio when it has a diff prio
+  - Fix except to use python 2.6 recommendation
+  - Fix for enable in all directories
+  - Pylint disable messages with sed
+  - Make it so all tests run
+  - Remove code that can't possibly work
+  - Remove instances of import md5 which is deprecated
+
 1.0.6 to 1.0.7.pre5:
   - Merge pull request #5928 from ticoann/clean_reject_abort
   - add thread for moving to archived status

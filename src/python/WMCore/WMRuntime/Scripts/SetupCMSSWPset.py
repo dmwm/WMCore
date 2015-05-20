@@ -430,8 +430,12 @@ class SetupCMSSWPset(ScriptInterface):
                         if getattr(baggage, 'skipPileupEvents', None) is not None:
                             inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
-                # Prevent each worker at a site from requesting the same file to find products
-                random.shuffle(inputTypeAttrib.fileNames)
+                        else:
+                            # we do not want to shuffle when it's deterministicPileup
+                            random.shuffle(inputTypeAttrib.fileNames)
+                    else:
+                        # Prevent each worker at a site from requesting the same file to find products
+                        random.shuffle(inputTypeAttrib.fileNames)
 
     def _getPileupMixingModules(self):
         """

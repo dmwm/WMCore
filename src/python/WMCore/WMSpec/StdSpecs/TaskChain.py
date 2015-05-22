@@ -239,12 +239,15 @@ class TaskChainWorkloadFactory(StdBase):
             if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
                 self.multicoreNCores = int(taskConf['Multicore'])
 
+            if 'Memory' in taskConf:
+                self.memory = taskConf['Memory']
+
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
                 
             task = self.makeTask(taskConf, parentTask)
-            
+
             if i == 1:
                 # First task will either be generator or processing
                 self.workload.setDashboardActivity("relval")

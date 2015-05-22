@@ -157,8 +157,8 @@ class TaskChainTests(unittest.TestCase):
         self.testInit.generateWorkDir()
         self.workload = None
 
-        self.multithreaded = getTestFilename('data/ReqMgr/requests/DMWM/TaskChain_Multicore.json')
-        self.differentNCores = getTestFilename('data/ReqMgr/requests/DMWM/TaskChain_Task_Multicore.json')
+        self.multithreaded = getTestFilename('data/ReqMgr/requests/Integration/TaskChain_Multicore.json')
+        self.differentNCores = getTestFilename('data/ReqMgr/requests/Integration/TaskChain_Task_Multicore.json')
 
         return
 
@@ -582,7 +582,7 @@ class TaskChainTests(unittest.TestCase):
         number of cores
         """
 
-        arguments = self.buildMultitheadedTaskChain(self.multithreaded)
+        arguments = self.buildMultithreadedTaskChain(self.multithreaded)
 
         factory = TaskChainWorkloadFactory()
         try:
@@ -611,7 +611,7 @@ class TaskChainTests(unittest.TestCase):
         may run with a different number of cores
         """
 
-        arguments = self.buildMultitheadedTaskChain(self.differentNCores)
+        arguments = self.buildMultithreadedTaskChain(self.differentNCores)
 
         factory = TaskChainWorkloadFactory()
         try:
@@ -624,6 +624,10 @@ class TaskChainTests(unittest.TestCase):
         reco = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
         miniAOD = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
 
+        hltMemory = hlt.jobSplittingParameters()['performance']['memoryRequirement']
+        recoMemory = reco.jobSplittingParameters()['performance']['memoryRequirement']
+        aodMemory = miniAOD.jobSplittingParameters()['performance']['memoryRequirement']
+
         hltStep = hlt.getStepHelper("cmsRun1")
         recoStep = reco.getStepHelper("cmsRun1")
         miniAODStep = miniAOD.getStepHelper("cmsRun1")
@@ -632,10 +636,14 @@ class TaskChainTests(unittest.TestCase):
         self.assertEqual(recoStep.getNumberOfCores(), 8)
         self.assertEqual(miniAODStep.getNumberOfCores(), 1)
 
+        self.assertEqual(recoMemory, 3200.0)
+        self.assertEqual(aodMemory, 2000.0)
+        self.assertEqual(hltMemory, 2400.0)
+
         return
 
-    def buildMultitheadedTaskChain(self, filename):
-        """
+    def buildMultithreadedTaskChain(self, filename):
+        """    d
         Build a TaskChain from several sources and customization
         """
 
@@ -650,7 +658,7 @@ class TaskChainTests(unittest.TestCase):
 
         # ... continuing with the request
         for key in ['CMSSWVersion', 'ScramArch', 'GlobalTag', 'ProcessingVersion',
-                    'Multicore',
+                    'Multicore', 'Memory',
                     'TaskChain', 'Task1', 'Task2', 'Task3']:
             arguments.update({key : request['createRequest'][key]})
 

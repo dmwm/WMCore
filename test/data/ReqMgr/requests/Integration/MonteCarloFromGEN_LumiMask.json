@@ -57,7 +57,7 @@
     "AutoApproveSubscriptionSites": [],
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
-    "useSiteListAsLocation" : "true",
+    "useSiteListAsLocation" : "True",
     "BlockCloseMaxWaitTime" : 72000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 20000000,

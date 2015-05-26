@@ -66,6 +66,14 @@ class PileupFetcher(FetcherInterface):
         directory / sandbox.
 
         """
+        
+        stepPath = "%s/%s" % (self.workingDirectory(), helper.name())
+        fileName = "%s/%s" % (stepPath, "pileupconf.json")
+        if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
+            # if file already exist don't make a new dbs call and overwrite the file.
+            # just return
+            return
+            
         encoder = JSONEncoder()
         # this should have been set in CMSSWStepHelper along with
         # the pileup configuration
@@ -78,7 +86,6 @@ class PileupFetcher(FetcherInterface):
         # create JSON and save into a file
         json = encoder.encode(configDict)
 
-        stepPath = "%s/%s" % (self.workingDirectory(), helper.name())
         if not os.path.exists(stepPath):
             os.mkdir(stepPath)
         try:

@@ -38,8 +38,6 @@ class ReRecoWorkloadFactory(DataProcessing):
 
         cmsswStepType = "CMSSW"
         taskType = "Processing"
-        if self.multicore and int(self.multicore) > 1:
-            taskType = "MultiProcessing"
 
         forceUnmerged = False
         if self.transientModules:

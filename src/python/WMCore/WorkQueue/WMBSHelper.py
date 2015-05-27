@@ -12,6 +12,7 @@ Use WMSpecParser to extract information for creating workflow, fileset, and subs
 import copy
 import logging
 import threading
+import traceback
 from collections import defaultdict
 
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
@@ -403,7 +404,14 @@ class WMBSHelper(WMConnectionBase):
         self.beginTransaction()
 
         self.createTopLevelFileset()
-        sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
+        try:
+            sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
+        except Exception as ex:
+            myThread = threading.currentThread()
+            myThread.transaction.rollback()
+            msg = traceback.format_exc()
+            logging.error("Failed to create subscription %s" % msg)
+            raise ex
 
         if block != None:
             logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),

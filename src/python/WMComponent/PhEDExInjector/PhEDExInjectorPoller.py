@@ -8,7 +8,6 @@ Poll the DBSBuffer database and inject files as they are created.
 import threading
 import logging
 import traceback
-from collections import defaultdict
 from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -64,7 +63,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "PhEDExInjector")
 
-        self.filesToRecover = None
+        self.blocksToRecover = None
 
     def setup(self, parameters):
         """
@@ -145,16 +144,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
              {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
         
         returns
-        {"block1": set(["lfn1", "lfn2"])}
+        set({"block1": set(["lfn1", "lfn2"])}, {"block2": set(["lfn3", "lfn4"]))
         """
-        sortedBlocks = defaultdict(set)
+        blocks = set()
         for datasetPath in unInjectedData:
-            
-            for fileBlockName, fileBlock in unInjectedData[datasetPath].iteritems():
+
+            for blockName, fileBlock in unInjectedData[datasetPath].items():
+
+                newBlock = { blockName : set() }
+
                 for fileDict in fileBlock["files"]:
-                    sortedBlocks[fileBlockName].add(fileDict["lfn"])
-                    
-        return sortedBlocks
+                    newBlock[blockName].add(fileDict["lfn"])
+
+                blocks.add(newBlock)
+
+        return blocks
     
     def injectFiles(self):
         """
@@ -211,7 +215,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 if ex.status == 400:
                     # assume it is duplicate injection error. but if that is not the case
                     # needs to be investigated
-                    self.filesToRecover = self.createRecoveryFileFormat(uninjectedFiles[siteName])
+                    self.blocksToRecover = self.createRecoveryFileFormat(uninjectedFiles[siteName])
                 
                 msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
                 raise PhEDExInjectorPassableError(msg)
@@ -331,18 +335,27 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         In that case run the recovery mode
         1. first check whether files which injection status = 0 are in the PhEDEx.
         2. if those file exist set the in_phedex status to 1
-        3. set self.filesToRecover = None
+        3. set self.blocksToRecover = None
+
+        Run this recovery one block at a time, with too many blocks
+        the call to the PhEDEx data service on cmsweb can time out
         """
         myThread = threading.currentThread()
-        
-        injectedFiles = self.phedex.getInjectedFiles(self.filesToRecover)
-        
-        myThread.transaction.begin()
-        self.setStatus.execute(injectedFiles, 1)
-        myThread.transaction.commit()
-        # when files are recovered set the self.file 
-        self.filesToRecover = None
-        return injectedFiles
+
+        # recover one block at a time
+        for block in self.blocksToRecover:
+
+            injectedFiles = self.phedex.getInjectedFiles(block)
+
+            if len(injectedFiles) > 0:
+
+                myThread.transaction.begin()
+                self.setStatus.execute(injectedFiles, 1)
+                myThread.transaction.commit()
+                logging.info("%s files already injected: changed status in dbsbuffer db" % len(injectedFiles))
+
+        self.blocksToRecover = None
+        return
         
     def algorithm(self, parameters):
         """
@@ -353,12 +366,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         try:
-            if self.filesToRecover != None:
+            if self.blocksToRecover != None:
                 logging.info(""" Running PhEDExInjector Recovery: 
                                  previous injection call failed, 
                                  check if files were injected to PhEDEx anyway""")
-                recoveredFiles = self.recoverInjectedFiles()
-                logging.info("%s files already injected: changed status in dbsbuffer db" % len(recoveredFiles))
+                self.recoverInjectedFiles()
                         
             self.injectFiles()
             self.closeBlocks()

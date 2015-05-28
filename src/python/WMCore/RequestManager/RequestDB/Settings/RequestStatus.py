@@ -51,12 +51,12 @@ NextStatus = {
  "failed" : ["failed", "testing-approved", "assigned", "rejected"],
  "epic-FAILED" : ["epic-FAILED"],
  "completed" : ["completed", "closed-out", "rejected"],
- "closed-out" : ["announced"],
- "announced" : ["normal-archived"],
+ "closed-out" : ["announced", "rejected"],
+ "announced" : ["rejected", "normal-archived"],
  "aborted" : ["aborted-completed"],
  "rejected" : ["rejected-archived"],
  "aborted-completed": ["aborted-archived"],
- "normal-archived":[],
+ "normal-archived":["rejected-archived"],
  "aborted-archived":[],
  "rejected-archived":[]
 }

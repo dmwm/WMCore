@@ -50,9 +50,9 @@ REQUEST_STATE_TRANSITION = {
                   "closed-out",
                   "rejected"], # manual transition
                              
-    "closed-out": ["announced"], # manual transition
+    "closed-out": ["announced", "rejected"], # manual transition
     
-    "announced": ["normal-archived"],
+    "announced": ["rejected", "normal-archived"],
     
     "aborted": ["aborted-completed"],
                              
@@ -61,7 +61,7 @@ REQUEST_STATE_TRANSITION = {
     "rejected": ["rejected-archived"],
                              
     # final status
-    "normal-archived": [],
+    "normal-archived": ["rejected-archived"],
     
     "aborted-archived": [],
     

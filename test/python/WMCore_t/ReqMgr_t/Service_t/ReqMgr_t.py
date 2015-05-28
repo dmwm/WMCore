@@ -64,16 +64,17 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         #print "%s" % self.test_authz_key.data
         self.default_status_header = getAuthHeader(self.test_authz_key.data, DEFAULT_STATUS_PERMISSION)
         
-        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests")
+        requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
         rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
         
         rerecoArgs = JsonWrapper.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
+        self.rerecoCreateArgs["PrepID"] = "test_prepid"
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
         # overwrite rereco args
         self.rerecoAssignArgs["AcquisitionEra"] = "test_aqc"
         
-        lheFile = open(os.path.join(requestPath, "LHEStep0.json"), 'r')
+        lheFile = open(os.path.join(requestPath, "TaskChain_Data.json"), 'r')
         lheArgs = JsonWrapper.load(lheFile)
         self.lheStep0CreateArgs = lheArgs["createRequest"]
         self.lheStep0AssignArgs = lheArgs["assignRequest"]
@@ -125,8 +126,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         # test post method
         respond = self.postRequestWithAuth(self.rerecoCreateArgs)
         self.assertEqual(respond[1], 200)
-        
-        requestName = respond[0]['result'][0]['RequestName']
+        requestName = respond[0]['result'][0]['request']
         return requestName
         
     def testRequestSimpleCycle(self):

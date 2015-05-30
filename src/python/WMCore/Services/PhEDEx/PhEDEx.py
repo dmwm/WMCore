@@ -217,6 +217,8 @@ class PhEDEx(Service):
         priority         priority, one of "low", "normal" and "high"
         move             y (move) or n (replica)
         suspended        y or n, default is either
+        collapse         y or n, default y. If y, do not show block level
+                           subscriptions of a dataset
         """
 
         callname = 'subscriptions'
@@ -242,6 +244,7 @@ class PhEDEx(Service):
         result = defaultdict(set)
 
         kwargs.setdefault('suspended', 'n') # active subscriptions by default
+        kwargs['collapse'] = 'n'            # queries for block level subscriptions as well
 
         dataItems = list(set(dataItems)) # force unique items
         datasetsOnly = set()
@@ -258,7 +261,6 @@ class PhEDEx(Service):
         for dsname, items in inputs.items():
             try:
                 # query for all blocks in dataset
-                # returns both dataset and block level subscriptions.
                 kwargs['block'] = dsname + '#%'
                 response = self.subscriptions(**kwargs)['phedex']
 

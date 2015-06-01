@@ -39,8 +39,8 @@ OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
 HOSTNAME=`hostname`
 
 # These values may be overwritten by the arguments provided in the command line
-WMA_ARCH=slc5_amd64_gcc461
-REPO="comp=comp"
+WMA_ARCH=slc6_amd64_gcc481
+REPO="comp=comp.pre”
 AG_NUM=0
 FLAVOR=mysql
 
@@ -191,9 +191,7 @@ unzip -q deployment.zip
 cd deployment-$CMSWEB_TAG
 set +e 
 
-### Patching Couchdb1.6
-echo -e "\n*** Applying deployment patches (couchdb1.6, etc) ***"
-wget -nv https://github.com/dmwm/deployment/pull/162.patch -O - | patch -p 1
+echo -e "\n*** Applying (for couchdb1.6, etc) cert file permission ***"
 chmod 600 /data/certs/service{cert,key}.pem
 echo "Done!"
 

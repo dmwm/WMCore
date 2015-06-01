@@ -43,7 +43,7 @@ workloadSummaryURL = couchURL
 
 # Information for the workqueue, email of the administrator and the team names
 # for this agent.
-userEmail = "OP EMAIL"
+userEmail = "cms-comp-ops-workflow-team@cern.ch"
 agentTeams = "team1,team2,cmsdataops"
 agentName = "WMAgentCommissioning"
 agentNumber = 0
@@ -61,9 +61,13 @@ localDBSVersion = "DBS_2_0_8"
 globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
-# Job retry information.  This includes the number of times a job will tried and
-# how long it will sit in cool off.
-maxJobRetries = 3
+# List of SE for T1 _Disk endpoints (TODO clean this up at some point)
+diskSites = ['storm-fe-cms.cr.cnaf.infn.it','srm-cms-disk.gridpp.rl.ac.uk',
+             'cmssrm-fzk.gridka.de','ccsrm.in2p3.fr','srmcms.pic.es','cmssrmdisk.fnal.gov'] 
+
+# Job retry information.  This includes the number of times a job will be retried and
+# for how long it will sit in cool off.
+maxJobRetries = {'default' : 3, 'Merge' : 4, 'LogCollect' : 1, 'Cleanup' : 2, 'Harvesting' : 2}
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.
@@ -168,7 +172,7 @@ config.PhEDExInjector.safeMode = False
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES" 
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
-config.PhEDExInjector.diskSites = []
+config.PhEDExInjector.diskSites = diskSites
 
 config.component_("JobAccountant")
 config.JobAccountant.namespace = "WMComponent.JobAccountant.JobAccountant"
@@ -214,7 +218,7 @@ config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
-config.JobStatusLite.stateTimeouts = {"Error": 1800, "Running": 169200, "Pending": 360000}
+config.JobStatusLite.stateTimeouts = {"Error": 1800, "Running": 169200, "Pending": 259200}
 
 config.component_("JobUpdater")
 config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
@@ -233,6 +237,7 @@ config.ErrorHandler.pollInterval = 240
 config.ErrorHandler.readFWJR = True
 config.ErrorHandler.failureExitCodes = [50660, 50661, 50664]
 config.ErrorHandler.maxFailTime = 120000
+config.ErrorHandler.maxProcessSize = 30
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
@@ -513,8 +518,8 @@ config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
 config.AnalyticsDataCollector.ignoreDisk = ["/lustre/unmerged"]
-config.AnalyticsDataCollector.diskUseThreshold = 60
-config.AnalyticsDataCollector.couchProcessThreshold = 25
+config.AnalyticsDataCollector.diskUseThreshold = 75
+config.AnalyticsDataCollector.couchProcessThreshold = 50
 config.AnalyticsDataCollector.pluginName = None
 
 config.component_("AgentStatusWatcher")

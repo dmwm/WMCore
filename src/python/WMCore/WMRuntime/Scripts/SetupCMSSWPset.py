@@ -434,14 +434,14 @@ class SetupCMSSWPset(ScriptInterface):
                     if requestedPileupType == 'data':
                         baggage = self.job.getBaggage()
                         if getattr(baggage, 'skipPileupEvents', None) is not None:
+                            # For deterministic pileup, we want to shuffle the list the
+                            # same for every job in the task and skip events
+                            random.seed(self.job['task'])
+                            print "Skipping %d pileup events for deterministic data mixing" % baggage.skipPileupEvents
                             inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
-                        else:
-                            # we do not want to shuffle when it's deterministicPileup
-                            random.shuffle(inputTypeAttrib.fileNames)
-                    else:
-                        # Prevent each worker at a site from requesting the same file to find products
-                        random.shuffle(inputTypeAttrib.fileNames)
+                    # Shuffle according to the seed above or randomly
+                    random.shuffle(inputTypeAttrib.fileNames)
         return
 
     def _getPileupMixingModules(self):

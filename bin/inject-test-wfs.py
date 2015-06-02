@@ -39,6 +39,8 @@ def main():
     parser.add_option('-i', '--injectOnly', action = "store_true", help = 'Only injects requests but do not assign them',
                       dest = 'injOnly', default=False)
     parser.add_option('-d', '--dryRun', action = "store_true", help = 'Simulation mode only', dest = 'dryRun', default=False)
+    parser.add_option('-2', '--reqmgr2', action = "store_true", help = 'Request Manager 2 injection', dest = 'reqmgr2', default=False)
+    
     (options, args) = parser.parse_args()
     if not options.camp and not options.reqStr:
         print "Ex.: python inject-test-wfs.py -c Agent105_Validation -r Robot_Alan -t testbed-vocms009 -a DMWM_Test -p TEST_Alan_LoL_v2"  
@@ -83,9 +85,15 @@ def main():
         templates = os.listdir(wmcorePath)
     blacklist = ['StoreResults.json']
     templates = [ item for item in templates if item not in blacklist ]
-
+    
+    
+    if options.reqmgr2:
+        reqMgrCommand = "reqmgr2.py"
+    else:
+        reqMgrCommand = "reqmgr.py"
+        
     for filename in templates:
-        strComm = "python reqmgr.py -u CMSWEB_TESTBED -f TEMPLATE.json -i "
+        strComm = "python %s -u CMSWEB_TESTBED -f TEMPLATE.json -i " % reqMgrCommand
         # create request setup
         name = filename.split('.json')[0]
         createRequest = {"createRequest": {}}

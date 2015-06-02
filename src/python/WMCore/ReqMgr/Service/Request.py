@@ -374,15 +374,19 @@ class Request(RESTEntity):
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
                 
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
-        return report
+        
+        if report == 'OK':
+            return {workload.name(): "OK"}
+        else:
+            return {workload.name(): "ERROR"}
     
     @restcall
     def put(self, workload_pair_list):
         "workloadPairList is a list of tuple containing (workload, requeat_args)"
         report = []
         for workload, request_args in workload_pair_list:
-            report = self._updateRequest(workload, request_args)
-            
+            result = self._updateRequest(workload, request_args)
+            report.append(result)
         return report 
     
     @restcall

@@ -568,7 +568,7 @@ class DBS3Reader:
         node_filter = set(['UNKNOWN', None])
         if not dbsOnly:
             try:
-                blocksInfo = self.phedex.getReplicaSEForBlocks(block=fileBlockNames, complete='y')
+                blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(block=fileBlockNames, complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
                 msg += "%s\n" % str(ex)
@@ -600,6 +600,10 @@ class DBS3Reader:
                 valid_nodes = set([node]) - node_filter
                 if valid_nodes:  # dont add if only 'UNKNOWN' or None
                     locations[name] = list(valid_nodes)
+
+        ## DEBUG ONLY, REMOVE BEFORE COMMITING
+        if dbsOnly:
+            logging.warning("ALEX DBS3Reader2: dbsOnly=%s, locations=%s" % (dbsOnly, locations))
 
         #returning single list if a single block is passed
         if singleBlockName is not None:
@@ -748,7 +752,7 @@ class DBS3Reader:
         locations=set()
         if not dbsOnly:
             try:
-                blocksInfo = self.phedex.getReplicaSEForBlocks(dataset=[datasetName],complete='y')
+                blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(dataset=[datasetName],complete='y')
             except Exception, ex:
                 msg = "Error while getting block location from PhEDEx for dataset=%s)\n" % datasetName
                 msg += "%s\n" % str(ex)

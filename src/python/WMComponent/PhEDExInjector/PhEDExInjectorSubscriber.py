@@ -87,6 +87,8 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
 
+            ## Wont need this if PNN stored in DB
+            #######################################
             cmsNames = self.siteDB.PNNtoPSN(node["name"])
             
             for cmsName in cmsNames:
@@ -96,6 +98,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
                 logging.info("Loaded PhEDEx node %s for site %s" % (node["name"], cmsName))
                 if node["kind"] not in self.cmsToPhedexMap[cmsName]:
                     self.cmsToPhedexMap[cmsName][node["kind"]] = node["name"]
+            ########################################
 
             if node["kind"] in [ "MSS", "Disk" ]:
                 self.phedexNodes[node["kind"]].append(node["name"])

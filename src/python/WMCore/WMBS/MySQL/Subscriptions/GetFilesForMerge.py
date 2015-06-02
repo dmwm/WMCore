@@ -34,7 +34,7 @@ class GetFilesForMerge(DBFormatter):
                     wmbs_file_details.first_event AS file_first_event,
                     MIN(wmbs_file_runlumi_map.run) AS file_run,
                     MIN(wmbs_file_runlumi_map.lumi) AS file_lumi,
-                    wls.se_name AS se_name
+                    wls.se_name AS pnn
              FROM (
                SELECT wmbs_sub_files_available.fileid AS fileid,
                       MIN(wmbs_file_parent.parent) AS parent,
@@ -83,10 +83,10 @@ class GetFilesForMerge(DBFormatter):
         result = {}
         for entry in ungroupedResult:
             if entry['file_lfn'] not in result:
-                entry['se_name'] = set([entry['se_name']])
+                entry['pnn'] = set([entry['pnn']])
                 result[entry['file_lfn']] = entry
             else:
-                result[entry['file_lfn']]['se_name'].add(entry['se_name'])
+                result[entry['file_lfn']]['pnn'].add(entry['pnn'])
         for entry in result:
-            result[entry]['pnn'] = frozenset(result[entry]['se_name'])
+            result[entry]['pnn'] = frozenset(result[entry]['pnn'])
         return result.values()

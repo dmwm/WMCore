@@ -411,7 +411,7 @@ class JobCreatorPoller(BaseWorkerThread):
                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             # Handle temporary connection problems (Temporary)
-            if "InterfaceError: not connected" in str(ex):
+            if "(InterfaceError) not connected" in str(ex):
                 logging.error('There was a connection problem during the JobCreator algorithm, I will try again next cycle')
             else:
                 msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex,traceback.format_exc())

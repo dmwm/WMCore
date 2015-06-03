@@ -328,7 +328,7 @@ class Assign(WebAPI):
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         helper.setProcessingString(kwargs.get("ProcessingString", None))
-
+        
         # Now verify the output datasets
         outputDatasets = helper.listOutputDatasets()
         for dataset in outputDatasets:
@@ -346,10 +346,10 @@ class Assign(WebAPI):
         helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),
                                   int(kwargs.get("MaxMergeSize", 4294967296)),
                                   int(kwargs.get("MaxMergeEvents", 50000)))
-        helper.setupPerformanceMonitoring(int(kwargs.get("MaxRSS", 2411724)),
-                                          int(kwargs.get("MaxVSize", 20411724)),
-                                          int(kwargs.get("SoftTimeout", 129600)),
-                                          int(kwargs.get("GracePeriod", 300)))
+        helper.setupPerformanceMonitoring(kwargs.get("MaxRSS", None),
+                                          kwargs.get("MaxVSize", None),
+                                          kwargs.get("SoftTimeout",None),
+                                          kwargs.get("GracePeriod", None))        
 
         # Check whether we should check location for the data
         useAAA = strToBool(kwargs.get("useSiteListAsLocation", False))
@@ -391,6 +391,10 @@ class Assign(WebAPI):
                                      blockCloseMaxEvents, blockCloseMaxSize)
 
         helper.setDashboardActivity(kwargs.get("Dashboard", ""))
+        # set Task properties if they are exist
+        # TODO: need to define the task format (maybe kwargs["tasks"]?)
+        helper.setTaskProperties(kwargs)
+        
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
         
         # update AcquisitionEra in the Couch document (#4380)

@@ -239,9 +239,6 @@ class TaskChainWorkloadFactory(StdBase):
             if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
                 self.multicoreNCores = int(taskConf['Multicore'])
 
-            if 'Memory' in taskConf:
-                self.memory = taskConf['Memory']
-
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
@@ -326,7 +323,8 @@ class TaskChainWorkloadFactory(StdBase):
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
                                               forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory, sizePerEvent = self.sizePerEvent)
+                                              memoryReq = taskConf.get('Memory', None), sizePerEvent = self.sizePerEvent,
+                                              tasConf = taskConf)
 
         # this need to be called after setpuProcessingTask since it will overwrite some values
         self._updateCommonParams(task, taskConf)
@@ -403,8 +401,9 @@ class TaskChainWorkloadFactory(StdBase):
                                               stepType = cmsswStepType,
                                               forceUnmerged = forceUnmerged,
                                               timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory,
-                                              sizePerEvent = self.sizePerEvent)
+                                              memoryReq = taskConf.get("Memory", None),
+                                              sizePerEvent = self.sizePerEvent, 
+                                              taskConf = taskConf)
         
         # this need to be called after setpuProcessingTask since it will overwrite some values
         self._updateCommonParams(task, taskConf)
@@ -623,7 +622,8 @@ class TaskChainWorkloadFactory(StdBase):
                     "Multicore" : {"default" : None, "type" : int,
                                      "optional" : True, "validate" : lambda x : x > 0,
                                      "null" : False},
-
+                    "Memory" : {"default" : None, "type" : int,
+                                "optional" : True, "validate" : lambda x : x > 0},
                     }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

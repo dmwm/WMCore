@@ -79,6 +79,7 @@ class WMTaskHelper(TreeHelper):
         TreeHelper.__init__(self, wmTask)
         self.startTime = None
         self.endTime   = None
+        self.monitoring = None
 
 
     def addTask(self, taskName):
@@ -523,6 +524,8 @@ class WMTaskHelper(TreeHelper):
         performanceParams = getattr(self.data.input.splitting, "performance")
         performanceParams.timePerEvent = timePerEvent \
                         or getattr(performanceParams, "timePerEvent", None)
+        if memoryReq:
+            memoryReq = int(memoryReq)
         performanceParams.memoryRequirement = memoryReq \
                         or getattr(performanceParams, "memoryRequirement", None)
         performanceParams.sizePerEvent = sizePerEvent \
@@ -1102,6 +1105,44 @@ class WMTaskHelper(TreeHelper):
 
         return self.data.notifications.targets
 
+    def _setPerformanceMonitorConfig(self):
+        """
+        if config section for the PerformanceMonitor. If not set, it will set one 
+        """
+        if self.monitoring != None:
+            return
+        
+        self.monitoring = self.data.section_("watchdog")
+        if not hasattr(self.data.watchdog, 'monitors'):
+            self.data.watchdog.monitors = []
+        if not 'PerformanceMonitor' in self.monitoring.monitors:
+            self.monitoring.monitors.append('PerformanceMonitor')
+            self.monitoring.section_("PerformanceMonitor")
+        return
+    
+    def setMaxRSS(self, maxRSS):
+        if type(maxRSS) == dict:
+            maxRSS = maxRSS.get(self.name(), None)
+        
+        if maxRSS:
+            self._setPerformanceMonitorConfig()
+            self.monitoring.PerformanceMonitor.maxRSS = int(maxRSS)
+            for task in self.childTaskIterator():
+                task.setMaxRSS(maxRSS)
+        return
+    
+    def setMaxVSize(self, maxVSize):
+        if type(maxVSize) == dict:
+            maxVSize = maxVSize.get(self.name(), None)
+
+        if maxVSize:
+            self._setPerformanceMonitorConfig()
+            self.monitoring.PerformanceMonitor.maxVSize = int(maxVSize)
+            for task in self.childTaskIterator():
+                task.setMaxVSize(maxVSize)
+        return
+    
+    
     def setPerformanceMonitor(self, maxRSS = None, maxVSize = None,
                                     softTimeout = None, gracePeriod = None):
         """
@@ -1109,16 +1150,16 @@ class WMTaskHelper(TreeHelper):
 
         Set/Update the performance monitor options for the task
         """
-        monitoring = self.data.section_("watchdog")
-        if not hasattr(self.data.watchdog, 'monitors'):
-            self.data.watchdog.monitors = []
-        if not 'PerformanceMonitor' in monitoring.monitors:
-            monitoring.monitors.append('PerformanceMonitor')
-            monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS      = maxRSS
-        monitoring.PerformanceMonitor.maxVSize    = maxVSize
-        monitoring.PerformanceMonitor.softTimeout = softTimeout
-        monitoring.PerformanceMonitor.hardTimeout = softTimeout + gracePeriod
+        if not maxRSS and not maxVSize and not softTimeout and not gracePeriod:
+            # if no values is specified do nothing
+            return
+        
+        self.setMaxRSS(maxRSS)
+        self.setMaxVSize(maxVSize)
+        if softTimeout:
+            self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
+            if gracePeriod:
+                self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)
         return
 
     def getSwVersion(self):
@@ -1302,6 +1343,27 @@ class WMTaskHelper(TreeHelper):
             return buildLumiMask(runs, lumis)
 
         return {}
+    
+    def _propMethodMap(self):
+        """
+        internal mapping methop which maps which method need to be call for each
+        property.
+        For now only contains properties which updates in assignment stage.
+        """
+        propMap = {"ProcessingVersion": self.setProcessingVersion,
+                   "AcquisitionEra": self.setAcquisitionEra,
+                   "ProcessingString": self.setProcessingString,
+                   "MaxRSS": self.setMaxRSS,
+                   "MaxVSize": self.setMaxVSize
+                   }
+        return propMap
+    
+    def setProperties(self, properties):
+        """
+        set task properties (only for assignment stage but make it more general). 
+        """
+        for prop, value in properties.items():
+            self._propMethodMap()[prop](value)
 
     def setInputLocationFlag(self, flag):
         """

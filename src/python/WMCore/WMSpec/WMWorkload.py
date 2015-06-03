@@ -704,7 +704,24 @@ class WMWorkloadHelper(PersistencyHelper):
         self.lumiList = lumiLists
         return
 
-
+    def setTaskProperties(self, requestArgs):
+        if not 'TaskChain' in requestArgs:
+            return
+        
+        numTasks = requestArgs['TaskChain']
+        taskArgs = []
+        for i in range(numTasks):
+            taskArgs.append(requestArgs["Task%s" % (i+1)])
+        
+        for prop in taskArgs:
+            taskName = prop['TaskName']
+            for task in self.getAllTasks():
+                if task.name() == taskName:
+                    del prop['TaskName']
+                    task.setProperties(prop)
+                    break
+        return 
+            
     def getAcquisitionEra(self):
         """
         _getAcquisitionEra_
@@ -1698,6 +1715,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if self._checkKeys(kwargs, "DashboardActivity"):
             self.setDashboardActivity(kwargs["DashboardActivity"])
+            
+        # TODO: need to define proper task form maybe kwargs['Tasks']?
+        self.setTaskProperties(kwargs)
 
 
         return kwargs

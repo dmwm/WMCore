@@ -172,19 +172,19 @@ def UniqueAxis(axisclass, axis):
         #print n
         if type(v)==types.FunctionType:
             #print 'rebuilding',n
-            newcode = new.code(v.func_code.co_argcount,
-                                   v.func_code.co_nlocals,
-                                   v.func_code.co_stacksize,
-                                   v.func_code.co_flags,
-                                   v.func_code.co_code,
-                                   v.func_code.co_consts,
-                                   tuple([nn.replace(axisclass.__name__,name) for nn in v.func_code.co_names]),
-                                   v.func_code.co_varnames,
-                                   v.func_code.co_filename,
-                                   v.func_code.co_name,
-                                   v.func_code.co_firstlineno,
-                                   v.func_code.co_lnotab)
-            newfunc = new.function(newcode,v.func_globals,v.func_name,v.func_defaults)
+            newcode = new.code(v.__code__.co_argcount,
+                                   v.__code__.co_nlocals,
+                                   v.__code__.co_stacksize,
+                                   v.__code__.co_flags,
+                                   v.__code__.co_code,
+                                   v.__code__.co_consts,
+                                   tuple([nn.replace(axisclass.__name__,name) for nn in v.__code__.co_names]),
+                                   v.__code__.co_varnames,
+                                   v.__code__.co_filename,
+                                   v.__code__.co_name,
+                                   v.__code__.co_firstlineno,
+                                   v.__code__.co_lnotab)
+            newfunc = new.function(newcode,v.__globals__,v.__name__,v.__defaults__)
             setattr(newtype,n,newfunc)
             #print 'rebuilt',n,newfunc.func_code.co_names,id(newfunc)
     return newtype

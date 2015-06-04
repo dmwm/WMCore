@@ -32,7 +32,7 @@ if __name__ == '__main__':
     task.completeTask(jobLocation = os.getcwd(),
                       logLocation = logLocation)
     print "Startup.py : %s : shutting down monitor" % time.strftime("%Y-%m-%dT%H:%M:%S")
-    os.fchmod(1, 0664)
-    os.fchmod(2, 0664)
+    os.fchmod(1, 0o664)
+    os.fchmod(2, 0o664)
     if monitor.isAlive():
         monitor.shutdown()

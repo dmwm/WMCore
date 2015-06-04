@@ -319,7 +319,7 @@ class CreateWorkArea:
 
         #change permissions. See #3623
         for directory in nameList:
-            os.chmod(directory,  0775)
+            os.chmod(directory,  0o775)
 
         return
 

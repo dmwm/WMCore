@@ -206,17 +206,17 @@ class LumiBasedTest(unittest.TestCase):
 
 
         mask0 = jobList[0]['mask'].getRunAndLumis()
-        self.assertEqual(mask0, {0L: [[0L, 1L]]})
+        self.assertEqual(mask0, {0: [[0, 1]]})
         mask1 = jobList[1]['mask'].getRunAndLumis()
-        self.assertEqual(mask1, {0L: [[2L, 2L]]})
+        self.assertEqual(mask1, {0: [[2, 2]]})
         mask2 = jobList[2]['mask'].getRunAndLumis()
-        self.assertEqual(mask2, {1L: [[100L, 101L]]})
+        self.assertEqual(mask2, {1: [[100, 101]]})
         mask3 = jobList[3]['mask'].getRunAndLumis()
-        self.assertEqual(mask3, {1L: [[102L, 102L]]})
+        self.assertEqual(mask3, {1: [[102, 102]]})
 
         j0 = Job(id = jobList[0]['id'])
         j0.loadData()
-        self.assertEqual(j0['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
+        self.assertEqual(j0['mask'].getRunAndLumis(), {0: [[0, 1]]})
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
@@ -256,11 +256,11 @@ class LumiBasedTest(unittest.TestCase):
 
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
         self.assertEqual(jobs[0]['estimatedJobTime'], 60 * 12)
         self.assertEqual(jobs[0]['estimatedDiskUsage'], 60 * 400)
         self.assertEqual(jobs[0]['estimatedMemoryUsage'], 2300)
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
         self.assertEqual(jobs[1]['estimatedJobTime'], 60 * 12)
         self.assertEqual(jobs[1]['estimatedDiskUsage'], 60 * 400)
         self.assertEqual(jobs[1]['estimatedMemoryUsage'], 2300)
@@ -269,7 +269,7 @@ class LumiBasedTest(unittest.TestCase):
         # And it should still be the same when you load it out of the database
         j1 = Job(id = jobs[1]['id'])
         j1.loadData()
-        self.assertEqual(j1['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(j1['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -285,8 +285,8 @@ class LumiBasedTest(unittest.TestCase):
 
         # In this case it should slice things up so that each job only has one run
         # in it.
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]]})
 
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 4, twoSites = False)
@@ -299,8 +299,8 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 2)
-        self.assertEqual(jobs[0]['mask']['runAndLumis'], {0L: [[0L, 3L]], 1L: [[100L, 103L]], 2L: [[200L, 201L]]})
-        self.assertEqual(jobs[1]['mask']['runAndLumis'], {2L: [[202L, 203L]], 3L: [[300L, 303L]], 4L: [[400L, 403L]]})
+        self.assertEqual(jobs[0]['mask']['runAndLumis'], {0: [[0, 3]], 1: [[100, 103]], 2: [[200, 201]]})
+        self.assertEqual(jobs[1]['mask']['runAndLumis'], {2: [[202, 203]], 3: [[300, 303]], 4: [[400, 403]]})
 
         j = Job(id = jobs[0]['id'])
         j.loadData()
@@ -452,8 +452,8 @@ class LumiBasedTest(unittest.TestCase):
                                performance = self.performanceParams)
 
 
-        self.assertEqual(jobGroups[0].jobs[0]['mask'].getRunAndLumis(), {1L: [[1L, 2L], [3L, 3L], [11L, 12L]]})
-        self.assertEqual(jobGroups[0].jobs[1]['mask'].getRunAndLumis(), {3L: [[20L, 20L]]})
+        self.assertEqual(jobGroups[0].jobs[0]['mask'].getRunAndLumis(), {1: [[1, 2], [3, 3], [11, 12]]})
+        self.assertEqual(jobGroups[0].jobs[1]['mask'].getRunAndLumis(), {3: [[20, 20]]})
 
         return
 

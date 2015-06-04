@@ -158,7 +158,7 @@ class ServiceTest(unittest.TestCase):
         """Raise error if pre-defined cache permission loose"""
         cache_path = tempfile.mkdtemp()
         sub_cache_path = os.path.join(cache_path, 'cmssw.cvs.cern.ch')
-        os.makedirs(sub_cache_path, 0777)
+        os.makedirs(sub_cache_path, 0o777)
         dict = {'logger': self.logger,
                 'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi',
                 'cacheduration': 100,

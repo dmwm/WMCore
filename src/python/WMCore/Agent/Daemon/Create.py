@@ -26,7 +26,7 @@ from signal import SIGTERM
 from xml.dom.minidom import Document, Element
 
 # File mode creation mask of the daemon.
-UMASK = 0022
+UMASK = 0o022
 
 def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
               workdir= None, startmsg = 'started with pid %s', \

@@ -25,7 +25,7 @@ class GetParentIDsByID(DBFormatter):
     def format(self, result):
         out = set()
         for r in result:
-            if type(1L) == type(r):
+            if type(1) == type(r):
                 # deal with crappy mysql implementation
                 out.add(int(r))
             else:

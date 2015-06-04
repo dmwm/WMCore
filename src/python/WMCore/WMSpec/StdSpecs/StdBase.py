@@ -228,7 +228,8 @@ class StdBase(object):
                             userSandbox = None, userFiles = [], primarySubType = None,
                             forceMerged = False, forceUnmerged = False,
                             configCacheUrl = None, timePerEvent = None, memoryReq = None,
-                            sizePerEvent = None, useMulticore = True, applySiteLists = True):
+                            sizePerEvent = None, useMulticore = True, applySiteLists = True,
+                            taskConf = {}):
         """
         _setupProcessingTask_
 
@@ -287,6 +288,10 @@ class StdBase(object):
         procTask.setProcessingVersion(self.processingVersion)
         procTask.setAcquisitionEra(self.acquisitionEra)
         procTask.setProcessingString(self.processingString)
+        procTask.setPerformanceMonitor(taskConf.get("MaxRSS", None),
+                                       taskConf.get("MaxVSize", None),
+                                       taskConf.get("SoftTimeout", None),
+                                       taskConf.get("GracePeriod", None))
 
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)

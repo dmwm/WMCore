@@ -107,7 +107,7 @@ class Plot(type):
                     +elem('div',elem('ul','\n'.join([v.doc() for v in self.validators])))
             mixins = elem('div',elem('h2','Mixins')) \
                     +elem('div','Uses'+elem('ul','\n'.join([elem('li',k.__name__) for k in self.__class__.__bases__]))) \
-                    +elem('div','Method order'+elem('ul','\n'.join([elem('li','%s::%s'%(f.im_class.__name__ if hasattr(f,'im_class') else self.__class__.__name__,f.__name__)) for f in self._validate_calls+self._extract_calls+self._build_calls])))
+                    +elem('div','Method order'+elem('ul','\n'.join([elem('li','%s::%s'%(f.__self__.__class__.__name__ if hasattr(f,'im_class') else self.__class__.__name__,f.__name__)) for f in self._validate_calls+self._extract_calls+self._build_calls])))
             return elem('html',head+elem('body',header+docstr+validators+mixins))
 
         attrs['doc']=doc

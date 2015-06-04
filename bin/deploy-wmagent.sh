@@ -40,7 +40,7 @@ HOSTNAME=`hostname`
 
 # These values may be overwritten by the arguments provided in the command line
 WMA_ARCH=slc6_amd64_gcc481
-REPO="comp=comp.pre”
+REPO="comp=comp.pre"
 AG_NUM=0
 FLAVOR=mysql
 

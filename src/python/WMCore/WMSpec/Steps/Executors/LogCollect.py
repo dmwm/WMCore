@@ -63,13 +63,14 @@ class LogCollect(Executor):
         # Set wait to over an hour
         waitTime  = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
         seName    = overrides.get('seName',    "srm-cms.cern.ch")
+        pnn       = overrides.get('pnn',    "T2_CERN_CH")
         lfnPrefix = overrides.get('lfnPrefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
         lfnBase   = overrides.get('lfnBase',   "/store/user/jsmith")
         userLogs  = overrides.get('userLogs',  False)
         dontStage = overrides.get('dontStage', False)
 
         stageOutParams = {"command": "srmv2-lcg",
-                          "se-name": seName,  "lfn-prefix": lfnPrefix}
+                          "se-name": seName,  "pnn": pnn, "lfn-prefix": lfnPrefix}
         
         #Okay, we need a stageOut Manager
         useNewStageOutCode = False
@@ -154,6 +155,7 @@ class LogCollect(Executor):
             tarInfo = {'LFN'    : lfn,
                     'PFN'    : tarPFN,
                     'SEName' : None,
+                    'PNN' : None,
                     'GUID'   : None}
 
             signal.signal(signal.SIGALRM, alarmHandler)
@@ -180,6 +182,7 @@ class LogCollect(Executor):
                     fileToDelete = {"LFN": file["lfn"],
                                     "PFN": None,
                                     "SEName": None,
+                                    "PNN": None,
                                     "StageOutCommand": None}
                     deleteMgr(fileToDelete = fileToDelete)
                 except Alarm:
@@ -202,7 +205,8 @@ class LogCollect(Executor):
             outputRef.output.lfn = 'NotStaged'
         else:
             outputRef.output.pfn = tarInfo['PFN']
-            outputRef.output.location = tarInfo['SEName']
+#            outputRef.output.location = tarInfo['SEName']
+            outputRef.output.location = tarInfo['PNN']
             outputRef.output.lfn = tarInfo['LFN']
         return
 

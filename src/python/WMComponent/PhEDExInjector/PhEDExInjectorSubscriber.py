@@ -36,7 +36,6 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -55,13 +54,9 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
-        self.siteDB = SiteDBJSON()
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
-        # We will map node names to CMS names, that what the spec will have.
-        # If a CMS name is associated to many PhEDEx node then choose the MSS option
-        self.cmsToPhedexMap = {}        
         self.phedexNodes = {'MSS':[], 'Disk':[]}
 
         # initialize the alert framework (if available - config.Alert present)
@@ -86,20 +81,6 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
 
         nodeMappings = self.phedex.getNodeMap()
         for node in nodeMappings["phedex"]["node"]:
-
-            ## Wont need this if PNN stored in DB
-            #######################################
-            cmsNames = self.siteDB.PNNtoPSN(node["name"])
-            
-            for cmsName in cmsNames:
-                if cmsName not in self.cmsToPhedexMap:
-                    self.cmsToPhedexMap[cmsName] = {}
-
-                logging.info("Loaded PhEDEx node %s for site %s" % (node["name"], cmsName))
-                if node["kind"] not in self.cmsToPhedexMap[cmsName]:
-                    self.cmsToPhedexMap[cmsName][node["kind"]] = node["name"]
-            ########################################
-
             if node["kind"] in [ "MSS", "Disk" ]:
                 self.phedexNodes[node["kind"]].append(node["name"])
         return
@@ -138,16 +119,11 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             site = subInfo['site']
 
             if site not in self.phedexNodes['MSS'] and site not in self.phedexNodes['Disk']:
-
-                if site not in self.cmsToPhedexMap:
-                    msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
-                    msg += "skipping subscription: %s" % subInfo['id']
-                    logging.error(msg)
-                    self.sendAlert(7, msg = msg)
-                    continue
-
-                # Get the phedex node from CMS site
-                site = self.cmsToPhedexMap[site].get("MSS") or self.cmsToPhedexMap[site]["Disk"] 
+                msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
+                msg += "skipping subscription: %s" % subInfo['id']
+                logging.error(msg)
+                self.sendAlert(7, msg = msg)
+                continue
 
             # Avoid custodial subscriptions to disk nodes
             if site not in self.phedexNodes['MSS']: 

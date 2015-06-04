@@ -126,6 +126,7 @@ class LogArchive(Executor):
         fileInfo = {'LFN': self.getLFN(tarName),
             'PFN' : tarBallLocation,
             'SEName' : None,
+            'PNN' : None,
             'GUID' : None
             }
 
@@ -135,7 +136,8 @@ class LogArchive(Executor):
             manager(fileInfo)
             self.report.addOutputModule(moduleName = "logArchive")
             reportFile = {"lfn": fileInfo["LFN"], "pfn": fileInfo["PFN"],
-                          "location": fileInfo["SEName"], "module_label": "logArchive",
+#                          "location": fileInfo["SEName"], "module_label": "logArchive",
+                          "location": fileInfo["PNN"], "module_label": "logArchive",
                           "events": 0, "size": 0, "merged": False,
                           "checksums": {'md5': BasicAlgos.getMD5(tarBallLocation),
                                         'adler32': readAdler32(tarBallLocation),

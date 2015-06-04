@@ -247,6 +247,7 @@ def createInitialReport(job, task, logLocation):
     report.data.WMAgentJobName = job.get('name', None)
     report.data.seName         = siteCfg.localStageOut.get('se-name',
                                                            socket.gethostname())
+    report.data.pnn            = siteCfg.localStageOut.get('pnn', 'Unknown')
     report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
     report.data.hostName       = socket.gethostname()
     report.data.ceName         = getSyncCE()
@@ -287,6 +288,7 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
 
     report.data.seName         = siteCfg.localStageOut.get('se-name',
                                                            socket.gethostname())
+    report.data.pnn         = siteCfg.localStageOut.get('pnn', 'Unknown')
     report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
     report.data.hostName       = socket.gethostname()
     report.data.ceName         = getSyncCE()

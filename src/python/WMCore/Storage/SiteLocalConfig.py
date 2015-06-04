@@ -131,6 +131,15 @@ class SiteLocalConfig:
         """
         return self.localStageOut['se-name']
 
+    def localStageOutPNN(self):
+        """
+        _localStageOutPNN_
+
+        return the local PhEDExNodeName used for stage out
+
+        """
+        return self.localStageOut['pnn']
+
 
     def read(self):
         """
@@ -268,6 +277,8 @@ def processLocalStageOut():
         for subnode in node.children:
             if subnode.name == 'se-name':
                 localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'phedex-node':
+                localReport['pnn'] = subnode.attrs.get('value', None)
             elif subnode.name == 'command':
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':
@@ -289,6 +300,8 @@ def processFallbackStageOut():
         for subnode in node.children:
             if subnode.name == 'se-name':
                 localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'phedex-node':
+                localReport['pnn'] = subnode.attrs.get('value', None)
             elif subnode.name == 'command':
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':

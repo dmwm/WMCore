@@ -437,8 +437,10 @@ class Report:
         if file.has_key("locations"):
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
-        elif file.has_key("SEName"):
-            fileRef.location = [file["SEName"]]
+#        elif file.has_key("SEName"):
+#            fileRef.location = [file["SEName"]]
+        elif file.has_key("PNN"):
+            fileRef.location = [file["PNN"]]
 
         if file.has_key("LFN"):
             fileRef.lfn = file["LFN"]

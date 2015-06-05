@@ -1157,6 +1157,7 @@ class WMTaskHelper(TreeHelper):
         self.setMaxRSS(maxRSS)
         self.setMaxVSize(maxVSize)
         if softTimeout:
+            self._setPerformanceMonitorConfig()
             self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
             if gracePeriod:
                 self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)

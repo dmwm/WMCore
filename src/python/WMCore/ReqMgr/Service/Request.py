@@ -6,6 +6,7 @@ ReqMgr request handling.
 import cherrypy
 import traceback
 
+from WMCore.Lexicon import sanitizeURL
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
 from WMCore.Wrappers import JsonWrapper
@@ -427,8 +428,10 @@ class Request(RESTEntity):
         out = []
         for workload, request_args in workload_pair_list:
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
+            request_args['RequestWorkflow'] = sanitizeURL("%s/%s/%s/spec" % (request_args["CouchURL"], 
+                                            request_args["CouchWorkloadDBName"], workload.name()))['url']
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
-                               metadata=request_args)
+                                              metadata=request_args)
             out.append({'request':workload.name()})
         return out
         

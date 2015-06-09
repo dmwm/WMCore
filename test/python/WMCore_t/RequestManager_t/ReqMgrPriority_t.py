@@ -211,7 +211,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
 
         raises = False
         try:
-            priority = sys.maxint + 1
+            priority = sys.maxsize + 1
             self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         except HTTPException as ex:
             raises = True
@@ -221,7 +221,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
 
         raises = False
         try:
-            priority = -1 - sys.maxint
+            priority = -1 - sys.maxsize
             self.jsonSender.put('request/%s?priority=%s' % (requestName, priority))
         except HTTPException as ex:
             raises = True

@@ -228,7 +228,7 @@ class ReqMgrRESTModel(RESTModel):
         """ Casts priority to an integer """
         if 'priority' in index:
             value = int(index['priority'])
-            if math.fabs(value) >= sys.maxint:
+            if math.fabs(value) >= sys.maxsize:
                 msg = "Invalid priority!  Priority must have abs() less then MAXINT!"
                 raise cherrypy.HTTPError(400, msg)
             index['priority'] = value

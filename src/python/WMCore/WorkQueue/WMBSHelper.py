@@ -305,8 +305,10 @@ class WMBSHelper(WMConnectionBase):
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
 
-        for site in task.siteBlacklist():
-            subscription.addWhiteBlackList([{"site_name": site, "valid": False}])
+        ### TODO: remove this DIRTY HACK after the TP storm is gone
+        ### see https://cms-logbook.cern.ch/elog/Workflow+processing/20275
+#        for site in task.siteBlacklist():
+#            subscription.addWhiteBlackList([{"site_name": site, "valid": False}])
 
         if self.topLevelSubscription == None:
             self.topLevelSubscription = subscription

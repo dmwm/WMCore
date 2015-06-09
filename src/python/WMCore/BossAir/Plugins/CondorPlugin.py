@@ -225,7 +225,7 @@ class CondorPlugin(BasePlugin):
         if self.proxyDir and not os.path.exists(self.proxyDir):
             logging.debug("proxyDir not found: creating it.")
             try:
-                os.makedirs(self.proxyDir, 01777)
+                os.makedirs(self.proxyDir, 0o1777)
             except Exception as ex:
                 msg = "Error: problem when creating proxyDir directory - '%s'" % str(ex)
                 raise BossAirPluginException(msg)

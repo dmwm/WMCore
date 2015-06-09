@@ -506,7 +506,7 @@ class DBSUploadTest(unittest.TestCase):
         # After this, one block should have been uploaded, one should still be open
         # This is the result of the pending block updating, and the open block staying open
         result = myThread.dbi.processData("SELECT status, id FROM dbsbuffer_block")[0].fetchall()
-        self.assertEqual(result, [('InGlobalDBS', 3L), ('Open', 4L)])
+        self.assertEqual(result, [('InGlobalDBS', 3), ('Open', 4)])
 
         # Check that one block got there
         result    = listBlocks(apiRef = globeAPI, datasetPath = datasetPath)

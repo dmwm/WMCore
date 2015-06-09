@@ -149,15 +149,15 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
 
         mask0 = jobList[0]['mask'].getRunAndLumis()
-        self.assertEqual(mask0, {0L: [[0L, 1L]]})
+        self.assertEqual(mask0, {0: [[0, 1]]})
         mask1 = jobList[1]['mask'].getRunAndLumis()
-        self.assertEqual(mask1, {0L: [[2L, 2L]]})
+        self.assertEqual(mask1, {0: [[2, 2]]})
         mask2 = jobList[2]['mask'].getRunAndLumis()
-        self.assertEqual(mask2, {1L: [[3L, 4L]]})
+        self.assertEqual(mask2, {1: [[3, 4]]})
         mask3 = jobList[3]['mask'].getRunAndLumis()
-        self.assertEqual(mask3, {1L: [[5L, 5L]]})
+        self.assertEqual(mask3, {1: [[5, 5]]})
 
-        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
+        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0: [[0, 1]]})
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
@@ -196,8 +196,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -213,8 +213,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         # In this case it should slice things up so that each job only has one run
         # in it.
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]]})
 
         # Test total_events limit. (The algorithm cuts off after the lumi that
         # brings the total average event count over -or equal to- total_events.)
@@ -231,7 +231,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 1)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 0L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 0]]})
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -246,9 +246,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -263,9 +263,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -280,10 +280,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 4)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[5L, 5L]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[6L, 8L]]})
-        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1L: [[9L, 9L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
+        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1: [[9, 9]]})
 
         return
 
@@ -363,11 +363,11 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 5, "There should be 5 jobs")
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[2L, 2L]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1L: [[3L, 4L]]})
-        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1L: [[5L, 5L]]})
-        self.assertEqual(jobs[4]['mask'].getRunAndLumis(), {2L: [[6L, 7L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[2, 2]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[3, 4]]})
+        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1: [[5, 5]]})
+        self.assertEqual(jobs[4]['mask'].getRunAndLumis(), {2: [[6, 7]]})
 
         return
 
@@ -435,15 +435,15 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 8, "Eight jobs must be in the jobgroup")
-        self.assertEqual(jobs[0]["mask"].getRunAndLumis(), {0L : [[0L, 2L]]}, "Wrong mask for the first job")
-        self.assertEqual(jobs[1]["mask"].getRunAndLumis(), {0L : [[3L, 4L]]}, "Wrong mask for the second job")
-        self.assertEqual(jobs[2]["mask"].getRunAndLumis(), {1L : [[1L, 1L]]}, "Wrong mask for the third job")
-        self.assertEqual(jobs[3]["mask"].getRunAndLumis(), {2L : [[4L, 4L]]}, "Wrong mask for the fourth job")
-        self.assertEqual(jobs[4]["mask"].getRunAndLumis(), {2L : [[5L, 5L]]}, "Wrong mask for the fifth job")
+        self.assertEqual(jobs[0]["mask"].getRunAndLumis(), {0 : [[0, 2]]}, "Wrong mask for the first job")
+        self.assertEqual(jobs[1]["mask"].getRunAndLumis(), {0 : [[3, 4]]}, "Wrong mask for the second job")
+        self.assertEqual(jobs[2]["mask"].getRunAndLumis(), {1 : [[1, 1]]}, "Wrong mask for the third job")
+        self.assertEqual(jobs[3]["mask"].getRunAndLumis(), {2 : [[4, 4]]}, "Wrong mask for the fourth job")
+        self.assertEqual(jobs[4]["mask"].getRunAndLumis(), {2 : [[5, 5]]}, "Wrong mask for the fifth job")
         self.assertEqual(jobs[5]["mask"].getRunAndLumis(),
-                         {3L : [[3L, 3L]], 4L : [[4L, 4L]], 5L : [[5L, 5L]]}, "Wrong mask for the sixth job")
-        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6L : [[18L, 19L]]}, "Wrong mask for the seventh job")
-        self.assertEqual(jobs[7]["mask"].getRunAndLumis(), {6L : [[20L, 20L]]}, "Wrong mask for the seventh job")
+                         {3 : [[3, 3]], 4 : [[4, 4]], 5 : [[5, 5]]}, "Wrong mask for the sixth job")
+        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6 : [[18, 19]]}, "Wrong mask for the seventh job")
+        self.assertEqual(jobs[7]["mask"].getRunAndLumis(), {6 : [[20, 20]]}, "Wrong mask for the seventh job")
         #Test interactions of this algorithm with splitOnRun = True
         #Make 2 files, one with 3 runs and a second one with the last run of the first
         fileA = File(lfn = "/this/is/file1", size = 1000,
@@ -623,8 +623,8 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 2, "Two jobs must be in the jobgroup")
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1L: [[10L, 14L]], 2L: [[20L, 21L]], 4L: [[40L, 40L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {4L: [[41L, 41L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[10, 14]], 2: [[20, 21]], 4: [[40, 40]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {4: [[41, 41]]})
 
 
 if __name__ == '__main__':

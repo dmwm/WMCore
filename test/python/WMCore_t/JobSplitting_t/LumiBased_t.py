@@ -140,15 +140,15 @@ class LumiBasedTest(unittest.TestCase):
 
 
         mask0 = jobList[0]['mask'].getRunAndLumis()
-        self.assertEqual(mask0, {0L: [[0L, 1L]]})
+        self.assertEqual(mask0, {0: [[0, 1]]})
         mask1 = jobList[1]['mask'].getRunAndLumis()
-        self.assertEqual(mask1, {0L: [[2L, 2L]]})
+        self.assertEqual(mask1, {0: [[2, 2]]})
         mask2 = jobList[2]['mask'].getRunAndLumis()
-        self.assertEqual(mask2, {1L: [[100L, 101L]]})
+        self.assertEqual(mask2, {1: [[100, 101]]})
         mask3 = jobList[3]['mask'].getRunAndLumis()
-        self.assertEqual(mask3, {1L: [[102L, 102L]]})
+        self.assertEqual(mask3, {1: [[102, 102]]})
 
-        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
+        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0: [[0, 1]]})
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
@@ -187,12 +187,12 @@ class LumiBasedTest(unittest.TestCase):
 
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
 
 
         # And it should still be the same when you load it out of the database
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -208,8 +208,8 @@ class LumiBasedTest(unittest.TestCase):
 
         # In this case it should slice things up so that each job only has one run
         # in it.
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]]})
         return
 
 
@@ -251,8 +251,8 @@ class LumiBasedTest(unittest.TestCase):
 
         self.assertEqual(len(jobs[0]['input_files']), 2)
         self.assertEqual(len(jobs[1]['input_files']), 1)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0L, 1L], [42L, 42L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[100L, 101L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1], [42, 42]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[100, 101]]})
 
         #Test that we are not removing all the lumis from the jobs anymore
         removedLumi = self.createSubscription(nFiles = 4, lumisPerFile = 1)
@@ -273,9 +273,9 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobs[0]['input_files']), 2)
         self.assertEqual(len(jobs[1]['input_files']), 1)
         self.assertEqual(len(jobs[2]['input_files']), 1)
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[100L, 100L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[200L, 200L]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {3: [[300L, 300L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[100, 100]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[200, 200]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {3: [[300, 300]]})
 
 if __name__ == '__main__':
     unittest.main()

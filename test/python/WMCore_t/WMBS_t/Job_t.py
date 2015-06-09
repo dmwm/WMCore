@@ -1044,9 +1044,9 @@ class JobTest(unittest.TestCase):
         binds = [{'jobid': testJob['id']}, {'jobid': testJob2['id']}, {'jobid': testJob3['id']}]
         result = jobGetLocation.execute(jobid = binds)
         self.assertEqual(result, \
-                         [{'site_name': 'test2.site.ch', 'id': 1L}, \
-                          {'site_name': 'test.site.ch', 'id': 2L}, \
-                          {'site_name': 'test.site.ch', 'id': 3L}])
+                         [{'site_name': 'test2.site.ch', 'id': 1}, \
+                          {'site_name': 'test.site.ch', 'id': 2}, \
+                          {'site_name': 'test.site.ch', 'id': 3}])
 
         return
 

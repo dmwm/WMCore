@@ -17,7 +17,7 @@ config.BossAir.MockPlugin.fakeReport = os.path.join(os.path.dirname(__file__), '
 config.BossAir.MockPlugin.fakeReport = os.path.join(os.path.dirname(__file__), 'LogCollectFakeReport.pkl')
 
 
-jobList = [{'status': 'Done', 'bulkid': None, 'cms_site_name': None, 'cache_dir': '/data/wmagent/osb/JobCache/mmascher_crab_MyAnalysis_110609_114309/Analysis/JobCollection_23_0/job_46', 'taskType': None, 'id': 1L, 'plugin': 'MockPlugin', 'gridid': None, 'userdn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni', 'jobid': 46L, 'priority': None, 'retry_count': 0L, 'sandbox': None, 'globalState': 'Running', 'location': None, 'packageDir': None, 'status_time': None}]
+jobList = [{'status': 'Done', 'bulkid': None, 'cms_site_name': None, 'cache_dir': '/data/wmagent/osb/JobCache/mmascher_crab_MyAnalysis_110609_114309/Analysis/JobCollection_23_0/job_46', 'taskType': None, 'id': 1, 'plugin': 'MockPlugin', 'gridid': None, 'userdn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni', 'jobid': 46, 'priority': None, 'retry_count': 0, 'sandbox': None, 'globalState': 'Running', 'location': None, 'packageDir': None, 'status_time': None}]
 
 
 
@@ -54,9 +54,9 @@ class MockPluginTest(unittest.TestCase):
         currentTime = datetime.now()
         #id is the only required parameter in the job dictionary
         res = mp.track( jobList, currentTime )
-        self.assertTrue( 1L in mp.jobsScheduledEnd )
+        self.assertTrue( 1 in mp.jobsScheduledEnd )
         #check scheduled end (N.B. this includes 20% of random time)
-        scheduledEnd = mp.jobsScheduledEnd[1L]
+        scheduledEnd = mp.jobsScheduledEnd[1]
         timeTillJob = scheduledEnd - currentTime
         self.assertTrue( timeTillJob >= timedelta(minutes = TEST_JOB_LEN - 1), \
                          "Time till Job %s !>= Delta %s" % (timeTillJob, \
@@ -70,7 +70,7 @@ class MockPluginTest(unittest.TestCase):
         self.assertEquals( [], res[2])
 
         #the job is not running anymore
-        mp.jobsScheduledEnd[1L] = datetime(1900,1,1)
+        mp.jobsScheduledEnd[1] = datetime(1900,1,1)
         res = mp.track( jobList )
         self.assertEquals( [], res[0])
         self.assertEquals( 'Done', res[1][0]['status'])

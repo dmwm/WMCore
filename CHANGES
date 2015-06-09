@@ -1,3 +1,18 @@
+1.0.7 to 1.0.8.pre1:
+  - Merge pull request #5965 from ericvaandering/futurize_0604b
+  - Merge pull request #5964 from ericvaandering/futurize_0604
+  - Merge pull request #5974 from hufnagel/repack-always-singlecore
+  - Merge pull request #5972 from ticoann/fix_reqmgr2_script
+  - Merge pull request #5973 from ticoann/workqueue_reqmgr2_transition
+  - Merge pull request #5966 from ericvaandering/futurize_0604c
+  - make workqueue handle both reqmgr2 and reqmgr
+  - repack jobs should always use a single core in CMSSW
+  - fix for reqmgr2 script
+  - Futurize methodattrs
+  - Futurize funcattrs
+  - Move to modern octal representation, eliminate distinction between Long and int
+  - Replace maxint with maxsize
+
 1.0.6 to 1.0.7:
   - 1.0.7.pre13
   - Merge pull request #5968 from ticoann/max_rss_patch

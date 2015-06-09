@@ -554,3 +554,44 @@ class WorkQueueBackend(object):
                                                   continuous = continuous)
             return True
         return False
+        
+    def getWorkflowNames(self, inboxFlag = False):
+        """Get workflow names from workqueue db"""
+        if inboxFlag:
+            db = self.inbox
+        else:
+            db = self.db
+        data = db.loadView('WorkQueue', 'elementsByWorkflow', 
+                           {'stale': "update_after", 'reduce' : True, 'group' : True})
+        return [x['key'] for x in data.get('rows', [])]
+    
+    def deleteWQElementsByWorkflow(self, workflowNames):
+        """
+        delete workqueue elements belongs to given workflow names 
+        it doen't check the status of workflow so need to be careful to use this.
+        Pass only workflows which has the end status
+        """
+        deleted = 0
+        dbs = [self.db, self.inbox]
+        if type(workflowNames) != list:
+            workflowNames = [workflowNames]
+        
+        if len(workflowNames) == 0:
+            return deleted
+        
+        options = {} 
+        options["stale"] = "update_after"
+        options["reduce"] = False
+        
+        for couchdb in dbs:
+            result = couchdb.loadView("WorkQueue", "elementsByWorkflow", options, workflowNames)
+            ids = []
+            for entry in result["rows"]:
+                ids.append(entry["id"])
+            if ids:
+                couchdb.bulkDeleteByIDs(ids)
+                deleted += len(ids)
+        # delete the workflow with spec from workqueue db
+        for wf in workflowNames:
+            self.db.delete_doc(wf)
+        return deleted

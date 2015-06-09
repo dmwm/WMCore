@@ -80,7 +80,7 @@ class ReqMgrClient(RESTClient):
         jsonArgs = json.dumps(requestArgs["createRequest"])
         status, data = self.http_request("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
         data = json.loads(data)
-        requestName = data.values()[0]["RequestName"]
+        requestName = data.values()[0]["request"]
         
         params = {"requestName": requestName,
                   "status": "assignment-approved"}
@@ -150,10 +150,57 @@ class ReqMgrClient(RESTClient):
             sys.exit(1)
         data = json.loads(data)
         print data
-        request_name = data["result"][0]["RequestName"] 
+        request_name = data["result"][0]["request"]
+        self.approve_request(request_name)
+        if config.assign_request or config.change_splitting:
+            # if --assign_request or --change_splitting at the same time, it will be checking requestNames
+            config.request_name = request_name
         logging.info("Create request '%s' succeeded." % request_name)
         return request_name
+    
+    def approve_request(self, request_name):
+        """
+        Set request status assignment-approved of the requestName request.
+        Once ReqMgr provides proper API for status settings, esp. for assignment,
+        a single method setStates shall handle all request status changes.
         
+        """
+        logging.info("Approving request '%s' ..." % request_name)
+
+        json_args = json.dumps({"RequestStatus": "assignment-approved"})        
+        urn = self.urn_prefix + "/request/%s" % request_name
+        status, data = self.http_request("PUT", urn, data = json_args,
+                                         headers = self.headersBody)
+    
+        if status != 200:
+            logging.error("Approve did not succeed.")
+            print data
+            sys.exit(1)
+        logging.info("Approve succeeded.")
+        
+    def assign_request(self, config):
+        """
+        config.request_args - arguments for both creation and assignment
+        
+        """
+        logging.info("Assigning request args:\n%s ..." %
+                     config.request_args["assignRequest"])
+        assign_args = config.request_args["assignRequest"]
+        assign_args["RequestStatus"] = "assigned"
+        json_args = json.dumps(assign_args)
+        
+        urn = self.urn_prefix + "/request/%s" % config.request_name
+        status, data = self.http_request("PUT", urn, data=json_args,
+                                         headers=self.headersBody)
+        if status > 216:
+            logging.error("Error occurred, exit.")
+            print data
+            sys.exit(1)
+        data = json.loads(data)
+        print data
+        request_name = data["result"][0]["request"] 
+        logging.info("Create request '%s' succeeded." % request_name)
+        return request_name
     
     def query_requests(self, config, to_query=None):
         """
@@ -346,6 +393,15 @@ def define_cli_options(parser):
     action = "create_request"
     actions.append(action)  
     parser.add_option("-i", "--" + action, action="store_true", help=help)
+    # -g --------------------------------------------------------------------
+    help = ("Action: Approve and assign request(s) specified by --request_names "
+            "or a new request when used with --create_request. "
+            "Depends on --request_names and --config_file when used without "
+            "--create_request")
+    action = "assign_request"
+    actions.append(action)
+    parser.add_option("-g", "--" + action, action="store_true", help=help)
+    
     # -d --------------------------------------------------------------------
     help = "Action: Delete request(s) specified by --request_names."
     action = "delete_requests"

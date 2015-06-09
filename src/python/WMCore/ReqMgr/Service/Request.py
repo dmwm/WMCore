@@ -25,6 +25,7 @@ from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
                validate_request_update_args
 
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
@@ -34,6 +35,7 @@ class Request(RESTEntity):
         self.reqmgr_db_service = RequestDBWriter(self.reqmgr_db, couchapp = "ReqMgr")
         # this need for the post validtiaon 
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
+        self.gq_service = WorkQueue(config.couch_host, config.couch_workqueue_db)
         
     def _requestArgMapFromBrowser(self, request_args):
         """
@@ -373,6 +375,11 @@ class Request(RESTEntity):
                     
                 # trailing / is needed for the savecouchUrl function
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
+            
+            req_status = request_args.get("RequestStatus", None)
+            # If it is aborted or force-complete transition call workqueue to cancel the request
+            if req_status == "aborted" or req_status == "force-complete":
+                self.gq_service.cancelWorkflow(workload.name())
                 
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         

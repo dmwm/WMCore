@@ -529,6 +529,8 @@ class SetupCMSSWPset(ScriptInterface):
         _handleRepackSettings_
 
         Disable lazy-download for repacking (no benefit on streamer files).
+
+        Repack jobs should only use one core in CMSSW
         """
         print "Hardcoding read/cache strategies for repack"
         self.process.add_(
@@ -538,6 +540,13 @@ class SetupCMSSWPset(ScriptInterface):
                         overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
                         )
             )
+
+        try:
+            if int(self.step.data.application.multicore.numberOfCores) > 1:
+                self.step.data.application.multicore.numberOfCores = 1
+        except AttributeError:
+            pass
+
         return
 
     def handleSpecialCERNMergeSettings(self, funcName):

@@ -207,6 +207,13 @@ class DashboardInfo():
         data['StatusValueReason'] = 'Job started execution in the WN'
         data['StatusDestination'] = getSyncCE()
 
+        # Inspect the tasks steps and figure out how many cores we will use
+        maxCores = 1
+        for stepName in self.task.listAllStepNames():
+            sh = self.task.getStepHelper(stepName)
+            maxCores = max(maxCores, sh.getNumberOfCores())
+        data['NCores'] = maxCores
+
         self.publish(data = data)
 
         return data

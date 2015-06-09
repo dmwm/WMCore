@@ -208,12 +208,16 @@ class DashboardInterfaceTest(unittest.TestCase):
         dbInfo   = DashboardInfo(job = job, task = task)
         dbInfo.addDestination('127.0.0.1', 8884)
 
+        # Modify the first step
+        step = task.getStep(stepName = "cmsRun1")
+        step.getTypeHelper().setMulticoreCores(8)
+
         # Check jobStart information
         data = dbInfo.jobStart()
+        self.assertEqual(data['NCores'], 8)
 
         # Do the first step
         step = task.getStep(stepName = "cmsRun1")
-        step.getTypeHelper().setMulticoreCores(8)
 
         # Do the step start
         data = dbInfo.stepStart(step = step.data)

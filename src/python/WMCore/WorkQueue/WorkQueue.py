@@ -804,6 +804,8 @@ class WorkQueue(WorkQueueBase):
                     if policyInstance.newDataAvailable(topLevelTask, element):
                         skipElement = True
                         self.backend.updateInboxElements(element.id, TimestampFoundNewData = currentTime)
+                        msg = "There are blocks still open for writing in DBS."
+                        self.logdb.post(element['RequestName'], msg, "warning")
                         break
                 if skipElement:
                     continue

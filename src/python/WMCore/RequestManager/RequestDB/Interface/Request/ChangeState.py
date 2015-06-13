@@ -91,7 +91,7 @@ def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     url = couchUrl.replace('/' + couchDbName, '')
     couchDb = Database(couchDbName, url)
     fields = {"RequestStatus": newState}
-    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields) 
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody=True) 
 
     #TODO: should we make this mendatory?
     if wmstatUrl:

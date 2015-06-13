@@ -177,7 +177,7 @@ def changePriority(requestName, priority, wmstatUrl = None):
     # change priority in CouchDB
     couchDb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
     fields = {"RequestPriority": newPrior}
-    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields)
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody = True)
     # push the change to the WorkQueue
     response = ProdManagement.getProdMgr(requestName)
     if response == [] or response[0] is None or response[0] == "":
@@ -430,7 +430,7 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     fields = {}
     for key in paramsToUpdate:
         fields[key] = reqDetails[key]
-    couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest", fields=fields) 
+    couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest", fields=fields, useBody=True) 
         
     try:
         wmstatSvc = WMStatsWriter(wmstatUrl)

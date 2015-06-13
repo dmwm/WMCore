@@ -404,7 +404,15 @@ class Assign(WebAPI):
         couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
         couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
                                fields={"AcquisitionEra": reqDetails["AcquisitionEra"],
-                                       "Teams": JsonWrapper.JSONEncoder().encode(kwargs["Teams"]),
-                                       "OutputDatasets": JsonWrapper.JSONEncoder().encode(outputDatasets), 
-                                       "SiteWhitelist": JsonWrapper.JSONEncoder().encode(whiteList),
-                                       "SiteBlacklist": JsonWrapper.JSONEncoder().encode(blackList)})
+                                       "ProcessingVersion": reqDetails["ProcessingVersion"],
+                                       "CustodialSites": custodialList, 
+                                       "NonCustodialSites": nonCustodialList, 
+                                       "AutoApproveSubscriptionSites": autoApproveList,
+                                       "SubscriptionPriority": subscriptionPriority,
+                                       "CustodialSubType": custodialType,
+                                       "NonCustodialSubType": nonCustodialType,
+                                       "Teams": kwargs["Teams"],
+                                       "OutputDatasets": outputDatasets, 
+                                       "SiteWhitelist": whiteList,
+                                       "SiteBlacklist": blackList},
+                               useBody = True)

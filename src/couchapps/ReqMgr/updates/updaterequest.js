@@ -28,29 +28,58 @@ function(doc, req) {
     }
     // req.query is dictionary fields into the 
     // CMSCouch.Database.updateDocument() method, which is a dictionary
-    var newValues = req.query;
+    function isEmpty(obj) {
+	    for(var prop in obj) {
+	        if(obj.hasOwnProperty(prop))
+	            return false;
+	    }
+    	return true;
+	}
+	
+    // req.query is dictionary fields into the 
+    // CMSCouch.Database.updateDocument() method, which is a dictionary
+ 
+    //TODO: only accepts request body for the argument
+    var fromQuery = false;
+    
+    var newValues = {};
+    if  (isEmpty(req.query)) {
+    	newValues = JSON.parse(req.body);
+    } else {
+    	fromQuery = true;
+    	newValues = req.query;
+    }
+    
     for (key in newValues)
     {   
-        if (key == "RequestTransition" ||
-            key == "SiteWhitelist" ||
-            key == "SiteBlacklist" ||
-            key == "BlockWhitelist" ||
-            key == "SoftwareVersions" ||
-            key == "InputDatasetTypes" ||
-            key == "InputDatasets" ||
-            key == "OutputDatasets" ||
-            key == "CustodialSites" ||
-            key == "NoneCustodialSites" ||
-            key == "AutoApproveSubscriptionSites" ||
-            key == "Teams") {
-    		
-    		doc[key] = JSON.parse(newValues[key]);
-    	} else if (key == "Team") {
+    	
+    	if (fromQuery) {
+        	if (key == "RequestTransition" ||
+	            key == "SiteWhitelist" ||
+	            key == "SiteBlacklist" ||
+	            key == "BlockWhitelist" ||
+	            key == "SoftwareVersions" ||
+	            key == "InputDatasetTypes" ||
+	            key == "InputDatasets" ||
+	            key == "OutputDatasets" ||
+	            key == "CustodialSites" ||
+	            key == "NoneCustodialSites" ||
+	            key == "AutoApproveSubscriptionSites" ||
+	            key == "Teams") {
+	    		
+	    		doc[key] = JSON.parse(newValues[key]);
+	    	}
+	    }
+	    
+	    if (key == "Team") {
     		updateTeams(newValues[key]);
+    	//TODO: need to handle TaskChain cases		
+    
     	} else {
     		doc[key] = newValues[key];
     	}
        
+        // If key is RequestStatus, also update the transition
         if (key == "RequestStatus") {
         	updateTransition();
         }

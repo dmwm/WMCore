@@ -290,7 +290,7 @@ def main():
             print couch_fields_to_correct
             if sys.argv[-1] == "-c":
                 couchdb.updateDocument(req_name, "ReqMgr", "updaterequest",
-                                       fields=couch_fields_to_correct)
+                                       fields=couch_fields_to_correct, useBody=True)
                 print "Couch updated"
         else:
             print "OK"

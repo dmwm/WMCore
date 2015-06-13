@@ -31,7 +31,7 @@ def couchdb_setter(db):
         except KeyError:
             print "%s: %s" % (request_name, "n/a")
         print "Setting %s ..." % request_name
-        db.updateDocument(request_name, "ReqMgr", "updaterequest", fields=fields)
+        db.updateDocument(request_name, "ReqMgr", "updaterequest", fields=fields, useBody=True)
     print "Queried %s request documents." % doc_count 
 
 

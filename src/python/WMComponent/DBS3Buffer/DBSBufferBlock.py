@@ -443,6 +443,9 @@ class DBSBlock:
 
         if 'status' in blockInfo.keys():
             self.status = blockInfo['status']
+            if self.status == "Pending":
+                self.data['block']['open_for_writing'] = 0
+                  
             del blockInfo['status']
             
         for key in blockInfo.keys():

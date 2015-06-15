@@ -100,7 +100,7 @@ _TweakParams = [
 
     ]
 
-class WMTweakMaskError(StandardError):
+class WMTweakMaskError(Exception):
 
     def __init__(self, mask = None, msg = "Cannot set process from job mask"):
         self.mask = mask

@@ -1,10 +1,10 @@
 from Globals import GlobalParams
 import Globals
 
-class NoDatasetError(StandardError):
+class NoDatasetError(Exception):
     """Standard error baseclass"""
     def __init__(self, error):
-        StandardError.__init__(self, error)
+        Exception.__init__(self, error)
         self.msg = 'NoDatasetError'
         self.error = error
 

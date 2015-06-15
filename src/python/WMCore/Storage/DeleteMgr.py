@@ -95,7 +95,7 @@ class DeleteMgr:
             self.tfc = self.siteCfg.trivialFileCatalog()
             msg += "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-        except StandardError as ex:
+        except Exception as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
@@ -125,7 +125,7 @@ class DeleteMgr:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
-        except StandardError as ex:
+        except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(overrideConf)
             raise StageOutInitError(msg)

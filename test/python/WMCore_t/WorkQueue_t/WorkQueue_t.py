@@ -1268,11 +1268,11 @@ class WorkQueueTest(WorkQueueTestCase):
         # force queue to fail queueing
         self.queue.params['SplittingMapping'] = 'thisisswrong'
 
-        self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
+        self.assertRaises(Exception, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Negotiating')
         # simulate time passing by making timeout negative
         self.queue.params['QueueRetryTime'] = -100
-        self.assertRaises(StandardError, self.queue.queueWork, self.processingSpec.specUrl())
+        self.assertRaises(Exception, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 
 

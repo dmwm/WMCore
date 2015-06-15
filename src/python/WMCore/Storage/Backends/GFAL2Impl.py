@@ -20,7 +20,8 @@ class GFAL2Impl(StageOutImpl):
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
-
+        self.removeCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY gfal-rm -vvv %s"
+        self.copyCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY gfal-copy -t 2400 -T 2400 -p -vvv"
 
     def createSourceName(self, protocol, pfn):
         """
@@ -49,11 +50,11 @@ class GFAL2Impl(StageOutImpl):
         handle file remove using gfal-rm
         """
         if pfn.startswith("file:"):
-            return "env -i gfal-rm -vvv %s" % pfn
+            return self.removeCommand % pfn
         elif os.path.isfile(pfn):
             return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
-            return "env -i gfal-rm -vvv %s" % pfn
+            return self.removeCommand % pfn
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
@@ -65,9 +66,9 @@ class GFAL2Impl(StageOutImpl):
 
         useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
 
-        copyCommand = "env -i gfal-copy -t 2400 -T 2400 -p -vvv "
+        copyCommand = self.copyCommand
         if useChecksum:
-            copyCommand += "-K adler32 "
+            copyCommand += " -K adler32 "
         if options != None:
             copyCommand += " %s " % options
         copyCommand += " %s " % sourcePFN
@@ -100,9 +101,9 @@ class GFAL2Impl(StageOutImpl):
         if os.path.isfile(pfnToRemove):
             command = "/bin/rm -f %s" % os.path.abspath(pfnToRemove)
         if pfnToRemove.startswith("file:"):
-            command = "env -i gfal-rm -vvv %s" % pfnToRemove
+            command = self.removeCommand % pfnToRemove
         else:
-            command = "env -i gfal-rm -vvv %s" % pfnToRemove
+            command = self.removeCommand % pfnToRemove
         self.executeCommand(command)
 
 

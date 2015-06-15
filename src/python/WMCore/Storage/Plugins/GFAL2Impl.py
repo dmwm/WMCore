@@ -41,7 +41,7 @@ class GFAL2Impl(StageOutImpl2):
         if not options:
             options = ""
 
-        transferCommand = "env -i gfal-copy -t 2400 -T 2400 -p -K adler32 -vvv %s %s %s " %\
+        transferCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY gfal-copy -t 2400 -T 2400 -p -K adler32 -vvv %s %s %s " %\
                             (options, fromPfn2, toPfn2)
 
         logging.info("Staging out with gfal-copy")
@@ -69,6 +69,6 @@ class GFAL2Impl(StageOutImpl2):
         if os.path.isfile(pfn):
             runCommand("/bin/rm -f %s" % pfn)
         elif pfn.startswith("file:"):
-            runCommand("env -i gfal-rm -vvv %s" % pfn)
+            runCommand("env -i X509_USER_PROXY=$X509_USER_PROXY gfal-rm -vvv %s" % pfn)
         else:
             runCommand(StageOutImpl.createRemoveFileCommand(self, pfn))

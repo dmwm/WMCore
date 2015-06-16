@@ -142,7 +142,7 @@ def test():
     sys.stdout.write ('Message to stdout...')
     sys.stderr.write ('Message to stderr...')
     c = 0
-    while 1:
+    while True:
         sys.stdout.write ('%d: %s\n' % (c, time.ctime(time.time())) )
         logging.info('%d: %s\n' % (c, time.ctime(time.time())) )
         sys.stdout.flush()

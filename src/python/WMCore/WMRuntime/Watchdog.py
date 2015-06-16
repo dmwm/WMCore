@@ -257,7 +257,7 @@ class Watchdog(threading.Thread):
         Override Thread.run() to do the periodic update
         of the MonitorState object and dispatch it to the monitors
         """
-        while 1:
+        while True:
             #  //
             # // shutdown signal
             #//

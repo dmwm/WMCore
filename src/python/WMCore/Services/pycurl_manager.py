@@ -206,7 +206,7 @@ class RequestHandler(object):
                 ret = multi.select(1.0)
                 if  ret == -1:
                     continue
-                while 1:
+                while True:
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break

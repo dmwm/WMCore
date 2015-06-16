@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain Pyquen PU with PrimaryDataset overwrite. 5 lumis per job",
+    "Comments": "PU with PrimaryDataset override. 5 lumis per job. Doomed to have MaxRSS and VSize failures",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
@@ -78,8 +78,12 @@
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 50000,
     "ProcessingVersion": 1,
-    "MaxRSS": 3072000,
-    "MaxVSize": 20294967,
+    "MaxRSS": {"Pyquen_ZeemumuJets_pt10_2760GeV" : 1500000,
+               "DIGIHISt3" : 2500000,
+               "RECOHISt4" : 2700000},
+    "MaxVSize": {"Pyquen_ZeemumuJets_pt10_2760GeV" : 1900000,
+                 "DIGIHISt3" : 3000000,
+                 "RECOHISt4" : 3000000},
     "SoftTimeout": 129600,
     "GracePeriod": 1000,
     "CustodialSites": [],

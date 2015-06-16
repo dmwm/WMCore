@@ -150,7 +150,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
 
             # Can be an empty list, full list, empty string, or non-empty string!
             inputdataset = requests[wf].get('inputdataset', "")
-            if isinstance(inputdataset, (list,)):
+            if isinstance(inputdataset, list):
                 if inputdataset:
                     inputdataset = inputdataset[0]
                 else:

@@ -144,6 +144,10 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             if not statuses:
                 log.error("Could not find any status from workflow: %s" % wf) # Should not happen but it does.
 
+            # Remove a single  task_ from the start of PREP ID if it exists
+            if prep_id.startswith('task_'):
+                prep_id.replace('task_', '', 1)
+
             # Can be an empty list, full list, empty string, or non-empty string!
             inputdataset = requests[wf].get('inputdataset', "")
             if isinstance(inputdataset, (list,)):

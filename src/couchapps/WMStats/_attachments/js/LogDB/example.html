@@ -4,77 +4,23 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 
     <title>Test</title>
-    <script type="text/javascript" src="couch.js"></script>
     <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
-    
+    <script type="text/javascript" src="js/jquery.couch.js"></script>
+    <script type="text/javascript" src="js/namespace.js"></script>
+    <script type="text/javascript" src="js/wmstats_couch.js"></script>
+    <script type="text/javascript" src="js/logdb.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/logdb.css">
+    <link rel="stylesheet" href="css/font-awesome.min.css">
 </head>
 
-<h3 class="request-header"></h3>
-<h4>Info messages</h4>
-<ul class="request-infos"></ul>
-<h4>Error messages</h4>
-<ul class="request-errors"></ul>
-<h4>Warning messages</h4>
-<ul class="request-warnings"></ul>
-<h4>Other messages</h4>
-<ul class="request-others"></ul>
-
+<div class="logdb-info"></div>
 <script type="text/javascript" charset="utf-8">
-// Run the query and output data to the console.
-var db = new CouchDB('wmstats_logdb');
-function find_request(db, request) {
-    var matches;
-    matches = db.view('wmstats_logdb/lastMsgByRequest', { key: request });
-    return matches.rows;
-}
-
-// helper functions
-var sel_info = function(row) {
-    if(row.value[0]=="agent-info") return true;
-    return false;
-}
-var sel_error = function(row) {
-    if(row.value[0]=="agent-error") return true;
-    return false;
-}
-var sel_warning = function(row) {
-    if(row.value[0]=="agent-warning") return true;
-    return false;
-}
-var sel_other = function(row) {
-    if(row.value[0]!="agent-error" && row.value[0]!="agent-info" && row.value[0]!="agent-warning") return true;
-    return false;
-}
-function create_list(tag, res) {
-    // construct list
-    var cList = $('ul.' + tag)
-    $.each(res, function(i)
-    {
-        var li = $('<li/>')
-            .addClass('ui-menu-item')
-            .appendTo(cList);
-        var val = $('<span/>')
-            .text(res[i].value[1] + " / " + res[i].value[2].msg + " / " + res[i].value[2].ts)
-            .appendTo(li);
-    });
-}
-
-// get data from CouchDB
-var request_name = "request_acdc";
-var results = find_request(db, request_name);
-
-// update request header
-$('h3.request-header').html("Request: "+request_name)
-// select categories
-var infos = results.filter(sel_info);
-var errors = results.filter(sel_error);
-var warnings = results.filter(sel_warning);
-var others = results.filter(sel_other);
-
-create_list('request-infos', infos);
-create_list('request-errors', errors);
-create_list('request-warnings', warnings);
-create_list('request-others', others);
+//logdb_info("div.logdb-info", "request_acdc");
+//logdb_info("div.logdb-info", "request_acdc,request_reqmgr2");
+//logdb_info("div.logdb-info", "");
+logdb_info("div.logdb-info");
 </script>
 
 </body>

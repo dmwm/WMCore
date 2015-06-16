@@ -10,7 +10,7 @@ import logging
 import os
 import subprocess
 import sys
-import time
+import socket
 
 from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMRuntime.Tools.Scram import Scram
@@ -24,7 +24,7 @@ def analysisFileLFN(fileName, lfnBase, job):
     Construct an LFN for a user file
     """
 
-    dummy, base = os.path.split(fileName)
+    base = os.path.split(fileName)[1]
     root, ext = os.path.splitext(base)
 
     newBase = '{base}_{count:04d}{ext}'.format(base=root, ext=ext, count=job['counter'])
@@ -62,8 +62,6 @@ class CMSSW(Executor):
 
         if hasattr(self.step, "pileup"):
             self.stepSpace.getFromSandbox("pileupconf.json")
-
-        dummyStepHelper = WMStepHelper(self.step)
 
         # add in ths scram env PSet manip script whatever happens
         self.step.runtime.scramPreScripts.append("SetupCMSSWPset")
@@ -205,8 +203,9 @@ class CMSSW(Executor):
         # open the output files
         stdoutHandle = open(self.step.output.stdout, 'w')
         stderrHandle = open(self.step.output.stderr, 'w')
-        dummyApplicationStart = time.time()
-        args = ['/bin/bash', configPath, scramSetup,
+        args = ['/bin/bash',
+                configPath,
+                scramSetup,
                 scramArch,
                 scramCommand,
                 scramProject,
@@ -218,7 +217,12 @@ class CMSSW(Executor):
                 userFiles,
                 cmsswArguments]
         logging.info("Executing CMSSW. args: %s", args)
-        returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
+
+        # at CERN override the environment to work around problem with GSI authentication plugin and EOS
+        if socket.getfqdn().endswith("cern.ch"):
+            returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle, env=dict(os.environ, XRD_LOADBALANCERTTL='86400'))
+        else:
+            returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
 
         stdoutHandle.close()
         stderrHandle.close()

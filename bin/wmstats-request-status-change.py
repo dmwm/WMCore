@@ -7,7 +7,7 @@ from WMCore.Configuration import loadConfigurationFile
 
 if __name__ == "__main__":
 
-    if not os.environ.has_key("WMAGENT_CONFIG"):
+    if "WMAGENT_CONFIG" not in os.environ:
         print "The WMAGENT_CONFIG environment variable needs to be set before this can run"
         sys.exit(1)
 

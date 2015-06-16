@@ -40,7 +40,7 @@ arguments = {
             "AnalysisConfigCacheDoc" : "746e4e30f9b7545ba4303845ea006003"
         }
 
-if not os.environ.has_key("WMAGENT_CONFIG"):
+if "WMAGENT_CONFIG" not in os.environ:
     print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
     sys.exit(1)
 

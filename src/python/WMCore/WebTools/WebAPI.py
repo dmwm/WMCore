@@ -162,7 +162,7 @@ class WebAPI(DatabasePage):
             self.debug(traceback.print_exc())
 #            self.debug("%s:%s" % (sys.exc_type, sys.exc_value))
             dict = {'Exception':{'Exception_thrown_in': method,
-                       'Exception_type': '%s' % sys.exc_type,
+                       'Exception_type': '%s' % sys.exc_info()[0],
                        'Exception_detail':error,
                        'Exception_arguments': input,
                        'Exception_dict':dict}}

@@ -147,8 +147,10 @@ fi
 
 if [[ "$HOSTNAME" == *cern.ch ]]; then
   MYPROXY_CREDNAME="amaltaroCERN"
+  FORCEDOWN="'T3_US_SDSC','T3_US_NERSC'"
 elif [[ "$HOSTNAME" == *fnal.gov ]]; then
   MYPROXY_CREDNAME="amaltaroFNAL"
+  FORCEDOWN="'T2_CH_CERN_HLT'"
 else
   echo "Sorry, I don't know this network domain name"
   exit 1
@@ -271,23 +273,21 @@ echo "Done!" && echo
 # tweak configuration
 ### TODO: remove part of these tweaks when #5949 gets merged
 echo "*** Tweaking configuration ***"
-sed -i "s+couchProcessThreshold = 25+couchProcessThreshold = 50+" $MANAGE/config.py
 sed -i "s+team1,team2,cmsdataops+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
-sed -i "s+OP EMAIL+$OP_EMAIL+" $MANAGE/config.py
-sed -i "s+config.AnalyticsDataCollector.diskUseThreshold = 60+config.AnalyticsDataCollector.diskUseThreshold = 75+" $MANAGE/config.py
-sed -i "s+config.PhEDExInjector.diskSites = \[\]+config.PhEDExInjector.diskSites = \['storm-fe-cms.cr.cnaf.infn.it','srm-cms-disk.gridpp.rl.ac.uk','cmssrm-fzk.gridka.de','ccsrm.in2p3.fr','srmcms.pic.es','cmssrmdisk.fnal.gov'\]+" $MANAGE/config.py
-sed -i "s+'Running': 169200, 'Pending': 360000, 'Error': 1800+'Running': 169200, 'Pending': 259200, 'Error': 1800+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval* ]]; then
-  sed -i "s+ErrorHandler.maxRetries = 3+ErrorHandler.maxRetries = \{'default' : 3, 'Merge' : 4, 'LogCollect' : 2, 'Cleanup' : 2\}+" $MANAGE/config.py
+  sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+ErrorHandler.maxRetries = 3+ErrorHandler.maxRetries = 0+" $MANAGE/config.py
+  sed -i "s+\{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2\}+0+" $MANAGE/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
+fi
+if [[ "$HOSTNAME" == *fnal.gov ]]; then
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN]+" $MANAGE/config.py
 else
-  sed -i "s+ErrorHandler.maxRetries = 3+ErrorHandler.maxRetries = \{'default' : 3, 'Harvesting' : 2, 'Merge' : 4, 'LogCollect' : 1, 'Cleanup' : 2\}+" $MANAGE/config.py
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN]+" $MANAGE/config.py
 fi
 # TODO remove this hack once AlertProcessor gets fixed
 sed -i "s+config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+#config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+" $MANAGE/config.py
@@ -296,9 +296,6 @@ sed -i "s+config.AlertProcessor.critical.sinks.email.toAddr = \['wmagentalerts@g
 sed -i "s+config.AlertProcessor.soft.sinks.email.fromAddr = 'noreply@cern.ch'+#config.AlertProcessor.soft.sinks.email.fromAddr = 'noreply@cern.ch'+" $MANAGE/config.py
 sed -i "s+config.AlertProcessor.soft.sinks.email.smtpServer = 'cernmx.cern.ch'+#config.AlertProcessor.soft.sinks.email.smtpServer = 'cernmx.cern.ch'+" $MANAGE/config.py
 sed -i "s+config.AlertProcessor.soft.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+#config.AlertProcessor.soft.sinks.email.toAddr = \['wmagentalerts@gmail.com'\]+" $MANAGE/config.py
-
-# Additional config
-sed -i "/config.ErrorHandler.pollInterval = 240/a config.ErrorHandler.maxProcessSize = 30" $MANAGE/config.py
 echo "Done!" && echo
 
 ### Populating resource-control

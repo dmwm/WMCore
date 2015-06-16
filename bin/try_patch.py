@@ -68,7 +68,7 @@ try:
     patch_handle = open( patchName, 'rb' )
     bufsize = 1024
     m = hashlib.md5()
-    while 1:
+    while True:
         bytes_read = patch_handle.read( bufsize )
         ssh_call.stdin.write( bytes_read )
         m.update( bytes_read )

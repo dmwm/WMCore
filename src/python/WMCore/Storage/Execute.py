@@ -46,7 +46,7 @@ def runCommand(command):
     makeNonBlocking(errfd)
     outdata = errdata = ''
     outeof = erreof = 0
-    while 1:
+    while True:
         ready = select.select([outfd,errfd],[],[]) # wait for input
         if outfd in ready[0]:
             try:
@@ -99,7 +99,7 @@ def runCommandWithOutput(command):
     outdata = errdata = ''
     outeof = erreof = 0
     output = ''
-    while 1:
+    while True:
         ready = select.select([outfd,errfd],[],[]) # wait for input
         if outfd in ready[0]:
             try:

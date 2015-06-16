@@ -84,7 +84,7 @@ class DBSUploadTest(unittest.TestCase):
 
         return
 
-    def getConfig(self, dbs3UploadOnly = False):
+    def getConfig(self):
         """
         _getConfig_
 
@@ -118,7 +118,6 @@ class DBSUploadTest(unittest.TestCase):
         config.DBS3Upload.nProcesses       = 1
         config.DBS3Upload.dbsWaitTime      = 0.1
         config.DBS3Upload.datasetType      = "VALID"
-        config.DBS3Upload.dbs3UploadOnly   = dbs3UploadOnly
         return config
 
     def createParentFiles(self, acqEra, nFiles = 10,
@@ -390,7 +389,6 @@ class DBSUploadTest(unittest.TestCase):
         Verify that the dual upload mode works correctly.
         """
         self.dbsApi = DbsApi(url = self.dbsUrl)
-        config = self.getConfig(dbs3UploadOnly = True)
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil = DBSBufferUtil()
 

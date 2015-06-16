@@ -204,7 +204,7 @@ class DBSBufferUtil(WMConnectionBase):
 
 
 
-    def findOpenBlocks(self, dbs3OnlyUpload = False):
+    def findOpenBlocks(self):
         """
         _findOpenBlocks_
 
@@ -214,7 +214,7 @@ class DBSBufferUtil(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         openBlocks = self.daoFactory(classname = "GetOpenBlocks")
-        result = openBlocks.execute(dbs3OnlyUpload, conn = self.getDBConn(),
+        result = openBlocks.execute(conn = self.getDBConn(),
                                     transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
@@ -245,7 +245,7 @@ class DBSBufferUtil(WMConnectionBase):
 
 
 
-    def loadBlocks(self, blocknames, dbs3UploadOnly):
+    def loadBlocks(self, blocknames):
         """
         _loadBlocks_
 
@@ -261,7 +261,7 @@ class DBSBufferUtil(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         findBlocks = self.daoFactory(classname = "LoadBlocks")
-        result     = findBlocks.execute(blocknames, dbs3UploadOnly,
+        result     = findBlocks.execute(blocknames,
                                         conn = self.getDBConn(),
                                         transaction=self.existingTransaction())
 
@@ -315,7 +315,7 @@ class DBSBufferUtil(WMConnectionBase):
         return dbsFiles
 
 
-    def updateBlocks(self, blocks, dbs3UploadOnly = False):
+    def updateBlocks(self, blocks):
         """
         _updateBlocks_
 
@@ -329,7 +329,7 @@ class DBSBufferUtil(WMConnectionBase):
         existingTransaction = self.beginTransaction()
 
         updateBlock = self.daoFactory(classname = "UpdateBlocks")
-        updateBlock.execute(blocks, dbs3UploadOnly, conn = self.getDBConn(),
+        updateBlock.execute(blocks, conn = self.getDBConn(),
                             transaction=self.existingTransaction())
         self.commitTransaction(existingTransaction)
         return

@@ -411,6 +411,7 @@ class ReqMgrService(TemplatedPage):
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
         transitions = []
+        tstamp = time.time()
         if len(doc) == 1:
             try:
                 doc = doc[rid]
@@ -425,15 +426,22 @@ class ReqMgrService(TemplatedPage):
             content = self.templatepage('doc', title=title, status=status, name=name,
                     table=json2table(doc, web_ui_names()),
                     jsondata=json2form(doc, indent=2, keep_first_value=False),
-                    transitions=transitions)
+                    transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
                     table="", jsondata=jsondata,
-                    transitions=transitions)
+                    transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
         else:
             doc = 'No request found for name=%s' % rid
         return self.abs_page('request', content)
+
+    @expose
+    def logdb(self, **kwds):
+        """LogDB submission page"""
+        print(kwds)
+        msg = '<h6>Confirmation</h6>Your request has been sent to LogDB.'
+        return self.abs_page('generic', msg)
 
     @expose
     def requests(self, **kwds):

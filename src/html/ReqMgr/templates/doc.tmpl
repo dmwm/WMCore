@@ -49,7 +49,7 @@ $jsondata
 <div name="edit-comment" id="edit-comment">
 #import time
 #set tstamp=$time.strftime("%Y-%m-%d %H:%M:%S", $time.gmtime($ts))
-<form method="post" action="$base/logdb" class="forms">
+<form method="post" action="$base/record2logdb" class="forms">
 <fieldset>
     Name: $user
     <input type="hidden" name="user" value="$user" />
@@ -57,10 +57,11 @@ $jsondata
     Time: $tstamp
     <input type="hidden" name="tstamp" value="$ts" />
     <input type="hidden" name="userdn" value="$userdn" />
+    <input type="hidden" name="request" value="$name" />
     <legend>LogDB entry</legend>
     <label>
         Add your comment below:
-        <textarea name="logdb-entry" class="width-100" rows="5"></textarea>
+        <textarea name="message" class="width-100" rows="5"></textarea>
     </label>
 <p>
     <input type="submit" class="btn btn-small unit-push-right" value="Add to LogDB" />

@@ -43,6 +43,7 @@ from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
+from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
 import WMCore
 
@@ -202,6 +203,11 @@ class ReqMgrService(TemplatedPage):
         self.dqm_url = cdict.get('dqm_url', '')
         self.sw_ver = cdict.get('default_sw_version', 'CMSSW_5_2_5')
         self.sw_arch = cdict.get('default_sw_scramarch', 'slc5_amd64_gcc434')
+
+        # LogDB holder
+        centralurl = cdict.get("central_logdb_url", "")
+        identifier = cdict.get("log_reporter", "reqmgr2")
+        self.logdb = LogDB(centralurl, identifier)
 
     def user(self):
         """
@@ -437,10 +443,13 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('request', content)
 
     @expose
-    def logdb(self, **kwds):
+    def record2logdb(self, **kwds):
         """LogDB submission page"""
         print(kwds)
-        msg = '<h6>Confirmation</h6>Your request has been sent to LogDB.'
+        request = kwds['request']
+        msg = kwds['message']
+        self.logdb.post(request, msg)
+        msg = '<h6>Confirmation</h6>Your request has been entered to LogDB.'
         return self.abs_page('generic', msg)
 
     @expose

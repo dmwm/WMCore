@@ -43,6 +43,7 @@ from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.REST.Main import RESTMain
+from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
 import WMCore
 
@@ -202,6 +203,11 @@ class ReqMgrService(TemplatedPage):
         self.dqm_url = cdict.get('dqm_url', '')
         self.sw_ver = cdict.get('default_sw_version', 'CMSSW_5_2_5')
         self.sw_arch = cdict.get('default_sw_scramarch', 'slc5_amd64_gcc434')
+
+        # LogDB holder
+        centralurl = cdict.get("central_logdb_url", "")
+        identifier = cdict.get("log_reporter", "reqmgr2")
+        self.logdb = LogDB(centralurl, identifier)
 
     def user(self):
         """
@@ -411,6 +417,7 @@ class ReqMgrService(TemplatedPage):
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
         transitions = []
+        tstamp = time.time()
         if len(doc) == 1:
             try:
                 doc = doc[rid]
@@ -425,15 +432,25 @@ class ReqMgrService(TemplatedPage):
             content = self.templatepage('doc', title=title, status=status, name=name,
                     table=json2table(doc, web_ui_names()),
                     jsondata=json2form(doc, indent=2, keep_first_value=False),
-                    transitions=transitions)
+                    transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
                     table="", jsondata=jsondata,
-                    transitions=transitions)
+                    transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
         else:
             doc = 'No request found for name=%s' % rid
         return self.abs_page('request', content)
+
+    @expose
+    def record2logdb(self, **kwds):
+        """LogDB submission page"""
+        print(kwds)
+        request = kwds['request']
+        msg = kwds['message']
+        self.logdb.post(request, msg)
+        msg = '<h6>Confirmation</h6>Your request has been entered to LogDB.'
+        return self.abs_page('generic', msg)
 
     @expose
     def requests(self, **kwds):

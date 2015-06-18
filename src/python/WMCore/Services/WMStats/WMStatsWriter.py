@@ -151,7 +151,7 @@ class WMStatsWriter(WMStatsReader):
 
     def replicate(self, target):
         return self.couchServer.replicate(self.dbName, target, continuous = True,
-                                   filter = 'WMStats/repfilter', useReplicator = True)
+                                          filter = 'WMStats/repfilter')
     
     def getDBInstance(self):
         return self.couchDB

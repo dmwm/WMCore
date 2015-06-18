@@ -22,7 +22,7 @@ class StageOutImplV2:
         self.numRetries = 5
         pass
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksums):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors

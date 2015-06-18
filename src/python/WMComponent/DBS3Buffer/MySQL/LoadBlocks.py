@@ -9,7 +9,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadBlocks(DBFormatter):
     sql = """SELECT DISTINCT dbb.blockname as blockname, dbb.create_time as create_time,
-                dbb.status AS status, dbb.status3 AS status3,
+                dbb.status AS status,
                 dbl.se_name AS location, dbf3.dataset_algo AS das,
                 dbw.name AS workflow
               FROM dbsbuffer_block dbb
@@ -21,7 +21,7 @@ class LoadBlocks(DBFormatter):
                 dbw.id = dbf3.workflow
               WHERE dbb.blockname = :blockname"""
 
-    def format(self, result, dbs3UploadOnly):
+    def format(self, result):
         tmpList = self.formatDict(result)
         blockList = []
         for tmp in tmpList:
@@ -31,17 +31,13 @@ class LoadBlocks(DBFormatter):
             final['origin_site_name'] = tmp['location']
             final['DatasetAlgo']      = tmp['das']
             final['workflow']      = tmp['workflow']
-            
-            if dbs3UploadOnly:
-                final['status'] = tmp['status3']
-            else:
-                final['status'] = tmp['status']
+            final['status'] = tmp['status']
                 
             blockList.append(final)
 
         return blockList
 
-    def execute(self, blocknames, dbs3UploadOnly, conn = None, transaction = False):
+    def execute(self, blocknames, conn = None, transaction = False):
         """
         Take a list of blocknames and use them to load
         the blocks.
@@ -51,4 +47,4 @@ class LoadBlocks(DBFormatter):
             binds.append({'blockname': name})
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
-        return self.format(result, dbs3UploadOnly)
+        return self.format(result)

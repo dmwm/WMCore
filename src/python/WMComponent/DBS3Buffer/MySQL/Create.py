@@ -150,7 +150,6 @@ class Create(DBCreator):
              location     INTEGER      NOT NULL,
              create_time  INTEGER,
              status       VARCHAR(20),
-             status3      VARCHAR(20) DEFAULT 'Pending',
              deleted      INTEGER DEFAULT 0,
              FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                ON DELETE CASCADE,

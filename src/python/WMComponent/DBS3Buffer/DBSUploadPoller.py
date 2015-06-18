@@ -195,7 +195,6 @@ class DBSUploadPoller(BaseWorkerThread):
         self.nProc  = getattr(self.config.DBS3Upload, 'nProcesses', 4)
         self.wait   = getattr(self.config.DBS3Upload, 'dbsWaitTime', 2)
         self.nTries = getattr(self.config.DBS3Upload, 'dbsNTries', 300)
-        self.dbs3UploadOnly = getattr(self.config.DBS3Upload, "dbs3UploadOnly", False)
         self.physicsGroup   = getattr(self.config.DBS3Upload, "physicsGroup", "NoGroup")
         self.datasetType    = getattr(self.config.DBS3Upload, "datasetType", "PRODUCTION")
         self.primaryDatasetType = getattr(self.config.DBS3Upload, "primaryDatasetType", "mc")
@@ -319,10 +318,9 @@ class DBSUploadPoller(BaseWorkerThread):
             # The following two functions will actually place new files into
             # blocks.  In DBS3 upload mode we rely on something else to do that
             # for us and will skip this step.
-            if not self.dbs3UploadOnly:
-                self.loadFiles()
-                self.checkTimeout()
-                self.checkCompleted()
+            self.loadFiles()
+            self.checkTimeout()
+            self.checkCompleted()
 
             self.inputBlocks() 
             self.retrieveBlocks()
@@ -341,7 +339,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         Find all blocks; make sure they're in the cache
         """
-        openBlocks = self.dbsUtil.findOpenBlocks(self.dbs3UploadOnly)
+        openBlocks = self.dbsUtil.findOpenBlocks()
         logging.info("These are the openblocks: %s" % openBlocks)
 
         # Load them if we don't have them
@@ -353,7 +351,7 @@ class DBSUploadPoller(BaseWorkerThread):
 
         # Now load the blocks
         try:
-            loadedBlocks = self.dbsUtil.loadBlocks(blocksToLoad, self.dbs3UploadOnly)
+            loadedBlocks = self.dbsUtil.loadBlocks(blocksToLoad)
             logging.info("Loaded blocks: %s" % loadedBlocks)
         except WMException:
             raise
@@ -629,8 +627,7 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             myThread.transaction.begin()
             self.dbsUtil.createBlocks(blocks = createInDBSBuffer)
-            self.dbsUtil.updateBlocks(blocks = updateInDBSBuffer,
-                                      dbs3UploadOnly = self.dbs3UploadOnly)
+            self.dbsUtil.updateBlocks(blocks = updateInDBSBuffer)
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()
@@ -761,9 +758,10 @@ class DBSUploadPoller(BaseWorkerThread):
 
         try:
             myThread.transaction.begin()
-            self.dbsUtil.updateBlocks(loadedBlocks, self.dbs3UploadOnly)
-            if not self.dbs3UploadOnly:
-                self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")
+            
+            self.dbsUtil.updateBlocks(loadedBlocks)
+            self.dbsUtil.updateFileStatus(loadedBlocks, "InDBS")
+            
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()
@@ -822,9 +820,10 @@ class DBSUploadPoller(BaseWorkerThread):
         # Update the status of those blocks that were truly inserted
         try:
             myThread.transaction.begin()
-            self.dbsUtil.updateBlocks(blocksUploaded, self.dbs3UploadOnly)
-            if not self.dbs3UploadOnly:
-                self.dbsUtil.updateFileStatus(blocksUploaded, "InDBS")
+            
+            self.dbsUtil.updateBlocks(blocksUploaded)
+            self.dbsUtil.updateFileStatus(blocksUploaded, "InDBS")
+            
             myThread.transaction.commit()
         except WMException:
             myThread.transaction.rollback()

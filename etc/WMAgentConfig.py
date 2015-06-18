@@ -94,7 +94,7 @@ config.section_("General")
 config.General.workDir = workDirectory
 config.General.logdb_name = logDBName
 config.General.logdb_url = "%s/%s" % (couchURL, config.General.logdb_name)
-config.General.central_logdb_url = "need to get from secrete file"
+config.General.central_logdb_url = "need to get from secrets file"
 
 config.section_("JobStateMachine")
 config.JobStateMachine.couchurl = couchURL
@@ -147,8 +147,7 @@ config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
 #"https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
-config.DBS3Upload.dbsUrl = "OVER_WRITE_BY_SECETES" 
-config.DBS3Upload.dbs3UploadOnly = False
+config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 
 config.section_("DBSInterface")

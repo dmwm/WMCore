@@ -80,13 +80,24 @@ class ResourceControl(WMConnectionBase):
         sitesArray = listAction.execute(conn = self.getDBConn(),
                                   transaction = self.existingTransaction())
         return [entry['site'] for entry in sitesArray]
+
+    def listSitesSlots(self):
+        """
+        _listSitesSlots_
+        
+        List all sites, their slots and state available in Resource Control
+        """
+        listAction = self.daofactory(classname = "ListSitesSlotsState")
+        results = listAction.execute(conn = self.getDBConn(),
+                                     transaction = self.existingTransaction())
+        return results
     
     def listSiteInfo(self, siteName):
         """
         _listSiteInfo_
 
-        List the site name, ce name, se name and number of job slots for a
-        given site.
+        List the site name, SE name, CE name, pending and running slots,
+        plugin, cms name and state for a given site.
         """
         listAction = self.wmbsDAOFactory(classname = "Locations.GetSiteInfo")
         results = listAction.execute(siteName = siteName,

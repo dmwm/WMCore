@@ -67,7 +67,7 @@ class AgentStatusPoller(BaseWorkerThread):
             self.localCouchMonitor.couchServer.replicate(
                                            rp['source'], rp['target'], filter = rp['filter'], 
                                            query_params = rp.get('query_params', False),
-                                           continuous = True, useReplicator = True)
+                                           continuous = True)
         # First cicle need to be skipped since document is not updated that fast
         self.skipReplicationCheck = True
                      

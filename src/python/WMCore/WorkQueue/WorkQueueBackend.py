@@ -72,8 +72,7 @@ class WorkQueueBackend(object):
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous,
-                                      cancel = cancel,
-                                      useReplicator = True)
+                                      cancel = cancel)
         except Exception as ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
@@ -86,8 +85,7 @@ class WorkQueueBackend(object):
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
                                       continuous = continuous,
-                                      cancel = cancel,
-                                      useReplicator = True)
+                                      cancel = cancel)
         except Exception as ex:
             self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 

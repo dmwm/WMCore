@@ -576,7 +576,7 @@
         ajaxOptions.successStatus = 202;
       }
       ajax({
-          type: "POST", url: this.urlPrefix + "/_replicate",
+          type: "POST", url: this.urlPrefix + "/_replicator",
           data: JSON.stringify(repOpts),
           contentType: "application/json"
         },

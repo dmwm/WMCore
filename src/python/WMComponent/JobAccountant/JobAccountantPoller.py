@@ -5,20 +5,14 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
-
-
-
 import time
 import threading
 import logging
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
 from WMCore.Agent.Harness import Harness
 from WMCore.DAOFactory import DAOFactory
-
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
-
 from WMCore.WMException import WMException
 
 class JobAccountantPollerException(WMException):
@@ -34,8 +28,7 @@ class JobAccountantPoller(BaseWorkerThread):
     def __init__(self, config):
         BaseWorkerThread.__init__(self)
         self.config = config
-        self.accountantWorkSize = getattr(self.config.JobAccountant,
-                                          'accountantWorkSize', 100)
+        self.accountantWorkSize = getattr(self.config.JobAccountant, 'accountantWorkSize', 100)
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "JobAccountant")
@@ -70,43 +63,28 @@ class JobAccountantPoller(BaseWorkerThread):
         logging.info("Found %d completed jobs" % len(completeJobs))
 
         if len(completeJobs) == 0:
-            # Then we have no work to do.  Bye!
             logging.debug("No work to do; exiting")
             return
 
-        while len(completeJobs) > self.accountantWorkSize:
+        while len(completeJobs) > 0:
             try:
                 jobsSlice = completeJobs[:self.accountantWorkSize]
                 completeJobs = completeJobs[self.accountantWorkSize:]
                 self.accountantWorker(jobsSlice)
+                logging.info("Remaining completed jobs to process: %d" % len(completeJobs))
             except WMException:
+                myThread = threading.currentThread()
+                if getattr(myThread, 'transaction', None) != None:
+                    myThread.transaction.rollback()
                 raise
             except Exception as ex:
+                myThread = threading.currentThread()
+                if getattr(myThread, 'transaction', None) != None:
+                    myThread.transaction.rollback()
                 msg =  "Hit general exception in JobAccountantPoller while using worker.\n"
                 msg += str(ex)
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
-                logging.debug("jobsSlice:")
-                logging.debug(jobsSlice)
                 raise JobAccountantPollerException(msg)
-
-        try:
-            self.accountantWorker(completeJobs)
-        except WMException:
-            myThread = threading.currentThread()
-            if getattr(myThread, 'transaction', None) != None:
-                myThread.transaction.rollback()
-            raise
-        except Exception as ex:
-            myThread = threading.currentThread()
-            if getattr(myThread, 'transaction', None) != None:
-                myThread.transaction.rollback()
-            msg =  "Hit general exception in JobAccountantPoller in last worker use.\n"
-            msg += str(ex)
-            logging.error(msg)
-            self.sendAlert(6, msg = msg)
-            logging.debug("jobs left:")
-            logging.debug(completeJobs)
-            raise JobAccountantPollerException(msg)
 
         return

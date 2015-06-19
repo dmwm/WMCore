@@ -110,6 +110,13 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           }
             },
             { "sDefaultContent": 0,
+              "sTitle": "failed", 
+              "fnRender": function ( o, val ) {
+                            var reqSummary = requestData.getSummary(o.aData.workflow);
+                            return  reqSummary.getTotalFailure();
+                          }
+            },
+            { "sDefaultContent": 0,
               "sTitle": "run", 
               "fnRender": function ( o, val ) {
                             return requestData.getKeyValue(o.aData.workflow, "run", 0);

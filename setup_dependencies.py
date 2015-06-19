@@ -81,7 +81,7 @@ dependencies = {'wmc-rest':{
                         'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',
                                      'WMCore.Services+',
                                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
-                                     'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts', 'WMCore.ReqMgr.DataStruct+'],
+                                     'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts', 'WMCore.ReqMgr.DataStructs+'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
                                      'WMCore.Algorithms.MiscAlgos', 'WMCore.Algorithms.ParseXMLFile',
                                      'WMCore.Database.__init__', 'WMCore.Database.CMSCouch',

@@ -5,7 +5,7 @@
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.ReqMgr.DataStructs import RequestStatus
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
@@ -276,7 +276,7 @@ class WorkQueueReqMgrInterface():
         if status in statusMapping:
             # if wq status passed convert to reqmgr status
             return statusMapping[status]
-        elif status in RequestStatus.REQUEST_STATE_LIST:
+        elif status in REQUEST_STATE_LIST:
             # if reqmgr status passed return reqmgr status
             return status
         else:

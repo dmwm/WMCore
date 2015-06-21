@@ -9,7 +9,9 @@ import os
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
 from WMCore.DAOFactory import DAOFactory
-
+from WMCore.JobSplitting.LumiBased import isGoodRun, isGoodLumi
+from WMCore.DataStructs.Run import Run
+from WMCore.WMSpec.WMTask import buildLumiMask
 
 class Harvest(JobFactory):
     """
@@ -37,7 +39,7 @@ class Harvest(JobFactory):
 
     """
 
-    def createJobsLocationWise(self, fileset, endOfRun, dqmHarvestUnit):
+    def createJobsLocationWise(self, fileset, endOfRun, dqmHarvestUnit, goodRunList):
 
         myThread = threading.currentThread()
         fileset.loadData(parentage = 0)
@@ -51,10 +53,6 @@ class Harvest(JobFactory):
             locSet = frozenset(fileInfo['locations'])
             runSet = fileInfo.getRuns()
 
-            #Cache run information
-            runDict[fileInfo['lfn']] = runSet
-            fileInfo['runs'] = set()
-
             if len(locSet) == 0:
                 msg = "File %s has no locations!" % fileInfo['lfn']
                 myThread.logger.error(msg)
@@ -65,11 +63,40 @@ class Harvest(JobFactory):
             # Populate a dictionary with [location][run] so we can split jobs according to those different combinations
             if locSet not in locationDict.keys():
                 locationDict[locSet] = {}
-            for run in runSet:
-                if run.run in locationDict[locSet].keys():
-                    locationDict[locSet][run.run].append(fileInfo)
-                else:
-                    locationDict[locSet][run.run] = [fileInfo]
+
+            fileInfo['runs'] = set()
+            # Handle jobs without lumiMask
+            if not goodRunList:
+                runDict[fileInfo['lfn']] = runSet
+                for run in runSet:
+                    if run.run in locationDict[locSet].keys():
+                        locationDict[locSet][run.run].append(fileInfo)
+                    else:
+                        locationDict[locSet][run.run] = [fileInfo]
+            else:
+                # it has lumiMask, thus we consider only good run/lumis
+                newRunSet = []
+                for run in runSet:
+                    if not isGoodRun(goodRunList, run.run):
+                        continue
+                    # then loop over lumis
+                    maskedLumis = []
+                    for lumi in run.lumis:
+                        if not isGoodLumi(goodRunList, run.run, lumi):
+                            continue
+                        maskedLumis.append(lumi)
+
+                    if not maskedLumis:
+                        continue
+                    maskedRun = Run(run.run, *maskedLumis)
+                    newRunSet.append(maskedRun)
+
+                    if run.run in locationDict[locSet].keys():
+                        locationDict[locSet][run.run].append(fileInfo)
+                    else:
+                        locationDict[locSet][run.run] = [fileInfo]
+                if newRunSet:
+                    runDict[fileInfo['lfn']] = newRunSet
 
         # create separate jobs for different locations
         self.newGroup()
@@ -87,7 +114,6 @@ class Harvest(JobFactory):
             if dqmHarvestUnit == "byRun":
                 self.createJobByRun(locationDict, location, baseName, harvestType, runDict, endOfRun)
             else:
-                #TODO: need to add when specific run is specified.
                 self.createMultiRunJob(locationDict, location, baseName, harvestType, runDict, endOfRun)
 
         return
@@ -165,6 +191,8 @@ class Harvest(JobFactory):
         periodicInterval = kwargs.get("periodic_harvest_interval", 0)
         periodicSibling = kwargs.get("periodic_harvest_sibling", False)
         dqmHarvestUnit = kwargs.get("dqmHarvestUnit", "byRun")
+        runs = kwargs.get("runs", None)
+        lumis = kwargs.get("lumis", None)
         
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -176,6 +204,10 @@ class Harvest(JobFactory):
         fileset = self.subscription.getFileset()
         fileset.load()
 
+        goodRunList = {}
+        if runs and lumis:
+            goodRunList = buildLumiMask(runs, lumis)
+
         if periodicInterval and periodicInterval > 0:
 
             # Trigger the Periodic Job if
@@ -185,7 +217,7 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating Periodic harvesting job")
-                self.createJobsLocationWise(fileset, False, dqmHarvestUnit)
+                self.createJobsLocationWise(fileset, False, dqmHarvestUnit, goodRunList)
 
         elif not fileset.open:
 
@@ -199,6 +231,6 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating EndOfRun harvesting job")
-                self.createJobsLocationWise(fileset, True, dqmHarvestUnit)
+                self.createJobsLocationWise(fileset, True, dqmHarvestUnit, goodRunList)
 
         return

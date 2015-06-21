@@ -44,9 +44,13 @@ function create_info_list(tag, res) {
         });
         $(tag).append('<br/><hr/>');
     });
+    $(tag).append('<button class="btn btn-smaller btn-blue right" onclick="hide_logdb_info()">Close</button>');
 }
 
 // helper functions
+function hide_logdb_info() {
+    $('.logdb-info-records').addClass('hide');
+}
 var not_null = function(row) {
     if(row.value!=null) return true;
     return false;
@@ -54,12 +58,13 @@ var not_null = function(row) {
 var ferrors = function(data) {
     var results = data.rows;
     var errors = results.filter(not_null);
-    create_info_list('.request-latest-errors', errors);
+    create_info_list('.logdb-info-records', errors);
 }
 function logdb_info(tag, request) {
     // create placeholders
-    var html = '<div class="request-latest-errors"></div>';
+    var html = '<div class="logdb-info-records shadow"></div>';
     $(tag).html(html);
+    $('.logdb-info-records').removeClass('hide');
     // setup DB connection
     var db = WMStats.CouchBase('wmstats_logdb', 'wmstats_logdb');
     // define view to use

@@ -437,6 +437,14 @@ WMStats.GenericRequests.prototype = {
             return list.sort(this._requestDateSort);
         }
     },
+    
+    getRequestNames: function() {
+        var list = [];
+        for (var request in this.getData()) {
+            list.push(request);
+        }
+        return list;
+    },
 
     getSummary: function(workflow, agentURL) {
         

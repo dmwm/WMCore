@@ -147,8 +147,10 @@ WMStats.Globals = function($){
         ALERT_COLLECTOR_LINK: getAlertCollectorLink(),
         T0_COUCHAPP_DESIGN: "T0Request",
         T0_COUCHDB_NAME: "t0_request",
+        LOGDB_DESIGN: "LogDB",
+        LOGDB_NAME: "wmstats_logdb",
+        T0_LOGDB_NAME: "t0_logdb",
         CONFIG: null, //this will be set when WMStats.Couch.loadConfig is called. just place holder or have default config
-        INIT_DB: "ReqMgr",
         loadScript: function (url, success) {
                         $.ajax({async: false, url: url, dataType: 'script', success: success});
             },
@@ -169,7 +171,8 @@ WMStats.namespace("CustomEvents");
 
 WMStats.CustomEvents.REQUESTS_LOADED = "C_1";
 WMStats.CustomEvents.AGENTS_LOADED = "C_2";
-
+//logDB list page event
+WMStats.CustomEvents.ERROR_LOG_LOADED = "L_1";
 
 WMStats.CustomEvents.REQUEST_SUMMARY_READY = "C_3";
 WMStats.CustomEvents.CATEGORY_SUMMARY_READY = "C_4";
@@ -190,9 +193,6 @@ WMStats.CustomEvents.RESUBMISSION_SUCCESS = "C_14";
 
 //workload summary page event
 WMStats.CustomEvents.WORKLOAD_SUMMARY_READY = "W_1";
-
-//workload summary page event
-WMStats.CustomEvents.SWITCH_DB = "S_1";
 
 //view model (need to move to proper location)
 WMStats.namespace("ViewModel");

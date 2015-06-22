@@ -103,24 +103,12 @@ WMStats.Controls = function($){
         });
     };
     
-    function setDBSourcetButton(selector) {
-    	
-    	WMStats.Globals.INIT_DB = "T0Request";
-        var dbSourceButton = 
-        '<nav id="db_source" class="button-group">\
-            <ul><li><a href="#" class="nav-button">' + WMStats.Globals.INIT_DB + '</a></li></ul>\
-        </nav>';
-        
-        $(selector).append(dbSourceButton).addClass("button-group");        
-    };
-    
     return {
         setFilter: setFilter,
         setTabs: setTabs,
         setCategoryButton: setCategoryButton,
         setAllRequestButton: setAllRequestButton,
         setViewSwitchButton: setViewSwitchButton,
-        setDBSourcetButton: setDBSourcetButton,
         getFilter: getFilter,
         requests: "requests",
         sites: "sites",

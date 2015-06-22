@@ -21,7 +21,8 @@ dataStrunct = ["DataStruct/WMStats._StructBase.js",
                "DataStruct/WMStats.SiteSummary.js",
                "DataStruct/WMStats.JobDetails.js",
                "DataStruct/WMStats.WorkloadSummary.js",
-               "DataStruct/WMStats.History.js"]
+               "DataStruct/WMStats.History.js",
+               "DataStruct/WMStats.LogDBData.js"]
 
 # tier1 specific library
 t1_dataStruct = ["DataStruct/T1/WMStats.RequestSummary.js",
@@ -48,6 +49,7 @@ views = ["Views/WMStats.CategoryMap.js",
          "Views/HTMLList/WMStats.AgentDetailList.js",
          "Views/HTMLList/WMStats.CategoryTitle.js",
          "Views/HTMLList/WMStats.RequestTitle.js",
+         "Views/HTMLList/WMStats.RequestLogList.js",
          "Views/Graphs/WMStats.SiteHistoryGraph.js"
          ]
 
@@ -90,10 +92,13 @@ models =["Models/WMStats._ModelBase.js",
 
 t1_models =["Models/T1/WMStats.ActiveRequestModel.js",
             "Models/T1/WMStats.ReqMgrRequestModel.js",
-            "Models/T1/WMStats.RequestSearchModel.js"]
+            "Models/T1/WMStats.RequestSearchModel.js",
+            "Models/T1/WMStats.RequestLogModel.js"]
 
 t0_models =["Models/T0/WMStats.ActiveRequestModel.js",
-            "Models/T0/WMStats.RequestSearchModel.js",]
+            "Models/T0/WMStats.RequestModel.js",
+            "Models/T0/WMStats.RequestSearchModel.js",
+            "Models/T0/WMStats.RequestLogModel.js"]
 
 
 controller = ["Controller/WMStats.GenericController.js",

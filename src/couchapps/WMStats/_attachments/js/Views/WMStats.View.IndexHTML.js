@@ -18,8 +18,6 @@ WMStats.View.IndexHTML = function(){
         $('#loading_page').addClass("front").show();
         //applyTemplate();
         WMStats.CommonControls.setLinkTabs("#link_tabs");
-        //WMStats.Controls.setExternalLink("#external_link");
-        WMStats.Controls.setDBSourcetButton("#external_link");
         WMStats.CommonControls.setUTCClock("#clock");
         WMStats.CommonControls.setWorkloadSummarySearch("#search_option_board");
         WMStats.Controls.setFilter("#filter_board");
@@ -31,8 +29,9 @@ WMStats.View.IndexHTML = function(){
         //view model bind
         var vm = WMStats.ViewModel;
         vm.ActiveRequestPage.id('#activeRequestPage');
-        vm.AgentPage.id('#agentInfoPage');
         vm.RequestAlertPage.id('#requestAlertPage');
+        vm.AgentPage.id('#agentInfoPage');
+        vm.LogDBPage.id('#logDBPage');
         vm.SearchPage.id('#workloadSummaryPage');
         
         vm.CategoryView.id('#category_view');
@@ -73,7 +72,7 @@ WMStats.View.IndexHTML = function(){
         function switchPage(event, data) {
             //data is page object
             wsControl.switchDiv(data.id(), ["#activeRequestPage", "#requestAlertPage", 
-                                            "#agentInfoPage", "#workloadSummaryPage"]);
+                                            "#agentInfoPage", "#logDBPage", "#workloadSummaryPage"]);
             vm.propagateUpdate();
         };
         
@@ -100,6 +99,14 @@ WMStats.View.IndexHTML = function(){
         	agentData.getAlertList();
             if (agentData.agentNumber.error > 0) {
                 $('#linkTabs a[href="#agentInfoPage"] strong').text("(" + agentData.agentNumber.error + ")");
+            }
+        });
+        
+        $(WMStats.Globals.Event).on(E.ERROR_LOG_LOADED, function(event, logDBData) {
+        	// refresh the agentData.agentNumber.error
+        	var errorNum = logDBData.getData().length;
+            if ( errorNum > 0) {
+                $('#linkTabs a[href="#logDBPage"] strong').text("(" + errorNum + ")");
             }
         });
         

@@ -16,6 +16,7 @@ WMStats.CommonControls = function($){
             <ul><li><a href="#activeRequestPage"> active request </a></li>\
                 <li><a href="#requestAlertPage"> request alert <strong></strong></a></li>\
                 <li><a href="#agentInfoPage"> agent info <strong></strong></a></li>\
+                <li><a href="#logDBPage"> error logs <strong></strong></a></li>\
                 <li><a href="#workloadSummaryPage"> search </a></li></ul>\
          </nav>';
         

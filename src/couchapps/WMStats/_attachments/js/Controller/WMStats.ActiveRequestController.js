@@ -16,6 +16,11 @@ WMStats.namespace("ActiveRequestController");
             vm.propagateUpdate();
         });
 
+	$(WMStats.Globals.Event).on(E.ERROR_LOG_LOADED, 
+        function(event, logData) {
+            vm.propagateUpdate();
+        });
+        
     $(WMStats.Globals.Event).on(E.JOB_SUMMARY_READY, 
         function(event, data) {
             vm.JobView.updateDataAndChild(data);
@@ -51,25 +56,6 @@ WMStats.namespace("ActiveRequestController");
     $(WMStats.Globals.Event).on(E.AJAX_LOADING_START, 
         function(event, data) {
             $('#loading_page').show();
-        });
-        
-    $(WMStats.Globals.Event).on(E.SWITCH_DB, 
-        function(event, data) {
-        	var initView, dbSource;
-        	if (WMStats.Globals.INIT_DB === "ReqMgr") {
-        		initView = 'bystatus';
-        	 	dbSource = WMStats.ReqMgrCouch;
-        	} else if (WMStats.Globals.INIT_DB === "T0Request") {
-        		initView = 'bystatus';
-        	 	dbSource = WMStats.T0Couch;
-        	} else {
-        		initView = 'bystatus';
-        	 	dbSource = WMStats.ReqMgrCouch;
-        	}
-        	
-            WMStats.ActiveRequestModel.setInitView(initView);
-            WMStats.ActiveRequestModel.setDBSource(dbSource);
-			WMStats.ActiveRequestModel.retrieveData();
         });
     
 })(jQuery);

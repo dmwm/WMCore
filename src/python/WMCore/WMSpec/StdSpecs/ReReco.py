@@ -54,10 +54,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                                               configDoc = self.configCacheID,
                                               splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs,
-                                              stepType = cmsswStepType,
-                                              timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory,
-                                              sizePerEvent = self.sizePerEvent)
+                                              stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
 
         for outputModuleName in outputMods.keys():

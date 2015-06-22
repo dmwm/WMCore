@@ -221,9 +221,8 @@ class ReDigiWorkloadFactory(DataProcessing):
                                               configCacheUrl = self.configCacheUrl,
                                               configDoc = self.stepOneConfigCacheID,
                                               splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
-                                              timePerEvent = self.timePerEvent, memoryReq = self.memory,
-                                              sizePerEvent = self.sizePerEvent)
+                                              splitArgs = self.procJobSplitArgs,
+                                              stepType = "CMSSW")
         self.addLogCollectTask(stepOneTask)
 
         if self.keepStepOneOutput and self.keepStepTwoOutput:

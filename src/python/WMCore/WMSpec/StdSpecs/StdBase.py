@@ -281,9 +281,18 @@ class StdBase(object):
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
+
+        if not timePerEvent and self.timePerEvent:
+            timePerEvent = self.timePerEvent
+        if not sizePerEvent and self.sizePerEvent:
+            sizePerEvent = self.sizePerEvent
+        if not memoryReq and self.memory:
+            memoryReq = self.memory
+
         procTask.setJobResourceInformation(timePerEvent = timePerEvent,
                                            sizePerEvent = sizePerEvent,
                                            memoryReq = memoryReq)
+
         procTask.setTaskType(taskType)
         procTask.setProcessingVersion(self.processingVersion)
         procTask.setAcquisitionEra(self.acquisitionEra)

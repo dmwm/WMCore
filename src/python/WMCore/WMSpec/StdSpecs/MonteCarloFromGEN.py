@@ -50,10 +50,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                                               splitAlgo = self.procJobSplitAlgo,
                                               splitArgs = self.procJobSplitArgs,
                                               stepType = "CMSSW",
-                                              primarySubType = "Production",
-                                              timePerEvent = self.timePerEvent,
-                                              memoryReq = self.memory,
-                                              sizePerEvent = self.sizePerEvent)
+                                              primarySubType = "Production")
         self.addLogCollectTask(procTask)
 
         for outputModuleName in outputMods.keys():

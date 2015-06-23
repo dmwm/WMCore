@@ -77,3 +77,7 @@ WMStats.ReqMgrCouch = WMStats.CouchBase(WMStats.Globals.REQMGR_COUCHDB_NAME,
                                                  WMStats.Globals.REQMGR_COUCHAPP_DESIGN);
 WMStats.T0Couch = WMStats.CouchBase(WMStats.Globals.T0_COUCHDB_NAME,
                                                  WMStats.Globals.T0_COUCHAPP_DESIGN);
+WMStats.LogDBCouch = WMStats.CouchBase(WMStats.Globals.LOGDB_NAME,
+                                                 WMStats.Globals.LOGDB_DESIGN);
+WMStats.T0LogDBCouch = WMStats.CouchBase(WMStats.Globals.T0_LOGDB_NAME,
+                                                 WMStats.Globals.LOGDB_DESIGN);

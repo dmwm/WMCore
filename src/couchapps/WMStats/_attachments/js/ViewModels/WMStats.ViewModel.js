@@ -151,6 +151,22 @@ WMStats.ViewModel = (function (){
         return agentPage;
     })();
     
+    vm.LogDBPage = (function (){
+        var logDBPage =new WMStats._ViewModelBase();
+        
+        logDBPage.propagateUpdate = function() {
+        
+            var logDBData = WMStats.RequestLogModel.getData();
+            if (logDBData === null) {
+                return false;
+            } else {
+                vm.LogDBPage.data(logDBData);
+                return true;
+            }
+        };
+        return logDBPage;
+    })();
+    
     vm.SearchPage = (function (){
         /*
          * keys contain {searchCategory: blah, searchValue: blah}

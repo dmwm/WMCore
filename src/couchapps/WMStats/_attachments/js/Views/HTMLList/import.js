@@ -3,7 +3,8 @@ WMStats.Globals.importScripts([
     "js/Views/HTMLList/WMStats.JobDetailList.js",
     "js/Views/HTMLList/WMStats.AgentDetailList.js",
     "js/Views/HTMLList/WMStats.CategoryTitle.js",
-    "js/Views/HTMLList/WMStats.RequestTitle.js"
+    "js/Views/HTMLList/WMStats.RequestTitle.js",
+    "js/Views/HTMLList/WMStats.RequestLogList.js"
 ]);
 
 if (WMStats.Globals.VARIANT == "tier1") {

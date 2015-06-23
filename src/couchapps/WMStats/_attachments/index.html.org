@@ -8,6 +8,9 @@
         @import "css/ColVis.css";
         @import "css/jquery-ui-1.8.18.custom.css";
         @import "css/main_layout.css";
+        @import "css/logdb.css";
+        @import "css/kube.min.css";
+        @import "css/font-awesome.min.css";
     </style>
   </head>
 <body>
@@ -15,7 +18,6 @@
     <div id="monitor_title">
         <div id="wmstats_logo"></div>
         <div id="link_tabs"></div>
-        <div id="external_link"></div>
         <div id="clock"></div>
     </div>
     <div id="activeRequestPage">
@@ -68,6 +70,10 @@
     <div id="agentInfoPage">
         <div id="agent_summary"></div>
         <div id="agent_detail"></div>
+    </div>
+    <div id="logDBPage">
+        <div id="logdb_summary" class="logdb-info"></div>
+        <div id="logdb_detail"></div>
     </div>
     <div id="workloadSummaryPage">
         <div id="search_option_board"></div>

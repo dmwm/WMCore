@@ -144,9 +144,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
              {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
         
         returns
-        set({"block1": set(["lfn1", "lfn2"])}, {"block2": set(["lfn3", "lfn4"]))
+        [{"block1": set(["lfn1", "lfn2"])}, {"block2": set(["lfn3", "lfn4"])]
         """
-        blocks = set()
+        blocks = []
         for datasetPath in unInjectedData:
 
             for blockName, fileBlock in unInjectedData[datasetPath].items():
@@ -156,7 +156,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 for fileDict in fileBlock["files"]:
                     newBlock[blockName].add(fileDict["lfn"])
 
-                blocks.add(newBlock)
+                blocks.append(newBlock)
 
         return blocks
     

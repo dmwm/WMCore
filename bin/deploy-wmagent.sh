@@ -27,8 +27,6 @@
 ### Usage: Example: sh deploy-wmagent.sh -w 1.0.7.pre10 -c HG1506c -t production -p "5757 5932" -n 2
 ### Usage: Example: sh deploy-wmagent.sh -w 1.0.5.patch2 -c HG1504d -t testbed-cmssrv113 -s slc6_amd64_gcc481 -r comp=comp.pre
 ### Usage:
-### TODO:
-###  - automatize the clean up of the old agent
  
 BASE_DIR=/data/srv 
 DEPLOY_DIR=$BASE_DIR/wmagent 
@@ -280,14 +278,14 @@ if [[ "$TEAMNAME" == relval* ]]; then
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
-  sed -i "s+\{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2\}+0+" $MANAGE/config.py
+  sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
 fi
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN]+" $MANAGE/config.py
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
 else
-  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN]+" $MANAGE/config.py
+  sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
 fi
 # TODO remove this hack once AlertProcessor gets fixed
 sed -i "s+config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+#config.AlertProcessor.critical.sinks.email.fromAddr = 'noreply@cern.ch'+" $MANAGE/config.py

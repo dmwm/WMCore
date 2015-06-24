@@ -52,10 +52,7 @@ class MonteCarloWorkloadFactory(StdBase):
                                               configCacheUrl = self.configCacheUrl,
                                               seeding = self.seeding,
                                               totalEvents = self.totalEvents,
-                                              eventsPerLumi = self.eventsPerLumi,
-                                              timePerEvent = self.timePerEvent,
-                                              sizePerEvent = self.sizePerEvent,
-                                              memoryReq = self.memory)
+                                              eventsPerLumi = self.eventsPerLumi)
         self.addLogCollectTask(prodTask)
 
         # pile up support

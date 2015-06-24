@@ -322,8 +322,10 @@ class TaskChainWorkloadFactory(StdBase):
                                               configCacheUrl = self.configCacheUrl,
                                               splitArgs = splitArguments, stepType = cmsswStepType,
                                               seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
-                                              forceUnmerged = forceUnmerged, timePerEvent = self.timePerEvent,
-                                              memoryReq = taskConf.get('Memory', None), sizePerEvent = self.sizePerEvent,
+                                              forceUnmerged = forceUnmerged,
+                                              timePerEvent = taskConf.get('TimePerEvent', None),
+                                              sizePerEvent = taskConf.get('SizePerEvent', None),
+                                              memoryReq = taskConf.get('Memory', None),
                                               taskConf = taskConf)
 
         # this need to be called after setpuProcessingTask since it will overwrite some values
@@ -400,9 +402,9 @@ class TaskChainWorkloadFactory(StdBase):
                                               splitArgs = taskConf["SplittingArguments"],
                                               stepType = cmsswStepType,
                                               forceUnmerged = forceUnmerged,
-                                              timePerEvent = self.timePerEvent,
+                                              timePerEvent = taskConf.get('TimePerEvent', None),
+                                              sizePerEvent = taskConf.get('SizePerEvent', None),
                                               memoryReq = taskConf.get("Memory", None),
-                                              sizePerEvent = self.sizePerEvent, 
                                               taskConf = taskConf)
         
         # this need to be called after setpuProcessingTask since it will overwrite some values

@@ -168,7 +168,8 @@ class SiteDBJSON(Service):
         This will allow us to add them in resourceControl at once
         """
         sitenames = self._sitenames()
-        cmsnames = filter(lambda x: x['type']=='psn', sitenames)
+        # Remove Disk endpoints and add T2_CH_CERN_* flavors
+        cmsnames = filter(lambda x: x['type']=='cms' and not x['alias'].endswith("Disk"), sitenames)
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
     

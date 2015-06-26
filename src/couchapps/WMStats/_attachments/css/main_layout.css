@@ -118,7 +118,7 @@ tr.mouseclickRow {
     width: 30%;
     float: right;
     overflow: auto;
-        -webkit-border-radius: 3px;
+    -webkit-border-radius: 3px;
     -moz-border-radius: 3px;
     border-radius: 3px;
 }
@@ -519,11 +519,11 @@ legend {
     background-color: #E2E2E2;
 }
 
-#agent_summary, #agent_detail, #search_option_board, #search_result_board {
+#agent_summary, #agent_detail, #search_option_board, #search_result_board, #logdb_summary {
     padding: 5px;
 }
 
-.agent_detail_box, .request_error_box{ 
+.agent_detail_box, .request_error_box, .logdb_info{ 
     padding: 3px;
     -webkit-border-radius: 3px;
     -moz-border-radius: 3px;

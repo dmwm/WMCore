@@ -11,7 +11,8 @@ WMStats.Globals.importScripts([
     "js/DataStruct/WMStats.JobDetails.js",
     "js/DataStruct/WMStats.WorkloadSummary.js",
     "js/DataStruct/WMStats.History.js",
-    "js/DataStruct/WMStats.LogDBData.js"
+    "js/DataStruct/WMStats.LogDBData.js",
+    "js/DataStruct/WMStats.LogMessage.js"
 ]);
 
 if (WMStats.Globals.VARIANT == "tier1") {

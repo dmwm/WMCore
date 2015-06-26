@@ -172,7 +172,8 @@ WMStats.namespace("CustomEvents");
 WMStats.CustomEvents.REQUESTS_LOADED = "C_1";
 WMStats.CustomEvents.AGENTS_LOADED = "C_2";
 //logDB list page event
-WMStats.CustomEvents.ERROR_LOG_LOADED = "L_1";
+WMStats.CustomEvents.LOG_LOADED = "L_1";
+WMStats.CustomEvents.ERROR_LOG_LOADED = "L_2";
 
 WMStats.CustomEvents.REQUEST_SUMMARY_READY = "C_3";
 WMStats.CustomEvents.CATEGORY_SUMMARY_READY = "C_4";

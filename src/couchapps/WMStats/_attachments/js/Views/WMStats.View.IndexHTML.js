@@ -99,15 +99,19 @@ WMStats.View.IndexHTML = function(){
         	agentData.getAlertList();
             if (agentData.agentNumber.error > 0) {
                 $('#linkTabs a[href="#agentInfoPage"] strong').text("(" + agentData.agentNumber.error + ")");
+            } else {
+            	$('#linkTabs a[href="#agentInfoPage"] strong').text("");
             }
         });
         
-        $(WMStats.Globals.Event).on(E.ERROR_LOG_LOADED, function(event, logDBData) {
+        $(WMStats.Globals.Event).on(E.ERROR_LOG_LOADED, function(event, logdbDetailData) {
         	// refresh the agentData.agentNumber.error
-        	var errorNum = logDBData.getData().length;
+        	var errorNum = logdbDetailData.getData().length;
             if ( errorNum > 0) {
                 $('#linkTabs a[href="#logDBPage"] strong').text("(" + errorNum + ")");
-            }
+            } else {
+            	$('#linkTabs a[href="#logDBPage"] strong').text("");
+            };
         });
         
         $(WMStats.Globals.Event).on(E.REQUESTS_LOADED, 
@@ -117,6 +121,8 @@ WMStats.View.IndexHTML = function(){
                 if ((numError.alert + numError.stalled) > 0) {
                     $('#linkTabs a[href="#requestAlertPage"] strong').text("(" + 
                                       numError.stalled + ", " + numError.alert  + ")");
+                } else {
+                	$('#linkTabs a[href="#requestAlertPage"] strong').text("");
                 };
         });
         

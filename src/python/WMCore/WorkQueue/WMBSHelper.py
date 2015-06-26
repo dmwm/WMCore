@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-#pylint: disable=W6501, E1103, C0103
+#pylint: disable=E1103, C0103, W1201
 # E1103: Attach methods to threads
-# W6501: Allow logging messages to have string formatting
 # C0103: Internal method names start with '_'
+# W1201: Specify string format arguments as logging function parameters
 """
 _WMBSHelper_
 
@@ -35,8 +35,6 @@ from WMCore.WMConnectionBase     import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
-
-from WMCore.JobSplitting.LumiBased import isGoodLumi
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -98,17 +96,16 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
                 killableJobs.append(liveJob)
         # Now kill them
         try:
-            bossAir.kill(jobs = killableJobs)
+            logging.info("Killing %d jobs for workflow: %s" % (len(killableJobs), workflowName))
+            bossAir.kill(jobs = killableJobs, workflowName = workflowName)
         except BossAirException as ex:
-            # Something's gone wrong
-            # Jobs not killed!
+            # Something's gone wrong. Jobs not killed!
             logging.error("Error while trying to kill running jobs in workflow!\n")
             logging.error(str(ex))
             trace = getattr(ex, 'traceback', '')
             logging.error(trace)
             # But continue; we need to kill the jobs in the master
             # the batch system will have to take care of itself.
-            pass
     
     liveWMBSJobs = defaultdict(list)
     for liveJob in liveJobs:
@@ -349,7 +346,8 @@ class WMBSHelper(WMConnectionBase):
         needed = ['FirstEvent', 'FirstLumi', 'FirstRun', 'LastEvent', 'LastLumi', 'LastRun']
         for key in needed:
             if self.mask and self.mask.get(key) is None:
-                raise RuntimeError, 'Invalid value "%s" for %s' % (self.mask.get(key), key)
+                msg = 'Invalid value "%s" for %s' % (self.mask.get(key), key)
+                raise WorkQueueWMBSException(msg)
         locations = set()
         for site in self.getLocations.execute(conn = self.getDBConn(),
                                               transaction = self.existingTransaction()):
@@ -363,7 +361,8 @@ class WMBSHelper(WMConnectionBase):
             except StandardError as ex:
                 self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
         if not locations:
-            raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"
+            msg = 'No locations to inject Monte Carlo work to, unable to proceed'
+            raise WorkQueueWMBSException(msg)
         mcFakeFileName = ("MCFakeFile-%s" % self.topLevelFileset.name).encode('ascii', 'ignore')
         wmbsFile = File(lfn = mcFakeFileName,
                         first_event = self.mask['FirstEvent'],
@@ -430,7 +429,7 @@ class WMBSHelper(WMConnectionBase):
 
         return sub, addedFiles
 
-    def addFiles(self, block, workflow = None):
+    def addFiles(self, block):
         """
         _addFiles_
 

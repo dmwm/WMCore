@@ -543,10 +543,18 @@ class WorkQueue(WorkQueueBase):
             # ensure all elements receive cancel request, covers case where initial cancel request missed some elements
             # without this elements may avoid the cancel and not be cleared up till they finish
             elements_not_requested = [x for x in elements if x['ChildQueueUrl'] and (x['Status'] != 'CancelRequested' and not x.inEndState())]
-            if elements_to_cancel or elements_not_requested:
-                self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
-                self.logger.info("Canceling element(s) %s" % str([x.id for x in elements]))
-            self.backend.updateElements(*[x.id for x in elements_to_cancel], Status = 'Canceled')
+            
+            self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
+            if elements_to_cancel:
+                self.backend.updateElements(*[x.id for x in elements_to_cancel], Status = 'Canceled')
+                self.logger.info("Cancel-ed element(s) %s" % str([x.id for x in elements_to_cancel]))
+            
+            if elements_not_requested:
+                # Don't update as fails sometimes due to conflicts (#3856)
+                [x.load().__setitem__('Status', 'CancelRequested') for x in elements_not_requested]
+                self.backend.saveElements(*elements_not_requested)
+                self.logger.info("CancelRequest-ed element(s) %s" % str([x.id for x in elements_not_requested]))
+            
             self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()], Status = 'CancelRequested')
             # if we haven't had any updates for a while assume agent is dead and move to canceled
             if self.params.get('cancelGraceTime', -1) > 0 and elements:
@@ -556,10 +564,6 @@ class WorkQueue(WorkQueueBase):
                     # Don't update as fails sometimes due to conflicts (#3856)
                     [x.load().__setitem__('Status', 'Canceled') for x in elements if not x.inEndState()]
                     self.backend.saveElements(*[x for x in elements if not x.inEndState()])
-            else:
-                # Don't update as fails sometimes due to conflicts (#3856)
-                [x.load().__setitem__('Status', 'CancelRequested') for x in elements_not_requested]
-                self.backend.saveElements(*elements_not_requested)
 
         return [x.id for x in elements]
 

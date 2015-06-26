@@ -197,7 +197,7 @@ class ResourceControlUpdater(BaseWorkerThread):
             if site in infoRC and infoRC[site]['state'] != 'Down':
                 logging.info("Forcing site %s to Down" % site)
                 self.updateSiteState(site, 'Down')
-                del infoRC[site]
+            infoRC.pop(site, None)
 
         # if onlySSB sites, force all the sites not in SSB to down
         if self.onlySSB:
@@ -205,7 +205,7 @@ class ResourceControlUpdater(BaseWorkerThread):
                 if infoRC[site]['state'] != 'Down':
                     logging.info('Only SSBsites, forcing site %s to Down' % site)
                     self.updateSiteState(site, 'Down')
-                    del infoRC[site]
+                infoRC.pop(site, None)
 
         # this time don't update infoRC since we still want to update slots info
         for site in set(infoRC).intersection(set(infoSSB)):

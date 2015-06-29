@@ -22,7 +22,8 @@ dataStrunct = ["DataStruct/WMStats._StructBase.js",
                "DataStruct/WMStats.JobDetails.js",
                "DataStruct/WMStats.WorkloadSummary.js",
                "DataStruct/WMStats.History.js",
-               "DataStruct/WMStats.LogDBData.js"]
+               "DataStruct/WMStats.LogDBData.js",
+               "DataStruct/WMStats.LogMessage.js"]
 
 # tier1 specific library
 t1_dataStruct = ["DataStruct/T1/WMStats.RequestSummary.js",
@@ -93,11 +94,13 @@ models =["Models/WMStats._ModelBase.js",
 t1_models =["Models/T1/WMStats.ActiveRequestModel.js",
             "Models/T1/WMStats.ReqMgrRequestModel.js",
             "Models/T1/WMStats.RequestSearchModel.js",
+            "Models/T1/WMStats.RequestLogDetailModel.js",
             "Models/T1/WMStats.RequestLogModel.js"]
 
 t0_models =["Models/T0/WMStats.ActiveRequestModel.js",
             "Models/T0/WMStats.RequestModel.js",
             "Models/T0/WMStats.RequestSearchModel.js",
+            "Models/T0/WMStats.RequestLogDetailModel.js",
             "Models/T0/WMStats.RequestLogModel.js"]
 
 

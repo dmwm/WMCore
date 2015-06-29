@@ -9,7 +9,6 @@
         @import "css/jquery-ui-1.8.18.custom.css";
         @import "css/main_layout.css";
         @import "css/logdb.css";
-        @import "css/kube.min.css";
         @import "css/font-awesome.min.css";
     </style>
   </head>
@@ -72,7 +71,7 @@
         <div id="agent_detail"></div>
     </div>
     <div id="logDBPage">
-        <div id="logdb_summary" class="logdb-info"></div>
+        <div id="logdb_summary" class="logdb_info warning"></div>
         <div id="logdb_detail"></div>
     </div>
     <div id="workloadSummaryPage">

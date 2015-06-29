@@ -12,12 +12,14 @@ if (WMStats.Globals.VARIANT == "tier1") {
     WMStats.Globals.importScripts(["js/Models/T1/WMStats.ActiveRequestModel.js",
                                    "js/Models/T1/WMStats.ReqMgrRequestModel.js",
                                    "js/Models/T1/WMStats.RequestSearchModel.js",
+                                   "js/Models/T1/WMStats.RequestLogDetailModel.js",
                                    "js/Models/T1/WMStats.RequestLogModel.js"
                                    ]);
 } else if (WMStats.Globals.VARIANT == "tier0") {
     WMStats.Globals.importScripts(["js/Models/T0/WMStats.ActiveRequestModel.js",
     							   "js/Models/T0/WMStats.RequestModel.js",
     							   "js/Models/T0/WMStats.RequestSearchModel.js",
+    							   "js/Models/T1/WMStats.RequestLogDetailModel.js",
     							   "js/Models/T0/WMStats.RequestLogModel.js"
     							   ]);
 }

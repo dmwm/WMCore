@@ -9,9 +9,9 @@ WMStats.namespace('WMStats.RequestLogList');
 	    {
 	        var req = $('<div/>')
 	            .addClass('request')
-	            .text(res[i].key);
+	            .text(res[i].request);
 	        $(containerDiv).append(req);
-	        var obj = res[i].value;
+	        var obj = res[i];
 	        var keys = Object.keys(obj);
 	        $.each(keys, function(j) {
 	            var thr = $('<div/>')
@@ -48,8 +48,32 @@ WMStats.namespace('WMStats.RequestLogList');
 	    });
 	};
     
+    var errorFormat = function(logData) {
+        //var formatStr = "<div class='fa fa-exclamation-triangle medium agent-error'>";
+        var formatStr = "";
+        for (var i in logData) {
+            formatStr += "<details> <summary> <b>" + logData[i].request + "</b></summary> <ul>";
+            formatStr += "<li><b>agent</b>: " + logData[i].agent + "</li>";
+            formatStr += "<li><b>thread</b>: " + logData[i].thr + "</li>";
+            formatStr += "<li><b>type</b>: " + logData[i].type + "</li>";
+            formatStr += "<li><b>update time</b>: " + WMStats.Utils.utcClock(new Date(logData[i].ts * 1000)) + "</li>";
+            formatStr += "<li><b>error message</b>: <pre>" + logData[i].messages[0].msg + "</pre></li>";
+            formatStr += "<li><b>id</b>: " + logData[i].id + "</li>";
+            formatStr += "</ul></details>";
+        }
+        //formatStr += "</div>";
+        return formatStr;
+    };
+    
+    
+    var format = function (data) {
+       var htmlstr = "";
+       htmlstr += errorFormat(data);
+       return htmlstr;
+    };
+    
     WMStats.RequestLogList = function (data, containerDiv) {
-        createRequestLogList(data, containerDiv);
+         $(containerDiv).html(format(data));
     };
     
      // controller for this view to be triggered
@@ -57,6 +81,8 @@ WMStats.namespace('WMStats.RequestLogList');
     vm.LogDBPage.subscribe("data", function() {
         //TODO get id form the view
         var divID = '#logdb_summary';
-        WMStats.RequestLogList(vm.LogDBPage.data().getData(), divID);
+        logDBData = vm.LogDBPage.data();
+        errors = logDBData.getLogWithLastestError();
+        WMStats.RequestLogList(errors, divID);
     });
 })();

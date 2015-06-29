@@ -4,15 +4,14 @@ WMStats.RequestLogModel = new WMStats._ModelBase('', {},
                                           WMStats.LogDBData);
 
 WMStats.RequestLogModel.setDBSource(WMStats.T0LogDBCouch);
-WMStats.RequestLogModel.setTrigger(WMStats.CustomEvents.ERROR_LOG_LOADED);
+WMStats.RequestLogModel.setTrigger(WMStats.CustomEvents.LOG_LOADED);
 
 $(WMStats.Globals.Event).on(WMStats.CustomEvents.REQUESTS_LOADED, 
     function(event) {
-        var options = {};
-    	options.group = true;
+        var options = {"stale": "update_after"};
     	
     	var requestData = WMStats.ActiveRequestModel.getData();
     	options.keys = requestData.getRequestNames();
         
-        WMStats.RequestLogModel.retrieveData("latestErrors", options);
+        WMStats.RequestLogModel.retrieveData("logByRequest", options);
 });

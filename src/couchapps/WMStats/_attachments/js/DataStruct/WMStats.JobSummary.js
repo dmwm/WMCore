@@ -21,7 +21,7 @@ WMStats.JobSummary = function (couchData) {
                                             statusSummary.agentName = data.rows[i].key[6];
                                             statusSummary.errorMsg = data.rows[i].key[7];
                                             statusSummary.count = data.rows[i].value;
-                                            jobSummary.status.push(statusSummary)
+                                            jobSummary.status.push(statusSummary);
                                         }
                                         return jobSummary;
                                    };

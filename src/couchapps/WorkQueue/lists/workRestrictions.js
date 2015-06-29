@@ -48,20 +48,30 @@ function(head, req) {
             break;
         }
 
+        var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
+
+        // check work is for a team in the request
+        if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
+            continue;
+        }
+
+        // skip if we only want work from certain wf's which don't include this one.
+        if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
+            continue;
+        }
+
+        // Don't check anything if useSiteListAsLocation/trusSiteLists is enabled
+        if (ele['NoLocationUpdate']) {
+            // subtract element jobs from site resources
+            if (first !== true) {
+                send(",");
+            }
+            send(toJSON(row["doc"])); // need whole document, id etc...
+            first = false; // from now on prepend "," to output
+            continue; // we have work, move to the next element
+        }
+
         for (var site in resources) {
-            var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-
-            // TODO: probably move this to a standalone function
-
-            // check work is for a team in the request
-            if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
-                continue;
-            }
-
-            // skip if we only want work from certain wf's which don't include this one.
-            if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
-                break;
-            }
 
             // skip if in blacklist
             if (ele["SiteBlacklist"].indexOf(site) != -1) {
@@ -118,7 +128,6 @@ function(head, req) {
                 send(",");
             }
             send(toJSON(row["doc"])); // need whole document, id etc...
-
             first = false; // from now on prepend "," to output
             break; // we have work, move to next element (break out of site loop)
         } // end resources

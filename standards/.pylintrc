@@ -21,7 +21,7 @@ files-output=no
 # respectivly contain the number of errors / warnings messages and the total
 # number of statements analyzed. This is used by the global evaluation report
 # (R0004).
-evaluation='10.0 - ((float(5 * errors + warnings) / statements) * 10)'
+evaluation='10.0 - ((float(5 * error + warning) / statement) * 10)'
 
 # Add a comment according to your evaluation note. This is used by the global
 # evaluation report (R0004).

@@ -98,10 +98,10 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
                 killableJobs.append(liveJob)
         # Now kill them
         try:
-            bossAir.kill(jobs = killableJobs)
+            logging.info("Killing %d jobs for workflow: %s" % (len(killableJobs), workflowName))
+            bossAir.kill(jobs = killableJobs, workflowName = workflowName)
         except BossAirException as ex:
-            # Something's gone wrong
-            # Jobs not killed!
+            # Something's gone wrong. Jobs not killed!
             logging.error("Error while trying to kill running jobs in workflow!\n")
             logging.error(str(ex))
             trace = getattr(ex, 'traceback', '')

@@ -656,17 +656,17 @@ class BossAirAPI(WMConnectionBase):
 
 
 
-    def kill(self, jobs, killMsg = None, errorCode = 61300):
+    def kill(self, jobs, workflowName = None, killMsg = None, errorCode = 61300):
         """
         _kill_
 
         Kill jobs using plugin functions:
 
-        Only active jobs (status = 1) will be killed
-        An optional killMsg can be sent; this will be written
-        into the job FWJR. The errorCode will be the one specified
-        and if no killMsg is provided then a standard message associated with the
-        exit code will be used.
+        Only active jobs (status = 1) will be killed. If workflowName is given,
+        then kill all its jobs in one shot.
+        An optional killMsg can be sent; this will be written into the job FWJR.
+        The errorCode will be the one specified and if no killMsg is provided then
+        a standard message associated with the exit code will be used.
         If a previous FWJR exists, this error will be appended to it.
         """
         if not len(jobs):
@@ -696,7 +696,10 @@ class BossAirAPI(WMConnectionBase):
                 # Then we send them to the plugins
                 try:
                     pluginInst = self.plugins[plugin]
-                    pluginInst.kill(jobs = jobsToKill[plugin])
+                    if workflowName:
+                        pluginInst.killWorkflowJobs(workflow = workflowName)
+                    else:
+                        pluginInst.kill(jobs = jobsToKill[plugin])
                     # Register the killed jobs
                     for job in jobsToKill[plugin]:
                         if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
@@ -707,8 +710,7 @@ class BossAirAPI(WMConnectionBase):
                             logging.error("Could not write a kill FWJR due to non-existant cache_dir for job %i\n" % job['id'])
                             logging.debug("cache_dir: %s\n" % job['cache_dir'])
                             continue
-                        reportName = os.path.join(job['cache_dir'],
-                                                      'Report.%i.pkl' % job['retry_count'])
+                        reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
                         errorReport = Report()
                         if os.path.exists(reportName) and os.path.getsize(reportName) > 0:
                             # Then there's already a report there.  Add messages
@@ -737,7 +739,6 @@ class BossAirAPI(WMConnectionBase):
                     # Even if kill fails, complete the jobs
                     self._complete(jobs = jobsToKill[plugin])
         return
-
 
 
     def update(self, jobs):

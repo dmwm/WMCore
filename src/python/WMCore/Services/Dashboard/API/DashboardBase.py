@@ -22,7 +22,7 @@ def generateCMSJobID():
 
     Generate a global job ID at the UI
     """
-    return `uuid.uuid4()`
+    return repr(uuid.uuid4())
 
 class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
     """

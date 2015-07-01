@@ -17,19 +17,18 @@ import types
 import traceback
 
 _SimpleTypes = [
-    types.BooleanType,
-    types.FloatType,
-    types.StringType,
-    types.UnicodeType,
-    types.LongType,
-    types.NoneType,
-    types.IntType,
+    bool,
+    float,
+    bytes,
+    str,
+    int,
+    type(None),
     ]
 
 _ComplexTypes = [
-    types.DictType,
-    types.ListType,
-    types.TupleType,
+    dict,
+    list,
+    tuple,
     ]
 
 _SupportedTypes = []
@@ -44,7 +43,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) == bytes:
         value = "\'%s\'" % value
     return str(value)
 
@@ -55,13 +54,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == types.IntType:
+    if type(value) == int:
         return value
-    if type(value) == types.FloatType:
+    if type(value) == float:
         return value
-    if type(value) == types.ListType:
+    if type(value) == list:
         return value
-    if type(value) == types.DictType:
+    if type(value) == dict:
         return dict
     else:
         return format(value)
@@ -96,12 +95,12 @@ class ConfigSection(object):
             return (id(self) == id(other))
 
     def _complexTypeCheck(self, name, value):
-        
+
         if type(value) in _SimpleTypes:
             return
         elif type(value) in _ComplexTypes:
             vallist = value
-            if type(value) == types.DictType:
+            if type(value) == dict:
                 vallist = value.values()
             for val in vallist:
                 self._complexTypeCheck(name, val)
@@ -111,7 +110,7 @@ class ConfigSection(object):
             msg += "for name: %s and value: %s\n" % (name, value)
             msg += "Added to WMAgent Configuration"
             raise RuntimeError, msg
-                
+
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -127,11 +126,11 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == types.UnicodeType:
+        if type(value) == str:
             value = str(value)
-        
+
         self._complexTypeCheck(name, value)
-        
+
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return

@@ -73,7 +73,7 @@ class MySQLTest(unittest.TestCase):
         poller.check()
         # assuming MySQL server is running, check that 1 sensible measurement value was collected
         self.assertEqual(len(poller._measurements), 1)
-        self.assertTrue(isinstance(poller._measurements[0], types.FloatType))
+        self.assertTrue(isinstance(poller._measurements[0], float))
 
 
     def testMySQLCPUPollerSoftThreshold(self):

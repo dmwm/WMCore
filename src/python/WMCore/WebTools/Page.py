@@ -327,14 +327,14 @@ def runDas(self, func, data, expires):
     results    = func(self, data)
     call_time  = time.time() - start_time
     res_expire = make_timestamp(expires)
-    if  type(results) is types.ListType:
+    if  type(results) is list:
         if len(results) > 0:
             row = results[0]
         else:
             row = None
     else:
         row = results
-    if  type(row) is types.StringType:
+    if  type(row) is bytes:
         row = '"%s"' % row
     try:
         factory = WMFactory('webtools_factory')

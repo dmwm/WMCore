@@ -73,7 +73,7 @@ class WebAPI(DatabasePage):
 #            dict = self.runMethod(args[0], kwargs)
 #            return dict
             res = self.runMethod(args[0], kwargs)
-            if  type(res) is types.StringType:
+            if  type(res) is bytes:
                 res = eval(res)
             return res
         else:
@@ -122,7 +122,7 @@ class WebAPI(DatabasePage):
         """
         try:
             res = self.runMethod(args[0], kwargs)
-            if  type(res) is types.StringType:
+            if  type(res) is bytes:
                 res = eval(res)
             return res
         except:
@@ -138,7 +138,7 @@ class WebAPI(DatabasePage):
 #            dict = self.runMethod(args[0], kwargs)
 #            return dict
             res = self.runMethod(args[0], kwargs)
-            if  type(res) is types.StringType:
+            if  type(res) is bytes:
                 res = eval(res)
             return res
         else:

@@ -50,7 +50,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
 
         if self.initialTask.siteWhitelist():
-            if type(self.initialTask.siteWhitelist()) in types.StringTypes:
+            if type(self.initialTask.siteWhitelist()) in str:
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist()))
                 raise error
             try:
@@ -60,7 +60,7 @@ class StartPolicyInterface(PolicyInterface):
                 raise error
 
         if self.initialTask.siteBlacklist():
-            if type(self.initialTask.siteBlacklist()) in types.StringTypes:
+            if type(self.initialTask.siteBlacklist()) in str:
                 error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(self.initialTask.siteBlacklist()))
                 raise error
             try:

@@ -227,7 +227,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) == bytes:
         value = "\'%s\'" % value
     return str(value)
 
@@ -238,13 +238,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == types.IntType:
+    if type(value) == int:
         return value
-    if type(value) == types.FloatType:
+    if type(value) == float:
         return value
-    if type(value) == types.ListType:
+    if type(value) == list:
         return value
-    if type(value) == types.DictType:
+    if type(value) == dict:
         return dict
     else:
         return format(value)

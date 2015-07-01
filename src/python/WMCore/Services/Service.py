@@ -134,7 +134,7 @@ class Service(dict):
 
         # Get the request class, to instantiate later
         # either passed as param to __init__, determine via scheme or default
-        if type(self.get('requests')) == types.TypeType:
+        if type(self.get('requests')) == type:
             requests = self['requests']
         elif (self.get('accept_type') == "application/json" and self.get('content_type') == "application/json"):
             requests = JSONRequests

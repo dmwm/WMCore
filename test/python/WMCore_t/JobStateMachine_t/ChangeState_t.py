@@ -56,7 +56,7 @@ class TestChangeState(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         couchurl = os.getenv("COUCHURL")
         self.couchServer = CouchServer(dburl = couchurl)
         self.config = self.testInit.getConfiguration()
@@ -147,8 +147,7 @@ class TestChangeState(unittest.TestCase):
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(type(transition["timestamp"]) in (types.IntType,
-                                                             types.LongType))
+            self.assertTrue(type(transition["timestamp"]) == int)
 
         assert testJobADoc["jobid"] == testJobA["id"], \
                "Error: ID parameter is incorrect."
@@ -759,7 +758,7 @@ class TestChangeState(unittest.TestCase):
 
         changeStateDB = self.couchServer.connectDatabase(dbname = self.config.JobStateMachine.jobSummaryDBName)
         allDocs = changeStateDB.document("_all_docs")
-        
+
         self.assertEqual(len(allDocs["rows"]), 2,
                          "Error: Wrong number of documents")
 

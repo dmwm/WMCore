@@ -13,7 +13,7 @@
 # for running the test check the tutorial, https://github.com/dmwm/WMCore/wiki/Setup-wmcore-unittest
 ###
 
-VERSION=1.0.7.pre3
+VERSION=1.0.8.pre7
 REPOSITORY=dmwm
 BRANCH=
 UPDATE=false

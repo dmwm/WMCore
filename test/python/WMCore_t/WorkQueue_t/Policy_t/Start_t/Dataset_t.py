@@ -90,8 +90,9 @@ class DatasetTestCase(unittest.TestCase):
         dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
 
         # Block blacklist
-        rerecoArgs2 = {'BlockBlacklist' : [dataset + '#1']}
+        rerecoArgs2 = {}
         rerecoArgs2.update(rerecoArgs)
+        rerecoArgs2.update({'BlockBlacklist' : [dataset + '#1']})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -132,8 +133,9 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
         # Run Whitelist
-        rerecoArgs3 = {'RunWhitelist' : [1]}
+        rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
+        rerecoArgs3.update({'RunWhitelist' : [1]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -142,12 +144,13 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(10, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
-        rerecoArgs3 = {'RunWhitelist' : [1 ,2]}
+        rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
+        rerecoArgs3.update({'RunWhitelist' : [1 ,2]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -156,13 +159,14 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 4.0)
-        self.assertEqual(20, units[0]['NumberOfLumis'])
+        self.assertEqual(8, units[0]['NumberOfLumis'])
         self.assertEqual(20, units[0]['NumberOfFiles'])
         self.assertEqual(20000, units[0]['NumberOfEvents'])
 
         # Run Blacklist
-        rerecoArgs3 = {'RunBlacklist' : [2]}
+        rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
+        rerecoArgs3.update({'RunBlacklist' : [2]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                     rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -171,13 +175,14 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(10, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
         # Run Mixed Whitelist
-        rerecoArgs3 = {'RunBlacklist' : [1], 'RunWhitelist' : [2]}
+        rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
+        rerecoArgs3.update({'RunBlacklist' : [1], 'RunWhitelist' : [2]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -186,7 +191,7 @@ class DatasetTestCase(unittest.TestCase):
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
         self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(10, units[0]['NumberOfLumis'])
+        self.assertEqual(4, units[0]['NumberOfLumis'])
         self.assertEqual(10, units[0]['NumberOfFiles'])
         self.assertEqual(10000, units[0]['NumberOfEvents'])
 
@@ -291,7 +296,12 @@ class DatasetTestCase(unittest.TestCase):
         """
         parentProcArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
-        parentProcSpec = factory.factoryWorkloadConstruction('testParentProcessing', parentProcArgs)
+
+        # This dataset does have parents. Adding it here to keep the test going. It seems like "dbs" below is never used
+        parentProcArgs2 = {}
+        parentProcArgs2.update(parentProcArgs)
+        parentProcArgs2.update({'InputDataset': '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO'})
+        parentProcSpec = factory.factoryWorkloadConstruction('testParentProcessing', parentProcArgs2)
         parentProcSpec.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,

@@ -25,11 +25,9 @@ class JSONThunker:
                                  bool,
                                  int,
                                  float,
-                                 int,
                                  complex,
                                  str,
                                  bytes,
-                                 str
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough

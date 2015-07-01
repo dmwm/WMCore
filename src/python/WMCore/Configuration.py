@@ -23,7 +23,6 @@ _SimpleTypes = [
     str,
     int,
     type(None),
-    int,
     ]
 
 _ComplexTypes = [
@@ -96,7 +95,7 @@ class ConfigSection(object):
             return (id(self) == id(other))
 
     def _complexTypeCheck(self, name, value):
-        
+
         if type(value) in _SimpleTypes:
             return
         elif type(value) in _ComplexTypes:
@@ -111,7 +110,7 @@ class ConfigSection(object):
             msg += "for name: %s and value: %s\n" % (name, value)
             msg += "Added to WMAgent Configuration"
             raise RuntimeError, msg
-                
+
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -129,9 +128,9 @@ class ConfigSection(object):
 
         if type(value) == str:
             value = str(value)
-        
+
         self._complexTypeCheck(name, value)
-        
+
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return

@@ -773,13 +773,12 @@ class CondorPlugin(BasePlugin):
         return jobtokill
 
 
-
     def kill(self, jobs, info = None):
         """
-        Kill a list of jobs based on the WMBS job names
+        _kill_
 
+        Kill a list of jobs based on the WMBS job names.
         """
-
         for job in jobs:
             jobID = job['jobid']
             # This is a very long and painful command to run
@@ -787,6 +786,19 @@ class CondorPlugin(BasePlugin):
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE, shell = True)
             out, err = proc.communicate()
+
+        return
+
+    def killWorkflowJobs(self, workflow):
+        """
+        _killWorkflowJobs_
+
+        Kill all the jobs belonging to a specif workflow.
+        """
+        command = 'condor_rm -constraint \'WMAgent_RequestName == "%s"\'' % workflow
+        proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                stdout = subprocess.PIPE, shell = True)
+        out, err = proc.communicate()
 
         return
 

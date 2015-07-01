@@ -732,16 +732,28 @@ class PyCondorPlugin(BasePlugin):
 
     def kill(self, jobs, info = None):
         """
-        Kill a list of jobs based on the WMBS job names
+        _kill_
 
-        Kill can happen for schedd running on localhost... TBC
-
+        Kill a list of jobs based on the WMBS job names.
+        Kill can happen for schedd running on localhost... TBC.
         """
         sd = condor.Schedd()
         for job in jobs:
             logging.debug("Going to remove jobid=%i from the queue" % job['jobid'])
             sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
             logging.debug("Removed jobid=%i from the queue" % job['jobid'])
+
+        return
+
+    def killWorkflowJobs(self, workflow):
+        """
+        _killWorkflowJobs_
+
+        Kill all the jobs belonging to a specif workflow.
+        """
+        sd = condor.Schedd()
+        logging.debug("Going to remove all the jobs for workflow %s" % workflow)
+        sd.act(condor.JobAction.Remove, 'WMAgent_RequestName == %s' % classad.quote(str(workflow)))
 
         return
 

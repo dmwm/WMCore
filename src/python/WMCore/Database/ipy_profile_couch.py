@@ -104,7 +104,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     """request method using provided HTTP request and httplib library"""
     if  debug:
         httplib.HTTPConnection.debuglevel = 1
-    if  type(params) is not types.StringType:
+    if  type(params) is not bytes:
         params = urllib.urlencode(params, doseq=True)
     if  debug:
         print "input parameters", params
@@ -141,7 +141,7 @@ def print_data(data, lookup="value"):
     padding = ""
     for row in jsondict['rows']:
         values = row[lookup]
-        if  type(values) is types.DictType:
+        if  type(values) is dict:
             if  not padding:
                 for key in values.keys():
                     if  len(key) > maxl:

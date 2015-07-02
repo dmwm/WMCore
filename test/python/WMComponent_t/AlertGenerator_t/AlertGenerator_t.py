@@ -286,11 +286,11 @@ class AlertGeneratorTest(unittest.TestCase):
             if hasattr(poller, "_measurements"):
                 mes = poller._measurements
                 self.assertEqual(len(mes), 1)
-                self.assertTrue(isinstance(mes[0], types.FloatType))
+                self.assertTrue(isinstance(mes[0], float))
             if hasattr(poller, "_compMeasurements"):
                 for measurements in poller._compMeasurements:
                     self.assertEqual(len(measurements), 1)
-                    self.assertTrue(isinstance(measurements[0], types.FloatType))
+                    self.assertTrue(isinstance(measurements[0], float))
 
         shutil.rmtree(d)
 

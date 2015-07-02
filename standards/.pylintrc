@@ -27,7 +27,7 @@ evaluation='10.0 - ((float(5 * error + warning) / statement) * 10)'
 # evaluation report (R0004).
 comment=no
 # Include message's id in output
-include-ids=no
+include-id=no
 
 [MESSAGES CONTROL]
 # disable F0401 - could not import module

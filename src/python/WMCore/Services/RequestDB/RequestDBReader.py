@@ -1,12 +1,9 @@
-import time
-import logging
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
 
 class RequestDBReader():
 
-    def __init__(self, couchURL, couchapp = "ReqMgr"):
+    def __init__(self, couchURL, couchapp="ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
         self._commonInit(couchURL, couchapp)
@@ -111,7 +108,23 @@ class RequestDBReader():
         options["descending"] = False
 
         return self._getCouchView("bystatusandtime", options)
-  
+
+    def _getRequestByTeamAndStatus(self, team, status, limit):
+        """
+        'status': is the status of the workflow
+        'startTime': unix timestamp for start time
+        """
+        options = {}
+        if limit:
+            options["limit"] = limit
+        if team and status:
+            options["key"] = [team, status]
+        elif team and not status:
+            options["startkey"] = [team]
+            options["endkey"] = [team, status]   # status = {}
+
+        return self._getCouchView("byteamandstatus", options)
+
     def _getAllDocsByIDs(self, ids, include_docs = True):
         """
         keys is [id, ....]
@@ -155,6 +168,24 @@ class RequestDBReader():
             
         requestInfo = self._formatCouchData(data, detail = detail)
 
+        return requestInfo
+
+    def getRequestByTeamAndStatus(self, team, status, detail=False, limit=None):
+        """
+        'team': team name in which the workflow was assigned to.
+        'status': a single status string.
+        """
+        if team and status:
+            data = self._getRequestByTeamAndStatus(team, status, limit)
+        elif team and not status:
+            data = self._getRequestByTeamAndStatus(team, status={}, limit=limit)
+        elif not team and not status:
+            data = self._getRequestByTeamAndStatus(team={}, status={}, limit=limit)
+        else:
+            # nothing we can do with status only 
+            return
+
+        requestInfo = self._formatCouchData(data, detail=detail)
         return requestInfo
     
     def getRequestByCouchView(self, view, options, keys = [], returnDict = True):

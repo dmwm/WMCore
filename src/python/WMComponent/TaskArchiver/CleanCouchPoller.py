@@ -36,6 +36,7 @@ class CleanCouchPoller(BaseWorkerThread):
         """
         Called at startup
         """
+        self.teamName = self.config.Agent.teamName
         # set the connection for local couchDB call
         self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
         self.archiveDelayHours   = getattr(self.config.TaskArchiver, 'archiveDelayHours', 0)
@@ -79,11 +80,17 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("Cleaning up the old request docs")
             report = self.wmstatsCouchDB.deleteOldDocs(self.config.TaskArchiver.DataKeepDays)
             logging.info("%s docs deleted" % report)
-            logging.info("getting complete and announced requests")
-            
+
+            # Archiving only workflows that I own (same team)
+            # It's a *temp* patch until we get HG1509 in prod, see #6048 for a correct fix
+            logging.info("Getting requests in '%s' state for team '%s'" % (self.deletableState,
+                                                                           self.teamName))
             endTime = int(time.time()) - self.archiveDelayHours * 3600
             deletableWorkflows = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
                                                                                             False, endTime)
+            if 'relval' not in self.teamName:
+                deletableWorkflows = [wf for wf in deletableWorkflows if 'RVCMSSW' not in wf]
+            
             logging.info("Ready to archive normal %s workflows" % len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
             logging.info("archive normal %s workflows" % numUpdated)

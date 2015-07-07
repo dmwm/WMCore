@@ -262,7 +262,7 @@ class JSONThunker:
         """
         _unthunk - does the actual work for unthunk
         """
-        if (type(jsondata) == types.UnicodeType):
+        if (type(jsondata) == str):
             return str(jsondata)
         if (type(jsondata) == type({})):
             if ('thunker_encoded_json' in jsondata):

@@ -203,7 +203,7 @@ class Report:
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection].keys():
                 val = jsonPerformance[reportSection][key]
-                if type(val) == types.FloatType:
+                if type(val) == float:
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 

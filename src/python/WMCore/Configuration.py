@@ -55,13 +55,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == types.IntType:
+    if type(value) == int:
         return value
-    if type(value) == types.FloatType:
+    if type(value) == float:
         return value
-    if type(value) == types.ListType:
+    if type(value) == list:
         return value
-    if type(value) == types.DictType:
+    if type(value) == dict:
         return dict
     else:
         return format(value)
@@ -101,7 +101,7 @@ class ConfigSection(object):
             return
         elif type(value) in _ComplexTypes:
             vallist = value
-            if type(value) == types.DictType:
+            if type(value) == dict:
                 vallist = value.values()
             for val in vallist:
                 self._complexTypeCheck(name, val)
@@ -127,7 +127,7 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == types.UnicodeType:
+        if type(value) == str:
             value = str(value)
         
         self._complexTypeCheck(name, value)

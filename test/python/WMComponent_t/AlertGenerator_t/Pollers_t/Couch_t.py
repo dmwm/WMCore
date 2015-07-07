@@ -120,7 +120,7 @@ class CouchTest(unittest.TestCase):
         poller.check()
         # assuming CouchDb server is running, check that 1 sensible measurement value was collected
         self.assertEqual(len(poller._measurements), 1)
-        self.assertTrue(isinstance(poller._measurements[0], types.FloatType))
+        self.assertTrue(isinstance(poller._measurements[0], float))
         # test handling of a non-existing process
         CouchPoller._getProcessPID = lambda inst: 1212121212
         self.assertRaises(Exception, CouchPoller,
@@ -246,7 +246,7 @@ class CouchTest(unittest.TestCase):
             self.fail("Exception, reason: %s" % ex)
         #self.assertTrue(isinstance(obs, (types.ListType, types.TupleType)))
         self.assertTrue(isinstance(self.config.AlertGenerator.couchErrorsPoller.observables,
-                                   (types.ListType, types.TupleType)))
+                                   (list, tuple)))
 
         # test return value on non-sense HTTP status code
         res = poller.sample("40000")

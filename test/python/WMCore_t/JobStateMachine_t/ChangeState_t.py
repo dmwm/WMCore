@@ -147,8 +147,8 @@ class TestChangeState(unittest.TestCase):
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(type(transition["timestamp"]) in (types.IntType,
-                                                             types.LongType))
+            self.assertTrue(type(transition["timestamp"]) in (int,
+                                                             int))
 
         assert testJobADoc["jobid"] == testJobA["id"], \
                "Error: ID parameter is incorrect."

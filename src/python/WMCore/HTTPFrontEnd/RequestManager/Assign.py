@@ -268,7 +268,7 @@ class Assign(WebAPI):
         teams = []
         requestNames = []
         for key, value in kwargs.iteritems():
-            if isinstance(value, types.StringTypes):
+            if isinstance(value, str):
                 kwargs[key] = value.strip()
             if key.startswith("Team"):
                 teams.append(key[4:])

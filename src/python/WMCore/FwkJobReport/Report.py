@@ -1055,11 +1055,12 @@ class Report:
             results.append(getattr(analysisFiles, "file%s" % fileNum))
 
         # filter out duplicates
-        fileNames = []
+        duplicateCheck = []
         filteredResults = []
         for result in results:
-            if result.fileName not in fileNames:
-                fileNames.append(result.fileName)
+            inputtag = getattr(result, 'inputtag', None)
+            if (result.fileName, inputtag) not in duplicateCheck:
+                duplicateCheck.append((result.fileName, inputtag))
                 filteredResults.append(result)
 
         return filteredResults

@@ -341,7 +341,7 @@ class ApMon:
                 host = aDestination.strip()
                 passwd = ""
         if (not port.isdigit()):
-            self.logger.error("Bad value for port number "+`port`+" in "+aDestination+" destination");
+            self.logger.error("Bad value for port number "+repr(port)+" in "+aDestination+" destination");
             return
         alreadyAdded = False
         port = int(port)
@@ -356,7 +356,7 @@ class ApMon:
                 break
         destination = (host, port, passwd)
         if not alreadyAdded:
-            self.logger.debug("Adding destination "+host+':'+`port`+' '+passwd)
+            self.logger.debug("Adding destination "+host+':'+repr(port)+' '+passwd)
             if(destination in self.destinations):
                 tempDestinations[destination] = self.destinations[destination]  # reuse previous options
             else:
@@ -368,7 +368,7 @@ class ApMon:
             if options != self.__defaultOptions:
                 # we have to overwrite defaults with given options
                 for key, value in options.items():
-                    self.logger.debug("Overwritting option: "+key+" = "+`value`)
+                    self.logger.debug("Overwritting option: "+key+" = "+repr(value))
                     tempDestinations[destination][key] = value
         else:
             self.logger.debug("Destination "+host+":"+str(port)+" "+passwd+" already added. Skipping it");

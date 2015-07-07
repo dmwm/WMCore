@@ -362,7 +362,7 @@ class WorkQueue(WorkQueueBase):
                                                                   dbsBlock)
                 except Exception as ex:
                     skipMatch = True
-                    msg = "%s, %s creating subscription failed in LQ: %s" % (wmspec.name(), blockName, str(ex))
+                    msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
                     self.logger.error(msg)  
                     centralurl = self.params.get("central_logdb_url", "")
                     identifier = self.params.get("log_reporter", "")

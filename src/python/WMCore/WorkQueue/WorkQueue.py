@@ -519,8 +519,7 @@ class WorkQueue(WorkQueueBase):
                         myThread = threading.currentThread()
                         myThread.dbi = self.conn.dbi
                         myThread.logger = self.logger
-                        killWorkflow(workflow, self.params["JobDumpConfig"],
-                                     self.params["BossAirConfig"])
+                        killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
                     except Exception as ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
                         badWfsCancel.append(workflow)

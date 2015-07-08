@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#pylint: disable=W1201
+# W1201: Specify string format arguments as logging function parameters
+
 """
 _PyCondorPlugin_
 
@@ -7,7 +10,6 @@ For glide-in use.
 """
 
 import os
-import re
 import time
 import Queue
 import os.path
@@ -17,7 +19,6 @@ import traceback
 import subprocess
 import multiprocessing
 import glob
-import shlex
 import fnmatch
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
@@ -33,8 +34,6 @@ from WMCore.Algorithms                 import SubprocessAlgos
 ##  python-condor stuff
 import htcondor as condor
 import classad
-import datetime
-import calendar
 
 
 def submitWorker(input, results, timeout = None):
@@ -345,7 +344,7 @@ class PyCondorPlugin(BasePlugin):
 
 
 
-    def submit(self, jobs, info):
+    def submit(self, jobs, info=None):
         """
         _submit_
 
@@ -559,7 +558,7 @@ class PyCondorPlugin(BasePlugin):
 
 
 
-    def track(self, jobs, info = None):
+    def track(self, jobs, info=None):
         """
         _track_
 
@@ -569,10 +568,6 @@ class PyCondorPlugin(BasePlugin):
         Second, the jobs that need to be changed
         Third, the jobs that need to be completed
         """
-
-
-        # Create an object to store final info
-        trackList = []
 
         changeList   = []
         completeList = []
@@ -594,7 +589,7 @@ class PyCondorPlugin(BasePlugin):
         for job in jobs:
             if not job['jobid'] in jobInfo.keys():
                 if noInfoFlag:
-                    self.procJobNoInfo(job, changeList, completeList, runningList)
+                    self.procJobNoInfo(job, changeList, completeList)
                 else:
                     self.procCondorLog(job, changeList, completeList, runningList)
             else:
@@ -730,18 +725,30 @@ class PyCondorPlugin(BasePlugin):
 
 
 
-    def kill(self, jobs, info = None):
+    def kill(self, jobs, info=None):
         """
-        Kill a list of jobs based on the WMBS job names
+        _kill_
 
-        Kill can happen for schedd running on localhost... TBC
-
+        Kill a list of jobs based on the WMBS job names.
+        Kill can happen for schedd running on localhost... TBC.
         """
         sd = condor.Schedd()
         for job in jobs:
             logging.debug("Going to remove jobid=%i from the queue" % job['jobid'])
             sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
             logging.debug("Removed jobid=%i from the queue" % job['jobid'])
+
+        return
+
+    def killWorkflowJobs(self, workflow):
+        """
+        _killWorkflowJobs_
+
+        Kill all the jobs belonging to a specif workflow.
+        """
+        sd = condor.Schedd()
+        logging.debug("Going to remove all the jobs for workflow %s" % workflow)
+        sd.act(condor.JobAction.Remove, 'WMAgent_RequestName == %s' % classad.quote(str(workflow)))
 
         return
 
@@ -1120,10 +1127,9 @@ class PyCondorPlugin(BasePlugin):
 
         
 
-    def procJobNoInfo(self, job, changeList, completeList, runningList):
+    def procJobNoInfo(self, job, changeList, completeList):
         """
         Process jobs where No ClassAd info is received from schedd
-        
         """
         if not job['status'] == 'Removed':
             logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s" % (job['jobid'], job['status']))

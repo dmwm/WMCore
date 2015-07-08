@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#pylint: disable=W1201
+# W1201: Specify string format arguments as logging function parameters
+
 """
 _CondorPlugin_
 
@@ -290,7 +293,8 @@ class CondorPlugin(BasePlugin):
         try:
             self.input.close()
             self.result.close()
-        except:
+        except Exception as ex:
+            logging.error(str(ex))
             # There's really not much we can do about this
             pass
         for proc in self.pool:
@@ -320,7 +324,7 @@ class CondorPlugin(BasePlugin):
 
 
 
-    def submit(self, jobs, info):
+    def submit(self, jobs, info=None):
         """
         _submit_
 
@@ -455,7 +459,7 @@ class CondorPlugin(BasePlugin):
                 exitCode = res['exitCode']
             except KeyError as ex:
                 msg =  "Error in finding key from result pipe\n"
-                msg += "Something has gone crticially wrong in the worker\n"
+                msg += "Something has gone critically wrong in the worker\n"
                 try:
                     msg += "Result: %s\n" % str(res)
                 except:
@@ -534,7 +538,7 @@ class CondorPlugin(BasePlugin):
 
 
 
-    def track(self, jobs, info = None):
+    def track(self, jobs, info=None):
         """
         _track_
 
@@ -544,10 +548,6 @@ class CondorPlugin(BasePlugin):
         Second, the jobs that need to be changed
         Third, the jobs that need to be completed
         """
-
-
-        # Create an object to store final info
-        trackList = []
 
         changeList   = []
         completeList = []
@@ -773,13 +773,12 @@ class CondorPlugin(BasePlugin):
         return jobtokill
 
 
-
-    def kill(self, jobs, info = None):
+    def kill(self, jobs, info=None):
         """
-        Kill a list of jobs based on the WMBS job names
+        _kill_
 
+        Kill a list of jobs based on the WMBS job names.
         """
-
         for job in jobs:
             jobID = job['jobid']
             # This is a very long and painful command to run
@@ -787,6 +786,19 @@ class CondorPlugin(BasePlugin):
             proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                     stdout = subprocess.PIPE, shell = True)
             out, err = proc.communicate()
+
+        return
+
+    def killWorkflowJobs(self, workflow):
+        """
+        _killWorkflowJobs_
+
+        Kill all the jobs belonging to a specif workflow.
+        """
+        command = 'condor_rm -constraint \'WMAgent_RequestName == "%s"\'' % workflow
+        proc = subprocess.Popen(command, stderr = subprocess.PIPE,
+                                stdout = subprocess.PIPE, shell = True)
+        out, err = proc.communicate()
 
         return
 

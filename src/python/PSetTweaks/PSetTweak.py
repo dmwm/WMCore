@@ -12,6 +12,7 @@ import pickle
 import StringIO
 import imp
 import sys
+from functools import reduce
 
 #py2.6 compatibility
 try:

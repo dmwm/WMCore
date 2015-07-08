@@ -15,6 +15,7 @@ import traceback
 from cStringIO import StringIO
 from mimetypes import guess_type
 from gzip import GzipFile
+from functools import reduce
 
 # Compatibility with python2.3 or earlier
 HTTPS = httplib.HTTPS

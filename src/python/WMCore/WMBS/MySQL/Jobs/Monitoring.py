@@ -9,6 +9,7 @@ __all__ = []
 
 
 from WMCore.Database.DBFormatter import DBFormatter
+from functools import reduce
 
 class JobsByState(DBFormatter):
     sql = """select count(wmbs_job.state) as count, wmbs_job_state.name as name from wmbs_job

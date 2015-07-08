@@ -160,7 +160,7 @@ class CleanUpManager:
             msg = "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
             print msg
-        except StandardError as ex:
+        except Exception as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Clean Up will not be attempted\n"
             msg += str(ex)
@@ -355,7 +355,7 @@ def cleanUp():
 
         config = state._RunResDB.toDictionary()[state.taskAttrs['Name']]
 
-    except StandardError as ex:
+    except Exception as ex:
         msg = "Unable to load details from task directory:\n"
         msg += "Error reading RunResDB XML file:\n"
         msg += "%s\n" % state.runresdb

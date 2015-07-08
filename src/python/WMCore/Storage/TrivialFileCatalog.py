@@ -205,7 +205,7 @@ def readTFC(filename):
 
     try:
         node = xmlFileToNode(filename)
-    except StandardError as ex:
+    except Exception as ex:
         msg = "Error reading TrivialFileCatalog: %s\n" % filename
         msg += str(ex)
         raise RuntimeError, msg

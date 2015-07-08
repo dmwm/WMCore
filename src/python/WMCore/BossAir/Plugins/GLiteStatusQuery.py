@@ -142,7 +142,7 @@ class GLiteStatusQuery(object):
 
         try:
             runningJob['statusReason'] = str(jobInfo[self.reason])
-        except StandardError :
+        except Exception :
             pass
 
         try:
@@ -152,7 +152,7 @@ class GLiteStatusQuery(object):
                 tmp = wms.split(':')
                 runningJob['service'] = \
                                  "https://" + getfqdn ( tmp[0] ) + ':' + tmp[1]
-        except StandardError :
+        except Exception :
             pass
 
         try:
@@ -160,7 +160,7 @@ class GLiteStatusQuery(object):
             runningJob['destination'] = destCe.replace("https://", "")
             # runningJob['DEST_CE'] = \
             #                     destCe.split(':')[0].replace("https://", "")
-        except StandardError :
+        except Exception :
             pass
 
         timestamp = str(jobInfo[self.stateEnterTimes])
@@ -184,14 +184,14 @@ class GLiteStatusQuery(object):
             if lst[3] != '0':
                 runningJob["lbTimestamp"] = lst[3]
 
-        except StandardError :
+        except Exception :
             pass
 
         try:
             if runningJob['statusScheduler'] == 'Done' \
                    and jobInfo[ self.doneCode ] != '0' :
                 runningJob['statusScheduler'] = 'Done(failed)'
-        except StandardError :
+        except Exception :
             pass
 
         runningJob['status'] = self.statusMap[runningJob['statusScheduler']]

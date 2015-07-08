@@ -68,7 +68,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         except IOError as ex:
             self.queue.logger.error("Error opening connection to work queue: %s \n%s" % 
                                     (str(ex), traceback.format_exc()))
-        except StandardError as ex:
+        except Exception as ex:
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"
                                     % (str(ex), traceback.format_exc()))
         self.queue.logger.info("Obtained %s unit(s) of work" % work)
@@ -79,7 +79,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
         self.queue.logger.info("Splitting new work")
         try:
             self.queue.processInboundWork()
-        except StandardError as ex:
+        except Exception as ex:
             self.queue.logger.exception('Error during split')
         self.logger.info('Splitting finished')
         return

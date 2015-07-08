@@ -360,7 +360,7 @@ class WMBSHelper(WMConnectionBase):
                     self.logger.info('Skipping MonteCarlo injection to site "%s" as unknown to wmbs' % site)
                     continue
                 locations.add(siteInfo[0]['se_name'])
-            except StandardError as ex:
+            except Exception as ex:
                 self.logger.error('Error getting storage element for "%s": %s' % (site, str(ex)))
         if not locations:
             raise RuntimeError, "No locations to inject Monte Carlo work to, unable to proceed"

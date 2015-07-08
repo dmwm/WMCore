@@ -99,7 +99,7 @@ class LogCollect(Executor):
                 deleteMgr   = DeleteMgr.DeleteMgr()
                 stageInMgr  = StageInMgr.StageInMgr()
                 stageOutMgr = StageOutMgr.StageOutMgr(**stageOutParams)
-        except StandardError as ex:
+        except Exception as ex:
             msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
             logging.error(msg)
             raise WMExecutionFailure(60312, "MgrImplementationError", msg)

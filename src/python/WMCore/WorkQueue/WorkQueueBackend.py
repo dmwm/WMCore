@@ -492,7 +492,7 @@ class WorkQueueBackend(object):
         record['tasks'][taskname]['comment'] = comment
         try:
             self.db.commitOne(record)
-        except StandardError as ex:
+        except Exception as ex:
             self.logger.error("Unable to update task %s freshness: %s" % (taskname, str(ex)))
 
     def getWMBSInjectStatus(self, request = None):

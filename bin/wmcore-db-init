@@ -24,7 +24,7 @@ from sqlalchemy.engine.url import make_url
 def usage():
 
     msg = """
-Usage: wmcore-db-init [--config] --create <options>
+Usage: wmcore-db-init [--config] (--create|--destroy) <options>
 
 You must either set the WMAGENT_CONFIG environment variable or specify the config file with
 --config 
@@ -36,7 +36,7 @@ need to be created.
     print(msg)
 
 
-valid = ['config=', 'create', 'modules=']
+valid = ['config=', 'create', 'destroy', 'modules=']
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
@@ -57,18 +57,25 @@ for opt, arg in opts:
             print msg
             sys.exit(1)
         command = "create"
+    if opt == "--destroy":
+        if command != None:
+            msg = "Command specified twice:\n"
+            msg += usage()
+            print msg
+            sys.exit(1)
+        command = "destroy"
     if opt == "--modules":
         modules = arg.split(',')
     if opt == "--config":
         config = arg
-   
+
 if command == None:
     msg = "No command specified\n"
     print(msg)
     usage()
     sys.exit(0)
 
-if config == None:            
+if config == None:
     config = os.environ.get("WMAGENT_CONFIG", None)
 
     if config == None:
@@ -76,7 +83,7 @@ if config == None:
         msg += "provide one with the --config option"
         print(msg)
         usage()
-        sys.exit(1) 
+        sys.exit(1)
 
 if not os.path.exists(config):
     print "Can't find config: %s" % config
@@ -121,7 +128,11 @@ def create(config):
     if hasattr(config.CoreDatabase, "indexspaceName"):
         params["tablespace_index"] = config.CoreDatabase.indexspaceName
 
-    wmInit.setSchema(modules, params = params) 
+    wmInit.setSchema(modules, params = params)
+    return
+
+def destroy(config):
+    wmInit.clearDatabase()
     return
 
 def executeCommand(command):
@@ -131,8 +142,25 @@ def executeCommand(command):
         while line:
             print(line)
             line = x.read()
-    
+
+def askConfirmation():
+    while True:
+        msg = "Are you sure you want to delete all the database? The operation is NOT reversible. (yes, no)"
+        print msg
+        answer = raw_input()
+        if answer.upper() in ['YES', 'NO']:
+            return answer
+
 if command == "create":
     connectionTest(cfgObject)
     create(cfgObject)
     sys.exit(0)
+if command == "destroy":
+    answer = askConfirmation()
+    if answer.upper() == 'YES':
+        connectionTest(cfgObject)
+        destroy(cfgObject)
+        sys.exit(0)
+    else:
+        print "Exiting without doing anything"
+

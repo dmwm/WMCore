@@ -1,3 +1,124 @@
+1.0.7 to 1.0.9.pre1:
+  - Merge pull request #5998 from hufnagel/promptreco-eventlimits
+  - Merge pull request #6055 from mmascher/master
+  - Add a destroy command to wmcore-db-init
+  - Merge pull request #6044 from ericvaandering/fix_dataset_uts
+  - Merge pull request #6028 from amaltaro/improve-condor-rm
+  - Merge pull request #6053 from hufnagel/alcaharvest-duplicate-removal
+  - Merge pull request #6031 from ericvaandering/futurize_0615a
+  - Merge pull request #6039 from ericvaandering/futurize_0701a
+  - Merge pull request #6046 from ericvaandering/fix_pylintrc
+  - Adapt pylintrc to new pylint
+  - tweak the AlcaHarvest payload duplicate removal
+  - Merge pull request #6030 from amaltaro/forceSite-fix
+  - Merge pull request #6040 from ericvaandering/futurize_0701b
+  - Merge pull request #6042 from ticoann/format_logdb
+  - Merge pull request #6048 from amaltaro/archive-delay-fix
+  - Merge pull request #6049 from amaltaro/byteamstatus-view
+  - Fix byteamandstatus view for ReqMgr
+  - Archive only workflows belonging to the same team
+  - Remove jobs by wf name for force-complete and aborted
+  - Fix two unit tests
+  - Merge pull request #6043 from ticoann/update_version_for_unittest
+  - update default rpm for unittest to 1.0.8.pre7
+  - wrap up error messages for humans to read
+  - Replace backticks with repr()
+  - import reduce for python3 compatibility
+  - Merge pull request #6036 from ericvaandering/fix_standards
+  - Fix pylint expression for new pylint
+  - Avoid flipping the state all the time
+  - 1.0.8.pre7
+  - Merge pull request #6032 from ticoann/logbd_fix
+  - initial patch for the logdb fix
+  - Merge pull request #6027 from ticoann/force_complete_fix
+  - fixes force-complete and aborted
+  - Merge pull request #6025 from amaltaro/assign-webpage
+  - Return correct value from checkbox checked
+  - Merge pull request #6023 from amaltaro/premix-template
+  - Added premixing template; bugfix for wmagent deployment script
+  - Merge pull request #6022 from hufnagel/phedex-recovery-fix
+  - fix bug in phedex recovery code
+  - 1.0.8.pre6
+  - Merge pull request #6020 from hufnagel/stdbase-memory
+  - Merge pull request #5954 from ericvaandering/shuffle_files
+  - Shuffle pileup files deterministically if needed
+  - move setting the processing task memory into StdBase
+  - 1.0.8.pre5
+  - Merge pull request #6019 from amaltaro/harvest-lumiList
+  - Merge pull request #6021 from ticoann/valentin_test
+  - add LogDB tab and retrievie only request data
+  - Handle lumiList for harvesting jobs
+  - 1.0.8.pre4
+  - Merge pull request #6018 from ticoann/fix_import
+  - fix workqueue dependency
+  - 1.0.8.pre3
+  - Merge pull request #6006 from ticoann/add_processing_version
+  - include ProcessingVersion, Subscription info
+  - Merge pull request #6017 from ticoann/fix_dependency
+  - fix workqueue dependency
+  - Merge pull request #5984 from amaltaro/jobaccountant-master
+  - Merge pull request #6015 from ticoann/t0_monitor_add_fail
+  - Break processing of jobs into smaller transactions
+  - add failure column in tier0 request view
+  - 1.0.8.pre2
+  - Merge pull request #6009 from vkuznet/logdb-comment
+  - Merge pull request #5986 from vkuznet/LogDBView
+  - Merge pull request #6003 from ticoann/clean_dbs_buffer
+  - Merge pull request #6010 from amaltaro/cleanup-replicate
+  - Merge pull request #6012 from juztas/consistent
+  - Merge pull request #6007 from amaltaro/unique-wf-names
+  - Merge pull request #5976 from amaltaro/agent-watcher-plus
+  - Make consistent storage plugins. Fixes #6011
+  - Cleanup of _replicate code, replaced by _replicator
+  - Adjust code to call LogDB API
+  - Necessary changes for adding LogDB comment form
+  - Return unique workflow names
+  - Changes for new LogDB view, API: logdb_info(tag, request_or_requests)
+  - clean up dbs3 configuration code
+  - Merge pull request #6001 from ericvaandering/futurize_0616b
+  - Merge pull request #6000 from ericvaandering/futurize_0616a
+  - Merge pull request #5999 from ericvaandering/futurize_0616d
+  - Merge pull request #6002 from ericvaandering/futurize_0616c
+  - Merge pull request #5980 from amaltaro/updt-template
+  - Merge pull request #5981 from amaltaro/deploy-force-list
+  - Replace while 1 with while True
+  - Fix has_key in non-code directories
+  - Remove duplicates in isinstance check
+  - Use exc_info to get exception info
+  - Merge pull request #5997 from ericvaandering/sub_extra_task
+  - increase event limits for PromptReco
+  - Strip leading task_ from PREP ID
+  - Convert instances of StandardError to Exception
+  - Merge pull request #5977 from ticoann/reqmgr2-abort
+  - Merge pull request #5956 from juztas/gfal2_fix
+  - Merge pull request #5987 from ticoann/dbs_open_block
+  - fixes abort and force-complete for reqmgr2
+  - fix open block upload in DBS
+  - Create separate logdb.js file which provides logdb_info function; add example how to use it in html
+  - Example of LogDB view page
+  - CouchDB connector
+  - Map for LogDB
+  - Update templates with task MaxRSS and MaxVSize and multiDQM upload
+  - Merge pull request #5978 from amaltaro/log-open-blocks
+  - Added force sites to Down; RC improvements related to condor
+  - Remove several tweaks; Added force site down list
+  - Update logdb request when blocks are opened in dbs
+  - 1.0.8.pre1
+  - Merge pull request #5965 from ericvaandering/futurize_0604b
+  - Merge pull request #5964 from ericvaandering/futurize_0604
+  - Merge pull request #5974 from hufnagel/repack-always-singlecore
+  - Merge pull request #5972 from ticoann/fix_reqmgr2_script
+  - Merge pull request #5973 from ticoann/workqueue_reqmgr2_transition
+  - Merge pull request #5966 from ericvaandering/futurize_0604c
+  - make workqueue handle both reqmgr2 and reqmgr
+  - repack jobs should always use a single core in CMSSW
+  - Fix Gfal2 plugin to use proxy and register module I have tested this at CERN, but seems with castor and adler32 it always fail with Segmentation fault. Without adler32 it works as expected, and as far as I understand, CERN will not change to gfal2. Tapas, I have agent fully set up with this patch, and let me know if you have some time to test. Everything what was needed for me is to put site-local-config.xml in afs directory and run jobs at CERN. Can you put somewhere modified site-local-config.xml that it is accessible in WN? Changes which I did to this file are:    <local-stage-out>      <command value="gfal2"/>      <option value=""/>      <catalog url="trivialcatalog_file:/afs/cern.ch/cms/SITECONF/T2_CH_CERN/PhEDEx/storage.xml?protocol=srmv2"/>
+  - fix for reqmgr2 script
+  - Futurize methodattrs
+  - Futurize funcattrs
+  - Move to modern octal representation, eliminate distinction between Long and int
+  - Replace maxint with maxsize
+
 1.0.7 to 1.0.8.pre7:
   - Merge pull request #6032 from ticoann/logbd_fix
   - initial patch for the logdb fix

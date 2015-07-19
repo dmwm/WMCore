@@ -35,6 +35,7 @@ from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.Database.CMSCouch               import CouchServer
 from WMCore.FwkJobReport.Report             import Report
+from WMCore.Services.DBS.DBSReader          import DBSReader
 
 
 def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
@@ -105,7 +106,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0,
-            numberOfCores = 1):
+            numberOfCores = 1, inputDataset = None, inputDatasetLocations = None):
     """
     _saveJob_
 
@@ -130,6 +131,9 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['scramArch'] = scramArch
     job['swVersion'] = swVersion
     job['numberOfCores'] = numberOfCores
+    job['inputDataset'] = inputDataset
+    job['inputDatasetLocations'] = inputDatasetLocations
+
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
     cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
     output.close()
@@ -160,6 +164,8 @@ def creatorProcess(work, jobCacheDir):
         swVersion    = work.get('swVersion', None)
         agentNumber  = work.get('agentNumber', 0)
         numberOfCores = work.get('numberOfCores', 1)
+        inputDataset = work.get('inputDataset', None)
+        inputDatasetLocations = work.get('inputDatasetLocations', None)
 
         if ownerDN == None:
             ownerDN = owner
@@ -198,7 +204,9 @@ def creatorProcess(work, jobCacheDir):
                     scramArch = scramArch,
                     swVersion = swVersion,
                     agentNumber = agentNumber,
-                    numberOfCores = numberOfCores)
+                    numberOfCores = numberOfCores,
+                    inputDataset = inputDataset,
+                    inputDatasetLocations = inputDatasetLocations)
 
     except Exception as ex:
         # Register as failure; move on
@@ -547,6 +555,13 @@ class JobCreatorPoller(BaseWorkerThread):
 
 
                 # Assemble a dict of all the info
+                inputDataset = None
+                locations = None
+                dbsurl = wmTask.inputDatasetDBSURL()
+                if dbsurl is not None:
+                    dbs = DBSReader(dbsurl)
+                    inputDataset = wmTask.getInputDatasetPath()
+                    locations = dbs.listDatasetLocation(inputDataset)
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
@@ -554,7 +569,9 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
-                               'numberOfCores': 1,}
+                               'numberOfCores': 1,
+                               'inputDataset': inputDataset,
+                               'inputDatasetLocations': locations}
                 try:
                     maxCores = 1
                     stepNames = wmTask.listAllStepNames()

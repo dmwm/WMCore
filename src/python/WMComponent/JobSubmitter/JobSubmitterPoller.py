@@ -314,7 +314,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 possibleLocations = set()
 
                 # all files in job have same location (in se names)
-                rawLocations = loadedJob["input_files"][0]["locations"]
+                #rawLocations = loadedJob["input_files"][0]["locations"]
+                rawLocations = loadedJob.get("inputDatasetLocations", [])
 
                 # transform se names into site names
                 for loc in rawLocations:
@@ -419,7 +420,9 @@ class JobSubmitterPoller(BaseWorkerThread):
                        newJob['task_name'],
                        frozenset(potentialLocations),
                        loadedJob.get("numberOfCores", 1),
-                       newJob['task_id']
+                       newJob['task_id'],
+                       loadedJob.get('inputDataset', None),
+                       loadedJob.get('inputDatasetLocations', None)
                        )
 
             self.jobDataCache[workflowName][jobID] = jobInfo
@@ -733,9 +736,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'estimatedMemoryUsage' : cachedJob[16],
                                'taskPriority' : self.workflowPrios[workflow],
                                'taskName' : cachedJob[17],
+                               'potentialSites' : potentialSites,
                                'numberOfCores' : cachedJob[19],
                                'taskID' : cachedJob[20],
-                               'potentialSites' : potentialSites}
+                               'inputDataset' : cachedJob[21],
+                               'inputDatasetLocations' : cachedJob[22]
+                               }
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

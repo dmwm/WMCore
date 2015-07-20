@@ -8,8 +8,6 @@ Handles site whitelist/blacklist info as well.
 """
 
 import types
-import copy
-import logging
 import cherrypy
 import threading
 
@@ -24,7 +22,7 @@ from WMCore.Wrappers import JsonWrapper
 from WMCore.WebTools.WebAPI import WebAPI
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMSpec.WMWorkloadTools import strToBool
-
+from WMCore.Services.DBS.DBSReader import DBSReader
 
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""
@@ -47,9 +45,9 @@ class Assign(WebAPI):
             try:
                 # Download a list of all the sites from SiteDB, uses v2 API.
                 sitedb = SiteDBJSON()
-                self.sites = sitedb.getAllCMSNames()    
+                self.sites = sitedb.getAllCMSNames()
                 self.sites.sort()
-                self.phedexNodes = sitedb.getAllPhEDExNodeNames(excludeBuffer = True)
+                self.phedexNodes = sitedb.getAllPhEDExNodeNames(excludeBuffer=True)
                 self.phedexNodes.sort()
             except Exception as ex:
                 msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % ex
@@ -57,7 +55,7 @@ class Assign(WebAPI):
                 raise
         else:
             self.sites = []
-        
+
         #store result lfn base with all Physics group
         storeResultLFNBase = ["/store/results/analysisops",
                               "/store/results/b_physics",
@@ -77,10 +75,10 @@ class Assign(WebAPI):
                               "/store/results/top",
                               "/store/results/tracker_dpg",
                               "/store/results/tracker_pog",
-                              "/store/results/trigger"]  
+                              "/store/results/trigger"]
         # yet 0.9.40 had also another self.mergedLFNBases which was differentiating
         # list of mergedLFNBases based on type of request, removed and all bases
-        # will be displayed regardless of the request type (discussion with Edgar) 
+        # will be displayed regardless of the request type (discussion with Edgar)
         self.allMergedLFNBases = [
             "/store/backfill/1",
             "/store/backfill/2",
@@ -90,9 +88,9 @@ class Assign(WebAPI):
             "/store/relval",
             "/store/hidata",
             "/store/himc"]
-        
+
         self.allMergedLFNBases.extend(storeResultLFNBase)
-        
+
         self.allUnmergedLFNBases = ["/store/unmerged", "/store/temp"]
 
         self.yuiroot = config.yuiroot
@@ -134,14 +132,26 @@ class Assign(WebAPI):
             raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
+    def validateDatatier(self, datatier, dbsUrl):
+        """
+        _validateDatatier_
+
+        Provided a list of datatiers extracted from the outputDatasets, checks
+        whether they all exist in DBS already.
+        """
+        dbsReader = DBSReader(dbsUrl)
+        dbsTiers = dbsReader.listDatatiers()
+        badTiers = list(set(datatier) - set(dbsTiers))
+        if badTiers:
+            raise cherrypy.HTTPError(400, "Bad datatier(s): %s not available in DBS." % badTiers)
+
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
-    def one(self,  requestName):
+    def one(self, requestName):
         """ Assign a single request """
         self.validate(requestName)
-        request =  GetRequest.getRequestByName(requestName)
+        request = GetRequest.getRequestByName(requestName)
         request = Utilities.prepareForTable(request)
-        requestType = request["RequestType"]
         # get assignments
         teams = ProdManagement.listTeams()
         assignments = GetRequest.getAssignmentsByName(requestName)
@@ -292,7 +302,7 @@ class Assign(WebAPI):
                 priority = kwargs.get(requestName+':priority', '')
                 if priority != '':
                     Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
-        participle=kwargs['action']+'ed'
+        participle = kwargs['action']+'ed'
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
 
 
@@ -328,18 +338,23 @@ class Assign(WebAPI):
         helper.setProcessingVersion(kwargs["ProcessingVersion"])
         helper.setAcquisitionEra(kwargs["AcquisitionEra"])
         helper.setProcessingString(kwargs.get("ProcessingString", None))
-        
+
         # Now verify the output datasets
+        datatier = []
         outputDatasets = helper.listOutputDatasets()
         for dataset in outputDatasets:
             tokens = dataset.split("/")
             procds = tokens[2]
+            datatier.append(tokens[3])
             try:
                 WMCore.Lexicon.procdataset(procds)
             except AssertionError as ex:
-                raise cherrypy.HTTPError(400, 
+                raise cherrypy.HTTPError(400,
                             "Bad output dataset name, check the processed dataset.\n %s" % 
                             str(ex))
+
+        # Verify whether the output datatiers are available in DBS
+        self.validateDatatier(datatier, dbsUrl=helper.getDbsUrl())
 
         #FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
@@ -348,13 +363,13 @@ class Assign(WebAPI):
                                   int(kwargs.get("MaxMergeEvents", 50000)))
         helper.setupPerformanceMonitoring(kwargs.get("MaxRSS", None),
                                           kwargs.get("MaxVSize", None),
-                                          kwargs.get("SoftTimeout",None),
-                                          kwargs.get("GracePeriod", None))        
+                                          kwargs.get("SoftTimeout", None),
+                                          kwargs.get("GracePeriod", None))
 
         # Check whether we should check location for the data
         useAAA = strToBool(kwargs.get("useSiteListAsLocation", False))
         if useAAA:
-            helper.setLocationDataSourceFlag(flag = useAAA)
+            helper.setLocationDataSourceFlag(flag=useAAA)
 
         # Set phedex subscription information
         custodialList = kwargs.get("CustodialSites", [])
@@ -394,9 +409,9 @@ class Assign(WebAPI):
         # set Task properties if they are exist
         # TODO: need to define the task format (maybe kwargs["tasks"]?)
         helper.setTaskProperties(kwargs)
-        
+
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)
-        
+
         # update AcquisitionEra in the Couch document (#4380)
         # request object returned above from Oracle doesn't have information Couch
         # database
@@ -405,14 +420,14 @@ class Assign(WebAPI):
         couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest",
                                fields={"AcquisitionEra": reqDetails["AcquisitionEra"],
                                        "ProcessingVersion": reqDetails["ProcessingVersion"],
-                                       "CustodialSites": custodialList, 
-                                       "NonCustodialSites": nonCustodialList, 
+                                       "CustodialSites": custodialList,
+                                       "NonCustodialSites": nonCustodialList,
                                        "AutoApproveSubscriptionSites": autoApproveList,
                                        "SubscriptionPriority": subscriptionPriority,
                                        "CustodialSubType": custodialType,
                                        "NonCustodialSubType": nonCustodialType,
                                        "Teams": kwargs["Teams"],
-                                       "OutputDatasets": outputDatasets, 
+                                       "OutputDatasets": outputDatasets,
                                        "SiteWhitelist": whiteList,
                                        "SiteBlacklist": blackList},
-                               useBody = True)
+                               useBody=True)

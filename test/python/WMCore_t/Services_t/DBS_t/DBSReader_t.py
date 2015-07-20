@@ -7,7 +7,6 @@ Unit test for the DBS helper class.
 
 import unittest
 from nose.plugins.attrib import attr
-from functools import wraps
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -28,7 +27,20 @@ class DBSReaderTest(unittest.TestCase):
         """
         #self.endpoint = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         self.endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
-        self.dbs      = None
+        self.dbs = None
+        return
+
+    @attr("integration")
+    def testListDatatiers(self):
+        """
+        listDatatiers returns all datatiers available
+        """
+        self.dbs = DBSReader(self.endpoint)
+        results = self.dbs.listDatatiers()
+        self.assertTrue('RAW' in results)
+        self.assertTrue('GEN-SIM-RECO' in results)
+        self.assertTrue('GEN-SIM' in results)
+        self.assertFalse('RAW-ALAN' in results)
         return
 
     @attr("integration")
@@ -56,26 +68,27 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual('Run2011A-v1', dataset[0]['Name'])
         self.assertFalse(self.dbs.matchProcessedDatasets('Jet', 'RAW', 'Run2011A-v666'))
 
-    @attr("integration")
     def testlistRuns(self):
         """listRuns returns known runs"""
         self.dbs = DBSReader(self.endpoint)
-        runs = self.dbs.listRuns(dataset = DATASET)
+        runs = self.dbs.listRuns(dataset=DATASET)
         self.assertEqual(46, len(runs))
         self.assertTrue(174074 in runs)
-        runs = self.dbs.listRuns(dataset = DATASET, block = BLOCK)
+        runs = self.dbs.listRuns(block=BLOCK)
+        self.assertEqual(1, len(runs))
         self.assertEqual([173657], runs)
 
-    @attr("integration")
     def testlistRunLumis(self):
-        """listRunLumis returns known runs and lumicounts"""
+        """listRunLumis returns known runs and lumicounts (None for DBS3)"""
         self.dbs = DBSReader(self.endpoint)
-        runs = self.dbs.listRunLumis(dataset = DATASET)
+        runs = self.dbs.listRunLumis(dataset=DATASET)
         self.assertEqual(46, len(runs))
         self.assertTrue(173692 in runs)
-        self.assertEqual(runs[173692], 2782)
-        runs = self.dbs.listRuns(dataset = DATASET, block = BLOCK)
-        self.assertEqual({173657 : 94}, runs)
+        self.assertEqual(runs[173692], None)
+        runs = self.dbs.listRunLumis(block=BLOCK)
+        self.assertEqual(1, len(runs))
+        self.assertTrue(173657 in runs)
+        self.assertEqual(runs[173657], None)
 
     @attr("integration")
     def testListProcessedDatasets(self):
@@ -87,7 +100,6 @@ class DBSReaderTest(unittest.TestCase):
         self.assertFalse(self.dbs.listProcessedDatasets('Jet', 'blah'))
         self.assertFalse(self.dbs.listProcessedDatasets('blah', 'RAW'))
 
-    @attr("integration")
     def testlistDatasetFiles(self):
         """listDatasetFiles returns files in dataset"""
         self.dbs = DBSReader(self.endpoint)
@@ -95,51 +107,52 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(49, len(files))
         self.assertTrue(FILE in files)
 
-    @attr("integration")
     def testlistDatasetFileDetails(self):
         """testlistDatasetFilesDetails returns lumis, events, and parents of a dataset"""
         TESTFILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/658/56484BAB-CBCB-E011-AF00-BCAEC518FF56.root'
-        for endpoint in [self.endpoint, 'test/python/WMCore_t/Services_t/DBS_t/DBSReader_t.py:']:
-            self.dbs = DBSReader(endpoint)
-            details = self.dbs.listDatasetFileDetails(DATASET)
-            self.assertEqual(len(details), 49)
-            self.assertTrue(TESTFILE in details)
-            self.assertEqual(details[TESTFILE]['NumberOfEvents'], 545)
-            self.assertEqual(details[TESTFILE]['Size'], 286021145)
-            self.assertEqual(details[TESTFILE]['BlockName'], '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace')
-            self.assertEqual(details[TESTFILE]['Checksums'],
-                {'Checksum': '22218315', 'Adler32': 'a41a1446', 'Md5': 'NOTSET'}
-            )
-            self.assertTrue( 173658 in details[TESTFILE]['Lumis'])
-            self.assertEqual( sorted(details[TESTFILE]['Lumis'][173658]),
-                sorted( map( long, [8, 12, 9, 14, 10, 6, 2, 1, 4, 3, 36, 49, 16, 11, 27, 35, 46, 39, 20, 24, 52, 23, 40, 42, 45, 21, 32, 37,  \
-                                    25, 22, 5, 33, 17, 15, 26, 50, 18, 29, 51, 44, 69, 43, 30, 73, 19, 41, 13, 38, 7, 31, 75, 48, 59, 65, 55, \
-                                    57, 34, 28, 74, 47, 64, 61, 68, 77, 66, 71, 60, 76, 70, 67, 62, 78, 82, 79, 88, 56, 101, 92, 58, 72, 54,  \
-                                    63, 96, 53, 84, 95, 89, 85, 99, 81, 91, 102, 80, 100, 107, 94, 93, 90, 86, 87, 83, 97, 104, 110, 111, 106,\
-                                    108, 98, 103, 109, 105]))
-            )
+        self.dbs = DBSReader(self.endpoint)
+        details = self.dbs.listDatasetFileDetails(DATASET)
+        self.assertEqual(len(details), 49)
+        self.assertTrue(TESTFILE in details)
+        self.assertEqual(details[TESTFILE]['NumberOfEvents'], 545)
+        self.assertEqual(details[TESTFILE]['file_size'], 286021145)
+        self.assertEqual(details[TESTFILE]['BlockName'], '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace')
+        self.assertEqual(details[TESTFILE]['Md5'], 'NOTSET')
+        self.assertEqual(details[TESTFILE]['md5'], 'NOTSET')
+        self.assertEqual(details[TESTFILE]['Adler32'], 'a41a1446')
+        self.assertEqual(details[TESTFILE]['adler32'], 'a41a1446')
+        self.assertEqual(details[TESTFILE]['Checksum'], '22218315')
+        self.assertEqual(details[TESTFILE]['check_sum'], '22218315')
+        self.assertTrue(173658 in details[TESTFILE]['Lumis'])
+        self.assertEqual(sorted(details[TESTFILE]['Lumis'][173658]),
+                         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+                          27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+                          51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74,
+                          75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98,
+                          99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111])
 
-    @attr("integration")
     def testGetDBSSummaryInfo(self):
         """getDBSSummaryInfo returns summary of dataset and block"""
         self.dbs = DBSReader(self.endpoint)
         dataset = self.dbs.getDBSSummaryInfo(DATASET)
         self.assertEqual(dataset['path'], DATASET)
         self.assertEqual(dataset['block'], '')
-        self.assertEqual(dataset['NumberOfEvents'], '22075')
-        self.assertEqual(dataset['NumberOfBlocks'], '46')
-        self.assertEqual(dataset['total_size'], '4001680824')
-        self.assertEqual(dataset['NumberOfFiles'], '49')
-        self.assertEqual(dataset['NumberOfLumis'], '7223')
+        self.assertEqual(dataset['NumberOfEvents'], 22075)
+        self.assertEqual(dataset['NumberOfBlocks'], 46)
+        self.assertEqual(dataset['FileSize'], 4001680824)
+        self.assertEqual(dataset['file_size'], 4001680824)
+        self.assertEqual(dataset['NumberOfFiles'], 49)
+        self.assertEqual(dataset['NumberOfLumis'], 7223)
 
         block = self.dbs.getDBSSummaryInfo(DATASET, BLOCK)
         self.assertEqual(block['path'], '')
         self.assertEqual(block['block'], BLOCK)
-        self.assertEqual(block['NumberOfEvents'], '377')
-        self.assertEqual(block['NumberOfBlocks'], '1')
-        self.assertEqual(block['total_size'], '150780132')
-        self.assertEqual(block['NumberOfFiles'], '2')
-        self.assertEqual(block['NumberOfLumis'], '94')
+        self.assertEqual(block['NumberOfEvents'], 377)
+        self.assertEqual(block['NumberOfBlocks'], 1)
+        self.assertEqual(block['FileSize'], 150780132)
+        self.assertEqual(block['file_size'], 150780132)
+        self.assertEqual(block['NumberOfFiles'], 2)
+        self.assertEqual(block['NumberOfLumis'], 94)
 
         self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET + 'blah')
         self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET, BLOCK + 'asas')
@@ -149,13 +162,13 @@ class DBSReaderTest(unittest.TestCase):
         """getFileBlocksInfo returns block info, including location lookup"""
         self.dbs = DBSReader(self.endpoint)
         blocks = self.dbs.getFileBlocksInfo(DATASET)
-        block = self.dbs.getFileBlocksInfo(DATASET, blockName = BLOCK)
+        block = self.dbs.getFileBlocksInfo(DATASET, blockName=BLOCK)
         self.assertEqual(1, len(block))
         block = block[0]
         self.assertEqual(46, len(blocks))
         self.assertTrue(block['Name'] in [x['Name'] for x in blocks])
         self.assertEqual(BLOCK, block['Name'])
-        #self.assertEqual(377, block['NumberOfEvents'])
+        self.assertEqual(0, block['OpenForWriting'])
         self.assertEqual(150780132, block['BlockSize'])
         self.assertEqual(2, block['NumberOfFiles'])
         # possibly fragile but assume block located at least at cern
@@ -164,57 +177,52 @@ class DBSReaderTest(unittest.TestCase):
 
         # weird error handling - depends on whether block or dataset is missing
         self.assertRaises(DBSReaderError, self.dbs.getFileBlocksInfo, DATASET + 'blah')
-        self.assertFalse(self.dbs.getFileBlocksInfo(DATASET, blockName = BLOCK + 'asas'))
+        self.assertRaises(DBSReaderError, self.dbs.getFileBlocksInfo, DATASET, blockName=BLOCK + 'asas')
 
-    @attr("integration")
     def testListFileBlocks(self):
         """listFileBlocks returns block names in dataset"""
         self.dbs = DBSReader(self.endpoint)
         blocks = self.dbs.listFileBlocks(DATASET)
+        self.assertTrue(BLOCK in blocks)
         # block is closed
-        block = self.dbs.listFileBlocks(DATASET, blockName = BLOCK, onlyClosedBlocks = True)[0]
+        block = self.dbs.listFileBlocks(DATASET, blockName=BLOCK, onlyClosedBlocks=True)[0]
         self.assertEqual(block, BLOCK)
         self.assertTrue(BLOCK in block)
 
-    @attr("integration")
     def testListOpenFileBlocks(self):
         """listOpenFileBlocks finds open blocks"""
         # hard to find a dataset with open blocks, so don't bother
         self.dbs = DBSReader(self.endpoint)
         self.assertFalse(self.dbs.listOpenFileBlocks(DATASET))
 
-    @attr("integration")
     def testBlockExists(self):
         """blockExists returns existence of blocks"""
         self.dbs = DBSReader(self.endpoint)
         self.assertTrue(self.dbs.blockExists(BLOCK))
-        self.assertFalse(self.dbs.blockExists(DATASET + '#somethingelse'))
+        self.assertRaises(DBSReaderError, self.dbs.blockExists, DATASET + '#somethingelse')
 
-    @attr("integration")
     def testListFilesInBlock(self):
         """listFilesInBlock returns files in block"""
         self.dbs = DBSReader(self.endpoint)
         self.assertTrue(FILE in [x['LogicalFileName'] for x in self.dbs.listFilesInBlock(BLOCK)])
         self.assertRaises(DBSReaderError, self.dbs.listFilesInBlock, DATASET + '#blah')
 
-    @attr("integration")
     def testListFilesInBlockWithParents(self):
         """listFilesInBlockWithParents gets files with parents for a block"""
-        # hope PromptReco doesn't get deleted
         self.dbs = DBSReader(self.endpoint)
-        files = self.dbs.listFilesInBlockWithParents('/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60')
-        self.assertEqual(1, len(files))
-        self.assertEqual('/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60', files[0]['Block']['Name'])
-        self.assertEqual('/store/data/Run2011A/Jet/RAW/v1/000/160/433/24B46223-0D4E-E011-B573-0030487C778E.root',
+        files = self.dbs.listFilesInBlockWithParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
+        self.assertEqual(4, len(files))
+        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0', files[0]['block_name'])
+        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0', files[0]['BlockName'])
+        self.assertEqual('/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
                          files[0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.listFilesInBlockWithParents, BLOCK + 'asas')
 
-    @attr("integration")
     def testLfnsInBlock(self):
         """lfnsInBlock returns lfns in block"""
         self.dbs = DBSReader(self.endpoint)
-        self.assertTrue(FILE in self.dbs.lfnsInBlock(BLOCK))
+        self.assertTrue(FILE in [x['logical_file_name'] for x in self.dbs.lfnsInBlock(BLOCK)])
         self.assertRaises(DBSReaderError, self.dbs.lfnsInBlock, BLOCK + 'asas')
 
     @attr("integration")
@@ -246,7 +254,6 @@ class DBSReaderTest(unittest.TestCase):
         ## one in DBS and one does not exist
         self.assertEqual(1, len(self.dbs.listFileBlockLocation([DBS_BLOCK, WRONG_BLOCK])))
 
-    @attr("integration")
     def testGetFileBlock(self):
         """getFileBlock returns block"""
         self.dbs = DBSReader(self.endpoint)
@@ -257,50 +264,44 @@ class DBSReaderTest(unittest.TestCase):
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlock, BLOCK + 'asas')
 
-    @attr("integration")
     def testGetFileBlockWithParents(self):
         """getFileBlockWithParents returns block and parents"""
         self.dbs = DBSReader(self.endpoint)
-        block = self.dbs.getFileBlockWithParents('/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60')
+        block = self.dbs.getFileBlockWithParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
         self.assertEqual(len(block), 1)
-        block = block['/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60']
-        self.assertEqual('/store/data/Run2011A/Jet/RAW/v1/000/160/433/24B46223-0D4E-E011-B573-0030487C778E.root',
+        block = block['/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0']
+        self.assertEqual('/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
                          block['Files'][0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlockWithParents, BLOCK + 'asas')
 
-    @attr("integration")
     def testGetFiles(self):
         """getFiles returns files in dataset"""
         self.dbs = DBSReader(self.endpoint)
         files = self.dbs.getFiles(DATASET)
         self.assertEqual(len(files), 46)
 
-    @attr("integration")
     def testListBlockParents(self):
         """listBlockParents returns block parents"""
         self.dbs = DBSReader(self.endpoint)
-        parents = self.dbs.listBlockParents('/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60')
+        parents = self.dbs.listBlockParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
         self.assertEqual(1, len(parents))
-        self.assertEqual('/Jet/Run2011A-v1/RAW#37cf2a40-4e0e-11e0-9833-00151755cb60',
-                         parents[0]['Name'])
+        self.assertEqual('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0', parents[0]['Name'])
         sites = [x for x in parents[0]['StorageElementList'] if x.find("cern.ch") > -1]
         self.assertTrue(sites)
 
-        self.assertFalse(self.dbs.listBlockParents('/Jet/Run2011A-PromptReco-v1/RECO#f8d36af3-4fb6-11e0-9d39-00151755cb60dsl'))
+        self.assertFalse(self.dbs.listBlockParents('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'))
 
-    @attr("integration")
     def testBlockIsOpen(self):
         """blockIsOpen checks if a block is open"""
         self.dbs = DBSReader(self.endpoint)
         self.assertFalse(self.dbs.blockIsOpen(BLOCK))
 
-    @attr("integration")
     def testBlockToDatasetPath(self):
         """blockToDatasetPath extracts path from block name"""
         self.dbs = DBSReader(self.endpoint)
         self.assertEqual(self.dbs.blockToDatasetPath(BLOCK), DATASET)
-        self.assertFalse(self.dbs.blockToDatasetPath(BLOCK + 'asas'))
+        self.assertRaises(DBSReaderError, self.dbs.blockToDatasetPath, BLOCK + 'asas')
 
 if __name__ == '__main__':
     unittest.main()

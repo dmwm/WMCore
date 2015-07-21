@@ -385,68 +385,76 @@ class PyCondorPlugin(BasePlugin):
         # unordered list of jobs with random sandboxes.
         # We intend to sort them by sandbox.
 
+        # We also need to do a secondary sort by number of cores
+        # because we can have jobs with different number of cores
+        # and the same sandbox and they cannot be submitted together.
+
         submitDict = {}
         nSubmits   = 0
         for job in jobs:
             sandbox = job['sandbox']
+            numberOfCores = job.get('numberOfCores', 1)
             if not sandbox in submitDict.keys():
-                submitDict[sandbox] = []
-            submitDict[sandbox].append(job)
+                submitDict[sandbox] = {}
+            if not numberOfCores in submitDict[sandbox]:
+                submitDict[sandbox][numberOfCores] = []
+            submitDict[sandbox][numberOfCores].append(job)
 
 
         # Now submit the bastards
         queueError = False
         for sandbox in submitDict.keys():
-            jobList = submitDict.get(sandbox, [])
-            idList = [x['jobid'] for x in jobList]
-            if queueError:
-                # If the queue has failed, then we must not process
-                # any more jobs this cycle.
-                continue
-            while len(jobList) > 0:
-                jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
-                jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
-                idList    = [x['id'] for x in jobsReady]
-                jdlList = self.makeSubmit(jobList = jobsReady)
-                if not jdlList or jdlList == []:
-                    # Then we got nothing
-                    logging.error("No JDL file made!")
-                    return {'NoResult': [0]}
-                jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
-                handle = open(jdlFile, 'w')
-                handle.writelines(jdlList)
-                handle.close()
-                jdlFiles.append(jdlFile)
+            for numberOfCores in submitDict[sandbox].keys():
+                jobList = submitDict[sandbox][numberOfCores]
+                idList = [x['jobid'] for x in jobList]
+                if queueError:
+                    # If the queue has failed, then we must not process
+                    # any more jobs this cycle.
+                    continue
+                while len(jobList) > 0:
+                    jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
+                    jobList   = jobList[self.config.JobSubmitter.jobsPerWorker:]
+                    idList    = [x['id'] for x in jobsReady]
+                    jdlList = self.makeSubmit(jobList = jobsReady)
+                    if not jdlList or jdlList == []:
+                        # Then we got nothing
+                        logging.error("No JDL file made!")
+                        return {'NoResult': [0]}
+                    jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
+                    handle = open(jdlFile, 'w')
+                    handle.writelines(jdlList)
+                    handle.close()
+                    jdlFiles.append(jdlFile)
 
-                # Now submit them
-                logging.info("About to submit %i jobs" %(len(jobsReady)))
-                if self.glexecPath:
-                    command = 'CS=`which condor_submit`; '
-                    if self.glexecWrapScript:
-                        command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
-                    command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
-                    command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
-                    command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
-                    command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
-                    if self.glexecUnwrapScript:
-                        command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                    # Now submit them
+                    logging.info("About to submit %i jobs" %(len(jobsReady)))
+                    if self.glexecPath:
+                        command = 'CS=`which condor_submit`; '
+                        if self.glexecWrapScript:
+                            command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
+                        command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
+                        command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
+                        command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
+                        command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
+                        if self.glexecUnwrapScript:
+                            command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                        else:
+                            command += '%s $CS %s' % (self.glexecPath, jdlFile)
                     else:
-                        command += '%s $CS %s' % (self.glexecPath, jdlFile)
-                else:
-                    command = "condor_submit %s" % jdlFile
+                        command = "condor_submit %s" % jdlFile
 
-                try:
-                    self.input.put({'command': command, 'idList': idList})
-                except AssertionError as ex:
-                    msg =  "Critical error: input pipeline probably closed.\n"
-                    msg += str(ex)
-                    msg += "Error Procedure: Something critical has happened in the worker process\n"
-                    msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
-                    msg += "Then refresh the worker pool\n"
-                    logging.error(msg)
-                    queueError = True
-                    break
-                nSubmits += 1
+                    try:
+                        self.input.put({'command': command, 'idList': idList})
+                    except AssertionError as ex:
+                        msg =  "Critical error: input pipeline probably closed.\n"
+                        msg += str(ex)
+                        msg += "Error Procedure: Something critical has happened in the worker process\n"
+                        msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
+                        msg += "Then refresh the worker pool\n"
+                        logging.error(msg)
+                        queueError = True
+                        break
+                    nSubmits += 1
 
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now

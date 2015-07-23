@@ -44,7 +44,6 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
-from WMCore.WMExceptions                import WMJobPermanentSystemErrors
 from WMCore.Database.CouchUtils import CouchConnectionError
 
 class ErrorHandlerException(WMException):
@@ -95,9 +94,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "ErrorHandler")
-
-        # Some exit codes imply an immediate failure, non-configurable
-        self.exitCodes.extend(WMJobPermanentSystemErrors)
 
         return
 

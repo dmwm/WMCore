@@ -26,7 +26,7 @@ from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
-from WMCore.Services.SiteDB.SiteDB            import SiteDBJSON as SiteDB
+#from WMCore.Services.SiteDB.SiteDB            import SiteDBJSON as SiteDB
 
 def siteListCompare(a, b):
     """
@@ -131,6 +131,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
+
+        # cache the psn to pnn mappings
+        self.pnn_to_psn = self.daoFactory(classname = "Locations.GetPNNtoPSNMapping").execute()
 
         return
 
@@ -313,11 +316,12 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # all files in job have same location (in se names)
                 rawLocations = loadedJob["input_files"][0]["locations"]
                 
-                sitedb = SiteDB()
+#                sitedb = SiteDB()
  #               sitedb_names = set()
                 for l in rawLocations:
 #                    sitedb_names.update(sitedb.PNNtoPSN(l) or [])
-                    possibleLocations.update(sitedb.PNNtoPSN(l) or [])
+                    possibleLocations.update(self.pnn_to_psn.get(l, []))
+#                    possibleLocations.update(sitedb.PNNtoPSN(l) or [])
 #                    if l in self.cmsNames:
 #                        possibleLocations.update(self.cmsNames.get(l))
 

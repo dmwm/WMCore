@@ -18,6 +18,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
+TEST_DB_NAME = 'db_configcache_test'
 class MonteCarloTest(unittest.TestCase):
     def setUp(self):
         """
@@ -28,13 +29,13 @@ class MonteCarloTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setupCouch("mc_configcache", "ConfigCache")
+        self.testInit.setupCouch(TEST_DB_NAME, "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("mc_configcache")
+        self.configDatabase = couchServer.connectDatabase(TEST_DB_NAME)
         EmulatorHelper.setEmulators(dbs = True)
         return
 
@@ -75,8 +76,7 @@ class MonteCarloTest(unittest.TestCase):
         """
         Retrieve the workload from WMBS and test all its properties.
         """
-        prodWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/Production")
+        prodWorkflow = Workflow(name = "TestWorkload", task = "/TestWorkload/Production")
         prodWorkflow.load()
 
         self.assertEqual(len(prodWorkflow.outputMap.keys()), 3,
@@ -209,6 +209,7 @@ class MonteCarloTest(unittest.TestCase):
         """
         defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = TEST_DB_NAME
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         factory = MonteCarloWorkloadFactory()
@@ -233,6 +234,7 @@ class MonteCarloTest(unittest.TestCase):
         """
         defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = TEST_DB_NAME
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
         defaultArguments["FirstLumi"] = 10001
         defaultArguments["EventsPerJob"] = 100
@@ -273,6 +275,7 @@ class MonteCarloTest(unittest.TestCase):
         """
         defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = TEST_DB_NAME
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         # Add pileup inputs
@@ -305,6 +308,7 @@ class MonteCarloTest(unittest.TestCase):
         """
         defaultArguments = MonteCarloWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = TEST_DB_NAME
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
         defaultArguments["LheInputFiles"] = "True"
         defaultArguments["EventsPerJob"] = 200

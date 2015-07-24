@@ -83,10 +83,10 @@ class MonteCarloFromGENTest(unittest.TestCase):
         factory = MonteCarloFromGENWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
 
-        self.assertEqual(len(testWorkload.listOutputDatasets()), 2)
-        print testWorkload.listOutputDatasets()
-        self.assertTrue("/WaitThisIsNotMinimumBias/None-FilterRECO-v0/RECO" in testWorkload.listOutputDatasets())
-        self.assertTrue("/WaitThisIsNotMinimumBias/None-FilterALCARECO-v0/ALCARECO" in testWorkload.listOutputDatasets())
+        outputDatasets = testWorkload.listOutputDatasets()
+        self.assertEqual(len(outputDatasets), 2)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterRECO-v1/RECO" in outputDatasets)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterALCARECO-v1/ALCARECO" in outputDatasets)
 
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()

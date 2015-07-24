@@ -12,13 +12,11 @@ is based on the WMCore.WMInit class.
 
 """
 
-import commands
 import logging
 import os
 import threading
 import tempfile
 import shutil
-import time
 import nose
 import traceback
 
@@ -29,7 +27,6 @@ from WMCore.WMBase import getWMBASE
 
 hasDatabase = True
 try:
-    from WMCore.Database.DBFormatter import DBFormatter
     from WMCore.WMInit import WMInit
 except ImportError as ex:
     print str(ex)
@@ -47,13 +44,13 @@ class TestInitException(WMException):
     Still, just in case...
     """
 
-def deleteDatabaseAfterEveryTest( areYouSerious ):
+def deleteDatabaseAfterEveryTest(areYouSerious):
     """
     this method handles whether or not TestInit will be vicious to databases
     """
     # python is idiotic for its scoping system
     global trashDatabases
-    if (areYouSerious == "I'm Serious"):
+    if areYouSerious == "I'm Serious":
         print "We are going to trash databases after every test"
         trashDatabases = True
     else:
@@ -107,7 +104,7 @@ class TestInit:
 
 
     def delWorkDir(self):
-        if (self.testDir != None):
+        if self.testDir != None:
             try:
                 shutil.rmtree( self.testDir )
             except:
@@ -181,7 +178,7 @@ class TestInit:
         # If the database is not empty when we go to set the schema, abort!
         result = self.init.checkDatabaseContents()
         if len(result) > 0:
-            msg =  "Database not empty, cannot set schema !\n"
+            msg = "Database not empty, cannot set schema !\n"
             msg += str(result)
             logging.error(msg)
             raise TestInitException(msg)
@@ -260,37 +257,37 @@ class TestInit:
             config.CoreDatabase.dialect = self.getBackendFromDbURL(connectUrl)
             config.CoreDatabase.socket = socket or os.getenv("DBSOCK")
         else:
-            if (os.getenv('DATABASE') == None):
+            if os.getenv('DATABASE') == None:
                 raise RuntimeError, \
                     "You must set the DATABASE environment variable to run tests"
             config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-            config.CoreDatabase.dialect = self.getBackendFromDbURL( os.getenv("DATABASE") )
+            config.CoreDatabase.dialect = self.getBackendFromDbURL(os.getenv("DATABASE"))
             config.CoreDatabase.socket = os.getenv("DBSOCK")
             if os.getenv("DBHOST"):
                 print "****WARNING: the DBHOST environment variable will be deprecated soon***"
                 print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
             # after this you can augment it with whatever you need.
-        
+
         couchurl = os.getenv("COUCHURL")
         config.section_("ACDC")
         config.ACDC.couchurl = couchurl
         config.ACDC.database = "wmagent_acdc_t"
-        
+
         config.component_("JobStateMachine")
         config.JobStateMachine.couchurl = couchurl
         config.JobStateMachine.couchDBName = "wmagent_job_test"
         config.JobStateMachine.jobSummaryDBName = "job_summary"
         config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
-        
+
         config.component_("JobAccountant")
         config.JobAccountant.pollInterval = 60
         config.JobAccountant.componentDir = os.getcwd()
         config.JobAccountant.logLevel = 'SQLDEBUG'
-        
+
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.ReqMgrSeviceURL = "request manager service url"
-         
+
         return config
 
     def clearDatabase(self, modules = []):
@@ -326,12 +323,3 @@ class TestInit:
                 print "dbFactory removed"
         except Exception as e:
             print "tried to delete factory but failed %s" % e
-            
-def getTestFilename(partialPath):
-    """
-    Return a full filename for a path in the test directories
-    """
-        
-    fullPath = os.path.normpath(os.path.join(getWMBASE(), 'test', partialPath))
-    return fullPath
-    

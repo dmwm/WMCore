@@ -12,5 +12,6 @@ REQUEST_TYPES = [
     "MonteCarloFromGEN",
     "TaskChain",
     "PrivateMC",
-    "DQMHarvest"
+    "DQMHarvest",
+    "StepChain"
 ]

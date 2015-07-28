@@ -221,7 +221,7 @@ class DBS3Reader:
         return [ x['logical_file_name'] for x in self.dbs.listFileArray(dataset = datasetPath)]
 
 
-    def listDatasetFileDetails(self, datasetPath, getParents=False):
+    def listDatasetFileDetails(self, datasetPath, getParents=False, validFileOnly=1):
         """
         TODO: This is completely wrong need to be redone. or be removed - getting dataset altogether
         might be to costly
@@ -236,36 +236,38 @@ class DBS3Reader:
               'Parents': [],
               'Checksum': '22218315',
               'Adler32': 'a41a1446',
-              'FileSize': 286021145
+              'FileSize': 286021145,
+              'ValidFile': 1
             }
 
         """
-        fileDetails = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = 1, detail=True)
+        fileDetails = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = validFileOnly, detail=True)
         blocks = set() #the set of blocks of the dataset
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
         for f in fileDetails:
             blocks.add(f['block_name'])
             files[f['logical_file_name']] = remapDBS3Keys(f, stringify = True)
+            files[f['logical_file_name']]['ValidFile'] = f['is_file_valid']
             files[f['logical_file_name']]['Lumis'] = {}
             files[f['logical_file_name']]['Parents'] = []
 
         #Iterate over the blocks and get parents and lumis
-        #TODO this part is completely wrong need to be redone
         for blockName in blocks:
             #get the parents
             if getParents:
                 parents = self.dbs.listFileParents(block_name=blockName)
                 for p in parents:
-                    if p['logical_file_name'] in files: #invalid files are not there
+                    if p['logical_file_name'] in files: #invalid files are not there if validFileOnly=1
                         files[p['logical_file_name']]['Parents'].extend(p['parent_logical_file_name'])
             #get the lumis
-            file_lumis = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
+            file_lumis = self.dbs.listFileLumis(block_name=blockName)
             for f in file_lumis:
-                if f['run_num'] in files[f['logical_file_name']]['Lumis']:
-                    files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
-                else:
-                    files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
+                if f['logical_file_name'] in files: #invalid files are not there if validFileOnly=1
+                    if f['run_num'] in files[f['logical_file_name']]['Lumis']:
+                        files[f['logical_file_name']]['Lumis'][f['run_num']].extend(f['lumi_section_num'])
+                    else:
+                        files[f['logical_file_name']]['Lumis'][f['run_num']] = f['lumi_section_num']
 
         return files
 

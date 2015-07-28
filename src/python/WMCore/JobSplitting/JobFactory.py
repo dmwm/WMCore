@@ -205,8 +205,8 @@ class JobFactory(WMObject):
             fileset = self.loadFiles(size = self.limit)
             logging.debug("Loaded %i files" % (len(fileset)))
         else:
-            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
             logging.debug("About to load files by DAO")
+            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
 
         for file in fileset:
             locSet = frozenset(file['locations'])

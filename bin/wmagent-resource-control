@@ -95,33 +95,16 @@ def createOptionParser():
 
     return myOptParser
 
-def getCMSSiteInfo(pattern):
+def getCMSSiteInfo(pattern=''):
     """
     _getCMSSiteInfo_
 
     Query SiteDB for the site and SE names matching the pattern.  Return a
     dictionary keyed by site name.
     """
-    nameSEMapping = {}
     print "Querying SiteDB for site information..."
 
-    siteDB = SiteDBJSON()
-    for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
-        cmsNames = siteDB.seToCMSName(seName)
-        for cmsName in cmsNames:
-            for pnn in siteDB.cmsNametoPhEDExNode(cmsName):
-                if cmsName in nameSEMapping:
-                    nameSEMapping[cmsName].append(pnn)
-                else:
-                    nameSEMapping[cmsName] = [pnn]
-
-    if options.addDisk:
-        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems()
-                        if not k.endswith("_Disk"))
-    else:
-        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems())
-
-    return nameSEMapping
+    return SiteDBJSON().PSNtoPNNMap(pattern.replace('*', '.*').replace('%', '.*'))
 
 def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
              tier0Option = False, cmsName = None, state=None):
@@ -211,7 +194,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
             sys.exit(1)
 
         print "Adding %s to the resource control db..." % siteName
-        if type(pnn) == type([]):
+        if isinstance(pnn, (list, set, tuple)):
             for singlePNN in pnn:
                 resourceControl.insertSite(siteName = siteName, pendingSlots = int(pendingSlots),
                                            runningSlots = int(runningSlots),

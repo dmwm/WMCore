@@ -229,7 +229,7 @@ class StdBase(object):
                             forceMerged = False, forceUnmerged = False,
                             configCacheUrl = None, timePerEvent = None, memoryReq = None,
                             sizePerEvent = None, useMulticore = True, applySiteLists = True,
-                            taskConf = {}):
+                            cmsswVersion=None, scramArch=None, globalTag=None, taskConf = {}):
         """
         _setupProcessingTask_
 
@@ -288,6 +288,12 @@ class StdBase(object):
             sizePerEvent = self.sizePerEvent
         if not memoryReq and self.memory:
             memoryReq = self.memory
+        if not cmsswVersion and self.frameworkVersion:
+            cmsswVersion = self.frameworkVersion
+        if not scramArch and self.scramArch:
+            scramArch = self.scramArch
+        if not globalTag and self.globalTag:
+            globalTag = self.globalTag
 
         procTask.setJobResourceInformation(timePerEvent = timePerEvent,
                                            sizePerEvent = sizePerEvent,
@@ -331,7 +337,7 @@ class StdBase(object):
 
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
-        procTaskCmsswHelper.setGlobalTag(self.globalTag)
+        procTaskCmsswHelper.setGlobalTag(globalTag)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
 
@@ -342,8 +348,8 @@ class StdBase(object):
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
 
-        procTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                       scramArch = self.scramArch)
+        procTaskCmsswHelper.cmsswSetup(cmsswVersion, softwareEnvironment = "",
+                                       scramArch = scramArch)
 
         if "events_per_lumi" in newSplitArgs:
             eventsPerLumi = newSplitArgs["events_per_lumi"]

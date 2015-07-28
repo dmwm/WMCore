@@ -3,7 +3,15 @@
 _StepChain_
 
 Creates a StepChain like workflow where there is only one production/processing
-task and several cmsRun steps inside.
+task and an arbitrary number of steps (cmsRun) inside this task, which are
+chained based on their StepName, InputStep and InputFromOutputModule.
+
+Each Step is formed as a dictionary providing only the basic information, see:
+test/data/ReqMgr/requests/DMWM/StepChain_MC.json
+
+It also assumes all the intermediate steps output are transient and do not need
+to be staged out and registered in DBS/PhEDEx. Only the last step output will be
+made available.
 """
 
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -12,11 +20,8 @@ from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
      validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
-#
 # simple utils for data mining the request dictionary
-#
 isGenerator = lambda args: not args["Step1"].get("InputDataset", None)
-parentTaskModule = lambda args: args.get("InputFromOutputModule", None)
 
 
 class StepChainWorkloadFactory(StdBase):
@@ -44,6 +49,7 @@ class StepChainWorkloadFactory(StdBase):
         self.stepChain = None
         self.sizePerEvent = None
         self.timePerEvent = None
+        self.primaryDataset = None
 
     def __call__(self, workloadName, arguments):
         """
@@ -63,7 +69,7 @@ class StepChainWorkloadFactory(StdBase):
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
         if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
             self.multicoreNCores = int(taskConf['Multicore'])
-        self.inputPrimaryDataset = taskConf['PrimaryDataset']
+        self.inputPrimaryDataset = taskConf.get("PrimaryDataset", self.primaryDataset)
         self.blockBlacklist = taskConf["BlockBlacklist"]
         self.blockWhitelist = taskConf["BlockWhitelist"]
         self.runBlacklist = taskConf["RunBlacklist"]
@@ -73,7 +79,7 @@ class StepChainWorkloadFactory(StdBase):
         # Create the first task
         firstTask = self.workload.newTask(taskConf['StepName'])
 
-        # Set workload level arguments and set task arguments
+        # Create a proper task and set workload level arguments
         if isGenerator(arguments):
             self.workload.setDashboardActivity("production")
             self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
@@ -88,7 +94,11 @@ class StepChainWorkloadFactory(StdBase):
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         # Now modify this task to add the next steps
-        self.setupNextSteps(firstTask, arguments)
+        if self.stepChain > 1:
+            self.setupNextSteps(firstTask, arguments)
+
+        # All tasks need to have this parameter set
+        self.workload.setTaskPropertiesFromWorkload()
 
         return self.workload
 
@@ -107,9 +117,12 @@ class StepChainWorkloadFactory(StdBase):
                                  configCacheUrl=self.configCacheUrl,
                                  splitArgs=splitArguments, seeding=taskConf['Seeding'],
                                  totalEvents=taskConf['RequestNumEvents'],
-                                 timePerEvent=taskConf.get('TimePerEvent', None),
+                                 timePerEvent=self.timePerEvent,
                                  memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=taskConf.get('SizePerEvent', None),
+                                 sizePerEvent=self.sizePerEvent,
+                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                 scramArch=taskConf.get("ScramArch", None),
+                                 globalTag=taskConf.get("GlobalTag", None),
                                  taskConf=taskConf)
 
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
@@ -130,18 +143,19 @@ class StepChainWorkloadFactory(StdBase):
         # Use PD from the inputDataset if not provided in the task itself
         if not self.inputPrimaryDataset:
             self.inputPrimaryDataset = self.inputDataset[1:].split("/")[0]
-        inpStep, inpMod = None, None
 
         self.setupProcessingTask(task, "Processing",
                                  inputDataset=self.inputDataset,
-                                 inputStep=inpStep, inputModule=inpMod,
                                  couchURL=self.couchURL, couchDBName=self.couchDBName,
                                  configDoc=configCacheID, splitAlgo=splitAlgorithm,
                                  configCacheUrl=self.configCacheUrl,
                                  splitArgs=splitArguments,
-                                 timePerEvent=taskConf.get('TimePerEvent', None),
+                                 timePerEvent=self.timePerEvent,
                                  memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=taskConf.get('SizePerEvent', None),
+                                 sizePerEvent=self.sizePerEvent,
+                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                 scramArch=taskConf.get("ScramArch", None),
+                                 globalTag=taskConf.get("GlobalTag", None),
                                  taskConf=taskConf)
 
         lumiMask = taskConf.get("LumiList", self.workload.lumiList)
@@ -177,6 +191,8 @@ class StepChainWorkloadFactory(StdBase):
             # Set default values to task parameters
             self.modifyTaskConfiguration(taskConf, False, 'InputDataset' not in taskConf)
             globalTag = taskConf.get("GlobalTag", self.globalTag)
+            frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
+            scramArch = taskConf.get("ScramArch", self.scramArch)
 
             childCmssw = parentCmsswStep.addTopStep(currentStepName)
             childCmssw.setStepType("CMSSW")
@@ -187,8 +203,8 @@ class StepChainWorkloadFactory(StdBase):
             childCmsswHelper.setGlobalTag(globalTag)
             childCmsswHelper.setupChainedProcessing(inputStepName, taskConf['InputFromOutputModule'])
             # Assuming we cannot change the CMSSW version inside the same job
-            childCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
-                                        scramArch=self.scramArch)
+            childCmsswHelper.cmsswSetup(frameworkVersion, softwareEnvironment="",
+                                        scramArch=scramArch)
             childCmsswHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'],
                                             self.couchDBName)
             childCmsswHelper.keepOutput(False)
@@ -216,8 +232,6 @@ class StepChainWorkloadFactory(StdBase):
         childCmsswHelper.keepOutput(True)
         self.addMergeTasks(task, currentStepName, outputMods)
 
-        # Override task parameters by the workload ones in case of their absence
-        self.updateCommonParams(task, taskConf)
         return
 
     def addMergeTasks(self, parentTask, parentStepName, outputMods):
@@ -233,18 +247,6 @@ class StepChainWorkloadFactory(StdBase):
             mergeTasks[outputModuleName] = mergeTask
 
         return mergeTasks
-
-    def updateCommonParams(self, task, taskConf):
-        """
-        _updateCommonParams_
-
-        Update some parameters at a task level, using either the
-        values set for the last Task or the workload level one.
-        """
-        task.setPrepID(taskConf.get("PrepID", self.workload.getPrepID()))
-        task.setAcquisitionEra(taskConf.get("AcquisitionEra", self.workload.acquisitionEra))
-        task.setProcessingString(taskConf.get("ProcessingString", self.workload.processingString))
-        task.setProcessingVersion(taskConf.get("ProcessingVersion", self.workload.processingVersion))
 
     def modifyTaskConfiguration(self, taskConf, firstTask=False, generator=False):
         """
@@ -278,19 +280,16 @@ class StepChainWorkloadFactory(StdBase):
         Adapt job splitting according to the first step configuration
         or lack of some of them.
         """
-        sizePerEvt = taskConf.get("SizePerEvent", self.sizePerEvent)
-        timePerEvt = taskConf.get("TimePerEvent", self.timePerEvent)
         if generator:
             requestNumEvts = int(taskConf.get("RequestNumEvents", 0))
             filterEff = taskConf.get("FilterEfficiency")
             # Adjust totalEvents according to the filter efficiency
             taskConf["SplittingAlgo"] = "EventBased"
             taskConf["RequestNumEvents"] = int(requestNumEvts / filterEff)
-            taskConf["SizePerEvent"] = sizePerEvt * filterEff
+            taskConf["SizePerEvent"] = self.sizePerEvent * filterEff
 
         if taskConf["EventsPerJob"] is None:
-            # TODO: the right thing is to consider TpE of all steps
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / timePerEvt)
+            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / self.timePerEvent)
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 
@@ -315,6 +314,8 @@ class StepChainWorkloadFactory(StdBase):
         specArgs = {"RequestType" : {"default" : "StepChain", "optional" : False},
                     "GlobalTag" : {"type" : str, "optional" : False},
                     "CouchURL" : {"type" : str, "optional" : False, "validate" : couchurl},
+                    "PrimaryDataset" : {"default" : None, "type" : str,
+                                        "validate" : primdataset, "null" : False},
                     "CouchDBName" : {"type" : str, "optional" : False,
                                      "validate" : identifier},
                     "ConfigCacheUrl" : {"type" : str, "optional" : True, "null" : True},
@@ -326,7 +327,7 @@ class StepChainWorkloadFactory(StdBase):
                                     "attr" : "firstEvent", "null" : False},
                     "FirstLumi" : {"default" : 1, "type" : int,
                                    "optional" : True, "validate" : lambda x: x > 0,
-                                   "attr" : "firstLumi", "null" : False},
+                                   "attr" : "firstLumi", "null" : False}
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -348,15 +349,6 @@ class StepChainWorkloadFactory(StdBase):
                     "ConfigCacheID" : {"default" : None, "type" : str,
                                        "optional" : False, "validate" : None,
                                        "null" : False},
-                    "KeepOutput" : {"default" : True, "type" : strToBool,
-                                    "optional" : True, "validate" : None,
-                                    "null" : False},
-                    "TransientOutputModules" : {"default" : [], "type" : makeList,
-                                                "optional" : True, "validate" : None,
-                                                "null" : False},
-                    "PrimaryDataset" : {"default" : None, "type" : str,
-                                        "optional" : not generator, "validate" : primdataset,
-                                        "null" : False},
                     "Seeding" : {"default" : "AutomaticSeeding", "type" : str, "optional" : True,
                                  "validate" : lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
                                  "null" : False},
@@ -391,9 +383,9 @@ class StepChainWorkloadFactory(StdBase):
                                       "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
                                       "null" : False},
                     "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
-                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                                       "EventAwareLumiBased", "FileBased"],
-                                       "null" : False},
+                                       "optional" : True, "null" : False,
+                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                    "EventAwareLumiBased", "FileBased"]},
                     "EventsPerJob" : {"default" : None, "type" : int,
                                       "optional" : True, "validate" : lambda x: x > 0,
                                       "null" : False},
@@ -426,8 +418,7 @@ class StepChainWorkloadFactory(StdBase):
         """
         _validateSchema_
 
-        Go over each task and make sure it matches validation
-        parameters derived from Dave's requirements.
+        Go over each step and make sure it matches validation parameters.
         """
         numSteps = schema['StepChain']
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
@@ -437,19 +428,19 @@ class StepChainWorkloadFactory(StdBase):
                 msg = "No Step%s entry present in request" % i
                 self.raiseValidationException(msg=msg)
 
-            task = schema[stepName]
-            # We can't handle non-dictionary tasks
-            if type(task) != dict:
-                msg = "Non-dictionary input for task in StepChain.\n"
+            step = schema[stepName]
+            # We can't handle non-dictionary steps
+            if type(step) != dict:
+                msg = "Non-dictionary input for step in StepChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)
 
-            # Generic task parameter validation
-            self.validateTask(task, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in task))
+            # Generic step parameter validation
+            self.validateTask(step, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in step))
 
             # Validate the existence of the configCache
-            if task["ConfigCacheID"]:
-                self.validateConfigCacheExists(configID=task['ConfigCacheID'],
+            if step["ConfigCacheID"]:
+                self.validateConfigCacheExists(configID=step['ConfigCacheID'],
                                                couchURL=couchUrl,
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=True)

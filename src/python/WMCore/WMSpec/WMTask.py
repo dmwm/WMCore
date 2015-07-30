@@ -62,9 +62,9 @@ def buildLumiMask(runs, lumis):
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
 
-    lumiLists = [map(list, zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2])) for x in lumis]
+    lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x in lumis]
     strRuns = [str(run) for run in runs]
-    lumiMask = dict(zip(strRuns, lumiLists))
+    lumiMask = dict(list(zip(strRuns, lumiLists)))
     return lumiMask
 
 

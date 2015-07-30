@@ -36,7 +36,7 @@ class LumiListTest(unittest.TestCase):
 
         listLs1 = range(1, 34) + [35] + range(37, 48)
         listLs2 = range(49, 76) + range(77, 131) + range(133, 137)
-        lumis = zip([1]*100, listLs1) + zip([2]*100, listLs2)
+        lumis = list(zip([1]*100, listLs1)) + list(zip([2]*100, listLs2))
 
         jsonLister = LumiList(filename = 'lumiTest.json')
         jsonString = jsonLister.getCMSSWString()
@@ -95,17 +95,17 @@ class LumiListTest(unittest.TestCase):
             2: range(49, 76) + range(77, 131) + range(133, 137)
         }
 
-        completeList = zip([1]*150, range(1, 150)) + \
-                       zip([2]*150, range(1, 150)) + \
-                       zip([3]*150, range(1, 150))
+        completeList = list(zip([1]*150, range(1, 150))) + \
+                       list(zip([2]*150, range(1, 150))) + \
+                       list(zip([3]*150, range(1, 150)))
 
-        smallList    = zip([1]*50,  range(1, 10)) + zip([2]*50, range(50, 70))
-        overlapList  = zip([1]*150, range(30, 40)) + \
-                       zip([2]*150, range(60, 80))
-        overlapRes   = zip([1]*9,   range(30, 34)) + [(1, 35)] + \
-                       zip([1]*9,   range(37, 40)) + \
-                       zip([2]*30,  range(60, 76)) + \
-                       zip([2]*9,   range(77, 80))
+        smallList    = list(zip([1]*50,  range(1, 10))) + list(zip([2]*50, range(50, 70)))
+        overlapList  = list(zip([1]*150, range(30, 40))) + \
+                       list(zip([2]*150, range(60, 80)))
+        overlapRes   = list(zip([1]*9,   range(30, 34))) + [(1, 35)] + \
+                       list(zip([1]*9,   range(37, 40))) + \
+                       list(zip([2]*30,  range(60, 76))) + \
+                       list(zip([2]*9,   range(77, 80)))
 
         runLister = LumiList(runsAndLumis = runsAndLumis)
 
@@ -124,8 +124,8 @@ class LumiListTest(unittest.TestCase):
         """
         Test a list with lots of duplicates
         """
-        result = zip([1]*100, range(1, 34) + range(37, 48))
-        lumis  = zip([1]*100, range(1, 34) + range(37, 48) + range(5, 25))
+        result = list(zip([1]*100, range(1, 34) + range(37, 48)))
+        lumis  = list(zip([1]*100, range(1, 34) + range(37, 48) + range(5, 25)))
 
         lister = LumiList(lumis = lumis)
         self.assertTrue(lister.getLumis() == result)

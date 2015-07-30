@@ -98,7 +98,7 @@ class DBFormatter(WMObject):
         if len(r.data) < 1:
             return {}
 
-        return dict(zip(description, r.fetchone()))
+        return dict(list(zip(description, r.fetchone())))
 
 
     def formatCursor(self, cursor, size=10):
@@ -121,7 +121,7 @@ class DBFormatter(WMObject):
                     cursor.close()
                     break
                 for r in rows:
-                    result.append(dict(zip(keys, r)))
+                    result.append(dict(list(zip(keys, r))))
             else: break
         if not cursor.closed:
             cursor.close()

@@ -35,5 +35,5 @@ class GetGroupFromAssoc(DBFormatter):
         if len(result) == 0:
             return None
         row = result[0].fetchone()
-        groupInfo = dict(zip([str(x).lower() for x in row.keys()], row.values()))
+        groupInfo = dict(list(zip([str(x).lower() for x in row.keys()], row.values())))
         return groupInfo

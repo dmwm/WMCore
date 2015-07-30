@@ -34,5 +34,5 @@ class GetUserFromAssoc(DBFormatter):
         if len(result) == 0:
             return None
         row = result[0].fetchone()
-        userInfo = dict(zip([str(x).lower() for x in row.keys()], row.values()))
+        userInfo = dict(list(zip([str(x).lower() for x in row.keys()], row.values())))
         return userInfo

@@ -9,17 +9,15 @@ TODO: duplicate all direct call tests to ones that use HTTP
 
 import unittest
 import logging
-import urllib
-import urllib2
 
-from cherrypy import HTTPError
+from nose.plugins.attrib import attr
+
 from WMCore.WebTools.RESTFormatter import RESTFormatter
 from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.Wrappers import JsonWrapper
 
 class RESTFormatTest(RESTBaseUnitTest):
 
@@ -50,6 +48,9 @@ class RESTFormatTest(RESTBaseUnitTest):
             # test accepted type should return 200 error
             methodTest('GET', url, accept=type, output={'code':200})
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testEncodedInput(self):
         type = 'text/plain'
 

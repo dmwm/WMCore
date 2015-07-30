@@ -838,6 +838,7 @@ cms::Exception caught in EventProcessor and rethrown
                 secondaryCount += 1
 
         self.assertEqual(primaryCount, 1)
+        self.assertEqual(secondaryCount, 0)
         self.assertEqual(mixingCount, 13)
         self.assertEqual(len(report.getAllFallbackFiles()), 1)
 

@@ -1,5 +1,6 @@
-from Validators import *
-from Utils import *
+from __future__ import absolute_import
+from .Validators import *
+from .Utils import *
 
 import matplotlib.ticker
 

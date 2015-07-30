@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import
 from xml.dom.minidom import parseString
-from DbsCli import sendMessage as callDbs
+from .DbsCli import sendMessage as callDbs
 
 class DbsQueryHelper:
     """

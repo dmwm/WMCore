@@ -1,6 +1,7 @@
-from Plot import Plot
-from Mixins import *
-from Validators import *
+from __future__ import absolute_import
+from .Plot import Plot
+from .Mixins import *
+from .Validators import *
 
 class Pie(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,LabelledSeriesMixin,WatermarkMixin,LegendMixin):
     '''

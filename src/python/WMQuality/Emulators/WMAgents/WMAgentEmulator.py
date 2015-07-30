@@ -4,11 +4,12 @@
 Auto generated stub be careful with editing,
 Inheritance is preferred.
 """
+from __future__ import absolute_import
 import threading
 import logging
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
-from WMAgentTasks import WMAgentTasks
+from .WMAgentTasks import WMAgentTasks
 from WMQuality.Emulators.DataBlockGenerator import Globals
 class WMAgentEmulator(Harness):
 

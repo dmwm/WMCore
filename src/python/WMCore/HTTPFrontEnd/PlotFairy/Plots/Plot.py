@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 import re
 import matplotlib
 import sys
@@ -9,7 +10,7 @@ new plots should override the plot(self, data) method. Plots should be
 instantiated via a factory, and be stateless.
 '''
 import matplotlib.pyplot
-from Utils import Props,elem
+from .Utils import Props,elem
 
 class null(object):
     def null(self):

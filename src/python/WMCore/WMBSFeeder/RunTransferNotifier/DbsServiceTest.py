@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from DbsQueryHelper import DbsQueryHelper
+from __future__ import absolute_import
+from .DbsQueryHelper import DbsQueryHelper
 
 qh = DbsQueryHelper("cmsweb.cern.ch/dbs_discovery/", 443, "cms_dbs_prod_global")
 #qh = DbsQueryHelper("cmsweb.cern.ch/dbs_discovery_test/", 443, "cms_dbs_prod_global")

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
 import os
 import unittest
 import shutil
@@ -8,7 +9,7 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMStatsDocGenerator import *
+from .WMStatsDocGenerator import *
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
 class WMStatsTest(unittest.TestCase):

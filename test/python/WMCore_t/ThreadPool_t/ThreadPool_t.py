@@ -6,6 +6,7 @@ _ThreadPool_t_
 Unit tests for threadpool.
 
 """
+from __future__ import absolute_import
 
 
 
@@ -21,7 +22,7 @@ from WMCore.WMFactory             import WMFactory
 from WMQuality.TestInit import TestInit
 
 # local import
-from Dummy import Dummy
+from .Dummy import Dummy
 import nose
 class ThreadPoolTest(unittest.TestCase):
     """

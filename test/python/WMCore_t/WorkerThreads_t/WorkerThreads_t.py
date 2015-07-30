@@ -5,6 +5,7 @@ _ThreadPool_t_
 Unit tests for WorkerThreads.
 
 """
+from __future__ import absolute_import
 
 
 
@@ -18,7 +19,7 @@ import os
 from WMCore.Configuration import Configuration
 from WMCore.WorkerThreads.WorkerThreadManager import WorkerThreadManager
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from Dummy import Dummy
+from .Dummy import Dummy
 
 from WMQuality.TestInit import TestInit
 

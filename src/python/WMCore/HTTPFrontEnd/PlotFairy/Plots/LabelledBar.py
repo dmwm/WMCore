@@ -1,6 +1,7 @@
-from Mixins import *
-from Validators import *
-from Plot import Plot
+from __future__ import absolute_import
+from .Mixins import *
+from .Validators import *
+from .Plot import Plot
 
 
 class LabelledBar(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin,XAutoLabelledAxisMixin,YNumericAxisMixin,LabelledSeriesMixin,WatermarkMixin,LegendMixin):

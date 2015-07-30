@@ -2,6 +2,7 @@
 """
     WorkQueue tests
 """
+from __future__ import absolute_import
 
 import tempfile
 import unittest
@@ -13,7 +14,7 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import localQueue
-from WorkQueueTestCase import WorkQueueTestCase
+from .WorkQueueTestCase import WorkQueueTestCase
 
 
 class LocalWorkQueueProfileTest(WorkQueueTestCase):

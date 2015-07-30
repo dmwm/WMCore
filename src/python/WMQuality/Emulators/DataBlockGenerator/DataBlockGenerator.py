@@ -1,5 +1,6 @@
-from Globals import GlobalParams
-import Globals
+from __future__ import absolute_import
+from .Globals import GlobalParams
+from . import Globals
 
 class NoDatasetError(Exception):
     """Standard error baseclass"""

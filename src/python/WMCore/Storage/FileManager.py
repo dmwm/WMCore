@@ -209,14 +209,14 @@ class FileManager:
         try:
             implName = self.siteCfg.localStageOut.get("command")
             seName   = self.siteCfg.localStageOut.get("se-name")
-            pnn      = self.siteCfg.localStageOut.get("pnn")
+            pnn      = self.siteCfg.localStageOut.get("phedex-node")
             catalog  = self.siteCfg.localStageOut.get("catalog")
             option   = self.siteCfg.localStageOut.get('option', None)
 
         except:
-            log.critical( 'Either command, se-name, pnn or the catalog are missing from site-local-config.xml' )
+            log.critical( 'Either command, se-name, phedex-node or the catalog are missing from site-local-config.xml' )
             log.critical( 'File operations cannot proceed like this' )
-            log.critical( 'command: %s se-name: %s pnn: %s catalog: %s' % (implName, seName, pnn, catalog) )
+            log.critical( 'command: %s se-name: %s phedex-node: %s catalog: %s' % (implName, seName, pnn, catalog) )
             raise
         try:
             self.tfc = self.siteCfg.trivialFileCatalog()
@@ -227,7 +227,7 @@ class FileManager:
         self.fallbacks = self.siteCfg.fallbackStageOut
         self.defaultMethod = { 'command' : implName,
                               'se-name' : seName,
-                              'pnn' : pnn,
+                              'phedex-node' : pnn,
                               'catalog' : catalog }
         if option:
             self.defaultMethod['option'] = option
@@ -256,19 +256,19 @@ class FileManager:
         try:
             implName   = self.overrideConf["command"]
             seName     = self.overrideConf["se-name"]
-            pnn        = self.overrideConf["pnn"]
+            pnn        = self.overrideConf["phedex-node"]
             lfn_prefix = self.overrideConf["lfn-prefix"]
 
         except:
-            log.critical( 'Either command, se-name pnn, or the lfn-prefix are missing from the override' )
+            log.critical( 'Either command, se-name, phedex-node, or the lfn-prefix are missing from the override' )
             log.critical( 'File operations cannot proceed like this' )
-            log.critical( 'command: %s se-name: %s pnn: %s lfn-prefix: %s' % (implName, seName, pnn, lfn_prefix) )
+            log.critical( 'command: %s se-name: %s phedex-node: %s lfn-prefix: %s' % (implName, seName, pnn, lfn_prefix) )
             raise
 
         self.fallbacks = []
         self.defaultMethod = { 'command' : implName,
                               'se-name' : seName,
-                              'pnn' : pnn,
+                              'phedex-node' : pnn,
                               'lfn-prefix' : lfn_prefix }
         if option:
             self.defaultMethod['option'] = option
@@ -289,14 +289,14 @@ class FileManager:
 
         if 'lfn-prefix' in currentMethod:
             seName   = currentMethod['se-name']
-            pnn      = currentMethod['pnn']
+            pnn      = currentMethod['phedex-node']
             command  = currentMethod['command']
             options  = currentMethod.get('option', None)
             pfn      = "%s%s" % (currentMethod['lfn-prefix'], lfn)
             protocol = command
         else:
             seName   = self.siteCfg.localStageOut['se-name']
-            pnn      = self.siteCfg.localStageOut['pnn']
+            pnn      = self.siteCfg.localStageOut['phedex-node']
             command  = self.siteCfg.localStageOut['command']
             options  = self.siteCfg.localStageOut.get('option', None)
             pfn      = self.searchTFC(lfn)

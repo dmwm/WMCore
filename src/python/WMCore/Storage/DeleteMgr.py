@@ -84,9 +84,9 @@ class DeleteMgr:
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
         msg += "Local Stage Out SE Name to be used is %s\n" % seName
-        pnn = self.siteCfg.localStageOut.get("pnn", None)
+        pnn = self.siteCfg.localStageOut.get("phedex-node", None)
         if pnn == None:
-            msg = "Unable to retrieve local stage out pnn\n"
+            msg = "Unable to retrieve local stage out phedex-node\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
@@ -127,14 +127,14 @@ class DeleteMgr:
             "command" : None,
             "option" : None,
             "se-name" : None,
-            "pnn" : None,
+            "phedex-node" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
-            overrideParams['pnn'] = overrideConf['pnn']
+            overrideParams['phedex-node'] = overrideConf['phedex-node']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
         except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
@@ -153,7 +153,7 @@ class DeleteMgr:
         print msg
         self.fallbacks.append(overrideParams)
         self.seName = overrideParams['se-name']
-        self.pnn = overrideParams['pnn']
+        self.pnn = overrideParams['phedex-node']
         return
 
 
@@ -230,14 +230,14 @@ class DeleteMgr:
 
         if override:
             seName = override['se-name']
-            pnn = override['pnn']
+            pnn = override['phedex-node']
             command = override['command']
             options = override['option']
             pfn = "%s%s" % (override['lfn-prefix'], lfn)
             protocol = command
         else:
             seName = self.siteCfg.localStageOut['se-name']
-            pnn = self.siteCfg.localStageOut['pnn']
+            pnn = self.siteCfg.localStageOut['phedex-node']
             command = self.siteCfg.localStageOut['command']
             options = self.siteCfg.localStageOut.get('option', None)
             pfn = self.searchTFC(lfn)

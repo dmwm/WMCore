@@ -69,7 +69,7 @@ class LogCollect(Executor):
         userLogs  = overrides.get('userLogs',  False)
 
         stageOutParams = {"command": "srmv2-lcg",
-                          "se-name": seName,  "pnn": pnn, "lfn-prefix": lfnPrefix}
+                          "se-name": seName,  "phedex-node": pnn, "lfn-prefix": lfnPrefix}
 
         # Set EOS stage out params
         seEOSName    = overrides.get('seName', "srm-eoscms.cern.ch")

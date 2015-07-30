@@ -78,12 +78,12 @@ class DeleteFiles(Executor):
 
         stageOutCall = {}
         if "command" in overrides and "option" in overrides \
-               and "se-name" in overrides and "pnn" in overrides \
+               and "se-name" in overrides and "phedex-node" in overrides \
                and"lfn-prefix" in overrides:
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
-            stageOutCall['pnn']    = overrides.get('pnn')
+            stageOutCall['phedex-node']= overrides.get('phedex-node')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real

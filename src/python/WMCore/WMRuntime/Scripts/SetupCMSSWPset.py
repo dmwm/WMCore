@@ -368,8 +368,8 @@ class SetupCMSSWPset(ScriptInterface):
         """
         # find out local site SE name
         siteConfig = loadSiteLocalConfig()
-        seLocalName = siteConfig.localStageOut["se-name"]
-        print "Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName)
+        PhEDExNodeName = siteConfig.localStageOut["phedex-node"]
+        print "Running on site '%s', local PNN: '%s'" % (siteConfig.siteName, PhEDExNodeName)
 
         pileupDict = self._getPileupConfigFromJson()
 
@@ -388,12 +388,12 @@ class SetupCMSSWPset(ScriptInterface):
 
         # if the user in the configuration specifies different pileup types
         # than "data" or "mc", the following call will not modify anything
-        self._processPileupMixingModules(pileupDict, seLocalName, dataMixModules, "data")
-        self._processPileupMixingModules(pileupDict, seLocalName, mixModules, "mc")
+        self._processPileupMixingModules(pileupDict, PhEDExNodeName, dataMixModules, "data")
+        self._processPileupMixingModules(pileupDict, PhEDExNodeName, mixModules, "mc")
 
         return
 
-    def _processPileupMixingModules(self, pileupDict, seLocalName, modules, requestedPileupType):
+    def _processPileupMixingModules(self, pileupDict, PhEDExNodeName, modules, requestedPileupType):
         """
         Iterates over all modules and over all pileup configuration types.
         The only considered types are "data" and "mc" (input to this method).
@@ -401,7 +401,7 @@ class SetupCMSSWPset(ScriptInterface):
         modify anything.
 
         The method considers only files which are present on this local
-        SE (seLocalName). The job will use only those. Dataset, divided into
+        PNN (PhEDExNodeName). The job will use only those. Dataset, divided into
         blocks, may not have all blocks present on a particular SE. However,
         all files belonging into a block will be present when reported by DBS.
 
@@ -427,7 +427,7 @@ class SetupCMSSWPset(ScriptInterface):
                     eventsAvailable = 0
                     for blockName in sorted(pileupDict[pileupType].keys()):
                         blockDict = pileupDict[pileupType][blockName]
-                        if seLocalName in blockDict["PhEDExNodeNames"]:
+                        if PhEDExNodeName in blockDict["PhEDExNodeNames"]:
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 inputTypeAttrib.fileNames.append(fileLFN['logical_file_name'])

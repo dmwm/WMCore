@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W6501, W0142
-# W6501: pass information to logging using string arguments
+#pylint: disable=W0142
 # W0142: Some people like ** magic
 """
 The actual taskArchiver algorithm
@@ -98,12 +97,12 @@ def getProxy(config, userdn, group, role):
 
     logging.debug("Retrieving proxy for %s" % userdn)
     proxy = Proxy(defaultDelegation)
-    proxyPath = proxy.getProxyFilename( True )
-    timeleft = proxy.getTimeLeft( proxyPath )
+    proxyPath = proxy.getProxyFilename(True)
+    timeleft = proxy.getTimeLeft(proxyPath)
     if timeleft is not None and timeleft > 3600:
         return (True, proxyPath)
     proxyPath = proxy.logonRenewMyProxy()
-    timeleft = proxy.getTimeLeft( proxyPath )
+    timeleft = proxy.getTimeLeft(proxyPath)
     if timeleft is not None and timeleft > 0:
         return (True, proxyPath)
     return (False, None)
@@ -355,7 +354,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Found %d candidate workflows for archiving: %s" % (len(finishedwfs),finishedwfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
-        if len(finishedwfs) ==0:
+        if len(finishedwfs) == 0:
             return
         
         completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
@@ -367,7 +366,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
             logging.info("There are %d requests in 'aborted' status in central couch." % len(abortedWorkflows))
-            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"]);
+            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"])
             logging.info("List of 'force-complete' workflows in central couch: %s" % forceCompleteWorkflows)
             
         except Exception as ex:
@@ -402,9 +401,9 @@ class TaskArchiverPoller(BaseWorkerThread):
     
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
-                        newState =  "aborted-completed"
+                        newState = "aborted-completed"
                     elif workflow in forceCompleteWorkflows:
-                        newState =  "completed"
+                        newState = "completed"
                     else:
                         newState = None
                         
@@ -472,10 +471,10 @@ class TaskArchiverPoller(BaseWorkerThread):
         deletablewfs = deletableWorkflowsDAO.execute()
 
         #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion: %s" % (len(deletablewfs),deletablewfs.keys()))
+        logging.info("Found %d candidate workflows for deletion: %s" % (len(deletablewfs), deletablewfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
-        if len(deletablewfs) ==0:
+        if len(deletablewfs) == 0:
             return
         safeStatesToDelete = ["completed", "aborted-completed", "rejected", 
                               "normal-archived", "aborted-archived", "rejected-archived"]
@@ -638,7 +637,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                           "stale" : "update_after"})['rows']
         for row in retryData:
             taskName = row['key'][2]
-            count    = str(row['key'][1])
+            count = str(row['key'][1])
             if not taskName in workflowData['retryData'].keys():
                 workflowData['retryData'][taskName] = {}
             workflowData['retryData'][taskName][count] = row['value']
@@ -670,7 +669,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         workflowData["_id"] = workflowName
         try:
-            workflowData["ACDCServer"]   = sanitizeURL(self.config.ACDC.couchurl)['url']
+            workflowData["ACDCServer"] = sanitizeURL(self.config.ACDC.couchurl)['url']
             workflowData["ACDCDatabase"] = self.config.ACDC.database
         except AttributeError as ex:
             # We're missing the ACDC info.
@@ -682,7 +681,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         # Attach output
         workflowData['output'] = {}
         for e in output:
-            entry   = e['value']
+            entry = e['value']
             dataset = entry['dataset']
             workflowData['output'][dataset] = {}
             workflowData['output'][dataset]['nFiles'] = entry['count']
@@ -690,6 +689,16 @@ class TaskArchiverPoller(BaseWorkerThread):
             workflowData['output'][dataset]['events'] = entry['events']
             workflowData['output'][dataset]['tasks']  = outputList.get(dataset, {}).keys()
 
+        # If the workflow was aborted, then don't parse all the jobs, cut at 5k
+        try:
+            reqDetails = self.centralCouchDBWriter.getRequestByNames(workflowName)
+            wfStatus = reqDetails[workflowName]['RequestTransition'][-1]['Status']
+            if wfStatus in ["aborted", "aborted-completed", "aborted-archived"]:
+                logging.info("Workflow %s in status %s with a total of %d jobs, capping at 5000" % (
+                    workflowName, wfStatus, len(failedJobs)))
+                failedJobs = failedJobs[:5000]
+        except Exception as ex:
+            logging.error("Failed to query getRequestByNames view. Will retry later.\n%s" % str(ex))
 
         # Loop over all failed jobs
         workflowData['errors'] = {}
@@ -844,8 +853,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                                                      
         failedJobs = self.getFailedJobs(workflowName)
 
-        taskList   = {}
-        finalTask  = {}
+        taskList  = {}
+        finalTask = {}
 
         for row in perf:
             taskName = row['value']['taskName']
@@ -878,7 +887,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                                 outputFailed[key] = []
                         try:
                             output[key].append(float(row[key]))
-                            if (row['jobID'] in failedJobs):
+                            if row['jobID'] in failedJobs:
                                 outputFailed[key].append(float(row[key]))
                                 
                         except TypeError:
@@ -941,7 +950,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                         final[stepName][key]['histogram'] = histogram
                         # Histogram only picking values from failed jobs
                         # Operators  can use it to find out quicker why a workflow/task/step is failing :
-                        if len(failedJobs) > 0 :
+                        if len(failedJobs) > 0:
                             failedJobsHistogram = MathAlgos.createHistogram(numList = outputFailed[key],
                                                                   nBins = self.histogramBins,
                                                                   limit = self.histogramLimit)
@@ -987,12 +996,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                 interestingDatasets.append(dataset)
         # We should have found 1 interesting dataset at least
         logging.debug("Those datasets are interesting %s" % str(interestingDatasets))
-        if len(interestingDatasets) == 0 :
+        if len(interestingDatasets) == 0:
             return
         # Request will be only interesting for performance if it's a ReReco or PromptReco
         (isReReco, isPromptReco) = (False, False)
         if workload.getRequestType() == 'ReReco':
-            isReReco=True
+            isReReco = True
         # Yes, few people like magic strings, but have a look at :
         # https://github.com/dmwm/T0/blob/master/src/python/T0/RunConfig/RunConfigAPI.py#L718
         # Might be safe enough
@@ -1006,7 +1015,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             return
         logging.info("%s has interesting performance information, trying to publish to DashBoard" % workload.name())
         release = workload.getCMSSWVersions()[0]
-        if not release :
+        if not release:
             logging.info("no release for %s, bailing out" % workload.name())
 
         
@@ -1041,7 +1050,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
         logging.debug("Requesting performance information from %s" % getUrl)
         
-        regExp=re.compile('https://(.*)(/dqm.+)')
+        regExp = re.compile('https://(.*)(/dqm.+)')
         regExpResult = regExp.match(getUrl)
         dqmHost = regExpResult.group(1)
         dqmPath = regExpResult.group(2)
@@ -1052,7 +1061,7 @@ class TaskArchiverPoller(BaseWorkerThread):
             response = connection.getresponse()
             responseData = response.read()
             responseJSON = json.loads(responseData)
-            if response.status != 200 :
+            if response.status != 200:
                 logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
                 return False
         except Exception as ex:
@@ -1074,20 +1083,20 @@ class TaskArchiverPoller(BaseWorkerThread):
         worthPoints = {}
         points = responseJSON["hist"]["bins"]["content"]
         for i in range(responseJSON["hist"]["xaxis"]["first"]["id"], responseJSON["hist"]["xaxis"]["last"]["id"]):
-                    # is the point worth it? if yes add to interesting points dictionary. 
-                    # 1 - non 0
-                    # 2 - between minimum and maximum expected luminosity
-                    # FIXME : 3 - population in dashboard for the bin interval < 100
-                    # Those should come from the config :
-                    if points[i] == 0:
-                        continue
-                    binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
-                    # Fetching the important values
-                    instLuminosity = i*binSize 
-                    timePerEvent = points[i]
+            # is the point worth it? if yes add to interesting points dictionary. 
+            # 1 - non 0
+            # 2 - between minimum and maximum expected luminosity
+            # FIXME : 3 - population in dashboard for the bin interval < 100
+            # Those should come from the config :
+            if points[i] == 0:
+                continue
+            binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+            # Fetching the important values
+            instLuminosity = i*binSize 
+            timePerEvent = points[i]
                     
-                    if instLuminosity > minLumi and instLuminosity <  maxLumi :
-                        worthPoints[instLuminosity] = timePerEvent
+            if instLuminosity > minLumi and instLuminosity < maxLumi:
+                worthPoints[instLuminosity] = timePerEvent
         logging.debug("Got %d worthwhile performance points" % len(worthPoints.keys()))
         
         return worthPoints
@@ -1101,15 +1110,15 @@ class TaskArchiverPoller(BaseWorkerThread):
                                      "integratedLuminosity" : instLuminosity,
                                      "timePerEvent" : timePerEvent})
             
-        data = "{\"data\":%s}" % str(dashboardPayload).replace("\'","\"")
-        headers={"Accept":"application/json"}
+        data = "{\"data\":%s}" % str(dashboardPayload).replace("\'", "\"")
+        headers = {"Accept":"application/json"}
         
         logging.debug("Going to upload this payload %s" % data)
         
         try:
             request = urllib2.Request(dashBoardUrl, data, headers)
             response = urllib2.urlopen(request)
-            if response.code != 200 :
+            if response.code != 200:
                 logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
                 return False
         except Exception as ex:

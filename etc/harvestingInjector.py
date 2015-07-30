@@ -120,7 +120,7 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
         inputFileset.addFile(myFile)
 
     if len(inputFileset) < 1:
-        raise Exception, "No files were selected!"
+        raise Exception("No files were selected!")
 
     inputFileset.commit()
     inputFileset.markOpen(False)

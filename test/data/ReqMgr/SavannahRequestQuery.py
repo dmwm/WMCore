@@ -551,7 +551,7 @@ class RequestQuery:
             else:
                 msg = 'DBS URL of the old request is neither phys01, phys02 nor phys03. Please, check!'
                 print msg
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
 
         return
 

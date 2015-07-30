@@ -32,9 +32,9 @@ class CouchAppTestHarness:
         self.dbName = dbName
         if self.couchUrl == None:
             msg = "COUCHRURL env var not set..."
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         if self.couchUrl.endswith('/'):
-            raise RuntimeError, "COUCHURL env var shouldn't end with /"
+            raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
         self.couchappConfig = Config()
 
@@ -84,7 +84,7 @@ class TestInitCouchApp(TestInit):
             return os.path.join(wmcoreroot, 'xdata', 'couchapps')
         elif os.path.exists(os.path.join(wmcoreroot, 'data', 'couchapps', couchapp)):
             return os.path.join(wmcoreroot, 'data', 'couchapps')
-        raise OSError, 'Cannot find couchapp: %s' % couchapp
+        raise OSError('Cannot find couchapp: %s' % couchapp)
 
     def setupCouch(self, dbName, *couchapps):
         """

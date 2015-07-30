@@ -201,14 +201,14 @@ def readTFC(filename):
     """
     if not os.path.exists(filename):
         msg = "TrivialFileCatalog not found: %s" % filename
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     try:
         node = xmlFileToNode(filename)
     except Exception as ex:
         msg = "Error reading TrivialFileCatalog: %s\n" % filename
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     parsedResult = nodeReader(node)
 

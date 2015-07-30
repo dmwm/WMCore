@@ -110,7 +110,7 @@ class ConfigSection(object):
             msg += "%s\n" % type(value)
             msg += "for name: %s and value: %s\n" % (name, value)
             msg += "Added to WMAgent Configuration"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
                 
 
     def __setattr__(self, name, value):
@@ -173,7 +173,7 @@ class ConfigSection(object):
                         )
 
 
-                    raise TypeError, msg
+                    raise TypeError(msg)
             self.__setattr__(setting, settingInstance)
         return self
 
@@ -384,7 +384,7 @@ class Configuration(object):
             return
         if not isinstance(value, ConfigSection):
             msg = "Can only add objects of type ConfigSection to Configuration"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         object.__setattr__(self, name, value)
         return
@@ -564,7 +564,7 @@ def loadConfigurationFile(filename):
         msg += "Due to error:\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     for attr in modRef.__dict__.values():
         if isinstance(attr, Configuration):
@@ -575,7 +575,7 @@ def loadConfigurationFile(filename):
     #//
     msg = "Unable to find a Configuration object instance in file:\n"
     msg += "%s\n" % filename
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
 
 

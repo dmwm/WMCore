@@ -167,7 +167,7 @@ class CouchFileset(Fileset):
                 document['_rev'] = "NeedToGet"
             else:
                 msg = "Unable to insert document: check acdc server doc id: %s" % document['_id']
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
         return document
 
     @connectToCouch
@@ -183,7 +183,7 @@ class CouchFileset(Fileset):
             except CMSCouch.CouchNotFoundError as ex:
                 msg = "Unable to retrieve Couch Document for fileset"
                 msg += str(msg)
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
 
             files = doc["files"]
             for d in files.values():

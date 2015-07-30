@@ -83,7 +83,7 @@ def HTTPpost(params, url, onFailureFile = None):
             msg = str(ex)
             msg += "\nA copy of the failed report is in %s" % onFailureFile
 
-        raise IOError, msg
+        raise IOError(msg)
 
     return
 

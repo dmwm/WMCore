@@ -84,7 +84,7 @@ class ChildProcess(object):
             self.processID = pid
             return pid
 
-        raise RuntimeError, "Something bad happened in fork()"
+        raise RuntimeError("Something bad happened in fork()")
 
     def execute(self):
         """
@@ -92,11 +92,11 @@ class ChildProcess(object):
         """
         msg = "ProcessMonitor.ProcessMonitor.execute method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
     def isRunning(self):
         if (self.processID == -1):
-            raise RuntimeError, "Trying to waitpid on nonexistant process"
+            raise RuntimeError("Trying to waitpid on nonexistant process")
         pid, status = os.waitpid( self.processID, os.WNOHANG )
         if ((pid == 0) and (status == 0)):
             # we're definately still running if this pops up
@@ -133,7 +133,7 @@ class ExecProcess(ChildProcess):
 
     def execute(self):
         if (self.args == []):
-            raise RuntimeError, "No arguments were set"
+            raise RuntimeError("No arguments were set")
         os.execvp(self.args[0], self.args[1:])
 
 class PythonProcess(ChildProcess):
@@ -147,11 +147,11 @@ class PythonProcess(ChildProcess):
     def setTarget(self,newtarget):
         if ((type(newtarget) != FunctionType) and
             (type(newtarget) != LambdaType)):
-            raise RuntimeError, "PythonProcess requires a function for target"
+            raise RuntimeError("PythonProcess requires a function for target")
 
         self.target = newtarget
 
     def execute(self):
         if (self.target == None):
-            raise RuntimeError, "No execute process was set"
+            raise RuntimeError("No execute process was set")
         return self.target()

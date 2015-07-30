@@ -27,8 +27,8 @@ class SetLocation(DBFormatter):
                    self.dbi.buildbinds(self.dbi.makelist(l), 'location')))
             return binds
         else:
-            raise Exception, "Type of location argument is not allowed: %s" \
-                                % type(location)
+            raise Exception("Type of location argument is not allowed: %s" \
+                                % type(location))
 
     def execute(self, file, location, conn = None, transaction = None):
         binds = self.getBinds(file, location)

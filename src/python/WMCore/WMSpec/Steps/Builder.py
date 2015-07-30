@@ -91,7 +91,7 @@ class Builder:
         """
         msg = "WMSpec.Steps.Builder.build method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
     def installWorkingArea(self, step, workingArea, **args):

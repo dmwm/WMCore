@@ -54,7 +54,7 @@ class GFAL2Impl(StageOutImpl2):
                 self.doDelete(toPfn, None, None, None, None)
             except:
                 pass
-            raise StageOutFailure, "File transfer failed"
+            raise StageOutFailure("File transfer failed")
 
         return toPfn
 

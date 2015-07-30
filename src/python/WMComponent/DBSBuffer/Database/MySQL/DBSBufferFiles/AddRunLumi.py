@@ -31,8 +31,8 @@ class AddRunLumi(DBFormatter):
         elif type(file) == type({}):
             lfn = file('lfn')
         else:
-            raise Exception, "Type of file argument is not allowed: %s" \
-                                % type(file)
+            raise Exception("Type of file argument is not allowed: %s" \
+                                % type(file))
 
         if isinstance(runs, set):
             for run in runs:
@@ -41,8 +41,8 @@ class AddRunLumi(DBFormatter):
                                     'run': run.run,
                                     'lumi':lumi})
         else:
-            raise Exception, "Type of runs argument is not allowed: %s" \
-                                % type(runs)
+            raise Exception("Type of runs argument is not allowed: %s" \
+                                % type(runs))
         return binds
 
     def format(self, result):

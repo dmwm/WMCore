@@ -196,8 +196,8 @@ class DBInterface(WMObject):
                                            (sqlstmt, binds, connection, transaction))
                 WMCore.WMLogging.sqldebug('type check:\nsql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' %
                                            (type(sqlstmt), type(binds), type(connection), type(transaction)))
-                raise Exception, """DBInterface.processData Nothing executed, problem with your arguments
-                Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds))
+                raise Exception("""DBInterface.processData Nothing executed, problem with your arguments
+                Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds)))
         finally:
             if not conn and connection != None:
                 connection.close() # Return connection to the pool

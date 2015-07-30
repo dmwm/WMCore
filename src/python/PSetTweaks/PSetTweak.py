@@ -204,7 +204,7 @@ class PSetTweak:
         if not paramName.startswith("process"):
             msg = "Invalid Parameter Name: %s\n" % paramName
             msg += "Parameter must start with process"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return recursiveGetattr(self, paramName)
 
 
@@ -345,7 +345,7 @@ class PSetTweak:
         """
         if format not in ("python", "json", "pickle"):
             msg = "Unsupported Format: %s" % format
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         if format == "python":
             handle = open(filename, 'w')
@@ -381,7 +381,7 @@ class PSetTweak:
 
         if format not in ("python", "json", "pickle"):
             msg = "Unsupported Format: %s" % format
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         if format == "pickle":
             handle = open(filename, 'r')

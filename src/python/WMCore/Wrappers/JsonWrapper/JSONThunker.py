@@ -256,7 +256,7 @@ class JSONThunker:
             return self.handleObjectThunk(toThunk)
         else:
             self.unrecurse(toThunk)
-            raise RuntimeError, type(toThunk)
+            raise RuntimeError(type(toThunk))
 
     def _unthunk(self, jsondata):
         """
@@ -352,7 +352,7 @@ class JSONThunker:
         module = jsondata['type'].rsplit('.',1)[0]
         name = jsondata['type'].rsplit('.',1)[1]
         if (module == 'WMCore.Services.Requests') and (name == JSONThunker):
-            raise RuntimeError, "Attempted to unthunk a JSONThunker.."
+            raise RuntimeError("Attempted to unthunk a JSONThunker..")
 
         __import__(module)
         mod = sys.modules[module]

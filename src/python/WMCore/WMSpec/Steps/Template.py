@@ -169,7 +169,7 @@ class Template:
         """
         msg = "WMSpec.Steps.Template.install method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
     def helper(self, wmStep):
@@ -182,4 +182,4 @@ class Template:
         """
         msg = "WMSpec.Steps.Template.helper method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)

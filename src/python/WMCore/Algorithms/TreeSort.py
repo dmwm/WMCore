@@ -157,7 +157,7 @@ class TreeSort:
             if len(parents) > 1:
                 # Multiple parents ==> PANIC!
                 msg = "Object %s has too many parents for tree sort"
-                raise RuntimeError, msg % name
+                raise RuntimeError(msg % name)
 
         #  //
         # // Now we have pruned out the roots, we process the
@@ -178,7 +178,7 @@ class TreeSort:
                 # // further reduction may not be possible
                 #//  for now, blow an exception
                 msg = "Parentage sorting appears to be stuck in a loop"
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
 
     def addRoot(self, name, object):
         """

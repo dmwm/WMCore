@@ -208,7 +208,7 @@ def axis_format(axis,data):
     elif format=='num':
         pass
     else:
-        raise ValueError, "unknown axis format '%s'"%format
+        raise ValueError("unknown axis format '%s'"%format)
 
 def numeric_bins(data):
     min = data.get('min',None)
@@ -219,15 +219,15 @@ def numeric_bins(data):
     logbase = float(data.get('logbase',10))
 
     if width!=None and width<=0:
-        raise ValueError, "axis 'width' defined and <=0"
+        raise ValueError("axis 'width' defined and <=0")
     if bins!=None and bins<=0:
-        raise ValueError, "axis 'bins' defined and <=0"
+        raise ValueError("axis 'bins' defined and <=0")
     if log and min!=None and min<=0:
-        raise ValueError, "log axis has 'min'<=0"
+        raise ValueError("log axis has 'min'<=0")
     if log and max!=None and max<=0:
-        raise ValueError, "log axis has 'max'<=0"
+        raise ValueError("log axis has 'max'<=0")
     if min!=None and max!=None and min>max:
-        raise ValueError, "axis 'min'>'max'"
+        raise ValueError("axis 'min'>'max'")
 
     if min!=None and max!=None and width!=None:
         if log:
@@ -247,7 +247,7 @@ def numeric_bins(data):
         else:
             min = max - bins*width
     else:
-        raise ValueError, "axis requires at least 3 of 'min','max','width','bins'"
+        raise ValueError("axis requires at least 3 of 'min','max','width','bins'")
 
     if log:
         return bins, [logbase**(math.log(min,logbase)+i*width) for i in range(bins+1)]
@@ -551,7 +551,7 @@ class BinnedNumericSeriesMixin(Mixin):
         if self.__binsrc!=None:
             xbins = self.props.get(self.__binsrc,{}).get('bins',0)
             if xbins==None:
-                raise Exception, 'xbins==None in BinnedNumericSeriesMixin'
+                raise Exception('xbins==None in BinnedNumericSeriesMixin')
         else:
             xbins = None
         if self.__datamode == 'edge':

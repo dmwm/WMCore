@@ -43,12 +43,12 @@ def loadSiteLocalConfig():
     if os.environ.get("CMS_PATH", None) == None:
         msg = "Unable to find site local config file:\n"
         msg += "CMS_PATH variable is not defined."
-        raise SiteConfigError, msg
+        raise SiteConfigError(msg)
 
     if not os.path.exists(actualPath):
         msg = "Unable to find site local config file:\n"
         msg += actualPath
-        raise SiteConfigError, msg
+        raise SiteConfigError(msg)
 
     config = SiteLocalConfig(actualPath)
     return config
@@ -101,7 +101,7 @@ class SiteLocalConfig:
         except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
             msg += "URL = %s\n" % tfcUrl
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
         return tfcInstance
 
 
@@ -144,23 +144,23 @@ class SiteLocalConfig:
         except Exception as ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
 
         nodeResult =  nodeReader(node)
 
         if 'siteName' not in nodeResult:
             msg = "Unable to find site name in SiteConfigFile:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
         if 'catalog' not in nodeResult:
             msg = "Unable to find catalog entry for event data in SiteConfigFile:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
         if 'localStageOut' not in nodeResult:
             msg = "Error:Unable to find any local-stage-out"
             msg += "information in:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
 
         self.siteName             = nodeResult.get('siteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)

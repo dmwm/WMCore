@@ -205,7 +205,7 @@ class Scram:
                 try:
                     var, val = l.split("=", 1)
                 except ValueError as ex:
-                    raise ValueError, "Couldn't split line: %s" % l
+                    raise ValueError("Couldn't split line: %s" % l)
 
                 self.runtimeEnv[var] = val
         if self.test_mode:
@@ -227,10 +227,10 @@ class Scram:
         """
         if self.projectArea == None:
             msg = "Scram Project Area not set/project() not called"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         if self.runtimeEnv == {}:
             msg = "Scram runtime environment is empty/runtime() not called"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         executeIn = runtimeDir
         if runtimeDir == None:
             executeIn = self.projectArea

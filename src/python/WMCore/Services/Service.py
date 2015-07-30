@@ -360,4 +360,4 @@ class Service(dict):
         elif self['method'].upper() in self.supportVerbList:
             return self['method'].upper()
         else:
-            raise TypeError, 'verb parameter needs to be set'
+            raise TypeError('verb parameter needs to be set')

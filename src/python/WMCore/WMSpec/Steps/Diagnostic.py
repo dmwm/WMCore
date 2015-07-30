@@ -32,7 +32,7 @@ class DiagnosticHandler(object):
         """
         msg = "DiagnosticHandler.__call__ not "
         msg += "implemented for class %s" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
 class DefaultDiagnosticHandler(DiagnosticHandler):

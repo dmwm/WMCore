@@ -25,7 +25,7 @@ class _Registry:
 
     def __init__(self):
         msg = "Do not init ths class"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
 
@@ -54,7 +54,7 @@ def retrieveRequestMaker(typename):
         print _Registry._Makers.keys()
         msg = "No RequestMaker implementation registered with name:"
         msg += " %s" % typename
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     maker = _Registry._Makers[typename]()
     maker.requestType = typename
@@ -82,10 +82,10 @@ def buildWorkloadForRequest(typename, schema):
             factoryInstance = getattr(mod, factoryName)
         except ImportError:
             msg =  "Spec type %s not found in WMCore.WMSpec.StdSpecs" % typename
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         except AttributeError as ex:
             msg = "Factory not found in Spec for type %s" % typename
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         _Registry._Factories[typename] = factoryInstance
     else:
         factoryInstance = _Registry._Factories[typename]

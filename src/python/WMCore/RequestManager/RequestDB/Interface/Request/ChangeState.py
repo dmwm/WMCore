@@ -40,7 +40,7 @@ def changeRequestIDStatus(requestId, newState, priority = None):
     if statusId == None:
         msg = "Attempted to change request %s to unknown status value %s" % (
             requestId, newState)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     stateChanger = factory(classname = "Request.SetStatus")
     stateChanger.execute(requestId, statusId)
@@ -120,7 +120,7 @@ def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
     if teamId == None:
         msg = "Team named %s not known in database" % teamName
         msg += "Failed to assign request %s to team %s" % (requestName, teamName)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     if wmstatUrl:
         wmstatSvc = WMStatsWriter(wmstatUrl)

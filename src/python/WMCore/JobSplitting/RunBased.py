@@ -59,7 +59,7 @@ class RunBased(JobFactory):
                 #Die if there are no runs
                 if len(f['runs']) < 1:
                     msg = "File %s claims to contain %s runs!" %(f['lfn'], len(f['runs']))
-                    raise RuntimeError, msg
+                    raise RuntimeError(msg)
 
                 #First we need to pick the lowest run
                 runList = []

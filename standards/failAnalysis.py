@@ -45,7 +45,7 @@ xunit  = xml.dom.minidom.parse( handle )
 handle.close()
 
 if len(xunit.getElementsByTagName('testsuite')) > 1:
-    raise RuntimeError, "More than one test suite? need to handle this"
+    raise RuntimeError("More than one test suite? need to handle this")
 longRunning = []
 
 for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('testcase'):
@@ -57,7 +57,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
         
     if len(case.childNodes) > 0:
         if len(case.childNodes) > 1:
-            raise RuntimeError, "Shouldn't be more than one error in a testcase"
+            raise RuntimeError("Shouldn't be more than one error in a testcase")
         # this isn't a win.
         message  = "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
         message += "Exception type: %s \n" % case.firstChild.getAttribute('type')

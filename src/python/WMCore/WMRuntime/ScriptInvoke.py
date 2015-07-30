@@ -90,7 +90,7 @@ if __name__ == '__main__':
         scriptModule = sys.argv[2]
     except Exception as ex:
         msg = "Usage: ScriptInvoke.py <Step Module> <Script Module>"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     invoker = ScriptInvoke(stepModule, scriptModule)
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
         msg += "Details:\n"
         for l in traceback.format_tb(sys.exc_info()[2]):
             msg += l
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     try:
         invoker.invoke()
@@ -114,6 +114,6 @@ if __name__ == '__main__':
         msg += "Details:\n"
         for l in traceback.format_tb(sys.exc_info()[2]):
             msg += l
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     sys.exit(invoker.exit())

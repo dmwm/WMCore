@@ -307,9 +307,9 @@ class File(WMBSBase, WMFile):
         child.load()
 
         if not self['id'] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % self['lfn']
+            raise Exception("Parent file doesn't have an id %s" % self['lfn'])
         if not child['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % child['lfn']
+            raise Exception("Child file doesn't have an id %s" % child['lfn'])
 
         heritageAction = self.daofactory(classname = "Files.Heritage")
         heritageAction.execute(child = child["id"], parent = self["id"],
@@ -330,10 +330,10 @@ class File(WMBSBase, WMFile):
         self["parents"].add(parent)
 
         if not self["id"] > 0:
-            raise Exception, "Child file doesn't have an id %s" % self["lfn"]
+            raise Exception("Child file doesn't have an id %s" % self["lfn"])
         if not parent["id"] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % \
-                        parent["lfn"]
+            raise Exception("Parent file doesn't have an id %s" % \
+                        parent["lfn"])
 
         action = self.daofactory(classname = "Files.Heritage")
         action.execute(child = self["id"], parent = parent["id"],
@@ -564,7 +564,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
             msg = "File created in WMBS without locations!\n"
             msg += "File lfn: %s\n" % (lfn)
             logging.error(msg)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         for loc in wmbsFile['newlocations']:
             fileLocations.append({'lfn': lfn, 'location': loc})

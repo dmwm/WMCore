@@ -297,7 +297,7 @@ class JobCreatorWorker:
                 # First we need the jobs.
 
                 try:
-                    wmbsJobGroups = jobSplittingFunction.next()
+                    wmbsJobGroups = next(jobSplittingFunction)
                     logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
                 except StopIteration:
                     # If you receive a stopIteration, we're done

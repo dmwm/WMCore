@@ -54,7 +54,7 @@ class FileBasedTest(unittest.TestCase):
         locationAction = daofactory(classname = "Locations.New")
         for site in range(self.nSites):
             locationAction.execute(siteName = "site%i" % site,
-                                   seName = "site%i.cern.ch" % site)
+                                   seName = "T2_CH_CERN" % site)
 
         return
 

@@ -65,9 +65,9 @@ class LumiBasedTest(unittest.TestCase):
         myThread = threading.currentThread()
         daofactory = DAOFactory(package="WMCore.WMBS", logger=myThread.logger, dbinterface=myThread.dbi)
 
-        locationAction = daofactory(classname="Locations.New")
-        locationAction.execute(siteName='s1', seName="somese.cern.ch")
-        locationAction.execute(siteName='s2', seName="otherse.cern.ch")
+        locationAction = daofactory(classname = "Locations.New")
+        locationAction.execute(siteName='s1', pnn="T1_US_FNAL_Disk")
+        locationAction.execute(siteName='s2', pnn="T2_CH_CERN")
 
         self.testWorkflow = Workflow(spec="spec.xml", owner="mnorman", name="wf001", task="Test")
         self.testWorkflow.create()
@@ -99,11 +99,11 @@ class LumiBasedTest(unittest.TestCase):
         testFileset = Fileset(name=baseName)
         testFileset.create()
         parentFile = File('%s_parent' % baseName, size=1000, events=100,
-                          locations=set(["somese.cern.ch"]))
+                          locations=set(["T1_US_FNAL"]))
         parentFile.create()
         for i in range(nFiles):
             newFile = File(lfn='%s_%i' % (baseName, i), size=1000,
-                           events=100, locations="somese.cern.ch")
+                           events=100, locations="T1_US_FNAL")
             lumis = []
             for lumi in range(lumisPerFile):
                 if rand:
@@ -117,7 +117,7 @@ class LumiBasedTest(unittest.TestCase):
         if twoSites:
             for i in range(nFiles):
                 newFile = File(lfn='%s_%i_2' % (baseName, i), size=1000,
-                               events=100, locations="otherse.cern.ch")
+                               events=100, locations="T2_CH_CERN")
                 lumis = []
                 for lumi in range(lumisPerFile):
                     if rand:
@@ -329,59 +329,59 @@ class LumiBasedTest(unittest.TestCase):
         workload = self.createTestWorkload()
         dcs = DataCollectionService(url=self.testInit.couchUrl, database=self.testInit.couchDbName)
 
-        testFileA = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileA = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileA.addRun(Run(1, 1, 2))
         testFileA.create()
-        testFileB = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileB = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileB.addRun(Run(1, 3))
         testFileB.create()
         testJobA = getJob(workload)
         testJobA.addFile(testFileA)
         testJobA.addFile(testFileB)
 
-        testFileC = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileC = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileC.addRun(Run(1, 4, 6))
         testFileC.create()
         testJobB = getJob(workload)
         testJobB.addFile(testFileC)
 
-        testFileD = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileD = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileD.addRun(Run(1, 7))
         testFileD.create()
         testJobC = getJob(workload)
         testJobC.addFile(testFileD)
 
-        testFileE = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileE = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileE.addRun(Run(1, 11, 12))
         testFileE.create()
         testJobD = getJob(workload)
         testJobD.addFile(testFileE)
 
-        testFileF = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileF = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileF.addRun(Run(2, 5, 6, 7))
         testFileF.create()
         testJobE = getJob(workload)
         testJobE.addFile(testFileF)
 
-        testFileG = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileG = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileG.addRun(Run(2, 10, 11, 12))
         testFileG.create()
         testJobF = getJob(workload)
         testJobF.addFile(testFileG)
 
-        testFileH = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileH = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileH.addRun(Run(2, 15))
         testFileH.create()
         testJobG = getJob(workload)
         testJobG.addFile(testFileH)
 
-        testFileI = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileI = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileI.addRun(Run(3, 20))
         testFileI.create()
         testJobH = getJob(workload)
         testJobH.addFile(testFileI)
 
-        testFileJ = File(lfn=makeUUID(), size=1024, events=1024, locations="somese.cern.ch")
+        testFileJ = File(lfn=makeUUID(), size=1024, events=1024, locations="T1_US_FNAL_Disk")
         testFileJ.addRun(Run(1, 9))
         testFileJ.create()
         testJobI = getJob(workload)
@@ -448,7 +448,7 @@ class LumiBasedTest(unittest.TestCase):
         testFileset.create()
         for i in range(nFiles):
             newFile = File(lfn='%s_%i' % (baseName, i), size=1000,
-                           events=100, locations="somese.cern.ch")
+                           events=100, locations="T1_US_FNAL_Disk")
             # Set to two non-continuous lumi numbers
             lumis = [100 + i, 200 + i]
             newFile.addRun(Run(i, *lumis))

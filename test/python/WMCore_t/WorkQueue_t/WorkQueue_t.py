@@ -274,7 +274,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                     logger = threading.currentThread().logger,
                                     dbinterface = threading.currentThread().dbi)
             addLocation = daofactory(classname = "Locations.New")
-            addLocation.execute(siteName = site, seName = se)
+            addLocation.execute(siteName = site, pnn = se)
 
 
     def tearDown(self):

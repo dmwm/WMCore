@@ -42,8 +42,8 @@ class FileTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "se1.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "se1.fnal.gov")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site2", pnn = "T1_US_FNAL_Disk")
 
         return
 
@@ -715,34 +715,34 @@ class FileTest(unittest.TestCase):
 
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
         locationAction = daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site3", seName = "se2.fnal.gov")
-        locationAction.execute(siteName = "site4", seName = "se3.fnal.gov")
-        locationAction.execute(siteName = "site5", seName = "se4.fnal.gov")
-        locationAction.execute(siteName = "site6", seName = "se5.fnal.gov")
-        locationAction.execute(siteName = "site7", seName = "se6.fnal.gov")
+        locationAction.execute(siteName = "site3", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site4", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site5", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site6", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site7", pnn = "T2_CH_CERN")
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileA.create()
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se2.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileB.create()
 
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se3.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se4.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileD.create()
 
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se5.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileE.create()
 
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se6.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileF.create()
 
         files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]

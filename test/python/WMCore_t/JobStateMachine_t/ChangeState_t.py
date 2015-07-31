@@ -100,7 +100,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -237,7 +237,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -282,7 +282,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -352,7 +352,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -425,7 +425,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -505,7 +505,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -568,7 +568,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -642,7 +642,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -716,7 +716,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -788,7 +788,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -882,8 +882,8 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site2", seName = "somese2.cern.ch")
+        locationAction.execute("site1", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute("site2", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)

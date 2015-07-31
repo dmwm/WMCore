@@ -42,8 +42,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site2", seName = "somese2.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction.execute("site2", pnn = "T1_US_FNAL_Disk")
 
         self.testFilesetA = Fileset(name = "FilesetA")
         self.testFilesetA.create()
@@ -51,13 +51,13 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFilesetB.create()
 
         self.testFileA = File("testFileA", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileA.create()
         self.testFileB = File("testFileB", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileB.create()
         self.testFileC = File("testFileC", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileC.create()
 
         self.testFilesetA.addFile(self.testFileA)
@@ -66,13 +66,13 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFilesetA.commit()
 
         self.testFileD = File("testFileD", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileD.create()
         self.testFileE = File("testFileE", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileE.create()
         self.testFileF = File("testFileF", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileF.create()
 
         self.testFilesetB.addFile(self.testFileD)
@@ -174,7 +174,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Job should only have one input file."
         assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileA", \
                "Error: Input file for job is wrong."
-        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
+        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["T2_CH_CERN"], \
                "Error: File location is wrong."
 
         result = deleteFactoryB(files_per_job = 1)
@@ -258,13 +258,13 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         that run over files at multiple sites.
         """
         testFile1 = File("testFile1", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
+                         locations = set(["T1_US_FNAL_Disk"]))
         testFile1.create()
         testFile2 = File("testFile2", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
+                         locations = set(["T1_US_FNAL_Disk"]))
         testFile2.create()
         testFile3 = File("testFile3", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
+                         locations = set(["T1_US_FNAL_Disk"]))
         testFile3.create()
 
         self.testFilesetA.addFile(testFile1)
@@ -288,9 +288,9 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         goldenFilesA = ["testFileA", "testFileB", "testFileC"]
         goldenFilesB = ["testFile1", "testFile2", "testFile3"]
 
-        locations = {"testFileA": "somese.cern.ch", "testFileB": "somese.cern.ch",
-                     "testFileC": "somese.cern.ch", "testFile1": "somese2.cern.ch",
-                     "testFile2": "somese2.cern.ch", "testFile3": "somese2.cern.ch"}
+        locations = {"testFileA": "T2_CH_CERN", "testFileB": "T2_CH_CERN",
+                     "testFileC": "T2_CH_CERN", "testFile1": "T1_US_FNAL_Disk",
+                     "testFile2": "T1_US_FNAL_Disk", "testFile3": "T1_US_FNAL_Disk"}
 
         for jobGroup in result:
             assert len(jobGroup.jobs) == 1, \
@@ -300,7 +300,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
             jobSite = list(jobGroup.jobs[0]["input_files"][0]["locations"])[0]
 
-            if jobSite == "somese.cern.ch":
+            if jobSite == "T2_CH_CERN":
                 goldenFiles = goldenFilesA
             else:
                 goldenFiles = goldenFilesB
@@ -335,7 +335,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         allFiles = []
         for i in range(500):
             testFile = File(str(i), size = 1000, events = 100,
-                            locations = set(["somese.cern.ch"]))
+                            locations = set(["T2_CH_CERN"]))
             testFile.create()
             allFiles.append(testFile)
             testFileset.addFile(testFile)
@@ -384,7 +384,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         allFiles = []
         for i in range(500):
             testFile = File(str(i), size = 1000, events = 100,
-                            locations = set(["somese.cern.ch"]))
+                            locations = set(["T2_CH_CERN"]))
             testFile.create()
             allFiles.append(testFile)
             testFileset.addFile(testFile)

@@ -53,10 +53,10 @@ class ReportIntegrationTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
+        locationAction.execute(siteName = "site1", pnn = "T1_US_FNAL_Disk")
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 10, events = 10,
-                         locations = "cmssrm.fnal.gov")
+                         locations = "T1_US_FNAL_Disk")
         inputFile.create()
 
         inputFileset = Fileset(name = "InputFileset")

@@ -45,7 +45,7 @@ class FilesetTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
         return
 
     def tearDown(self):

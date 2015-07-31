@@ -126,14 +126,14 @@ class WMAgentTest(unittest.TestCase):
 
 
         for site in self.sites:
-            locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
+            locationAction.execute(siteName = site, pnn = 'se.%s' % (site), ceName = site)
             pendingSlots.execute(siteName = site, pendingSlots = 1000)
 
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
+            resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site), ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000, pendingSlots = 10000)
 

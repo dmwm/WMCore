@@ -66,10 +66,12 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': 'file:///etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
                                 'command'    : 'test-win',
                                 'option'    : '',
+                                'phedex-node' : 'test-win',
                                 'se-name'  : 'test-win',
                                 'lfn-prefix':''})
         wrapper(fileForTransfer)
@@ -79,11 +81,13 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': 'failtest', \
                            'PFN': 'failtest', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr( numberOfRetries= 1,
                                retryPauseTime=0, **{
                                 'command'    : 'test-fail',
                                 'option'    : '',
+                                'phedex-node' : 'test-win',
                                 'se-name'  : 'test-win',
                                 'lfn-prefix':''})
         self.assertRaises(WMCore.Storage.StageOutError.StageOutError, wrapper.__call__, fileForTransfer)
@@ -93,11 +97,13 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': '/etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
                                 'command'    : 'cp',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
         self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
@@ -107,11 +113,13 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': '/etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
                                 'command'    : 'testFallbackToOldBackend',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
         self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
@@ -120,11 +128,13 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': '/etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageInMgr(  **{
                                 'command'    : 'test-win',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix':''})
         wrapper(fileForTransfer)
 
@@ -133,12 +143,14 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': 'failtest', \
                            'PFN': 'failtest', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageInMgr( numberOfRetries= 1,
                                retryPauseTime=0, **{
                                 'command'    : 'test-fail',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix':''})
         self.assertRaises(WMCore.Storage.StageOutError.StageOutError, wrapper.__call__, fileForTransfer)
 
@@ -149,12 +161,14 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/INPUT', \
                            'PFN': '%s/etc/hosts' % self.testDir, \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
 
         wrapper = StageInMgr(  **{
                                 'command'    : 'cp',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
 
@@ -164,12 +178,14 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/INPUT', \
                            'PFN': '%s/etc/hosts' % self.testDir, \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
 
         wrapper = StageInMgr(  **{
                                 'command'    : 'testFallbackToOldBackend',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
 
@@ -179,12 +195,14 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/INPUT', \
                            'PFN': '%s/etc/hosts' % self.testDir, \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
 
         wrapper = StageInMgr(  **{
                                 'command'    : 'cp',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         retval = wrapper(fileForTransfer)
         print "got the retval %s" % retval
@@ -193,6 +211,7 @@ class FileManagerTest(unittest.TestCase):
                                 'command'    : 'cp',
                                 'option'    : '',
                                 'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(retval)
 

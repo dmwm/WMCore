@@ -72,8 +72,8 @@ class EventBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = 's1', seName = "somese.cern.ch")
-        locationAction.execute(siteName = 's2', seName = "otherse.cern.ch")
+        locationAction.execute(siteName = 's1', pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = 's2', pnn = "T2_CH_CERN")
         self.validLocations = ["somese.cern.ch", "otherse.cern.ch"]
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")

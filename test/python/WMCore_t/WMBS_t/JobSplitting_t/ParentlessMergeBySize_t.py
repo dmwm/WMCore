@@ -62,9 +62,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
-        locationAction = self.daoFactory(classname="Locations.New")
-        locationAction.execute(siteName="s1", seName="somese.cern.ch")
-        locationAction.execute(siteName="s1", seName="somese2.cern.ch")
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
 
         changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 
@@ -87,50 +87,50 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                                               workflow=mergeWorkflow,
                                               split_algo="ParentlessMergeBySize")
 
-        file1 = File(lfn="file1", size=1024, events=1024, first_event=0,
-                     locations=set(["somese.cern.ch"]))
+        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
+                     locations = set(["T2_CH_CERN"]))
         file1.addRun(Run(1, *[45]))
         file1.create()
-        file2 = File(lfn="file2", size=1024, events=1024,
-                     first_event=1024, locations=set(["somese.cern.ch"]))
+        file2 = File(lfn = "file2", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["T2_CH_CERN"]))
         file2.addRun(Run(1, *[45]))
         file2.create()
-        file3 = File(lfn="file3", size=1024, events=1024,
-                     first_event=2048, locations=set(["somese.cern.ch"]))
+        file3 = File(lfn = "file3", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["T2_CH_CERN"]))
         file3.addRun(Run(1, *[45]))
         file3.create()
-        file4 = File(lfn="file4", size=1024, events=1024,
-                     first_event=3072, locations=set(["somese.cern.ch"]))
+        file4 = File(lfn = "file4", size = 1024, events = 1024,
+                     first_event = 3072, locations = set(["T2_CH_CERN"]))
         file4.addRun(Run(1, *[45]))
         file4.create()
 
-        fileA = File(lfn="fileA", size=1024, events=1024,
-                     first_event=0, locations=set(["somese.cern.ch"]))
+        fileA = File(lfn = "fileA", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["T2_CH_CERN"]))
         fileA.addRun(Run(1, *[46]))
         fileA.create()
-        fileB = File(lfn="fileB", size=1024, events=1024,
-                     first_event=1024, locations=set(["somese.cern.ch"]))
+        fileB = File(lfn = "fileB", size = 1024, events = 1024,
+                     first_event = 1024, locations = set(["T2_CH_CERN"]))
         fileB.addRun(Run(1, *[46]))
         fileB.create()
-        fileC = File(lfn="fileC", size=1024, events=1024,
-                     first_event=2048, locations=set(["somese.cern.ch"]))
+        fileC = File(lfn = "fileC", size = 1024, events = 1024,
+                     first_event = 2048, locations = set(["T2_CH_CERN"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
 
-        fileI = File(lfn="fileI", size=1024, events=1024,
-                     first_event=0, locations=set(["somese.cern.ch"]))
+        fileI = File(lfn = "fileI", size = 1024, events = 1024,
+                     first_event = 0, locations = set(["T2_CH_CERN"]))
         fileI.addRun(Run(2, *[46]))
         fileI.create()
-        fileII = File(lfn="fileII", size=1024, events=1024,
-                      first_event=1024, locations=set(["somese.cern.ch"]))
+        fileII = File(lfn = "fileII", size = 1024, events = 1024,
+                      first_event = 1024, locations = set(["T2_CH_CERN"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
-        fileIII = File(lfn="fileIII", size=1024, events=102400,
-                       first_event=2048, locations=set(["somese.cern.ch"]))
+        fileIII = File(lfn = "fileIII", size = 1024, events = 102400,
+                       first_event = 2048, locations = set(["T2_CH_CERN"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
-        fileIV = File(lfn="fileIV", size=102400, events=1024,
-                      first_event=3072, locations=set(["somese.cern.ch"]))
+        fileIV = File(lfn = "fileIV", size = 102400, events = 1024,
+                      first_event = 3072, locations = set(["T2_CH_CERN"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
 
@@ -204,7 +204,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFile.loadData()
             assert jobFile["lfn"] in goldenFiles, \
                 "Error: Unknown file: %s" % jobFile["lfn"]
-            self.assertTrue(jobFile["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+            self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
                             "Error: File is missing a location.")
             goldenFiles.remove(jobFile["lfn"])
 
@@ -279,7 +279,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in jobFiles:
                 assert jobFile["lfn"] in goldenFiles, \
                     "Error: Unknown file in merge jobs."
-                assert jobFile["locations"] == set(["somese.cern.ch"]), \
+                assert jobFile["locations"] == set(["T2_CH_CERN"]), \
                     "Error: File is missing a location."
 
                 goldenFiles.remove(jobFile["lfn"])
@@ -356,7 +356,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in jobFiles:
                 assert jobFile["lfn"] in goldenFiles, \
                     "Error: Unknown file in merge jobs."
-                assert jobFile["locations"] == set(["somese.cern.ch"]), \
+                assert jobFile["locations"] == set(["T2_CH_CERN"]), \
                     "Error: File is missing a location: %s" % jobFile["locations"]
 
                 goldenFiles.remove(jobFile["lfn"])
@@ -431,7 +431,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in job.getFiles():
                 jobFile.loadData()
                 jobLFNs.append(jobFile["lfn"])
-                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+                self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
                                 "Error: File is missing a location.")
 
                 fileRun = list(jobFile["runs"])[0].run
@@ -519,7 +519,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in jobFiles:
                 self.assertTrue(jobFile["lfn"] in goldenFiles,
                                 "Error: Unknown file in merge jobs.")
-                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch"]),
+                self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
                                 "Error: File is missing a location.")
 
                 goldenFiles.remove(jobFile["lfn"])
@@ -598,7 +598,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in jobFiles:
                 self.assertTrue(jobFile["lfn"] in goldenFiles,
                                 "Error: Unknown file in merge jobs.")
-                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch"]),
+                self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
                                 "Error: File is missing a location: %s" % jobFile["locations"])
 
                 goldenFiles.remove(jobFile["lfn"])
@@ -640,11 +640,11 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         self.stuffWMBS()
 
-        locationAction = self.daoFactory(classname="Locations.New")
-        locationAction.execute(siteName="s3", seName="somese3.cern.ch")
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute(siteName = "s3", pnn = "T2_CH_CERN")
 
-        fileSite2 = File(lfn="fileSite2", size=4098, events=1024,
-                         first_event=0, locations=set(["somese3.cern.ch"]))
+        fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
+                         first_event = 0, locations = set(["T2_CH_CERN"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
 

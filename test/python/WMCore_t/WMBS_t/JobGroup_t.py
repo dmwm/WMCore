@@ -54,9 +54,9 @@ class JobGroupTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "malpaquet")
-        locationAction.execute(siteName = "site3", seName = "badse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site2", pnn = "malpaquet")
+        locationAction.execute(siteName = "site3", pnn = "badse.cern.ch")
 
 
     def tearDown(self):

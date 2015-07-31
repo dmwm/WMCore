@@ -107,7 +107,7 @@ class WMBSHelperTest(unittest.TestCase):
         locationAction = daoFactory(classname = "Locations.New")
         changeStateAction = daoFactory(classname = "Jobs.ChangeState")
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
                                    ceName = 'site1', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
                                         maxSlots = 10000, pendingSlots = 10000)
@@ -487,7 +487,7 @@ class WMBSHelperTest(unittest.TestCase):
         locationDAO = self.daoFactory(classname = "Locations.New")
         self.ses = []
         for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, seName = self.siteDB.cmsNametoSE(site)[0])
+            locationDAO.execute(siteName = site, pnn = self.siteDB.cmsNametoSE(site)[0])
             self.ses.append(self.siteDB.cmsNametoSE(site)[0])
 
     def createWMSpec(self, name = 'ReRecoWorkload'):
@@ -561,9 +561,9 @@ class WMBSHelperTest(unittest.TestCase):
         Verify that the subscription creation code works correctly.
         """
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
                                    ceName = 'site1', plugin = "TestPlugin")
-        resourceControl.insertSite(siteName = 'site2', seName = 'goodse2.cern.ch',
+        resourceControl.insertSite(siteName = 'site2', pnn = 'goodse2.cern.ch',
                                    ceName = 'site2', plugin = "TestPlugin")
 
         testWorkload = self.createTestWMSpec()
@@ -707,9 +707,9 @@ class WMBSHelperTest(unittest.TestCase):
 
         """
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', seName = 'goodse.cern.ch',
+        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
                                    ceName = 'site1', plugin = "TestPlugin")
-        resourceControl.insertSite(siteName = 'site2', seName = 'goodse2.cern.ch',
+        resourceControl.insertSite(siteName = 'site2', pnn = 'goodse2.cern.ch',
                                    ceName = 'site2', plugin = "TestPlugin")
 
         testWorkload = self.createTestWMSpec()

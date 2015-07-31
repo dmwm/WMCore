@@ -52,17 +52,17 @@ class FileBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = "site2", pnn = "T2_CH_CERN")
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         parentFile = File('/parent/lfn/', size = 1000, events = 100,
-                          locations = set(["somese.cern.ch"]))
+                          locations = set(["T1_US_FNAL_Disk"]))
         parentFile.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.addRun(Run(i, *[45]))
             newFile.create()
             newFile.addParent(lfn = parentFile['lfn'])
@@ -72,7 +72,7 @@ class FileBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T1_US_FNAL_Disk"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -82,12 +82,12 @@ class FileBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["otherse.cern.ch", "somese.cern.ch"]))
+                           locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
@@ -136,7 +136,7 @@ class FileBasedTest(unittest.TestCase):
         testFileset.create()
         for i in range(5000):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
             testFileset.addFile(newFile)
         testFileset.commit()
@@ -425,9 +425,9 @@ class FileBasedTest(unittest.TestCase):
             for job in group.jobs:
                 self.assertTrue(len(job['input_files']) in (1,2))
                 for file in job['input_files']:
-                    self.assertTrue(file['locations'] in [set(['somese.cern.ch']),
-                                                              set(['otherse.cern.ch',
-                                                                   'somese.cern.ch'])])
+                    self.assertTrue(file['locations'] in [set(['T1_US_FNAL_Disk']),
+                                                              set(['T2_CH_CERN',
+                                                                   'T1_US_FNAL_Disk'])])
 
 
 

@@ -102,7 +102,7 @@ class JobSubmitterTest(unittest.TestCase):
                                   'runningSlots' : 5}}
 
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
+        resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site),
                                    ceName = site, plugin = "MockPlugin", pendingSlots = options['pendingSlots'],
                                    runningSlots = options['runningSlots'], cmsName = site)
         for task in options['tasks']:

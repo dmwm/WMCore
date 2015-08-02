@@ -767,26 +767,18 @@ class Report:
         """
 
         stepReport = self.retrieveStep(step = step)
-
         if not stepReport:
             logging.debug("Asked to retrieve files from non-existant step %s" % step)
             return []
 
+        # steps with no outputModules is normal
         listOfModules = getattr(stepReport, 'outputModules', None)
-
         if not listOfModules:
-            logging.debug("Asked to retrieve files from step %s with no outputModules" % step)
-            logging.debug("StepReport: %s" % stepReport)
             return []
 
         listOfFiles = []
-
         for module in listOfModules:
-            tmpList = self.getFilesFromOutputModule(step = step, outputModule = module)
-            if not tmpList:
-                continue
-            listOfFiles.extend(tmpList)
-
+            listOfFiles.extend( self.getFilesFromOutputModule(step = step, outputModule = module) )
 
         return listOfFiles
 
@@ -879,22 +871,20 @@ class Report:
         Grab all the files in a particular output module
         """
 
-        listOfFiles = []
-
         outputMod = self.getOutputModule(step = step, outputModule = outputModule)
 
         if not outputMod:
-            return None
+            return []
 
+        listOfFiles = []
         for n in range(outputMod.files.fileCount):
             file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
-            if not file:
+            if file:
+                listOfFiles.append(file)
+            else:
                 msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
-                return None
-
-            #Now, append to the list of files
-            listOfFiles.append(file)
+                return []
 
         return listOfFiles
 

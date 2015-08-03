@@ -183,11 +183,21 @@ class DashboardReporter(WMObject):
 
             package.update(self.getPerformanceInformation(step))
             package.update(self.getEventInformation(stepName, job['fwjr']))
-            package.update(self.getInputFilesInformation(step))
+
+            # Input files should just be appended onto inputFiles instead of given a step #
+            # per https://hypernews.cern.ch/HyperNews/CMS/get/comp-monitoring/326.html
+            inputFilePackage = self.getInputFilesInformation(step)
+            if inputFilePackage:
+                if 'inputFiles' in package:
+                    package['inputFiles'] += ';' +  inputFilePackage['inputFiles']
+                else:
+                    package.update(self.getInputFilesInformation(step))
 
             trimmedPackage = {}
             for key in package:
-                if package[key] != None:
+                if key in ['inputFiles', 'Basename', 'inputBlocks']:
+                    trimmedPackage[key] = package[key]
+                elif package[key] != None:
                     trimmedPackage['%d_%s' % (counter, key)] = package[key]
             package = trimmedPackage
 

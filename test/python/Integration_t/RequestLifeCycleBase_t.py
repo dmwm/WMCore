@@ -148,7 +148,7 @@ class RequestLifeCycleBase_t():
                 if [x for x in request if x['status'] in ('Available', 'Negotiating', 'Acquired', 'Running')]:
                     break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for workqueue to acquire'
+                raise RuntimeError('timeout waiting for workqueue to acquire')
             time.sleep(15)
 
     @attr("lifecycle")
@@ -166,7 +166,7 @@ class RequestLifeCycleBase_t():
             if [x for x in request if x['status'] in ('Acquired', 'Running')]:
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for agent to acquire'
+                raise RuntimeError('timeout waiting for agent to acquire')
             time.sleep(15)
         self.assertTrue([x for x in request if x['status'] in ('Acquired', 'Running')])
 
@@ -184,7 +184,7 @@ class RequestLifeCycleBase_t():
                 self.assertTrue(childQueue, "Running but can't get child queue")
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for request to run'
+                raise RuntimeError('timeout waiting for request to run')
             time.sleep(15)
 
     @attr("lifecycle")
@@ -199,7 +199,7 @@ class RequestLifeCycleBase_t():
             if not request or request == [x for x in request if x['status'] in ('Done', 'Failed', 'Canceled')]:
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for request to finish'
+                raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
     @attr("lifecycle")
@@ -213,7 +213,7 @@ class RequestLifeCycleBase_t():
                                                            'aborted'):
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for request to finish'
+                raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
     @attr("lifecycle")

@@ -165,7 +165,7 @@ def queueConfigFromConfigObject(config):
         msg = """Unable to determine WMBS monitor URL, Either:
         Configure a WMBSRESTModel webapp_ section or,
         Add a WorkQueueManager.queueParams.WMBSUrl setting."""
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     if 'Teams' not in qConfig and hasattr(config.Agent, 'teamName'):
         qConfig['Teams'] = config.Agent.teamName

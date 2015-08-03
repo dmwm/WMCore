@@ -34,7 +34,7 @@ class Registry:
 
     def __init__(self):
         msg = "Do not init StageOut.Registry class"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
 
@@ -49,14 +49,14 @@ def registerStageOutImpl(name, classRef):
     """
     if name in Registry.StageOutImpl.keys():
         msg = "Duplicate StageOutImpl registered for name: %s\n" % name
-        raise RegistryError, msg
+        raise RegistryError(msg)
 
 
     if not issubclass(classRef, StageOutImpl):
         msg = "StageOutImpl object registered as %s\n" % name
         msg += "is not a subclass of StageOut.StageOutImpl\n"
         msg += "Registration should be of a class that inherits StageOutImpl"
-        raise RegistryError, msg
+        raise RegistryError(msg)
 
     Registry.StageOutImpl[name] = classRef
     return
@@ -75,7 +75,7 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
         try:
             return _retrieveStageOutImpl2(name)
         except ImportError:
-            raise RegistryError, "Stageout plugin %s doesn't exist" % name
+            raise RegistryError("Stageout plugin %s doesn't exist" % name)
 
     if not useNewVersion:
         return classRef(stagein)

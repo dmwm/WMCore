@@ -156,7 +156,7 @@ class TestInit:
         elif dialectPart == 'http':
             return 'CouchDB'
         else:
-            raise RuntimeError, "Unrecognized dialect %s" % dialectPart
+            raise RuntimeError("Unrecognized dialect %s" % dialectPart)
 
     def setDatabaseConnection(self, connectUrl=None, socket=None, destroyAllDatabase = False):
         """
@@ -261,8 +261,7 @@ class TestInit:
             config.CoreDatabase.socket = socket or os.getenv("DBSOCK")
         else:
             if (os.getenv('DATABASE') == None):
-                raise RuntimeError, \
-                    "You must set the DATABASE environment variable to run tests"
+                raise RuntimeError("You must set the DATABASE environment variable to run tests")
             config.CoreDatabase.connectUrl = os.getenv("DATABASE")
             config.CoreDatabase.dialect = self.getBackendFromDbURL( os.getenv("DATABASE") )
             config.CoreDatabase.socket = os.getenv("DBSOCK")

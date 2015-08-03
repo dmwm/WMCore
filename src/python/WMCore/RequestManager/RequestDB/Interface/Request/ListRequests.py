@@ -51,7 +51,7 @@ def listRequestsForGroup(groupName, statusName = None):
     groupId = factory(classname = "Group.ID").execute(groupName)
     if groupId == None:
         msg = "Group %s not known to reqmgr database" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     reqFind = factory(classname = "Request.FindByGroupStatus")
     result = reqFind.execute(groupId, statusName)
     return result

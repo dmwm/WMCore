@@ -32,7 +32,7 @@ class RequestSchema(dict):
         for field in self.basicFields:
             if self[field] == None:
                 msg = "Missing setting for required field: %s\n" % field
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
         #  //
         # // subclass
         #//
@@ -65,7 +65,7 @@ class RequestSchema(dict):
             try:
                 validator(self[field])
             except AssertionError:
-                raise RuntimeError, "Bad value for %s" % field
+                raise RuntimeError("Bad value for %s" % field)
 
     def __to_json__(self, thunker):
         """

@@ -34,7 +34,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
     userId = getUserId.execute(hnUser)
     if userId == None:
         msg = "User: %s not registered with Request Manager" % hnUser
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     getGroups = factory(classname = "Requestor.GetAssociationNames")
     groups = getGroups.execute(userId)
@@ -46,7 +46,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
         else:
             msg = "User %s is not a member of group %s\n" % (hnUser, groupName)
             msg += "User is associated to groups: %s" % groups.keys()
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     associationId = groups[groupName]
 
     #  //
@@ -58,7 +58,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
     if requestType not in typeMap.keys():
         msg = "Unknown Request Type: %s\n" % requestType
         msg += "Known Types are %s" % typeMap.keys()
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     #  //
     # // does the request name already exist?
@@ -67,7 +67,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
     if requestId != None:
         msg = "Request name already exists: %s\n" % requestName
         msg += "Cannot create new request with same name"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     newRequest = factory(classname = "Request.New")
     try:
@@ -82,7 +82,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName,
     except Exception as ex:
         msg = "Unable to create request named %s\n" % requestName
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return reqId
 
 
@@ -101,7 +101,7 @@ def associateInputDataset(requestName, datasetName, datasetType = "source"):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate dataset to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     addDataset = factory(classname = "Datasets.NewInput")
     addDataset.execute(reqId, datasetName, datasetType)
@@ -122,7 +122,7 @@ def associateOutputDataset(requestName, datasetName):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate dataset to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     addDataset = factory(classname = "Datasets.NewOutput")
     addDataset.execute(reqId, datasetName)
@@ -145,14 +145,14 @@ def associateSoftware(requestName, softwareName):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate software to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     softwareId = factory(classname = "Software.ID")
     swId = softwareId.execute(softwareName)
     if swId == None or swId == []:
         msg = "Unknown Software name: %s\n" % softwareName
         msg += "Cannot associate software to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
     softwareAssoc = factory(classname = "Software.Association")
@@ -162,7 +162,7 @@ def associateSoftware(requestName, softwareName):
     except Exception as ex:
         msg = "Unable to associate software to request\n"
         msg += "request: %s software: %s " % (requestName, softwareName)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     return
 
@@ -185,7 +185,7 @@ def updateRequestSize(requestName, reqEventsSize,
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot update size of request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
     updateSize = factory(classname = "Request.Size")

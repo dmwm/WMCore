@@ -128,7 +128,7 @@ class FileManager:
         if self.firstException:
             raise self.firstException
         else:
-            raise StageOutError, "Error in stageout, this has been logged in the logs"
+            raise StageOutError("Error in stageout, this has been logged in the logs")
 
     def deleteLFN(self, lfn):
         """
@@ -444,5 +444,5 @@ class DeleteMgr(FileManager):
         the dict will be modified and returned, or an exception will be raised
         """
         if not 'LFN' in fileToDelete:
-            raise StageOutFailure, 'LFN not provided to deleteLFN'
+            raise StageOutFailure('LFN not provided to deleteLFN')
         return self.deleteLFN(fileToDelete['LFN'])

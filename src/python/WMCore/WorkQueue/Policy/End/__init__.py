@@ -21,7 +21,7 @@ def endPolicy(elements, parents = None, args = None):
     elif parents:
         policy = parents[0]['EndPolicy']
     else:
-        raise RuntimeError, "Can't get policy, no elements or parents"
+        raise RuntimeError("Can't get policy, no elements or parents")
     name = policy['policyName']
     args = args.get(name, {})
     args.update(policy)

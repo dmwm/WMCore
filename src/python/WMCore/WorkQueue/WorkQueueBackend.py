@@ -186,7 +186,7 @@ class WorkQueueBackend(object):
 
         if elementIDs:
             if elementFilters or status or returnIdOnly:
-                raise ValueError, "Can't specify extra filters (or return id's) when using element id's with getElements()"
+                raise ValueError("Can't specify extra filters (or return id's) when using element id's with getElements()")
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
             options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly, 'reduce' : False}

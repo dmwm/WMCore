@@ -51,7 +51,7 @@ class XRDCPImpl(StageOutImplV2):
                 self.doDelete(targetPFN, None, None, None, None)
             except:
                 pass
-            raise StageOutFailure, "File sizes don't match"
+            raise StageOutFailure("File sizes don't match")
 
     def doDelete(self, pfnToRemove, seName, command, options, protocol  ):
         """

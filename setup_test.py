@@ -100,14 +100,14 @@ if can_nose:
         if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
             # The main thread should raise an exception
             sys.stderr.write("*******EXIT WAS TRAPPED**********\n")
-            raise RuntimeError, "os._exit() was called in the main thread"
+            raise RuntimeError("os._exit() was called in the main thread")
         elif "DONT_TRAP_EXIT" in os.environ:
             # We trust this component to run real exits
             os.DMWM_REAL_EXIT(code)
         else:
             # os._exit on child threads should just blow away the thread
-            raise SystemExit, "os._exit() was called in a child thread. " +\
-                              "Protecting the interpreter and trapping it"
+            raise SystemExit("os._exit() was called in a child thread. " +\
+                              "Protecting the interpreter and trapping it")
 
     class DetailedOutputter(Plugin):
         name = "detailed"

@@ -212,7 +212,7 @@ class ARCPlugin(BasePlugin):
 
         s, output = executeCommand("ngstat -t 180 -i %s" % jobsFile.name)
         if s != 0:
-            raise BossAirPluginException, "ngstat failed:" + output
+            raise BossAirPluginException("ngstat failed:" + output)
 
         for js in splitNgstatOutput(output):
             arcStat = None
@@ -224,14 +224,14 @@ class ARCPlugin(BasePlugin):
 
                 arcIdMatch = re.search("(\w+://([a-zA-Z0-9.-]+)\S*/\d*)", js)
                 if not arcIdMatch:
-                    raise BossAirPluginException, "No grid job ID!"
+                    raise BossAirPluginException("No grid job ID!")
                 arcId = arcIdMatch.group(1)
 
             elif js.find("Malformed URL:") >= 0:
                 # This shouldn't be possible, since we are pass arcID:s to
                 # ngstat.
                 arcIdMatch = re.search("URL: (\w+://([a-zA-Z0-9.-]+)\S*/\d*)", js)
-                raise BossAirPluginException, "Malformed URL for job " + arcIdMatch.group(1)
+                raise BossAirPluginException("Malformed URL for job " + arcIdMatch.group(1))
             else:
                 # With special cases taken care of above, we are left with
                 # "normal" jobs. They are assumed to have the format

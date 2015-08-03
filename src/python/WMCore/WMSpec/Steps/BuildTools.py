@@ -111,7 +111,7 @@ class Directory:
         if target in self.files:
             msg = "File %s already exists in directory %s" % (
                 self.name, target)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         newFile = File(self, target, source)
         self.files[target] = newFile

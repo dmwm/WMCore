@@ -76,7 +76,7 @@ class SRMV2Impl(StageOutImpl):
                 exitCode, output = self.run(checkdircmd + dir)
                 levelToCreateFrom = count # create dirs from here (at least)
                 if exitCode: # did srmls fail to execute properly?
-                    raise RuntimeError, "Error checking directory existence, %s" % str(output)
+                    raise RuntimeError("Error checking directory existence, %s" % str(output))
                 if not output.count('SRM_FAILURE'): # any other codes?
                     break
             except Exception as ex:
@@ -94,7 +94,7 @@ class SRMV2Impl(StageOutImpl):
             try:
                 exitCode, output = self.run(mkdircommand + dir)
                 if exitCode:
-                    raise RuntimeError, "Error creating directory, %s" % str(output)
+                    raise RuntimeError("Error creating directory, %s" % str(output))
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircommand + dir

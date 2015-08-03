@@ -74,7 +74,7 @@ class SRMImpl(StageOutImplV2):
             p3 = Popen(['cut','-f3','-d" "'], stdin=p1.stdout, stdout=PIPE)
             exitCode = p3.communicate()[0]
             if exitCode:
-                raise StageOutError, "srmcp failed! Error code: %s" % exitCode
+                raise StageOutError("srmcp failed! Error code: %s" % exitCode)
 
         localSize = os.path.getsize( localPFN )
         logging.info("Local Size %s" % localSize)
@@ -92,7 +92,7 @@ class SRMImpl(StageOutImplV2):
                 self.doDelete(toPfn,None,None,None,None)
             except:
                 pass
-            raise StageOutFailure, "File sizes don't match"
+            raise StageOutFailure("File sizes don't match")
 
         return toPfn
 

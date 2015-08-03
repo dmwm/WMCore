@@ -39,11 +39,11 @@ def addUserToGroup(userName, groupName):
     if groupId == None:
         msg = "Failed to add user %s to group %s\n" % (userName, groupName)
         msg += "Group: %s is not registered in Request Manager" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     if userId == None:
         msg = "Failed to add user %s to group %s\n" % (userName, groupName)
         msg += "User: %s is not registered in Request Manager" % userName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     try:
         newAssoc = factory(classname = "Requestor.NewAssociation")
@@ -70,11 +70,11 @@ def removeUserFromGroup(userName, groupName):
     if groupId == None:
         msg = "Failed to remove user %s from %s\n" % (userName, groupName)
         msg += "Group: %s is not registered in Request Manager" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     if userId == None:
         msg = "Failed to remove user %s from %s\n" % (userName, groupName)
         msg += "User: %s is not registered in Request Manager" % userName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     deleteAssoc = factory(classname = "Requestor.DeleteAssociation")
     deleteAssoc.execute(userId, groupId)

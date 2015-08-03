@@ -17,7 +17,7 @@ class WorkQueueElement(dict):
 
         if 'Status' in kwargs and kwargs['Status'] not in STATES:
             msg = 'Invalid Status: %s' % kwargs['Status']
-            raise ValueError, msg
+            raise ValueError(msg)
 
         self.update(kwargs)
 

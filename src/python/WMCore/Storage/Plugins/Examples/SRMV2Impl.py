@@ -142,7 +142,7 @@ class SRMV2Impl(StageOutImplV2):
                 elif ( str(exitCode) != "0" ):
                     logging.error("Couldn't stage out! Error code: %s" % exitCode)
                     self.doDelete(toPfn,None,None,None,None)
-                    raise StageOutFailure, "srmcp failed! Error code: %s" % exitCode
+                    raise StageOutFailure("srmcp failed! Error code: %s" % exitCode)
                 else:
                     logging.info("Tentatively succeeded transfer, will check metadata")
                     break
@@ -178,7 +178,7 @@ class SRMV2Impl(StageOutImplV2):
                 self.doDelete(toPfn,None,None,None,None)
             except:
                 pass
-            raise StageOutFailure, "File sizes don't match"
+            raise StageOutFailure("File sizes don't match")
 
         return toPfn
 

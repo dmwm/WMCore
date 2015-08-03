@@ -244,13 +244,13 @@ def changeStatus(requestName, status, wmstatUrl, acdcUrl):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     if not status in RequestStatus.StatusList:
-        raise RuntimeError, "Bad status code " + status
+        raise RuntimeError("Bad status code " + status)
     if 'RequestStatus' not in request:
-        raise RuntimeError, "Cannot find status for request " + requestName
+        raise RuntimeError("Cannot find status for request " + requestName)
     oldStatus = request['RequestStatus']
     if not status in RequestStatus.NextStatus[oldStatus]:
-        raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
-           oldStatus, status,  RequestStatus.NextStatus[oldStatus])
+        raise RuntimeError("Cannot change status from %s to %s.  Allowed values are %s" % (
+           oldStatus, status,  RequestStatus.NextStatus[oldStatus]))
 
     if status == 'aborted' or status == 'force-complete':
         # delete from the workqueue

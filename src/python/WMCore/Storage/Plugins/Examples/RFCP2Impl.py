@@ -89,7 +89,7 @@ class RFCP2Impl(StageOutImplV2):
                 self.doDelete(toPfn,None,None,None,None)
             except:
                 pass
-            raise StageOutFailure, "File sizes don't match"
+            raise StageOutFailure("File sizes don't match")
 
         return toPfn
 

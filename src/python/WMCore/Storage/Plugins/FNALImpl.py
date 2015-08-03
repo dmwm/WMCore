@@ -108,7 +108,7 @@ class FNALImpl(StageOutImplV2):
 
     def dcapToPNFS(self, pfn):
         if pfn.find('/pnfs/') == -1:
-            raise RuntimeError, "dcapToPNFS called on a non-dcap/pnfs URL: %s" % pfn
+            raise RuntimeError("dcapToPNFS called on a non-dcap/pnfs URL: %s" % pfn)
 
         pfnSplit = pfn.split("WAX/11/store/", 1)[1]
         filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
@@ -186,7 +186,7 @@ class FNALImpl(StageOutImplV2):
             pfn = self.substituteLustrePath( pfn )
             logging.info("  Translated PFN: %s" % pfn)
         else:
-            raise RuntimeError, "Unknown method found in createSourceName: %s" % method
+            raise RuntimeError("Unknown method found in createSourceName: %s" % method)
 
         return pfn
 
@@ -215,7 +215,7 @@ class FNALImpl(StageOutImplV2):
                 logging.info( "Removing file: " + filePath )
                 os.unlink( filePath )
         else:
-            raise RuntimeError, "Unsupported storage method in doDelete: %s" % method
+            raise RuntimeError("Unsupported storage method in doDelete: %s" % method)
 
     def doTransfer( self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
         """

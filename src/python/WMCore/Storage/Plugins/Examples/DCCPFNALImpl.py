@@ -98,7 +98,7 @@ class DCCPFNALImpl(StageOutImplV2):
             (exitCode, output) = self.doWrapped(copyCommand)
             if exitCode:
                 logging.error("Transfer failed")
-                raise StageOutFailure, "DCCP failed - No good"
+                raise StageOutFailure("DCCP failed - No good")
             # riddle me this, the following line fails with:
             # not all arguments converted during string formatting
             #FIXME
@@ -115,7 +115,7 @@ class DCCPFNALImpl(StageOutImplV2):
                     self.doDelete(targetPFN,None,None,None,None)
                 except:
                     pass
-                raise StageOutFailure, "DCCP failed - No good"
+                raise StageOutFailure("DCCP failed - No good")
 
             return targetPFN
         else:

@@ -31,7 +31,7 @@ class DAOFactory(object):
                 if isinstance(dia, self.dialects[i]):
                     dialect = i
             if not dialect:
-                raise TypeError, "unknown connection type: %s" % dia
+                raise TypeError("unknown connection type: %s" % dia)
         else:
             dialect = 'CouchDB'
 

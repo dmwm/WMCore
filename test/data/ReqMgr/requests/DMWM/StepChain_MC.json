@@ -1,64 +1,59 @@
-{ 
-"createRequest":
-{
+{"createRequest": {
     "Comments": "StepChain MC from scratch, 3 steps in the same job. 3 lumis per job",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
+    "ScramArch": "slc5_amd64_gcc481",
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "ProcessingString": "START70_V4",
+    "PrimaryDataset": "RelValProdMinBias",
     "GlobalTag": "START70_V4::All",
     "Group": "DATAOPS",
     "ProcessingVersion": 1,
     "RequestPriority": 100000,
     "RequestType": "StepChain",
-    "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,
     "SizePerEvent": 1234,
-    "TimePerEvent": 0.8,
+    "TimePerEvent": 4.8,
+    "PrepID": "Step-00",
     "mergedLFNBase": "/store/relval",
     "unmergedLFNBase": "/store/unmerged",
-    "Step1": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "Step1": {
         "ConfigCacheID": "564b9ff125f090d3385206a0b460a55d",
+        "CMSSWVersion": "CMSSW_7_0_0_pre12",
+        "ScramArch": "slc5_amd64_gcc481",
         "GlobalTag": "START70_V4::All",
-        "PrimaryDataset": "RelValProdMinBias",
-        "ProcessingString": "START70_V4",
         "RequestNumEvents": 1500,
         "EventsPerJob": 150,
         "EventsPerLumi": 50,
         "Seeding": "AutomaticSeeding",
         "SplittingAlgo": "EventBased",
         "StepName": "ProdMinBias"},
-    "Step2": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "Step2": {
         "ConfigCacheID": "564b9ff125f090d3385206a0b460e161",
         "GlobalTag": "START70_V4::All",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "ProdMinBias",
         "LumisPerJob": 10,
-        "ProcessingString": "START70_V4",
         "SplittingAlgo": "LumiBased",
         "StepName": "DIGIPROD1"},
-    "Step3": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "Step3": {
         "ConfigCacheID": "564b9ff125f090d3385206a0b460ed9b",
         "GlobalTag": "START70_V4::All",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "DIGIPROD1",
         "LumisPerJob" : 10,
-        "ProcessingString": "START70_V4",
         "SplittingAlgo": "LumiBased",
         "StepName": "RECOPROD1"},
     "StepChain": 3
-},
-"assignRequest":
-{
+    },
+"assignRequest": {
     "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
-    "AcquisitionEra": {"ProdMinBias" : "AcquisitionEra-OVERRIDE-ME",
-                       "DIGIPROD1" : "AcquisitionEra-1-OVERRIDE-ME",
-                       "RECOPROD1" : "AcquisitionEra-2-OVERRIDE-ME"},
-    "ProcessingString": {"ProdMinBias" : "ProcessingString-OVERRIDE-ME",
-                         "DIGIPROD1" : "ProcessingString-1-OVERRIDE-ME",
-                         "RECODreHLT" : "ProcessingString-2-OVERRIDE-ME"},
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
@@ -80,5 +75,5 @@
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 200000000,
     "BlockCloseMaxSize" : 5000000000000
-}
+    }
 }

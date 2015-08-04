@@ -12,16 +12,20 @@ import os
 import unittest
 
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
-from WMQuality.TestInit import getTestFilename
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
+def getTestFile(partialPath):
+    """
+    Returns the absolute path for the test json file
+    """
+    normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+    return os.path.join(normPath, partialPath)
 
 def makeGeneratorConfig(couchDatabase):
     """
@@ -157,9 +161,7 @@ class TaskChainTests(unittest.TestCase):
         self.testInit.generateWorkDir()
         self.workload = None
 
-        self.multithreaded = getTestFilename('data/ReqMgr/requests/Integration/TaskChain_Multicore.json')
-        self.differentNCores = getTestFilename('data/ReqMgr/requests/Integration/TaskChain_Task_Multicore.json')
-
+        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Task_Multicore.json')
         return
 
 
@@ -400,7 +402,7 @@ class TaskChainTests(unittest.TestCase):
                 allParts = True
                 for part in processedDatasetParts:
                     if part in taskConf:
-                        self.asserTrue(part in currentModule.processedDataset, "Wrong processed dataset for module")
+                        self.assertTrue(part in currentModule.processedDataset, "Wrong processed dataset for module")
                     else:
                         allParts = False
                 if allParts:
@@ -582,8 +584,10 @@ class TaskChainTests(unittest.TestCase):
         number of cores
         """
 
-        arguments = self.buildMultithreadedTaskChain(self.multithreaded)
-
+        arguments = self.buildMultithreadedTaskChain(self.differentNCores)
+        arguments['Task1']['Multicore'] = 4
+        arguments['Task2']['Multicore'] = 4
+        arguments['Task3']['Multicore'] = 4
         factory = TaskChainWorkloadFactory()
         try:
             self.workload = factory.factoryWorkloadConstruction("MultiChain", arguments)

@@ -115,7 +115,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(testWorkload.data.tasks.DataProcessing.tree.children.DataProcessingMergeRECOoutput.\
                          tree.children.SomeSkim.tree.children.SomeSkimMergeSkimB.steps.cmsRun1.output.modules.\
                          Merged.mergedLFNBase,
-                         '/store/data/None/MinimumBias/USER/SkimBFilter-ProcString-v0')
+                         '/store/data/FAKE/MinimumBias/USER/SkimBFilter-ProcString-v1')
 
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -450,7 +450,7 @@ class ReRecoTest(unittest.TestCase):
         self.assertEqual(testWorkload.data.tasks.DataProcessing.tree.children.\
                          SomeSkim.tree.children.SomeSkimMergeSkimB.steps.cmsRun1.output.modules.\
                          Merged.mergedLFNBase,
-                         '/store/data/None/MinimumBias/USER/SkimBFilter-ProcString-v0')
+                         '/store/data/FAKE/MinimumBias/USER/SkimBFilter-ProcString-v1')
 
         testWMBSHelper = WMBSHelper(testWorkload, "DataProcessing", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()

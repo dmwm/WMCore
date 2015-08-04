@@ -11,6 +11,7 @@ import unittest
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper, WMWorkloadException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
 
 class WMWorkloadTest(unittest.TestCase):
     def setUp(self):
@@ -262,6 +263,17 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.getPhEDExInjectionOverride(), name)
         self.assertEqual(workload.getWorkloadOverrides().injectionSite, name)
 
+        return
+
+    def testDbsUrl(self):
+        """
+        _testDbsUrl_
+
+        Check whether the DbsUrl can be retrieved from the workload.
+        """
+        testWorkload = TestSpecs.oneTaskTwoStep()
+        url = testWorkload.getDbsUrl()
+        self.assertEqual(url, "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
         return
 
     def testWhiteBlacklists(self):

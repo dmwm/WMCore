@@ -52,7 +52,7 @@ def registerUser(hnUsername, emailAddress, dnName = None):
         newUser.execute(hnUsername, emailAddress,dnName , 1)
     except Exception as ex:
         msg = "Unable to register user:\n%s" % str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
 def listUsers():

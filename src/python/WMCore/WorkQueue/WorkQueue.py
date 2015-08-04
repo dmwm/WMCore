@@ -89,7 +89,7 @@ class WorkQueue(WorkQueueBase):
         self.config = params.get("Config", None)
         self.params.setdefault('CouchUrl', os.environ.get('COUCHURL'))
         if not self.params.get('CouchUrl'):
-            raise RuntimeError, 'CouchUrl config value mandatory'
+            raise RuntimeError('CouchUrl config value mandatory')
         self.params.setdefault('DbName', 'workqueue')
         self.params.setdefault('InboxDbName', self.params['DbName'] + '_inbox')
         self.params.setdefault('ParentQueueCouchUrl', None) # We get work from here
@@ -149,7 +149,7 @@ class WorkQueue(WorkQueueBase):
             except OSError:
                 pass
         elif self.params.get('PopulateFilesets'):
-            raise RuntimeError, 'CacheDir mandatory for local queue'
+            raise RuntimeError('CacheDir mandatory for local queue')
 
         self.params.setdefault('SplittingMapping', {})
         self.params['SplittingMapping'].setdefault('DatasetBlock',
@@ -180,7 +180,7 @@ class WorkQueue(WorkQueueBase):
         # Can only release blocks on location
         if self.params['TrackLocationOrSubscription'] == 'location':
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
-                raise RuntimeError, 'Only blocks can be released on location'
+                raise RuntimeError('Only blocks can be released on location')
 
         if self.params.get('PhEDEx'):
             self.phedexService = self.params['PhEDEx']
@@ -278,13 +278,13 @@ class WorkQueue(WorkQueueBase):
 
         affected = self.backend.getElements(elementIDs = elementIDs, **args)
         if not affected:
-            raise WorkQueueNoMatchingElements, "No matching elements"
+            raise WorkQueueNoMatchingElements("No matching elements")
 
         for x in affected:
             x['Status'] = status
         elements = self.backend.saveElements(*affected)
         if len(affected) != len(elements):
-            raise RuntimeError, "Some elements not updated, see log for details"
+            raise RuntimeError("Some elements not updated, see log for details")
 
         return elements
 
@@ -300,7 +300,7 @@ class WorkQueue(WorkQueueBase):
         self.backend.updateElements(*affected, Priority = newpriority)
 
         if not affected:
-            raise RuntimeError, "Priority not changed: No matching elements"
+            raise RuntimeError("Priority not changed: No matching elements")
 
     def resetWork(self, ids):
         """Put work back in Available state, from here either another queue
@@ -572,7 +572,7 @@ class WorkQueue(WorkQueueBase):
         for request in requests:
             request = self.backend.getInboxElements(elementIDs = [request])
             if len(request) != 1:
-                raise RuntimeError, 'Invalid number of requests for %s' % request[0]['RequestName']
+                raise RuntimeError('Invalid number of requests for %s' % request[0]['RequestName'])
             request = request[0]
 
             if request.inEndState():

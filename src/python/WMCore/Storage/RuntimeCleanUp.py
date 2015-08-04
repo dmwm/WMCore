@@ -153,7 +153,7 @@ class CleanUpManager:
         if siteCfg == None:
             msg = "No Site Config Available:\n"
             msg += "Unable to perform CleanUp operation"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         try:
             self.tfc = siteCfg.trivialFileCatalog()
@@ -164,7 +164,7 @@ class CleanUpManager:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Clean Up will not be attempted\n"
             msg += str(ex)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
 
 
@@ -176,7 +176,7 @@ class CleanUpManager:
             msg = "Unable to retrieve local stage out command\n"
             msg += "From site config file.\n"
             msg += "Unable to perform CleanUp operation"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         msg = "Stage Out Implementation to be used for cleanup is:"
         msg += "%s" % self.implName
         print msg

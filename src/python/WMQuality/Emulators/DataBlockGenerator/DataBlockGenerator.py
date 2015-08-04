@@ -12,7 +12,7 @@ class DataBlockGenerator(object):
 
     def _blockGenerator(self, dataset):
         if dataset.startswith('/' + Globals.NOT_EXIST_DATASET):
-            raise NoDatasetError, "no dataset"
+            raise NoDatasetError("no dataset")
         blocks = []
         numOfEvents = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfEventsPerFile()
         for i in range(GlobalParams.numOfBlocksPerDataset()):

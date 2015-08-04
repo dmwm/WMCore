@@ -108,7 +108,7 @@ class CouchObject(dict):
 
         """
         if not self.couch.documentExists(self.document_id):
-            raise RuntimeError, "Document: %s not found" % self.document_id
+            raise RuntimeError("Document: %s not found" % self.document_id)
 
         doc = self.couch.document(self.document_id)
         data = doc.get(self.cdb_document_data, {})
@@ -125,5 +125,5 @@ class CouchObject(dict):
         needed, override in the classes derived from this
         """
         if not self.couch.documentExists(self.document_id):
-            raise RuntimeError, "Document: %s not found" % self.document_id
+            raise RuntimeError("Document: %s not found" % self.document_id)
         self.couch.delete_doc(self.document_id)

@@ -61,7 +61,7 @@ class Run(WMObject):
         if self.run != rhs.run:
             msg = "Adding together two different runs"
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         #newRun = Run(self.run, *self)
         #[ newRun.append(x) for x in rhs if x not in newRun ]

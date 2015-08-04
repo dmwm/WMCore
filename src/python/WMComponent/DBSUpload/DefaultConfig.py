@@ -17,8 +17,7 @@ config = Configuration()
 
 config.section_("CoreDatabase")
 if (os.getenv('DATABASE') == None):
-    raise RuntimeError, \
-          "You must set the DATABASE environment variable to run tests"
+    raise RuntimeError("You must set the DATABASE environment variable to run tests")
 config.CoreDatabase.connectUrl = os.getenv("DATABASE")
 config.CoreDatabase.dialect = os.getenv('DIALECT', None)
 config.CoreDatabase.socket = os.getenv("DBSOCK")

@@ -33,13 +33,13 @@ def getWorkloadFromTask(taskRef):
         msg = "Top Node is not a WM definition object:\n"
         msg += "Object has no objectType attribute"
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     objType = getattr(topNode, "objectType")
     if objType != "WMWorkload":
         msg = "Top level object is not a WMWorkload: %s" % objType
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     return WMWorkloadHelper(topNode)
 
@@ -293,19 +293,19 @@ class WMWorkloadHelper(PersistencyHelper):
             msg = "Workload name does not match:\n"
             msg += "requested name %s from workload %s " % (taskList[0],
                                                             self.name())
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         if len(taskList) < 2:
             # path should include workload and one task
             msg = "Task Path does not contain a top level task:\n"
             msg += taskPath
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
 
         topTask = self.getTask(taskList[1])
         if topTask == None:
             msg = "Task /%s/%s Not Found in Workload" % (taskList[0],
                                                          taskList[1])
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         for x in topTask.taskIterator():
             if x.getPathName() == taskPath:
                 return x
@@ -394,7 +394,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
             msg += "Known tasks: %s\n" % self.listAllTaskNodes()
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         self.data.tasks.tasklist.append(taskName)
         setattr(self.data.tasks, taskName, task)
         return
@@ -413,7 +413,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
             msg += "Known tasks: %s\n" % self.listAllTaskNodes()
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         task = WMTask(taskName)
         helper = WMTaskHelper(task)
         helper.setTopOfTree()

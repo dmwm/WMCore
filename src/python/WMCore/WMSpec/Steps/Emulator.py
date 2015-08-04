@@ -49,7 +49,7 @@ class Emulator:
         """
         msg = "WMStep.Steps.Emulator.emulate not implemented for "
         msg += "class %s" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
     def post(self):
         """

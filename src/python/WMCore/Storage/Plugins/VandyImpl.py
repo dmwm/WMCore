@@ -85,7 +85,7 @@ class VandyImpl(StageOutImplV2):
         if exitCode != 0:
             logging.error("Error in file transfer:")
             logging.error(output)
-            raise StageOutError, "Transfer failure, command %s, error %s" % (command, output)
+            raise StageOutError("Transfer failure, command %s, error %s" % (command, output))
 
         # Returns the path
         return dstPath
@@ -105,4 +105,4 @@ class VandyImpl(StageOutImplV2):
         if exitCode != 0:
             logging.error("Error removing file from LStore")
             logging.error(output)
-            raise StageOutError, "remove file failure command %s, error %s" % (command, output)
+            raise StageOutError("remove file failure command %s, error %s" % (command, output))

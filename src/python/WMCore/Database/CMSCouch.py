@@ -481,9 +481,8 @@ class Database(CouchDBRequests):
             retval = self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), encodedOptions)
         if ('error' in retval):
-            raise RuntimeError ,\
-                    "Error in CouchDB: viewError '%s' reason '%s'" %\
-                        (retval['error'], retval['reason'])
+            raise RuntimeError("Error in CouchDB: viewError '%s' reason '%s'" %\
+                        (retval['error'], retval['reason']))
         else:
             return retval
 
@@ -586,7 +585,7 @@ class Database(CouchDBRequests):
         # right?
         # TODO: MAKE BETTER ERROR HANDLING
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
-            raise RuntimeError, "File not found, deleted"
+            raise RuntimeError("File not found, deleted")
         if (id == "nonexistantid"):
             print attachment
         return attachment

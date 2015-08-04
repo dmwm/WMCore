@@ -72,4 +72,4 @@ class GeneratorInterface(object):
         """
         msg = "Object %s does not implement Generator.__call__(wmbsJob)" % (
             self.__class__.__name__,)
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)

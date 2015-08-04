@@ -98,4 +98,4 @@ class RESTBaseUnitTest(unittest.TestCase):
         """
 
         message = "initialize method has to be implemented, self.restModel, self.schemaModules needs to be set"
-        raise NotImplementedError, message
+        raise NotImplementedError(message)

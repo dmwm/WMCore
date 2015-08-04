@@ -12,7 +12,7 @@ class FeederImpl(WMObject):
         pass
 
     def __call__(self, fileset):
-        raise NotImplementedError, "WMBSFeeder.__call__"
+        raise NotImplementedError("WMBSFeeder.__call__")
 
     def persist(self):
-        raise NotImplementedError, "WMBSFeeder.persist"
+        raise NotImplementedError("WMBSFeeder.persist")

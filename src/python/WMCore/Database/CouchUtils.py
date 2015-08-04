@@ -89,7 +89,7 @@ def requireFilesetName(func):
     """
     def wrapper(self, *args, **opts):
         if not 'name' in self or self['name'] == None:
-            raise RuntimeError, "Filesets must be named"
+            raise RuntimeError("Filesets must be named")
         return func(self, *args, **opts)
     return wrapper
 
@@ -102,6 +102,6 @@ def requireCollectionName(func):
     """
     def wrapper(self, *args, **opts):
         if not 'name' in self or self['name'] == None:
-            raise RuntimeError, "Filesets must be named"
+            raise RuntimeError("Filesets must be named")
         return func(self, *args, **opts)
     return wrapper

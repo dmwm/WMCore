@@ -12,7 +12,7 @@ class RequestManager(dict):
         self.maxWmSpec = kwargs.setdefault('numOfSpecs', 1)
         self.type = kwargs.setdefault("type", 'ReReco')
         if self.type not in ['ReReco', 'MonteCarlo']:
-            raise TypeError, 'unknown request type %s' % self.type
+            raise TypeError('unknown request type %s' % self.type)
         self.splitter = kwargs.setdefault('splitter', 'DatasetBlock')
         self.inputDataset = kwargs.setdefault('inputDataset', None)
         self.dbsUrl = kwargs.setdefault('dbsUrl', None)
@@ -61,7 +61,7 @@ class RequestManager(dict):
     def getRequest(self, requestName):
         """Get request info"""
         if requestName not in self.names:
-            raise RuntimeError, "unknown request %s" % requestName
+            raise RuntimeError("unknown request %s" % requestName)
 
         request = {'RequestName' : requestName,
                    'RequestStatus' : self.status[requestName],
@@ -77,7 +77,7 @@ class RequestManager(dict):
 
     def reportRequestStatus(self, name, status):
         if status not in NextStatus[self.status[name]]:
-            raise RuntimeError, "Invalid status move: %s" % status
+            raise RuntimeError("Invalid status move: %s" % status)
         self.status[name] = status
 
     def reportRequestProgress(self, name, **args):

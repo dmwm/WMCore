@@ -136,21 +136,40 @@ class Job(WMObject, dict):
         Add to the current resource estimates, if None then initialize them
         to the given value. Each value can be set independently.
         """
-        # Update time
-        if self["estimatedJobTime"] is None:
+        if not self["estimatedJobTime"]:
             self["estimatedJobTime"] = jobTime
-        elif jobTime is not None:
+        elif jobTime:
             self["estimatedJobTime"] += jobTime
-        # Update memory
-        if self["estimatedMemoryUsage"] is None:
+
+        if not self["estimatedMemoryUsage"]:
             self["estimatedMemoryUsage"] = memory
-        elif memory is not None:
+        elif memory:
             self["estimatedMemoryUsage"] += memory
-        # Update disk
-        if self["estimatedDiskUsage"] is None:
+
+        if not self["estimatedDiskUsage"]:
             self["estimatedDiskUsage"] = disk
-        elif disk is not None:
+        elif disk:
             self["estimatedDiskUsage"] += disk
+
+        return
+
+    def capResourceEstimates(self, jobTime = None, memory = None, disk = None):
+        """
+        _capResourceEstimates_
+
+        Checks the current resource estimates and caps them
+        at the provided values if higher.
+        """
+        if self["estimatedJobTime"] and jobTime and jobTime < self["estimatedJobTime"]:
+            self["estimatedJobTime"] = jobTime
+
+        if self["estimatedMemoryUsage"] and memory and memory < self["estimatedMemoryUsage"]:
+            self["estimatedMemoryUsage"] = memory
+
+        if self["estimatedDiskUsage"] and disk and disk < self["estimatedDiskUsage"]:
+            self["estimatedDiskUsage"] = disk
+
+        return
 
     def getBaggage(self):
         """

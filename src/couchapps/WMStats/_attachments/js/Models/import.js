@@ -1,6 +1,7 @@
 WMStats.Globals.importScripts([
     "js/Models/WMStats._ModelBase.js",
     "js/Models/WMStats._RequestModelBase.js",
+    "js/Models/WMStats._AjaxModelBase.js",
     "js/Models/WMStats.JobSummaryModel.js",
     "js/Models/WMStats.JobDetailModel.js",
     "js/Models/WMStats.AgentModel.js",

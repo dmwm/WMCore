@@ -24,8 +24,8 @@ WMStats.RequestsSummary = function() {
     return requestSummary;
 };
 
-WMStats.Requests = function(noFilterFlag) {
-    var tier1Requests = new WMStats.GenericRequests(noFilterFlag);
+WMStats.Requests = function(data) {
+    var tier1Requests = new WMStats.GenericRequests(data);
 
     tier1Requests.estimateCompletionTime = function(request) {
         //TODO need to improve the algo

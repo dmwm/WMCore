@@ -84,6 +84,7 @@ t0_views = ["Views/Controls/T0/WMStats.Controls.js",
             "Views/HTMLList/T0/WMStats.RequestDataList.js"]
 
 models =["Models/WMStats._ModelBase.js",
+         "Models/WMStats._AjaxModelBase.js",
          "Models/WMStats._RequestModelBase.js",
          "Models/WMStats.JobSummaryModel.js",
          "Models/WMStats.JobDetailModel.js",

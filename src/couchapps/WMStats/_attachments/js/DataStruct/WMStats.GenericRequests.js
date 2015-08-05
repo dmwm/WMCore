@@ -212,7 +212,10 @@ WMStats.RequestStruct.prototype = {
         
         for (var field in doc) {
             //handles when request is split in more than one agents
-            if (this[field] && 
+            if (field == "AgentJobInfo") {
+            	//skipping AgentJobInfo field. - added to handle newer ajax call to wmstats server
+            	continue;
+            } else if (this[field] && 
                 (field == 'sites' || field == 'status')){
                 this._addJobs(this[field], doc[field]);
             } else if (this[field] && field == 'tasks'){
@@ -237,7 +240,7 @@ WMStats.RequestStruct.prototype = {
     }
 };
 
-WMStats.GenericRequests = function (noFilterFlag) {
+WMStats.GenericRequests = function (data) {
     /*
      * Data structure for holding the request
      * it handles 3 types (not very robust and modular)
@@ -253,6 +256,9 @@ WMStats.GenericRequests = function (noFilterFlag) {
     this._get = WMStats.Utils.get;
     this._filter = {};
     this._filteredRequests = null;
+    if (data !== undefined) {
+    	this.setFromRawData(data);
+    }
 };
 
 WMStats.GenericRequests.prototype = {
@@ -370,6 +376,97 @@ WMStats.GenericRequests.prototype = {
                 this.updateRequest(docList[row].doc);
             }
         }
+    },
+    
+    updateRequestFromWMStatsServer: function(doc) {
+    	
+    	var doc = WMStats.Globals.convertRequestDocToWMStatsFormat(doc);
+        var workflow = doc.workflow;
+        
+        if (workflow && !this._dataByWorkflow[workflow]) {
+            this._dataByWorkflow[workflow] = new WMStats.RequestStruct(workflow);
+            this._dataByWorkflow[workflow].updateFromCouchDoc(doc);
+        };
+        
+        if (doc.AgentJobInfo) {
+        	for (var agentURL in doc.AgentJobInfo) {
+        		this._dataByWorkflowAgent[workflow][agentURL] = new WMStats.RequestStruct(workflow);
+        		this._dataByWorkflowAgent[workflow][agentURL].updateFromCouchDoc(doc.AgentJobInfo[agentURL]);
+        	};
+        };
+
+    },
+    
+    setFromRawData: function(data) {
+    	/*   {"result": [
+                                 * 	{"sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878": 
+                                 *   {"InputDataset": "/QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph/Summer12pLHE-DMWM_Validation_DONOTDELETE_Alan_TEST-v1/GEN", 
+                                 *    "Group": "DATAOPS", "CustodialSites": [], "OpenRunningTimeout": 1800, 
+                                 *    "Comments": "MCFromGEN LumiBased splitting with 1l per job. Half an hour opened", 
+                                 *    "Requestor": "sryu", "ProcessingString": "START53_V7C", "ScramArch": "slc6_amd64_gcc472", 
+                                 *    "SizePerEvent": 1154, "ConfigCacheID": "1ad063a0d73c1d81143b4182cbf84793", "Memory": 2300, 
+                                 *    "RunBlacklist": [], "PrepID": "B2G-Summer12-00736", "AutoApproveSubscriptionSites": [], 
+                                 *    "BlockBlacklist": [], "BlockWhitelist": [], "CustodialSubType": "Move", 
+                                 *    "RequestType": "MonteCarloFromGEN", "TimePerEvent": 16.87, "InputDatasetTypes": {},  
+                                 *    "OutputDatasets": ["/QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph/Integ_Test-MonteCarloFromGEN_SRYU_pnn-v1/GEN-SIM"], 
+                                 *    "LumisPerJob": 1, "SoftwareVersions": ["CMSSW_5_3_19"], 
+                                 *    "AcquisitionEra": "Integ_Test", "PrimaryDataset": "QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph", 
+                                 *    "CouchDBName": "reqmgr_config_cache", "CMSSWVersion": "CMSSW_5_3_19", "NonCustodialSites": [], 
+                                 *    "RequestSizeFiles": 0, "CouchWorkloadDBName": "reqmgr_workload_cache", "RequestPriority": 90000, 
+                                 *    "SiteWhitelist": ["T1_US_FNAL", "T2_CH_CERN"], 
+                                 *    "SubscriptionPriority": "Low", "ProcessingVersion": "1", "Teams": ["testbed-dev"], 
+                                 *    "SplittingAlgo": "LumiBased", "TotalEstimatedJobs": 100, 
+                                 *    "RequestTransition": [{"Status": "new", "DN": null, "UpdateTime": 1437149248}, 
+                                 *                          {"Status": "assignment-approved", "DN": null, "UpdateTime": 1437149248}, 
+                                 *                          {"Status": "assigned", "DN": null, "UpdateTime": 1437149249}, 
+                                 *                          {"Status": "acquired", "DN": null, "UpdateTime": 1437150308}, 
+                                 *                          {"Status": "running-open", "DN": null, "UpdateTime": 1437152703}, 
+                                 *                          {"Status": "running-closed", "DN": null, "UpdateTime": 1437152709}, 
+                                 *                          {"Status": "completed", "DN": null, "UpdateTime": 1437227104}], 
+                                 *    "RequestName": "sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878", 
+                                 *    "RequestString": "MonteCarloFromGEN_reqmgr2_validation", 
+                                 *    "InputDatasets": ["/QDTojWinc_NC_M-1200_TuneZ2star_8TeV-madgraph/Summer12pLHE-DMWM_Validation_DONOTDELETE_Alan_TEST-v1/GEN"], 
+                                 *    "CouchURL": "https://reqmgr2-dev.cern.ch/couchdb", "TotalTime": 28800, 
+                                 *    "RequestorDN": "....", 
+                                 *    "RequestWorkflow": "https://reqmgr2-dev.cern.ch/couchdb/reqmgr_workload_cache/sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878/spec", "
+                                 *    "Campaign": "Agent108_Validation", "GlobalTag": "START53_V7C::All", "RunWhitelist": [], 
+                                 *    "FilterEfficiency": 1, "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader", 
+                                 *    "TotalInputLumis": 100, "RequestDate": [2015, 7, 17, 16, 7, 24], "NonCustodialSubType": "Replica", 
+                                 *    "TotalInputFiles": 1, "SiteBlacklist": [], "TotalInputEvents": 2500, 
+                                 *    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+                                 *    "_id": "sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878", 
+                                 *    "RequestStatus": "completed", 
+                                 *    "RequestNumEvents": 50000, 
+                                 *    "AgentJobInfo": {"vocms008.cern.ch:9999": 
+                                 *                       {"status": {"success": 107}, 
+                                 *                        "agent_team": "testbed-dev", 
+                                 *                        "workflow": "sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878", 
+                                 *                        "timestamp": 1437498506, 
+                                 *                        "_rev": "1-d792c9d73285ff1318d7f5c0e2b2f486", 
+                                 *                        "sites": {"T2_CH_CERN": {"success": 107}}, 
+                                 *                        "agent": "WMAgentCommissioning", 
+                                 *                        "tasks": {"/sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878/MonteCarloFromGEN/MonteCarloFromGENMergeRAWSIMoutput/MonteCarloFromGENRAWSIMoutputMergeLogCollect": 
+                                 *                                     {"status": {"success": 1}, 
+                                 *                                      "sites": {"T2_CH_CERN": 
+                                 *                                                  {"inputEvents": 0, 
+                                 *                                                   "cmsRunCPUPerformance": {"totalJobCPU": 0, "totalJobTime": 0, "totalEventCPU": 0}, 
+                                 *                                                   "wrappedTotalJobTime": 6, "success": 1, "dataset": {}}}}, 
+                                 *                                   "/sryu_MonteCarloFromGEN_reqmgr2_validation_150717_180724_9878/MonteCarloFromGEN/LogCollect": 
+                                 *                                      {"status": {"success": 1}, 
+                                 *                                       "sites": .....}}}, ....}, 
+                                 *                        "agent_url": "vocms008.cern.ch:9999", 
+                                 *                        "_id": "98e5e3643f1c6575407b6de04bd6619a", 
+                                 *                        "type": "agent_request"}},
+                                 * "sryu_MonteCarloFromGEN_reqmgr2_validation_150721_194418_5448": 
+                                 *   {"InputDataset": .....
+                                 *   }}]
+                                 * }
+                                 */
+    	if (data.result.length == 1) {
+    		for (var req in data.result[0]) {
+    			this.updateRequestFromWMStatsServer(data.result[0][req]);
+    		}
+    	}
     },
 
     filterRequests: function(filter) {

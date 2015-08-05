@@ -8,8 +8,8 @@ WMStats.RequestsSummary = function() {
     return requestSummary;
 };
 
-WMStats.Requests = function(noFilterFlag) {
-    var tier0Requests = new WMStats.GenericRequests(noFilterFlag);
+WMStats.Requests = function(data) {
+    var tier0Requests = new WMStats.GenericRequests(data);
     
     tier0Requests.getRequestAlerts = function() {
         

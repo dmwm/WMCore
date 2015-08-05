@@ -1,4 +1,4 @@
-from cherrypy.test import test, webtest, helper
+from cherrypy.test import helper
 from cherrypy import expose, response, config as cpconfig
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
 from WMCore.REST.Test import setup_test_server, fake_authz_headers

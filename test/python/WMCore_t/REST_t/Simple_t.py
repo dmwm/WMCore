@@ -1,4 +1,4 @@
-from cherrypy.test import test, webtest, helper
+from cherrypy.test import helper
 from WMCore.REST.Test import setup_test_server, fake_authz_headers
 from WMCore.REST.Tools import tools
 import WMCore.REST.Test as T

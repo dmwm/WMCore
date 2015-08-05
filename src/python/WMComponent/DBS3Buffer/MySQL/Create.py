@@ -24,15 +24,14 @@ class Create(DBCreator):
         self.create["01dbsbuffer_dataset"] = \
               """CREATE TABLE dbsbuffer_dataset
                         (
-                           id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                           id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
                            path            VARCHAR(500) COLLATE latin1_general_cs UNIQUE NOT NULL,
                            processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
                            parent          VARCHAR(500),
-                           prep_id         VARCHAR(255),
-                           primary key(id)
+                           prep_id         VARCHAR(255)
                         ) ENGINE=InnoDB"""
 
         self.create["02dbsbuffer_dataset_subscription"] = \
@@ -55,25 +54,23 @@ class Create(DBCreator):
         self.create["02dbsbuffer_algo"] = \
               """CREATE TABLE dbsbuffer_algo
                         (
-                           id     BIGINT UNSIGNED not null auto_increment,
+                           id     BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
                            app_name varchar(100),
                            app_ver  varchar(100),
                            app_fam  varchar(100),
                            pset_hash varchar(700),
                            config_content LONGTEXT,
                            in_dbs int, 
-                           primary key(ID),
-                           unique (app_name, app_ver, app_fam, pset_hash)
+                           UNIQUE (app_name, app_ver, app_fam, pset_hash)
                         ) ENGINE=InnoDB"""
 
         self.create["03dbsbuffer_algo_dataset_assoc"] = \
               """CREATE TABLE dbsbuffer_algo_dataset_assoc
                         (
-                           id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                           id BIGINT UNSIGNED PRIMARY KEY NOT NULL AUTO_INCREMENT,
                            algo_id BIGINT UNSIGNED,
                            dataset_id BIGINT UNSIGNED,
                            in_dbs INTEGER DEFAULT 0, 
-                           primary key(id),
                            FOREIGN KEY (algo_id) REFERENCES dbsbuffer_algo(id)
                              ON DELETE CASCADE,
                            FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
@@ -89,13 +86,9 @@ class Create(DBCreator):
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,
                block_close_max_size         BIGINT UNSIGNED,
-               completed                    INTEGER DEFAULT 0
+               completed                    INTEGER DEFAULT 0,
+               UNIQUE (name, task)
                ) ENGINE = InnoDB"""
-
-
-        self.constraints["01_pk_dbsbuffer_workflow"] = \
-          """ALTER TABLE dbsbuffer_workflow ADD
-               (CONSTRAINT dbsbuffer_workflow_unique UNIQUE (name,task))"""
 
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
@@ -103,7 +96,7 @@ class Create(DBCreator):
              lfn          VARCHAR(500) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
-             dataset_algo BIGINT UNSIGNED   not null,
+             dataset_algo BIGINT UNSIGNED   NOT NULL,
              block_id     BIGINT UNSIGNED,
              status       VARCHAR(20),
              in_phedex    INTEGER DEFAULT 0,
@@ -120,7 +113,11 @@ class Create(DBCreator):
              FOREIGN KEY (child)  references dbsbuffer_file(id)
                ON DELETE CASCADE,
              FOREIGN KEY (parent) references dbsbuffer_file(id),
-             UNIQUE(child, parent))ENGINE=InnoDB"""
+             UNIQUE(child, parent)) ENGINE=InnoDB"""
+
+        self.constraints["01_pk_dbsbuffer_file_parent"] = \
+          """ALTER TABLE dbsbuffer_file_parent ADD
+               (CONSTRAINT dbsbuffer_file_parent_pk PRIMARY KEY (child, parent))"""
 
         self.create["07dbsbuffer_file_runlumi_map"] = \
           """CREATE TABLE dbsbuffer_file_runlumi_map (
@@ -140,6 +137,8 @@ class Create(DBCreator):
           """CREATE TABLE dbsbuffer_file_location (
              filename INTEGER NOT NULL,
              location INTEGER NOT NULL,
+             FOREIGN KEY (filename) references dbsbuffer_file(id)
+               ON DELETE CASCADE,
              UNIQUE(filename, location)) ENGINE=InnoDB"""
 
         self.create["10dbsbuffer_block"] = \
@@ -151,6 +150,8 @@ class Create(DBCreator):
              create_time  INTEGER,
              status       VARCHAR(20),
              deleted      INTEGER DEFAULT 0,
+             FOREIGN KEY (location) REFERENCES dbsbuffer_location(id)
+               ON DELETE CASCADE,
              FOREIGN KEY (dataset_id) REFERENCES dbsbuffer_dataset(id)
                ON DELETE CASCADE,
              UNIQUE(blockname, location))ENGINE=InnoDB"""

@@ -389,9 +389,16 @@ WMStats.GenericRequests.prototype = {
         };
         
         if (doc.AgentJobInfo) {
+        	
         	for (var agentURL in doc.AgentJobInfo) {
+        		if (agentURL && !this._dataByWorkflowAgent[workflow]) {
+            		this._dataByWorkflowAgent[workflow] = {};
+        		};
         		this._dataByWorkflowAgent[workflow][agentURL] = new WMStats.RequestStruct(workflow);
         		this._dataByWorkflowAgent[workflow][agentURL].updateFromCouchDoc(doc.AgentJobInfo[agentURL]);
+        		// legacy format which need to be updated
+        		doc.AgentJobInfo[agentURL].agent_url = agentURL;
+        		this._dataByWorkflow[workflow].updateFromCouchDoc(doc.AgentJobInfo[agentURL]);
         	};
         };
 

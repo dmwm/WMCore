@@ -35,6 +35,6 @@ class ActiveRequestJobInfo(RESTEntity):
     @tools.expires(secs=-1)
     def get(self):
         results = DataCache.getlatestJobData()
-        if results == None:
+        if results == None or DataCache.islatestJobDataExpired():
             results = self.wmstats.getActiveData(jobInfoFlag = True)
         return rows([results])

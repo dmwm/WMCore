@@ -30,7 +30,8 @@ WMStats.Globals = function($){
 		   "TotalInputEvents": "input_events",
 		   "TotalInputLumis": "input_lumis",
 		   "TotalInputFiles": "input_num_files",
-		   "Run": "run"
+		   "Run": "run",
+		   "AgentJobInfo": "AgentJobInfo"
 		};
 
     function convertRequestDocToWMStatsFormat(doc) {

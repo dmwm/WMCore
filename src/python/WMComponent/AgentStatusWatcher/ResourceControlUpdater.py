@@ -47,7 +47,6 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         # agent teams (for dynamic threshold) and queueParams (drain mode)
         self.teamNames = config.Agent.teamName
-        self.queueParams = config.WorkQueueManager.queueParams
         self.agentsNumByTeam = getattr(config.AgentStatusWatcher, 'defaultAgentsNumByTeam', 5)
                 
         # only SSB sites

@@ -5,8 +5,8 @@ Main ReqMgr web page handler.
 import re
 from WMCore.REST.Server import RESTFrontPage
 
-import WMCore.ReqMgr.Service.RegExp as rx
-
+# path to static resources
+RX_STATIC_DIR_PATH = re.compile(r"^([a-zA-Z]+/)+[-a-z0-9_]+\.(?:css|js|png|gif|html)$")
 
 class FrontPage(RESTFrontPage):
     
@@ -32,7 +32,7 @@ class FrontPage(RESTFrontPage):
                 # value here
                 "root": "%s/html/" % config.static_content_dir,
                 
-                "rx": rx.RX_STATIC_DIR_PATH
+                "rx": RX_STATIC_DIR_PATH
             },
             "js":
             {   "root": "%s/html/WMStats/js/" % config.static_content_dir,
@@ -48,11 +48,11 @@ class FrontPage(RESTFrontPage):
             },
             "lib":
             {   "root": "%s/html/WMStats/lib/" % config.static_content_dir,
-                "rx": rx.RX_STATIC_DIR_PATH
+                "rx": RX_STATIC_DIR_PATH
             },
             "fonts":
             {   "root": "%s/html/WMStats/fonts/" % config.static_content_dir,
-                "rx": rx.RX_STATIC_DIR_PATH
+                "rx": RX_STATIC_DIR_PATH
             }
         
         }

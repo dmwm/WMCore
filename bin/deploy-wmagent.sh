@@ -3,9 +3,9 @@
 ### This script downloads a CMSWEB deployment tag and then use the Deploy script
 ### with the arguments provided in the command line to deploy WMAgent in a VOBox.
 ###
-### It deploys the agent, apply all the required patches (TODO they must be defined
-### in the code), populate the resource-control database, apply final tweaks to
-### the configuration and finally, download and create some utilitarian cronjobs.
+### It deploys the agent, apply all the required patches populate the
+### resource-control database, apply final tweaks to the configuration and
+### finally, download and create some utilitarian cronjobs.
 ###
 ### You also can choose whether you want to separate the WMAgent from the Couchdb
 ### deployment. By default Couch databases will be available in /data partition.
@@ -199,16 +199,12 @@ echo -e "\n*** Removing the current crontab ***"
 /usr/bin/crontab -r;
 echo "Done!"
 
-echo -e "\n*** Bootstrapping WMAgent: prep ***"
 cd $BASE_DIR/deployment-$CMSWEB_TAG
 set -e
-./Deploy -R wmagent@$WMA_TAG -s prep -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR wmagent
-
-echo -e "\n*** Deploying WMAgent: sw ***"
-./Deploy -R wmagent@$WMA_TAG -s sw -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR wmagent
-
-echo -e "\n*** Posting WMAgent: post ***"
-./Deploy -R wmagent@$WMA_TAG -s post -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR wmagent
+for step in prep sw post; do
+  echo -e "\n*** Deploying WMAgent: running $step step ***"
+  ./Deploy -R wmagent@$WMA_TAG -s $step -A $WMA_ARCH -r $REPO -t v$WMA_TAG $DEPLOY_DIR wmagent
+done
 set +e
 
 echo -e "\n*** Activating the agent ***"
@@ -269,10 +265,13 @@ echo "Done!" && echo
 
 ###
 # tweak configuration
-### TODO: remove part of these tweaks when #5949 gets merged
+### 
 echo "*** Tweaking configuration ***"
 sed -i "s+team1,team2,cmsdataops+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
+sed -i "s+config.AgentStatusWatcher.onlySSB = True+config.AgentStatusWatcher.onlySSB = False+" $MANAGE/config.py
+sed -i "s+pendingSlotsSitePercent = 40+pendingSlotsSitePercent = 60+" $MANAGE/config.py
+sed -i "s+pendingSlotsTaskPercent = 30+pendingSlotsTaskPercent = 50+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval* ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py

@@ -2227,7 +2227,7 @@ class DatabaseRESTApi(RESTApi):
         list of dictionaries ``[{ "a": 1, "b": 3 }, { "a": 2, "b": 4 }]``."""
 
         keys = kwargs.keys()
-        return [dict(zip(keys, vals)) for vals in zip(*kwargs.values())]
+        return [dict(list(zip(keys, vals))) for vals in zip(*kwargs.values())]
 
 ######################################################################
 ######################################################################

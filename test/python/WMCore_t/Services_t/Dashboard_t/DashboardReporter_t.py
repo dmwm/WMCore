@@ -10,10 +10,17 @@ Created on Fri Jun  8 11:21:07 2012
 
 import unittest
 
+import os
+
+from WMCore.FwkJobReport.Report import Report
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.DataStructs.Job import Job
+from WMCore.WMBase import getTestBase
 
-from WMCore_t.Services_t.Dashboard_t.reportSamples import ProcessingSample, MergeSample, ErrorSample
+from WMCore_t.Services_t.Dashboard_t.reportSamples import ErrorSample
+from WMCore_t.Services_t.Dashboard_t.reportSamples import MergeSample
+from WMCore_t.Services_t.Dashboard_t.reportSamples import FallbackSample
+from WMCore_t.Services_t.Dashboard_t.reportSamples import ProcessingSample
 
 class DashboardReporterTest(unittest.TestCase):
     """
@@ -27,10 +34,15 @@ class DashboardReporterTest(unittest.TestCase):
 
         Setup a dashboard reporter
         """
-        self.reporter = DashboardReporter(config = None)
+        self.reporter = DashboardReporter(config=None)
         self.processingReport = ProcessingSample.report
         self.mergeReport = MergeSample.report
         self.errorReport = ErrorSample.report
+        self.fallbackReport = FallbackSample.report
+
+        self.twoFileFallbackXmlPath = os.path.join(getTestBase(), "WMCore_t/FwkJobReport_t/CMSSWTwoFileRemote.xml")
+        self.pileupXmlPath = os.path.join(getTestBase(), "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
+
         return
 
     def tearDown(self):
@@ -163,3 +175,128 @@ class DashboardReporterTest(unittest.TestCase):
                                                       self.errorReport)
         self.assertEqual(eventInfo, {},
                          'Error report event info is not empty')
+
+    def testFileInformation(self):
+        """
+        _testFileInformation_
+
+        Check that the file information is extracted correctly for
+        different reports
+        """
+
+        # First test the processingReport
+
+        step = self.processingReport.retrieveStep('cmsRun1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+
+        fileReports = fileInfo['inputFiles'].split(';')
+        self.assertEqual(2, len(fileReports))
+
+        # Format is LFN, Status, Type (EDM), Local/Remote, Count
+        report0 = (fileInfo['inputFiles'].split(';'))[0].split('::')
+        report1 = (fileInfo['inputFiles'].split(';'))[1].split('::')
+
+        self.assertEqual('1', report0[1])
+        self.assertEqual('1', report1[1])
+        self.assertEqual('Local', report0[3])
+        self.assertEqual('Local', report1[3])
+        self.assertEqual('1', report0[4])
+        self.assertEqual('2', report1[4])
+
+        step = self.processingReport.retrieveStep('logArch1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+        self.assertEqual(self.trimNoneValues(fileInfo), {},
+                         'logArch1 file info is not empty')
+
+        step = self.processingReport.retrieveStep('stageOut1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+        self.assertEqual(self.trimNoneValues(fileInfo), {},
+                         'stageOut1 file info is not empty')
+
+        # Now shorter test on mergeReport
+
+        step = self.mergeReport.retrieveStep('cmsRun1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+
+        fileReports = fileInfo['inputFiles'].split(';')
+        self.assertEqual(1, len(fileReports))
+
+        report0 = (fileInfo['inputFiles'].split(';'))[0].split('::')
+
+        self.assertEqual('1', report0[1])
+        self.assertEqual('Local', report0[3])
+        self.assertEqual('1', report0[4])
+
+        # Now shorter test on errorReport
+        step = self.errorReport.retrieveStep('cmsRun1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+
+        fileReports = fileInfo['inputFiles'].split(';')
+        self.assertEqual(2, len(fileReports))
+
+        # Format is LFN, Status, Type (EDM), Local/Remote, Count
+        report0 = (fileInfo['inputFiles'].split(';'))[0].split('::')
+        report1 = (fileInfo['inputFiles'].split(';'))[1].split('::')
+
+        self.assertEqual('1', report0[1])
+        self.assertEqual('0', report1[1])
+        self.assertEqual('Local', report0[3])
+        self.assertEqual('Local', report1[3])
+        self.assertEqual('1', report0[4])
+        self.assertEqual('2', report1[4])
+
+        # And tests on the fallback report
+
+        step = self.fallbackReport.retrieveStep('cmsRun1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+
+        fileReports = fileInfo['inputFiles'].split(';')
+        self.assertEqual(1, len(fileReports))
+
+        # Format is LFN, Status, Type (EDM), Local/Remote, Count
+        report0 = (fileInfo['inputFiles'].split(';'))[0].split('::')
+
+        self.assertEqual('1', report0[1])
+        self.assertEqual('Remote', report0[3])
+        self.assertEqual('1', report0[4])
+
+        # And tests on a report of two fallback files
+
+        twoReport = Report("cmsRun1")
+        twoReport.parse(self.twoFileFallbackXmlPath)
+        step = twoReport.retrieveStep('cmsRun1')
+        fileInfo = self.reporter.getInputFilesInformation(step)
+
+        fileReports = fileInfo['inputFiles'].split(';')
+        self.assertEqual(2, len(fileReports))
+
+        # Format is LFN, Status, Type (EDM), Local/Remote, Count
+        report0 = (fileInfo['inputFiles'].split(';'))[0].split('::')
+        report1 = (fileInfo['inputFiles'].split(';'))[1].split('::')
+
+        self.assertEqual('1', report0[1])
+        self.assertEqual('1', report1[1])
+        self.assertEqual('Remote', report0[3])
+        self.assertEqual('Remote', report1[3])
+        self.assertEqual('1', report0[4])
+        self.assertEqual('2', report1[4])
+
+        pileupReport = Report("cmsRun1")
+        pileupReport.parse(self.pileupXmlPath)
+        step = pileupReport.retrieveStep('cmsRun1')
+
+        localCount = 0
+        remoteCount = 0
+        for report in (self.reporter.getInputFilesInformation(step))['inputFiles'].split(';'):
+            if (report.split('::'))[3] == 'Remote':
+                remoteCount += 1
+            elif (report.split('::'))[3] == 'Local':
+                localCount += 1
+
+        self.assertEqual(1, remoteCount)
+        self.assertEqual(13, localCount)
+
+
+if __name__ == '__main__':
+    unittest.main()
+

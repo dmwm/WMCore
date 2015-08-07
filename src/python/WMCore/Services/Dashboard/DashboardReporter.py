@@ -184,9 +184,20 @@ class DashboardReporter(WMObject):
             package.update(self.getPerformanceInformation(step))
             package.update(self.getEventInformation(stepName, job['fwjr']))
 
+            # Input files should just be appended onto inputFiles instead of given a step #
+            # per https://hypernews.cern.ch/HyperNews/CMS/get/comp-monitoring/326.html
+            inputFilePackage = self.getInputFilesInformation(step)
+            if inputFilePackage:
+                if 'inputFiles' in package:
+                    package['inputFiles'] += ';' +  inputFilePackage['inputFiles']
+                else:
+                    package.update(self.getInputFilesInformation(step))
+
             trimmedPackage = {}
             for key in package:
-                if package[key] != None:
+                if key in ['inputFiles', 'Basename', 'inputBlocks']:
+                    trimmedPackage[key] = package[key]
+                elif package[key] != None:
                     trimmedPackage['%d_%s' % (counter, key)] = package[key]
             package = trimmedPackage
 
@@ -330,6 +341,60 @@ class DashboardReporter(WMObject):
                                                     'MinEventTime', None)
         package['MaxEventCPU']            = getattr(performance.cpu,
                                                     'MaxEventCPU', None)
+
+        return package
+
+    def getInputFilesInformation(self, step):
+        """
+        Determines the input files and parent input files and
+        if they were read correctly, skipped, or read through fallback
+        """
+
+        files = {}
+        package = {}
+
+        try:
+            if hasattr(step, 'input') and hasattr(step.input, 'source'):
+                for fileobj in step.input.source.files:
+                    if hasattr(fileobj, 'lfn'):
+                        lfn = fileobj.lfn
+                        inputType = getattr(fileobj, 'input_type', 'primaryFiles')
+                        files.update({lfn: {'status': 'Local', 'type': inputType}})
+
+            if hasattr(step, 'skipped'):
+                for fileobj in step.skipped.files:
+                    if hasattr(fileobj, 'LogicalFileName'):
+                        lfn = fileobj.LogicalFileName
+                        inputType = getattr(fileobj, 'input_type', 'primaryFiles')  # Probably not working
+                        files.update({lfn: {'status': 'Skipped', 'type': inputType}})
+
+            if hasattr(step, 'fallback'):
+                for fileobj in step.fallback.files:
+                    if hasattr(fileobj, 'LogicalFileName'):
+                        lfn = fileobj.LogicalFileName
+                        inputType = getattr(fileobj, 'input_type', 'primaryFiles')  # Probably not working
+                    files.update({lfn: {'status': 'Remote', 'type': inputType}})
+        except AttributeError:
+            return package
+
+        inputFilesStrings = []
+        fileCount = 0
+        for inputFile, details in files.items():
+            fileCount += 1
+            success = '0'
+            accessType = details['status']
+            if details['status'] in ['Local', 'Remote']:
+                success = '1'
+            if accessType == 'Skipped':
+                accessType = 'Local'
+            inputFilesStrings.append('::'.join([inputFile, success, 'EDM', accessType, str(fileCount)]))
+
+        if fileCount:
+            package = {
+                'inputBlocks': 'Dummy',
+                'Basename': '/',
+                'inputFiles': ';'.join(inputFilesStrings),
+            }
 
         return package
 

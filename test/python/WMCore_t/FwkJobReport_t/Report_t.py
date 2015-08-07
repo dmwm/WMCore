@@ -43,6 +43,11 @@ class ReportTest(unittest.TestCase):
                                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
         self.fallbackXmlPath = os.path.join(getTestBase(),
                                                    "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
+        self.twoFileFallbackXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWTwoFileRemote.xml")
+        self.pileupXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
+
         self.testDir = self.testInit.generateWorkDir()
         return
 
@@ -787,7 +792,7 @@ cms::Exception caught in EventProcessor and rethrown
 
     def testFallbackFiles(self):
         """
-        _testFallback_
+        _testFallbackFiles_
 
         Test that fallback files end up in the report
         """
@@ -802,6 +807,40 @@ cms::Exception caught in EventProcessor and rethrown
         badReport.parse(self.fallbackXmlPath)
         self.assertEqual(sorted(badReport.getAllFallbackFiles()),
                          ['/store/data/Run2012D/SingleElectron/AOD/PromptReco-v1/000/207/279/D43A5B72-1831-E211-895D-001D09F24763.root'])
+
+        twoReport = Report("cmsRun1")
+        twoReport.parse(self.twoFileFallbackXmlPath)
+        self.assertEqual(len(twoReport.getAllFallbackFiles()), 2)
+
+        return
+
+    def testPileupFiles(self):
+        """
+        _testPileupFiles_
+
+        Test that alll the pileup files end up in the report
+        """
+
+        report = Report("cmsRun1")
+        report.parse(self.pileupXmlPath)
+        self.assertEqual(len(report.getAllInputFiles()), 14)
+
+        primaryCount = 0
+        secondaryCount = 0
+        mixingCount = 0
+
+        for fileEntry in report.getAllInputFiles():
+            if fileEntry['input_type'] == 'mixingFiles':
+                mixingCount += 1
+            elif fileEntry['input_type'] == 'primaryFiles':
+                primaryCount += 1
+            elif fileEntry['input_type'] == 'secondaryFiles':
+                secondaryCount += 1
+
+        self.assertEqual(primaryCount, 1)
+        self.assertEqual(secondaryCount, 0)
+        self.assertEqual(mixingCount, 13)
+        self.assertEqual(len(report.getAllFallbackFiles()), 1)
 
         return
 

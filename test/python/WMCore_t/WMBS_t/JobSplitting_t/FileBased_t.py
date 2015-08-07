@@ -393,7 +393,7 @@ class FileBasedTest(unittest.TestCase):
             goFlag    = True
             while goFlag:
                 try:
-                    res = func.next()
+                    res = next(func)
                     self.jobGroups.extend(res)
                 except StopIteration:
                     goFlag = False
@@ -412,7 +412,7 @@ class FileBasedTest(unittest.TestCase):
 
         for x in range(7):
             try:
-                res = a.next()
+                res = next(a)
                 jobGroups.extend(res)
             except StopIteration:
                 continue

@@ -154,8 +154,8 @@ class PhEDExSubscription(object):
             msg = "matchesExistingTransferRequest is only supported by dataset subscriptions"
             raise PhEDExSubscriptionException(msg)
 
-        node = iter(self.nodes).next()
-        dataset = iter(self.datasetPaths).next()
+        node = next(iter(self.nodes))
+        dataset = next(iter(self.datasetPaths))
         # Get the unapproved requests involving the node and dataset in this subscription
         existingRequests = phedexDataSvc.getRequestList(dataset = dataset,
                                                         node = node,
@@ -199,8 +199,8 @@ class PhEDExSubscription(object):
             msg = "matchesExistingSubscription is only supported by dataset subscriptions"
             raise PhEDExSubscriptionException(msg)
 
-        node = iter(self.nodes).next()
-        dataset = iter(self.datasetPaths).next()
+        node = next(iter(self.nodes))
+        dataset = next(iter(self.datasetPaths))
         # Check if the dataset has a subscription the given node
         existingSubscription = phedexDataSvc.subscriptions(dataset = dataset,
                                                            node = node)['phedex']['dataset']

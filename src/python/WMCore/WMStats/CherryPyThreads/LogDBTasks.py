@@ -7,7 +7,7 @@ import cherrypy
 
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
 class LogDBTasks(CherryPyPeriodicTask):
 

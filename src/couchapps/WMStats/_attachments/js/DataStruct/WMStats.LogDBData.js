@@ -37,7 +37,8 @@ WMStats.LogDBData = function (couchData) {
         		row = couchData.rows[i]['value'];
         		row.request = couchData.rows[i]['key'];
         		row.id = couchData.rows[i].id;	
-        	}	results.push(row);
+        		results.push(row);
+        	}	
         }
         // and sortby ts stamp decending order
         results.sort(this._timestampSort); 

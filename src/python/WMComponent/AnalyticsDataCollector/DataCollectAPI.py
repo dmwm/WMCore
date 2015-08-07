@@ -383,7 +383,10 @@ def isDrainMode(config):
     """
     config is loaded WMAgentCofig 
     """
-    return config.WorkQueueManager.queueParams.get('DrainMode', False)
+    if hasattr(self.config, "Tier0Feeder"):
+        return False
+    else:
+        return config.WorkQueueManager.queueParams.get('DrainMode', False)
 
 def initAgentInfo(config):
     

@@ -233,49 +233,54 @@ class DashboardReporter(WMObject):
 
         Handles the information about input and output files in the step
         and provides detailed event information to be sent to the dashboard
+
         """
-
-        package = {}
-
-        package['inputEvents'] = 0
+        inputEvents = 0
         inputFiles = fwjr.getInputFilesFromStep(stepName = stepName)
         for inputFile in inputFiles:
-            package['inputEvents'] += inputFile['events']
+            inputEvents += inputFile['events']
 
-        package['OutputEventInfo'] = ''
+        outputEventInfo = ''
         step = fwjr.retrieveStep(stepName)
         outputModules = getattr(step, 'outputModules', None)
 
         if outputModules:
             for outputMod in outputModules:
+
+                # we don't report logArchive, LogCollect and Sqlite output
+                if outputMod in [ "logArchive", "LogCollect", "Sqlite" ]:
+                    continue
+
                 outFiles = fwjr.getFilesFromOutputModule(step = stepName,
                                                          outputModule = outputMod)
-                if not outFiles:
-                    continue
-                dataTier = None
+
+                # an output module can write multiple files, but
+                # they all have the same dataset and data tier
                 events = 0
+                dataTier = None
                 procDataset = None
                 for outFile in outFiles:
-                    if not dataTier:
-                        dataTier = outFile['dataset'].get('dataTier', None)
-                    if not procDataset:
-                        procDataset = outFile['dataset'].get('processedDataset', None)
-                    if not (dataTier and procDataset):
+
+                    dataTier = outFile['dataset'].get('dataTier', None)
+                    procDataset = outFile['dataset'].get('processedDataset', None)
+                    if dataTier and procDataset:
+                        events += outFile['events']
+                    else:
                         logging.error('Output module %s has a file %s with incomplete info'
-                                        % (outputMod, outFile['lfn']))
-                        continue
-                    events += outFile['events']
+                                      % (outputMod, outFile['lfn']))
+
                 if dataTier and procDataset:
-                    package['OutputEventInfo'] += '%s:%s:%d;' % (procDataset,
-                                                                dataTier,
-                                                                events)
+                    outputEventInfo += '%s:%s:%d;' % (procDataset, dataTier, events)
 
-        if not (package['inputEvents'] or package['OutputEventInfo']):
+        # take off the last ;
+        if outputEventInfo:
+            outputEventInfo = outputEventInfo[:-1]
+
+        if inputEvents or outputEventInfo:
+            return { 'inputEvents' : inputEvents,
+                     'OutputEventInfo' : outputEventInfo }
+        else:
             return {}
-
-        package['OutputEventInfo'] = package['OutputEventInfo'][:-1]
-
-        return package
 
     def getPerformanceInformation(self, step):
         """

@@ -767,26 +767,18 @@ class Report:
         """
 
         stepReport = self.retrieveStep(step = step)
-
         if not stepReport:
             logging.debug("Asked to retrieve files from non-existant step %s" % step)
             return []
 
+        # steps with no outputModules can be ok (even for CMSSW steps)
         listOfModules = getattr(stepReport, 'outputModules', None)
-
         if not listOfModules:
-            logging.debug("Asked to retrieve files from step %s with no outputModules" % step)
-            logging.debug("StepReport: %s" % stepReport)
             return []
 
         listOfFiles = []
-
         for module in listOfModules:
-            tmpList = self.getFilesFromOutputModule(step = step, outputModule = module)
-            if not tmpList:
-                continue
-            listOfFiles.extend(tmpList)
-
+            listOfFiles.extend( self.getFilesFromOutputModule(step = step, outputModule = module) )
 
         return listOfFiles
 
@@ -800,9 +792,7 @@ class Report:
         listOfFiles = []
 
         for step in self.data.steps:
-            tmp = self.getAllFilesFromStep(step = step)
-            if tmp:
-                listOfFiles.extend(tmp)
+            listOfFiles.extend( self.getAllFilesFromStep(step = step) )
 
         return listOfFiles
 
@@ -879,22 +869,20 @@ class Report:
         Grab all the files in a particular output module
         """
 
-        listOfFiles = []
-
         outputMod = self.getOutputModule(step = step, outputModule = outputModule)
 
         if not outputMod:
-            return None
+            return []
 
+        listOfFiles = []
         for n in range(outputMod.files.fileCount):
             file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
-            if not file:
+            if file:
+                listOfFiles.append(file)
+            else:
                 msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
-                return None
-
-            #Now, append to the list of files
-            listOfFiles.append(file)
+                return []
 
         return listOfFiles
 
@@ -1484,7 +1472,7 @@ class Report:
         """
         files = self.getAllFilesFromStep(step = stepName)
         analysisFiles = self.getAnalysisFilesFromStep(step = stepName)
-        if not (len(files) > 0 or len(analysisFiles) > 0):
+        if len(files) == 0 and len(analysisFiles) == 0:
             msg = WMJobErrorCodes[60450]
             self.addError(stepName, 60450, "NoOutput", msg)
             self.setStepStatus(stepName = stepName, status = 60450)

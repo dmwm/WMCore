@@ -383,7 +383,7 @@ def isDrainMode(config):
     """
     config is loaded WMAgentCofig 
     """
-    if hasattr(self.config, "Tier0Feeder"):
+    if hasattr(config, "Tier0Feeder"):
         return False
     else:
         return config.WorkQueueManager.queueParams.get('DrainMode', False)

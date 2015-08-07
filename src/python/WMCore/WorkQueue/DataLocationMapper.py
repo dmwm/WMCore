@@ -246,6 +246,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
+                    if element.get('NoLocationUpdate', False):
+                        continue
                     for pData in element['PileupData']:
                         if pData == data:
                             if sorted(locations) != sorted(element['PileupData'][pData]):

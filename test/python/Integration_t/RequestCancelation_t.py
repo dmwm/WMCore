@@ -37,7 +37,7 @@ class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
             if not request or request == [x for x in request if x['status'] in ('Canceled')]:
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for request to finish'
+                raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
     @attr("lifecycle")
@@ -51,7 +51,7 @@ class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
             if self.__class__.request['RequestStatus'] == 'aborted':
                 break
             if start + (60 * 20) < time.time():
-                raise RuntimeError, 'timeout waiting for request to finish'
+                raise RuntimeError('timeout waiting for request to finish')
             time.sleep(15)
 
 # Remove tests that don't apply

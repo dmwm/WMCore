@@ -27,7 +27,7 @@ def listRequests(userName):
     userId = getUserId.execute(userName)
     if userId == None:
         msg = "User: %s not registered with Request Manager" % userName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     listReqs = factory(classname = "Requestor.ListRequests")
 

@@ -122,7 +122,7 @@ def fixElementConflicts(*elements):
             # we need to merge: Take elements from both that seem most advanced, e.g. status & progress stats
             if key not in allowed_keys:
                 msg = 'Unable to merge conflicting element %s: field "%s" value 1 "%s" value2 "%s"'
-                raise RuntimeError, msg % (ele.id, key, merged_value.get(key), ele.get(key))
+                raise RuntimeError(msg % (ele.id, key, merged_value.get(key), ele.get(key)))
             elif key == 'Status':
                 if ordered_states.index(ele[key]) > ordered_states.index(merged_value[key]):
                     merged_value[key] = ele[key]

@@ -75,7 +75,7 @@ class StageOutImpl:
         implementation uses.
 
         """
-        raise NotImplementedError, "StageOutImpl.createSourceName"
+        raise NotImplementedError("StageOutImpl.createSourceName")
 
 
     def createTargetName(self, protocol, pfn):
@@ -114,7 +114,7 @@ class StageOutImpl:
         targetPFN using the options provided if necessary
 
         """
-        raise NotImplementedError, "StageOutImpl.createStageOutCommand"
+        raise NotImplementedError("StageOutImpl.createStageOutCommand")
 
 
     def removeFile(self, pfnToRemove):
@@ -127,7 +127,7 @@ class StageOutImpl:
         intermediate files upon successful completion of the merge job
 
         """
-        raise NotImplementedError, "StageOutImpl.removeFile"
+        raise NotImplementedError("StageOutImpl.removeFile")
 
 
     def createRemoveFileCommand(self, pfn):

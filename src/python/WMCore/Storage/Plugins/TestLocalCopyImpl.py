@@ -40,7 +40,7 @@ class TestLocalCopyImpl(StageOutImplV2):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):
-            raise StageOutFailure, "Invalid file size"
+            raise StageOutFailure("Invalid file size")
         return toPfn
 
 

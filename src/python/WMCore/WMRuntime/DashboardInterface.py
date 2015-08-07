@@ -444,11 +444,11 @@ class DashboardInfo():
         if self.taskName == None:
             msg = "Error: You must set the task id before adding \n"
             msg += "destinations or publishing data"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         if self.jobName == None:
             msg = "Error: You must set the job id before adding \n"
             msg += "destinations or publishing data"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         self.publisher = ApMonDestMgr(clusterName = self.taskName,
                                       nodeName = self.jobName)
         return

@@ -107,7 +107,7 @@ class RunTransferNotifier(FeederImpl):
             runs.sort(reverse=True)
             if len(runs) == 0:
                 msg = "Could not bootstrap RunTransferNotifier feeder"
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
 
             # There are runs, ensure we ignore them in first query
             self.lastRun = runs[0]

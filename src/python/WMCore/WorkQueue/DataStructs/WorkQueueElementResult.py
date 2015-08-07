@@ -41,7 +41,7 @@ class WorkQueueElementResult(dict):
             self.setdefault('TeamName', self['ParentQueueElement']['TeamName'])
             self.setdefault('ParentQueueId', self['ParentQueueElement'].id)
         else:
-            raise RuntimeError, "Can create WQEResult: No elements or parent provided"
+            raise RuntimeError("Can create WQEResult: No elements or parent provided")
 
         # some cross checks
         for i in self['Elements']:
@@ -106,7 +106,7 @@ class WorkQueueElementResult(dict):
         for element in self['Elements']:
             if element['Status'] != status:
                 msg = "Unable to compute overall status of elements: %s"
-                raise RuntimeError, msg % str(self['Elements'])
+                raise RuntimeError(msg % str(self['Elements']))
         return status
 
     def inEndState(self):

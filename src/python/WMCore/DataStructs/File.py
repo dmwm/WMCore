@@ -53,7 +53,7 @@ class File(WMObject, dict):
 
         if not isinstance(run, Run):
             msg = "addRun argument must be of type WMCore.DataStructs.Run"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         addFlag = False
         for runMember in self['runs']:

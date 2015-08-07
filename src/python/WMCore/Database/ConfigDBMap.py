@@ -16,11 +16,11 @@ class ConfigDBMapInterface(object):
         this should return db string
         i.e. mysql://username@hostname.fnal.gov:3306/TestDB
         """
-        raise NotImplementedError, "getDBUrl is not implemented"
+        raise NotImplementedError("getDBUrl is not implemented")
 
     def getOption(self):
         """
         this should return options of dict format
         i.e. {'engine_parameters': {'pool_size': 10}}
         """
-        raise NotImplementedError, "getOption is not implemented"
+        raise NotImplementedError("getOption is not implemented")

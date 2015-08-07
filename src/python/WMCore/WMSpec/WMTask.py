@@ -40,7 +40,7 @@ def getTaskFromStep(stepRef):
     if taskNode == None:
         msg = "Unable to find Task containing step\n"
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     return WMTaskHelper(taskNode)
 
@@ -641,7 +641,7 @@ class WMTaskHelper(TreeHelper):
 
         if primary == None or processed == None or tier == None:
             msg = "Primary, Processed and Tier must be set"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         self.data.input.dataset.primary = primary
         self.data.input.dataset.processed = processed

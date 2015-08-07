@@ -132,7 +132,7 @@ def loadJobDefinition():
         msg = "Failed to load JobPackage:%s\n" % packageLoc
         msg += str(ex)
         createErrorReport(exitCode = 11001, errorType = "JobPackageError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
 
     try:
         import WMSandbox.JobIndex
@@ -140,7 +140,7 @@ def loadJobDefinition():
         msg = "Failed to import WMSandbox.JobIndex module\n"
         msg += str(ex)
         createErrorReport(exitCode = 11002, errorType = "JobIndexError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
 
     index = WMSandbox.JobIndex.jobIndex
 
@@ -150,7 +150,7 @@ def loadJobDefinition():
         msg = "Failed to extract Job %i\n" % (index)
         msg += str(ex)
         createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     diagnostic = """
     Job Index = %s
     Job Instance = %s
@@ -194,19 +194,19 @@ def loadTask(job):
         msg += str(ex)
         createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     except Exception as ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
         createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     if task == None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
         createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     return task
 
 
@@ -315,7 +315,7 @@ def setupLogging(logDir):
     except Exception as ex:
         msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     return
 
 
@@ -333,4 +333,4 @@ def setupMonitoring(logPath):
     except Exception as ex:
         msg = "Error setting up Watchdog monitoring:\n"
         msg += str(ex)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)

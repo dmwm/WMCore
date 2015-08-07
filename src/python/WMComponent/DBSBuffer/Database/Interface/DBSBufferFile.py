@@ -231,7 +231,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         existingTransaction = self.beginTransaction()
 
         if not self["id"] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % self["lfn"]
+            raise Exception("Parent file doesn't have an id %s" % self["lfn"])
 
         action = self.daoFactory(classname = "DBSBufferFiles.HeritageLFNChild")
         action.execute(childLFNs = lfns, parentID = self["id"],

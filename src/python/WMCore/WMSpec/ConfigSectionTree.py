@@ -126,7 +126,7 @@ def addNode(currentNode, newNode):
     if newName in allNames:
         msg = "Duplicate Node Name %s already exists in tree\n" % newName
         msg += "%s\n" % allNames
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     setattr(currentNode.tree.children, newName, newNode)
     currentNode.tree.childNames.append(newName)
@@ -146,7 +146,7 @@ def addTopNode(currentNode, newNode):
     if newName in allNames:
         msg = "Duplicate Node Name %s already exists in tree\n" % newName
         msg += "%s\n" % allNames
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     setattr(currentNode.tree.children, newName, newNode)
     currentNode.tree.childNames.insert(0, newName)

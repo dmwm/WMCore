@@ -77,7 +77,7 @@ class ErrorWorker(DummyWorker1):
         # that isnt used here so add manually
         myThread = threading.currentThread()
         myThread.workerThreadManager = self.workerThreadManager
-        raise RuntimeError, "ErrorWorker throws errors"
+        raise RuntimeError("ErrorWorker throws errors")
 
 class WorkerThreadsTest(unittest.TestCase):
     """

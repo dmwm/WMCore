@@ -34,7 +34,7 @@ class Dataset(StartPolicyInterface):
                                      inputDataset.tier)
         # dataset splitting can't have its data selection overridden
         if (self.data and self.data.keys() != [datasetPath]):
-            raise RuntimeError, "Can't provide different data to split with"
+            raise RuntimeError("Can't provide different data to split with")
 
         blocks = self.validBlocks(self.initialTask, self.dbs())
         if not blocks:

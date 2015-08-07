@@ -94,7 +94,7 @@ class PhEDExSubscription(object):
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
                   """ % (self.requesterID)
-            raise Exception, msg
+            raise Exception(msg)
 
         self.datasetPaths = self.datasetPaths.union(subscription.datasetPaths)
         self.subscriptionIds = self.subscriptionIds.union(subscription.subscriptionIds)
@@ -104,7 +104,7 @@ class PhEDExSubscription(object):
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
                   """ % (self.requesterID)
-            raise Exception, msg
+            raise Exception(msg)
 
         self.nodes = self.nodes.union(subscription.nodes)
         self.subscriptionIds = self.subscriptionIds.union(subscription.subscriptionIds)
@@ -138,7 +138,7 @@ class PhEDExSubscription(object):
             msg = """ PhEDEx subscription is already made with id: %s\n
                       Create a new subscription
                   """ % (self.requesterID)
-            raise Exception, msg
+            raise Exception(msg)
 
     def matchesExistingTransferRequest(self, phedexDataSvc):
         """

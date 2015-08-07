@@ -31,7 +31,7 @@ def requireGroup(funcRef):
     def wrapper(self, *args, **opts):
         if getattr(self, "group", None) == None:
             msg = "Group Attribute not present/set"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return funcRef(self, *args, **opts)
     return wrapper
 
@@ -46,6 +46,6 @@ def requireUser(funcRef):
     def wrapper(self, *args, **opts):
         if getattr(self, "owner", None) == None:
             msg = "Group Attribute not present/set"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return funcRef(self, *args, **opts)
     return wrapper

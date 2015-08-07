@@ -156,7 +156,7 @@ class DummyRESTModel(RESTModel):
         try:
             assert type(request_input['input_int']) == type(123)
         except AssertionError:
-            raise AssertionError, 'val_1 failed: %s not int' % type(request_input['input_int'])
+            raise AssertionError('val_1 failed: %s not int' % type(request_input['input_int']))
         return request_input
 
     def val_2(self, request_input):

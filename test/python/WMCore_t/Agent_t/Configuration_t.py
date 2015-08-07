@@ -119,11 +119,6 @@ class ConfigurationTest(unittest.TestCase):
             RuntimeError, setattr,
             config.Section2, "BadList", badList)
 
-        badDict = { "dict" : {}, "list": [], "tuple" : () }
-        self.assertRaises(
-            RuntimeError, setattr,
-            config.Section2, "BadDict", badDict)
-
 
     def testC(self):
         """add components"""

@@ -344,7 +344,7 @@ class LumiList(object):
                 lumiSection = run[1]
                 run         = run[0]
             except:
-                raise RuntimeError, "Improper format for run '%s'" % run
+                raise RuntimeError("Improper format for run '%s'" % run)
         lumiRangeList = self.compactList.get( str(run) )
         if not lumiRangeList:
             # the run isn't there, so no need to look any further

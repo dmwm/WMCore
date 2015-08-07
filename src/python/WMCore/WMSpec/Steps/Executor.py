@@ -38,14 +38,14 @@ def getStepSpace(stepName):
             msg = "Unable to load WMTaskSpace module:\n"
             msg += str(ex)
             #TODO: Generic ExecutionException...
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
     try:
         stepSpace = taskspace.taskSpace.stepSpace(stepName)
     except Exception as ex:
         msg = "Error retrieving stepSpace from TaskSpace:\n"
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return stepSpace
 
 
@@ -148,7 +148,7 @@ class Executor:
         """
         msg = "WMSpec.Steps.Executor.execute method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
     def post(self, emulator = None):

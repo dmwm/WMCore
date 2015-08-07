@@ -62,7 +62,7 @@ class DataLocationMapper():
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
-            raise ValueError, "Invalid value for locationFrom '%s' valid values %s" % (self.params['locationFrom'], validLocationFrom)
+            raise ValueError("Invalid value for locationFrom '%s' valid values %s" % (self.params['locationFrom'], validLocationFrom))
 
         if self.params.get('phedex'):
             self.phedex = self.params['phedex']
@@ -126,7 +126,7 @@ class DataLocationMapper():
                 except Exception as ex:
                     logging.error('Error getting block location from phedex for %s: %s' % (dataItem, str(ex)))
         else:
-            raise RuntimeError, "shouldn't get here"
+            raise RuntimeError("shouldn't get here")
 
         # convert from PhEDEx name to cms site name
         for name, nodes in result.items():

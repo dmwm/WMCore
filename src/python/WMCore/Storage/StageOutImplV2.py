@@ -72,7 +72,7 @@ class StageOutImplV2:
             logging.error("  Command executed was: %s" % command )
             logging.error("  Output was: %s" % output )
             logging.error("  Exit code was: %s" % exitCode )
-            raise StageOutError, "Transfer failure"
+            raise StageOutError("Transfer failure")
         return (exitCode, output)
 
     def runCommandWarnOnNonZero(self, command):

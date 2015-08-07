@@ -1,7 +1,8 @@
+from __future__ import absolute_import
 import copy
 import matplotlib.colors
 import re
-from Utils import elem
+from .Utils import elem
 
 class ElementBase:
     def __init__(self,element_name,element_type=None,allow_missing=True,default=None,doc_user=''):

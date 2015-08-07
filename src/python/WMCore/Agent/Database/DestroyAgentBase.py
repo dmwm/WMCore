@@ -3,6 +3,7 @@
 _DestroyAgentBase_
 
 """
+from __future__ import absolute_import
 
 
 
@@ -14,7 +15,7 @@ from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from CreateAgentBase import CreateAgentBase
+from .CreateAgentBase import CreateAgentBase
 
 class DestroyAgentBase(DBCreator):
     def __init__(self, logger = None, dbi = None):

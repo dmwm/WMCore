@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 import unittest
 
-from WorkQueueTestCase import WorkQueueTestCase
+from .WorkQueueTestCase import WorkQueueTestCase
 
 class WorkQueueSchemnaTest(WorkQueueTestCase):
     """

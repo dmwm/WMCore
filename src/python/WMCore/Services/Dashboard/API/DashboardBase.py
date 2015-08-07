@@ -6,6 +6,7 @@ Monitoring plugin to broadcast data to the CMS Dashboard
 Allow only to publish a dictionary
 
 """
+from __future__ import absolute_import
 
 
 
@@ -13,8 +14,8 @@ import uuid
 import types
 import time
 import os
-from MSGTransPortAgent import *
-from ApmonTransPort import *
+from .MSGTransPortAgent import *
+from .ApmonTransPort import *
 
 def generateCMSJobID():
     """

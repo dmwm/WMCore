@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import math
 from matplotlib.pyplot import figure
 import matplotlib.cm as cm
@@ -6,9 +7,9 @@ from matplotlib.lines import Line2D
 import matplotlib.ticker
 import numpy as np
 
-from Plot import Plot
-from Mixins import *
-from Validators import *
+from .Plot import Plot
+from .Mixins import *
+from .Validators import *
 
 class Baobab(FigureMixin,TitleMixin,FigAxesMixin,StyleMixin):
     '''

@@ -2,16 +2,17 @@
 """
     WorkQueue tests
 """
+from __future__ import absolute_import
 import os
 import shutil
 import tempfile
 
 from WMCore.WMSpec.StdSpecs.ReReco  import ReRecoWorkloadFactory
-from Samples.TestMonteCarloWorkload \
+from .Samples.TestMonteCarloWorkload \
     import monteCarloWorkload as TestMCWorkload, getMCArgs
-from Samples.BasicProductionWorkload \
+from .Samples.BasicProductionWorkload \
     import createWorkload as BasicProductionWorkload
-from Samples.BasicProcessingWorkload \
+from .Samples.BasicProcessingWorkload \
     import createWorkload as BasicProcessingWorkload
 from WMCore.Cache.WMConfigCache import ConfigCache
 

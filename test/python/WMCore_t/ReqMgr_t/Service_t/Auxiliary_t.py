@@ -8,6 +8,7 @@ from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBB
 
 class AuxiliaryTest(RESTBaseUnitTestWithDBBackend):
     def setUp(self):
+        config.main.tools.cms_auth.policy = "dangerously_insecure"
         self.setConfig(config)
         self.setCouchDBs([(config.views.data.couch_reqmgr_db, "ReqMgr")])
         self.setSchemaModules([])

@@ -8,8 +8,18 @@ ReqMgr unittest configuration file.
 # this entire section copied from:
 #     deployment/reqmgr2/config.py
 
+
 from WMCore.Configuration import Configuration
 from os import path
+import socket
+import time
+
+HOST = socket.gethostname().lower()
+BASE_URL = "@@BASE_URL@@"
+DBS_INS = "@@DBS_INS@@"
+COUCH_URL = "%s/couchdb" % BASE_URL
+LOG_DB_URL = "%s/wmstats_logdb" % COUCH_URL
+ROOTDIR = __file__.rsplit('/', 3)[0]
 
 config = Configuration()
 
@@ -52,6 +62,28 @@ data.couch_reqmgr_aux_db = "reqmgr_auxiliary"
 data.couch_config_cache_db = "reqmgr_config_cache"
 data.couch_workload_summary_db = "workloadsummary"
 data.couch_wmstats_db = "wmstats"
+data.couch_wmdatamining_db = "wmdatamining"
+data.couch_acdc_db = "acdcserver"
+data.couch_workqueue_db = "workqueue"
+data.central_logdb_url = LOG_DB_URL
+data.log_reporter = "request_manager"
+
+# number of past days since when to display requests in the default view
+data.default_view_requests_since_num_days = 30 # days
+# resource to fetch CMS software versions and scramarch info from
+data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
+# another source at TC, returns directly JSON, but strangely formatted (e.g.
+# keys are not present at easy item but defined in a dedicated item ...)
+# https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
+
+# request related settings (e.g. default injection arguments)
+data.default_sw_version = "CMSSW_5_2_5"
+data.default_sw_scramarch = "slc5_amd64_gcc434"
+data.dqm_url = "%s/dqm/dev" % BASE_URL
+
+#use dbs testbed for private vm test
+data.dbs_url = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
+
 # number of past days since when to display requests in the default view
 data.default_view_requests_since_num_days = 30 # days
 # resource to fetch CMS software versions and scramarch info from
@@ -65,6 +97,7 @@ data.default_sw_version = "CMSSW_5_2_5"
 data.default_sw_scramarch = "slc5_amd64_gcc434"
 data.dqm_url = "https://cmsweb.cern.ch/dqm/dev"
 data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+
 
 # web user interface
 ui = views.section_("ui")
@@ -98,5 +131,9 @@ config.views.ui.static_content_dir = os.path.join(first_part, "WMCore/src/data")
 
 config.views.data.couch_host = os.getenv("COUCHURL", None)
 
+
+
 # end of deployment/reqmgr2/config-localhost.py
 # ---------------------------------------------------------------------------
+
+# Production instance of wmdatamining, must be a production back-end

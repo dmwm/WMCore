@@ -92,7 +92,8 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         from pprint import pprint
         pprint(response)
         self.assertEqual(len(response), 1)
-        requestName = response[0]['RequestName']
+        requestName = response[0]['request']
+        
         
         ## test get method
         # get by name

@@ -11,6 +11,22 @@ import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
 
+def mapSitetoSE(sites):
+    """
+    Receives a list of site names, query resource control and return
+    a list of SE names.
+    """
+    from WMCore.ResourceControl.ResourceControl import ResourceControl
+
+    if not len(sites):
+        return []
+
+    fakeSEs = []
+    rControl = ResourceControl()
+    for site in sites:
+        fakeSEs.extend(rControl.listSiteInfo(site)['se_name'])
+    return fakeSEs
+
 class PileupFetcher(FetcherInterface):
     """
     Pull dataset block/SE : LFN list from DBS for the
@@ -20,7 +36,7 @@ class PileupFetcher(FetcherInterface):
 
     """
 
-    def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
+    def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader, fakeSites):
         """
         Method iterates over components of the pileup configuration input
         and queries DBS. Then iterates over results from DBS.
@@ -41,6 +57,11 @@ class PileupFetcher(FetcherInterface):
         a subset of the blocks in a dataset will be at a site.
 
         """
+        # convert the siteWhitelist into SE list and add SEs to the pileup location list
+        fakeSE = []
+        if fakeSites:
+            fakeSE = mapSitetoSE(fakeSites)
+
         resultDict = {}
         # iterate over input pileup types (e.g. "cosmics", "minbias")
         for pileupType in stepHelper.data.pileup.listSections_():
@@ -55,25 +76,26 @@ class PileupFetcher(FetcherInterface):
                 for dbsBlockName in blockNames:
                     blockDict[dbsBlockName] = {"FileList": sorted(dbsReader.lfnsInBlock(dbsBlockName)),
                                                "StorageElementNames": dbsReader.listFileBlockLocation(dbsBlockName),
-                                               "NumberOfEvents" : dbsReader.getDBSSummaryInfo(block = dbsBlockName)['NumberOfEvents']}
+                                               "NumberOfEvents": dbsReader.getDBSSummaryInfo(block=dbsBlockName)['NumberOfEvents']}
+                    blockDict[dbsBlockName]['StorageElementNames'].extend(x for x in fakeSE if x not in \
+                                                                          blockDict[dbsBlockName]['StorageElementNames'])
             resultDict[pileupType] = blockDict
         return resultDict
 
 
-    def _createPileupConfigFile(self, helper):
+    def _createPileupConfigFile(self, helper, fakeSites):
         """
         Stores pileup JSON configuration file in the working
         directory / sandbox.
 
         """
-        
         stepPath = "%s/%s" % (self.workingDirectory(), helper.name())
         fileName = "%s/%s" % (stepPath, "pileupconf.json")
         if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
             return
-            
+
         encoder = JSONEncoder()
         # this should have been set in CMSSWStepHelper along with
         # the pileup configuration
@@ -81,7 +103,7 @@ class PileupFetcher(FetcherInterface):
 
         dbsReader = DBSReader(url)
 
-        configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader)
+        configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader, fakeSites)
 
         # create JSON and save into a file
         json = encoder.encode(configDict)
@@ -108,10 +130,18 @@ class PileupFetcher(FetcherInterface):
         wmTask is instance of WMTask.WMTaskHelper
 
         """
+        siteWhitelist = wmTask.siteWhitelist()
+
+        # check whether we need to pretend PU data location
+        if wmTask.inputLocationFlag():
+            fakeSites = wmTask.siteWhitelist()
+        else:
+            fakeSites = []
+
         for step in wmTask.steps().nodeIterator():
             helper = WMStep.WMStepHelper(step)
             # returns e.g. instance of CMSSWHelper
             # doesn't seem to be necessary ... strangely (some inheritance involved?)
             # typeHelper = helper.getTypeHelper()
             if hasattr(helper.data, "pileup"):
-                self._createPileupConfigFile(helper)
+                self._createPileupConfigFile(helper, fakeSites)

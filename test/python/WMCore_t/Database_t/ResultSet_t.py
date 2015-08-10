@@ -18,7 +18,6 @@ import os
 from WMCore.WMFactory import WMFactory
 from WMCore.Database.ResultSet import ResultSet
 from WMQuality.TestInit import TestInit
-from sqlalchemy.engine.base import ResultProxy
 
 
 class ResultSetTest(unittest.TestCase):

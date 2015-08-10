@@ -53,7 +53,7 @@ class SystemTest(unittest.TestCase):
         pd = ProcessDetail(pid, name)
         poller = ProcessCPUPoller()
         v = poller.sample(pd)
-        self.assertTrue(isinstance(v, types.FloatType))
+        self.assertTrue(isinstance(v, float))
 
 
     def testProcessMemoryPollerBasic(self):
@@ -62,7 +62,7 @@ class SystemTest(unittest.TestCase):
         pd = ProcessDetail(pid, name)
         poller = ProcessMemoryPoller()
         v = poller.sample(pd)
-        self.assertTrue(isinstance(v, types.FloatType))
+        self.assertTrue(isinstance(v, float))
 
 
     def _doPeriodPoller(self, thresholdToTest, level, config,

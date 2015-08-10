@@ -141,7 +141,7 @@ def print_data(data, lookup="value"):
     padding = ""
     for row in jsondict['rows']:
         values = row[lookup]
-        if  type(values) is types.DictType:
+        if  type(values) is dict:
             if  not padding:
                 for key in values.keys():
                     if  len(key) > maxl:

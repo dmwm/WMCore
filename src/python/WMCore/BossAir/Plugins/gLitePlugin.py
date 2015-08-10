@@ -1385,8 +1385,8 @@ class gLitePlugin(BasePlugin):
           and add the ce if not already in the destination
         """
         destlist = []
-        if type(location) == types.StringType or \
-           type(location) == types.UnicodeType:
+        if type(location) == bytes or \
+           type(location) == str:
             destlist.append( self.locationAction.execute( \
                                cesite = location)[0].get('se_name', None) )
         else:

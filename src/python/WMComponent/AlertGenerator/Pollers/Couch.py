@@ -213,7 +213,7 @@ class CouchErrorsPoller(BasePoller):
                    (self.__class__.__name__, ex))
             raise Exception(msg)
         # observables shall be list-like integers
-        if not isinstance(self.config.observables, (types.ListType, types.TupleType)):
+        if not isinstance(self.config.observables, (list, tuple)):
             self.config.observables = tuple([self.config.observables])
 
 

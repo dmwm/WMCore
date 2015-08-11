@@ -145,7 +145,7 @@ class CleanCouchPoller(BaseWorkerThread):
         elif db == "SummaryStats":
             couchDB = self.statsumdatabase
             view = None
-        elif db == "WMStats":
+        elif db == "WMStatsAgent":
             couchDB = self.wmstatsCouchDB.getDBInstance()
             view = "jobsByStatusWorkflow"
         
@@ -199,7 +199,7 @@ class CleanCouchPoller(BaseWorkerThread):
         summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
         logging.debug("%s docs deleted from SummaryStats" % summaryReport)
         
-        wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStats")
+        wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStatsAgent")
         logging.debug("%s docs deleted from wmagent_summary" % wmstatsReport)
         
         # if one of the procedure fails return False

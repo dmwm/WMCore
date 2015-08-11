@@ -29,7 +29,7 @@ class BulkOperations(WebAPI):
         """ For use with tables that send hidden parameters "checkbox<requestName>" """
         requests = []
         for key, value in kwargs.iteritems():
-            if isinstance(value, str):
+            if isinstance(value, basestring):
                 kwargs[key] = value.strip()
             if key.startswith("checkbox"):
                 requestName = key[8:]

@@ -195,7 +195,7 @@ class WorkQueue(WorkQueueBase):
         else:
             self.SiteDB = SiteDB()
 
-        if type(self.params['Teams']) in str:
+        if isinstance(self.params['Teams'], basestring):
             self.params['Teams'] = [x.strip() for x in \
                                     self.params['Teams'].split(',')]
 
@@ -262,7 +262,7 @@ class WorkQueue(WorkQueueBase):
             if not elementIDs:
                 elementIDs = []
             iter(elementIDs)
-            if type(elementIDs) in str:
+            if isinstance(elementIDs, basestring):
                 raise TypeError
         except TypeError:
             elementIDs = [elementIDs]

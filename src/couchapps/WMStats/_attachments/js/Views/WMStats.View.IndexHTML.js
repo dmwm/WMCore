@@ -133,6 +133,6 @@ WMStats.View.IndexHTML = function(){
         retrieveData();
         //$("div.draggable").draggable();
         // 5 min update
-        setInterval(retrieveData, 300000);
+        setInterval(retrieveData, 180000);
      } );
 };

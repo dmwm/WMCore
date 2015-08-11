@@ -12,8 +12,10 @@ import imp
 import os
 import uuid
 import tempfile
+
 from cgi import FieldStorage
 from httplib import HTTPException
+from nose.plugins.attrib import attr
 
 class PyCurlRESTServer(RESTBaseUnitTest):
     """
@@ -30,6 +32,9 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         self.config.UnitTests.object = 'WMCore_t.Services_t.PyCurlRESTModel'
         self.requestHandler = Requests('http://127.0.0.1:8888/unittests/rest/')
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testFileUpload(self):
         """
         The method upload a file (data/TestUpload.txt) and check if the server API has saved it
@@ -49,6 +54,9 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         os.remove(uploadedFilename)
         self.assertTrue('Success' in res)
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testFailingFileUpload(self):
         """
         The method upload a file (data/TestUpload.txt) and check if the server API has saved it

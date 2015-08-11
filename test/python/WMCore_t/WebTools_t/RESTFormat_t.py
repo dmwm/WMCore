@@ -35,11 +35,17 @@ class RESTFormatTest(RESTBaseUnitTest):
 
         self.urlbase = self.config.getServerUrl()
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testUnsupportedFormat(self):
         # test not accepted type should return 406 error
         url = self.urlbase +'list1/'
         methodTest('GET', url, accept='text/das', output={'code':406})
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testSupportedFormat(self):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'

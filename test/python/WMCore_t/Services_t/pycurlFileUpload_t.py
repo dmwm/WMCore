@@ -12,8 +12,10 @@ import imp
 import os
 import uuid
 import tempfile
+
 from cgi import FieldStorage
 from httplib import HTTPException
+from nose.plugins.attrib import attr
 
 class PyCurlRESTServer(RESTBaseUnitTest):
     """

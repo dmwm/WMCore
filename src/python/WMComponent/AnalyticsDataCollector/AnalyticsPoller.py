@@ -42,7 +42,8 @@ class AnalyticsPoller(BaseWorkerThread):
         set db connection(couchdb, wmbs) to prepare to gather information
         """
         # set the connection to local queue
-        self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
+        if not hasattr(self.config, "Tier0Feeder"):
+            self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
 
         # set the connection for local couchDB call
         self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, 
@@ -96,7 +97,11 @@ class AnalyticsPoller(BaseWorkerThread):
             # get the data from local workqueue:
             # request name, input dataset, inWMBS, inQueue
             logging.info("Getting Local Queue Data ...")
-            localQInfo = self.localQueue.getAnalyticsData()
+            localQInfo = {}
+            if not hasattr(self.config, "Tier0Feeder"):
+                localQInfo = self.localQueue.getAnalyticsData()
+            else: 
+                logging.debug("Tier-0 instance, not checking WorkQueue")
 
             # combine all the data from 3 sources
             logging.info("""Combining data from

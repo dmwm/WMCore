@@ -25,11 +25,11 @@ class JSONThunker:
                                  bool,
                                  int,
                                  float,
-                                 int,
+                                 long,
                                  complex,
                                  str,
                                  bytes,
-                                 str
+                                 unicode
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -262,7 +262,7 @@ class JSONThunker:
         """
         _unthunk - does the actual work for unthunk
         """
-        if (type(jsondata) == str):
+        if (type(jsondata) == unicode):
             return str(jsondata)
         if (type(jsondata) == type({})):
             if ('thunker_encoded_json' in jsondata):

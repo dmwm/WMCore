@@ -148,10 +148,9 @@ class TestChangeState(unittest.TestCase):
 
         for transition in testJobADoc["states"].itervalues():
             self.assertTrue(type(transition["timestamp"]) in (int,
-                                                             int))
+                                                             long))
 
-        assert testJobADoc["jobid"] == testJobA["id"], \
-               "Error: ID parameter is incorrect."
+        self.assertEqual(testJobADoc["jobid"] , testJobA["id"], "Error: ID parameter is incorrect.")
         assert testJobADoc["name"] == testJobA["name"], \
                "Error: Name parameter is incorrect."
         assert testJobADoc["jobgroup"] == testJobA["jobgroup"], \

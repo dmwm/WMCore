@@ -352,14 +352,13 @@ class TaskArchiverPoller(BaseWorkerThread):
         finishedwfs = finishedWorkflowsDAO.execute()
 
         #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for archiving: %s" % (len(finishedwfs),finishedwfs.keys()))
+        logging.info("Found %d candidate workflows for completing: %s" % (len(finishedwfs),finishedwfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) ==0:
             return
         
         completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
-        completedWorkflowsDAO.execute(finishedwfs.keys())
         
         centralCouchAlive = True
         try:
@@ -424,6 +423,8 @@ class TaskArchiverPoller(BaseWorkerThread):
                                 self.reqmgrSvc.updateRequestStatus(workflow, newState)
                             
                         logging.info("status updated to '%s' : %s" % (newState, workflow))
+                    
+                    completedWorkflowsDAO.execute([workflow])
         
                 except TaskArchiverPollerException as ex:
 
@@ -477,7 +478,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         # create updateDBSBufferWorkflowComplete DAO
         if len(deletablewfs) ==0:
             return
-        safeStatesToDelete = ["completed", "aborted-completed", "rejected", 
+        safeStatesToDelete = ["completed", "aborted-completed", "rejected", "announced",
                               "normal-archived", "aborted-archived", "rejected-archived"]
         wfsToDelete = {}
         for workflow in deletablewfs:

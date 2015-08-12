@@ -19,9 +19,9 @@ import traceback
 _SimpleTypes = [
     bool,
     float,
-    bytes,
     str,
-    int,
+    unicode,
+    long,    # Not needed in python3
     type(None),
     int,
     ]
@@ -44,7 +44,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == bytes:
+    if type(value) == str:
         value = "\'%s\'" % value
     return str(value)
 
@@ -127,7 +127,7 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == str:
+        if type(value) == unicode:
             value = str(value)
         
         self._complexTypeCheck(name, value)

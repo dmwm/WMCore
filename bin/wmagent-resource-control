@@ -123,18 +123,18 @@ def getCMSSiteInfo(pattern):
     return nameSEMapping
 
 def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
-             tier0Option = False, cmsName = None):
+             tier0Option = False, cmsName = None, state=None):
     """
     _addSites_
 
     Add the given sites to resource control and add tasks as well.
     """
     if pendingSlots is None:
-        pendingSlots = 10
+        pendingSlots = 25
     else:
         pendingSlots = pendingSlots
     if runningSlots is None:
-        runningSlots = 10
+        runningSlots = 25
     else:
         runningSlots = runningSlots
 
@@ -145,6 +145,10 @@ def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlo
         tasks = getTaskTypes(tier0Option)
         for task in tasks:
             updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
+
+    if state:
+        for siteName in allSites.keys():
+            setSiteState(resourceControl, siteName, state)
 
     return
 
@@ -318,15 +322,15 @@ else:
     elif options.addT1s == True:
         t1Sites = getCMSSiteInfo("T1*")
         addSites(myResourceControl, t1Sites, options.ceName, options.plugin,
-                 options.pendingSlots, options.runningSlots)
+                 options.pendingSlots, options.runningSlots, state=options.state)
     elif options.addT2s == True:
         t2Sites = getCMSSiteInfo("T2*")
         addSites(myResourceControl, t2Sites, options.ceName, options.plugin,
-                 options.pendingSlots, options.runningSlots)
+                 options.pendingSlots, options.runningSlots, state=options.state)
     elif options.addAllSites == True:
         allSites = getCMSSiteInfo("*")
         addSites(myResourceControl, allSites, options.ceName, options.plugin,
-                 options.pendingSlots, options.runningSlots)
+                 options.pendingSlots, options.runningSlots, state=options.state)
     elif options.siteName is None:
         print "You must specify a site name."
         myOptParser.print_help()

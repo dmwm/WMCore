@@ -187,7 +187,7 @@ class BlackWhiteListParser(object):
         @rtype: list
         """
         results = []
-        if isinstance(siteList, bytes):
+        if isinstance(siteList, basestring):
             siteList = siteList.split(',')
 
         for expr in siteList:

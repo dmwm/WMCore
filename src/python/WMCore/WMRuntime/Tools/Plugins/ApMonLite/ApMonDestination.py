@@ -17,9 +17,9 @@ from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonException import ApMonExcepti
 # // Map python types to XDR Types for packaging
 #//
 _ValuePackers = {
-    bytes:  (0, xdrlib.Packer.pack_string), # strings
-    int   :  (2, xdrlib.Packer.pack_int),     # integer XDR_INT32
-    float :  (5, xdrlib.Packer.pack_double),  # float XDR_REAL64
+    str: (0, xdrlib.Packer.pack_string), # strings
+    int: (2, xdrlib.Packer.pack_int),     # integer XDR_INT32
+    float: (5, xdrlib.Packer.pack_double),  # float XDR_REAL64
     }
 
 

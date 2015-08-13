@@ -334,7 +334,7 @@ def runDas(self, func, data, expires):
             row = None
     else:
         row = results
-    if  type(row) is bytes:
+    if  type(row) is str:
         row = '"%s"' % row
     try:
         factory = WMFactory('webtools_factory')

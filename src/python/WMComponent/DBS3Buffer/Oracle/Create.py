@@ -317,10 +317,6 @@ class Create(DBCreator):
                (CONSTRAINT dbsbuffer_algo_unique UNIQUE (app_name, app_ver,
                                                          app_fam, pset_hash) %s)""" % tablespaceIndex
 
-        self.indexes["01_pk_dbsbuffer_file"] = \
-          """ALTER TABLE dbsbuffer_file ADD
-               (CONSTRAINT dbsbuffer_file_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
-
         self.indexes["01_pk_dbsbuffer_file_parent"] = \
           """ALTER TABLE dbsbuffer_file_parent ADD
                (CONSTRAINT dbsbuffer_file_parent_pk PRIMARY KEY (child, parent) %s)""" % tablespaceIndex
@@ -398,10 +394,18 @@ class Create(DBCreator):
           """ALTER TABLE dbsbuffer_workflow ADD
                (CONSTRAINT dbsbuffer_workflow_uq UNIQUE (name, task) %s)""" % tablespaceIndex
 
+        self.indexes["01_pk_dbsbuffer_file"] = \
+          """ALTER TABLE dbsbuffer_file ADD
+               (CONSTRAINT dbsbuffer_file_pk PRIMARY KEY (id) %s)""" % tablespaceIndex
+
         self.constraints["01_fk_dbsbuffer_file"] = \
           """ALTER TABLE dbsbuffer_file ADD
-               (CONSTRAINT dbsbuffer_file  FOREIGN KEY (workflow)  REFERENCES dbsbuffer_workflow(id)
+               (CONSTRAINT dbsbuffer_file FOREIGN KEY (workflow) REFERENCES dbsbuffer_workflow(id)
                  ON DELETE CASCADE)"""
+
+        self.indexes["01_uq_dbsbuffer_file"] = \
+          """ALTER TABLE dbsbuffer_file ADD
+               (CONSTRAINT dbsbuffer_file_unique UNIQUE (lfn) %s)""" % tablespaceIndex
 
         checksumTypes = ['cksum', 'adler32', 'md5']
         for i in checksumTypes:

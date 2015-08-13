@@ -104,7 +104,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     """request method using provided HTTP request and httplib library"""
     if  debug:
         httplib.HTTPConnection.debuglevel = 1
-    if  type(params) is not types.StringType:
+    if  type(params) is not str:
         params = urllib.urlencode(params, doseq=True)
     if  debug:
         print "input parameters", params

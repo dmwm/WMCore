@@ -17,19 +17,19 @@ import types
 import traceback
 
 _SimpleTypes = [
-    types.BooleanType,
-    types.FloatType,
-    types.StringType,
-    types.UnicodeType,
-    types.LongType,
-    types.NoneType,
-    types.IntType,
+    bool,
+    float,
+    str,
+    unicode,
+    long,    # Not needed in python3
+    type(None),
+    int,
     ]
 
 _ComplexTypes = [
-    types.DictType,
-    types.ListType,
-    types.TupleType,
+    dict,
+    list,
+    tuple,
     ]
 
 _SupportedTypes = []
@@ -44,7 +44,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) == str:
         value = "\'%s\'" % value
     return str(value)
 
@@ -55,13 +55,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == types.IntType:
+    if type(value) == int:
         return value
-    if type(value) == types.FloatType:
+    if type(value) == float:
         return value
-    if type(value) == types.ListType:
+    if type(value) == list:
         return value
-    if type(value) == types.DictType:
+    if type(value) == dict:
         return dict
     else:
         return format(value)
@@ -101,7 +101,7 @@ class ConfigSection(object):
             return
         elif type(value) in _ComplexTypes:
             vallist = value
-            if type(value) == types.DictType:
+            if type(value) == dict:
                 vallist = value.values()
             for val in vallist:
                 self._complexTypeCheck(name, val)
@@ -127,7 +127,7 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == types.UnicodeType:
+        if type(value) == unicode:
             value = str(value)
         
         self._complexTypeCheck(name, value)

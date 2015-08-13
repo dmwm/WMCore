@@ -227,7 +227,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) == str:
         value = "\'%s\'" % value
     return str(value)
 

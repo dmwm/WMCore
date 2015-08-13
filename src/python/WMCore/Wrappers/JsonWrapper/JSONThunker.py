@@ -21,15 +21,15 @@ class JSONThunker:
 
     """
     def __init__(self):
-        self.passThroughTypes = (types.NoneType,
-                                 types.BooleanType,
-                                 types.IntType,
-                                 types.FloatType,
-                                 types.LongType,
-                                 types.ComplexType,
-                                 types.StringTypes,
-                                 types.StringType,
-                                 types.UnicodeType
+        self.passThroughTypes = (type(None),
+                                 bool,
+                                 int,
+                                 float,
+                                 long,
+                                 complex,
+                                 str,
+                                 bytes,
+                                 unicode
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -262,7 +262,7 @@ class JSONThunker:
         """
         _unthunk - does the actual work for unthunk
         """
-        if (type(jsondata) == types.UnicodeType):
+        if (type(jsondata) == unicode):
             return str(jsondata)
         if (type(jsondata) == type({})):
             if ('thunker_encoded_json' in jsondata):

@@ -69,7 +69,7 @@ class LogDB(object):
                 for rec in row['doc']['messages']:
                     rec.update({'request':request, 'identifier':identifier, 'thr': thr, 'type':mtype})
                     res.append(rec)
-        except Exception as exc:
+        except Exception, exc:
             self.logger.error("LogDBBackend get API failed, error=%s" % str(exc))
             res = 'get-error'
         self.logger.debug("LogDB get request, res=%s", res)

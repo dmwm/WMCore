@@ -198,7 +198,7 @@ class WMBSRESTModel(RESTModel):
 
     def setTableFormat(self, input):
         input.setdefault("tableFormat", True)
-        if type(input['tableFormat']) == str:
+        if isinstance(input['tableFormat'], str):
             if input['tableFormat'].lower() == 'false':
                 input["tableFormat"] = False
             else:

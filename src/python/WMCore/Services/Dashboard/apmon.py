@@ -197,11 +197,11 @@ class ApMon:
         sent_params_nr = 0
         paramsPacker = xdrlib.Packer ()
 
-        if type(params) == type( {} ):
+        if isinstance(params, type( {} )):
             for name, value in params.iteritems():
                 if self.__packParameter(paramsPacker, name, value):
                     sent_params_nr += 1
-        elif type(params) == type( [] ):
+        elif isinstance(params, type( [] )):
             for name, value in params:
                 self.logger.debug("Adding parameter "+name+" = "+str(value));
                 if self.__packParameter(paramsPacker, name, value):
@@ -302,11 +302,11 @@ class ApMon:
         Set the destinations of the ApMon instance. It accepts the same parameters as the constructor.
         """
 
-        if type(initValue) == type([]):
+        if isinstance(initValue, type([])):
             self.configAddresses = []
             for dest in initValue:
                 self.__addDestination (dest, self.destinations)
-        elif type(initValue) == type({}):
+        elif isinstance(initValue, type({})):
             self.configAddresses = []
             for dest, opts in initValue.items():
                 self.__addDestination (dest, self.destinations, opts)

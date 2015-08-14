@@ -280,26 +280,26 @@ class FileTest(unittest.TestCase):
         assert testFileA == testFileC, \
                "ERROR: File load by ID didn't work"
 
-        assert type(testFileB["id"]) == int, \
+        assert isinstance(testFileB["id"], int), \
                "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int, \
+        assert isinstance(testFileB["size"], int), \
                "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int, \
+        assert isinstance(testFileB["events"], int), \
                "ERROR: File events is not an integer type."
-        assert type(testFileB["checksums"]) == dict, \
+        assert isinstance(testFileB["checksums"], dict), \
                "ERROR: File cksum is not a string type."
-        assert type(testFileB["first_event"]) == int, \
+        assert isinstance(testFileB["first_event"], int), \
                "ERROR: File first_event is not an integer type."
 
-        assert type(testFileC["id"]) == int, \
+        assert isinstance(testFileC["id"], int), \
                "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int, \
+        assert isinstance(testFileC["size"], int), \
                "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int, \
+        assert isinstance(testFileC["events"], int), \
                "ERROR: File events is not an integer type."
-        assert type(testFileC["checksums"]) == dict, \
+        assert isinstance(testFileC["checksums"], dict), \
                "ERROR: File cksum is not an string type."
-        assert type(testFileC["first_event"]) == int, \
+        assert isinstance(testFileC["first_event"], int), \
                "ERROR: File first_event is not an integer type."
 
         self.assertEqual(testFileC['checksums'], {'cksum': '101'})

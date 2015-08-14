@@ -76,8 +76,7 @@ def sites():
     try:
         # Download a list of all the sites from SiteDB, uses v2 API.
         sitedb = SiteDBJSON()
-        sites = sitedb.getAllCMSNames()
-        sites.sort()
+        sites = sorted(sitedb.getAllCMSNames())
     except Exception as exc:
         msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % str(exc)
         raise Exception(msg)

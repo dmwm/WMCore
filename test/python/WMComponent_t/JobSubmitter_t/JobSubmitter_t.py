@@ -178,7 +178,7 @@ class JobSubmitterTest(unittest.TestCase):
             #site = self.sites[0]
             testFile = File(lfn = "/singleLfn/%s/%s" % (name, n),
                             size = 1024, events = 10)
-            if type(site) == list:
+            if isinstance(site, list):
                 for singleSite in site:
                     testFile.setLocation(singleSite)
             else:

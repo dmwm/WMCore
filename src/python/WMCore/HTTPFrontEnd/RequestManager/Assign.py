@@ -316,7 +316,7 @@ class Assign(WebAPI):
         if kwargs.get("ProcessingString", None):
             processedDatasetParts.append("ProcessingString")
         for field in processedDatasetParts:
-            if type(kwargs[field]) == dict:
+            if isinstance(kwargs[field], dict):
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:
@@ -325,9 +325,9 @@ class Assign(WebAPI):
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
-        if type(whiteList) != list:
+        if not isinstance(whiteList, list):
             whiteList = [whiteList]
-        if type(blackList) != list:
+        if not isinstance(blackList, list):
             blackList = [blackList]
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)

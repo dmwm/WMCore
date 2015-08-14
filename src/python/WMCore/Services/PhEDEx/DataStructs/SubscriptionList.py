@@ -29,9 +29,9 @@ class PhEDExSubscription(object):
         """
         Initialize PhEDEx subscription with default value
         """
-        if type(datasetPathList) == str:
+        if isinstance(datasetPathList, str):
             datasetPathList = [datasetPathList]
-        if type(nodeList) == str:
+        if isinstance(nodeList, str):
             nodeList = [nodeList]
 
         self.datasetPaths = set(datasetPathList)

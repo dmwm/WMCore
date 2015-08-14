@@ -216,7 +216,7 @@ class JobArchiverPoller(BaseWorkerThread):
 
         results = self.loadAction.execute(jobID = binds)
 
-        if not type(results) == list:
+        if not isinstance(results, list):
             results = [results]
 
         doneList = []

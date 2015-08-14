@@ -296,7 +296,7 @@ class ProcessPool:
             try:
                 output = self.sink.recv()
                 decode = self.jsonHandler.decode(output)
-                if type(decode) == type({}) and decode.get('type', None) == 'ERROR':
+                if isinstance(decode, type({})) and decode.get('type', None) == 'ERROR':
                     # Then we had some kind of error
                     msg = decode.get('msg', 'Unknown Error in ProcessPool')
                     logging.error("Received Error Message from ProcessPool Slave")
@@ -457,7 +457,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
         if output != None:
-            if type(output) == list:
+            if isinstance(output, list):
                 for item in output:
                     encodedOutput = jsonHandler.encode(item)
                     sender.send(encodedOutput)

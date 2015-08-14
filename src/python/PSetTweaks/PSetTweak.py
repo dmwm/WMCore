@@ -145,7 +145,7 @@ class JSONiser:
         for param in params:
             self.parameters["%s.%s" % (queue, param)]  = dictionary[param]
         for key, value in dictionary.items():
-            if type(value) == type(dict()):
+            if isinstance(value, type(dict())):
                 self.queue.append(key)
                 self.dejson(dictionary[key])
                 self.queue.pop(-1)
@@ -293,8 +293,7 @@ class PSetTweak:
         setattrCalls = {}
         for pset in self.psets():
             setattrCalls.update(self.setattrCalls(pset))
-        order = setattrCalls.keys()
-        order.sort()
+        order = sorted(setattrCalls.keys())
         for call in order:
             if call == "process": continue
             result += "%s\n" % setattrCalls[call]
@@ -303,7 +302,7 @@ class PSetTweak:
         for param, value in self:
             psetName = param.rsplit(".", 1)[0]
             paramName = param.rsplit(".", 1)[1]
-            if type(value) == type("string"):
+            if isinstance(value, type("string")):
                 value = "\"%s\"" % value
             result += "setattr(%s, \"%s\", %s)\n" % (
                 psetName, paramName, value)

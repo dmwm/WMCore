@@ -308,22 +308,22 @@ class JobGroupTest(unittest.TestCase):
         testJobGroupC = JobGroup(uid = testJobGroupA.uid)
         testJobGroupC.load()
 
-        assert type(testJobGroupB.id) == int, \
+        assert isinstance(testJobGroupB.id, int), \
                "ERROR: Job group id is not an int."
 
-        assert type(testJobGroupC.id) == int, \
+        assert isinstance(testJobGroupC.id, int), \
                "ERROR: Job group id is not an int."
 
-        assert type(testJobGroupB.subscription["id"]) == int, \
+        assert isinstance(testJobGroupB.subscription["id"], int), \
                "ERROR: Job group subscription id is not an int."
 
-        assert type(testJobGroupC.subscription["id"]) == int, \
+        assert isinstance(testJobGroupC.subscription["id"], int), \
                "ERROR: Job group subscription id is not an int."
 
-        assert type(testJobGroupB.output.id) == int, \
+        assert isinstance(testJobGroupB.output.id, int), \
                "ERROR: Job group output id is not an int."
 
-        assert type(testJobGroupC.output.id) == int, \
+        assert isinstance(testJobGroupC.output.id, int), \
                "ERROR: Job group output id is not an int."
 
         assert testJobGroupB.uid == testJobGroupA.uid, \

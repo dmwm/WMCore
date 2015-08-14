@@ -171,7 +171,7 @@ def UniqueAxis(axisclass, axis):
     setattr(newtype,'_%s__axis'%name,axis)
     for n,v in newtype.__dict__.items():
         #print n
-        if type(v)==types.FunctionType:
+        if isinstance(v, types.FunctionType):
             #print 'rebuilding',n
             newcode = new.code(v.__code__.co_argcount,
                                    v.__code__.co_nlocals,

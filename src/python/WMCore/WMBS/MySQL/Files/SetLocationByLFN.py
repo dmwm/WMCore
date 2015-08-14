@@ -18,7 +18,7 @@ class SetLocationByLFN(DBFormatter):
                AND wmbs_file_details.lfn = :lfn"""
 
     def getBinds(self, lfn = None, location = None):
-        if type(lfn) == type('string'):
+        if isinstance(lfn, type('string')):
             return {'lfn': lfn, 'location': location}
         elif isinstance(lfn, (list, set)):
             binds = []

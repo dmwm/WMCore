@@ -73,7 +73,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries     = self.config.ErrorHandler.maxRetries
-        if type(self.maxRetries) != dict:
+        if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default' : self.maxRetries}
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
@@ -325,7 +325,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         results = self.idLoad.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
@@ -353,7 +353,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         results = self.loadAction.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []

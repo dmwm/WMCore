@@ -67,7 +67,7 @@ class Page(WMObject):
         Do the logging using the CherryPy logger
         """
 
-        if type(msg) != str:
+        if not isinstance(msg, str):
             msg = str(msg)
         if  msg:
             cplog.error_log.log(severity, msg)
@@ -327,14 +327,14 @@ def runDas(self, func, data, expires):
     results    = func(self, data)
     call_time  = time.time() - start_time
     res_expire = make_timestamp(expires)
-    if  type(results) is list:
+    if  isinstance(results, list):
         if len(results) > 0:
             row = results[0]
         else:
             row = None
     else:
         row = results
-    if  type(row) is str:
+    if  isinstance(row, str):
         row = '"%s"' % row
     try:
         factory = WMFactory('webtools_factory')

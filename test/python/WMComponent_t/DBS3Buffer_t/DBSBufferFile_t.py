@@ -250,18 +250,18 @@ class DBSBufferFileTest(unittest.TestCase):
         assert testFileA == testFileC, \
                "ERROR: File load by ID didn't work"
 
-        assert type(testFileB["id"]) == int or type(testFileB["id"]) == long, \
+        assert isinstance(testFileB["id"], int) or isinstance(testFileB["id"], long), \
                "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int or type(testFileB["size"]) == long, \
+        assert isinstance(testFileB["size"], int) or isinstance(testFileB["size"], long), \
                "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
+        assert isinstance(testFileB["events"], int) or isinstance(testFileB["events"], long), \
                "ERROR: File events is not an integer type."
 
-        assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
+        assert isinstance(testFileC["id"], int) or isinstance(testFileC["id"], long), \
                "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int or type(testFileC["size"]) == long, \
+        assert isinstance(testFileC["size"], int) or isinstance(testFileC["size"], long), \
                "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int or type(testFileC["events"]) == long, \
+        assert isinstance(testFileC["events"], int) or isinstance(testFileC["events"], long), \
                "ERROR: File events is not an integer type."
 
         testFileA.delete()

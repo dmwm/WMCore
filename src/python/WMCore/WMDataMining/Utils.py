@@ -160,7 +160,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
             try:
                 outputTiers = []
                 for ds in outputdatasets:
-                    if type(ds) == list:
+                    if isinstance(ds, list):
                         outputTiers.append(ds[0].split('/')[-1])
                     else:
                         outputTiers.append(ds.split('/')[-1])

@@ -77,8 +77,7 @@ class RunTest(unittest.TestCase):
         run2 = Run(2, 4,5,6)
         run3 = Run(3, 7,8,9)
 
-        runlist = [run2, run3, run1]
-        runlist.sort()
+        runlist = sorted([run2, run3, run1])
         self.assertEqual(runlist[0], run1)
         self.assertEqual(runlist[1], run2)
         self.assertEqual(runlist[2], run3)

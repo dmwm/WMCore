@@ -22,9 +22,9 @@ class JobSummary(object):
         
         #TODO need to validate the structure.
         for key, value in self.jobStatus.items():
-            if type(value) == int:
+            if isinstance(value, int):
                 self.jobStatus[key] += jobStatus.get(key, 0)
-            elif type(value) == dict:
+            elif isinstance(value, dict):
                 for secondKey, secondValue in value.items():
                     if key in jobStatus and secondKey in jobStatus[key]:
                         self.jobStatus[key][secondKey] += jobStatus[key][secondKey]

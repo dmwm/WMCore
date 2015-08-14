@@ -69,7 +69,7 @@ def getAverageStdDev(numList):
         average = 0.0
     if math.isnan(stdDev) or math.isinf(average) or not decimal.Decimal(str(stdDev)).is_finite():
         stdDev = 0.0
-    if type(stdDev) != float and type(stdDev) != int:
+    if not isinstance(stdDev, float) and not isinstance(stdDev, int):
         stdDev = 0.0
 
 

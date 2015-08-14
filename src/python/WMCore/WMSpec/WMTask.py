@@ -1121,7 +1121,7 @@ class WMTaskHelper(TreeHelper):
         return
     
     def setMaxRSS(self, maxRSS):
-        if type(maxRSS) == dict:
+        if isinstance(maxRSS, dict):
             maxRSS = maxRSS.get(self.name(), None)
         
         if maxRSS:
@@ -1132,7 +1132,7 @@ class WMTaskHelper(TreeHelper):
         return
     
     def setMaxVSize(self, maxVSize):
-        if type(maxVSize) == dict:
+        if isinstance(maxVSize, dict):
             maxVSize = maxVSize.get(self.name(), None)
 
         if maxVSize:
@@ -1233,7 +1233,7 @@ class WMTaskHelper(TreeHelper):
         Set the task processing version
         """
         
-        if type(procVer) == dict:
+        if isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
         else:
             taskProcVer = procVer
@@ -1258,7 +1258,7 @@ class WMTaskHelper(TreeHelper):
         Set the task processing string
         """
         
-        if type(procString) == dict:
+        if isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
         else:
             taskProcString = procString
@@ -1284,7 +1284,7 @@ class WMTaskHelper(TreeHelper):
         Set the task acquisition era
         """
         
-        if type(era) == dict:
+        if isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
         else:
             taskEra = era

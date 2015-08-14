@@ -553,7 +553,7 @@ class JobAccountantTest(unittest.TestCase):
             assert dbsFile["datasetPath"] == datasetPath, \
                    "Error: dataset path in buffer is wrong."
 
-            if type(parentFileLFNs) == dict:
+            if isinstance(parentFileLFNs, dict):
                 parentFileLFNsCopy = copy.deepcopy(parentFileLFNs[fwkJobReportFile["lfn"]])
             else:
                 parentFileLFNsCopy = copy.deepcopy(parentFileLFNs)

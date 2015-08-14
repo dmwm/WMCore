@@ -105,8 +105,7 @@ class DBSBlock:
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
             logging.debug("Block length: %i" % len(self.files))
-            l = [x['id'] for x in self.files]
-            l.sort()
+            l = sorted([x['id'] for x in self.files])
             logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
             return
 

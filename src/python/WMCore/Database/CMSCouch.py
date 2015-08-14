@@ -595,7 +595,7 @@ class Database(CouchDBRequests):
         delete bulk documents
         """
         # do the safty check other wise it will delete whole db.
-        if type(ids) != list:
+        if not isinstance(ids, list):
             raise
         if len(ids) == 0:
             return None

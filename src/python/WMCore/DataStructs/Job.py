@@ -102,7 +102,7 @@ class Job(WMObject, dict):
 
         Add a file or list of files to the job's input.
         """
-        if type(file) == list:
+        if isinstance(file, list):
             self["input_files"].extend(file)
         else:
             self["input_files"].append(file)

@@ -159,10 +159,10 @@ class FilesetTest(unittest.TestCase):
         testFilesetC = Fileset(id = testFilesetA.id)
         testFilesetC.load()
 
-        assert type(testFilesetB.id) == int, \
+        assert isinstance(testFilesetB.id, int), \
                "ERROR: Fileset id is not an int."
 
-        assert type(testFilesetC.id) == int, \
+        assert isinstance(testFilesetC.id, int), \
                "ERROR: Fileset id is not an int."
 
         assert testFilesetB.id == testFilesetA.id, \

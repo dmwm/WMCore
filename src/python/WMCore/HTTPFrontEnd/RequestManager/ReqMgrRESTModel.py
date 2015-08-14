@@ -307,9 +307,8 @@ class ReqMgrRESTModel(RESTModel):
 
     def getMostRecentOutputForPrepID(self, prepID):
         """Return the datasets produced by the most recently submitted request with this prep ID"""
-        requestIDs = GetRequest.getRequestByPrepID(prepID)
+        requestIDs = sorted(GetRequest.getRequestByPrepID(prepID))
         # most recent will have the largest ID
-        requestIDs.sort()
         requestIDs.reverse()
 
         request = None

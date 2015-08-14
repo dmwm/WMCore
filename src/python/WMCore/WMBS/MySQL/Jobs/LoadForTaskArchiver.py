@@ -38,7 +38,7 @@ class LoadForTaskArchiver(DBFormatter):
         the result.
         """
 
-        if type(jobID) != list:
+        if not isinstance(jobID, list):
             jobID = [jobID]
 
         binds = [{"jobid": x} for x in jobID]

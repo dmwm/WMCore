@@ -61,7 +61,7 @@ class Page(object):
 
     def log(self, msg, severity):
         """Define log level"""
-        if type(msg) != str:
+        if not isinstance(msg, str):
             msg = str(msg)
         if  msg:
             cplog(msg, context=self.name,

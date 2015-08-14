@@ -113,7 +113,7 @@ class WMStatsReader():
         
         options = self.setDefaultStaleOptions(options)
             
-        if keys and type(keys) == str:
+        if keys and isinstance(keys, str):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
             

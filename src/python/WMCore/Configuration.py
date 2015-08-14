@@ -44,7 +44,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == str:
+    if isinstance(value, str):
         value = "\'%s\'" % value
     return str(value)
 
@@ -55,13 +55,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == int:
+    if isinstance(value, int):
         return value
-    if type(value) == float:
+    if isinstance(value, float):
         return value
-    if type(value) == list:
+    if isinstance(value, list):
         return value
-    if type(value) == dict:
+    if isinstance(value, dict):
         return dict
     else:
         return format(value)
@@ -101,7 +101,7 @@ class ConfigSection(object):
             return
         elif type(value) in _ComplexTypes:
             vallist = value
-            if type(value) == dict:
+            if isinstance(value, dict):
                 vallist = value.values()
             for val in vallist:
                 self._complexTypeCheck(name, val)
@@ -127,7 +127,7 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == unicode:
+        if isinstance(value, unicode):
             value = str(value)
         
         self._complexTypeCheck(name, value)
@@ -165,7 +165,7 @@ class ConfigSection(object):
             settingInstance = getattr(otherSection, setting)
             if setting in self._internal_settings:
                 currentSetting = getattr(self, setting)
-                if type(currentSetting) != type(settingInstance) and currentSetting != None and settingInstance != None:
+                if not isinstance(currentSetting, type(settingInstance)) and currentSetting != None and settingInstance != None:
                     msg = "Trying to overwrite a setting with mismatched types"
                     msg += "%s.%s is not the same type as %s.%s" % (
                         self._internal_name, setting,

@@ -101,7 +101,7 @@ class PhEDEx(dict):
         Update a request approving/disapproving it.
         Currently only works on deletion requests.
         """
-        if type(nodes) == str:
+        if isinstance(nodes, str):
             nodes = [nodes]
         for dataset in self.deletionRequests:
             for request in self.deletionRequests[dataset]:
@@ -214,7 +214,7 @@ class PhEDEx(dict):
         data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
         if 'dataset' in args:
             args['block'] = []
-            if type(args['dataset']) != type([]):
+            if not isinstance(args['dataset'], type([])):
                 args['dataset'] = [args['dataset']]
             for dataset in args['dataset']:
                 args['block'].extend(self.dataBlocks._blockGenerator(dataset))
@@ -234,7 +234,7 @@ class PhEDEx(dict):
         def _blockInfoGenerator(blockList):
 
             for block in blockList:
-                if type(block) == dict:
+                if isinstance(block, dict):
                     block = block['Name']
                 dataset = self.dataBlocks.getDatasetName(block)
                 # TODO needs to add correct file numbers

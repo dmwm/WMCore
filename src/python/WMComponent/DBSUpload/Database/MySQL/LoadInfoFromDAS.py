@@ -86,7 +86,7 @@ class LoadInfoFromDAS(FindDASToUpload):
         Take a list of IDs, return info
         """
         binds  = []
-        if not type(ids) == type([]):
+        if not isinstance(ids, type([])):
             ids = list(ids)
         for id in ids:
             binds.append({'id': id})

@@ -83,7 +83,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
 
     tierList = dataTier.split("-")
 
-    if not type(algorithm) == list:
+    if not isinstance(algorithm, list):
         algorithm = [algorithm]
 
     processedDataset = DbsProcessedDataset(PrimaryDataset = primary,
@@ -680,7 +680,7 @@ class DBSInterface:
         take just one.
         """
 
-        if type(blockNames) != list:
+        if not isinstance(blockNames, list):
             blockNames = [blockNames]
 
 
@@ -721,7 +721,7 @@ class DBSInterface:
             logging.debug("Skipping migration due to doGlobalMigration tag.")
             return blocks
 
-        if type(blocks) != list:
+        if not isinstance(blocks, list):
             blocks = [blocks]
 
 

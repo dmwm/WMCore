@@ -303,7 +303,7 @@ class Root(Harness):
                 view_config.security = security_cfg.section_(instance)
 
         if 'database' in view_config.dictionary_():
-            if not type(view_config.database) == str:
+            if not isinstance(view_config.database, str):
                 if len(view_config.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:
                         view_config.database.connectUrl = self.coreDatabase.connectUrl

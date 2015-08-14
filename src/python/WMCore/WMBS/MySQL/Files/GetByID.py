@@ -60,7 +60,7 @@ class GetByID(DBFormatter):
 
         #Making some modifications to allow it to load a whole list of files
         #This DAO object should be called directly, not through WMBSFile
-        if type(file) == list:
+        if isinstance(file, list):
             #Then we have a list of the form [fileid, fileid, etc.]
             if len(file) == 0:
                 #Ignore empty lists

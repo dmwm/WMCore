@@ -22,8 +22,7 @@ def user_info_from_headers(key, verbose=False):
     # Extract user information from the headers. Collect data required
     # for HMAC validation while processing headers.
     prefix = suffix = ""
-    hkeys = headers.keys()
-    hkeys.sort()
+    hkeys = sorted(headers.keys())
     for hk in hkeys:
         hk = hk.lower()
         if hk[0:9] in ("cms-authn", "cms-authz") and hk != "cms-authn-hmac":

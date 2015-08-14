@@ -44,13 +44,13 @@ class GetTask(DBFormatter):
         """
 
 
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             if len(jobID) == 0:
                 return {}
             binds = []
             for id in jobID:
                 binds.append({'jobid': int(id)})
-        elif type(jobID) == int:
+        elif isinstance(jobID, int):
             binds = {'jobid': jobID}
         else:
             logging.error('Incompatible jobid in GetTask')

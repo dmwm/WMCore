@@ -18,13 +18,13 @@ class Add(DBFormatter):
                  dataset_algo = 0, status = "NOTUPLOADED"):
         # Can't use self.dbi.buildbinds here...
         binds = {}
-        if type(files) == type('string'):
+        if isinstance(files, type('string')):
             binds = {'lfn': files,
                      'filesize': size,
                      'events': events,
                      'dataset_algo': dataset_algo,
                      'status' : status}
-        elif type(files) == type([]):
+        elif isinstance(files, type([])):
         # files is a list of tuples containing lfn, size, events, cksum, dataset, status
             binds = []
             for f in files:

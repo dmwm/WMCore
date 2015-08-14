@@ -17,7 +17,7 @@ class AcquireFiles(DBFormatter):
 
     def execute(self, subscription = None, file = None, conn = None,
                 transaction = False):
-        if type(file) == type([]):
+        if isinstance(file, type([])):
             binds = []
             for fileid in file:
                 binds.append({"subscription": subscription, "fileid": fileid})

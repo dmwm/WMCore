@@ -553,7 +553,7 @@ class AccountantWorker(WMConnectionBase):
             results = self.getJobInfoByID.execute(parentWMBSJobIDs)
             parentJobNames = []
             
-            if type(results) == list:
+            if isinstance(results, list):
                 for jobInfo in results:
                     parentJobNames.append(jobInfo['name'])
             else:
@@ -865,9 +865,9 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile = File()
         wmbsFile.update(file)
 
-        if type(file["locations"]) == set:
+        if isinstance(file["locations"], set):
             seName = list(file["locations"])[0]
-        elif type(file["locations"]) == list:
+        elif isinstance(file["locations"], list):
             if len(file['locations']) > 1:
                 logging.error("Have more then one location for a file in job %i" % (jobID))
                 logging.error("Choosing location %s" % (file['locations'][0]))

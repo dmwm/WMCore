@@ -48,7 +48,7 @@ class JobGroup(WMObject):
         self.newjobs = []
         self.id = 0
 
-        if type(jobs) == list:
+        if isinstance(jobs, list):
             self.newjobs = jobs
         elif jobs != None:
             self.newjobs = [jobs]
@@ -128,9 +128,9 @@ class JobGroup(WMObject):
         """
         This just gets a length for either dict or list objects
         """
-        if type(obj) == dict:
+        if isinstance(obj, dict):
             return len(obj.keys())
-        elif type(obj) == list:
+        elif isinstance(obj, list):
             return len(obj)
         else:
             return 0

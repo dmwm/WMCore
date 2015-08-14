@@ -227,7 +227,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == str:
+    if isinstance(value, str):
         value = "\'%s\'" % value
     return str(value)
 
@@ -238,13 +238,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == int:
+    if isinstance(value, int):
         return value
-    if type(value) == float:
+    if isinstance(value, float):
         return value
-    if type(value) == list:
+    if isinstance(value, list):
         return value
-    if type(value) == dict:
+    if isinstance(value, dict):
         return dict
     else:
         return format(value)
@@ -398,7 +398,7 @@ class TreeHelper:
         adds an arbitrary value as a dictionary.  Can have multiple values
         """
 
-        if not type(value) == dict:
+        if not isinstance(value, dict):
             raise Exception("TreeHelper.addValue passed a value that was not a dictionary")
 
         for key in value.keys():

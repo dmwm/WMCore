@@ -541,7 +541,7 @@ class WorkQueueBackend(object):
         """
         deleted = 0
         dbs = [self.db, self.inbox]
-        if type(workflowNames) != list:
+        if not isinstance(workflowNames, list):
             workflowNames = [workflowNames]
         
         if len(workflowNames) == 0:

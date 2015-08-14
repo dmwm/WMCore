@@ -430,7 +430,7 @@ class StepChainWorkloadFactory(StdBase):
 
             step = schema[stepName]
             # We can't handle non-dictionary steps
-            if type(step) != dict:
+            if not isinstance(step, dict):
                 msg = "Non-dictionary input for step in StepChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)

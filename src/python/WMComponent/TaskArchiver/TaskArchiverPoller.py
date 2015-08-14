@@ -495,7 +495,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 else:
                     logging.error("%s is in %s, will be deleted later" % (workflow, wfStatus))
             
-            except Exception, ex:
+            except Exception as ex:
                 #Something didn't go well on couch, abort!!!
                 msg = "Couldn't delete %s " % workflow
                 msg += "Exception message: %s" % str(ex)

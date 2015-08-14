@@ -71,17 +71,18 @@ REQUEST_STATE_TRANSITION = {
 ACTIVE_STATUS = ["new",
                  "assignment-approved",
                  "assigned",
-                 "ops-hold",
                  "negotiating",
                  "acquired",
                  "running",
                  "running-open",
                  "running-closed",
                  "failed",
+                 "force-complete",
                  "completed",
                  "closed-out",
                  "announced",
                  "aborted",
+                 "aborted-completed",
                  "rejected"]
 
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key

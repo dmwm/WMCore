@@ -51,21 +51,22 @@ class WMStatsReader():
     
     #TODO need to get this from reqmgr api
     ACTIVE_STATUS = ["new",
-                    "assignment-approved",
-                    "assigned",
-                    "ops-hold",
-                    "negotiating",
-                    "acquired",
-                    "running",
-                    "running-open",
-                    "running-closed",
-                    "failed",
-                    "completed",
-                    "closed-out",
-                    "announced",
-                    "aborted",
-                    "rejected"]
-
+                 "assignment-approved",
+                 "assigned",
+                 "negotiating",
+                 "acquired",
+                 "running",
+                 "running-open",
+                 "running-closed",
+                 "failed",
+                 "force-complete",
+                 "completed",
+                 "closed-out",
+                 "announced",
+                 "aborted",
+                 "aborted-completed",
+                 "rejected"]
+    
     def __init__(self, couchURL, reqdbURL = None, reqdbCouchApp = "ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call

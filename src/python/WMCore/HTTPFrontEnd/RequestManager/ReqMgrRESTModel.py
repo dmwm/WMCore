@@ -538,6 +538,9 @@ class ReqMgrRESTModel(RESTModel):
         if requestName:
             self.info("Cloning request: request name: '%s'" % requestName)
             requestOrigDict = self.getRequest(requestName)
+            # add OriginalRequestName to the new request schema
+            requestOrigDict['OriginalRequestName'] = requestName
+
             if requestOrigDict:
                 self.info("Request found, cloning ...")
                 newReqSchema = Utilities.getNewRequestSchema(requestOrigDict)

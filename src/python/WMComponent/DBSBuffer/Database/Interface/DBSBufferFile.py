@@ -225,7 +225,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         Set one or more lfns as the child of this file.
         """
-        if type(lfns) != list:
+        if not isinstance(lfns, list):
             lfns = [lfns]
 
         existingTransaction = self.beginTransaction()

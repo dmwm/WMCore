@@ -132,7 +132,7 @@ class DummyRESTModel(RESTModel):
         return aList
 
     def listTypeValidate(self, request_input):
-        if type(request_input["aList"]) != list:
+        if not isinstance(request_input["aList"], list):
             request_input["aList"] = [int(request_input["aList"])]
         else:
             request_input["aList"] = map(int, request_input["aList"])
@@ -154,7 +154,7 @@ class DummyRESTModel(RESTModel):
             pass
         # Checks its first request_input contains a int
         try:
-            assert type(request_input['input_int']) == type(123)
+            assert isinstance(request_input['input_int'], type(123))
         except AssertionError:
             raise AssertionError('val_1 failed: %s not int' % type(request_input['input_int']))
         return request_input
@@ -162,7 +162,7 @@ class DummyRESTModel(RESTModel):
     def val_2(self, request_input):
         # Checks its second request_input is a string
         try:
-            assert type(request_input['input_str']) == type('abc')
+            assert isinstance(request_input['input_str'], type('abc'))
         except AssertionError:
             raise HTTPError(400, 'val_2 failed: %s not str' % type(request_input['input_str']))
         return request_input

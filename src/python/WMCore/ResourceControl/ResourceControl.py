@@ -143,7 +143,7 @@ class ResourceControl(WMConnectionBase):
 
         subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
         insertAction = self.daofactory(classname = "InsertThreshold")
-        if type(taskType) == type([]):
+        if isinstance(taskType, type([])):
             for singleTask in taskType:
                 subTypeAction.execute(subType = singleTask,
                                       conn = self.getDBConn(),

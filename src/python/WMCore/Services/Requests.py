@@ -215,7 +215,7 @@ class Requests(dict):
             pass
 
         if verb != 'GET' and data:
-            if type(encoder) == type(self.get) or type(encoder) == type(f):
+            if isinstance(encoder, type(self.get)) or isinstance(encoder, type(f)):
                 encoded_data = encoder(data)
             elif encoder == False:
                 # Don't encode the data more than we have to
@@ -235,7 +235,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert type(encoded_data) == type('string'), \
+        assert isinstance(encoded_data, type('string')), \
             "Data in makeRequest is %s and not encoded to a string" \
                 % type(encoded_data)
 
@@ -274,7 +274,7 @@ class Requests(dict):
             setattr(e, 'headers', response)
             raise e
 
-        if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
+        if isinstance(decoder, type(self.makeRequest)) or isinstance(decoder, type(f)):
             result = decoder(result)
         elif decoder != False:
             result = self.decode(result)

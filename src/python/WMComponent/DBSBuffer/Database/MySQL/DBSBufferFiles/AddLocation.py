@@ -37,7 +37,7 @@ class AddLocation(DBFormatter):
         mySites = copy.deepcopy(siteName)
         nameMap = {}
 
-        if type(mySites) == str:
+        if isinstance(mySites, str):
             mySites = [mySites]
 
         myTransaction = Transaction(self.dbi)

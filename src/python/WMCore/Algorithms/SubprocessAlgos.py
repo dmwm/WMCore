@@ -99,7 +99,7 @@ def runCommand(cmd, shell = True, timeout = None):
     """
 
     if timeout:
-        if type(timeout) != int:
+        if not isinstance(timeout, int):
             timeout = None
             logging.error("SubprocessAlgo.runCommand expected int timeout, got %s" % timeout)
         else:

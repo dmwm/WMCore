@@ -56,7 +56,7 @@ class LoadFromID(DBFormatter):
         the result.
         """
 
-        if type(jobID) == list:
+        if isinstance(jobID, list):
             binds = jobID
         else:
             binds = {"jobid": jobID}

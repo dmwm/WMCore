@@ -53,7 +53,7 @@ class Performance:
         """
         fmtstring = ""
         for i in input.keys():
-            if type(input[i]) == type('string'):
+            if isinstance(input[i], type('string')):
                 fmtstring = "%s %s='%s'," % (fmtstring, i, input[i])
             else:
                 fmtstring = "%s %s=%s," % (fmtstring, i, input[i])

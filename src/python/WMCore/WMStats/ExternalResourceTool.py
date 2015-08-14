@@ -31,8 +31,7 @@ def handlePostSideEffect(workloadHelper, request_args):
         
 def getSiteInfo(config):
     sitedb = SiteDBJSON()
-    sites = sitedb.getAllCMSNames()    
-    sites.sort()
+    sites = sorted(sitedb.getAllCMSNames())    
     wildcardKeys = getattr(config, 'wildcardKeys', {'T1*': 'T1_*',
                                                     'T2*': 'T2_*',
                                                     'T3*': 'T3_*'})

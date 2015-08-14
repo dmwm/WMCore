@@ -26,7 +26,7 @@ class GetChecksum(DBFormatter):
         formattedResult = {}
 
         dictVersion = DBFormatter.formatDict(self, result)
-        if type(dictVersion) == type([]):
+        if isinstance(dictVersion, type([])):
             if len(dictVersion) == 0:
                 #Then it's empty
                 return None

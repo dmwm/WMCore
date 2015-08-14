@@ -200,8 +200,7 @@ class RunTransferNotifier(FeederImpl):
         """
         Queries DBS to determine what new runs are present, and adds a watcher
         """
-        runs = self.dbsHelper.getRuns(self.lastRun)
-        runs.sort()
+        runs = sorted(self.dbsHelper.getRuns(self.lastRun))
         for run in runs:
             watchedRuns.append(WatchedRun(run))
             self.lastRun = run

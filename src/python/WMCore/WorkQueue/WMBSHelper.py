@@ -633,7 +633,7 @@ class WMBSHelper(WMConnectionBase):
                         locations = set(storageElements))
 
         for lumi in dbsFile['LumiList']:
-            if type(lumi['LumiSectionNumber']) == list:
+            if isinstance(lumi['LumiSectionNumber'], list):
                 run = Run(lumi['RunNumber'], *lumi['LumiSectionNumber'])
             else:
                 run = Run(lumi['RunNumber'], lumi['LumiSectionNumber'])
@@ -736,7 +736,7 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if type(f) == type("") or "LumiList" not in f:
+            if isinstance(f, type("")) or "LumiList" not in f:
                 results.append(f)
                 continue
 

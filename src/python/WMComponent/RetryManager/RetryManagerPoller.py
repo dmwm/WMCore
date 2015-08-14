@@ -237,7 +237,7 @@ class RetryManagerPoller(BaseWorkerThread):
             subTypes[typeEntry['id']] = typeEntry['type']
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []

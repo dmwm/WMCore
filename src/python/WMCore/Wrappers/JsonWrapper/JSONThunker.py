@@ -127,10 +127,10 @@ class JSONThunker:
         special = False
         tmpdict = {}
         for k,v in toThunk.iteritems():
-            if type(k) == type(int):
+            if isinstance(k, type(int)):
                 special = True
                 tmpdict['_i:%s' % k] = self._thunk(v)
-            elif type(k) == type(float):
+            elif isinstance(k, type(float)):
                 special = True
                 tmpdict['_f:%s' % k] = self._thunk(v)
             else:
@@ -148,7 +148,7 @@ class JSONThunker:
         toThunk = self.checkRecursion( toThunk )
         toThunk = self.checkBlackListed(toThunk)
 
-        if (type(toThunk) == type("")):
+        if (isinstance(toThunk, type(""))):
             # things that got blacklisted
             return toThunk
         if (hasattr(toThunk, '__to_json__')):
@@ -240,16 +240,16 @@ class JSONThunker:
 
         if (type(toThunk) in self.passThroughTypes):
             return toThunk
-        elif (type(toThunk) == type([])):
+        elif (isinstance(toThunk, type([]))):
             return self.handleListThunk(toThunk)
 
-        elif (type(toThunk) == type({})):
+        elif (isinstance(toThunk, type({}))):
             return self.handleDictThunk(toThunk)
 
-        elif ((type(toThunk) == type(set()))):
+        elif ((isinstance(toThunk, type(set())))):
             return self.handleSetThunk(toThunk)
 
-        elif (type(toThunk) == types.FunctionType):
+        elif (isinstance(toThunk, types.FunctionType)):
             self.unrecurse(toThunk)
             return "function reference"
         elif (isinstance(toThunk, object)):
@@ -262,9 +262,9 @@ class JSONThunker:
         """
         _unthunk - does the actual work for unthunk
         """
-        if (type(jsondata) == unicode):
+        if (isinstance(jsondata, unicode)):
             return str(jsondata)
-        if (type(jsondata) == type({})):
+        if (isinstance(jsondata, type({}))):
             if ('thunker_encoded_json' in jsondata):
                 # we've got a live one...
                 if jsondata['type'] == 'set':

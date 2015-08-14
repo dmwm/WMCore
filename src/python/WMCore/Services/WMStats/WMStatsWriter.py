@@ -51,7 +51,7 @@ class WMStatsWriter(WMStatsReader):
         """
         # add delete docs as well for the compaction
         # need to check whether delete and update is successful
-        if type(docs) == dict:
+        if isinstance(docs, dict):
             docs = [docs]
         for doc in docs:
             self.couchDB.queue(doc)

@@ -144,7 +144,7 @@ class Mask(dict):
               with duplicate lumis.
         """
 
-        if not type(lumis) == list:
+        if not isinstance(lumis, list):
             lumis = list(lumis)
 
         if not run in self['runAndLumis'].keys():

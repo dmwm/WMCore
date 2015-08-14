@@ -24,7 +24,7 @@ def sortListByKey(input, key):
             logging.error("Found entry with no key in sortListByKey: %s" % entry)
             logging.error("Skipping")
             continue
-        if type(value) == set:
+        if isinstance(value, set):
             try:
                 v     = value
                 value = v.pop()

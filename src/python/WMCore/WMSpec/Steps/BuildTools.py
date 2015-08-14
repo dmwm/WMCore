@@ -175,7 +175,7 @@ def processDir( cfgSect, parent):
     """
     for setting in cfgSect._internal_settings:
         value = getattr(cfgSect, setting)
-        if type(value) != type(dict()): continue
+        if not isinstance(value, type(dict())): continue
         parent.addFile(value['Source'], value['Target'])
 
     for subdir in cfgSect._internal_children:

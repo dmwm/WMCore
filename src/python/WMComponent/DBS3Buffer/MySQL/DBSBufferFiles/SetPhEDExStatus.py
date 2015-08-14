@@ -11,7 +11,7 @@ class SetPhEDExStatus(DBFormatter):
     sql = "UPDATE dbsbuffer_file SET in_phedex = :status WHERE lfn = :lfn"
 
     def execute(self, lfns, status, conn = None, transaction = None):
-        if type(lfns) != list:
+        if not isinstance(lfns, list):
             lfns = [lfns]
 
         if len(lfns) < 1:

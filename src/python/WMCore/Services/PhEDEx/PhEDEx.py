@@ -134,7 +134,7 @@ class PhEDEx(Service):
 
         Update a request approving/disapproving it.
         """
-        if type(nodes) == str:
+        if isinstance(nodes, str):
             nodes = [nodes]
         args = {}
         args['decision'] = decision.lower()

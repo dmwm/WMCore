@@ -73,9 +73,9 @@ namespace (package): %s """ % (name, str(namespace))
             #This handles the passing of list-style arguments instead of dicts
             #Primarily for setting the schema
             #Or anywhere you need arguments of the form (a,b,c,...)
-            if type(args) == list and listFlag:
+            if isinstance(args, list) and listFlag:
                 classinstance = obj(*args)
-            elif type(args) == dict:
+            elif isinstance(args, dict):
                 classinstance = obj(**args)
             else:
                 #But if you actually need to pass a list, better do it the old fashioned way

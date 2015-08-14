@@ -138,7 +138,7 @@ class WorkflowManager(object):
                 if request[listitem]=='[]' or request[listitem]=='':
                     request[listitem]=[]
                 #if there is not a list but some elements it creates a list
-                if type(request[listitem]) is not list:
+                if not isinstance(request[listitem], list):
                     # if doesn't contain "[" is a single block
                     if '[' not in request[listitem]:
                         #wrap in a list

@@ -254,7 +254,7 @@ def combineAnalyticsData(a, b, combineFunc = None):
         if key not in result:
             result[key] = value
         else:
-            if not combineFunc and (type(value) != dict or type(result[key]) != dict):
+            if not combineFunc and (not isinstance(value, dict) or not isinstance(result[key], dict)):
                 # this will raise error if it can't combine two
                 result[key] = combineFunc(value, result[key])
             else:
@@ -331,7 +331,7 @@ def _setMultiLevelStatus(statusData, status, value):
 
 def _combineJobsForStatusAndSite(requestData, data):
     for status, siteJob in requestData.items():
-        if type(siteJob) != dict:
+        if not isinstance(siteJob, dict):
             _setMultiLevelStatus(data['status'], status, siteJob)
         else:
             for site, job in siteJob.items():

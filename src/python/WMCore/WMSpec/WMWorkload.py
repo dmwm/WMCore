@@ -160,7 +160,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.owner.name = name
         self.data.owner.group = "undefined"
 
-        if not type(ownerProperties) == dict:
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
         for key in ownerProperties.keys():
@@ -177,7 +177,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.owner.name = name
         self.data.owner.group = group
-        if not type(ownerProperties) == dict:
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
         for key in ownerProperties.keys():
             setattr(self.data.owner, key, ownerProperties[key])
@@ -497,7 +497,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site white list for the top level tasks in the workload.
         """
-        if type(siteWhitelist) != type([]):
+        if not isinstance(siteWhitelist, type([])):
             siteWhitelist = [siteWhitelist]
 
         taskIterator = self.taskIterator()
@@ -513,7 +513,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the site black list for the top level tasks in the workload.
         """
-        if type(siteBlacklist) != type([]):
+        if not isinstance(siteBlacklist, type([])):
             siteBlacklist = [siteBlacklist]
 
         taskIterator = self.taskIterator()
@@ -530,7 +530,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block white list for all tasks that have an input dataset
         defined.
         """
-        if type(blockWhitelist) != type([]):
+        if not isinstance(blockWhitelist, type([])):
             blockWhitelist = [blockWhitelist]
 
         if initialTask:
@@ -552,7 +552,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block black list for all tasks that have an input dataset
         defined.
         """
-        if type(blockBlacklist) != type([]):
+        if not isinstance(blockBlacklist, type([])):
             blockBlacklist = [blockBlacklist]
 
         if initialTask:
@@ -573,7 +573,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run white list for all tasks that have an input dataset defined.
         """
-        if type(runWhitelist) != type([]):
+        if not isinstance(runWhitelist, type([])):
             runWhitelist = [runWhitelist]
 
         if initialTask:
@@ -595,7 +595,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run black list for all tasks that have an input dataset defined.
         """
-        if type(runBlacklist) != type([]):
+        if not isinstance(runBlacklist, type([])):
             runBlacklist = [runBlacklist]
 
         if initialTask:
@@ -1145,11 +1145,11 @@ class WMWorkloadHelper(PersistencyHelper):
         See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
         """
 
-        if custodialSites and type(custodialSites) != type([]):
+        if custodialSites and not isinstance(custodialSites, type([])):
             custodialSites = [custodialSites]
-        if nonCustodialSites and type(nonCustodialSites) != type([]):
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and type(autoApproveSites) != type([]):
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
             autoApproveSites = [autoApproveSites]
 
         newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
@@ -1189,11 +1189,11 @@ class WMWorkloadHelper(PersistencyHelper):
         in the workload that match the given primaryDataset (if any)
         """
 
-        if custodialSites and type(custodialSites) != type([]):
+        if custodialSites and not isinstance(custodialSites, type([])):
             custodialSites = [custodialSites]
-        if nonCustodialSites and type(nonCustodialSites) != type([]):
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and type(autoApproveSites) != type([]):
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
             autoApproveSites = [autoApproveSites]
 
         if initialTask:

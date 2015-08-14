@@ -139,7 +139,7 @@ class ChangeState(WMObject, WMConnectionBase):
         Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
         """
-        if type(jobs) != list:
+        if not isinstance(jobs, list):
             jobs = [jobs]
 
         if len(jobs) == 0:

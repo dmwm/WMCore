@@ -85,7 +85,7 @@ def addRunInfoToFile(fileSection, runInfo):
     """
     runSection = fileSection.section_("runs")
 
-    if not type(runInfo) == Run:
+    if not isinstance(runInfo, Run):
         for singleRun in runInfo:
             setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
     else:
@@ -203,7 +203,7 @@ class Report:
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection].keys():
                 val = jsonPerformance[reportSection][key]
-                if type(val) == float:
+                if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 

@@ -299,11 +299,11 @@ class JobFactory(WMObject):
 
         resultProxy = self.proxies[0]
         rawResults  = []
-        if type(resultProxy.keys) == list:
+        if isinstance(resultProxy.keys, list):
             keys  = resultProxy.keys
         else:
             keys  = resultProxy.keys()
-            if type(keys) == set:
+            if isinstance(keys, set):
                 # If it's a set, handle it
                 keys = list(keys)
         files       = set()

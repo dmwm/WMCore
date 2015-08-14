@@ -228,7 +228,7 @@ class Subscription(WMBSBase, WMSubscription):
 
         if not files:
             files = self.filesOfStatus("Available")
-        elif type(files) == type(Fileset()) or type(files) == type(WMFileset()):
+        elif isinstance(files, type(Fileset())) or isinstance(files, type(WMFileset())):
             pass
         else:
             files = self.makelist(files)
@@ -535,7 +535,7 @@ class Subscription(WMBSBase, WMSubscription):
         Returns True if all the given files are in complete status
         Return False if one of files are not in complete status
         """
-        if type(files) != list:
+        if not isinstance(files, list):
             files = [files]
 
         action = self.daofactory(classname = "Subscriptions.GetCompletedByFileList")

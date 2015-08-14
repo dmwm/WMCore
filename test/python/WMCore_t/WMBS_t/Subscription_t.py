@@ -814,22 +814,22 @@ class SubscriptionTest(unittest.TestCase):
         testSubscriptionB.load()
         testSubscriptionC.load()
 
-        assert type(testSubscriptionB["id"]) == int, \
+        assert isinstance(testSubscriptionB["id"], int), \
                "ERROR: Subscription id is not an int."
 
-        assert type(testSubscriptionC["id"]) == int, \
+        assert isinstance(testSubscriptionC["id"], int), \
                "ERROR: Subscription id is not an int."
 
-        assert type(testSubscriptionB["workflow"].id) == int, \
+        assert isinstance(testSubscriptionB["workflow"].id, int), \
                "ERROR: Subscription workflow id is not an int."
 
-        assert type(testSubscriptionC["workflow"].id) == int, \
+        assert isinstance(testSubscriptionC["workflow"].id, int), \
                "ERROR: Subscription workflow id is not an int."
 
-        assert type(testSubscriptionB["fileset"].id) == int, \
+        assert isinstance(testSubscriptionB["fileset"].id, int), \
                "ERROR: Subscription fileset id is not an int."
 
-        assert type(testSubscriptionC["fileset"].id) == int, \
+        assert isinstance(testSubscriptionC["fileset"].id, int), \
                "ERROR: Subscription fileset id is not an int."
 
         assert testWorkflow.id == testSubscriptionB["workflow"].id, \

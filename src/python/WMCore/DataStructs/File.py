@@ -98,9 +98,9 @@ class File(WMObject, dict):
         File is equal if it has the same name
         """
         eq = False
-        if type(rhs) == type(self):
+        if isinstance(rhs, type(self)):
             eq = self['lfn'] == rhs['lfn']
-        elif type(rhs) == type('string'):
+        elif isinstance(rhs, type('string')):
             eq = self['lfn'] == rhs
         return eq
 
@@ -131,7 +131,7 @@ class File(WMObject, dict):
                     "parents": []}
 
         for parent in self["parents"]:
-            if type(parent) == str:
+            if isinstance(parent, str):
                 # Then for some reason, we're passing strings
                 # Done specifically for ErrorHandler
                 fileDict['parents'].append(parent)

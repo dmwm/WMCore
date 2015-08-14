@@ -107,21 +107,21 @@ class ConfigTest(unittest.TestCase):
             component = getattr(config, compName)
             for var in component.listSections_():
                 value = getattr(component, var)
-                if type(value) == str:
+                if isinstance(value, str):
                     if re.search(oldWorkDir, value):
                         # Then set it
                         setattr(component, var, value.replace(oldWorkDir, self.testDir))
-                elif type(value) == list:
+                elif isinstance(value, list):
                     # Go through it one component at a time
                     for element in value:
-                        if type(element) == str and re.search(oldWorkDir, element):
+                        if isinstance(element, str) and re.search(oldWorkDir, element):
                             index = value.index(element)
                             value.remove(element)
                             value.insert(index, value.replace(oldWorkDir, self.testDir))
                     setattr(component, var, value)
-                elif type(value) == dict:
+                elif isinstance(value, dict):
                     for key in value.keys():
-                        if type(value[key]) == str and re.search(oldWorkDir, value[key]):
+                        if isinstance(value[key], str) and re.search(oldWorkDir, value[key]):
                             value[key] = value[key].replace(oldWorkDir, self.testDir)
                     setattr(component, var, value)
 

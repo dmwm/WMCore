@@ -45,7 +45,7 @@ class GetLocation(DBFormatter):
         the result.
         """
 
-        if type(jobid) == list:
+        if isinstance(jobid, list):
             result = self.dbi.processData(self.bulkSQL, jobid, conn = conn, transaction = transaction)
             tmp = self.formatDict(result)
             return tmp

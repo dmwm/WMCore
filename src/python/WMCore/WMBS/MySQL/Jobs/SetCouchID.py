@@ -26,7 +26,7 @@ class SetCouchID(DBFormatter):
         Update the location of the couch record for the job.
         """
 
-        if type(bulkList) == list:
+        if isinstance(bulkList, list):
             binds = bulkList
         else:
             binds = {"jobid": jobID, "couchid": couchID}

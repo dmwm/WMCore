@@ -90,7 +90,7 @@ def sortListByKey(input, key):
 
     for entry in input:
         value = entry.get(key)
-        if type(value) == set:
+        if isinstance(value, set):
             value = value.pop()
         if not value in final.keys():
             final[value] = []

@@ -62,8 +62,7 @@ class FrontEndAuth(cherrypy.Tool):
 
         # User information is available on headers
         prefix = suffix = ""
-        hkeys = headers.keys()
-        hkeys.sort()
+        hkeys = sorted(headers.keys())
         for hk in hkeys:
             hk=hk.lower()
             if hk[0:9] in ["cms-authn","cms-authz"] and hk != "cms-authn-hmac":

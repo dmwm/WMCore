@@ -20,15 +20,15 @@ class AddRunLumi(DBFormatter):
 
         binds = []
 
-        if type(file) == list:
+        if isinstance(file, list):
             for entry in file:
                 binds.extend(self.getBinds(file = entry['lfn'], runs = entry['runs']))
             return binds
 
-        if type(file) == type('string'):
+        if isinstance(file, type('string')):
             lfn = file
 
-        elif type(file) == type({}):
+        elif isinstance(file, type({})):
             lfn = file('lfn')
         else:
             raise Exception("Type of file argument is not allowed: %s" \

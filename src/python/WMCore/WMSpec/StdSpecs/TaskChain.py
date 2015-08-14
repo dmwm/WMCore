@@ -645,7 +645,7 @@ class TaskChainWorkloadFactory(StdBase):
 
             task = schema[taskName]
             # We can't handle non-dictionary tasks
-            if type(task) != dict:
+            if not isinstance(task, dict):
                 msg =  "Non-dictionary input for task in TaskChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg = msg)

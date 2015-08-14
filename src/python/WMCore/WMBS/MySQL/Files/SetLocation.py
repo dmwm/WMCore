@@ -17,7 +17,7 @@ class SetLocation(DBFormatter):
              WHERE wls.se_name = :location"""
 
     def getBinds(self, file = None, location = None):
-        if type(location) == type('string'):
+        if isinstance(location, type('string')):
             return self.dbi.buildbinds(self.dbi.makelist(file), 'fileid',
                    self.dbi.buildbinds(self.dbi.makelist(location), 'location'))
         elif isinstance(location, (list, set)):

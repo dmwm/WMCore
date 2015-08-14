@@ -122,7 +122,7 @@ class ExecProcess(ChildProcess):
             Either accepts a list of arguments which are passed to execvp
             OR     accepts a string which is passed to bash and shell-expanded
         """
-        if (type(arguments) != type.ListType):
+        if (not isinstance(arguments, type.ListType)):
             # we got passed a string, pass it to a shell
             self.args[0] = 'bash'
             self.args[1] = '-c'
@@ -145,8 +145,8 @@ class PythonProcess(ChildProcess):
         self.target = None
 
     def setTarget(self,newtarget):
-        if ((type(newtarget) != FunctionType) and
-            (type(newtarget) != LambdaType)):
+        if ((not isinstance(newtarget, FunctionType)) and
+            (not isinstance(newtarget, LambdaType))):
             raise RuntimeError("PythonProcess requires a function for target")
 
         self.target = newtarget

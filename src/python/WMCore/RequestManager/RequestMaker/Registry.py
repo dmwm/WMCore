@@ -131,16 +131,16 @@ def loadRequestSchema(workload, requestSchema):
     """
     schema = workload.data.request.section_('schema')
     for key, value in requestSchema.iteritems():
-        if type(value) == dict and key == 'LumiList': 
+        if isinstance(value, dict) and key == 'LumiList': 
             value = JsonWrapper.dumps(value)
         try:            
             setattr(schema, key, value)
         except Exception as ex:
             # Attach TaskChain tasks
-            if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
+            if isinstance(value, dict) and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
                 newSec = schema.section_(key)
                 for k, v in requestSchema[key].iteritems():
-                    if type(value) == dict and key == 'LumiList': 
+                    if isinstance(value, dict) and key == 'LumiList': 
                         value = JsonWrapper.dumps(value)
                     try:
                         setattr(newSec, k, v)

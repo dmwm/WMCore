@@ -42,7 +42,7 @@ class AddLocation(MySQLAddLocation):
         mySites = copy.deepcopy(siteName)
         nameMap = {}
 
-        if type(mySites) == str:
+        if isinstance(mySites, str):
             mySites = [mySites]
 
         myTransaction = Transaction(self.dbi)
@@ -69,7 +69,7 @@ class AddLocation(MySQLAddLocation):
                 self.dbi.processData(self.sql, binds, conn = myTransaction.conn,
                                      transaction = True)
             except Exception as ex:
-                if "orig" in dir(ex) and type(ex.orig) != tuple:
+                if "orig" in dir(ex) and not isinstance(ex.orig, tuple):
                     if str(ex.orig).find("ORA-00001: unique constraint") != -1 and \
                        str(ex.orig).find("DBSBUFFER_LOCATION_UNIQUE") != -1:
                         return

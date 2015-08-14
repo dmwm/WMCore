@@ -81,8 +81,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
 
 def _generateHash(keyfile, headers):
     prefix = suffix = ""
-    hkeys = headers.keys()
-    hkeys.sort()
+    hkeys = sorted(headers.keys())
     for hk in hkeys:
         hk=hk.lower()
         if hk[0:9] in ["cms-authn","cms-authz"]:

@@ -31,22 +31,22 @@ class BlackWhiteListParser(object):
         self.kind = 'se'
         self.mapper = mapper
         self.siteDBAPI = SiteDBJSON(dict)
-        if type(whiteList) == type("string"):
+        if isinstance(whiteList, type("string")):
             if whiteList:
                 whiteList = whiteList.split(',')
             else:
                 whiteList = []
-        elif type(whiteList) == type([]):
+        elif isinstance(whiteList, type([])):
             pass
         else:
             whiteList = []
 
-        if type(blackList) == type("string"):
+        if isinstance(blackList, type("string")):
             if blackList:
                 blackList = blackList.split(',')
             else:
                 blackList = []
-        elif type(blackList) == type([]):
+        elif isinstance(blackList, type([])):
             pass
         else:
             blackList = []

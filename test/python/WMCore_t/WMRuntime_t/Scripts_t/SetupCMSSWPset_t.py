@@ -104,6 +104,10 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+
+        if os.environ.get('CMSSW_VERSION', None):
+            del os.environ['CMSSW_VERSION']
+
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -135,6 +139,9 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+
+        os.environ['CMSSW_VERSION'] = "CMSSW_7_4_0"
+
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.step.setEventsPerLumi(500)
@@ -169,6 +176,9 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+
+        os.environ['CMSSW_VERSION'] = "CMSSW_7_6_0"
+
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")

@@ -42,6 +42,9 @@ def initialize_request_args(request, config, clone = False):
                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
     
+    if clone:
+        # if it is clone parameter should contain requestName
+        request["OriginalRequestName"] = request["RequestName"]
     #TODO: generate this automatically from the spec
     # generate request name using request
     generateRequestName(request)

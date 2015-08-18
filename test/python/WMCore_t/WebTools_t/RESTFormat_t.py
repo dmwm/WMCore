@@ -71,6 +71,9 @@ class RESTFormatTest(RESTBaseUnitTest):
         methodTest('GET', url, accept=type, request_input=request_input,
                  output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testReturnFormat(self):
         return_type = 'application/json'
 

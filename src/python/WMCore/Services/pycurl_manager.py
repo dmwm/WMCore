@@ -84,13 +84,12 @@ class RequestHandler(object):
             if  isinstance(params, dict):
                 params = json.dumps(params)
 
+        encoded_data = urllib.urlencode(params, doseq=doseq)
         if  verb == 'GET':
-            encoded_data = urllib.urlencode(params, doseq=doseq)
             url = url + '?' + encoded_data
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
-            if params:
-                curl.setopt(pycurl.POSTFIELDS, params)
+            curl.setopt(pycurl.POSTFIELDS, encoded_data)
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])

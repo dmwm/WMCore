@@ -307,9 +307,8 @@ class ReqMgrRESTModel(RESTModel):
 
     def getMostRecentOutputForPrepID(self, prepID):
         """Return the datasets produced by the most recently submitted request with this prep ID"""
-        requestIDs = GetRequest.getRequestByPrepID(prepID)
+        requestIDs = sorted(GetRequest.getRequestByPrepID(prepID))
         # most recent will have the largest ID
-        requestIDs.sort()
         requestIDs.reverse()
 
         request = None
@@ -705,7 +704,7 @@ class ReqMgrRESTModel(RESTModel):
         if 'stats' not in index:
             return index
         index['stats'] = Utilities.unidecode(JsonWrapper.loads(index['stats']))
-        for k in ['input_lummis', 'input_num_files',
+        for k in ['input_lumis', 'input_num_files',
                   'input_events', 'total_jobs']:
             if k in index['stats']:
                 index['stats'][k] = int(index['stats'][k])

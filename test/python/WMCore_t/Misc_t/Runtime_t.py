@@ -57,10 +57,6 @@ from WMCore.Services.UUID       import makeUUID
 from WMCore.FwkJobReport.Report import Report
 
 
-# DBS
-from DBSAPI.dbsApi import DbsApi
-
-
 def getListOfTasks(workload):
     """
     _getListOfTasks_

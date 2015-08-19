@@ -5,7 +5,7 @@ WorkQueue splitting by block
 """
 __all__ = []
 
-
+from __future__ import division
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
@@ -51,15 +51,11 @@ class MonteCarlo(StartPolicyInterface):
 
             #Calculate the job splitting without actually doing it
             nEvents = mask['LastEvent'] - mask['FirstEvent'] + 1
-            lumis_per_job = ceil(self.args['SliceSize'] /
-                                 float(self.args['SubSliceSize']))
-            remainingEvents = nEvents % self.args['SliceSize']
-            lumis = (nEvents / self.args['SliceSize']) * lumis_per_job
-            lumis += ceil(remainingEvents / float(self.args['SubSliceSize']))
-            jobs = ceil(lumis/lumis_per_job)
+            lumis_per_job = ceil(self.args['SliceSize'] / self.args['SubSliceSize'])
+            nLumis = ceil(nEvents / self.args['SubSliceSize'])
+            jobs = ceil(nEvents/self.args['SliceSize'])
 
-            mask['LastLumi'] = mask['FirstLumi'] + int(lumis) - 1 # inclusive range
-            nLumis = mask['LastLumi'] - mask['FirstLumi'] + 1
+            mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,
                                  NumberOfLumis = nLumis,
                                  NumberOfEvents = nEvents,

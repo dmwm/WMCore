@@ -6,12 +6,74 @@ API for UserFileCache service
 """
 
 import os
-import hashlib
 import json
+import shutil
+import hashlib
 import logging
 import tarfile
+import tempfile
 
 from WMCore.Services.Service import Service
+
+
+def calculateChecksum(tarfile_, exclude=[]):
+    """
+    Calculate the checksum of the tar file in input.
+
+    The tarfile_ input parameter could be a string or a file object (anything compatible
+    with the fileobj parameter of tarfile.open).
+
+    The exclude parameter could be a list of strings, or a callable that takes as input
+    the output of  the list of tarfile.getmembers() and return a list of strings.
+    The exclude param is interpreted as a list of files that will not be taken into consideration
+    when calculating the checksum.
+
+    The output is the checksum of the tar input file.
+
+    The checksum is calculated taking into consideration the names of the objects
+    in the tarfile (files, directories etc) and the content of each file.
+
+    Each file is exctracted, read, and then deleted right after the input is passed
+    to the hasher object. The file is read in chuncks of 4096 bytes to avoid memory
+    issues.
+    """
+
+    hasher = hashlib.sha256()
+
+    ## "massage" out the input parameters
+    if isinstance(tarfile_, basestring):
+        tar = tarfile.open(tarfile_, mode='r')
+    else:
+        tar = tarfile.open(fileobj=tarfile_, mode='r')
+
+    if exclude and hasattr(exclude, '__call__'):
+        excludeList = exclude(tar.getmembers())
+    else:
+        excludeList = exclude
+
+
+    tmpDir = tempfile.mkdtemp()
+    try:
+        for tarmember in tar:
+            if tarmember.name in excludeList:
+                continue
+            hasher.update(tarmember.name)
+            if tarmember.isfile() and tarmember.name.split('.')[-1]!='pkl':
+                tar.extractall(path=tmpDir, members=[tarmember])
+                fn = os.path.join(tmpDir, tarmember.name)
+                with open(fn, 'rb') as fd:
+                    while True:
+                        buf = fd.read(4096)
+                        if not buf:
+                            break
+                        hasher.update(buf)
+                os.remove(fn)
+    finally:
+        #never leave tmddir around
+        shutil.rmtree(tmpDir)
+    checksum = hasher.hexdigest()
+    print checksum
+    return checksum
 
 
 class UserFileCache(Service):
@@ -69,12 +131,12 @@ class UserFileCache(Service):
         self['logger'].debug('Wrote %s' % fileName)
         return fileName
 
-    def upload(self, fileName):
+    def upload(self, fileName, excludeList = []):
         """
         Upload the tarfile fileName to the user file cache. Returns the hash of the content of the file
         which can be used to retrieve the file later on.
         """
-        params = [('hashkey', self.checksum(fileName))]
+        params = [('hashkey', calculateChecksum(fileName, excludeList))]
 
         resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'file',
@@ -82,16 +144,3 @@ class UserFileCache(Service):
 
         return json.loads(resString)['result'][0]
 
-    def checksum(self, fileName):
-        """
-        Calculate the checksum of the file. We don't just hash the contents because
-        that includes the timestamp of when the tar was made, not just the timestamps
-        of the constituent files
-        """
-
-        tar = tarfile.open(fileName, mode='r')
-        lsl = [(x.name, int(x.size), int(x.mtime), x.uname) for x in tar.getmembers()]
-        hasher = hashlib.sha256(str(lsl))
-        checksum = hasher.hexdigest()
-
-        return checksum

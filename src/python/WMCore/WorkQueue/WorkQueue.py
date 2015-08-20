@@ -9,7 +9,6 @@ and released when a suitable resource is found to execute them.
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
 
-import types
 from collections import defaultdict
 import os
 import threading
@@ -41,7 +40,6 @@ from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerError
 
 from WMCore import Lexicon
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.LogDB.LogDB         import LogDB
@@ -942,8 +940,7 @@ class WorkQueue(WorkQueueBase):
             msg = traceback.format_exc()
             self.logger.error('Error canceling wq elements  "%s": %s' % (str(ex), msg))
 
-    def _splitWork(self, wmspec, parentQueueId = None,
-                   data = None, mask = None, team = None,
+    def _splitWork(self, wmspec, data = None, mask = None,
                    inbound = None, continuous = False):
         """
         Split work from a parent into WorkQeueueElements.
@@ -1019,8 +1016,12 @@ class WorkQueue(WorkQueueBase):
                 if work and not continuous:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work, totalStats, rejectedWork = self._splitWork(inbound['WMSpec'], None, data = inbound['Inputs'],
-                                                                     mask = inbound['Mask'], inbound = inbound, continuous = continuous)
+                    work, totalStats, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
+                                                                     mask=inbound['Mask'], inbound=inbound, continuous=continuous)
+
+                    # if global queue, then update workflow stats to request mgr couch doc
+                    if not self.params.get('LocalQueueFlag'):
+                        self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
                     # save inbound work to signal we have completed queueing
                     self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
@@ -1047,35 +1048,6 @@ class WorkQueue(WorkQueueBase):
                                 chunkProcessed = processedInputs[:chunkSize]
                                 chunkRejected = rejectedWork[:chunkSize]
                     
-                    # update request mgr couch doc
-                    if not self.params.get('LocalQueueFlag'):
-                        # only update global stats for global queue
-                        try:
-                            # add the total work on wmstat summary or add the recently split work
-                            self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
-                        except HTTPException as httpEx:
-                            msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
-                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
-                                                                        inbound['RequestName'], msg))
-                        except Exception as ex:
-                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
-                                                                        inbound['RequestName'], str(ex)))
-                    
-                    #TODO: remove this when reqmgr is dropped
-                    if not self.params.get('LocalQueueFlag') and self.params.get('WMStatsCouchUrl'):
-                        # only update global stats for global queue
-                        try:
-                            # add the total work on wmstat summary or add the recently split work
-                            wmstatSvc = WMStatsWriter(self.params.get('WMStatsCouchUrl'))
-                            wmstatSvc.insertTotalStats(inbound['WMSpec'].name(), totalStats)
-                        except HTTPException as httpEx:
-                            msg = "status: %s, reason: %s" % (httpEx.status, httpEx.reason)
-                            self.logger.error('Error publishing %s to Request Mgr for %s: %s' % (totalStats,
-                                                                        inbound['RequestName'], msg))
-                        except Exception as ex:
-                            self.logger.error('Error publishing %s to WMStats for %s: %s' % (totalStats,
-                                                                            inbound['RequestName'], str(ex)))
-
             except TERMINAL_EXCEPTIONS as ex:
                 if not continuous:
                     # Only fail on first splitting

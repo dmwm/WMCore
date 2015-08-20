@@ -5,15 +5,12 @@ WorkQueue SplitPolicyInterface
 """
 __all__ = []
 
-import types
-
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 #from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement as WorkQueueElement
-from WMCore.WMException import WMException
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
-from DBSAPI.dbsApiException import DbsConfigurationError
+from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
@@ -140,7 +137,7 @@ class StartPolicyInterface(PolicyInterface):
                 self.pileupData = self.getDatasetLocations(pileupDatasets)
             self.split()
         # For known exceptions raise custom error that will fail the workflow.
-        except DbsConfigurationError as ex:
+        except dbsClientException as ex:
             # A dbs configuration error implies the spec is invalid
             error = WorkQueueWMSpecError(self.wmspec, "DBS config error: %s" % str(ex))
             raise error

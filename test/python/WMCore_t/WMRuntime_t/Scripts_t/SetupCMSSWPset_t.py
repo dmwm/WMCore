@@ -198,7 +198,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
 
         """
         try:
-            from DBSAPI.dbsApi import DbsApi
+            from dbs.apis.dbsClient import DbsApi
         except ImportError as ex:
             raise nose.SkipTest
 

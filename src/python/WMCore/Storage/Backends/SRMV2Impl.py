@@ -55,7 +55,6 @@ class SRMV2Impl(StageOutImpl):
 
         """
         targetdir = os.path.dirname(targetPFN)
-
         if self.stageIn:
             # stage in to local directory - should exist but you never know
             if not os.path.exists(targetdir):
@@ -122,6 +121,7 @@ class SRMV2Impl(StageOutImpl):
         Build an srmcp command
 
         """
+        self.createOutputDirectory(targetPFN)
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -2 -report=$REPORT_FILE -retry_num=0"

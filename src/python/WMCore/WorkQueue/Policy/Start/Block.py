@@ -8,7 +8,6 @@ __all__ = []
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 
-from copy import deepcopy
 from math import ceil
 
 from WMCore.DataStructs.LumiList import LumiList
@@ -123,7 +122,7 @@ class Block(StartPolicyInterface):
 
             #check lumi restrictions
             if task.getLumiMask():
-                accepted_lumis = sum( [ len(maskedBlocks[blockName][file].getLumis()) for file in maskedBlocks[blockName] ] )
+                accepted_lumis = sum( [ len(maskedBlocks[blockName][lfn].getLumis()) for lfn in maskedBlocks[blockName] ] )
                 #use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
                 #ratio =  lumis which are ok in the block / total num lumis
@@ -171,9 +170,9 @@ class Block(StartPolicyInterface):
                             if runNumber in runs:
                                 acceptedFile = True
                                 acceptedFileLumiCount += 1
+                                acceptedLumiCount += len(lumiInfo['LumiSectionNumber'])
                         if acceptedFile:
                             acceptedFileCount += 1
-                            acceptedLumiCount += acceptedFileLumiCount
                             if len(fileEntry['LumiList']) != acceptedFileLumiCount:
                                 acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents']/len(fileEntry['LumiList'])
                             else:
@@ -224,9 +223,9 @@ class Block(StartPolicyInterface):
                 slicedFiles = dbs.dbs.listFileArray(dataset=datasetPath, run_num=run,
                                        lumi_list=slumis, detail=True)
                 files.extend(slicedFiles)
-            for file in files:
-                blockName = file['block_name']
-                fileName = file['logical_file_name']
+            for lfn in files:
+                blockName = lfn['block_name']
+                fileName = lfn['logical_file_name']
                 if blockName not in maskedBlocks:
                     maskedBlocks[blockName] = {}
                 if fileName not in maskedBlocks[blockName]:

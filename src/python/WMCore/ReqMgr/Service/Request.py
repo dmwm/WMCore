@@ -226,7 +226,7 @@ class Request(RESTEntity):
         return (workload, clone_args)
     
 
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     def get(self, **kwargs):
         """
         Returns request info depending on the conditions set by kwargs
@@ -388,7 +388,7 @@ class Request(RESTEntity):
         else:
             return {workload.name(): "ERROR"}
     
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     def put(self, workload_pair_list):
         "workloadPairList is a list of tuple containing (workload, requeat_args)"
         report = []
@@ -397,7 +397,7 @@ class Request(RESTEntity):
             report.append(result)
         return report 
     
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     def delete(self, request_name):
         cherrypy.log("INFO: Deleting request document '%s' ..." % request_name)
         try:
@@ -411,7 +411,7 @@ class Request(RESTEntity):
         cherrypy.log("INFO: Delete '%s' done." % request_name)
         
     
-    @restcall
+    @restcall(formats = [('application/json', JSONFormat())])
     def post(self, workload_pair_list, multi_update_flag = False):
         """
         Create and update couchDB with  a new request. 

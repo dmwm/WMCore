@@ -378,7 +378,7 @@ class DashboardReporter(WMObject):
                     if hasattr(fileobj, 'LogicalFileName'):
                         lfn = fileobj.LogicalFileName
                         inputType = getattr(fileobj, 'input_type', 'primaryFiles')  # Probably not working
-                    files.update({lfn: {'status': 'Remote', 'type': inputType}})
+                        files.update({lfn: {'status': 'Remote', 'type': inputType}})
         except AttributeError:
             return package
 

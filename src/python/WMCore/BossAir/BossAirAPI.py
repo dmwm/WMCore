@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable=E1103, W6501, E1101, C0103
+#pylint: disable=E1103, E1101, C0103
 #E1103: Use DB objects attached to thread
-#W6501: Allow string formatting in error messages
 #E1101: Create config sections
 #C0103: Internal methods start with _
 """
@@ -257,33 +256,6 @@ class BossAirAPI(WMConnectionBase):
         self.commitTransaction(existingTransaction)
 
         return loadedJobs
-
-
-    # FIXME : internal function that is unused => remove it ?
-    def _completeJobs(self, jobs):
-        """
-        _completeJobs_
-
-        Complete jobs in the database
-        Expects runJob input
-        """
-
-        if len(jobs) < 1:
-            # Nothing to do
-            return
-
-        idList = [x['id'] for x in jobs]
-
-        existingTransaction = self.beginTransaction()
-
-        completeDAO = self.daoFactory(classname = "CompleteJob")
-        completeDAO.execute(jobs = idList, conn = self.getDBConn(),
-                            transaction = self.existingTransaction())
-
-        self.commitTransaction(existingTransaction)
-
-        return
-
 
     def _updateJobs(self, jobs):
         """
@@ -811,7 +783,7 @@ class BossAirAPI(WMConnectionBase):
             try:
                 pluginInst = self.plugins[plugin]
                 tempjoblist = pluginInst.updateSiteInformation(jobs, siteName, excludeSite)
-                if(tempjoblist != None) :
+                if tempjoblist != None:
                     jobkill.extend(tempjoblist)
             except WMException:
                 raise
@@ -821,9 +793,6 @@ class BossAirAPI(WMConnectionBase):
                 logging.error(msg)
                 raise BossAirException(msg)
         return jobkill
-
-
-
 
     def _buildRunningJobsFromRunJobs(self, runJobs):
         """

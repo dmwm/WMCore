@@ -5,6 +5,8 @@ _LumiBased_t
 Test lumi based splitting.
 """
 
+from __future__ import division
+
 import threading
 import unittest
 import random
@@ -197,11 +199,11 @@ class LumiBasedTest(unittest.TestCase):
             # Have should have one file, half two
             self.assertEqual(len(job['input_files']), 1)
             if idx % 2 == 0:
-                self.assertEqual(job['estimatedJobTime'], (1.0 * 100 / 3) * 12)
-                self.assertEqual(job['estimatedDiskUsage'], (1.0 * 100 / 3) * 400)
+                self.assertEqual(job['estimatedJobTime'], (1.0 * round(100/3)) * 12)
+                self.assertEqual(job['estimatedDiskUsage'], (1.0 * round(100/3)) * 400)
             else:
-                self.assertEqual(job['estimatedJobTime'], (2.0 * 100 / 3) * 12)
-                self.assertEqual(job['estimatedDiskUsage'], (2.0 * 100 / 3) * 400)
+                self.assertEqual(job['estimatedJobTime'], (2.0 * round(100/3)) * 12)
+                self.assertEqual(job['estimatedDiskUsage'], (2.0 * round(100/3)) * 400)
             self.assertEqual(job['estimatedMemoryUsage'], 2300)
 
 

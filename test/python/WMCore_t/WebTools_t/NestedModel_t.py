@@ -53,9 +53,6 @@ class NestedModelTest(RESTBaseUnitTest):
         output={'code':400}
         methodTest(verb, url, output=output)
 
-    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
-    # Disabling for now
-    @attr("integration")
     def testInnerPingError(self):
         verb ='GET'
         url = self.urlbase + 'foo/123/ping'

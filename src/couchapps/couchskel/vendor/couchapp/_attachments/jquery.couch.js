@@ -669,7 +669,7 @@
           options.error(req.status, resp && resp.error || errorMessage, resp && resp.reason || "no response");
         } else if (resp === null) {
           //happens only in firefox ignore
-          continue;
+          return;
         } else {
           throw errorMessage + ": " + (resp && resp.reason || "no response");
         }

@@ -56,7 +56,7 @@
         req.type = "PUT";
         req.data = toJSON(value);
         req.contentType = "application/json";
-        req.processData = false
+        req.processData = false;
       }
 
       ajax(req, options,
@@ -667,6 +667,9 @@
           if (options.success) options.success(resp);
         } else if (options.error) {
           options.error(req.status, resp && resp.error || errorMessage, resp && resp.reason || "no response");
+        } else if (resp === null) {
+          //happens only in firefox ignore
+          continue;
         } else {
           throw errorMessage + ": " + (resp && resp.reason || "no response");
         }

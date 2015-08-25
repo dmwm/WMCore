@@ -28,7 +28,6 @@ class SRMV2Impl(StageOutImpl):
 
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
-        self.directoryErrorCodes = (1,)
 
 
     def createSourceName(self, protocol, pfn):
@@ -121,7 +120,6 @@ class SRMV2Impl(StageOutImpl):
         Build an srmcp command
 
         """
-        self.createOutputDirectory(targetPFN)
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -2 -report=$REPORT_FILE -retry_num=0"

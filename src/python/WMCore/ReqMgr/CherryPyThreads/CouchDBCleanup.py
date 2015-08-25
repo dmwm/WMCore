@@ -35,7 +35,7 @@ class CouchDBCleanup(CherryPyPeriodicTask):
         if len(originalRequests) == 0:
             return 
         # filter requests
-        results = reqDB._getCouchView("byrequest", {"stale": True}, originalRequests)
+        results = reqDB._getCouchView("byrequest", {}, originalRequests)
         # checkt he status of the requests [announced, rejected-archived, aborted-archived, normal-archived]
         deleteStates = ["announced", "rejected-archived", "aborted-archived", "normal-archived"]
         filteredRequests = []

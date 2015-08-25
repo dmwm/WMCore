@@ -196,26 +196,6 @@ class AccountantWorker(WMConnectionBase):
 
         return jobReport
 
-    def didJobSucceed(self, jobReport):
-        """
-        _didJobSucceed_
-
-        Get the status of the jobReport.  This will loop through all the steps
-        and make sure the status is 'Success'.  If a step does not return
-        'Success', the job will fail.
-        """
-        if not hasattr(jobReport, 'data'):
-            return False
-
-        if not hasattr(jobReport.data, 'steps'):
-            return False
-
-        if not jobReport.taskSuccessful():
-            return False
-
-
-        return True
-
     def isTaskExistInFWJR(self, jobReport, jobStatus):
         """
         If taskName is not available in the FWJR, then tries to
@@ -237,7 +217,9 @@ class AccountantWorker(WMConnectionBase):
             else:
                 logging.info("TaskName '%s' successfully recovered and added to fwjr id %s." % (jobReport.getTaskName(),
                                                                                                 jobReport.getJobID()))
-        
+
+        return
+
     def __call__(self, parameters):
         """
         __call__
@@ -254,25 +236,16 @@ class AccountantWorker(WMConnectionBase):
             # Load the job and set the ID
             fwkJobReport = self.loadJobReport(job)
             fwkJobReport.setJobID(job['id'])
-            jobSuccess = None
             
-            if not self.didJobSucceed(fwkJobReport):
-                logging.error("I have a bad jobReport for %i" %(job['id']))
-                self.handleFailed(jobID = job["id"],
-                                  fwkJobReport = fwkJobReport)
-                jobSuccess = False
-            else:
-                self.isTaskExistInFWJR(fwkJobReport, "success")
-                self.handleSuccessful(jobID = job["id"],
-                                      fwkJobReport = fwkJobReport,
-                                      fwkJobReportPath = job['fwjr_path'])
-                jobSuccess = True
+            jobSuccess = self.handleJob(jobID = job["id"],
+                                        fwkJobReport = fwkJobReport)
 
             if self.returnJobReport:
                 returnList.append({'id': job["id"], 'jobSuccess': jobSuccess,
                                    'jobReport': fwkJobReport})
             else:
                 returnList.append({'id': job["id"], 'jobSuccess': jobSuccess})
+
             self.count += 1
 
         self.beginTransaction()
@@ -470,20 +443,15 @@ class AccountantWorker(WMConnectionBase):
                 file.location = self.phedex.getBestNodeName(file.location, self.locLists)
 
 
-    def handleSuccessful(self, jobID, fwkJobReport, fwkJobReportPath = None):
+    def handleJob(self, jobID, fwkJobReport):
         """
-        _handleSuccessful_
+        _handleJob_
 
-        Handle a successful job, parsing the job report and updating the job in
-        WMBS.
+        Figure out if a job was successful or not, handle it appropriately
+        (parse FWJR, update WMBS) and return the success status as a boolean
+
         """
-        wmbsJob = Job(id = jobID)
-        wmbsJob.load()
-        wmbsJob["outcome"] = "success"
-        wmbsJob.getMask()
-        outputID = wmbsJob.loadOutputID()
-
-        wmbsJob["fwjr"] = fwkJobReport
+        jobSuccess = fwkJobReport.taskSuccessful()
 
         outputMap = self.getOutputMapAction.execute(jobID = jobID,
                                                     conn = self.getDBConn(),
@@ -493,49 +461,126 @@ class AccountantWorker(WMConnectionBase):
                                                 conn = self.getDBConn(),
                                                 transaction = self.existingTransaction())
 
-        fileList = fwkJobReport.getAllFiles()
-        
-        bookKeepingSuccess = True
-        
-        for fwjrFile in fileList:
-            # associate logArchived file for parent jobs on wmstats assuming fileList is length is 1.
-            if jobType == "LogCollect":
+        if jobSuccess:
+            fileList = fwkJobReport.getAllFiles()
+
+            # consistency check comparing outputMap to fileList
+            # they should match except for some limited special cases
+            outputModules = set([])
+            for fwjrFile in fileList:
+                outputModules.add(fwjrFile['outputModule'])
+            if set(outputMap.keys()) == outputModules:
+                pass
+            elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
+                pass
+            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['Merged', 'logArchive']):
+                pass
+            elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['MergedError', 'logArchive']):
+                pass
+            elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAW']):
+                pass
+            else:
+                failJob = True
+                if jobType in [ "Processing", "Production" ]:
+                    cmsRunSteps = 0
+                    for step in fwkJobReport.listSteps():
+                        if step.startswith("cmsRun"):
+                            cmsRunSteps += 1
+                    if cmsRunSteps > 1:
+                        failJob = False
+
+                if failJob:
+                    jobSuccess = False
+                    logging.error("Job %d , list of expected outputModules does not match job report, failing job", jobID)
+                    logging.debug("Job %d , expected outputModules %s", jobID, sorted(outputMap.keys()))
+                    logging.debug("Job %d , fwjr outputModules %s", jobID, sorted(outputModules))
+                    fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+                else:
+                    logging.debug("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
+        else:
+            fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
+
+        if jobSuccess:
+            logging.info("Job %d , handle successful job", jobID)
+        else:
+            logging.error("Job %d , bad jobReport, failing job",  jobID)
+
+        # make sure the task name is present in FWJR (recover from WMBS if needed)
+        if len(fileList) > 0:
+            if jobSuccess:
+                self.isTaskExistInFWJR(fwkJobReport, "success")
+            else:
+                self.isTaskExistInFWJR(fwkJobReport, "failed")
+
+        # special check for LogCollect jobs
+        skipLogCollect = False
+        if jobSuccess and jobType == "LogCollect":
+            for fwjrFile in fileList:
                 try:
+                    # this assumes there is only one file for LogCollect jobs, not sure what happend if that changes
                     self.associateLogCollectToParentJobsInWMStats(fwkJobReport, fwjrFile["lfn"], fwkJobReport.getTaskName())
                 except Exception as ex:
-                    bookKeepingSuccess = False
+                    skipLogCollect = True
                     logging.error("Error occurred: associating log collect location, will try again\n %s" % str(ex))
                     break
-                
-            wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                          jobID = jobID, task = fwkJobReport.getTaskName())
-            merged = fwjrFile['merged']
-            moduleLabel = fwjrFile["module_label"]
 
-            if merged:
-                self.mergedOutputFiles.append(wmbsFile)
+        # now handle the job (unless the special LogCollect check failed)
+        if not skipLogCollect:
 
-            self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
-            outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
-            for outputFileset in outputFilesets:
-                self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
+            wmbsJob = Job(id = jobID)
+            wmbsJob.load()
+            outputID = wmbsJob.loadOutputID()
+            wmbsJob.getMask()
 
-        # Check if the job had any skipped files
-        # Put them in ACDC containers, we assume full file processing
-        # No job masks
-        skippedFiles = fwkJobReport.getAllSkippedFiles()
-        if skippedFiles:
-            self.jobsWithSkippedFiles[jobID] = skippedFiles
+            wmbsJob["fwjr"] = fwkJobReport
 
-        if bookKeepingSuccess:
+            if jobSuccess:
+                wmbsJob["outcome"] = "success"
+            else:
+                wmbsJob["outcome"] = "failure"
+
+            for fwjrFile in fileList:
+
+                logging.debug("Job %d , register output %s", jobID, fwjrFile["lfn"])
+
+                wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
+                                              jobID = jobID, task = fwkJobReport.getTaskName())
+                merged = fwjrFile['merged']
+                moduleLabel = fwjrFile["module_label"]
+
+                if merged:
+                    self.mergedOutputFiles.append(wmbsFile)
+
+                self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
+
+                # LogCollect jobs have no output fileset
+                if jobType != "LogCollect":
+                    outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
+                    for outputFileset in outputFilesets:
+                        self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
+
+            # Check if the job had any skipped files, put them in ACDC containers
+            # We assume full file processing (no job masks)
+            if jobSuccess:
+                skippedFiles = fwkJobReport.getAllSkippedFiles()
+                if skippedFiles:
+                    self.jobsWithSkippedFiles[jobID] = skippedFiles
+
             # Only save once job is done, and we're sure we made it through okay
             self._mapLocation(wmbsJob['fwjr'])
-            self.listOfJobsToSave.append(wmbsJob)
-        #wmbsJob.save()
+            if jobSuccess:
+                self.listOfJobsToSave.append(wmbsJob)
+            else:
+                self.listOfJobsToFail.append(wmbsJob)
 
-        return
+        return jobSuccess
     
     def associateLogCollectToParentJobsInWMStats(self, fwkJobReport, logAchiveLFN, task):
+        """
+        _associateLogCollectToParentJobsInWMStats_
+
+        Associate a logArchive output to its parent job
+        """
         inputFileList = fwkJobReport.getAllInputFiles()
         requestName = task.split('/')[1]
         keys = []
@@ -553,7 +598,7 @@ class AccountantWorker(WMConnectionBase):
             results = self.getJobInfoByID.execute(parentWMBSJobIDs)
             parentJobNames = []
             
-            if type(results) == list:
+            if isinstance(results, list):
                 for jobInfo in results:
                     parentJobNames.append(jobInfo['name'])
             else:
@@ -564,58 +609,8 @@ class AccountantWorker(WMConnectionBase):
             #TODO: if the couch db is consistent with DB this should be removed (checking resultRow > 0)
             #It need to be failed and retried.
             logging.error("job report is missing for updating log archive mapping\n Input file list\n %s" % inputFileList)
-            
-    def handleFailed(self, jobID, fwkJobReport):
-        """
-        _handleFailed_
-
-        Handle a failed job.  Update the job's metadata marking the outcome as
-        'failure' and incrementing the retry count.  Mark all the files used as
-        input for the job as failed.  Finally, update the job's state.
-        """
-        wmbsJob = Job(id = jobID)
-        wmbsJob.load()
-        outputID = wmbsJob.loadOutputID()
-        wmbsJob["outcome"] = "failure"
-        #wmbsJob.save()
-
-        # We'll fake the rest of the state transitions here as the rest of the
-        # WMAgent job submission framework is not yet complete.
-        wmbsJob["fwjr"] = fwkJobReport
-
-        outputMap = self.getOutputMapAction.execute(jobID = jobID,
-                                                    conn = self.getDBConn(),
-                                                    transaction = self.existingTransaction())
-
-        jobType = self.getJobTypeAction.execute(jobID = jobID,
-                                                conn = self.getDBConn(),
-                                                transaction = self.existingTransaction())
-
-        fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
-        
-        if len(fileList) > 0:
-            # Need task name info to proceed
-            self.isTaskExistInFWJR(fwkJobReport, "failed")
-            
-        for fwjrFile in fileList:
-            wmbsFile = self.addFileToWMBS(jobType, fwjrFile, wmbsJob["mask"],
-                                          jobID = jobID, task = fwkJobReport.getTaskName())
-            merged = fwjrFile['merged']
-            moduleLabel = fwjrFile["module_label"]
-
-            if merged:
-                self.mergedOutputFiles.append(wmbsFile)
-
-            self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
-            outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
-            for outputFileset in outputFilesets:
-                self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})
-
-        self._mapLocation(wmbsJob['fwjr'])
-        self.listOfJobsToFail.append(wmbsJob)
 
         return
-
 
     def createMissingFWKJR(self, parameters, errorCode = 999,
                            errorDescription = 'Failure of unknown type'):
@@ -865,9 +860,9 @@ class AccountantWorker(WMConnectionBase):
         wmbsFile = File()
         wmbsFile.update(file)
 
-        if type(file["locations"]) == set:
+        if isinstance(file["locations"], set):
             seName = list(file["locations"])[0]
-        elif type(file["locations"]) == list:
+        elif isinstance(file["locations"], list):
             if len(file['locations']) > 1:
                 logging.error("Have more then one location for a file in job %i" % (jobID))
                 logging.error("Choosing location %s" % (file['locations'][0]))

@@ -68,7 +68,7 @@ class GFAL2Impl(StageOutImpl):
 
         copyCommand = self.copyCommand
         if useChecksum:
-            copyCommand += " -K adler32 "
+            copyCommand += " -K ADLER32 "
         if options != None:
             copyCommand += " %s " % options
         copyCommand += " %s " % sourcePFN

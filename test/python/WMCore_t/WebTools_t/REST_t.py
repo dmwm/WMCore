@@ -8,28 +8,22 @@ TODO: duplicate all direct call tests to ones that use HTTP
 """
 
 import unittest
-import cherrypy
 import logging
 import urllib2
 import urllib
 import json
-from WMCore.Wrappers import JsonWrapper
 
 from cherrypy import HTTPError
-from wsgiref.handlers import format_date_time
-from WMQuality.TestInit import TestInit
-from WMCore.Configuration import Configuration
-from WMCore.WebTools.Page import make_rfc_timestamp
-from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
-from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig, cherrypySetup
-from WMQuality.WebTools.RESTClientAPI import makeRequest, methodTest
-from tempfile import NamedTemporaryFile
-from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_ROLE
-from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_GROUP
-from WMCore_t.WebTools_t.DummyRESTModel import DUMMY_SITE
-
 from nose.plugins.attrib import attr
+from tempfile import NamedTemporaryFile
+
+from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
+from WMCore_t.WebTools_t.DummyRESTModel import (DUMMY_ROLE, DUMMY_GROUP, DUMMY_SITE)
+
+from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
+from WMQuality.WebTools.RESTServerSetup import (DefaultConfig, cherrypySetup)
+from WMQuality.WebTools.RESTClientAPI import (makeRequest, methodTest)
+
 
 secureConfig = DefaultConfig('WMCore_t.WebTools_t.DummyRESTModel')
 secureConfig.SecurityModule.dangerously_insecure = False
@@ -95,19 +89,19 @@ class RESTTest(RESTBaseUnitTest):
         """
         verb ='GET'
         url = self.urlbase + 'echo'
-        input={'data': 'unit test'}
-        output={'code':405, 'type':'text/json'}
+        input_data = {'data': 'unit test'}
+        output = {'code':405, 'type':'text/json'}
 
-        methodTest(verb, url, input, output=output)
+        methodTest(verb, url, input_data, output=output)
 
     def testBadVerbEcho(self):
         "echo is only available to GET and POST, so should raise a 501"
         url = self.urlbase + 'echo'
-        input={'data': 'unit test'}
-        output={'code':501, 'type':'text/json'}
+        input_data = {'data': 'unit test'}
+        output = {'code':501, 'type':'text/json'}
 
         for verb in ['DELETE']:
-            methodTest(verb, url, input, output=output)
+            methodTest(verb, url, input_data, output=output)
 
     def testPing(self):
         verb ='GET'
@@ -163,6 +157,7 @@ class RESTTest(RESTBaseUnitTest):
             self.assertEqual(result[i], request_input[i], '%s does not match response' % i)
 
     def testA(self):
+        # This test doesn't actually use the type, just the same thing 5 times.
         for t in ['GET', 'POST', 'PUT', 'DELETE', 'UPDATE']:
             response = makeRequest(url=self.urlbase + '/', values={'value':1234})
             assert response[1] == 200, 'Got a return code != 200 (got %s)' % response[1]

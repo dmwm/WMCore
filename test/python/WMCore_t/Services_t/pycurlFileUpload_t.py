@@ -1,21 +1,13 @@
-from WMCore.WebTools.RESTModel import RESTModel
+import logging
+import os
+import unittest
+from httplib import HTTPException
+
 from WMCore.Services.Requests import Requests
+from WMCore.WMBase import getTestBase
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.WMBase import getTestBase
 
-import logging
-import unittest
-import threading
-import cherrypy
-import imp
-import os
-import uuid
-import tempfile
-
-from cgi import FieldStorage
-from httplib import HTTPException
-from nose.plugins.attrib import attr
 
 class PyCurlRESTServer(RESTBaseUnitTest):
     """
@@ -38,16 +30,16 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         """
         uploadedFilename = 'UploadedFile.txt'
         fileName = os.path.join(getTestBase(), 'WMCore_t/Services_t/TestUpload.txt')
-        #Check the uploaded file is not there
+        # Check the uploaded file is not there
         if os.path.isfile(uploadedFilename):
             os.remove(uploadedFilename)
-            self.assertFalse( os.path.isfile(uploadedFilename))
-        #do the upload
+            self.assertFalse(os.path.isfile(uploadedFilename))
+        # do the upload
         res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/file/')
-        #the file is there now (?)
-        self.assertTrue( os.path.isfile(uploadedFilename))
-        self.assertEquals( open(uploadedFilename).read() , open(fileName).read() )
-        #delete the uploaded file
+        # the file is there now (?)
+        self.assertTrue(os.path.isfile(uploadedFilename))
+        self.assertEquals(open(uploadedFilename).read(), open(fileName).read())
+        # delete the uploaded file
         os.remove(uploadedFilename)
         self.assertTrue('Success' in res)
 
@@ -57,18 +49,17 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         """
         uploadedFilename = 'UploadedFile.txt'
         fileName = os.path.join(getTestBase(), 'WMCore_t/Services_t/TestUpload.txt')
-        #Check the uploaded file is not there
+        # Check the uploaded file is not there
         if os.path.isfile(uploadedFilename):
             os.remove(uploadedFilename)
-            self.assertFalse( os.path.isfile(uploadedFilename))
-        #do the upload using the wrong address
+            self.assertFalse(os.path.isfile(uploadedFilename))
+        # do the upload using the wrong address
         try:
             res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/iAmNotThere/')
             self.fail()
         except HTTPException as he:
             self.assertEqual(he.status, 404)
-        self.assertFalse( os.path.isfile(uploadedFilename))
-
+        self.assertFalse(os.path.isfile(uploadedFilename))
 
 
 if __name__ == "__main__":

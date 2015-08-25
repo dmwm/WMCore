@@ -1,7 +1,5 @@
-import unittest, logging
-from cherrypy import HTTPError
-
-from nose.plugins.attrib import attr
+import logging
+import unittest
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest

@@ -13,8 +13,6 @@ import logging
 from nose.plugins.attrib import attr
 
 from WMCore.WebTools.RESTFormatter import RESTFormatter
-from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
-
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
@@ -44,25 +42,25 @@ class RESTFormatTest(RESTBaseUnitTest):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
 
-        for type in rf.supporttypes.keys():
+        for textType in rf.supporttypes.keys():
             # test accepted type should return 200 error
-            methodTest('GET', url, accept=type, output={'code':200})
+            methodTest('GET', url, accept=textType, output={'code':200})
 
     # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
     # Disabling for now
     @attr("integration")
     def testEncodedInput(self):
-        type = 'text/plain'
+        textType = 'text/plain'
 
         url = self.urlbase + 'list3?a=a%&b=b'
-        methodTest('GET', url, accept=type,
+        methodTest('GET', url, accept=textType,
                          output={'code':200, 'data':"{'a': 'a%', 'b': 'b'}"})
 
         request_input={'a':'%', 'b':'b'}
 
         #methodTest encoded input with urlencode
         url = self.urlbase +'list3'
-        methodTest('GET', url, accept=type, request_input=request_input,
+        methodTest('GET', url, accept=textType, request_input=request_input,
                  output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
 
     def testReturnFormat(self):

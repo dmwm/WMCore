@@ -107,7 +107,9 @@ class StdBase(object):
             outputModules = configCache.getOutputModuleInfo()
         else:
             if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
+
                 for output in scenarioArgs.get('outputs', []):
+
                     moduleLabel = output['moduleLabel']
                     outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
                     if 'primaryDataset' in output:
@@ -115,12 +117,25 @@ class StdBase(object):
                     if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
-            elif 'writeTiers' in scenarioArgs and scenarioFunc == "promptReco":
-                for dataTier in scenarioArgs.get('writeTiers'):
-                    moduleLabel = "%soutput" % dataTier
-                    outputModules[moduleLabel] = { 'dataTier' : dataTier }
+                for physicsSkim in scenarioArgs.get('PhysicsSkims',[]):
+
+                    skimToDataTier = { 'LogError' : 'RAW-RECO',
+                                       'LogErrorMonitor' : 'USER',
+                                       'ZElectron' : 'RAW-RECO',
+                                       'ZMu' : 'RAW-RECO',
+                                       'MuTau' : 'RAW-RECO',
+                                       'TopMuEG' : 'RAW-RECO',
+                                       'EcalActivity' : 'RAW-RECO',
+                                       'CosmicSP' : 'RAW-RECO',
+                                       'CosmicTP' : 'RAW-RECO'
+                                       }
+                    dataTier = skimToDataTier.get(physicsSkim, 'USER')
+                    moduleLabel = "SKIMStream%s" % physicsSkim
+                    outputModules[moduleLabel] = { 'dataTier' : dataTier,
+                                                   'filterName' : physicsSkim }
 
             elif scenarioFunc == "alcaSkim":
+
                 for alcaSkim in scenarioArgs.get('skims',[]):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
                     if alcaSkim.startswith("PromptCalibProd"):

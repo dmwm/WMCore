@@ -5,83 +5,10 @@ _PromptReco_
 Standard PromptReco workflow.
 """
 
-import logging
-import os
-import re
-import shutil
-import tempfile
-import urllib
-
-from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Lexicon import dataset, couchurl, identifier, block
-from WMCore.WMInit import getWMBASE
-from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool
 
-def injectIntoConfigCache(frameworkVersion, scramArch, initCommand,
-                          configUrl, configLabel, couchUrl, couchDBName,
-                          envPath = None, binPath = None):
-    """
-    _injectIntoConfigCache_
-    """
-    logging.info("Injecting to config cache.\n")
-    configTempDir = tempfile.mkdtemp()
-    configPath = os.path.join(configTempDir, "cmsswConfig.py")
-    configString = urllib.urlopen(fixCVSUrl(configUrl)).read(-1)
-    configFile = open(configPath, "w")
-    configFile.write(configString)
-    configFile.close()
-
-    scramTempDir = tempfile.mkdtemp()
-    wmcoreBase = getWMBASE()
-    if not envPath:
-        envPath = os.path.normpath(os.path.join(wmcoreBase, "../../../../../../../../apps/wmagent/etc/profile.d/init.sh"))
-    scram = Scram(version = frameworkVersion, architecture = scramArch,
-                  directory = scramTempDir, initialise = initCommand,
-                  envCmd = "source %s" % envPath)
-    scram.project()
-    scram.runtime()
-
-    if not binPath:
-        scram("python2.6 %s/../../../bin/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (wmcoreBase,
-                                                                                                              couchUrl,
-                                                                                                              couchDBName,
-                                                                                                              configPath,
-                                                                                                              configLabel))
-    else:
-        scram("python2.6 %s/inject-to-config-cache %s %s PromptSkimmer cmsdataops %s %s None" % (binPath,
-                                                                                                 couchUrl,
-                                                                                                 couchDBName,
-                                                                                                 configPath,
-                                                                                                 configLabel))
-
-    shutil.rmtree(configTempDir)
-    shutil.rmtree(scramTempDir)
-    return
-
-def parseT0ProcVer(procVer, procString = None):
-    compoundProcVer = r"^(((?P<ProcString>[a-zA-Z0-9_]+)-)?v)?(?P<ProcVer>[0-9]+)$"
-    match = re.match(compoundProcVer, procVer)
-    if match:
-        return {'ProcString' : match.group('ProcString') or procString,
-                'ProcVer' : int(match.group('ProcVer'))}
-    logging.error('Processing version %s is not compatible'
-                                % procVer)
-    raise Exception
-
-def fixCVSUrl(url):
-    """
-    _fixCVSUrl_
-
-    Checks the url, if it looks like a cvs url then make sure it has no
-    view option in it, so it can be downloaded correctly
-    """
-    cvsPatt = '(http://cmssw\.cvs\.cern\.ch.*\?).*(revision=[0-9]*\.[0-9]*).*'
-    cvsMatch = re.match(cvsPatt, url)
-    if cvsMatch:
-        url = cvsMatch.groups()[0] + cvsMatch.groups()[1]
-    return url
 
 class PromptRecoWorkloadFactory(StdBase):
     """
@@ -122,6 +49,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
         scenarioArgs = { 'globalTag' : self.globalTag,
                          'skims' : self.alcaSkims,
+                         'PhysicsSkims' : self.physicsSkims,
                          'dqmSeq' : self.dqmSequences,
                          'outputs' : recoOutputs }
         if self.globalTagConnect:
@@ -170,62 +98,9 @@ class PromptRecoWorkloadFactory(StdBase):
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)
 
-                for alcaOutLabel, alcaOutInfo in alcaOutMods.items():
+                for alcaOutLabel in alcaOutMods.keys():
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,
                                       doLogCollect = self.doLogCollect)
-
-        for promptSkim in self.promptSkims:
-            if not promptSkim.DataTier in recoMergeTasks:
-                error = 'PromptReco output does not have the following output data tier: %s.' % promptSkim.DataTier
-                error += 'Please change the skim input to be one of the following: %s' % recoMergeTasks.keys()
-                error += 'That should be in the relevant skimConfig in T0AST'
-                logging.error(error)
-                raise Exception
-
-            mergeTask = recoMergeTasks[promptSkim.DataTier]
-            skimTask = mergeTask.addTask(promptSkim.SkimName)
-            parentCmsswStep = mergeTask.getStep('cmsRun1')
-
-            parsedProcVer = parseT0ProcVer(promptSkim.ProcessingVersion,
-                                           'PromptSkim')
-            self.processingString = parsedProcVer["ProcString"]
-            self.processingVersion = parsedProcVer["ProcVer"]
-
-            if promptSkim.TwoFileRead:
-                self.skimJobSplitArgs['include_parents'] = True
-            else:
-                self.skimJobSplitArgs['include_parents'] = False
-
-            configLabel = '%s-%s' % (self.workloadName, promptSkim.SkimName)
-            configCacheUrl = self.configCacheUrl or self.couchURL
-            injectIntoConfigCache(self.frameworkVersion, self.scramArch,
-                                       self.initCommand, promptSkim.ConfigURL, configLabel,
-                                       configCacheUrl, self.couchDBName,
-                                       self.envPath, self.binPath)
-            try:
-                configCache = ConfigCache(configCacheUrl, self.couchDBName)
-                configCacheID = configCache.getIDFromLabel(configLabel)
-                if configCacheID:
-                    logging.error("The configuration was not uploaded to couch")
-                    raise Exception
-            except Exception:
-                logging.error("There was an exception loading the config out of the")
-                logging.error("ConfigCache.  Check the scramOutput.log file in the")
-                logging.error("PromptSkimScheduler directory to find out what went")
-                logging.error("wrong.")
-                raise
-
-            outputMods = self.setupProcessingTask(skimTask, "Skim", inputStep = parentCmsswStep, inputModule = "Merged",
-                                                  couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                                  configCacheUrl = self.configCacheUrl,
-                                                  configDoc = configCacheID, splitAlgo = self.skimJobSplitAlgo,
-                                                  splitArgs = self.skimJobSplitArgs, useMulticore = False)
-            if self.doLogCollect:
-                self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % promptSkim.SkimName)
-
-            for outputModuleName in outputMods.keys():
-                self.addMergeTask(skimTask, self.skimJobSplitAlgo, outputModuleName,
-                                  doLogCollect = self.doLogCollect)
 
         workload.setBlockCloseSettings(self.blockCloseDelay,
                                        workload.getBlockCloseMaxFiles(),
@@ -308,9 +183,9 @@ class PromptRecoWorkloadFactory(StdBase):
                     "InputDataset" : {"default" : "/Cosmics/Run2012A-v1/RAW", "type" : str,
                                       "optional" : False, "validate" : dataset,
                                       "attr" : "inputDataset", "null" : False},
-                    "PromptSkims" : {"default" : [], "type" : makeList,
-                                     "optional" : True, "validate" : None,
-                                     "attr" : "promptSkims", "null" : False},
+                    "PhysicsSkims" : {"default" : [], "type" : makeList,
+                                      "optional" : True, "validate" : None,
+                                      "attr" : "physicsSkims", "null" : False},
                     "InitCommand" : {"default" : None, "type" : str,
                                      "optional" : True, "validate" : None,
                                      "attr" : "initCommand", "null" : False},

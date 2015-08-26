@@ -3,8 +3,6 @@
 WorkQueue splitting by block
 
 """
-__all__ = []
-
 from __future__ import division
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
@@ -12,6 +10,9 @@ from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueue
 from WMCore.DataStructs.Mask import Mask
 from copy import copy
 from math import ceil
+
+__all__ = []
+
 
 class MonteCarlo(StartPolicyInterface):
     """Split elements into blocks"""

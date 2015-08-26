@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
     Mocked DBS interface for Start Policy unit tests
+    This emulates DBS2 which is dead anyhow and should be removed. Of course that will blow up lots of tests.
 """
 
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
@@ -162,7 +163,7 @@ class DBSReader:
                 for y in x['LumiList']:
                     if y['RunNumber'] not in results:
                         results[y['RunNumber']] = 0
-                    results[y['RunNumber']] += 1
+                    results[y['RunNumber']] = None  # To match DBS3
             return results
 
         if block:
@@ -174,7 +175,7 @@ class DBSReader:
                 for run in updateRuns:
                     if run not in runs:
                         runs[run] = 0
-                    runs[run] += updateRuns[run]
+                    runs[run] = None  # To match DBS3
             return runs
         return None
 

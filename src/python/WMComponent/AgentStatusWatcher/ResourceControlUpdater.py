@@ -3,7 +3,7 @@ Perform cleanup actions
 """
 __all__ = []
 
-import urllib,urllib2, re, os
+import urllib2
 import threading
 import logging
 import traceback
@@ -11,7 +11,6 @@ import json
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
-from WMCore.Configuration import loadConfigurationFile
 
 class ResourceControlUpdater(BaseWorkerThread):
     """
@@ -103,10 +102,10 @@ class ResourceControlUpdater(BaseWorkerThread):
             sitesRC = self.checkStatusChanges(sitesRC, sitesSSB)
 
             # get number of agents working in the same team (not in DrainMode)
-            agentsCount = self.getAgentsByTeam()
+            self.getAgentsByTeam()
 
             # Check which site slots need to be updated in the database
-            self.checkSlotsChanges(sitesRC, sitesSSB, agentsCount)
+            self.checkSlotsChanges(sitesRC, sitesSSB, self.agentsNumByTeam)
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
@@ -136,9 +135,10 @@ class ResourceControlUpdater(BaseWorkerThread):
                     agentsCount.append(1)
                 else:
                     agentsCount.append(self.agentsByTeam[team])
-            self.agentsNumByTeam = min(agentsCount) # If agent is in several teams, we choose the team with less agents
+            # If agent is in several teams, we choose the team with less agents
+            self.agentsNumByTeam = min(agentsCount, self.agentsNumByTeam)
             logging.debug("Agents connected to the same team (not in DrainMode): %d" % self.agentsNumByTeam)
-        return self.agentsNumByTeam
+        return
 
     def getInfoFromSSB(self):
         """
@@ -171,7 +171,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         sitesSSB = {}
         if not stateBySite or not slotsCPU or not slotsIO:
             logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
-            return siteSSB
+            return sitesSSB
 
         for k,v in stateBySite.iteritems():
             sitesSSB[k] = {'state': v}

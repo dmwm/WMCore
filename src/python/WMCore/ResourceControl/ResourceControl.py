@@ -59,13 +59,20 @@ class ResourceControl(WMConnectionBase):
 
         executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByState")
         jobInfo = executingJobs.execute(state = 'executing')
+        if not jobInfo:
+            # then no jobs to look at
+            return
         bossAir = BossAirAPI(self.config, noSetup = True)
         jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in ("Aborted","Draining","Down"))
 
-        if state == "Aborted" :    ercode=61301
-        elif state == "Draining" : ercode=61302
-        elif state == "Down" :     ercode=61303
-        else :                     ercode=61300
+        if state == "Aborted":
+            ercode=61301
+        elif state == "Draining":
+            ercode=61302
+        elif state == "Down":
+            ercode=61303
+        else:
+            ercode=61300
         bossAir.kill(jobtokill, errorCode=ercode)
         
         return
@@ -143,7 +150,7 @@ class ResourceControl(WMConnectionBase):
 
         subTypeAction = self.wmbsDAOFactory(classname = "Subscriptions.InsertType")
         insertAction = self.daofactory(classname = "InsertThreshold")
-        if type(taskType) == type([]):
+        if isinstance(taskType, list):
             for singleTask in taskType:
                 subTypeAction.execute(subType = singleTask,
                                       conn = self.getDBConn(),

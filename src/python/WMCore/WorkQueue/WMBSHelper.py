@@ -736,15 +736,15 @@ class WMBSHelper(WMConnectionBase):
 
         results = []
         for f in files:
-            if type(f) == type("") or "LumiList" not in f:
+            if isinstance(f, basestring) or "LumiList" not in f:
                 results.append(f)
                 continue
 
             # Create a LumiList from the WMBS info
-            fileRunsAndLumis = {}
+            lumis = []
             for x in f['LumiList']:
-                fileRunsAndLumis.update({str(x['RunNumber']): x['LumiSectionNumber']})
-            fileLumiList = LumiList(runsAndLumis = fileRunsAndLumis)
+                lumis.append([str(x['RunNumber']), x['LumiSectionNumber']])
+            fileLumiList = LumiList(lumis = lumis)
 
             if lumiMask:
                 if fileLumiList & lumiMask:  # At least one lumi from file is in lumiMask

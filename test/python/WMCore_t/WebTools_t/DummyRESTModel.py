@@ -162,9 +162,9 @@ class DummyRESTModel(RESTModel):
     def val_2(self, request_input):
         # Checks its second request_input is a string
         try:
-            assert type(request_input['input_str']) == type('abc')
+            assert isinstance(request_input['input_str'], basestring)
         except AssertionError:
-            raise HTTPError(400, 'val_2 failed: %s not str' % type(request_input['input_str']))
+            raise HTTPError(400, 'val_2 failed: %s not string or unicode' % type(request_input['input_str']))
         return request_input
 
     def val_3(self, request_input):

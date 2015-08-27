@@ -8,7 +8,7 @@ import filecmp
 import os
 from os import path
 
-from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
+from WMCore.Services.UserFileCache.UserFileCache import UserFileCache, calculateChecksum
 from WMCore.WMBase import getTestBase
 
 class UserFileCacheTest(unittest.TestCase):
@@ -21,14 +21,13 @@ class UserFileCacheTest(unittest.TestCase):
         """
         Tests checksum method
         """
-        self.ufc = UserFileCache()
-        checksum1 = self.ufc.checksum(fileName=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_111229_140959_publish.tgz'))
-        checksum2 = self.ufc.checksum(fileName=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_resubmit_111229_144319_publish.tgz'))
+        checksum1 = calculateChecksum(tarfile_=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_111229_140959_publish.tgz'))
+        checksum2 = calculateChecksum(tarfile_=path.join(getTestBase(), 'WMCore_t/Services_t/UserFileCache_t/ewv_crab_EwvAnalysis_31_resubmit_111229_144319_publish.tgz'))
         self.assertTrue(checksum1)
         self.assertTrue(checksum2)
         self.assertFalse(checksum1 == checksum2)
 
-        self.assertRaises(IOError, self.ufc.checksum, **{'fileName': 'does_not_exist'})
+        self.assertRaises(IOError, calculateChecksum, **{'tarfile_': 'does_not_exist'})
         return
 
     def testUploadDownload(self):

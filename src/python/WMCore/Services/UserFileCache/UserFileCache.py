@@ -9,7 +9,6 @@ import os
 import json
 import shutil
 import hashlib
-import logging
 import tarfile
 import tempfile
 
@@ -72,7 +71,7 @@ def calculateChecksum(tarfile_, exclude=[]):
         #never leave tmddir around
         shutil.rmtree(tmpDir)
     checksum = hasher.hexdigest()
-    print checksum
+
     return checksum
 
 

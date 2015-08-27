@@ -4,6 +4,7 @@
 """
 
 import unittest
+
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
@@ -230,12 +231,15 @@ class DatasetTestCase(unittest.TestCase):
                 self.assertEqual(4, unit['Jobs'])
 
     def testRunWhitelist(self):
-        """ReReco lumi split with Run whitelist"""
+        """
+        ReReco lumi split with Run whitelist
+        This test may not do much of anything anymore since listRunLumis is not in DBS3
+        """
         # get files with multiple runs
         Globals.GlobalParams.setNumOfRunsPerFile(2)
         # a large number of lumis to ensure we get multiple runs
         Globals.GlobalParams.setNumOfLumisPerBlock(10)
-        splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
+        splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
@@ -243,23 +247,23 @@ class DatasetTestCase(unittest.TestCase):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
             # Check number of jobs in element match number for
             # dataset in run whitelist
-            jobs = 0
             wq_jobs = 0
             for unit in units:
                 wq_jobs += unit['Jobs']
-                runLumis = dbs[inputDataset.dbsurl].listRunLumis(dataset = unit['Inputs'].keys()[0])
+                runLumis = dbs[inputDataset.dbsurl].listRunLumis(dataset=unit['Inputs'].keys()[0])
+                print "runLumis", runLumis
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
-                        jobs += runLumis[run]
-            self.assertEqual(int(jobs / splitArgs['SliceSize'] ) , int(wq_jobs))
+                        self.assertEqual(runLumis[run], None)  # This is what it is with DBS3 unless we calculate it
+            self.assertEqual(75, int(wq_jobs))
 
     def testInvalidSpecs(self):
         """Specs with no work"""

@@ -11,11 +11,11 @@ JobStatusAir
 import time
 import logging
 import threading
-import traceback
 
-from WMCore.WMException                       import WMException
-from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
-from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
+from WMCore.WMException                    import WMException
+from WMCore.WMExceptions                   import WM_JOB_ERROR_CODES
+from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.BossAir.BossAirAPI             import BossAirAPI
 
 class StatusPollerException(WMException):
     """
@@ -43,7 +43,7 @@ class StatusPoller(BaseWorkerThread):
 
         self.cachedJobs = []
 
-        self.bossAir = BossAirAPI(config = config)
+        self.bossAir = BossAirAPI(config=config)
 
         # With no timeouts, nothing ever happens
         # Otherwise we expect a dictionary with the keys representing
@@ -51,10 +51,10 @@ class StatusPoller(BaseWorkerThread):
         self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts', {})
 
         # init alert system
-        self.initAlerts(compName = "StatusPoller")
+        self.initAlerts(compName="StatusPoller")
         return
 
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         _algorithm_
 
@@ -66,13 +66,13 @@ class StatusPoller(BaseWorkerThread):
         except WMException as ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
-            self.sendAlert(6, msg = str(ex))
+            self.sendAlert(6, msg=str(ex))
             raise
         except Exception as ex:
-            msg =  "Unhandled error in statusPoller"
+            msg = "Unhandled error in statusPoller"
             msg += str(ex)
             logging.exception(msg)
-            self.sendAlert(6, msg = msg)
+            self.sendAlert(6, msg=msg)
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
             raise StatusPollerException(msg)
@@ -121,8 +121,8 @@ class StatusPoller(BaseWorkerThread):
         # and then kill them.
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        self.bossAir.update(jobs = jobsToKill)
-        self.bossAir.kill(jobs = jobsToKill, killMsg = "Job killed due to timeout", errorCode = 61304)
+        self.bossAir.update(jobs=jobsToKill)
+        self.bossAir.kill(jobs=jobsToKill, killMsg=WM_JOB_ERROR_CODES[61304], errorCode=61304)
         myThread.transaction.commit()
 
 

@@ -9,7 +9,7 @@ from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterf
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.DataStructs.Mask import Mask
 from copy import copy
-from math import ceil
+from math import ceil, floor
 
 __all__ = []
 
@@ -51,9 +51,16 @@ class MonteCarlo(StartPolicyInterface):
             mask['LastEvent'] = current
 
             #Calculate the job splitting without actually doing it
+            # number of lumis is calculated by events number and SubSliceSize which is events per lumi
+            # So if there no exact division between events per job and events per lumi
+            # it takes the ceiling of the value.
+            # Therefore total lumis can't be calculated from total events / SubSliceSize
+            # It has to be caluated by adding the lumis_per_job * number of jobs
             nEvents = mask['LastEvent'] - mask['FirstEvent'] + 1
             lumis_per_job = ceil(self.args['SliceSize'] / self.args['SubSliceSize'])
-            nLumis = ceil(nEvents / self.args['SubSliceSize'])
+            nLumis = floor(nEvents / self.args['SliceSize']) * lumis_per_job
+            remainingLumis = ceil(nEvents % self.args['SliceSize'] / self.args['SubSliceSize'])
+            nLumis += remainingLumis
             jobs = ceil(nEvents/self.args['SliceSize'])
 
             mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range

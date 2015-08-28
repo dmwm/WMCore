@@ -27,6 +27,7 @@ class ResponseHeader(object):
         super(ResponseHeader, self).__init__()
         self.header = {}
         self.reason = ''
+        self.fromcache = False
         self.parse(response)
 
     def parse(self, response):

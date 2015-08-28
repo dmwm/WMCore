@@ -1,3 +1,296 @@
+1.0.7 to 1.0.9.pre9:
+  - Merge pull request #6176 from vkuznet/pycurl-fix3
+  - Merge pull request #6178 from ticoann/lumi_fix
+  - Add fromcache attribute to ResponseHeader since it is required by CMS stack
+  - fix lumi caculation
+  - Put back exception attributes
+  - Revert to use httplib.HTTPException
+  - Fix issues with pycurl manager for POST/PUT/DELETE requests; change exception on failed requests; use future print statement; require params to be passed as dictionary
+  - Merge pull request #6164 from ericvaandering/enable_port8888
+  - Merge pull request #6172 from ericvaandering/fix_flap_826
+  - Merge pull request #6173 from ericvaandering/fix_flap_826b
+  - Fix one unit test and cripple the DBS2 emulator a little more
+  - Fix a unit test
+  - Fix some stuff that pylint is complaining about, mostly unused imports
+  - Re-enable some tests that were not reliable before. Ensuring no other test harness running seems to do the trick.
+  - 1.0.9.pre8
+  - Merge pull request #6157 from hufnagel/promptreco-physicsskims
+  - Merge pull request #6163 from amaltaro/plugin-complain
+  - Merge pull request #6166 from juztas/srmv2fix
+  - Merge pull request #6165 from amaltaro/future-position
+  - Merge pull request #6170 from ticoann/fix_cleanup_couchwq
+  - Merge pull request #6171 from dmwm/ericvaandering-datamining-idiom
+  - Merge pull request #6167 from amaltaro/wmdataming-prep
+  - Update Utils.py
+  - fix cleanup Couch
+  - Merge pull request #6162 from ericvaandering/fix_792_800
+  - Merge pull request #6125 from hufnagel/logcollect-optimize
+  - Handle requests without prep_id
+  - Make dir creation correct in SRMV2 impl
+  - Move future statements to the top
+  - Minor bugfixes for resource control
+  - Merge pull request #6103 from hufnagel/jobaccountant-fileregister
+  - Reformat code according to PEP-8
+  - Fix this unit test. New divsion does nothing, but have to adapt to LumiBased doing the rounding
+  - add debug output and consistency checks for file registration
+  - making logcollect jobs run better
+  - 1.0.9.pre7
+  - Merge pull request #6159 from ticoann/fix_couch_js
+  - fix jquery.couch.js
+  - 1.0.9.pre6
+  - Merge pull request #6150 from juztas/master
+  - Merge pull request #6145 from ticoann/fix_lumi_calculation
+  - Merge pull request #6156 from ticoann/firefox_error
+  - Merge pull request #6158 from hufnagel/dashboard-fixtypo
+  - fix indentation typo in dashboard reporting
+  - add PhysicsSkims to PromptReco
+  - Merge pull request #6154 from ticoann/json_return_for_rest
+  - Merge pull request #6155 from amaltaro/rereco-lumi-count
+  - ignore null response
+  - Fixed TotalInputLumis calculation for Block policy
+  - return always json for rest call
+  - Merge pull request #6151 from ticoann/clean_WMBSFeeder
+  - Merge pull request #6144 from amaltaro/total-stats-upload
+  - remove WMBSFeeder
+  - Merge pull request #6146 from ticoann/remove_dbs2_exception
+  - Merge pull request #6147 from amaltaro/typo-unittest
+  - srmcp requires to create directory before copy
+  - fix typo in test_dir
+  - Upload request stats before inserting elements
+  - remove dbs2 code
+  - Merge pull request #6143 from ericvaandering/flap_0818
+  - fix the lumi calcuation
+  - Remove one more unstable test
+  - Merge pull request #6142 from vkuznet/pycurl-fix2
+  - Fix POSTFIELDS settings
+  - 1.0.9.pre5
+  - Merge pull request #6141 from ticoann/add_original_request_reqmgr2
+  - add original request for reqmgr2
+  - Merge pull request #6140 from ticoann/remove_logdb_task_from_reqmgr2
+  - remove LogDBTask from reqmgr2
+  - Merge pull request #6136 from ticoann/jquery_couch_fix
+  - Merge pull request #6135 from ticoann/update_active_status
+  - fix jquery.couch.js in firefox
+  - add missing active status
+  - Merge pull request #6134 from amaltaro/clone-origReq
+  - Added OriginalRequestName to the clone api
+  - Merge pull request #6130 from ericvaandering/python_27
+  - Old exception syntax snuck in
+  - Merge pull request #6127 from ericvaandering/final_types
+  - Merge pull request #6128 from amaltaro/default-down
+  - Merge pull request #6126 from amaltaro/oracle-tables
+  - Change remaining bytes to str or basestring
+  - Accept sites state when adding sites
+  - Add long to JSONThunker as well
+  - Re-add long type to list of allowed types in config
+  - Apply known breaking changes to types,
+  - Sync Mysql schema w.r.t. Oracle
+  - 1.0.9.pre4
+  - Merge pull request #6121 from ticoann/task_archiver_state_transition_fix
+  - Merge pull request #6123 from lucacopa/dont_check_localQInfo_tier0
+  - Merge pull request #6124 from ticoann/wmstats_server_reduce_refresh_time
+  - reduce the refreshing time to 3 min in wmstats
+  - Merge pull request #6118 from ticoann/missing_wmstats_view
+  - Merge pull request #6116 from ericvaandering/fix_some_types
+  - Merge pull request #6120 from ericvaandering/more_flapping_tests
+  - Analytics poller shouln't check local Queue for Tier0 agent
+  - fix complete transiton update
+  - Merge pull request #6099 from amaltaro/oracle-unique
+  - Add nose import
+  - Merge pull request #6111 from amaltaro/whitelist-for-pu
+  - Disable four more flapping tests
+  - Switch to isinstance, forget lists of types
+  - add missing WMStatsAgent view
+  - Merge pull request #6114 from ticoann/fix_unittest
+  - Merge pull request #6115 from ticoann/unittest_deploy_typo
+  - Try string types to str
+  - Merge pull request #6110 from ericvaandering/fix_some_types
+  - Merge pull request #6112 from ericvaandering/remove_rp
+  - fix typo for directory name
+  - fix WMCore_t/ReqMgr_t and WMCore_t/Services_t/ReqMgr_t
+  - Fix a bit more re: dicts and lists
+  - Remove unused import
+  - Fake SE for PU when trustSiteLists
+  - Try some innocuous looking type fixes.
+  - 1.0.9.pre3
+  - Merge pull request #6035 from amaltaro/trust-pu-location
+  - Merge pull request #6077 from hufnagel/eventawarelumibased-maxwall
+  - Merge pull request #6106 from ticoann/t0_wq_dependency_fix
+  - fix typo
+  - Merge pull request #6105 from lucacopa/wqmgr_independent_tier0
+  - Merge pull request #6089 from ericvaandering/futurize_0730b
+  - Merge pull request #6096 from ericvaandering/futurize_raise
+  - Merge pull request #6076 from hufnagel/condor-bulk-numberofcores
+  - Merge pull request #6097 from hufnagel/dashboard-logarchive
+  - Merge pull request #6090 from ericvaandering/futurize_0730a
+  - Merge pull request #6082 from ericvaandering/fallback_dashboard
+  - Merge pull request #6088 from ericvaandering/futurize_0730c
+  - Merge pull request #6104 from ticoann/wmstats_server2
+  - Remove dependencies in the WorkQueueMgr config for the Tier0 agent
+  - fix the job calculation
+  - Merge pull request #6102 from amaltaro/deployment-update
+  - Merge pull request #6101 from ticoann/wmstats_server2
+  - Skip PU location if trustSiteList enabled
+  - Disable onlySSB; increased pending thresholds
+  - Merge pull request #6100 from ericvaandering/cherrypy_test
+  - fix the dependency
+  - Remove imports that no longer exist
+  - 1.0.9.pre2
+  - Merge pull request #6060 from ticoann/wmstats_server
+  - Merge pull request #6084 from amaltaro/taskArchiver-aborted
+  - initial code wmstats server - need deployment change
+  - Added unique constraint to oracle dbsbuffer_file lfn
+  - add option for EventAwareLumiBase wall time and disk caps, use them for PromptReco
+  - remove lots of spurious output from JobAccountant
+  - Dict, list, tuple are now allowed in the config
+  - use modern raise statement
+  - Merge pull request #6067 from amaltaro/validate-datatier
+  - Merge pull request #6073 from amaltaro/fix-stdSpecs-tests
+  - Omit step counter from inputFiles, basename, and inputBlocks
+  - Merge pull request #6081 from amaltaro/stepchain-fixes
+  - Use next() builtin
+  - Fix a pylint warning
+  - Use python3 version of relative imports
+  - Merge pull request #6085 from lucacopa/FNAL_compatible_xrdcp_old_dcache
+  - Enclose zip in list
+  - Merge pull request #6086 from ericvaandering/fix_flipping_tests
+  - Mark flipping tests as integration
+  - Swith to compatible xrd client for old dcache version at FNAL
+  - Add FWJRs for local and remote reads of two file workflows, unit tests to FWJR generator and dashboard reporting on local vs. fallback. Same for pileup files.
+  - TaskArchiver will not parse all jobs for aborted wfs
+  - Allow different CMSSW for StepChain; Added unittest
+  - Merge pull request #6056 from AndresTanasijczuk/listAllFiles
+  - DQMHarvest unittest created; fixed other spec unittests
+  - Merge pull request #6070 from juztas/slc6python
+  - Merge pull request #6059 from amaltaro/taskchain-aws
+  - Merge pull request #6069 from lucacopa/dont_fail_jobs_site_down
+  - Use slc6 python2.6.8, openssl1.0.1p, bzlib2 1.0.6
+  - Let jobs retry when exit code 61102
+  - Check output datatiers during assignment
+  - do not bulk submit jobs with different numberofcore to HTCondor
+  - 1.0.9.pre1
+  - New request spec for chain of steps
+  - When retrieving dataset file details, allow to get non-valid files from dbs.
+  - Merge pull request #5998 from hufnagel/promptreco-eventlimits
+  - Merge pull request #6055 from mmascher/master
+  - Add a destroy command to wmcore-db-init
+  - Merge pull request #6044 from ericvaandering/fix_dataset_uts
+  - Merge pull request #6028 from amaltaro/improve-condor-rm
+  - Merge pull request #6053 from hufnagel/alcaharvest-duplicate-removal
+  - Merge pull request #6031 from ericvaandering/futurize_0615a
+  - Merge pull request #6039 from ericvaandering/futurize_0701a
+  - Merge pull request #6046 from ericvaandering/fix_pylintrc
+  - Adapt pylintrc to new pylint
+  - tweak the AlcaHarvest payload duplicate removal
+  - Merge pull request #6030 from amaltaro/forceSite-fix
+  - Merge pull request #6040 from ericvaandering/futurize_0701b
+  - Merge pull request #6042 from ticoann/format_logdb
+  - Merge pull request #6048 from amaltaro/archive-delay-fix
+  - Merge pull request #6049 from amaltaro/byteamstatus-view
+  - Fix byteamandstatus view for ReqMgr
+  - Archive only workflows belonging to the same team
+  - Remove jobs by wf name for force-complete and aborted
+  - Fix two unit tests
+  - Merge pull request #6043 from ticoann/update_version_for_unittest
+  - update default rpm for unittest to 1.0.8.pre7
+  - wrap up error messages for humans to read
+  - Replace backticks with repr()
+  - import reduce for python3 compatibility
+  - Merge pull request #6036 from ericvaandering/fix_standards
+  - Fix pylint expression for new pylint
+  - Avoid flipping the state all the time
+  - 1.0.8.pre7
+  - Merge pull request #6032 from ticoann/logbd_fix
+  - initial patch for the logdb fix
+  - Merge pull request #6027 from ticoann/force_complete_fix
+  - fixes force-complete and aborted
+  - Merge pull request #6025 from amaltaro/assign-webpage
+  - Return correct value from checkbox checked
+  - Merge pull request #6023 from amaltaro/premix-template
+  - Added premixing template; bugfix for wmagent deployment script
+  - Merge pull request #6022 from hufnagel/phedex-recovery-fix
+  - fix bug in phedex recovery code
+  - 1.0.8.pre6
+  - Merge pull request #6020 from hufnagel/stdbase-memory
+  - Merge pull request #5954 from ericvaandering/shuffle_files
+  - Shuffle pileup files deterministically if needed
+  - move setting the processing task memory into StdBase
+  - 1.0.8.pre5
+  - Merge pull request #6019 from amaltaro/harvest-lumiList
+  - Merge pull request #6021 from ticoann/valentin_test
+  - add LogDB tab and retrievie only request data
+  - Handle lumiList for harvesting jobs
+  - 1.0.8.pre4
+  - Merge pull request #6018 from ticoann/fix_import
+  - fix workqueue dependency
+  - 1.0.8.pre3
+  - Merge pull request #6006 from ticoann/add_processing_version
+  - include ProcessingVersion, Subscription info
+  - Merge pull request #6017 from ticoann/fix_dependency
+  - fix workqueue dependency
+  - Merge pull request #5984 from amaltaro/jobaccountant-master
+  - Merge pull request #6015 from ticoann/t0_monitor_add_fail
+  - Break processing of jobs into smaller transactions
+  - add failure column in tier0 request view
+  - 1.0.8.pre2
+  - Merge pull request #6009 from vkuznet/logdb-comment
+  - Merge pull request #5986 from vkuznet/LogDBView
+  - Merge pull request #6003 from ticoann/clean_dbs_buffer
+  - Merge pull request #6010 from amaltaro/cleanup-replicate
+  - Merge pull request #6012 from juztas/consistent
+  - Merge pull request #6007 from amaltaro/unique-wf-names
+  - Merge pull request #5976 from amaltaro/agent-watcher-plus
+  - Make consistent storage plugins. Fixes #6011
+  - Cleanup of _replicate code, replaced by _replicator
+  - Adjust code to call LogDB API
+  - Necessary changes for adding LogDB comment form
+  - Return unique workflow names
+  - Changes for new LogDB view, API: logdb_info(tag, request_or_requests)
+  - clean up dbs3 configuration code
+  - Merge pull request #6001 from ericvaandering/futurize_0616b
+  - Merge pull request #6000 from ericvaandering/futurize_0616a
+  - Merge pull request #5999 from ericvaandering/futurize_0616d
+  - Merge pull request #6002 from ericvaandering/futurize_0616c
+  - Merge pull request #5980 from amaltaro/updt-template
+  - Merge pull request #5981 from amaltaro/deploy-force-list
+  - Replace while 1 with while True
+  - Fix has_key in non-code directories
+  - Remove duplicates in isinstance check
+  - Use exc_info to get exception info
+  - Merge pull request #5997 from ericvaandering/sub_extra_task
+  - increase event limits for PromptReco
+  - Strip leading task_ from PREP ID
+  - Convert instances of StandardError to Exception
+  - Merge pull request #5977 from ticoann/reqmgr2-abort
+  - Merge pull request #5956 from juztas/gfal2_fix
+  - Merge pull request #5987 from ticoann/dbs_open_block
+  - fixes abort and force-complete for reqmgr2
+  - fix open block upload in DBS
+  - Create separate logdb.js file which provides logdb_info function; add example how to use it in html
+  - Example of LogDB view page
+  - CouchDB connector
+  - Map for LogDB
+  - Update templates with task MaxRSS and MaxVSize and multiDQM upload
+  - Merge pull request #5978 from amaltaro/log-open-blocks
+  - Added force sites to Down; RC improvements related to condor
+  - Remove several tweaks; Added force site down list
+  - Update logdb request when blocks are opened in dbs
+  - 1.0.8.pre1
+  - Merge pull request #5965 from ericvaandering/futurize_0604b
+  - Merge pull request #5964 from ericvaandering/futurize_0604
+  - Merge pull request #5974 from hufnagel/repack-always-singlecore
+  - Merge pull request #5972 from ticoann/fix_reqmgr2_script
+  - Merge pull request #5973 from ticoann/workqueue_reqmgr2_transition
+  - Merge pull request #5966 from ericvaandering/futurize_0604c
+  - make workqueue handle both reqmgr2 and reqmgr
+  - repack jobs should always use a single core in CMSSW
+  - Fix Gfal2 plugin to use proxy and register module I have tested this at CERN, but seems with castor and adler32 it always fail with Segmentation fault. Without adler32 it works as expected, and as far as I understand, CERN will not change to gfal2. Tapas, I have agent fully set up with this patch, and let me know if you have some time to test. Everything what was needed for me is to put site-local-config.xml in afs directory and run jobs at CERN. Can you put somewhere modified site-local-config.xml that it is accessible in WN? Changes which I did to this file are:    <local-stage-out>      <command value="gfal2"/>      <option value=""/>      <catalog url="trivialcatalog_file:/afs/cern.ch/cms/SITECONF/T2_CH_CERN/PhEDEx/storage.xml?protocol=srmv2"/>
+  - fix for reqmgr2 script
+  - Futurize methodattrs
+  - Futurize funcattrs
+  - Move to modern octal representation, eliminate distinction between Long and int
+  - Replace maxint with maxsize
+
 1.0.7 to 1.0.9.pre8:
   - Merge pull request #6157 from hufnagel/promptreco-physicsskims
   - Merge pull request #6163 from amaltaro/plugin-complain

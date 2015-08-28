@@ -159,6 +159,13 @@ class RequestHandler(object):
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \
                     % (url, header.status, header.reason, header.header)
             exc = httplib.HTTPException(msg)
+            setattr(exc, 'req_data', params)
+            setattr(exc, 'req_headers', headers)
+            setattr(exc, 'url', url)
+            setattr(exc, 'result', data)
+            setattr(exc, 'status', header.status)
+            setattr(exc, 'reason', header.reason)
+            setattr(exc, 'headers', header.header)
             bbuf.flush()
             hbuf.flush()
             raise exc

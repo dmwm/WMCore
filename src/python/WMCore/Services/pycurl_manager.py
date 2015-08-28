@@ -13,7 +13,7 @@ from __future__ import print_function
 import time
 import pycurl
 import urllib
-import urllib2
+import httplib
 import logging
 from WMCore.Wrappers import JsonWrapper as json
 try:
@@ -156,7 +156,9 @@ class RequestHandler(object):
             data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
-            exc = urllib2.HTTPError(url=url, code=header.status, msg=header.reason, hdrs=header.header, fp=None)
+            msg = 'url=%s, code=%s, reason=%s, headers=%s' \
+                    % (url, header.status, header.reason, header.header)
+            exc = httplib.HTTPException(msg)
             bbuf.flush()
             hbuf.flush()
             raise exc

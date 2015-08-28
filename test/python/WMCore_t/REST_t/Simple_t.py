@@ -41,7 +41,7 @@ class SimpleTest(helper.CPWebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root")
+    _, T.test_authz_key = setup_test_server(srcfile, "Root")
 
 if __name__ == '__main__':
     setup_server()

@@ -93,7 +93,7 @@ class TaskTest(helper.CPWebCase):
 def setup_server():
     """Set up this test case."""
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "TaskAPI")
+    _, T.test_authz_key = setup_test_server(srcfile, "TaskAPI")
     #cpconfig.update({"log.screen": True})
     #print server.config
 

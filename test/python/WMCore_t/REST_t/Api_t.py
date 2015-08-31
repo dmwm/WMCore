@@ -225,9 +225,23 @@ class Tester(helper.CPWebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root")
-    #cpconfig.update({"log.screen": True})
+    server, T.test_authz_key = setup_test_server(srcfile, "Root")
+    print("SERVER", server.config.pythonise_())
+    print("AUTHZ", T.test_authz_key, T.test_authz_key.data)
+
+import cherrypy
+from cherrypy.test import webtest
+def testmain():
+    cherrypy.engine.start_with_callback(_test_main_thread)
+    cherrypy.engine.block()
+
+def _test_main_thread():
+    try:
+        webtest.WebCase.PORT = cherrypy.server.socket_port
+        webtest.main()
+    finally:
+        cherrypy.engine.exit()
 
 if __name__ == '__main__':
     setup_server()
-    helper.testmain()
+    testmain()

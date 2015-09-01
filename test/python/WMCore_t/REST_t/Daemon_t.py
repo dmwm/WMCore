@@ -1,10 +1,19 @@
-from cherrypy.test import helper
-from WMCore.REST.Test import setup_test_server, fake_authz_headers
-from WMCore.REST.Server import RESTApi, RESTEntity, restcall
-from cherrypy import expose, engine, process, config as cpconfig
+# system modules
+import cherrypy
+from multiprocessing import Process
+from cherrypy.test import webtest
+from cherrypy import expose, engine, process
 from threading import Thread, Condition
-import WMCore.REST.Test as T
 import time, random
+
+# WMCore modules
+from WMCore.REST.Test import setup_test_server, fake_authz_headers
+from WMCore.REST.Test import fake_authz_key_file
+from WMCore.REST.Server import RESTApi, RESTEntity, restcall
+import WMCore.REST.Test as T
+
+FAKE_FILE = fake_authz_key_file()
+PORT = 8888
 
 class Task(Thread):
     """A pseudo-task which runs in a separate thread. Provides standard
@@ -80,10 +89,19 @@ class TaskAPI(RESTApi):
         tasks = [Task() for _ in xrange(0, 10)]
         self._add({ "status": Status(app, self, config, mount, tasks) })
 
-class TaskTest(helper.CPWebCase):
+class TaskTest(webtest.WebCase):
     """Client to verify :class:`TaskAPI` works."""
+    def setUp(self):
+        self.h = fake_authz_headers(FAKE_FILE.data)
+        webtest.WebCase.PORT = PORT
+        self.proc = load_server()
+
+    def tearDown(self):
+        self.proc.terminate()
+        cherrypy.engine.exit()
+
     def test(self):
-        h = fake_authz_headers(T.test_authz_key.data)
+        h = self.h
         h.append(("Accept", "application/json"))
         for _ in xrange(0, 10):
             self.getPage("/test/status", headers=h)
@@ -91,12 +109,20 @@ class TaskTest(helper.CPWebCase):
             time.sleep(.3)
 
 def setup_server():
-    """Set up this test case."""
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "TaskAPI")
-    #cpconfig.update({"log.screen": True})
-    #print server.config
+    setup_test_server(srcfile, "TaskAPI", authz_key_file=FAKE_FILE, port=PORT)
+
+def load_server():
+    setup_server()
+    proc = Process(target=start_server, name="cherrypy_test_server")
+    proc.start()
+    proc.join(timeout=1)
+    return proc
+
+def start_server():
+    webtest.WebCase.PORT = PORT
+    cherrypy.engine.start()
+    cherrypy.engine.block()
 
 if __name__ == '__main__':
-    setup_server()
-    helper.testmain()
+    webtest.main()

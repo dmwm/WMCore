@@ -564,7 +564,7 @@ class DBSWriter:
             # // Convert each file into a DBS File object
             #//
             pnn = None
-            if outFile.has_key("PNN"):
+            if "PNN" in outFile:
                 if outFile['PNN'] :
                     pnn = outFile['PNN']
                     logging.debug("PNN associated to file is: %s"%pnn)

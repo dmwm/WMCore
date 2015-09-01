@@ -7,7 +7,6 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 
 import os
 import random
-import types
 import socket
 import traceback
 import pickle
@@ -15,8 +14,7 @@ import pickle
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from PSetTweaks.PSetTweak import PSetTweak
-import WMCore.WMSpec.WMStep as WMStep
-from PSetTweaks.WMTweak import makeTweak, applyTweak
+from PSetTweaks.WMTweak import applyTweak
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Wrappers.JsonWrapper import JSONDecoder
@@ -549,6 +547,20 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+    def handleMergeSettings(self):
+        """
+        _handleMergeSettings_
+
+        Merge jobs should only use one core in CMSSW
+        """
+        try:
+            if int(self.step.data.application.multicore.numberOfCores) > 1:
+                self.step.data.application.multicore.numberOfCores = 1
+        except AttributeError:
+            pass
+
+        return
+
     def handleSpecialCERNMergeSettings(self, funcName):
         """
         _handleSpecialCERNMergeSettings_
@@ -600,6 +612,8 @@ class SetupCMSSWPset(ScriptInterface):
 
             if funcName == "repack":
                 self.handleRepackSettings()
+            elif funcName == "merge":
+                self.handleMergeSettings()
 
             if socket.getfqdn().endswith("cern.ch"):
                 self.handleSpecialCERNMergeSettings(funcName)
@@ -625,7 +639,7 @@ class SetupCMSSWPset(ScriptInterface):
                 options.numberOfThreads = cms.untracked.uint32(numCores)
                 options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
         except AttributeError:
-                print "No value for numberOfCores. Not setting"
+            print "No value for numberOfCores. Not setting"
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:

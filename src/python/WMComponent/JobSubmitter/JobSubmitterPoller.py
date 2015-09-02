@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-#pylint: disable=W0102, W6501, C0301
+#pylint: disable=W0102, C0301
 # W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
-# W6501: pass information to logging using string arguments
 # C0301: I'm ignoring this because breaking up error messages is painful
 """
 _JobSubmitterPoller_t_
@@ -18,7 +17,7 @@ import cPickle
 
 # WMBS objects
 from WMCore.DAOFactory        import DAOFactory
-from WMCore.WMExceptions      import WMJobErrorCodes
+from WMCore.WMExceptions      import WM_JOB_ERROR_CODES
 
 from WMCore.JobStateMachine.ChangeState       import ChangeState
 from WMCore.WorkerThreads.BaseWorkerThread    import BaseWorkerThread
@@ -216,8 +215,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         workflowNames = self.jobsToPackage.keys()
         for workflowName in workflowNames:
-            batchID    = self.jobsToPackage[workflowName]["batchid"]
-            id         = self.jobsToPackage[workflowName]["id"]
             jobPackage = self.jobsToPackage[workflowName]["package"]
             batchDir   = jobPackage['directory']
 
@@ -470,9 +467,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             job['couch_record'] = None
             job['fwjr'] = Report()
             if exitCode in (61102, 61104):
-                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] + ', '.join(job['possibleLocations']))
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
             else:
-                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WMJobErrorCodes[exitCode] )
+                job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] )
             fwjrPath = os.path.join(job['cache_dir'],
                                     'Report.%d.pkl' % int(job['retry_count']))
             job['fwjr'].setJobID(job['id'])

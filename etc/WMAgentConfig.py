@@ -1,4 +1,7 @@
 #/usr/bin/env python
+#pylint: disable=E1101,C0103
+#E1101: ignore no member complaints here (created dynamically)
+#C0103: also ignore invalid variable name
 """
 WMAgent Configuration
 
@@ -62,8 +65,8 @@ globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
 
 # List of SE for T1 _Disk endpoints (TODO clean this up at some point)
-diskSites = ['storm-fe-cms.cr.cnaf.infn.it','srm-cms-disk.gridpp.rl.ac.uk',
-             'cmssrm-fzk.gridka.de','ccsrm.in2p3.fr','srmcms.pic.es','cmssrmdisk.fnal.gov'] 
+diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
+             'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov'] 
 
 # Job retry information.  This includes the number of times a job will be retried and
 # for how long it will sit in cool off.
@@ -88,7 +91,7 @@ config.Agent.agentName = agentName
 config.Agent.agentNumber = agentNumber
 config.Agent.useMsgService = False
 config.Agent.useTrigger = False
-config.Agent.useHeartbeat = True 
+config.Agent.useHeartbeat = True
 
 config.section_("General")
 config.General.workDir = workDirectory
@@ -137,7 +140,7 @@ config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName
 config.WorkQueueManager.queueParams = {}
 config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
-# this has to be unique for different work queue. This is just place holder 
+# this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 
 config.component_("DBS3Upload")
@@ -168,7 +171,7 @@ config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
 #phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
-config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES" 
+config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
 config.PhEDExInjector.diskSites = diskSites
@@ -217,7 +220,7 @@ config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
-config.JobStatusLite.stateTimeouts = {"Error": 1800, "Running": 169200, "Pending": 259200}
+config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 259200}
 
 config.component_("JobUpdater")
 config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"

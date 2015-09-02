@@ -14,7 +14,6 @@ import sys
 import traceback
 import time
 import math
-import types
 
 from WMCore.Configuration import ConfigSection
 
@@ -23,7 +22,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
-from WMCore.WMExceptions import WMJobErrorCodes
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 class FwkJobReportException(WMException):
@@ -34,17 +33,13 @@ class FwkJobReportException(WMException):
     """
     pass
 
-def checkFileForCompletion(file):
+def checkFileForCompletion(filee):
     """
     _checkFileForCompletion_
 
     Takes a DataStucts/File object (or derivative) and checks to see that the
     file is ready for transfer.
     """
-    return True
-    if file['lfn'] == "" or file['size'] == 0 or file['events'] == 0:
-        return False
-
     return True
 
 def addBranchNamesToFile(fileSection, branchNames):
@@ -83,9 +78,7 @@ def addRunInfoToFile(fileSection, runInfo):
 
     Note that the run number will have to be cast to a string.
     """
-    runSection = fileSection.section_("runs")
-
-    if not type(runInfo) == Run:
+    if not isinstance(runInfo, Run):
         for singleRun in runInfo:
             setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
     else:
@@ -151,6 +144,7 @@ class Report:
         except Exception as ex:
             msg = "Error reading XML job report file, possibly corrupt XML File:\n"
             msg += "Details: %s" % str(ex)
+
             crashMessage = "\nStacktrace:\n"
 
             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
@@ -203,7 +197,7 @@ class Report:
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection].keys():
                 val = jsonPerformance[reportSection][key]
-                if type(val) == float:
+                if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 
@@ -1430,7 +1424,7 @@ class Report:
                 error = f.get('lfn', None)
 
         if error:
-            msg = '%s, file was %s' % (WMJobErrorCodes[60451], error)
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60451], error)
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
@@ -1458,7 +1452,7 @@ class Report:
                         error = f.get('lfn', None)
                         break
         if error:
-            msg = '%s, file was %s' % (WMJobErrorCodes[60452], error)
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60452], error)
             self.addError(stepName, 60452, "NoRunLumiInformation", msg)
             self.setStepStatus(stepName = stepName, status = 60452)
         return
@@ -1473,7 +1467,7 @@ class Report:
         files = self.getAllFilesFromStep(step = stepName)
         analysisFiles = self.getAnalysisFilesFromStep(step = stepName)
         if len(files) == 0 and len(analysisFiles) == 0:
-            msg = WMJobErrorCodes[60450]
+            msg = WM_JOB_ERROR_CODES[60450]
             self.addError(stepName, 60450, "NoOutput", msg)
             self.setStepStatus(stepName = stepName, status = 60450)
         return

@@ -31,16 +31,20 @@ class UserFileCacheTest(unittest.TestCase):
         self.assertRaises(IOError, self.ufc.checksum, **{'fileName': 'does_not_exist'})
         return
 
+
     def testUploadDownload(self):
         if 'UFCURL' in os.environ:
             currdir = getTestBase()
             upfile = path.join(currdir, 'WMCore_t/Services_t/UserFileCache_t/test_file.tgz') #file to upload
             upfileLog = path.join(currdir, 'WMCore_t/Services_t/UserFileCache_t/uplog.txt') #file to upload
-            ufc = UserFileCache({'endpoint':os.environ['UFCURL']})
+            ufc = UserFileCache({'endpoint':os.environ['UFCURL'], 'pycurl': True})
 
             #hashkey upload/download
             res = ufc.upload(upfile)
             ufc.download(res['hashkey'], output='pippo_publish_down.tgz')
+
+            #hashkey deletion
+            ufc.removeFile(res['hashkey'])
 
             #log upload/download
             res = ufc.uploadLog(upfileLog)

@@ -54,7 +54,6 @@ class UserFileCache(Service):
         return json.loads(resString)['result'][0]
 
     def removeFile(self, haskey):
-
         result=self['requests'].makeRequest(uri = 'info', data = {'subresource':'fileremove', 'hashkey': haskey})
         return result[0]['result'][0]
 

@@ -16,7 +16,6 @@ import traceback
 from collections import defaultdict
 
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-
 from WMCore.WMBS.File import File
 from WMCore.DataStructs.File import File as DatastructFile
 from WMCore.DataStructs.LumiList import LumiList
@@ -26,15 +25,13 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
-
 from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
-# Added to allow bulk commits
-from WMCore.DAOFactory           import DAOFactory
-from WMCore.WMConnectionBase     import WMConnectionBase
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
 
-from WMCore.BossAir.BossAirAPI    import BossAirAPI, BossAirException
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
@@ -633,7 +630,7 @@ class WMBSHelper(WMConnectionBase):
                         locations = set(storageElements))
 
         for lumi in dbsFile['LumiList']:
-            if type(lumi['LumiSectionNumber']) == list:
+            if isinstance(lumi['LumiSectionNumber'], list):
                 run = Run(lumi['RunNumber'], *lumi['LumiSectionNumber'])
             else:
                 run = Run(lumi['RunNumber'], lumi['LumiSectionNumber'])
@@ -705,7 +702,6 @@ class WMBSHelper(WMConnectionBase):
 
         return wmbsFile
 
-
     def validFiles(self, files):
         """
         Apply lumi mask and or run white/black list and return files which have
@@ -716,43 +712,43 @@ class WMBSHelper(WMConnectionBase):
         taskLumiMask = self.topLevelTask.getLumiMask()
 
         blackMask = None
-        if taskLumiMask:       # We have a lumiMask, so use it and modify with run white/black list
+        if taskLumiMask:  # We have a lumiMask, so use it and modify with run white/black list
             if isinstance(taskLumiMask, LumiList):  # For a possible future where we use LumiList more prevalently
                 lumiMask = copy.deepcopy(taskLumiMask)
             else:
-                lumiMask = LumiList(compactList = taskLumiMask)
+                lumiMask = LumiList(compactList=taskLumiMask)
             if runWhiteList:
                 lumiMask.selectRuns(runWhiteList)
             if runBlackList:
                 lumiMask.removeRuns(runBlackList)
-        elif runWhiteList:    # We have a run whitelist, subtract off blacklist
-            lumiMask = LumiList(runs = runWhiteList)
+        elif runWhiteList:  # We have a run whitelist, subtract off blacklist
+            lumiMask = LumiList(runs=runWhiteList)
             if runBlackList:  # We only have a blacklist, so make a black mask out of it instead
                 lumiMask.removeRuns(runBlackList)
         else:
             lumiMask = None
             if runBlackList:
-                blackMask = LumiList(runs = runWhiteList)
+                blackMask = LumiList(runs=runWhiteList)
 
         results = []
         for f in files:
-            if type(f) == type("") or "LumiList" not in f:
+            if isinstance(f, basestring) or "LumiList" not in f:
                 results.append(f)
                 continue
 
             # Create a LumiList from the WMBS info
-            fileRunsAndLumis = {}
+            lumis = []
             for x in f['LumiList']:
-                fileRunsAndLumis.update({str(x['RunNumber']): x['LumiSectionNumber']})
-            fileLumiList = LumiList(runsAndLumis = fileRunsAndLumis)
+                lumis.append([str(x['RunNumber']), x['LumiSectionNumber']])
+            fileLumiList = LumiList(lumis=lumis)
 
             if lumiMask:
                 if fileLumiList & lumiMask:  # At least one lumi from file is in lumiMask
                     results.append(f)
             elif blackMask:
-                if fileLumiList - blackMask: # At least one lumi from file is not in blackMask
+                if fileLumiList - blackMask:  # At least one lumi from file is not in blackMask
                     results.append(f)
-            else:                            # There is effectively no mask
+            else:  # There is effectively no mask
                 results.append(f)
 
         return results

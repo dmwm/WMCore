@@ -34,7 +34,6 @@ class ActiveRequestJobInfo(RESTEntity):
     @restcall(formats = [('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self):
-        results = DataCache.getlatestJobData()
-        if results == None or DataCache.islatestJobDataExpired():
-            results = self.wmstats.getActiveData(jobInfoFlag = True)
-        return rows([results])
+        # This assumes DataCahe is periodically updated. 
+        # If data is not updated, need to check, dataCacheUpdate log
+        return rows([DataCache.getlatestJobData()])

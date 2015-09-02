@@ -255,6 +255,7 @@ def load_server():
 
 def start_server():
     webtest.WebCase.PORT = PORT
+    cherrypy.log.screen = True
     cherrypy.engine.start()
     cherrypy.engine.block()
 

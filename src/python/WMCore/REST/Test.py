@@ -4,6 +4,9 @@ from WMCore.REST.Main import RESTMain
 from WMCore.REST.Auth import authz_canonical
 from WMCore.Configuration import Configuration
 
+#: The key set up by setup_test_server().
+test_authz_key = None
+
 def fake_authz_headers(hmac_key, method = 'HNLogin',
                        login = 'test', name = 'Test User',
                        dn = None, roles = {}, format = "list"):
@@ -63,7 +66,7 @@ def fake_authz_key_file(delete=True):
     t.seek(0)
     return t
 
-def setup_test_server(module_name, class_name, app_name = None, authz_key_file=None, port=8888):
+def setup_test_server(module_name, class_name, app_name = None):
     """Helper function to set up a :class:`~.RESTMain` server from given
     module and class. Creates a fake server configuration and instantiates
     the server application from it.
@@ -72,9 +75,8 @@ def setup_test_server(module_name, class_name, app_name = None, authz_key_file=N
     :arg str class_type: name of the server test class.
     :arg str app_name: optional test application name, 'test' by default.
     :returns: tuple with the server object and authz hmac signing key."""
-    if authz_key_file:
-        test_authz_key = authz_key_file
-    else:
+    global test_authz_key
+    if not test_authz_key:
         test_authz_key = fake_authz_key_file()
 
     cfg = Configuration()
@@ -97,12 +99,11 @@ def setup_test_server(module_name, class_name, app_name = None, authz_key_file=N
     server.validate_config()
     server.setup_server()
     server.install_application()
-    cherrypy.config.update({'server.socket_port': port})
+    cherrypy.config.update({'server.socket_port': 8888})
     cherrypy.config.update({'server.socket_host': '127.0.0.1'})
     cherrypy.config.update({'request.show_tracebacks': True})
     cherrypy.config.update({'environment': 'test_suite'})
     for app in cherrypy.tree.apps.values():
-        if '/' in app.config:
-            app.config["/"]["request.show_tracebacks"] = True
+        app.config["/"]["request.show_tracebacks"] = True
 
     return server, test_authz_key

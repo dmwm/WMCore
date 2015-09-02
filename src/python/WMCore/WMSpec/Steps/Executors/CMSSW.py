@@ -170,7 +170,7 @@ class CMSSW(Executor):
                 stdin=subprocess.PIPE,
                 )
             # BADPYTHON
-            scriptProcess.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+            scriptProcess.stdin.write("export LD_LIBRARY_PATH=$LD_LIBRARY_PATH\n")
             invokeCommand = "%s -m WMCore.WMRuntime.ScriptInvoke %s %s \n" % (
                 sys.executable,
                 stepModule,
@@ -197,7 +197,6 @@ class CMSSW(Executor):
             invokeCommand = self.step.runtime.invokeCommand if hasattr(self.step.runtime, 'invokeCommand') else\
                                 "%s -m WMCore.WMRuntime.ScriptInvoke %s" % (sys.executable, stepModule)
             invokeCommand += " %s \n" % script
-            logging.info("    Invoking command: %s" % invokeCommand)
             retCode = scram(invokeCommand, runtimeDir=runtimeDir)
             if retCode > 0:
                 msg = "Error running command\n%s\n" % invokeCommand

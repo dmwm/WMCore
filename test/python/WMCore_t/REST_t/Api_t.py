@@ -1,26 +1,17 @@
-# system modules
-import cjson, re, zlib
-import cherrypy
-from cherrypy.test import webtest
-from cherrypy import response
-from multiprocessing import Process
-
-# WMCore modules
+from cherrypy.test import helper
+from cherrypy import expose, response, config as cpconfig
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
 from WMCore.REST.Test import setup_test_server, fake_authz_headers
-from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Validation import validate_num, validate_str
 from WMCore.REST.Error import InvalidObject
 from WMCore.REST.Format import RawFormat
 from WMCore.REST.Tools import tools
 import WMCore.REST.Test as T
+import cjson, re, zlib
 
 gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
              '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
              '\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x02\x03\x02\x08\t\x00;')
-
-FAKE_FILE = fake_authz_key_file()
-PORT = 8888
 
 class Simple(RESTEntity):
     def validate(self, *args): pass
@@ -70,19 +61,9 @@ class Root(RESTApi):
                     "image":  Image(app, self, config, mount),
                     "multi":  Multi(app, self, config, mount) })
 
-class Tester(webtest.WebCase):
-
-    def setUp(self):
-        self.h = fake_authz_headers(FAKE_FILE.data)
-        webtest.WebCase.PORT = PORT
-        self.proc = load_server()
-
-    def tearDown(self):
-        self.proc.terminate()
-        cherrypy.engine.exit()
-
+class Tester(helper.CPWebCase):
     def _test_accept_ok(self, fmt, page = "/test/simple", inbody = None):
-        h = self.h + [("Accept", fmt)]
+        h = fake_authz_headers(T.test_authz_key.data) + [("Accept", fmt)]
         self.getPage(page, headers = h)
         self.assertStatus("200 OK")
         if fmt.find("*") >= 0:
@@ -100,7 +81,7 @@ class Tester(webtest.WebCase):
 
     def _test_accept_fail(self, fmt, page="/test/simple",
                           avail="application/json, application/xml"):
-        h = self.h + [("Accept", fmt)]
+        h = fake_authz_headers(T.test_authz_key.data) + [("Accept", fmt)]
         self.getPage(page, headers = h)
         self.assertStatus("406 Not Acceptable")
         self.assertHeader("X-REST-Status", "201")
@@ -141,7 +122,7 @@ class Tester(webtest.WebCase):
         self._test_accept_fail("image/png")
 
     def test_simple_json(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/simple", headers = h)
         self.assertStatus("200 OK")
@@ -154,7 +135,7 @@ class Tester(webtest.WebCase):
         assert b["result"][0] == "foo"
 
     def test_simple_json_deflate(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         h.append(("Accept-Encoding", "deflate"))
         self.getPage("/test/simple", headers = h)
@@ -170,7 +151,7 @@ class Tester(webtest.WebCase):
         assert b["result"][0] == "foo"
 
     def test_multi_nothrow(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/multi", headers = h)
         self.assertStatus("200 OK")
@@ -187,7 +168,7 @@ class Tester(webtest.WebCase):
             assert b["result"][i][1] == i
 
     def test_multi_throw0(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/multi?lim=0", headers = h)
         self.assertStatus(400)
@@ -198,7 +179,7 @@ class Tester(webtest.WebCase):
         self.assertHeader("X-Error-ID")
 
     def test_multi_throw5a(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/multi?lim=5&etag=x", headers = h)
         self.assertStatus("200 OK")
@@ -215,7 +196,7 @@ class Tester(webtest.WebCase):
             assert b["result"][i][1] == i
 
     def test_multi_throw5b(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/multi?lim=5", headers = h)
         self.assertStatus(400)
@@ -226,7 +207,7 @@ class Tester(webtest.WebCase):
         self.assertHeader("X-Error-ID")
 
     def test_multi_throw10(self):
-        h = self.h
+        h = fake_authz_headers(T.test_authz_key.data)
         h.append(("Accept", "application/json"))
         self.getPage("/test/multi?lim=10&etag=x", headers = h)
         self.assertStatus("200 OK")
@@ -244,20 +225,9 @@ class Tester(webtest.WebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
-
-def load_server():
-    setup_server()
-    proc = Process(target=start_server, name="cherrypy_test_server")
-    proc.start()
-    proc.join(timeout=1)
-    return proc
-
-def start_server():
-    webtest.WebCase.PORT = PORT
-    cherrypy.log.screen = True
-    cherrypy.engine.start()
-    cherrypy.engine.block()
+    setup_test_server(srcfile, "Root")
+    #cpconfig.update({"log.screen": True})
 
 if __name__ == '__main__':
-    webtest.main()
+    setup_server()
+    helper.testmain()

@@ -120,9 +120,8 @@ class MemoryPoller(PeriodPoller):
         None is passed here (see check below).
 
         """
-        # psutil.phymem_usage(): returns:
-        # usage(total=8367161344, used=3072045056, free=5295116288, percent=26.800000000000001)
-        usedPhyMemPercent = psutil.phymem_usage().percent
+        # Updated for psutil 0.6.0 and virtual_memory(). Needs to be updated again for 3.x
+        usedPhyMemPercent = psutil.virtual_memory().percent
         return usedPhyMemPercent
 
 

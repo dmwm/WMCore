@@ -2,7 +2,7 @@
 import cherrypy
 from multiprocessing import Process
 from cherrypy.test import webtest
-from cherrypy import expose, engine, process
+from cherrypy import process
 from threading import Thread, Condition
 import time, random
 
@@ -10,7 +10,6 @@ import time, random
 from WMCore.REST.Test import setup_test_server, fake_authz_headers
 from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall
-import WMCore.REST.Test as T
 
 FAKE_FILE = fake_authz_key_file()
 PORT = 8888
@@ -26,9 +25,9 @@ class Task(Thread):
         self._cv = Condition()
         self._status = {}
         self._stopme = False
-        engine.subscribe("stop", self.stop)
-        if engine.state == process.wspbus.states.STOPPED:
-            engine.subscribe("start", self.start)
+        cherrypy.engine.subscribe("stop", self.stop)
+        if cherrypy.engine.state == process.wspbus.states.STOPPED:
+            cherrypy.engine.subscribe("start", self.start)
         else:
             self.start()
 

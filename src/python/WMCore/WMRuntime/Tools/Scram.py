@@ -88,6 +88,7 @@ class Scram:
         self.runtimeEnv = {}
 
         # handler to write to subprocesses
+        self.library_path = "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH\n"
         self.procWriter = procWriter
         if self.test_mode:
             # if in test mode, decorate the subprocess writer with the test harness
@@ -135,9 +136,8 @@ class Scram:
             stdin=subprocess.PIPE,
             )
 
-
         # send commands to the subshell utilising the process writer method
-        self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        self.procWriter(proc, self.library_path)
         self.procWriter(proc, self.preCommand())
         self.procWriter(proc, "%s --arch %s project CMSSW %s\n" % (self.command, self.architecture, self.version))
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 3; fi\n""")
@@ -187,7 +187,7 @@ class Scram:
             return 1
 
         # write via process writer method
-        self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+        self.procWriter(proc, self.library_path)
         self.procWriter(proc, self.preCommand())
         self.procWriter(proc, "%s ru -sh\n" % self.command)
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 4; fi\n""")
@@ -270,7 +270,7 @@ class Scram:
             self.procWriter(proc, 'export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
 
         if hackLdLibPath:
-            self.procWriter(proc, "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/openssl/0.9.7m/lib:$VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/bz2lib/1.0.5/lib\n")
+            self.procWriter(proc, self.library_path)
 
         self.procWriter(proc, "%s\n" % self.preCommand())
 
@@ -278,14 +278,18 @@ class Scram:
             self.procWriter(proc, "%s\n" % self.envCmd)
 
         if command.startswith(sys.executable):
-            # replace python version with python 2.7 from CMSSW release if possible
+            # replace COMP python version with python from CMSSW release if possible
             python27exec = "%s/external/%s/bin/python2.7" % (rtCmsswBase, rtScramArch)
+            python26exec = "%s/external/%s/bin/python2.6" % (rtCmsswBase, rtScramArch)
             if os.path.islink(python27exec):
                 command = command.replace(sys.executable, python27exec)
+            elif os.path.islink(python26exec):
+                command = command.replace(sys.executable, python26exec)
             elif hackLdLibPath:
                 # reset python path for DMWM python (scram will have changed env to point at its own)
                 self.procWriter(proc, "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
 
+        logging.info("    Invoking command: %s" % command)
         self.procWriter(proc, "%s\n" % command)
         self.procWriter(proc,"""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()

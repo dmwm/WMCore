@@ -28,7 +28,7 @@ from WMCore.BossAir.RunJob      import RunJob
 from WMCore.WMConnectionBase    import WMConnectionBase
 from WMCore.WMException         import WMException
 from WMCore.FwkJobReport.Report import Report
-from WMCore.WMExceptions        import WMJobErrorCodes
+from WMCore.WMExceptions        import WM_JOB_ERROR_CODES
 
 
 class BossAirException(WMException):
@@ -692,7 +692,7 @@ class BossAirAPI(WMConnectionBase):
                             reportedMsg = killMsg
                             reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                         else:
-                            reportedMsg = WMJobErrorCodes[errorCode]
+                            reportedMsg = WM_JOB_ERROR_CODES[errorCode]
                             reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                         errorReport.addError("JobKilled", errorCode, "JobKilled", reportedMsg)
                         try:

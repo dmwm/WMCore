@@ -12,8 +12,9 @@
 #
 # for running the test check the tutorial, https://github.com/dmwm/WMCore/wiki/Setup-wmcore-unittest
 ###
+DMWM_ARCH=slc6_amd64_gcc481
+VERSION=$(curl -s http://cmsrep.cern.ch/cmssw/comp.pre/RPMS/$DMWM_ARCH/ | cut -d\> -f6 | cut -d\" -f2 | grep wmagent-dev | cut -d+ -f3 | rev | cut -d\- -f3- | rev | tail -1)
 
-VERSION=1.0.8.pre7
 REPOSITORY=dmwm
 BRANCH=
 UPDATE=false

@@ -225,7 +225,7 @@ class Tester(helper.CPWebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root")
+    _, T.test_authz_key = setup_test_server(srcfile, "Root")
     #cpconfig.update({"log.screen": True})
 
 if __name__ == '__main__':

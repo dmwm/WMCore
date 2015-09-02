@@ -134,16 +134,18 @@ def retrieveJobSplitParams(wmWorkload, task):
 
 
 
-def runSplitter(jobFactory, splitParams):
+def runSplitter(jobFactory, splitParams, glideInRestriction):
     """
     _runSplitter_
 
     Run the jobSplitting as a coroutine method, yielding values as required
     """
-
+    kwargs = {}
+    kwargs.update(splitParams)
+    kwargs.update(glideInRestriction)
     groups = ['test']
     while groups != []:
-        groups = jobFactory(**splitParams)
+        groups = jobFactory(**kwargs)
         yield groups
 
 
@@ -202,7 +204,7 @@ class JobCreatorWorker:
         self.jobCacheDir    = configDict['jobCacheDir']
         self.defaultJobType = configDict['defaultJobType']
         self.limit          = configDict.get('fileLoadLimit', 500)
-
+        self.glideInRestriction = configDict['GlideInRestriction']
 
 
         self.createWorkArea  = CreateWorkArea()
@@ -288,7 +290,8 @@ class JobCreatorWorker:
 
             # Create a function to hold it
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
-                                               splitParams = splitParams)
+                                               splitParams = splitParams, 
+                                               self.glideInRestriction)
             while continueSubscription:
                 # This loop runs over the jobFactory,
                 # using yield statements and a pre-existing proxy to

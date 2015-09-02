@@ -84,16 +84,18 @@ def retrieveJobSplitParams(wmWorkload, task):
         return task.jobSplittingParameters()
 
 
-def runSplitter(jobFactory, splitParams):
+def runSplitter(jobFactory, splitParams, glideInRestriction):
     """
     _runSplitter_
 
     Run the jobSplitting as a coroutine method, yielding values as required
     """
-
+    kwargs = {}
+    kwargs.update(splitParams)
+    kwargs.update(glideInRestriction)
     groups = ['test']
     while groups != []:
-        groups = jobFactory(**splitParams)
+        groups = jobFactory(**kwargs)
         yield groups
         # Dump it after one go if we're not grabbing by proxy
         if jobFactory.grabByProxy == False:
@@ -347,11 +349,13 @@ class JobCreatorPoller(BaseWorkerThread):
 
         #information
         self.config = config
-
+        
         #Variables
         self.defaultJobType     = config.JobCreator.defaultJobType
         self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
         self.agentNumber        = int(getattr(config.Agent, 'agentNumber', 0))
+        # need to group them for the 
+        self.glideInRestriction = getattr(config.JobCreator, "GlideInRestriction", {})
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
@@ -511,7 +515,8 @@ class JobCreatorPoller(BaseWorkerThread):
 
             # Create a function to hold it
             jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
-                                               splitParams = splitParams)
+                                               splitParams = splitParams, 
+                                               self.glideInRestriction)
 
             # Now we get to find out how many jobs there are.
             jobNumber = self.countJobs.execute(workflow = workflow.id,

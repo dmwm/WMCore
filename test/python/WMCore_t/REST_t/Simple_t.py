@@ -1,8 +1,16 @@
-from cherrypy.test import helper
-from WMCore.REST.Test import setup_test_server, fake_authz_headers
-from WMCore.REST.Tools import tools
-import WMCore.REST.Test as T
+# system modules
+import cherrypy
+from cherrypy.test import webtest
 from cherrypy import expose
+from multiprocessing import Process
+
+# WMCore modules
+from WMCore.REST.Test import setup_test_server, fake_authz_headers
+from WMCore.REST.Test import fake_authz_key_file
+from WMCore.REST.Tools import tools
+
+FAKE_FILE = fake_authz_key_file()
+PORT = 8888
 
 class Root:
     def __init__(self, *args):
@@ -17,32 +25,57 @@ class Root:
     def global_admin(self):
         return "ok"
 
-class SimpleTest(helper.CPWebCase):
+class SimpleTest(webtest.WebCase):
+
+    def setUp(self):
+        self.h = fake_authz_headers(FAKE_FILE.data)
+        self.hglobal = fake_authz_headers(FAKE_FILE.data, roles = {"Global Admin": {'group': ['global']}})
+        webtest.WebCase.PORT = PORT
+        self.engine = cherrypy.engine
+        self.proc = load_server(self.engine)
+
+    def tearDown(self):
+        stop_server(self.proc, self.engine)
+
     def test_basic_fail(self):
         self.getPage("/test")
         self.assertStatus("403 Forbidden")
 
     def test_basic_success(self):
-        h = fake_authz_headers(T.test_authz_key.data)
-        self.getPage("/test", headers = h)
+        self.getPage("/test", headers = self.h)
         self.assertStatus("200 OK")
         self.assertBody("foo")
 
     def test_auth_fail(self):
-        h = fake_authz_headers(T.test_authz_key.data)
-        self.getPage("/test/global_admin", headers = h)
+        self.getPage("/test/global_admin", headers = self.h)
         self.assertStatus("403 Forbidden")
 
     def test_auth_success(self):
-        h = fake_authz_headers(T.test_authz_key.data, roles = {"Global Admin": {'group': ['global']}})
-        self.getPage("/test/global_admin", headers = h)
+        self.getPage("/test/global_admin", headers = self.hglobal)
         self.assertStatus("200 OK")
         self.assertBody("ok")
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root")
+    setup_test_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
+
+def load_server(engine):
+    setup_server()
+    proc = Process(target=start_server, name="cherrypy_Api_t", args=(engine,))
+    proc.start()
+    proc.join(timeout=1)
+    return proc
+
+def start_server(engine):
+    webtest.WebCase.PORT = PORT
+    cherrypy.log.screen = True
+    engine.start()
+    engine.block()
+
+def stop_server(proc, engine):
+    cherrypy.log.screen = True
+    engine.stop()
+    proc.terminate()
 
 if __name__ == '__main__':
-    setup_server()
-    helper.testmain()
+    webtest.main()

@@ -42,7 +42,8 @@ class RESTMainTestServer(object):
         cherrypy.config.update({'request.show_tracebacks': True})
         cherrypy.config.update({'environment': 'test_suite'})
         for app in cherrypy.tree.apps.values():
-            app.config["/"]["request.show_tracebacks"] = True
+            if '/' in app.config:
+                app.config["/"]["request.show_tracebacks"] = True
             
         cherrypy.server.httpserver = None
         cherrypy.engine.start()

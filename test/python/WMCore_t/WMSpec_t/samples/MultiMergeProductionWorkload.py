@@ -54,13 +54,13 @@ prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever
 
 prodCmsswHelper.addOutputModule("writeOutput1", primaryDataset = "Primary",
                                 processedDataset = "Processed1-unmerged",
-                                dataTier = "TIER1")
+                                dataTier = "TIERONE")
 prodCmsswHelper.addOutputModule("writeOutput2", primaryDataset = "Primary",
                                 processedDataset = "Processed2-unmerged",
-                                dataTier = "TIER2")
+                                dataTier = "TIERTWO")
 prodCmsswHelper.addOutputModule("writeOutput3", primaryDataset = "Primary",
                                 processedDataset = "Processed3-unmerged",
-                                dataTier = "TIER3")
+                                dataTier = "TIERTHREE")
 #print prodCmsswHelper.data
 
 

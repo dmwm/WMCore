@@ -300,7 +300,7 @@ class LumiBasedTest(unittest.TestCase):
         workload.setOwnerDetails(name="evansde77", group="DMWM")
 
         # first task uses the input dataset
-        reco.addInputDataset(primary="PRIMARY", processed="processed-v1", tier="TIER1")
+        reco.addInputDataset(primary="PRIMARY", processed="processed-v1", tier="TIERONE")
         cmsRunReco = reco.makeStep("cmsRun1")
         cmsRunReco.setStepType("CMSSW")
         reco.applyTemplates()
@@ -308,7 +308,7 @@ class LumiBasedTest(unittest.TestCase):
         cmsRunRecoHelper.addOutputModule("outputRECO",
                                          primaryDataset="PRIMARY",
                                          processedDataset="processed-v2",
-                                         dataTier="TIER2",
+                                         dataTier="TIERTWO",
                                          lfnBase="/store/dunkindonuts",
                                          mergedLFNBase="/store/kfc")
         # second step uses an input reference

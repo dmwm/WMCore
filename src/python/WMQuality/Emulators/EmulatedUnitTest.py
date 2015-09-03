@@ -1,3 +1,10 @@
+#! /usr/bin/env python
+"""
+Unit testing base class that turns on emulators
+"""
+
+from __future__ import (division, print_function)
+
 import unittest
 
 import mock

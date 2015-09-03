@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
 """
 The JobCreator Poller for the JSM
 """
@@ -7,33 +6,23 @@ __all__ = []
 
 
 import os
-import copy
-import time
-import Queue
 import os.path
 import cPickle
 import logging
 import traceback
 import threading
-import multiprocessing
-#import time
-#import cProfile, pstats
-
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
-from WMCore.ProcessPool.ProcessPool         import ProcessPool
 
 from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
-
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 from WMComponent.JobCreator.CreateWorkArea  import CreateWorkArea
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.Database.CMSCouch               import CouchServer
 from WMCore.FwkJobReport.Report             import Report
 
 
@@ -99,6 +88,32 @@ def runSplitter(jobFactory, splitParams):
         if jobFactory.grabByProxy == False:
             break
 
+
+def capResourceEstimates(jobGroups, nCores, constraints):
+    """
+    _capResourceEstimates_
+
+    Checks the current job resource estimates and cap
+    them based on the limits defined in the agent
+    config file (also take into account nCores).
+    """
+    for jobGroup in jobGroups:
+        for j in jobGroup.jobs:
+            if not j['estimatedJobTime'] or j['estimatedJobTime'] < constraints['MinWallTimeSecs']:
+                j['estimatedJobTime'] = constraints['MinWallTimeSecs']
+            if not j['estimatedDiskUsage'] or j['estimatedDiskUsage'] < constraints['MinRequestDiskKB']:
+                j['estimatedDiskUsage'] = constraints['MinRequestDiskKB']
+
+            if nCores == 1:
+                j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
+                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
+            else:
+                # we assume job efficiency as nCores * 0.8 for multicore
+                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
+                                            constraints['MaxWallTimeSecs'])
+                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
+                                              constraints['MaxRequestDiskKB'] * nCores)
+    return
 
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
@@ -349,17 +364,18 @@ class JobCreatorPoller(BaseWorkerThread):
         self.config = config
 
         #Variables
-        self.defaultJobType     = config.JobCreator.defaultJobType
-        self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
-        self.agentNumber        = int(getattr(config.Agent, 'agentNumber', 0))
+        self.defaultJobType = config.JobCreator.defaultJobType
+        self.limit          = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.agentNumber    = int(getattr(config.Agent, 'agentNumber', 0))
+        self.glideinLimits  = getattr(config.JobCreator, 'GlideInRestriction', None)
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "JobCreator")
 
         try:
-            self.jobCacheDir        = getattr(config.JobCreator, 'jobCacheDir',
-                                              os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
+            self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
+                                       os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
             self.check()
         except WMException:
             raise
@@ -567,11 +583,15 @@ class JobCreatorPoller(BaseWorkerThread):
 
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
 
+                # if we have glideinWMS constraints, then adapt all jobs
+                if self.glideinLimits:
+                    capResourceEstimates(wmbsJobGroups, processDict['numberOfCores'], self.glideinLimits) 
+
                 nameDictList = []
                 for wmbsJobGroup in wmbsJobGroups:
                     # For each jobGroup, put a dictionary
                     # together and run it with creatorProcess
-                    jobsInGroup               = len(wmbsJobGroup.jobs)
+                    jobsInGroup = len(wmbsJobGroup.jobs)
                     wmbsJobGroup.subscription = tempSubscription
                     tempDict = {}
                     tempDict.update(processDict)

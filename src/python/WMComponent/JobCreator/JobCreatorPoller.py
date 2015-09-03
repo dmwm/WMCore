@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
 """
 The JobCreator Poller for the JSM
 """
@@ -7,23 +6,15 @@ __all__ = []
 
 
 import os
-import copy
-import time
-import Queue
 import os.path
 import cPickle
 import logging
 import traceback
 import threading
-import multiprocessing
-#import time
-#import cProfile, pstats
-
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
-from WMCore.ProcessPool.ProcessPool         import ProcessPool
 
 from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
 
@@ -33,7 +24,6 @@ from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.Database.CMSCouch               import CouchServer
 from WMCore.FwkJobReport.Report             import Report
 
 
@@ -84,16 +74,18 @@ def retrieveJobSplitParams(wmWorkload, task):
         return task.jobSplittingParameters()
 
 
-def runSplitter(jobFactory, splitParams):
+def runSplitter(jobFactory, splitParams, glideinLimits):
     """
     _runSplitter_
 
     Run the jobSplitting as a coroutine method, yielding values as required
     """
-
+    kwargs = {}
+    kwargs.update(splitParams)
+    kwargs.update(glideinLimits)
     groups = ['test']
     while groups != []:
-        groups = jobFactory(**splitParams)
+        groups = jobFactory(**kwargs)
         yield groups
         # Dump it after one go if we're not grabbing by proxy
         if jobFactory.grabByProxy == False:
@@ -349,17 +341,18 @@ class JobCreatorPoller(BaseWorkerThread):
         self.config = config
 
         #Variables
-        self.defaultJobType     = config.JobCreator.defaultJobType
-        self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
-        self.agentNumber        = int(getattr(config.Agent, 'agentNumber', 0))
+        self.defaultJobType = config.JobCreator.defaultJobType
+        self.limit          = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.agentNumber    = int(getattr(config.Agent, 'agentNumber', 0))
+        self.glideinLimits  = getattr(config.JobCreator, 'GlideInRestriction', {})
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "JobCreator")
 
         try:
-            self.jobCacheDir        = getattr(config.JobCreator, 'jobCacheDir',
-                                              os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
+            self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
+                                       os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
             self.check()
         except WMException:
             raise
@@ -494,9 +487,19 @@ class JobCreatorPoller(BaseWorkerThread):
                 self.sendAlert(6, msg = msg)
                 continue
 
+            try:
+                maxCores = 1
+                stepNames = wmTask.listAllStepNames()
+                for stepName in stepNames:
+                    sh = wmTask.getStep(stepName)
+                    maxCores = max(maxCores, sh.getNumberOfCores())
+            except AttributeError:
+                logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
+
             logging.debug("Going to call wmbsJobFactory for sub %i with limit %i" % (subscriptionID, self.limit))
 
             splitParams = retrieveJobSplitParams(wmWorkload, workflow.task)
+            splitParams.update({'NumberOfCores': maxCores})
             logging.debug("Split Params: %s" % splitParams)
 
             # My hope is that the job factory is smart enough only to split un-split jobs
@@ -510,8 +513,9 @@ class JobCreatorPoller(BaseWorkerThread):
             wmbsJobFactory.open()
 
             # Create a function to hold it
-            jobSplittingFunction = runSplitter(jobFactory = wmbsJobFactory,
-                                               splitParams = splitParams)
+            jobSplittingFunction = runSplitter(jobFactory=wmbsJobFactory,
+                                               splitParams=splitParams,
+                                               glideinLimits=self.glideinLimits)
 
             # Now we get to find out how many jobs there are.
             jobNumber = self.countJobs.execute(workflow = workflow.id,
@@ -545,7 +549,6 @@ class JobCreatorPoller(BaseWorkerThread):
                     myThread.transaction.commit()
                     break
 
-
                 # Assemble a dict of all the info
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
@@ -554,16 +557,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
-                               'numberOfCores': 1,}
-                try:
-                    maxCores = 1
-                    stepNames = wmTask.listAllStepNames()
-                    for stepName in stepNames:
-                        sh = wmTask.getStep(stepName)
-                        maxCores = max(maxCores, sh.getNumberOfCores())
-                    processDict.update({'numberOfCores' : maxCores})
-                except AttributeError:
-                    logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
+                               'numberOfCores': maxCores}
 
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
 

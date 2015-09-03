@@ -132,7 +132,7 @@ class RequestHandler(object):
                         % (str(exc), type(data))
                 logging.warning(msg)
                 return data
-            return data
+            return res
         else:
             return data
 

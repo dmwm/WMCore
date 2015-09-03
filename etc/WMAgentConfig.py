@@ -197,6 +197,10 @@ config.JobCreator.pollInterval = 120
 config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
+# glidein restrictions used for resource estimation
+config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 60 * 60,    # lower limit (or default)
+                                        "MaxWallTimeMins": 47 * 60 * 60,   # pilot lifetime is usually 48h
+                                        "RequestDiskKB": 20 * 1024 * 1024} # unit KB, site limit at 27GB
 
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"

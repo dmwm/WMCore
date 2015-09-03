@@ -9,14 +9,9 @@ Data object that describes a job
 __all__ = []
 
 
-
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Configuration import ConfigSection
-
-from WMCore.Services.UUID import makeUUID
 
 import time
 
@@ -102,7 +97,7 @@ class Job(WMObject, dict):
 
         Add a file or list of files to the job's input.
         """
-        if type(file) == list:
+        if isinstance(file, list):
             self["input_files"].extend(file)
         else:
             self["input_files"].append(file)
@@ -150,24 +145,6 @@ class Job(WMObject, dict):
             self["estimatedDiskUsage"] = disk
         elif disk:
             self["estimatedDiskUsage"] += disk
-
-        return
-
-    def capResourceEstimates(self, jobTime = None, memory = None, disk = None):
-        """
-        _capResourceEstimates_
-
-        Checks the current resource estimates and caps them
-        at the provided values if higher.
-        """
-        if self["estimatedJobTime"] and jobTime and jobTime < self["estimatedJobTime"]:
-            self["estimatedJobTime"] = jobTime
-
-        if self["estimatedMemoryUsage"] and memory and memory < self["estimatedMemoryUsage"]:
-            self["estimatedMemoryUsage"] = memory
-
-        if self["estimatedDiskUsage"] and disk and disk < self["estimatedDiskUsage"]:
-            self["estimatedDiskUsage"] = disk
 
         return
 

@@ -81,6 +81,11 @@ class RequestHandler(object):
         encoded_data = urllib.urlencode(params, doseq=doseq)
         if  verb == 'GET':
             url = url + '?' + encoded_data
+        elif verb == 'HEAD':
+            url = url + '?' + encoded_data
+            curl.setopt(pycurl.CUSTOMREQUEST, verb)
+            curl.setopt(pycurl.HEADER, 1)
+            curl.setopt(pycurl.NOBODY, True)
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
             curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
@@ -154,7 +159,10 @@ class RequestHandler(object):
             print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
         if  header.status < 300:
-            data = self.parse_body(bbuf.getvalue(), decode)
+            if  verb == 'HEAD':
+                data = ''
+            else:
+                data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \

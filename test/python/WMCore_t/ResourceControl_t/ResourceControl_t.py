@@ -467,7 +467,7 @@ class ResourceControlTest(unittest.TestCase):
         self.assertEqual( siteInfo["site_name"], "testSite1",
                           "Error: Site name is wrong." )
 
-        self.assertEqual( siteInfo["se_name"], ["testSE1"],
+        self.assertEqual( siteInfo["pnn"], ["testSE1"],
                           "Error: SE name is wrong." )
 
         self.assertEqual( siteInfo["ce_name"], "testCE1",
@@ -742,8 +742,8 @@ class ResourceControlTest(unittest.TestCase):
                                        ceName = 'glidein-ce.fnal.gov',
                                        plugin = 'CondorPlugin', taskList = taskList)
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue('test_cmssrm.fnal.gov' in result.keys())
-        self.assertEqual(result['test_cmssrm.fnal.gov']['cms_name'], 'T1_US_FNAL')
+        self.assertTrue('T1_US_FNAL_Disk' in result.keys())
+        self.assertEqual(result['T1_US_FNAL_Disk']['cms_name'], 'T1_US_FNAL')
         for x in result.keys():
             self.assertEqual(len(result[x]['thresholds']), 2)
             self.assertEqual(result[x]['total_pending_slots'], 200)
@@ -793,7 +793,7 @@ class ResourceControlTest(unittest.TestCase):
 
         # Verify that sites with more than one SE were added correctly.
         cernInfo = myResourceControl.listSiteInfo("CERN")
-        self.assertTrue(len(cernInfo["se_name"]) == 2)
+        self.assertTrue(len(cernInfo["pnn"]) == 2)
         return
 
 if __name__ == '__main__':

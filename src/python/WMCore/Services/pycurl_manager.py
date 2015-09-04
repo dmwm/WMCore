@@ -70,6 +70,8 @@ class RequestHandler(object):
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
         """Set options for given curl object, params should be a dictionary"""
+        if  params == None:
+            params = {}
         if  not isinstance(params, dict):
             raise TypeError("pycurl parameters should be passed as dictionary")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)

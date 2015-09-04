@@ -35,19 +35,14 @@ real sending of Alert instances.
 
 """
 
-
-
 import os
 import unittest
 import logging
 import time
-import random
 import shutil
-import types
 import inspect
 
 import psutil
-
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
 from WMQuality.TestInit import TestInit
@@ -57,9 +52,7 @@ from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Base import BasePoller
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
-from WMComponent.AlertGenerator.Pollers.Agent import ComponentsPoller
 from WMComponent.AlertGenerator.Pollers.Agent import ComponentsCPUPoller
-
 
 
 class BaseTest(unittest.TestCase):
@@ -101,15 +94,19 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(len(handler.queue), 1)
         self.assertEqual(handler.queue[0]["Component"], inspect.stack()[0][3])
 
-
     def testProcessDetailBasic(self):
         pid = os.getpid()
-        name = inspect.stack()[0][3] # test name
+        name = inspect.stack()[0][3]  # test name
         pd = ProcessDetail(pid, name)
         self.assertEqual(pd.pid, pid)
         self.assertEqual(pd.name, name)
         self.assertEqual(pd.proc.pid, pid)
-        numChildren = len(psutil.Process(pid).get_children())
+        numChildren = None
+        try:
+            numChildren = len(psutil.Process(pid).children())  # psutil 3.1.1
+        except AttributeError:
+            numChildren = len(psutil.Process(pid).get_children())  # psutil 0.6.1
+
         self.assertEqual(len(pd.children), numChildren)
         self.assertEqual(len(pd.allProcs), 1 + numChildren)
         d = pd.getDetails()
@@ -117,7 +114,6 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(d["component"], name)
         self.assertEqual(d["numChildrenProcesses"], numChildren)
         pd.refresh()
-
 
     def testMeasurementsBasic(self):
         numMes = 10

@@ -11,11 +11,9 @@ import threading
 import traceback
 
 import psutil
-
 from WMCore.Alerts import API as alertAPI
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
-
 
 
 class ProcessDetail(object):
@@ -25,13 +23,16 @@ class ProcessDetail(object):
     also as psutil.Process instances, etc.
 
     """
+
     def __init__(self, pid, name):
         self.pid = int(pid)
         self.name = name
         self.proc = psutil.Process(self.pid)
-        self.children = self.proc.get_children()
+        try:
+            self.children = self.proc.children()  # psutil 3.1.1
+        except AttributeError:
+            self.children = self.proc.get_children()  # psutil 0.6.1
         self.allProcs = [self.proc] + self.children
-
 
     def refresh(self):
         """
@@ -39,7 +40,10 @@ class ProcessDetail(object):
         Update the list of child processes.
 
         """
-        self.children = self.proc.get_children()
+        try:
+            self.children = self.proc.children()  # psutil 3.1.1
+        except AttributeError:
+            self.children = self.proc.get_children()  # psutil 0.6.1
         self.allProcs = [self.proc] + self.children
 
 

@@ -4,7 +4,6 @@ agent components, etc.
 
 """
 
-
 import os
 import unittest
 import logging
@@ -12,19 +11,15 @@ import time
 import random
 import shutil
 import datetime
-import inspect
-
-import psutil
 
 from WMCore.Configuration import Configuration
-from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
-from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Agent import ComponentsPoller
 from WMComponent.AlertGenerator.Pollers.Agent import ComponentsCPUPoller
 from WMComponent.AlertGenerator.Pollers.Agent import ComponentsMemoryPoller
 from WMQuality.TestInit import TestInit
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 from WMComponent_t.AlertGenerator_t.AlertGenerator_t import getConfig
+
 
 
 

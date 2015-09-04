@@ -1,18 +1,15 @@
 import os
-import sys
 import time
 import unittest
 import logging
 import shutil
-import types
 import inspect
-
-import psutil
 
 from WMQuality.TestInit import TestInit
 from WMCore.Configuration import Configuration
 from WMComponent.AlertGenerator.AlertGenerator import AlertGenerator
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
+
 # poller final implementations
 from WMComponent.AlertGenerator.Pollers.System import CPUPoller
 from WMComponent.AlertGenerator.Pollers.System import MemoryPoller

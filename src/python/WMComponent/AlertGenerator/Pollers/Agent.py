@@ -16,14 +16,12 @@ import os
 import logging
 from xml.etree.ElementTree import ElementTree
 
-import psutil
-
+from psutil import (NoSuchProcess, AccessDenied)
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
-
 
 
 class ComponentsPoller(PeriodPoller):
@@ -88,7 +86,7 @@ class ComponentsPoller(PeriodPoller):
             self._compMeasurements.append(Measurements(self.numOfMeasurements))
             m = ("%s: loaded process information on %s:%s" % (myName, compName, compPID))
             logging.info(m)
-        except (psutil.error.NoSuchProcess, psutil.error.AccessDenied) as ex:
+        except (NoSuchProcess, AccessDenied) as ex:
             logging.error("%s: component %s ignored, reason: %s" % (myName, compName, ex))
 
 
@@ -133,7 +131,7 @@ class ComponentsPoller(PeriodPoller):
                                   " list of child processes ..." % processDetail.getDetails())
                     try:
                         processDetail.refresh()
-                    except psutil.error.NoSuchProcess as ex:
+                    except NoSuchProcess as ex:
                         logging.error("Could not update list of children processes "
                                       "for %s, reason: %s" % (processDetail.getDetails(), ex))
                     del componentsInfo[processDetail.name]
@@ -146,7 +144,7 @@ class ComponentsPoller(PeriodPoller):
                         index = self._components.index(processDetail)
                         self._components[index] = pd
                         measurements.clear()
-                    except (psutil.error.NoSuchProcess, psutil.error.AccessDenied) as ex:
+                    except (NoSuchProcess, AccessDenied) as ex:
                         logging.error("%s: component %s ignored, reason: %s" % (myName, processDetail.name, ex))
                         removeItems(processDetail, measurements)
             except KeyError:
@@ -165,7 +163,7 @@ class ComponentsPoller(PeriodPoller):
         for processDetail, measurements in zip(self._components, self._compMeasurements):
             try:
                 PeriodPoller.check(self, processDetail, measurements)
-            except psutil.error.NoSuchProcess as ex:
+            except NoSuchProcess as ex:
                 logging.warn("Observed process or its child process(es) disappeared, "
                              "update at the next polling attempt, reason: %s." % ex)
 

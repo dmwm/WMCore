@@ -8,18 +8,13 @@ utilisation by particular processes, etc.
 import os
 import unittest
 import logging
-import types
 import random
 import datetime
 import time
 import subprocess
 import signal
 
-import psutil
-
-from WMCore.Alerts.Alert import Alert
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
-from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
 from WMComponent.AlertGenerator.Pollers.System import CPUPoller
@@ -29,7 +24,6 @@ from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMQuality.TestInit import TestInit
 from WMComponent_t.AlertGenerator_t.AlertGenerator_t import getConfig
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
-
 
 
 class SystemTest(unittest.TestCase):

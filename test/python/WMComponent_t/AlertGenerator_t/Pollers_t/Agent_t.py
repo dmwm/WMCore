@@ -123,7 +123,6 @@ class AgentTest(unittest.TestCase):
             f.write(utils.daemonXmlContent % dict(PID_TO_PUT = pid))
             f.close()
 
-        numMeasurements = config.period / config.pollInterval
         poller = pollerClass(config, self.generator)
         # inject own input sample data provider
         # there is in fact input argument in this case which needs be ignored
@@ -288,7 +287,6 @@ class AgentTest(unittest.TestCase):
         handler, receiver = utils.setUpReceiver(self.generator.config.Alert.address,
                                                 self.generator.config.Alert.controlAddr)
 
-        numMeasurements = self.config.AlertGenerator.componentsCPUPoller.period / self.config.AlertGenerator.componentsCPUPoller.pollInterval
         poller = ComponentsCPUPoller(self.config.AlertGenerator.componentsCPUPoller, self.generator)
         # inject own input sample data provider
         thresholdToTest = self.config.AlertGenerator.componentsCPUPoller.soft

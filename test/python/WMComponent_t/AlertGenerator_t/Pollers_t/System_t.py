@@ -312,10 +312,10 @@ none                   4085528       628   4084900   1% /dev/shm
         self.config.AlertGenerator.bogusSizePoller.critical = 10
         self.config.AlertGenerator.bogusSizePoller.pollInterval = 0.2
         poller = DirectorySizePoller(self.config.AlertGenerator.bogusSizePoller, self.generator)
-        dir = "/dev"
-        poller.sample(dir)
+        directory = "/dev"
+        poller.sample(directory)
         # check will need this attribute set
-        poller._dbDirectory = dir
+        poller._dbDirectory = directory
         poller.check()
 
 

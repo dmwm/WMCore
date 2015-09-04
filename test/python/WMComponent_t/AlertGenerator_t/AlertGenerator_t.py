@@ -25,11 +25,9 @@ from WMComponent.AlertGenerator.Pollers.Couch import CouchMemoryPoller
 from WMComponent.AlertGenerator.Pollers.Couch import CouchErrorsPoller
 
 
-"""
-Any new end (final) implementation of new poller(s) should be add
-here to test its basic flow chain.
+# Any new end (final) implementation of new poller(s) should be add
+# here to test its basic flow chain.
 
-"""
 finalPollerClasses = [CouchErrorsPoller,
                       CouchMemoryPoller,
                       CouchCPUPoller,

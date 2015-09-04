@@ -8,18 +8,13 @@ utilisation by particular processes, etc.
 import os
 import unittest
 import logging
-import types
 import random
 import datetime
 import time
 import subprocess
 import signal
 
-import psutil
-
-from WMCore.Alerts.Alert import Alert
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
-from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
 from WMComponent.AlertGenerator.Pollers.System import CPUPoller
@@ -29,7 +24,6 @@ from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMQuality.TestInit import TestInit
 from WMComponent_t.AlertGenerator_t.AlertGenerator_t import getConfig
 from WMComponent_t.AlertGenerator_t.Pollers_t import utils
-
 
 
 class SystemTest(unittest.TestCase):
@@ -318,10 +312,10 @@ none                   4085528       628   4084900   1% /dev/shm
         self.config.AlertGenerator.bogusSizePoller.critical = 10
         self.config.AlertGenerator.bogusSizePoller.pollInterval = 0.2
         poller = DirectorySizePoller(self.config.AlertGenerator.bogusSizePoller, self.generator)
-        dir = "/dev"
-        poller.sample(dir)
+        directory = "/dev"
+        poller.sample(directory)
         # check will need this attribute set
-        poller._dbDirectory = dir
+        poller._dbDirectory = directory
         poller.check()
 
 

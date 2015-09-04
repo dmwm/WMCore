@@ -5,18 +5,14 @@ Alert framework poller classes.
 """
 
 import os
-import sys
 import random
 import time
-import logging
 import datetime
-import signal
-
-import psutil
 
 from WMCore.Alerts.ZMQ.Receiver import Receiver
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
+
 
 
 

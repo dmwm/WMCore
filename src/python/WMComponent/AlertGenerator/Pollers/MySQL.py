@@ -3,21 +3,16 @@ Common module for all MySQL related checked metrics.
 
 """
 
-
 import threading
 import logging
-import time
 
-import psutil
-
-from WMCore.Alerts.Alert import Alert
+from psutil import NoSuchProcess
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Base import ProcessDetail
 from WMComponent.AlertGenerator.Pollers.System import DirectorySizePoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessCPUPoller
 from WMComponent.AlertGenerator.Pollers.System import ProcessMemoryPoller
-
 
 
 class MySQLPoller(PeriodPoller):
@@ -79,7 +74,7 @@ class MySQLPoller(PeriodPoller):
         if self._dbProcessDetail:
             try:
                 PeriodPoller.check(self, self._dbProcessDetail, self._measurements)
-            except psutil.error.NoSuchProcess as ex:
+            except NoSuchProcess as ex:
                 logging.warn(ex)
                 logging.warn("Updating info about the polled process ...")
                 self._setUp()

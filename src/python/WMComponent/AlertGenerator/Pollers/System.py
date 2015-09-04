@@ -9,12 +9,11 @@ import logging
 import subprocess
 
 import psutil
-
+from psutil import AccessDenied
 from WMCore.Alerts.Alert import Alert
 from WMComponent.AlertGenerator.Pollers.Base import Measurements
 from WMComponent.AlertGenerator.Pollers.Base import BasePoller
 from WMComponent.AlertGenerator.Pollers.Base import PeriodPoller
-
 
 
 class ProcessCPUPoller(object):
@@ -36,7 +35,7 @@ class ProcessCPUPoller(object):
             pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except psutil.error.AccessDenied as ex:
+        except AccessDenied as ex:
             m = ("Can't get CPU usage of %s, reason: %s" %
                  (processDetail.getDetails(), ex))
             raise Exception(m)
@@ -66,7 +65,7 @@ class ProcessMemoryPoller(object):
             pollProcess = lambda proc: proc.get_memory_percent()
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
-        except psutil.error.AccessDenied as ex:
+        except AccessDenied as ex:
             m = ("Can't get memory usage of %s, reason: %s" %
                  (processDetail.getDetails(), ex))
             raise Exception(m)
@@ -120,10 +119,9 @@ class MemoryPoller(PeriodPoller):
         None is passed here (see check below).
 
         """
-        # Updated for psutil 0.6.0 and virtual_memory(). Needs to be updated again for 3.x
+
         usedPhyMemPercent = psutil.virtual_memory().percent
         return usedPhyMemPercent
-
 
     def check(self):
         PeriodPoller.check(self, None, self._measurements)

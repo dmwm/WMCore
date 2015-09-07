@@ -52,8 +52,6 @@ class EventAwareLumiBased(JobFactory):
         lumis           = kwargs.get('lumis', None)
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
-        capJobTime      = kwargs.get('capJobTime', None)
-        capJobDisk      = kwargs.get('capJobDisk', None)
         deterministicPileup = kwargs.get('deterministicPileup', False)
         eventsPerLumiInDataset = 0
 
@@ -214,8 +212,6 @@ class EventAwareLumiBased(JobFactory):
                                 runAddedTime = eventsAdded * timePerEvent
                                 runAddedSize = eventsAdded * sizePerEvent
                                 self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
-                                if capJobTime or capJobDisk:
-                                    self.currentJob.capResourceEstimates(jobTime = capJobTime, disk = capJobDisk)
                                 firstLumi = None
                                 lastLumi = None
                             continue
@@ -228,8 +224,6 @@ class EventAwareLumiBased(JobFactory):
                             runAddedTime = eventsAdded * timePerEvent
                             runAddedSize = eventsAdded * sizePerEvent
                             self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
-                            if capJobTime or capJobDisk:
-                                self.currentJob.capResourceEstimates(jobTime = capJobTime, disk = capJobDisk)
                             firstLumi = None
                             lastLumi = None
 
@@ -249,8 +243,6 @@ class EventAwareLumiBased(JobFactory):
                                 runAddedTime = eventsAdded * timePerEvent
                                 runAddedSize = eventsAdded * sizePerEvent
                                 self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
-                                if capJobTime or capJobDisk:
-                                    self.currentJob.capResourceEstimates(jobTime = capJobTime, disk = capJobDisk)
                             msg = None
                             if failNextJob:
                                 msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
@@ -304,8 +296,6 @@ class EventAwareLumiBased(JobFactory):
                         runAddedTime = eventsAdded * timePerEvent
                         runAddedSize = eventsAdded * sizePerEvent
                         self.currentJob.addResourceEstimates(jobTime = runAddedTime, disk = runAddedSize)
-                        if capJobTime or capJobDisk:
-                            self.currentJob.capResourceEstimates(jobTime = capJobTime, disk = capJobDisk)
                         firstLumi = None
                         lastLumi = None
 

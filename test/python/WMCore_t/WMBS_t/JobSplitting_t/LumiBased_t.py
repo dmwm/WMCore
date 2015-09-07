@@ -99,11 +99,11 @@ class LumiBasedTest(unittest.TestCase):
         testFileset = Fileset(name=baseName)
         testFileset.create()
         parentFile = File('%s_parent' % baseName, size=1000, events=100,
-                          locations=set(["T1_US_FNAL"]))
+                          locations=set(["T1_US_FNAL_Disk"]))
         parentFile.create()
         for i in range(nFiles):
             newFile = File(lfn='%s_%i' % (baseName, i), size=1000,
-                           events=100, locations="T1_US_FNAL")
+                           events=100, locations="T1_US_FNAL_Disk")
             lumis = []
             for lumi in range(lumisPerFile):
                 if rand:

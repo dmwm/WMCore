@@ -513,19 +513,19 @@ class FileTest(unittest.TestCase):
                         checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        testFileA.setLocation(["se1.fnal.gov"])
+        testFileA.setLocation(["T1_US_FNAL_Disk"])
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
 
-        testFileA.setLocation(["se1.cern.ch"])
+        testFileA.setLocation(["T2_CH_CERN"])
         testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
                               immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+        goldenLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -538,7 +538,7 @@ class FileTest(unittest.TestCase):
         myThread.transaction.rollback()
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov"]
+        goldenLocations = ["T1_US_FNAL_Disk"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \

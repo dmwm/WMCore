@@ -74,16 +74,16 @@ class EventBasedTest(unittest.TestCase):
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = 's1', pnn = "T1_US_FNAL_Disk")
         locationAction.execute(siteName = 's2', pnn = "T2_CH_CERN")
-        self.validLocations = ["somese.cern.ch", "otherse.cern.ch"]
+        self.validLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         parentFile = File('/parent/lfn/', size = 1000, events = 100,
-                          locations = set(["somese.cern.ch"]))
+                          locations = set(["T1_US_FNAL_Disk"]))
         parentFile.create()
         for _ in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
             newFile.addParent(lfn = parentFile['lfn'])
             self.multipleFileFileset.addFile(newFile)
@@ -92,7 +92,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T1_US_FNAL_Disk"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -102,12 +102,12 @@ class EventBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for _ in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation("somese.cern.ch")
+            newFile.setLocation("T1_US_FNAL_Disk")
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for _ in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation(["somese.cern.ch", "otherse.cern.ch"])
+            newFile.setLocation(["T1_US_FNAL_Disk", "T2_CH_CERN"])
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
@@ -180,7 +180,7 @@ class EventBasedTest(unittest.TestCase):
         # MC comes with MCFakeFile(s)
         newFile = File("MCFakeFile-some-hash-%s" % str(index).zfill(5), size = 1000,
                        events = numEvents,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T1_US_FNAL_Disk"]))
         newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent

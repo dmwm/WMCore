@@ -796,7 +796,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -844,7 +844,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFilesetB")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNB", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNB", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()

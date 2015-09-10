@@ -67,6 +67,7 @@ class DummyRESTModel(RESTModel):
                                }
                          }
 
+        self._addMethod('GET', 'gen', self.gen)
 
         self._addMethod('GET', 'list', self.list, args=['input_int', 'input_str'],
                               validation=[self.val_0,
@@ -110,6 +111,11 @@ class DummyRESTModel(RESTModel):
         """
         input_data = self._sanitise_input(args, kwargs, 'echo')
         return input_data
+
+    def gen(self):
+        """Generator method which produce generator dicts"""
+        data = ({'idx':i} for i in range(10))
+        return data
 
     def list(self, input_int, input_str):
         return {'input_int':input_int, 'input_str':input_str}

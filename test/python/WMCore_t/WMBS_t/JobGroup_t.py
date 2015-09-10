@@ -88,12 +88,12 @@ class JobGroupTest(unittest.TestCase):
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
         testFileA.addRun(Run(10, *[12312]))
-        testFileA.setLocation("goodse.cern.ch")
+        testFileA.setLocation("T2_CH_CERN")
         testFileA.setLocation("malpaquet")
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
-        testFileB.setLocation("goodse.cern.ch")
+        testFileB.setLocation("T2_CH_CERN")
         testFileB.setLocation("malpaquet")
 
         testFileA.create()
@@ -135,12 +135,12 @@ class JobGroupTest(unittest.TestCase):
 
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10)
         testFileC.addRun(Run(10, *[12312]))
-        testFileC.setLocation("goodse.cern.ch")
+        testFileC.setLocation("T2_CH_CERN")
         testFileC.setLocation("malpaquet")
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10)
         testFileD.addRun(Run(10, *[12312]))
-        testFileD.setLocation("goodse.cern.ch")
+        testFileD.setLocation("T2_CH_CERN")
         testFileD.setLocation("malpaquet")
 
         testFileC.create()

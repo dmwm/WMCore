@@ -4,13 +4,12 @@ _GetPSNtoPNNMapping_
 
 MySQL implementation of Locations.GetPSNtoPNNMapping
 """
-
-__all__ = []
-
-
 from __future__ import print_function
 from __future__ import division
 from WMCore.Database.DBFormatter import DBFormatter
+
+__all__ = []
+
 
 class GetPSNtoPNNMapping(DBFormatter):
     """

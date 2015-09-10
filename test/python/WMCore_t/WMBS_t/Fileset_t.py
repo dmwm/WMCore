@@ -329,15 +329,15 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
@@ -1003,7 +1003,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         inputFileset.addFile(testFileA)
@@ -1036,7 +1036,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testOutputFileset1.addFile(testFileB)
@@ -1063,7 +1063,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription2.completeFiles([testFileB])
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
         testOutputFileset2.addFile(testFileC)
@@ -1090,7 +1090,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription3.completeFiles([testFileC])
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()
         testOutputFileset3.addFile(testFileD)
@@ -1116,23 +1116,23 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()
 
@@ -1218,23 +1218,23 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()
 
@@ -1319,22 +1319,22 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
 
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
 
 

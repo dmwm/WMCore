@@ -86,13 +86,13 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         testFileset.create()
         for i in range(nFiles):
             newFile = self.createFile('%s_%i' % (baseName, i), nEventsPerFile,
-                                      i, lumisPerFile, 'somese.cern.ch')
+                                      i, lumisPerFile, 'T1_US_FNAL_Disk')
             newFile.create()
             testFileset.addFile(newFile)
         if twoSites:
             for i in range(nFiles):
                 newFile = self.createFile('%s_%i_2' % (baseName, i), nEventsPerFile,
-                                          i, lumisPerFile, 'otherse.cern.ch')
+                                          i, lumisPerFile, 'T2_CH_CERN')
                 newFile.create()
                 testFileset.addFile(newFile)
         testFileset.commit()
@@ -246,13 +246,13 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         # Create 7 files, each one with different lumi/event distributions
         testFileset = Fileset(name="FilesetA")
         testFileset.create()
-        testFileA = self.createFile("/this/is/file1", 250, 0, 5, "otherse.cern.ch")
-        testFileB = self.createFile("/this/is/file2", 600, 1, 1, "otherse.cern.ch")
-        testFileC = self.createFile("/this/is/file3", 1200, 2, 2, "otherse.cern.ch")
-        testFileD = self.createFile("/this/is/file4", 100, 3, 1, "otherse.cern.ch")
-        testFileE = self.createFile("/this/is/file5", 30, 4, 1, "otherse.cern.ch")
-        testFileF = self.createFile("/this/is/file6", 10, 5, 1, "otherse.cern.ch")
-        testFileG = self.createFile("/this/is/file7", 151, 6, 3, "otherse.cern.ch")
+        testFileA = self.createFile("/this/is/file1", 250, 0, 5, "T2_CH_CERN")
+        testFileB = self.createFile("/this/is/file2", 600, 1, 1, "T2_CH_CERN")
+        testFileC = self.createFile("/this/is/file3", 1200, 2, 2, "T2_CH_CERN")
+        testFileD = self.createFile("/this/is/file4", 100, 3, 1, "T2_CH_CERN")
+        testFileE = self.createFile("/this/is/file5", 30, 4, 1, "T2_CH_CERN")
+        testFileF = self.createFile("/this/is/file6", 10, 5, 1, "T2_CH_CERN")
+        testFileG = self.createFile("/this/is/file7", 151, 6, 3, "T2_CH_CERN")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
@@ -321,9 +321,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         fileA.addRun(Run(1, *lumiListA))
         fileA.addRun(Run(2, *lumiListA))
         fileA.addRun(Run(3, *lumiListA))
-        fileA.setLocation("somese.cern.ch")
+        fileA.setLocation("T1_US_FNAL_Disk")
 
-        fileB = self.createFile('/this/is/file2a', 200, 3, 5, "somese.cern.ch")
+        fileB = self.createFile('/this/is/file2a', 200, 3, 5, "T1_US_FNAL_Disk")
 
         testFileset = Fileset(name='FilesetB')
         testFileset.create()
@@ -372,9 +372,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         # Create 3 files, the one in the middle is a "bad" file
         testFileset = Fileset(name = "FilesetA")
         testFileset.create()
-        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "somese.cern.ch")
-        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "somese.cern.ch")
-        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "somese.cern.ch")
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 5, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 2, "T1_US_FNAL_Disk")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
@@ -414,9 +414,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         # Create 3 single-big-lumi files
         testFileset = Fileset(name = "FilesetA")
         testFileset.create()
-        testFileA = self.createFile("/this/is/file1", 1000, 0, 1, "somese.cern.ch")
-        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "somese.cern.ch")
-        testFileC = self.createFile("/this/is/file3", 1000, 2, 1, "somese.cern.ch")
+        testFileA = self.createFile("/this/is/file1", 1000, 0, 1, "T1_US_FNAL_Disk")
+        testFileB = self.createFile("/this/is/file2", 1000, 1, 1, "T1_US_FNAL_Disk")
+        testFileC = self.createFile("/this/is/file3", 1000, 2, 1, "T1_US_FNAL_Disk")
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)

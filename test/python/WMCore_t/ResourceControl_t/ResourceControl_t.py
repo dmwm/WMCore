@@ -711,7 +711,7 @@ class ResourceControlTest(unittest.TestCase):
 
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue('T1_US_FNAL' in result.keys())
+        self.assertTrue('T1_US_FNAL_Buffer' in result.keys())
         for x in result.keys():
             self.assertEqual(len(result[x]['thresholds']), 8)
             self.assertEqual(result[x]['total_pending_slots'], 100)
@@ -723,7 +723,7 @@ class ResourceControlTest(unittest.TestCase):
 
         # Verify that sites with more than one SE were added correctly.
         nebInfo = myResourceControl.listSiteInfo("T2_US_Nebraska")
-        self.assertTrue(len(nebInfo["se_name"]) == 3)
+        self.assertTrue(len(nebInfo["pnn"]) == 3)
         return
 
     def testInsertAllSEs2(self):
@@ -742,8 +742,8 @@ class ResourceControlTest(unittest.TestCase):
                                        ceName = 'glidein-ce.fnal.gov',
                                        plugin = 'CondorPlugin', taskList = taskList)
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertTrue('T1_US_FNAL_Disk' in result.keys())
-        self.assertEqual(result['T1_US_FNAL_Disk']['cms_name'], 'T1_US_FNAL')
+        self.assertTrue('test_T1_US_FNAL_Buffer' in result.keys())
+        self.assertEqual(result['test_T1_US_FNAL_Buffer']['cms_name'], 'T1_US_FNAL')
         for x in result.keys():
             self.assertEqual(len(result[x]['thresholds']), 2)
             self.assertEqual(result[x]['total_pending_slots'], 200)

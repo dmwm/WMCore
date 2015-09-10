@@ -228,7 +228,7 @@ class LocationsTest(unittest.TestCase):
         result = locationInfo.execute(siteName = "Choshu")
 
         self.assertEqual(result[0]['ce_name'], 'Choshu')
-        self.assertEqual(result[0]['se_name'], 'Choshu')
+        self.assertEqual(result[0]['pnn'], 'Choshu')
         self.assertEqual(result[0]['site_name'], 'Choshu')
         self.assertEqual(result[0]['pending_slots'], 20)
         self.assertEqual(result[0]['running_slots'], 50)

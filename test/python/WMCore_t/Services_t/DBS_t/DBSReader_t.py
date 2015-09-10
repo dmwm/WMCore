@@ -172,7 +172,7 @@ class DBSReaderTest(unittest.TestCase):
         self.assertEqual(150780132, block['BlockSize'])
         self.assertEqual(2, block['NumberOfFiles'])
         # possibly fragile but assume block located at least at cern
-        sites = [x['Name'] for x in block['StorageElementList'] if x['Name'].find('cern.ch') > -1]
+        sites = [x['Name'] for x in block['PhEDExNodeList'] if x['Name'].find('cern.ch') > -1]
         self.assertTrue(sites)
 
         # weird error handling - depends on whether block or dataset is missing
@@ -287,7 +287,7 @@ class DBSReaderTest(unittest.TestCase):
         parents = self.dbs.listBlockParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
         self.assertEqual(1, len(parents))
         self.assertEqual('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0', parents[0]['Name'])
-        sites = [x for x in parents[0]['StorageElementList'] if x.find("cern.ch") > -1]
+        sites = [x for x in parents[0]['PhEDExNodeList'] if x.find("cern.ch") > -1]
         self.assertTrue(sites)
 
         self.assertFalse(self.dbs.listBlockParents('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'))

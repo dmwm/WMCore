@@ -19,7 +19,7 @@ import math
 
 from WMCore.DataStructs.Run         import Run
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.JobSplitting.LumiBased  import isGoodLumi, isGoodRun
+from WMCore.JobSplitting.LumiBased  import isGoodLumi, isGoodRun, LumiChecker
 from WMCore.WMBS.File               import File
 from WMCore.WMSpec.WMTask           import buildLumiMask
 
@@ -50,6 +50,8 @@ class EventAwareLumiBased(JobFactory):
         runWhitelist    = kwargs.get('runWhitelist', [])
         runs            = kwargs.get('runs', None)
         lumis           = kwargs.get('lumis', None)
+        applyLumiCorrection = bool(kwargs.get('applyLumiCorrection', False))
+
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
         deterministicPileup = kwargs.get('deterministicPileup', False)
@@ -142,6 +144,7 @@ class EventAwareLumiBased(JobFactory):
         totalAvgEventCount = 0
         currentJobAvgEventCount = 0
         stopTask = False
+        self.lumiChecker = LumiChecker(applyLumiCorrection)
         for location in locationDict:
 
             # For each location, we need a new jobGroup
@@ -202,7 +205,8 @@ class EventAwareLumiBased(JobFactory):
 
                     # Now loop over the lumis
                     for lumi in run:
-                        if not isGoodLumi(goodRunList, run = run.run, lumi = lumi):
+                        if (not isGoodLumi(goodRunList, run = run.run, lumi = lumi) or
+                            self.lumiChecker.isSplitLumi(run.run, lumi, f)):
                             # Kill the chain of good lumis
                             # Skip this lumi
                             if firstLumi != None and firstLumi != lumi:
@@ -248,6 +252,7 @@ class EventAwareLumiBased(JobFactory):
                                 msg = "File %s has too many events (%d) in %d lumi(s)" % (f['lfn'],
                                                                                           f['events'],
                                                                                           f['lumiCount'])
+                            self.lumiChecker.closeJob(self.currentJob)
                             self.newJob(name = self.getJobName(), failedJob = failNextJob,
                                         failedReason = msg)
                             if deterministicPileup:
@@ -311,4 +316,5 @@ class EventAwareLumiBased(JobFactory):
             if stopTask:
                 break
 
+        self.lumiChecker.fixInputFiles()
         return

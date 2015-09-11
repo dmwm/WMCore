@@ -10,7 +10,6 @@ Core Database APIs
 
 
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.Database.ResultSet import ResultSet
 from copy import copy
 import WMCore.WMLogging
 
@@ -64,13 +63,9 @@ class DBInterface(WMObject):
         else:
             resultProxy = connection.execute(s, b)
 
-        if returnCursor:
-            return resultProxy
-
-        result = ResultSet()
-        result.add(resultProxy)
-        resultProxy.close()
-        return result
+        yield resultProxy
+        if not returnCursor:
+            resultProxy.close()
 
     def executemanybinds(self, s=None, b=None, connection=None,
                          returnCursor=False):
@@ -87,32 +82,23 @@ class DBInterface(WMObject):
         This will return a list of sqlalchemy.engine.base.ResultProxy object's
         one for each set of binds.
 
-        returns a list of sqlalchemy.engine.base.ResultProxy objects
+        returns a generator of sqlalchemy.engine.base.ResultProxy objects
         """
 
         s = s.strip()
         if s.lower().endswith('select', 0, 6):
-            """
-            Trying to select many
-            """
+            # Trying to select many
             if returnCursor:
-                result = []
                 for bind in b:
-                    result.append(connection.execute(s, bind))
+                    result = connection.execute(s, bind)
+                    yield result
             else:
-                result = ResultSet()
                 for bind in b:
                     resultproxy = connection.execute(s, bind)
-                    result.add(resultproxy)
+                    yield resultproxy
                     resultproxy.close()
-
-            return self.makelist(result)
-
-        """
-        Now inserting or updating many
-        """
         result = connection.execute(s, b)
-        return self.makelist(result)
+        yield result
 
     def connection(self):
         """
@@ -120,8 +106,15 @@ class DBInterface(WMObject):
         """
         return self.engine.connect()
 
-
     def processData(self, sqlstmt, binds={}, conn=None,
+                    transaction=False, returnCursor=False, useGenerator=False):
+        """Wrapper around _processData generator"""
+        res = self._processData(sqlstmt, binds, conn, transaction, returnCursor)
+        if useGenerator:
+            return res
+        return [r for r in res]
+
+    def _processData(self, sqlstmt, binds={}, conn=None,
                     transaction=False, returnCursor=False):
         """
         set conn if you already have an active connection to reuse
@@ -135,7 +128,6 @@ class DBInterface(WMObject):
             else:
                 connection = conn
 
-            result = []
             # Can take either a single statement or a list of statements and binds
             sqlstmt = self.makelist(sqlstmt)
             binds = self.makelist(binds)
@@ -146,9 +138,10 @@ class DBInterface(WMObject):
                     trans = connection.begin()
 
                 for i in sqlstmt:
-                    r = self.executebinds(i, connection=connection,
+                    gen = self.executebinds(i, connection=connection,
                                           returnCursor=returnCursor)
-                    result.append(r)
+                    for rec in gen:
+                        yield rec
 
                 if not transaction:
                     trans.commit()
@@ -157,14 +150,18 @@ class DBInterface(WMObject):
                 if not transaction:
                     trans = connection.begin()
                 while(len(binds) > self.maxBindsPerQuery):
-                    result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
+                    gen = self._processData(sqlstmt, binds[:self.maxBindsPerQuery],
                                                    conn=connection, transaction=True,
-                                                   returnCursor=returnCursor))
+                                                   returnCursor=returnCursor)
+                    for rec in gen:
+                        yield rec
                     binds = binds[self.maxBindsPerQuery:]
 
                 for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection,
-                                                        returnCursor=returnCursor))
+                    gen = self.executemanybinds(i, binds, connection=connection,
+                                                        returnCursor=returnCursor)
+                    for rec in gen:
+                        yield rec
                 if not transaction:
                     trans.commit()
             elif len(binds) == len(sqlstmt):
@@ -175,9 +172,10 @@ class DBInterface(WMObject):
                 for i, s in enumerate(sqlstmt):
                     b = binds[i]
 
-                    r = self.executebinds(s, b, connection=connection,
+                    gen = self.executebinds(s, b, connection=connection,
                                           returnCursor=returnCursor)
-                    result.append(r)
+                    for rec in gen:
+                        yield rec
 
                 if not transaction:
                     trans.commit()
@@ -201,4 +199,3 @@ class DBInterface(WMObject):
         finally:
             if not conn and connection != None:
                 connection.close() # Return connection to the pool
-        return result

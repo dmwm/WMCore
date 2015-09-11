@@ -5,12 +5,6 @@ A class to read in a SQLAlchemy result proxy and hold the data, such that the
 SQLAlchemy result sets (aka cursors) can be closed. Make this class look as much
 like the SQLAlchemy class to minimise the impact of adding this class.
 """
-
-
-
-
-import threading
-
 class ResultSet:
     def __init__(self):
         self.data = []
@@ -29,9 +23,6 @@ class ResultSet:
         return self.data
 
     def add(self, resultproxy):
-
-        myThread = threading.currentThread()
-
         if resultproxy.closed:
             return
         else:

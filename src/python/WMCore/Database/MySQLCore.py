@@ -8,7 +8,6 @@ Handle bind variable parsing for MySQL.
 import copy
 
 from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.ResultSet import ResultSet
 
 def bindVarCompare(a, b):
     """

@@ -12,6 +12,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import sys
 import os
 
+
 def dispatcher(*args):
     """
     _dispatcher_
@@ -32,6 +33,7 @@ def dispatcher(*args):
         print "Unknown scram command: %s\nFull command: %s" % (args[0], args)
         sys.exit(1)
 
+
 def scramProject(*args):
     print "Emulating scram project command..."
     workingDir = os.getcwd()
@@ -47,10 +49,5 @@ def scramRuntime(*args):
     print "export GREETING=\"Hello World\";"
 
 
-
 if __name__ == '__main__':
-
     dispatcher(*sys.argv[1:])
-
-
-    #dispatcher(*args)

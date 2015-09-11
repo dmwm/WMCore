@@ -19,6 +19,9 @@ def dispatcher(*args):
     Examine argument list and route to the appropriate call
 
     """
+    if args[0] == '--arch':
+        args = args[2:]
+
     if args[0] == 'project':
         scramProject(*args)
     elif args[0] == 'runtime':
@@ -26,7 +29,7 @@ def dispatcher(*args):
     elif args[0] == 'ru':
         scramRuntime(*args)
     else:
-        print "Unknown scram command: %s" % args[1]
+        print "Unknown scram command: %s\nFull command: %s" % (args[0], args)
         sys.exit(1)
 
 def scramProject(*args):

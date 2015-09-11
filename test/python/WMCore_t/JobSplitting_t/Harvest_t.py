@@ -12,15 +12,13 @@ import logging
 import time
 import os
 
-from WMCore.Agent.Configuration import Configuration
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
-
 from WMCore.JobStateMachine.ChangeState import ChangeState
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.ResourceControl.ResourceControl import ResourceControl
@@ -64,8 +62,8 @@ class HarvestTest(unittest.TestCase):
         myResourceControl.insertSite("SomeSite2", 10, 20, "SomeSE3", "SomeCE2")
 
         self.fileset1 = Fileset(name = "TestFileset1")
-        for file in range(11):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(11):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
             newFile.setLocation('SomeSE')
             self.fileset1.addFile(newFile)
@@ -180,8 +178,8 @@ class HarvestTest(unittest.TestCase):
         self.finishJobs(jobGroups)
 
         # Adding more of files, so we have new stuff to process
-        for file in range(12,24):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(12,24):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
             newFile.setLocation('SomeSE')
             self.fileset1.addFile(newFile)
@@ -204,8 +202,8 @@ class HarvestTest(unittest.TestCase):
         self.finishJobs(jobGroups)
 
         # Adding more of files, so we have new stuff to process
-        for file in range(26,36):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(26,36):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
             newFile.setLocation('SomeSE')
             self.fileset1.addFile(newFile)
@@ -234,15 +232,15 @@ class HarvestTest(unittest.TestCase):
         self.finishJobs(jobGroups)
 
         # Adding files for the first location
-        for file in range(38,48):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(38,48):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
             newFile.setLocation('SomeSE')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
         # Then another location
-        for file in range(50,56):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(50,56):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
             newFile.setLocation('SomeSE3')
             self.fileset1.addFile(newFile)
@@ -264,15 +262,15 @@ class HarvestTest(unittest.TestCase):
 
         self.finishJobs(jobGroups)
 
-        for file in range(60,65):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(60,65):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(2,*[2]))
             newFile.setLocation('SomeSE3')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
-        for file in range(70,75):
-            newFile = File("/some/file/name%d" % file, size = 1000, events = 100)
+        for fileNum in range(70,75):
+            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(3,*[3]))
             newFile.setLocation('SomeSE3')
             self.fileset1.addFile(newFile)
@@ -336,11 +334,12 @@ class HarvestTest(unittest.TestCase):
         for job in jobGroups[0].getJobs():
             runs = job['mask'].getRunAndLumis()
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
-            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8]],
-                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8]],
+                                       2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
             run = runs.keys()[0]
             for lumiPair in runs[run]:
-                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
+                for lumi in range(lumiPair[0], lumiPair[1] + 1):
+                    self.assertTrue((str(run), lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
 
         self.finishJobs(jobGroups, harvestSub)
 
@@ -359,11 +358,12 @@ class HarvestTest(unittest.TestCase):
         for job in jobGroups[0].getJobs():
             runs = job['mask'].getRunAndLumis()
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
-            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8],[9,14]],
-                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8], [9, 14]],
+                                       2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
             run = runs.keys()[0]
             for lumiPair in runs[run]:
-                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
+                for lumi in range(lumiPair[0], lumiPair[1] + 1):
+                    self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
 
         harvestingWorkflowSib = Workflow(spec = "spec.xml",
                                          owner = "hufnagel",
@@ -393,11 +393,12 @@ class HarvestTest(unittest.TestCase):
         for job in jobGroups[0].getJobs():
             runs = job['mask'].getRunAndLumis()
             self.assertEqual(len(runs), 1, "Job has more than one run configured")
-            possibleLumiPairs = {1 : [[1,1],[3,7],[2,2],[8,8],[9,14]],
-                                 2 : [[1,2],[4,7],[3,3],[8,8]]}
+            ll = LumiList(compactList={1: [[1, 1], [3, 7], [2, 2], [8, 8], [9, 14]],
+                                       2: [[1, 2], [4, 7], [3, 3], [8, 8]]})
             run = runs.keys()[0]
             for lumiPair in runs[run]:
-                self.assertTrue(lumiPair in possibleLumiPairs[run], "Strange lumi pair in the job mask")
+                for lumi in range(lumiPair[0], lumiPair[1] + 1):
+                    self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
 
 if __name__ == '__main__':
     unittest.main()

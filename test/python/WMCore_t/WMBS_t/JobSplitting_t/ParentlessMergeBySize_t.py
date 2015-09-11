@@ -185,7 +185,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         assert len(result[0].jobs) == 1, \
                "Error: One job should have been returned: %s" % len(result[0].jobs)
 
-        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 10 + 100)
+        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 10 + 2*100)
 
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
@@ -262,10 +262,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 10)
+                self.assertEqual(job["estimatedDiskUsage"], 11)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2*100)
                 goldenFiles = goldenFilesB
 
             currentRun = 0
@@ -339,10 +339,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 9 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 9 + 2*100)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 1)
+                self.assertEqual(job["estimatedDiskUsage"], 2)
                 goldenFiles = goldenFilesB
 
             currentRun = 0
@@ -456,10 +456,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
             jobLFNs.sort()
             if jobLFNs == goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFilesA = []
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 3 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 3 + 2*100)
                 self.assertEqual(jobLFNs, goldenFilesB,
                                  "Error: LFNs do not match.")
                 goldenFilesB = []
@@ -499,13 +499,13 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 3)
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesB
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2*100)
                 goldenFiles = goldenFilesC
 
             currentRun = 0
@@ -578,13 +578,13 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 2 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2 + 2*100)
                 goldenFiles = goldenFilesB
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 1)
+                self.assertEqual(job["estimatedDiskUsage"], 2 * 1)
                 goldenFiles = goldenFilesC
 
             currentRun = 0

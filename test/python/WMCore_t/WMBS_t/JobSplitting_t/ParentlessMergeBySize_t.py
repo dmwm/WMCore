@@ -12,14 +12,19 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
 from WMCore.DataStructs.Run import Run
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMQuality.TestInit import TestInit
 
+
 class ParentlessMergeBySizeTest(unittest.TestCase):
+    """
+    _ParentlessMergeBySizeTest_
+
+    Unit tests for parentless WMBS merging.
+    """
+
     def setUp(self):
         """
         _setUp_
@@ -29,13 +34,13 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
         return
 
     def tearDown(self):
@@ -57,82 +62,82 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         also injected.  Also files are added to the "Mergeable" subscription as
         well as to the output fileset for their jobgroups.
         """
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="s1", seName="somese.cern.ch")
+        locationAction.execute(siteName="s1", seName="somese2.cern.ch")
 
-        changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
+        changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 
-        self.mergeFileset = Fileset(name = "mergeFileset")
+        self.mergeFileset = Fileset(name="mergeFileset")
         self.mergeFileset.create()
-        self.bogusFileset = Fileset(name = "bogusFileset")
+        self.bogusFileset = Fileset(name="bogusFileset")
         self.bogusFileset.create()
 
-        mergeWorkflow = Workflow(name = "mergeWorkflow", spec = "bunk2",
-                                 owner = "Steve", task="Test")
+        mergeWorkflow = Workflow(name="mergeWorkflow", spec="bunk2",
+                                 owner="Steve", task="Test")
         mergeWorkflow.create()
-        markWorkflow = self.daoFactory(classname = "Workflow.MarkInjectedWorkflows")
-        markWorkflow.execute(names = [mergeWorkflow.name], injected = True)
+        markWorkflow = self.daoFactory(classname="Workflow.MarkInjectedWorkflows")
+        markWorkflow.execute(names=[mergeWorkflow.name], injected=True)
 
-        self.mergeSubscription = Subscription(fileset = self.mergeFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "ParentlessMergeBySize")
+        self.mergeSubscription = Subscription(fileset=self.mergeFileset,
+                                              workflow=mergeWorkflow,
+                                              split_algo="ParentlessMergeBySize")
         self.mergeSubscription.create()
-        self.bogusSubscription = Subscription(fileset = self.bogusFileset,
-                                              workflow = mergeWorkflow,
-                                              split_algo = "ParentlessMergeBySize")
+        self.bogusSubscription = Subscription(fileset=self.bogusFileset,
+                                              workflow=mergeWorkflow,
+                                              split_algo="ParentlessMergeBySize")
 
-        file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+        file1 = File(lfn="file1", size=1024, events=1024, first_event=0,
+                     locations=set(["somese.cern.ch"]))
         file1.addRun(Run(1, *[45]))
         file1.create()
-        file2 = File(lfn = "file2", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        file2 = File(lfn="file2", size=1024, events=1024,
+                     first_event=1024, locations=set(["somese.cern.ch"]))
         file2.addRun(Run(1, *[45]))
         file2.create()
-        file3 = File(lfn = "file3", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        file3 = File(lfn="file3", size=1024, events=1024,
+                     first_event=2048, locations=set(["somese.cern.ch"]))
         file3.addRun(Run(1, *[45]))
         file3.create()
-        file4 = File(lfn = "file4", size = 1024, events = 1024,
-                     first_event = 3072, locations = set(["somese.cern.ch"]))
+        file4 = File(lfn="file4", size=1024, events=1024,
+                     first_event=3072, locations=set(["somese.cern.ch"]))
         file4.addRun(Run(1, *[45]))
         file4.create()
 
-        fileA = File(lfn = "fileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileA = File(lfn="fileA", size=1024, events=1024,
+                     first_event=0, locations=set(["somese.cern.ch"]))
         fileA.addRun(Run(1, *[46]))
         fileA.create()
-        fileB = File(lfn = "fileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileB = File(lfn="fileB", size=1024, events=1024,
+                     first_event=1024, locations=set(["somese.cern.ch"]))
         fileB.addRun(Run(1, *[46]))
         fileB.create()
-        fileC = File(lfn = "fileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileC = File(lfn="fileC", size=1024, events=1024,
+                     first_event=2048, locations=set(["somese.cern.ch"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
 
-        fileI = File(lfn = "fileI", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+        fileI = File(lfn="fileI", size=1024, events=1024,
+                     first_event=0, locations=set(["somese.cern.ch"]))
         fileI.addRun(Run(2, *[46]))
         fileI.create()
-        fileII = File(lfn = "fileII", size = 1024, events = 1024,
-                      first_event = 1024, locations = set(["somese.cern.ch"]))
+        fileII = File(lfn="fileII", size=1024, events=1024,
+                      first_event=1024, locations=set(["somese.cern.ch"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
-        fileIII = File(lfn = "fileIII", size = 1024, events = 102400,
-                       first_event = 2048, locations = set(["somese.cern.ch"]))
+        fileIII = File(lfn="fileIII", size=1024, events=102400,
+                       first_event=2048, locations=set(["somese.cern.ch"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
-        fileIV = File(lfn = "fileIV", size = 102400, events = 1024,
-                      first_event = 3072, locations = set(["somese.cern.ch"]))
+        fileIV = File(lfn="fileIV", size=102400, events=1024,
+                      first_event=3072, locations=set(["somese.cern.ch"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
 
-        for file in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
-                     fileII, fileIII, fileIV]:
-            self.mergeFileset.addFile(file)
-            self.bogusFileset.addFile(file)
+        for jobFile in [file1, file2, file3, file4, fileA, fileB, fileC, fileI,
+                        fileII, fileIII, fileIV]:
+            self.mergeFileset.addFile(jobFile)
+            self.bogusFileset.addFile(jobFile)
 
         self.mergeFileset.commit()
         self.bogusFileset.commit()
@@ -150,14 +155,14 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000000,
-                            max_merge_events = 200000000)
+        result = jobFactory(min_merge_size=200000, max_merge_size=2000000000,
+                            max_merge_events=200000000)
 
         assert len(result) == 0, \
-               "ERROR: No job groups should be returned."
+            "ERROR: No job groups should be returned."
 
         return
 
@@ -173,39 +178,39 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000,
-                            max_merge_events = 2000000)
+        result = jobFactory(min_merge_size=200000, max_merge_size=2000000,
+                            max_merge_events=2000000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % len(result)
+            "ERROR: More than one JobGroup returned: %s" % len(result)
 
         assert len(result[0].jobs) == 1, \
-               "Error: One job should have been returned: %s" % len(result[0].jobs)
+            "Error: One job should have been returned: %s" % len(result[0].jobs)
 
-        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 10 + 100)
+        self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 10 + 2 * 100)
 
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                      "fileC", "fileI", "fileII", "fileIII", "fileIV"]
+                       "fileC", "fileI", "fileII", "fileIII", "fileIV"]
 
         jobFiles = result[0].jobs[0].getFiles()
 
         currentRun = 0
         currentLumi = 0
         currentEvent = 0
-        for file in jobFiles:
-            file.loadData()
-            assert file["lfn"] in goldenFiles, \
-                   "Error: Unknown file: %s" % file["lfn"]
-            self.assertTrue(file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+        for jobFile in jobFiles:
+            jobFile.loadData()
+            assert jobFile["lfn"] in goldenFiles, \
+                "Error: Unknown file: %s" % jobFile["lfn"]
+            self.assertTrue(jobFile["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
                             "Error: File is missing a location.")
-            goldenFiles.remove(file["lfn"])
+            goldenFiles.remove(jobFile["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(jobFile["runs"])[0].run
+            fileLumi = min(list(jobFile["runs"])[0])
+            fileEvent = jobFile["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -214,15 +219,15 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                 continue
 
             assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                "ERROR: Files not sorted by run."
 
             if fileRun == currentRun:
                 assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                    "ERROR: Files not ordered by lumi"
 
             if fileLumi == currentLumi:
                 assert fileEvent >= currentEvent, \
-                       "ERROR: Files not ordered by first event"
+                    "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
             currentLumi = fileLumi
@@ -242,17 +247,17 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 100000,
-                            max_merge_events = 200000)
+        result = jobFactory(min_merge_size=1, max_merge_size=100000,
+                            max_merge_events=200000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % result
+            "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 2, \
-               "ERROR: Two jobs should have been returned."
+            "ERROR: Two jobs should have been returned."
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                         "fileC", "fileI", "fileII", "fileIII"]
@@ -262,26 +267,26 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 10)
+                self.assertEqual(job["estimatedDiskUsage"], 11)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2 * 100)
                 goldenFiles = goldenFilesB
 
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                assert file["lfn"] in goldenFiles, \
-                       "Error: Unknown file in merge jobs."
-                assert file["locations"] == set(["somese.cern.ch"]), \
-                       "Error: File is missing a location."
+            for jobFile in jobFiles:
+                assert jobFile["lfn"] in goldenFiles, \
+                    "Error: Unknown file in merge jobs."
+                assert jobFile["locations"] == set(["somese.cern.ch"]), \
+                    "Error: File is missing a location."
 
-                goldenFiles.remove(file["lfn"])
+                goldenFiles.remove(jobFile["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(jobFile["runs"])[0].run
+            fileLumi = min(list(jobFile["runs"])[0])
+            fileEvent = jobFile["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -290,22 +295,22 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                 continue
 
             assert fileRun >= currentRun, \
-                   "ERROR: Files not sorted by run."
+                "ERROR: Files not sorted by run."
 
             if fileRun == currentRun:
                 assert fileLumi >= currentLumi, \
-                       "ERROR: Files not ordered by lumi"
+                    "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
             currentRun = fileRun
             currentLumi = fileLumi
             currentEvent = fileEvent
 
         assert len(goldenFilesA) == 0 and len(goldenFilesB) == 0, \
-               "ERROR: Files missing from merge jobs."
+            "ERROR: Files missing from merge jobs."
 
         return
 
@@ -319,17 +324,17 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 20000000,
-                            max_merge_events = 100000)
+        result = jobFactory(min_merge_size=1, max_merge_size=20000000,
+                            max_merge_events=100000)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % result
+            "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 2, \
-               "ERROR: Two jobs should have been returned: %s" % len(result[0].jobs)
+            "ERROR: Two jobs should have been returned: %s" % len(result[0].jobs)
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                         "fileC", "fileI", "fileII", "fileIV"]
@@ -339,26 +344,26 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 9 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 9 + 2 * 100)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 1)
+                self.assertEqual(job["estimatedDiskUsage"], 2)
                 goldenFiles = goldenFilesB
 
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                assert file["lfn"] in goldenFiles, \
-                       "Error: Unknown file in merge jobs."
-                assert file["locations"] == set(["somese.cern.ch"]), \
-                       "Error: File is missing a location: %s" % file["locations"]
+            for jobFile in jobFiles:
+                assert jobFile["lfn"] in goldenFiles, \
+                    "Error: Unknown file in merge jobs."
+                assert jobFile["locations"] == set(["somese.cern.ch"]), \
+                    "Error: File is missing a location: %s" % jobFile["locations"]
 
-                goldenFiles.remove(file["lfn"])
+                goldenFiles.remove(jobFile["lfn"])
 
-                fileRun = list(file["runs"])[0].run
-                fileLumi = min(list(file["runs"])[0])
-                fileEvent = file["first_event"]
+                fileRun = list(jobFile["runs"])[0].run
+                fileLumi = min(list(jobFile["runs"])[0])
+                fileEvent = jobFile["first_event"]
 
                 if currentRun == 0:
                     currentRun = fileRun
@@ -367,15 +372,15 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                     continue
 
                 assert fileRun >= currentRun, \
-                       "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun)
+                    "ERROR: Files not sorted by run: %s, %s" % (fileRun, currentRun)
 
                 if fileRun == currentRun:
                     assert fileLumi >= currentLumi, \
-                           "ERROR: Files not ordered by lumi"
+                        "ERROR: Files not ordered by lumi"
 
                     if fileLumi == currentLumi:
                         assert fileEvent >= currentEvent, \
-                               "ERROR: Files not ordered by first event"
+                            "ERROR: Files not ordered by first event"
 
                 currentRun = fileRun
                 currentLumi = fileLumi
@@ -399,17 +404,17 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.mergeFileset.markOpen(False)
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000,
-                            max_merge_events = 2000000, merge_across_runs = False)
+        result = jobFactory(min_merge_size=200000, max_merge_size=2000000,
+                            max_merge_events=2000000, merge_across_runs=False)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % len(result)
+            "ERROR: More than one JobGroup returned: %s" % len(result)
 
         assert len(result[0].jobs) == 2, \
-               "Error: Two jobs should have been returned: %s" % len(result[0].jobs)
+            "Error: Two jobs should have been returned: %s" % len(result[0].jobs)
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                         "fileC"]
@@ -423,15 +428,15 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentEvent = 0
             jobLFNs = []
 
-            for file in job.getFiles():
-                file.loadData()
-                jobLFNs.append(file["lfn"])
-                self.assertTrue(file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
+            for jobFile in job.getFiles():
+                jobFile.loadData()
+                jobLFNs.append(jobFile["lfn"])
+                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]),
                                 "Error: File is missing a location.")
 
-                fileRun = list(file["runs"])[0].run
-                fileLumi = min(list(file["runs"])[0])
-                fileEvent = file["first_event"]
+                fileRun = list(jobFile["runs"])[0].run
+                fileLumi = min(list(jobFile["runs"])[0])
+                fileEvent = jobFile["first_event"]
 
                 if currentRun == 0:
                     currentRun = fileRun
@@ -440,15 +445,15 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                     continue
 
                 assert fileRun >= currentRun, \
-                       "ERROR: Files not sorted by run."
+                    "ERROR: Files not sorted by run."
 
                 if fileRun == currentRun:
                     assert fileLumi >= currentLumi, \
-                           "ERROR: Files not ordered by lumi"
+                        "ERROR: Files not ordered by lumi"
 
                 if fileLumi == currentLumi:
                     assert fileEvent >= currentEvent, \
-                           "ERROR: Files not ordered by first event"
+                        "ERROR: Files not ordered by first event"
 
                 currentRun = fileRun
                 currentLumi = fileLumi
@@ -456,10 +461,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
             jobLFNs.sort()
             if jobLFNs == goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFilesA = []
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 3 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 3 + 2 * 100)
                 self.assertEqual(jobLFNs, goldenFilesB,
                                  "Error: LFNs do not match.")
                 goldenFilesB = []
@@ -478,17 +483,17 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 100000,
-                            max_merge_events = 200000, merge_across_runs = False)
+        result = jobFactory(min_merge_size=1, max_merge_size=100000,
+                            max_merge_events=200000, merge_across_runs=False)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned: %s" % result
+            "ERROR: More than one JobGroup returned: %s" % result
 
         assert len(result[0].jobs) == 3, \
-               "ERROR: Three jobs should have been returned."
+            "ERROR: Three jobs should have been returned."
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                         "fileC"]
@@ -499,29 +504,29 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 3)
+                self.assertEqual(job["estimatedDiskUsage"], 4)
                 goldenFiles = goldenFilesB
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2 * 100)
                 goldenFiles = goldenFilesC
 
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                self.assertTrue(file["lfn"] in goldenFiles,
+            for jobFile in jobFiles:
+                self.assertTrue(jobFile["lfn"] in goldenFiles,
                                 "Error: Unknown file in merge jobs.")
-                self.assertTrue(file["locations"] == set(["somese.cern.ch"]),
+                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch"]),
                                 "Error: File is missing a location.")
 
-                goldenFiles.remove(file["lfn"])
+                goldenFiles.remove(jobFile["lfn"])
 
-            fileRun = list(file["runs"])[0].run
-            fileLumi = min(list(file["runs"])[0])
-            fileEvent = file["first_event"]
+            fileRun = list(jobFile["runs"])[0].run
+            fileLumi = min(list(jobFile["runs"])[0])
+            fileEvent = jobFile["first_event"]
 
             if currentRun == 0:
                 currentRun = fileRun
@@ -557,11 +562,11 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 1, max_merge_size = 20000000,
-                            max_merge_events = 100000, merge_across_runs = False)
+        result = jobFactory(min_merge_size=1, max_merge_size=20000000,
+                            max_merge_events=100000, merge_across_runs=False)
 
         self.assertTrue(len(result) == 1,
                         "ERROR: More than one JobGroup returned: %s" % result)
@@ -570,7 +575,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
                         "ERROR: Three jobs should have been returned: %s" % len(result[0].jobs))
 
         goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                        "fileC",]
+                        "fileC", ]
         goldenFilesB = ["fileI", "fileII", "fileIV"]
         goldenFilesC = ["fileIII"]
 
@@ -578,29 +583,29 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
-                self.assertEqual(job["estimatedDiskUsage"], 7)
+                self.assertEqual(job["estimatedDiskUsage"], 8)
                 goldenFiles = goldenFilesA
             elif jobFiles[0]["lfn"] in goldenFilesB:
-                self.assertEqual(job["estimatedDiskUsage"], 2 + 100)
+                self.assertEqual(job["estimatedDiskUsage"], 2 + 2 * 100)
                 goldenFiles = goldenFilesB
             else:
-                self.assertEqual(job["estimatedDiskUsage"], 1)
+                self.assertEqual(job["estimatedDiskUsage"], 2 * 1)
                 goldenFiles = goldenFilesC
 
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
-            for file in jobFiles:
-                self.assertTrue(file["lfn"] in goldenFiles,
+            for jobFile in jobFiles:
+                self.assertTrue(jobFile["lfn"] in goldenFiles,
                                 "Error: Unknown file in merge jobs.")
-                self.assertTrue(file["locations"] == set(["somese.cern.ch"]),
-                                "Error: File is missing a location: %s" % file["locations"])
+                self.assertTrue(jobFile["locations"] == set(["somese.cern.ch"]),
+                                "Error: File is missing a location: %s" % jobFile["locations"])
 
-                goldenFiles.remove(file["lfn"])
+                goldenFiles.remove(jobFile["lfn"])
 
-                fileRun = list(file["runs"])[0].run
-                fileLumi = min(list(file["runs"])[0])
-                fileEvent = file["first_event"]
+                fileRun = list(jobFile["runs"])[0].run
+                fileLumi = min(list(jobFile["runs"])[0])
+                fileEvent = jobFile["first_event"]
 
                 if currentRun == 0:
                     currentRun = fileRun
@@ -635,11 +640,11 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         self.stuffWMBS()
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s3", seName = "somese3.cern.ch")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute(siteName="s3", seName="somese3.cern.ch")
 
-        fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
-                         first_event = 0, locations = set(["somese3.cern.ch"]))
+        fileSite2 = File(lfn="fileSite2", size=4098, events=1024,
+                         first_event=0, locations=set(["somese3.cern.ch"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
 
@@ -647,17 +652,17 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.mergeFileset.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
-                            max_merge_events = 999999999, merge_across_runs = False)
+        result = jobFactory(min_merge_size=4097, max_merge_size=99999999,
+                            max_merge_events=999999999, merge_across_runs=False)
 
         assert len(result) == 1, \
-               "ERROR: More than one JobGroup returned."
+            "ERROR: More than one JobGroup returned."
 
         assert len(result[0].jobs) == 3, \
-               "ERROR: Three jobs should have been returned."
+            "ERROR: Three jobs should have been returned."
 
         for job in result[0].jobs:
             firstInputFile = job.getFiles()[0]
@@ -665,13 +670,12 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
             for inputFile in job.getFiles():
                 assert len(inputFile["locations"]) == 1, \
-                       "Error: Wrong number of locations"
+                    "Error: Wrong number of locations"
 
                 assert list(inputFile["locations"])[0] == baseLocation, \
-                       "Error: Wrong location."
+                    "Error: Wrong location."
 
         return
-
 
     def testMaxWaitTime(self):
         """
@@ -686,11 +690,11 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
 
-        result = jobFactory(min_merge_size = 200000, max_merge_size = 2000000000,
-                            max_merge_events = 200000000, max_wait_time = -10)
+        result = jobFactory(min_merge_size=200000, max_merge_size=2000000000,
+                            max_merge_events=200000000, max_wait_time=-10)
 
         # Everything should be in one, small jobGroup
         self.assertEqual(len(result), 1)
@@ -710,27 +714,27 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        dummyWorkflow = Workflow(name = "dummyWorkflow", spec = "bunk49",
-                                 owner = "Steve", task="Test2")
+        dummyWorkflow = Workflow(name="dummyWorkflow", spec="bunk49",
+                                 owner="Steve", task="Test2")
         dummyWorkflow.create()
-        dummyFileset = Fileset(name = "dummyFileset")
+        dummyFileset = Fileset(name="dummyFileset")
         dummyFileset.create()
-        dummySubscription1 = Subscription(fileset = dummyFileset,
-                                          workflow = dummyWorkflow,
-                                          split_algo = "ParentlessMergeBySize")
-        dummySubscription2 = Subscription(fileset = dummyFileset,
-                                          workflow = dummyWorkflow,
-                                          split_algo = "ParentlessMergeBySize")
+        dummySubscription1 = Subscription(fileset=dummyFileset,
+                                          workflow=dummyWorkflow,
+                                          split_algo="ParentlessMergeBySize")
+        dummySubscription2 = Subscription(fileset=dummyFileset,
+                                          workflow=dummyWorkflow,
+                                          split_algo="ParentlessMergeBySize")
         dummySubscription1.create()
         dummySubscription2.create()
         myThread.transaction.commit()
 
         self.stuffWMBS()
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.mergeSubscription)
-        result = jobFactory(min_merge_size = 4097, max_merge_size = 99999999,
-                            max_merge_events = 999999999, merge_across_runs = False)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.mergeSubscription)
+        result = jobFactory(min_merge_size=4097, max_merge_size=99999999,
+                            max_merge_events=999999999, merge_across_runs=False)
         self.assertEqual(len(result), 1)
         jobGroup = result[0]
         self.assertEqual(len(jobGroup.jobs), 2)

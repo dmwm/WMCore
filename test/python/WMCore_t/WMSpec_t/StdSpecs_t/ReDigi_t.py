@@ -638,7 +638,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
         defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
         defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
-        defaultArguments["MCPileup"] = "/mixing/pileup/dataset"
+        defaultArguments["MCPileup"] = "/mixing/pileup/DATASET"
         defaultArguments["KeepStepOneOutput"] = False
 
         factory = ReDigiWorkloadFactory()

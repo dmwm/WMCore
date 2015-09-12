@@ -275,15 +275,10 @@ class DatasetTestCase(unittest.TestCase):
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, Dataset(), processingSpec, task)
 
-        # invalid dbs url
-        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
-        for task in processingSpec.taskIterator():
-            self.assertRaises(WorkQueueWMSpecError, Dataset(), processingSpec, task)
-
         # invalid dataset name
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
+
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
 

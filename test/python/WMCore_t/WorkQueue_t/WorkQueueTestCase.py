@@ -9,6 +9,7 @@ import unittest
 import os
 
 from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Database.CMSCouch import CouchMonitor
 
 from WMQuality.TestInit import TestInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
@@ -36,7 +37,8 @@ class WorkQueueTestCase(unittest.TestCase):
         self.localQDB2 = 'workqueue_t_local2'
         self.localQInboxDB2 = 'workqueue_t_local2_inbox'
         self.configCacheDB = 'workqueue_t_config_cache'
-
+        self.logDBName = 'logdb_t'
+        
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
@@ -52,10 +54,14 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.setupCouch(self.localQDB2, *self.couchApps)
         self.testInit.setupCouch(self.localQInboxDB2, *self.couchApps)
         self.testInit.setupCouch(self.configCacheDB, 'ConfigCache')
+        self.testInit.setupCouch(self.logDBName, 'LogDB')
+        
 
         couchServer = CouchServer(os.environ.get("COUCHURL"))
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
-
+        
+        self.localCouchMonitor = CouchMonitor(os.environ.get("COUCHURL"))
+    
         self.workDir = self.testInit.generateWorkDir()
         return
 
@@ -65,6 +71,7 @@ class WorkQueueTestCase(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        #self.testInit.tearDownCouch()
+        #self.localCouchMonitor.deleteReplicatorDocs()
+        self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()

@@ -1020,7 +1020,8 @@ class WorkQueue(WorkQueueBase):
                                                                      mask=inbound['Mask'], inbound=inbound, continuous=continuous)
 
                     # if global queue, then update workflow stats to request mgr couch doc
-                    if not self.params.get('LocalQueueFlag'):
+                    # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
+                    if not self.params.get('LocalQueueFlag') and not self.params.get("UnittestFlag", False):
                         self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
                     # save inbound work to signal we have completed queueing

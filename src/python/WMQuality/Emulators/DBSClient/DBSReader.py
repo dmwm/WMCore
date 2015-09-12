@@ -11,7 +11,7 @@ class _MockDBSApi():
     def __init__(self, args):
         # just make sure args value complies with dbs args
         try:
-            from DBSAPI.dbsApi import DbsApi
+            from dbs.apis.dbsClient import DbsApi
             DbsApi(args)
         except ImportError:
             # No dbsApi available, carry on

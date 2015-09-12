@@ -1,5 +1,5 @@
 NOT_EXIST_DATASET = 'thisdoesntexist'
-PILEUP_DATASET = '/mixing/pileup/dataset'
+PILEUP_DATASET = '/mixing/pileup/DATASET'
 
 SITES = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
 

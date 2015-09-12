@@ -15,11 +15,11 @@ from WMCore.Configuration import Configuration
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
+from WMCore.Lexicon import sanitizeURL
 
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
-from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
-    import monteCarloWorkload, getMCArgs
+from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 from WMQuality.Emulators.DataBlockGenerator import Globals
@@ -44,16 +44,19 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Lexicon import sanitizeURL
 
-rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
-mcArgs = getMCArgs()
-parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
-parentProcArgs.update(IncludeParents = "True")
-openRunningProcArgs = ReRecoWorkloadFactory.getTestArguments()
-openRunningProcArgs.update(OpenRunningTimeout = 10)
-redigiArgs = ReDigiWorkloadFactory.getTestArguments()
-redigiArgs.update(MCPileup = "/mixing/pileup/dataset")
-pileupMcArgs = getMCArgs()
-pileupMcArgs.update(MCPileup = "/mixing/pileup/dataset")
+
+
+
+def monteCarloWorkload(workloadName, arguments):
+    """
+    _monteCarloWorkload_
+
+    Instantiate the MonteCarloWorkflowFactory and have it generate a workload for
+    the given parameters.
+    """
+    factory = MonteCarloWorkloadFactory()
+    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
+    return wmspec
 
 def rerecoWorkload(workloadName, arguments):
     factory = ReRecoWorkloadFactory()
@@ -76,17 +79,50 @@ def syncQueues(queue):
     """Sync parent & local queues and split work
         Workaround having to wait for couchdb replication and splitting polling
     """
+    
     queue.backend.forceQueueSync()
     work = queue.processInboundWork()
     queue.performQueueCleanupActions()
     queue.backend.forceQueueSync()
+    # after replication need to wait a while to update result
+    time.sleep(3)
     return work
+
 
 class WorkQueueTest(WorkQueueTestCase):
     """
     _WorkQueueTest_
 
     """
+    def setupConfigCacheAndAgrs(self):
+        self.rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
+        self.rerecoArgs["CouchDBName"] = self.configCacheDB
+        self.rerecoArgs["ConfigCacheID"] = createConfig(self.rerecoArgs["CouchDBName"])
+        
+        self.mcArgs = MonteCarloWorkloadFactory.getTestArguments()
+        self.mcArgs["CouchDBName"] = self.configCacheDB
+        self.mcArgs["ConfigCacheID"] = createConfig(self.mcArgs["CouchDBName"])
+        
+        self.parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
+        self.parentProcArgs.update(IncludeParents = "True")
+        self.parentProcArgs.update(InputDataset = "/Cosmics/Commissioning2015-PromptReco-v1/RECO")
+        self.parentProcArgs["CouchDBName"] = self.configCacheDB
+        self.parentProcArgs["ConfigCacheID"] = createConfig(self.parentProcArgs["CouchDBName"])
+        
+        self.openRunningProcArgs = ReRecoWorkloadFactory.getTestArguments()
+        self.openRunningProcArgs.update(OpenRunningTimeout = 10)
+        self.openRunningProcArgs["CouchDBName"] = self.configCacheDB
+        self.openRunningProcArgs["ConfigCacheID"] = createConfig(self.openRunningProcArgs["CouchDBName"])
+        
+        self.redigiArgs = ReDigiWorkloadFactory.getTestArguments()
+        self.redigiArgs.update(MCPileup = "/mixing/pileup/DATASET")
+        self.redigiArgs["CouchDBName"] = self.configCacheDB
+        
+        self.pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
+        self.pileupMcArgs.update(MCPileup = "/mixing/pileup/DATASET")
+        self.pileupMcArgs["CouchDBName"] = self.configCacheDB
+        self.pileupMcArgs["ConfigCacheID"] = createConfig(self.pileupMcArgs["CouchDBName"])
+        
     def setUp(self):
         """
         If we dont have a wmspec file create one
@@ -100,58 +136,55 @@ class WorkQueueTest(WorkQueueTestCase):
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         WorkQueueTestCase.setUp(self)
-
+        self.setupConfigCacheAndAgrs()
         # Basic production Spec
-        self.spec = monteCarloWorkload('testProduction', mcArgs)
+        self.spec = monteCarloWorkload('testProduction', self.mcArgs)
         getFirstTask(self.spec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(self.spec).addProduction(totalEvents = 10000)
         self.spec.setSpecUrl(os.path.join(self.workDir, 'testworkflow.spec'))
         self.spec.save(self.spec.specUrl())
 
         # Production spec plus pileup
-        self.productionPileupSpec = monteCarloWorkload('testProduction', pileupMcArgs)
+        self.productionPileupSpec = monteCarloWorkload('testProduction', self.pileupMcArgs)
         getFirstTask(self.productionPileupSpec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB'])
         getFirstTask(self.productionPileupSpec).addProduction(totalEvents = 10000)
         self.productionPileupSpec.setSpecUrl(os.path.join(self.workDir, 'testworkflowPileupMc.spec'))
         self.productionPileupSpec.save(self.productionPileupSpec.specUrl())
 
         # Sample Tier1 ReReco spec
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
+        self.processingSpec = rerecoWorkload('testProcessing', self.rerecoArgs)
         self.processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessing.spec'))
         self.processingSpec.save(self.processingSpec.specUrl())
 
         # Sample Tier1 ReReco spec
-        parentProcArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        self.parentProcSpec = rerecoWorkload('testParentProcessing', parentProcArgs)
+        self.parentProcSpec = rerecoWorkload('testParentProcessing', self.parentProcArgs)
         self.parentProcSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testParentProcessing.spec'))
         self.parentProcSpec.save(self.parentProcSpec.specUrl())
 
         # ReReco spec with blacklist
-        self.blacklistSpec = rerecoWorkload('blacklistSpec', rerecoArgs)
+        self.blacklistSpec = rerecoWorkload('blacklistSpec', self.rerecoArgs)
         self.blacklistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testBlacklist.spec'))
         getFirstTask(self.blacklistSpec).data.constraints.sites.blacklist = ['T2_XX_SiteA']
         self.blacklistSpec.save(self.blacklistSpec.specUrl())
 
         # ReReco spec with whitelist
-        self.whitelistSpec = rerecoWorkload('whitelistlistSpec', rerecoArgs)
+        self.whitelistSpec = rerecoWorkload('whitelistlistSpec', self.rerecoArgs)
         self.whitelistSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testWhitelist.spec'))
         getFirstTask(self.whitelistSpec).data.constraints.sites.whitelist = ['T2_XX_SiteB']
         self.whitelistSpec.save(self.whitelistSpec.specUrl())
 
         # ReReco spec with delay for running open
-        openRunningProcArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        self.openRunningSpec = rerecoWorkload('openRunningSpec', openRunningProcArgs)
+        self.openRunningSpec = rerecoWorkload('openRunningSpec', self.openRunningProcArgs)
         self.openRunningSpec.setSpecUrl(os.path.join(self.workDir,
                                                      'testOpenRunningSpec.spec'))
         self.openRunningSpec.save(self.openRunningSpec.specUrl())
 
         # High priority ReReco spec
-        self.highPrioReReco = rerecoWorkload('highPrioSpec', rerecoArgs)
+        self.highPrioReReco = rerecoWorkload('highPrioSpec', self.rerecoArgs)
         self.highPrioReReco.data.request.priority = 100000000
         self.highPrioReReco.setSpecUrl(os.path.join(self.workDir,
                                                     'highPrioSpec.spec'))
@@ -169,9 +202,13 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Create queues
         globalCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
+        logdbCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.logDBName)
         self.globalQueue = globalQueue(DbName = self.globalQDB,
                                        InboxDbName = self.globalQInboxDB,
-                                       QueueURL = globalCouchUrl)
+                                       QueueURL = globalCouchUrl,
+                                       central_logdb_url = logdbCouchUrl,
+                                       log_reporter = "WorkQueue_Unittest",
+                                       UnittestFlag = True)
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -196,7 +233,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                      ParentQueueInboxCouchDBName = self.globalQInboxDB,
                                      JobDumpConfig = jobCouchConfig,
                                      BossAirConfig = bossAirConfig,
-                                     CacheDir = self.workDir)
+                                     CacheDir = self.workDir,
+                                     central_logdb_url = logdbCouchUrl,
+                                     log_reporter = "WorkQueue_Unittest")
 
         self.localQueue2 = localQueue(DbName = self.localQDB2,
                                       InboxDbName = self.localQInboxDB2,
@@ -204,7 +243,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                       ParentQueueInboxCouchDBName = self.globalQInboxDB,
                                       JobDumpConfig = jobCouchConfig,
                                       BossAirConfig = bossAirConfig,
-                                      CacheDir = self.workDir)
+                                      CacheDir = self.workDir,
+                                      central_logdb_url = logdbCouchUrl,
+                                      log_reporter = "WorkQueue_Unittest")
 
         # configuration for the Alerts messaging framework, work (alerts) and
         # control  channel addresses to which alerts
@@ -220,7 +261,9 @@ class WorkQueueTest(WorkQueueTestCase):
                                DbName = self.queueDB,
                                InboxDbName = self.queueInboxDB,
                                CacheDir = self.workDir,
-                               config = config)
+                               config = config,
+                               central_logdb_url = logdbCouchUrl,
+                               log_reporter = "WorkQueue_Unittest")
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -241,7 +284,27 @@ class WorkQueueTest(WorkQueueTestCase):
         EmulatorSetup.deleteConfig(self.configFile)
         EmulatorHelper.resetEmulators()
 
-
+    def createWQReplication(self, parentQURL, childURL):
+        wqfilter = 'WorkQueue/queueFilter'
+        query_params = {'childUrl' : childURL, 'parentUrl' : sanitizeURL(parentQURL)['url']}
+        localQInboxURL = "%s_inbox" % childURL
+        replicatorDocs = []
+        replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL, 
+                                    'filter': wqfilter, 'query_params': query_params})       
+        replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL, 
+                                        'filter': wqfilter, 'query_params': query_params})
+            
+        for rp in replicatorDocs:
+            self.localCouchMonitor.couchServer.replicate(
+                                           rp['source'], rp['target'], filter = rp['filter'], 
+                                           query_params = rp.get('query_params', False),
+                                           continuous = False)
+        return
+    
+    def pullWorkWithReplication(self, localQ, resources):
+        localQ.pullWork(resources)
+        self.createWQReplication(localQ.params['ParentQueueCouchUrl'], localQ.params['QueueURL'])
+        
     def createRedigiSpec(self):
         """
         _createRedigiSpec_
@@ -249,13 +312,12 @@ class WorkQueueTest(WorkQueueTestCase):
         Create a bogus redigi spec, with configs and all the shiny things
         """
         configs = injectReDigiConfigs(self.configCacheDBInstance)
-        redigiArgs["CouchDBName"] = self.configCacheDB
-        redigiArgs["StepOneConfigCacheID"] = configs[0]
-        redigiArgs["StepTwoConfigCacheID"] = configs[1]
-        redigiArgs["StepThreeConfigCacheID"] = configs[2]
-        redigiArgs["StepOneOutputModuleName"] = "RAWDEBUGoutput"
-        redigiArgs["StepTwoOutputModuleName"] = "RECODEBUGoutput"
-        self.redigiSpec = redigiWorkload('reDigiSpec', redigiArgs)
+        self.redigiArgs["StepOneConfigCacheID"] = configs[0]
+        self.redigiArgs["StepTwoConfigCacheID"] = configs[1]
+        self.redigiArgs["StepThreeConfigCacheID"] = configs[2]
+        self.redigiArgs["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        self.redigiArgs["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+        self.redigiSpec = redigiWorkload('reDigiSpec', self.redigiArgs)
         self.redigiSpec.setSpecUrl(os.path.join(self.workDir,
                                                 'reDigiSpec.spec'))
         self.redigiSpec.save(self.redigiSpec.specUrl())
@@ -271,7 +333,7 @@ class WorkQueueTest(WorkQueueTestCase):
         workload.setOwnerDetails(name = "evansde77", group = "DMWM")
 
         # first task uses the input dataset
-        reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIER1")
+        reco.addInputDataset(primary = "PRIMARY", processed = "processed-v1", tier = "TIERONE")
         reco.data.input.splitting.algorithm = "File"
         reco.data.input.splitting.include_parents = parentage
         reco.setTaskType("Processing")
@@ -282,7 +344,7 @@ class WorkQueueTest(WorkQueueTestCase):
         cmsRunRecoHelper.addOutputModule("outputRECO",
                                         primaryDataset = "PRIMARY",
                                         processedDataset = "processed-v2",
-                                        dataTier = "TIER2",
+                                        dataTier = "TIERTWO",
                                         lfnBase = "/store/dunkindonuts",
                                         mergedLFNBase = "/store/kfc")
 
@@ -322,7 +384,6 @@ class WorkQueueTest(WorkQueueTestCase):
         numUnit = 1
         jobSlot = [10] * numUnit # array of jobs per block
         total = sum(jobSlot)
-
         for _ in range(numUnit):
             self.queue.queueWork(specfile)
         self.assertEqual(numUnit, len(self.queue))
@@ -351,14 +412,16 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numUnit, len(self.globalQueue))
 
         # pull work to localQueue2 - check local doesn't get any
-        self.assertEqual(numUnit, self.localQueue2.pullWork({'T2_XX_SiteA' : total},
-                                                            continuousReplication = False))
+        print "first"
+        numWork = self.localQueue2.pullWork({'T2_XX_SiteA' : total})
+        self.assertEqual(numUnit, numWork)
+        print "second"
         self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA' : total},
                                                      continuousReplication = False))
         syncQueues(self.localQueue)
         syncQueues(self.localQueue2)
-        self.assertEqual(numUnit, len(self.localQueue2.status(status = 'Available')))
         self.assertEqual(0, len(self.localQueue.status(status = 'Available')))
+        self.assertEqual(numUnit, len(self.localQueue2.status(status = 'Available')))
         self.assertEqual(numUnit, len(self.globalQueue.status(status = 'Acquired')))
         self.assertEqual(sanitizeURL(self.localQueue2.params['QueueURL'])['url'],
                          self.globalQueue.status()[0]['ChildQueueUrl'])
@@ -675,12 +738,10 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # Can't get work for wrong team
         self.localQueue.params['Teams'] = ['other']
-        self.assertEqual(self.localQueue.pullWork(slots,
-                                                  continuousReplication = False), 0)
+        self.assertEqual(self.localQueue.pullWork(slots), 0)
         # and with correct team name
         self.localQueue.params['Teams'] = ['The A-Team']
-        self.assertEqual(self.localQueue.pullWork(slots,
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork(slots), 1)
         syncQueues(self.localQueue)
         # when work leaves the queue in the agent it doesn't care about teams
         self.localQueue.params['Teams'] = ['other']
@@ -949,7 +1010,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                                 request = 'fail_this')
 
         # invalid white list
-        mcspec = monteCarloWorkload('testProductionInvalid', mcArgs)
+        mcspec = monteCarloWorkload('testProductionInvalid', self.mcArgs)
         getFirstTask(mcspec).setSiteWhitelist('ThisIsInvalid')
         mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
         mcspec.save(mcspec.specUrl())
@@ -963,7 +1024,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, mcspec.specUrl())
 
         # no dataset
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         processingSpec.save(processingSpec.specUrl())
@@ -972,7 +1033,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
 
         # invalid dbs url
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
@@ -981,7 +1042,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.deleteWorkflows(processingSpec.name())
 
         # invalid dataset name
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
@@ -996,7 +1057,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.deleteWorkflows(processingSpec.name())
 
         # dataset splitting with invalid run whitelist
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         processingSpec.setStartPolicy('Dataset')
@@ -1006,7 +1067,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.queue.deleteWorkflows(processingSpec.name())
 
         # block splitting with invalid run whitelist
-        processingSpec = rerecoWorkload('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
         processingSpec.setStartPolicy('Block')
@@ -1535,8 +1596,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1,
                                                       'T2_XX_SiteB' : 3,
                                                       'T2_XX_SiteC' : 4}, {})), 0)
-        Globals.moveBlock({'/mixing/pileup/dataset#1' : ['T2_XX_SiteA', 'T2_XX_SiteC'],
-                           '/mixing/pileup/dataset#2' : ['T2_XX_SiteA', 'T2_XX_SiteC']})
+        Globals.moveBlock({'/mixing/pileup/DATASET#1' : ['T2_XX_SiteA', 'T2_XX_SiteC'],
+                           '/mixing/pileup/DATASET#2' : ['T2_XX_SiteA', 'T2_XX_SiteC']})
         self.localQueue.updateLocationInfo()
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 1)
         self.assertEqual(len(self.localQueue), 0)

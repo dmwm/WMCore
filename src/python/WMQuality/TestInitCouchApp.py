@@ -41,6 +41,8 @@ class CouchAppTestHarness:
 
     def create(self, dropExistingDb=True):
         """create couch db instance"""
+        #import pdb
+        #pdb.set_trace()
         if self.dbName in self.couchServer.listDatabases():
             if not dropExistingDb:
                 return

@@ -64,7 +64,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
-        locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "s1", pnn = "T1_US_FNAL_Disk")
 
         changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 
@@ -204,7 +204,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             jobFile.loadData()
             assert jobFile["lfn"] in goldenFiles, \
                 "Error: Unknown file: %s" % jobFile["lfn"]
-            self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
+            self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]),
                             "Error: File is missing a location.")
             goldenFiles.remove(jobFile["lfn"])
 
@@ -431,7 +431,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in job.getFiles():
                 jobFile.loadData()
                 jobLFNs.append(jobFile["lfn"])
-                self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN"]),
+                self.assertTrue(jobFile["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]),
                                 "Error: File is missing a location.")
 
                 fileRun = list(jobFile["runs"])[0].run
@@ -641,10 +641,10 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s3", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "s3", pnn = "T1_UK_RAL_Disk")
 
         fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
-                         first_event = 0, locations = set(["T2_CH_CERN"]))
+                         first_event = 0, locations = set(["T1_UK_RAL_Disk"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
 

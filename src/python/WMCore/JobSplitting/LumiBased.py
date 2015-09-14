@@ -124,6 +124,7 @@ class LumiChecker:
         # Just a cosmetic "if": self.splitLumiFiles is empty when applyLumiCorrection is not enabled
         if not self.applyLumiCorrection:
             return
+
         for (run, lumi), files in self.splitLumiFiles.iteritems():
             for file_ in files:
                 self.lumiJobs[(run, lumi)].addFile(file_)
@@ -375,5 +376,6 @@ class LumiBased(JobFactory):
             if stopTask:
                 break
 
+        self.lumiChecker.closeJob(self.currentJob)
         self.lumiChecker.fixInputFiles()
         return

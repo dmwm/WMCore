@@ -277,5 +277,30 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[200, 200]]})
         self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {3: [[300, 300]]})
 
+
+        #Check that if the last two jobs have the same duplicated lumi you do not get an error
+        testSubscription = self.createSubscription(nFiles = 2, lumisPerFile = 2,
+                                           twoSites = False)
+        files = testSubscription.getFileset().getFiles()
+        # Now modifying and adding the same duplicated lumis in the Nth and Nth-1 jobs
+        for runObj in files[0]['runs']:
+            if runObj.run != 0:
+                continue
+            runObj.lumis.append(42)
+        for runObj in files[1]['runs']:
+            runObj.run = 0
+            runObj.lumis = [42]
+        files[1]['locations'] = set(['blenheim'])
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(events_per_job = 50,
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3)
+
 if __name__ == '__main__':
     unittest.main()

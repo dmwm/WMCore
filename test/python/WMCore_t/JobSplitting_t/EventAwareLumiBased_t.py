@@ -626,7 +626,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[10, 14]], 2: [[20, 21]], 4: [[40, 40]]})
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {4: [[41, 41]]})
 
-    def testG_LumiCorrections(self):
+    def testH_LumiCorrections(self):
         """
         _LumiCorrections_
 
@@ -697,6 +697,31 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {0: [[42, 42]]})
         self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {0: [[2, 2]]})
         self.assertEqual(jobs[4]['mask'].getRunAndLumis(), {0: [[3, 3]]})
+
+
+        #Check that if the last two jobs have the same duplicated lumi you do not get an error
+        testSubscription = self.createSubscription(nFiles = 2, lumisPerFile = 2,
+                                           twoSites = False, nEventsPerFile = 150)
+        files = testSubscription.getFileset().getFiles()
+        # Now modifying and adding the same duplicated lumis in the Nth and Nth-1 jobs
+        for runObj in files[0]['runs']:
+            if runObj.run != 0:
+                continue
+            runObj.lumis.append(42)
+        for runObj in files[1]['runs']:
+            runObj.run = 0
+            runObj.lumis = [42]
+        files[1]['locations'] = set(['blenheim'])
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(events_per_job = 50,
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3)
 
 
 

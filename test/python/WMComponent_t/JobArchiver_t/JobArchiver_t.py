@@ -8,18 +8,12 @@ JobArchiver test
 
 
 import os
-import logging
 import threading
 import unittest
-import time
 import shutil
 import cProfile, pstats
-import inspect
 
 from subprocess import Popen, PIPE
-
-from WMCore.Agent.Configuration import loadConfigurationFile, Configuration
-
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators import EmulatorSetup
@@ -36,17 +30,13 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.JobArchiver.JobArchiver       import JobArchiver
 from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
-from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPollerException
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 from nose.plugins.attrib import attr
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-
 
 class JobArchiverTest(unittest.TestCase):
     """
@@ -81,8 +71,6 @@ class JobArchiverTest(unittest.TestCase):
 
         self.nJobs = 10
 
-        self.alertsReceiver = None
-
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
         self.configFile = EmulatorSetup.setupWMAgentConfig()
@@ -98,8 +86,6 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         EmulatorSetup.deleteConfig(self.configFile)
-        if self.alertsReceiver:
-            self.alertsReceiver.shutdown()
 
         return
 
@@ -145,13 +131,6 @@ class JobArchiverTest(unittest.TestCase):
         config.WorkQueueManager.inboxDatabase = 'whatever2'
         config.WorkQueueManager.queueParams = {}
         config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
-
-        # addition for Alerts messaging framework, work (alerts) and control
-        # channel addresses to which the component will be sending alerts
-        # these are destination addresses where AlertProcessor:Receiver listens
-        config.section_("Alert")
-        config.Alert.address = "tcp://127.0.0.1:5557"
-        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
 
         return config
 
@@ -326,66 +305,6 @@ class JobArchiverTest(unittest.TestCase):
         p.print_stats(.2)
 
         return
-
-
-    def testJobArchiverPollerAlertsSending_constructor(self):
-        """
-        Cause exception (alert-worthy situation) in
-        the JobArchiverPoller constructor.
-
-        """
-        myThread = threading.currentThread()
-        config = self.getConfig()
-
-        handler, self.alertsReceiver = \
-            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
-
-        config.JobArchiver.logDir = ""
-        config.JobArchiver.componentDir = ""
-        # invoke exception and thus Alert message
-        self.assertRaises(JobArchiverPollerException, JobArchiverPoller, config = config)
-        # wait for the generated alert to arrive
-        while len(handler.queue) == 0:
-            time.sleep(0.3)
-            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
-
-        self.alertsReceiver.shutdown()
-        self.alertsReceiver = None
-        # now check if the alert was properly sent
-        self.assertEqual(len(handler.queue), 1)
-        alert = handler.queue[0]
-        self.assertEqual(alert["Source"], "JobArchiverPoller")
-
-
-    def testJobArchiverPollerAlertsSending_cleanJobCache(self):
-        """
-        Cause exception (alert-worthy situation) in
-        the cleanJobCache method.
-
-        """
-        myThread = threading.currentThread()
-        config = self.getConfig()
-
-        handler, self.alertsReceiver = \
-            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
-
-        testJobArchiver = JobArchiverPoller(config = config)
-
-        # invoke the problem and thus Alert message
-        job = dict(cache_dir = None)
-        testJobArchiver.cleanJobCache(job)
-        # wait for the generated alert to arrive
-        while len(handler.queue) == 0:
-            time.sleep(0.3)
-            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
-
-        self.alertsReceiver.shutdown()
-        self.alertsReceiver = None
-        # now check if the alert was properly sent
-        self.assertEqual(len(handler.queue), 1)
-        alert = handler.queue[0]
-        self.assertEqual(alert["Source"], testJobArchiver.__class__.__name__)
-
 
 
 if __name__ == '__main__':

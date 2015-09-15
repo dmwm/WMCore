@@ -3,25 +3,23 @@
 Test case for SiteScreening
 """
 
-
-
-
-import sets
 import unittest
 import logging
 
 from  WMCore.SiteScreening import BlackWhiteListParser
 
 logging.basicConfig(level=logging.DEBUG,
-format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-datefmt='%m-%d %H:%M',
-filename='%s.log' % __file__, filemode='w')
-fakeLogger  = logging.getLogger('SiteScreening')
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='%s.log' % __file__, filemode='w')
+fakeLogger = logging.getLogger('SiteScreening')
+
 
 class FakeLogger:
     """
     Fake logger class
     """
+
     def __init__(self):
         pass
 
@@ -37,7 +35,11 @@ class FakeLogger:
         """
         pass
 
-
+    def info(self, *args):
+        """
+        Dummy method
+        """
+        pass
 
 fakeLogger  = FakeLogger()
 
@@ -73,8 +75,8 @@ class BlackWhiteListParserTest(unittest.TestCase):
         blacklist = ['ccsrm.in2p3.fr', 'cmssrm.fnal.gov']
         other = ['t2-srm-02.lnl.infn.it', 'se-dcache.hepgrid.uerj.br']
         results = self.separser.checkBlackList(other + blacklist)
-        results = sets.Set(results)
-        self.failUnless(results == sets.Set(other))
+        results = set(results)
+        self.failUnless(results == set(other))
 
     def testSEWhiteList(self):
         """
@@ -84,8 +86,8 @@ class BlackWhiteListParserTest(unittest.TestCase):
             'cluster142.knu.ac.kr']
         other = ['f-dpm001.grid.sinica.edu.tw', 'cmsrm-se01.roma1.infn.it']
         results = self.separser.checkWhiteList(other + whitelist)
-        results = sets.Set(results)
-        self.failUnless(results == sets.Set(whitelist))
+        results = set(results)
+        self.failUnless(results == set(whitelist))
 
     def testCEBlackList(self):
         """
@@ -96,8 +98,8 @@ class BlackWhiteListParserTest(unittest.TestCase):
         other = ['osgce.hepgrid.uerj.br', 'egeece01.ifca.es',
             'grid006.lca.uc.pt']
         results = self.ceparser.checkBlackList(other + blacklist)
-        results = sets.Set(results)
-        self.failUnless(results == sets.Set(other))
+        results = set(results)
+        self.failUnless(results == set(other))
 
     def testCEWhiteList(self):
         """
@@ -107,8 +109,8 @@ class BlackWhiteListParserTest(unittest.TestCase):
                      'ic-kit-lcgce.rz.uni-karlsruhe.de']
         other = ['gridce2.pi.infn.it', 'lcg02.ciemat.es']
         results = self.ceparser.checkWhiteList(other + whitelist)
-        results = sets.Set(results)
-        self.failUnless(results == sets.Set(whitelist))
+        results = set(results)
+        self.failUnless(results == set(whitelist))
 
 
 seBlackList = 'ccsrm.in2p3.fr, T1_*'

@@ -82,13 +82,16 @@ class PileupFetcher(FetcherInterface):
             resultDict[pileupType] = blockDict
         return resultDict
 
-
-    def _createPileupConfigFile(self, helper, fakeSites):
+    def _createPileupConfigFile(self, helper, fakeSites=None):
         """
         Stores pileup JSON configuration file in the working
         directory / sandbox.
 
         """
+
+        if fakeSites is None:
+            fakeSites = []
+
         stepPath = "%s/%s" % (self.workingDirectory(), helper.name())
         fileName = "%s/%s" % (stepPath, "pileupconf.json")
         if os.path.isfile(fileName) and os.path.getsize(fileName) > 0:

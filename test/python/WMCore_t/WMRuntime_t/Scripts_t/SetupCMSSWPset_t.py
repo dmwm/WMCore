@@ -8,24 +8,23 @@ Tests for the PSet configuration code.
 
 import imp
 import unittest
-import pickle
 import os
 import sys
+
 import nose
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
 from WMCore.Configuration import ConfigSection
 from WMCore.Storage.TrivialFileCatalog import loadTFC
-
 from WMCore.WMSpec.WMStep import WMStep
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSWStepHelper
 from WMCore.WMSpec.Steps import StepFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-
 from WMQuality.TestInit import TestInit
 import WMCore.WMBase
+
 
 class SetupCMSSWPsetTest(unittest.TestCase):
     def setUp(self):
@@ -36,9 +35,9 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                                         "WMCore_t/WMRuntime_t/Scripts_t"))
 
     def tearDown(self):
-        sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(),
-                                     "WMCore_t/WMRuntime_t/Scripts_t"))
-        del sys.modules["WMTaskSpace"]
+        sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(), "WMCore_t/WMRuntime_t/Scripts_t"))
+        if 'WMTaskSpace' in sys.modules:
+            del sys.modules["WMTaskSpace"]
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
 
@@ -266,7 +265,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # pileup configuration file, need to create it in self.testDir
         fetcher = PileupFetcher()
         fetcher.setWorkingDirectory(self.testDir)
-        fetcher._createPileupConfigFile(setupScript.step)
+        fetcher._createPileupConfigFile(setupScript.step, fakeSites=['T1_US_FNAL'])
 
         setupScript()
 

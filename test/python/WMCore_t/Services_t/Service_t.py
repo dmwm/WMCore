@@ -8,17 +8,17 @@ import socket
 import time
 import tempfile
 import shutil
-import stat
 from httplib import HTTPException
 from httplib import BadStatusLine, IncompleteRead
+
+from nose.plugins.attrib import attr
+
 from WMCore.Services.Service import Service
 from WMCore.Services.Requests import Requests
 from WMCore.Algorithms import Permissions
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-
 import cherrypy
-from nose.plugins.attrib import attr
+
 
 class CrappyServer(object):
     def truncated(self):
@@ -69,9 +69,7 @@ class ServiceTest(unittest.TestCase):
 
         #self.cache_path = tempfile.mkdtemp()
         test_dict = {'logger': self.logger,
-                #'cachepath' : self.cache_path,
-                #'req_cache_path': '%s/requests' % self.cache_path,
-                'endpoint':'http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi'}
+                     'endpoint': 'https://github.com/dmwm'}
 
         self.myService = Service(test_dict)
 
@@ -97,7 +95,7 @@ class ServiceTest(unittest.TestCase):
         """
         Populate the cache, and then check that it's deleted
         """
-        f = self.myService.refreshCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
         assert os.path.exists(f.name)
         f.close()
 
@@ -108,14 +106,14 @@ class ServiceTest(unittest.TestCase):
         """
         Populate the cache, and then check that it's deleted
         """
-        f = self.myService.refreshCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
         assert os.path.exists(f.name)
         f.close()
 
         self.myService.clearCache('testClear')
         assert not os.path.exists(f.name)
 
-        f = self.myService.refreshCache('testClear', '/COMP/WMCORE/src/python/WMCore/Services/Service.py?view=markup')
+        f = self.myService.refreshCache('testClear', '/WMCore/blob/master/setup.py#L11')
         assert os.path.exists(f.name)
         f.close()
 
@@ -187,7 +185,7 @@ class ServiceTest(unittest.TestCase):
 
     def testSocketTimeout(self):
         dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch/',
+                'endpoint':'https://github.com/dmwm',
                 'cacheduration': None,
                 'timeout': 10,
                 #'cachepath' : self.cache_path,
@@ -195,7 +193,7 @@ class ServiceTest(unittest.TestCase):
                 }
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
-        service.getData('%s/socketresettest' % self.testDir, '/cgi-bin/cmssw.cgi')
+        service.getData('%s/socketresettest' % self.testDir, '/WMCore/blob/master/setup.py#L11')
         assert deftimeout == socket.getdefaulttimeout()
 
     @attr("integration")
@@ -278,7 +276,7 @@ class ServiceTest(unittest.TestCase):
     def testNoCache(self):
         """Cache disabled"""
         dict = {'logger': self.logger,
-                'endpoint':'http://cmssw.cvs.cern.ch',
+                'endpoint':'https://github.com/dmwm',
                 'cachepath' : None,
                 }
         service = Service(dict)

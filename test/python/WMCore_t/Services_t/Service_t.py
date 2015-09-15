@@ -117,7 +117,6 @@ class ServiceTest(unittest.TestCase):
         assert os.path.exists(f.name)
         f.close()
 
-
     def testCachePath(self):
         cache_path = tempfile.mkdtemp()
         dict = {'logger': self.logger,
@@ -185,11 +184,9 @@ class ServiceTest(unittest.TestCase):
 
     def testSocketTimeout(self):
         dict = {'logger': self.logger,
-                'endpoint':'https://github.com/dmwm',
+                'endpoint': 'https://github.com/dmwm',
                 'cacheduration': None,
                 'timeout': 10,
-                #'cachepath' : self.cache_path,
-                #'req_cache_path': '%s/requests' % self.cache_path
                 }
         service = Service(dict)
         deftimeout = socket.getdefaulttimeout()
@@ -276,14 +273,14 @@ class ServiceTest(unittest.TestCase):
     def testNoCache(self):
         """Cache disabled"""
         dict = {'logger': self.logger,
-                'endpoint':'https://github.com/dmwm',
-                'cachepath' : None,
+                'endpoint': 'https://github.com/dmwm',
+                'cachepath': None,
                 }
         service = Service(dict)
 
-        self.assertEqual( service['cachepath'] ,  dict['cachepath'] )
-        self.assertEqual( service['requests']['cachepath'] ,  dict['cachepath'] )
-        self.assertEqual( service['requests']['req_cache_path'] ,  dict['cachepath'] )
+        self.assertEqual(service['cachepath'], dict['cachepath'])
+        self.assertEqual(service['requests']['cachepath'], dict['cachepath'])
+        self.assertEqual(service['requests']['req_cache_path'], dict['cachepath'])
 
         out = service.refreshCache('shouldntbeused', '/').read()
         self.assertTrue('html' in out)

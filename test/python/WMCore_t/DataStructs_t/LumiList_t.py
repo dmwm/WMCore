@@ -11,6 +11,12 @@ class LumiListTest(unittest.TestCase):
 
     """
 
+    def setUp(self):
+        jsonFile = open('lumiTest.json','w')
+        jsonFile.write('{"1": [[1, 33], [35, 35], [37, 47]], "2": [[49, 75], [77, 130], [133, 136]]}')
+        jsonFile.close()
+
+
     def notestRead(self):
         """
         Test reading from JSON
@@ -31,7 +37,7 @@ class LumiListTest(unittest.TestCase):
 
     def testList(self):
         """
-        Test constucting from list of pairs
+        Test constructing from list of pairs
         """
 
         listLs1 = range(1, 34) + [35] + range(37, 48)
@@ -52,7 +58,7 @@ class LumiListTest(unittest.TestCase):
 
     def testRuns(self):
         """
-        Test constucting from run and list of lumis
+        Test constructing from run and list of lumis
         """
         runsAndLumis = {
             1: range(1, 34) + [35] + range(37, 48),
@@ -244,7 +250,7 @@ class LumiListTest(unittest.TestCase):
 
     def testRemoveSelect(self):
         """
-        a-b for lots of cases
+        a-b on runs for lots of cases
         """
 
         alumis = {'1' : range(2,20) + range(31,39) + range(45,49),
@@ -282,10 +288,13 @@ class LumiListTest(unittest.TestCase):
         a = LumiList(runsAndLumis = alumis)
         a.writeJSON('newFile.json')
 
+    def testCompact(self):
+        acl = {'1': [[1, 2], [3, 4], [8, 9]]}
+        bcl = {'1': [[8, 9], [3, 4], [1, 2]]}
+        ccl = {'1': [[1, 4], [8, 9]]}
 
+        self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=bcl).getCMSSWString())
+        self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=ccl).getCMSSWString())
 
 if __name__ == '__main__':
-    jsonFile = open('lumiTest.json','w')
-    jsonFile.write('{"1": [[1, 33], [35, 35], [37, 47]], "2": [[49, 75], [77, 130], [133, 136]]}')
-    jsonFile.close()
     unittest.main()

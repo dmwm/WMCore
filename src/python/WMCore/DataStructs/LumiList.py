@@ -104,6 +104,17 @@ class LumiList(object):
                 if compactList[run]:
                     self.compactList[runString] = compactList[run]
 
+        # Compact each run and make it unique
+
+        for run in self.compactList.keys():
+            newLumis = []
+            for lumi in sorted(self.compactList[run]):
+                # If the next lumi starts inside or just after the last just change the endpoint of the first
+                if newLumis and lumi[0] >= newLumis[-1][0] and lumi[0] <= newLumis[-1][1] + 1:
+                    newLumis[-1][1] = lumi[1]
+                else:
+                    newLumis.append(lumi)
+            self.compactList[run] = newLumis
 
     def __sub__(self, other): # Things from self not in other
         result = {}

@@ -62,6 +62,7 @@ class RESTFormatter(TemplatedPage):
 
     def format(self, data, datatype, expires):
         response_data = ''
+        func = self.supporttypes[datatype]
         if datatype not in self.supporttypes.keys():
             response.status = 406
             expires=0
@@ -76,14 +77,12 @@ class RESTFormatter(TemplatedPage):
             # This won't be triggered with a default formatter, but could be by a subclass
             response.status = h[0]
             expires=0
-            response_data = self.supporttypes[datatype]({'exception': h[0],
-                                                'type': 'HTTPError',
-                                                'message': h[1]}, expires=0)
+            rec = {'exception': h[0],'type': 'HTTPError','message': h[1]}
+            response_data = func(rec)
         except Exception as e:
             response.status = 500
             expires=0
-            response_data = self.supporttypes[datatype]({'exception': 500,
-                                                'type': e.__class__.__name__,
-                                                'message': 'Server Error'})
+            rec = {'exception': 500, 'type': e.__class__.__name__, 'message': 'Server Error'}
+            response_data = func(rec)
         _setCherryPyHeaders(response_data, datatype, expires)
         return response_data

@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "MonteCarloFromGEN with LumiMask, 1 run and 42l in total. Half an hour opened",
+    "Comments": "MonteCarloFromGEN with LumiMask, 1 run and 15l in total. Half an hour opened",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_19",
@@ -22,7 +22,7 @@
     "Group": "DATAOPS",
     "TotalTime": 28800,
     "TimePerEvent": 16.879,
-    "LumiList": {"1": [[1, 10], [25,45], [90,100]]},
+    "LumiList": {"1": [1, 2, 3, 4, 25, 26, 27, 28, 29, 30, 90, 91, 92, 93, 94]},
     "Memory": 2300,
     "LumisPerJob": 1,
     "SizePerEvent": 1154,

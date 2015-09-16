@@ -292,9 +292,11 @@ class LumiListTest(unittest.TestCase):
         acl = {'1': [[1, 2], [3, 4], [8, 9]]}
         bcl = {'1': [[8, 9], [3, 4], [1, 2]]}
         ccl = {'1': [[1, 4], [8, 9]]}
+        dcl = {'1': [[1, 4], [2, 3], [8, 9]]}
 
         self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=bcl).getCMSSWString())
         self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=ccl).getCMSSWString())
+        self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=dcl).getCMSSWString())
 
 if __name__ == '__main__':
     unittest.main()

@@ -64,7 +64,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
-        locationAction.execute(siteName = "s1", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = "s2", pnn = "T1_US_FNAL_Disk")
 
         changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
 

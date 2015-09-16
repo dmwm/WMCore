@@ -1068,8 +1068,10 @@ class StdBase(object):
                         schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
                     else:
                         schema[arg] = "fake"
-                if workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
+                elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
                     schema[arg] = 1
+                else: # A non-optional list or similar. Just copy.
+                    schema[arg] = workloadDefinition[arg]['default']
             else:
                 schema[arg] = workloadDefinition[arg]['default']
         return schema

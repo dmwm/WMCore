@@ -1322,8 +1322,11 @@ class WMTaskHelper(TreeHelper):
         for run, runLumis in lumiMask.items():
             runs.append(int(run))
             lumiList = []
-            for lumi in runLumis:
-                lumiList.extend([str(l) for l in lumi])
+            # check whether it's a plain or nested list
+            if isinstance(runLumis[0], int):
+                lumiList.extend([str(l) for l in runLumis])
+            else:
+                lumiList.extend([str(l) for lumi in runLumis for l in lumi])
             lumis.append(','.join(lumiList))
 
         self.data.input.splitting.runs = runs

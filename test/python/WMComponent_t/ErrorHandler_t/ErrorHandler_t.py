@@ -60,7 +60,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "malpaquet", pnn = "malpaquet")
+        locationAction.execute(siteName = "malpaquet", pnn = "T2_CH_CERN")
         self.testDir = self.testInit.generateWorkDir()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10

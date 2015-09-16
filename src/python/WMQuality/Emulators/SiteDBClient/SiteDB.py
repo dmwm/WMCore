@@ -222,3 +222,15 @@ class SiteDBJSON(object):
         except IndexError:
             return None
         return psns
+
+    def PSNtoPNNMap(self, psn_pattern=''):
+        if not isinstance(psn_pattern, str):
+            raise TypeError('psn_pattern arg must be of type str')
+
+        mapping = {}
+        psn_pattern = re.compile(psn_pattern)  # .replace('*', '.*').replace('%', '.*'))
+        for entry in self._dataProcessing():
+            if not psn_pattern.match(entry['psn_name']):
+                continue
+            mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
+        return mapping

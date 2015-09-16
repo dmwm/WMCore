@@ -8,8 +8,9 @@ import os.path
 import threading
 import time
 import unittest
+import cProfile, pstats
 
-from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
+from nose.plugins.attrib import attr
 
 import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -27,14 +28,11 @@ from WMCore.WMBS.JobGroup     import JobGroup
 
 from WMCore.DataStructs.Run             import Run
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Agent.Configuration         import Configuration
 from WMCore.WMSpec.Makers.TaskMaker     import TaskMaker
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
-from WMCore.FwkJobReport.Report         import Report
-
 
 from WMCore_t.WMSpec_t.TestSpec         import testWorkload
-
+from WMComponent.ErrorHandler.ErrorHandlerPoller import ErrorHandlerPoller
 
 
 class ErrorHandlerTest(unittest.TestCase):
@@ -99,12 +97,14 @@ class ErrorHandlerTest(unittest.TestCase):
 
         config.component_("ErrorHandler")
         # The log level of the component.
-        config.ErrorHandler.logLevel = 'DEBUG'
+        config.ErrorHandler.logLevel = 'INFO'
         # The namespace of the component
         config.ErrorHandler.namespace = 'WMComponent.ErrorHandler.ErrorHandler'
         # maximum number of threads we want to deal
+        #config.ErrorHandler.maxThreads = 30
         # with messages per pool.
-        config.ErrorHandler.maxThreads = 30
+        config.ErrorHandler.maxProcessSize = 30
+        config.ErrorHandler.readFWJR = True
         # maximum number of retries we want for job
         config.ErrorHandler.maxRetries = 5
         # The poll interval at which to look for failed jobs
@@ -123,21 +123,19 @@ class ErrorHandlerTest(unittest.TestCase):
         return config
 
 
-    def createWorkload(self, workloadName = 'Test', emulator = True):
+    def createWorkload(self, workloadName = 'Test'):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
-        rereco = workload.getTask("ReReco")
+        workload = testWorkload(workloadName)
 
         # Add RequestManager stuff
         workload.data.request.section_('schema')
         workload.data.request.schema.Requestor = 'nobody'
         workload.data.request.schema.Group     = 'testers'
-
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -199,7 +197,6 @@ class ErrorHandlerTest(unittest.TestCase):
             testJob['retry_max'] = 10
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312])
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12314, 12316])
-            testJob['mask']['FirstEvent'] = 100
             testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
             testJob['fwjr_path'] = fwjrPath
             os.mkdir(testJob['cache_dir'])
@@ -229,14 +226,13 @@ class ErrorHandlerTest(unittest.TestCase):
 
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
                                                workloadPath = workloadPath,
                                                workloadName = workloadName)
-
         config = self.getConfig()
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
@@ -284,8 +280,8 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
@@ -318,8 +314,8 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs,
@@ -355,8 +351,8 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs, retry_count = 5,
@@ -405,8 +401,8 @@ class ErrorHandlerTest(unittest.TestCase):
         """
         workloadName = 'TestWorkload'
 
-        workload = self.createWorkload(workloadName = workloadName)
-        workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload',
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
                                     'WMSandbox', 'WMWorkload.pkl')
 
         fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
@@ -485,9 +481,7 @@ class ErrorHandlerTest(unittest.TestCase):
         return
 
 
-
-
-
+    @attr('integration')
     def testZ_Profile(self):
         """
         _testProfile_
@@ -495,32 +489,37 @@ class ErrorHandlerTest(unittest.TestCase):
         Do a full profile of the poller
         """
 
-        return
+        nJobs = 100
+        workloadName = 'TestWorkload'
+        self.createWorkload(workloadName = workloadName)
+        workloadPath = os.path.join(self.testDir, 'workloadTest', workloadName,
+                                    'WMSandbox', 'WMWorkload.pkl')
 
-        import cProfile, pstats
-
-        nJobs = 1000
-
-        testJobGroup = self.createTestJobGroup(nJobs = nJobs)
+        testJobGroup = self.createTestJobGroup(nJobs = nJobs, workloadPath = workloadPath)
 
         config = self.getConfig()
         changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
+        changer.propagate(testJobGroup.jobs, 'created', 'new')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
+        changer.propagate(testJobGroup.jobs, 'complete', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
 
-        idList = self.getJobs.execute(state = 'CreateFailed')
+        idList = self.getJobs.execute(state = 'JobFailed')
         self.assertEqual(len(idList), nJobs)
 
         testErrorHandler = ErrorHandlerPoller(config)
         testErrorHandler.setup(None)
         startTime = time.time()
-        #cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename = "profStats.stat")
-        testErrorHandler.algorithm()
+        cProfile.runctx("testErrorHandler.algorithm()", globals(), locals(), filename = "profStats.stat")
         stopTime = time.time()
 
         idList = self.getJobs.execute(state = 'CreateFailed')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'JobFailed')
+        self.assertEqual(len(idList), 0)
+
+        idList = self.getJobs.execute(state = 'JobCooloff')
         self.assertEqual(len(idList), nJobs)
 
         print("Took %f seconds to run polling algo" % (stopTime - startTime))

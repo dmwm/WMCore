@@ -5,7 +5,9 @@ _Fileset_t_
 Testcase for Fileset
 
 """
-import unittest, logging, random
+import logging
+import random
+import unittest
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File
@@ -56,31 +58,33 @@ class FilesetTest (unittest.TestCase):
 
         """
         pass
+
     def testAddFile(self):
         """
-            Testcase for the addFile method of the Fileset class
+        _testAddFile_
+
+        Testcase for the addFile method of the Fileset class
 
         """
-        #First test - Add file and check if its there
-        testfile = File('/tmp/lfntest',9999,9,9)
+
+        # First test - Add file and check if it's there
+        testfile = File('/tmp/lfntest', 9999, 9, 9)
         self.fileset.addFile(testfile)
-        assertTrue(testfile in self.fileset.listNewFiles(), 'Couldn\'t add file '
-                'to fileset - fileset.addfile method not working')
-        #Second test - Add file that was already at Fileset.files ,
-        # and check if it gets updated
-        testFileSame = File('/tmp/lfntest',9999,9,9)
+        self.assertTrue(testfile in self.fileset.listNewFiles(),
+                        "Couldn't add file to fileset - fileset.addfile method not working")
+
+        # Second test - Add file that was already at Fileset.files, and check if it gets updated
+        testFileSame = File('/tmp/lfntest', 9999, 9, 9)
         testFileSame.setLocation(set('dummyse.dummy.com'))
         self.fileset.addFile(testFileSame)
-        assertTrue(testFileSame in  self.fileset.getFiles(),'Same file copy '
-               'failed - fileset.addFile not updating location of already '
-               'existing files' )
-        assertTrue(testfile in self.fileset.getFiles(),'Same file copy '
-               'failed - fileset.addFile unable to remove previous file '
-               'from list')
-        #Third test - Add file that was already at Fileset.newfiles ,
-        #and check if it gets updated
-        assertTrue(testFileSame in  self.fileset.listNewFiles(),'Same file copy '
-               'failed - fileset.addFile not adding file to fileset.newFiles')
+        self.assertTrue(testFileSame in self.fileset.getFiles(),
+                        'Same file copy ailed - fileset.addFile not updating location of already existing files')
+        self.assertTrue(testfile in self.fileset.getFiles(),
+                        'Same file copy failed - fileset.addFile unable to remove previous file from list')
+
+        # Third test - Add file that was already at Fileset.newfiles, and check if it gets updated
+        self.assertTrue(testFileSame in self.fileset.listNewFiles(),
+                        'Same file copy failed - fileset.addFile not adding file to fileset.newFiles')
 
     def testListFiles(self):
         """

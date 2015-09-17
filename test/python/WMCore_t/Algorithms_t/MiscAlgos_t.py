@@ -39,15 +39,15 @@ class MiscAlgosTest(unittest.TestCase):
 
         d1 = [{'a': 1, 'b': 2, 'Title': 'First'}, {'a': 2, 'b': 1, 'Title': 'Second'}]
 
-        result = MiscAlgos.sortListByKey(input = d1, key = 'a')
+        result = MiscAlgos.sortListByKey(d1, 'a')
         self.assertEqual(result[1][0]['Title'], 'First')
-        result = MiscAlgos.sortListByKey(input = d1, key = 'b')
+        result = MiscAlgos.sortListByKey(d1, 'b')
         self.assertEqual(result[1][0]['Title'], 'Second')
 
         # Make sure it handles an empty set
         # This should print an error to logging, but skip the set in question
         d2 = [{'a': set(), 'Title': 'First'}, {'a': set([1]), 'Title': 'Second'}]
-        result = MiscAlgos.sortListByKey(input = d2, key = 'a')
+        result = MiscAlgos.sortListByKey(d2, 'a')
         self.assertEqual(result, {1: [{'a': set([1]), 'Title': 'Second'}]})
 
         return

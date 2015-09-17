@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W6501
-# W6501: Allow logging messages to have string formatting
 
 """
 _DBSUploadPoller_
@@ -44,7 +42,6 @@ import threading
 import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.ProcessPool.ProcessPool        import ProcessPool
 from WMCore.Cache.WMConfigCache            import ConfigCache
 from WMCore.Algorithms.MiscAlgos           import sortListByKey
 
@@ -54,7 +51,6 @@ from WMCore.WMException   import WMException
 from WMCore.Services.UUID import makeUUID
 
 from WMComponent.DBSUpload.DBSInterface import DBSInterface
-from WMComponent.DBSUpload.DBSErrors    import DBSInterfaceError
 
 
 def createDatasetFromInfo(info):
@@ -333,8 +329,8 @@ class DBSUploadPoller(BaseWorkerThread):
             logging.debug("Retrieved %i files and %i blocks from DB." % (len(files), len(blocks)))
 
             # Sort the files and blocks by location
-            locationDict = sortListByKey(input = files, key = 'locations')
-            blockDict    = sortListByKey(input = blocks, key = 'location')
+            locationDict = sortListByKey(files, 'locations')
+            blockDict    = sortListByKey(blocks, 'location')
             logging.debug("Active DAS file locations: %s" % locationDict.keys())
             logging.debug("Active Block file locations: %s" % blockDict.keys())
 

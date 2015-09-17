@@ -59,12 +59,12 @@ class WorkQueueReqMgrInterface():
         try:    # report back to ReqMgr
             uptodate_elements = self.report(queue)
             msg += "Updated ReqMgr status for: %s\n" % ", ".join([x['RequestName'] for x in uptodate_elements])
-        except:
+        except Exception:
             self.logger.exception("Error caught during RequestManager update")
         else:
             try:    # Delete finished requests from WorkQueue
                 self.deleteFinishedWork(queue, uptodate_elements)
-            except:
+            except Exception:
                 self.logger.exception("Error caught during work deletion")
 
         queue.backend.recordTaskActivity('reqmgr_sync', msg)
@@ -154,7 +154,12 @@ class WorkQueueReqMgrInterface():
         for ele in elements:
             ele = elements[ele][0] # 1 element tuple
             try:
-                request = self.reqMgr2.getRequestByNames(ele['RequestName'])[ele['RequestName']]
+                request = self.reqMgr2.getRequestByNames(ele['RequestName'])
+                if not request:
+                    msg = 'Failed to get request "%s" from ReqMgr2. Will try again later.' % ele['RequestName']
+                    self.logger.warning(msg)
+                    continue
+                request = request[ele['RequestName']]
                 if request['RequestStatus'] in ('failed', 'completed', 'announced',
                                                 'epic-FAILED', 'closed-out', 'rejected'):
                     # requests can be done in reqmgr but running in workqueue

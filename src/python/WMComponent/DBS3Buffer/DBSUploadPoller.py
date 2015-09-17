@@ -35,7 +35,7 @@ import multiprocessing
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.UUID                  import makeUUID
 from WMCore.WMException                    import WMException
-
+from WMCore.Algorithms.MiscAlgos           import sortListByKey
 
 from WMComponent.DBS3Buffer.DBSBufferUtil  import DBSBufferUtil
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
@@ -77,26 +77,6 @@ def createDictionaryFromConfig(configSection):
 
     return final
 
-
-
-def sortListByKey(input, key):
-    """
-    Return list of dictionaries as a
-    dictionary of lists of dictionaries
-    keyed by one original key
-
-    """
-    final = {}
-
-    for entry in input:
-        value = entry.get(key)
-        if type(value) == set:
-            value = value.pop()
-        if not value in final.keys():
-            final[value] = []
-        final[value].append(entry)
-
-    return final
 
 def uploadWorker(input, results, dbsUrl):
     """
@@ -173,7 +153,7 @@ class DBSUploadPoller(BaseWorkerThread):
     """
 
 
-    def __init__(self, config, dbsconfig = None):
+    def __init__(self, config):
         """
         Initialise class members
         """
@@ -274,7 +254,7 @@ class DBSUploadPoller(BaseWorkerThread):
         try:
             self.input.close()
             self.result.close()
-        except:
+        except Exception:
             # What are you going to do?
             pass
         for proc in self.pool:
@@ -340,7 +320,8 @@ class DBSUploadPoller(BaseWorkerThread):
         Find all blocks; make sure they're in the cache
         """
         openBlocks = self.dbsUtil.findOpenBlocks()
-        logging.info("These are the openblocks: %s" % openBlocks)
+        logging.info("Found %d open blocks." % len(openBlocks))
+        logging.debug("These are the openblocks: %s" % openBlocks)
 
         # Load them if we don't have them
         blocksToLoad = []
@@ -385,8 +366,8 @@ class DBSUploadPoller(BaseWorkerThread):
                 raise DBSUploadException(msg)
 
             # Add the loaded files to the block
-            for file in files:
-                block.addFile(file, self.datasetType, self.primaryDatasetType)
+            for f in files:
+                block.addFile(f, self.datasetType, self.primaryDatasetType)
 
             # Add to the cache
             self.addNewBlock(block = block)
@@ -430,7 +411,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 raise DBSUploadException(msg)
 
             # Sort the files and blocks by location
-            fileDict = sortListByKey(input = loadedFiles, key = 'locations')
+            fileDict = sortListByKey(loadedFiles, 'locations')
 
             # Now add each file
             for location in fileDict.keys():

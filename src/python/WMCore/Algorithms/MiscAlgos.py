@@ -7,7 +7,7 @@ Useful little tools that can be handy anywhere.
 """
 import logging
 
-def sortListByKey(input, key):
+def sortListByKey(data, key):
     """
     Return list of dictionaries as a
     dictionary of lists of dictionaries
@@ -16,7 +16,7 @@ def sortListByKey(input, key):
     """
     final = {}
 
-    for entry in input:
+    for entry in data:
         value = entry.get(key, None)
         if value == None:
             # Empty dict value?
@@ -24,7 +24,7 @@ def sortListByKey(input, key):
             logging.error("Found entry with no key in sortListByKey: %s" % entry)
             logging.error("Skipping")
             continue
-        if type(value) == set:
+        if isinstance(value, set):
             try:
                 v     = value
                 value = v.pop()

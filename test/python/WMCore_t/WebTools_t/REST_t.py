@@ -61,6 +61,15 @@ class RESTTest(RESTBaseUnitTest):
 
         self.urlbase = self.config.getServerUrl()
 
+    def testGeneratorMethod(self):
+        # test not accepted type should return 406 error
+        url = self.urlbase + 'gen'
+        output={'code':200}
+        data, _ = methodTest('GET', url, accept='text/json', output=output)
+        data = json.loads(data)
+        self.assertEquals(type(data), list)
+        self.assertEquals(type(data[0]), dict)
+
     def testUnsupportedFormat(self):
         # test not accepted type should return 406 error
         url = self.urlbase + 'ping'

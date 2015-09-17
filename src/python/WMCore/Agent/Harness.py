@@ -135,8 +135,10 @@ class Harness:
             print('Log file is: '+compSect.logFile)
             logHandler = RotatingFileHandler(compSect.logFile,
                 "a", 1000000000, 3)
+            logMsgFormat = getattr(compSect, "logMsgFormat", \
+                           "%(asctime)s:%(levelname)s:%(module)s:%(message)s")
             logFormatter = \
-                logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
+                logging.Formatter(logMsgFormat)
             logHandler.setFormatter(logFormatter)
             logLevelName = getattr(compSect, 'logLevel', 'INFO')
             logLevel     = getattr(logging, logLevelName)

@@ -30,7 +30,7 @@ class ReportTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         self.xmlPath = os.path.join(getTestBase(),
@@ -49,7 +49,6 @@ class ReportTest(unittest.TestCase):
                                                    "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
 
         self.testDir = self.testInit.generateWorkDir()
-        return
 
     def tearDown(self):
         """
@@ -58,9 +57,7 @@ class ReportTest(unittest.TestCase):
         Cleanup the databases.
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        return
 
     def verifyInputData(self, report):
         """

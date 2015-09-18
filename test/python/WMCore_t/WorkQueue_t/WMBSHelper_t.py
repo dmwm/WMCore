@@ -77,7 +77,6 @@ class WMBSHelperTest(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = threading.currentThread().logger,
                                      dbinterface = threading.currentThread().dbi)
-        return
 
     def tearDown(self):
         """
@@ -85,10 +84,8 @@ class WMBSHelperTest(unittest.TestCase):
 
         Clear out the database.
         """
-        self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
-        return
 
     def setupForKillTest(self, baAPI = None):
         """

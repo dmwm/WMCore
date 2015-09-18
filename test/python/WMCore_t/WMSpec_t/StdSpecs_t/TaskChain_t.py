@@ -151,7 +151,8 @@ class TaskChainTests(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setupCouch("taskchain_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -162,8 +163,6 @@ class TaskChainTests(unittest.TestCase):
         self.workload = None
 
         self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Task_Multicore.json')
-        return
-
 
     def tearDown(self):
         """
@@ -172,10 +171,9 @@ class TaskChainTests(unittest.TestCase):
         Clear out the database.
 
         """
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        return
 
     def testGeneratorWorkflow(self):
         """

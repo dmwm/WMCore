@@ -42,7 +42,6 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         Clear out the database.
         """
-        self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         return

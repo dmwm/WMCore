@@ -41,6 +41,9 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         self.couchApps = ["WorkQueue"]
 
     def setUp(self):
+        self.central_logdb_url = os.getenv("COUCHURL", "http://localhost:5984") + "/logdb"
+        self.log_reporter = self.__class__.__name__
+        self.reqmgr2 = os.getenv("COUCHURL", "http://localhost:5984") + "/reqmgr2"
         WorkQueueTestCase.setUp(self)
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
@@ -81,6 +84,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
     def setupGlobalWorkqueue(self, **kwargs):
         """Return a workqueue instance"""
+        kwargs["central_logdb_url"] = self.central_logdb_url
+        kwargs["log_reporter"] = self.log_reporter
         globalQ = globalQueue(DbName = self.globalQDB,
                               InboxDbName = self.globalQInboxDB,
                               QueueURL = self.globalQCouchUrl,
@@ -89,12 +94,15 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
     def setupLocalQueue(self):
         """Create a local queue"""
+        kwargs = {}
+        kwargs["central_logdb_url"] = self.central_logdb_url
+        kwargs["log_reporter"] = self.log_reporter
         localQ = localQueue(DbName = self.localQDB,
                             InboxDbName = self.localQInboxDB,
                             QueueURL = self.localQCouchUrl,
                             Teams = ["The A-Team", "some other bloke"],
                             ParentQueueCouchUrl = self.globalQCouchUrl,
-                            CacheDir = self.testInit.testDir)
+                            CacheDir = self.testInit.testDir, **kwargs)
         return localQ
 
     def testReqMgrPollerAlgorithm(self):
@@ -103,7 +111,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         globalQ = self.setupGlobalWorkqueue()
         localQ = self.setupLocalQueue()
         reqMgr = fakeReqMgr(splitter = 'Block')
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
 
         # 1st run should pull a request
@@ -145,7 +154,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         """ReqMgr interaction with block level splitting"""
         globalQ = self.setupGlobalWorkqueue()
         reqMgr = fakeReqMgr(splitter = 'Block')
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
 
         self.assertEqual(len(globalQ), 0)
@@ -183,7 +193,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         """Report invalid spec back to ReqMgr"""
         globalQ = self.setupGlobalWorkqueue()
         reqMgr = fakeReqMgr(inputDataset = 'thisdoesntexist')
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
         reqMgrInt(globalQ)
         self.assertEqual('failed', reqMgr.status[reqMgr.names[0]])
@@ -203,7 +214,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         """Stop acquiring work when DrainMode set"""
         globalQ = self.setupGlobalWorkqueue(DrainMode = True)
         reqMgr = fakeReqMgr()
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
         self.assertEqual(len(globalQ), 0)
         reqMgrInt(globalQ)
@@ -213,7 +225,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         """WorkQueue cancels if canceled in ReqMgr"""
         globalQ = self.setupGlobalWorkqueue()
         reqMgr = fakeReqMgr()
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
         reqMgrInt(globalQ)
         # abort in reqmgr
@@ -229,7 +242,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         """If running request finished in Reqmgr and no update locally for a long time decalre request done"""
         globalQ = self.setupGlobalWorkqueue()
         reqMgr = fakeReqMgr()
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
         reqMgrInt(globalQ)
         # set reqmgr status to done
@@ -259,7 +273,8 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
         globalQ = self.setupGlobalWorkqueue()
         localQ = self.setupLocalQueue()
         reqMgr = fakeReqMgr(splitter = 'Block', openRunningTimeout = 3600)
-        reqMgrInt = WorkQueueReqMgrInterface()
+        reqMgrInt = WorkQueueReqMgrInterface(reqmgr2_endpoint=self.reqmgr2,
+                central_logdb_url=self.central_logdb_url, log_reporter=self.log_reporter)
         reqMgrInt.reqMgr = reqMgr
 
         # 1st run should pull a request

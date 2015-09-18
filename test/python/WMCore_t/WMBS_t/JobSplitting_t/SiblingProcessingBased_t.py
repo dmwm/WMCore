@@ -32,7 +32,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -128,7 +129,6 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                                 split_algo = "SiblingProcessingBased",
                                                 type = "Cleanup")
         self.deleteSubscriptionB.create()
-        return
 
     def tearDown(self):
         """
@@ -136,8 +136,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testSiblingProcessing(self):
         """

@@ -14,6 +14,7 @@ from WMCore.WebTools.Root import Root
 class RESTBaseUnitTest(unittest.TestCase):
 
     def setUp(self, initRoot = True):
+        self.testDB = 'unittest_%s' % self.__class__.__name__
         # default set
         self.schemaModules = []
 
@@ -24,7 +25,9 @@ class RESTBaseUnitTest(unittest.TestCase):
             from WMQuality.TestInitCouchApp import TestInitCouchApp
             self.testInit = TestInitCouchApp(__file__)
             self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-            self.testInit.setDatabaseConnection( destroyAllDatabase = True )
+            self.testInit.setDatabaseConnection()
+            self.testInit.destroyDatabase(self.testDB) # wipe-out previous db
+            self.testInit.createDatabase(self.testDB) # create new db
             self.testInit.setSchema(customModules = self.schemaModules,
                                     useDefault = False)
             # Now pull the dbURL from the factory
@@ -84,7 +87,7 @@ class RESTBaseUnitTest(unittest.TestCase):
             cherrypy.engine.subscribe('start', cherrypy.checker)
 
         if self.schemaModules:
-            self.testInit.clearDatabase()
+            self.testInit.destroyDatabase(self.testDB)
         self.config = None
         return
 

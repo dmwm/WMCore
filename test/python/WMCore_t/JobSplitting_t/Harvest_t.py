@@ -40,8 +40,8 @@ class HarvestTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"])
 
         self.splitterFactory = SplitterFactory(package = "WMCore.JobSplitting")
@@ -81,17 +81,13 @@ class HarvestTest(unittest.TestCase):
         self.subscription1.create()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         EmulatorSetup.deleteConfig(self.configFile)
-
-        return
 
     def getConfig(self):
         """

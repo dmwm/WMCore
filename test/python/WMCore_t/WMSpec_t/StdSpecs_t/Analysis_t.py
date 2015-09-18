@@ -36,7 +36,6 @@ class AnalysisTest(unittest.TestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("analysis_t")
         self.testDir = self.testInit.generateWorkDir()
-        return
 
     def injectAnalysisConfig(self):
         """
@@ -70,10 +69,7 @@ class AnalysisTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        return
-
 
     def testAnalysis(self):
         """

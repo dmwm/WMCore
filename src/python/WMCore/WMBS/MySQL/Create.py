@@ -28,7 +28,7 @@ class Create(CreateWMBSBase):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             name        VARCHAR(700) NOT NULL,
+             name        VARCHAR(255) NOT NULL,
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INT(11)      NOT NULL,
              UNIQUE (name))"""

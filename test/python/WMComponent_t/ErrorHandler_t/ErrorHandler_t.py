@@ -49,7 +49,8 @@ class ErrorHandlerTest(unittest.TestCase):
 
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("errorhandler_t", "GroupUser", "ACDC")
@@ -70,17 +71,15 @@ class ErrorHandlerTest(unittest.TestCase):
         self.dataCS = DataCollectionService(url = self.testInit.couchUrl,
                                             database = "errorhandler_t")
 
-        return
 
     def tearDown(self):
         """
         Database deletion
         """
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)
-        return
 
     def getConfig(self):
         """

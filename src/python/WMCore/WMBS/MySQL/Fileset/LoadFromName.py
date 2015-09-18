@@ -23,7 +23,10 @@ class LoadFromName(DBFormatter):
         DBFormatter's formatDict() method changes all attributes to be
         strings.
         """
-        formattedResult = DBFormatter.formatDict(self, result)[0]
+        res = DBFormatter.formatDict(self, result)
+        if not res:
+            return res
+        formattedResult = res[0]
         formattedResult["id"] = int(formattedResult["id"])
         formattedResult["last_update"] = int(formattedResult["last_update"])
 

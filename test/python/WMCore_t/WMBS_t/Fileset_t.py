@@ -35,7 +35,8 @@ class FilesetTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -46,7 +47,6 @@ class FilesetTest(unittest.TestCase):
 
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
-        return
 
     def tearDown(self):
         """
@@ -54,7 +54,7 @@ class FilesetTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testCreateDeleteExists(self):
         """

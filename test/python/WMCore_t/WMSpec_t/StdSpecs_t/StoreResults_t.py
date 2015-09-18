@@ -23,11 +23,11 @@ class StoreResultsTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testDir = self.testInit.generateWorkDir()
-        return
 
     def tearDown(self):
         """
@@ -35,9 +35,8 @@ class StoreResultsTest(unittest.TestCase):
 
         Clear out the database.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
-        return
 
     def testStoreResults(self):
         """

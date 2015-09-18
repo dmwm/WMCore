@@ -45,8 +45,6 @@ class DQMHarvestTests(unittest.TestCase):
         self.workload = None
         self.jsonTemplate = getTestFile('data/ReqMgr/requests/DMWM/DQMHarvesting.json')
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
@@ -54,9 +52,7 @@ class DQMHarvestTests(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        return
 
     def injectDQMHarvestConfig(self):
         """

@@ -65,8 +65,8 @@ class JobArchiverTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.tearDown()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("jobarchiver_t_0/jobs", "JobDump")
@@ -94,7 +94,7 @@ class JobArchiverTest(unittest.TestCase):
         Database deletion
         """
         EmulatorHelper.resetEmulators()
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.destroyDatabase(self.testDB, modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         EmulatorSetup.deleteConfig(self.configFile)

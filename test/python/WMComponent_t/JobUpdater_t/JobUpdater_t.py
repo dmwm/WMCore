@@ -38,7 +38,8 @@ class JobUpdaterTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMCore.BossAir"],
                                 useDefault = False)
@@ -61,7 +62,7 @@ class JobUpdaterTest(unittest.TestCase):
 
         Tear down the databases
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         EmulatorHelper.resetEmulators()

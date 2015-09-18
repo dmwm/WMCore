@@ -32,6 +32,7 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
                     
             
         """
+        self.testDB = 'unittest_%s' % self.__class__.__name__
         if self.schemaModules or self.couchDBs:
             from WMQuality.TestInitCouchApp import TestInitCouchApp
             self.testInit = TestInitCouchApp(__file__)
@@ -39,6 +40,8 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             
             if self.schemaModules:
                 self.testInit.setDatabaseConnection()
+                self.testInit.destroyDatabase(self.testDB) # wipe-out previous db
+                self.testInit.createDatabase(self.testDB) # create new db
                 self.testInit.setSchema(customModules = self.schemaModules,
                                         useDefault = False)
                 # Now pull the dbURL from the factory
@@ -72,7 +75,7 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             self.test_authz_key = None
 
         if self.schemaModules:
-            self.testInit.clearDatabase()
+            self.testInit.destroyDatabase(self.testDB)
         
         if self.couchDBs:
             self.testInit.tearDownCouch()

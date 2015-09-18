@@ -25,7 +25,8 @@ class HeartbeatTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging() # logLevel = logging.SQLDEBUG
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.Agent.Database"],
                                 useDefault = False)
         self.heartbeat = HeartbeatAPI("testComponent")
@@ -37,7 +38,7 @@ class HeartbeatTest(unittest.TestCase):
         Drop all the Heartbeat tables.
         """
 
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testHeartbeat(self):
         testComponent = HeartbeatAPI("testComponent")

@@ -35,7 +35,8 @@ class SubscriptionTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -52,15 +53,13 @@ class SubscriptionTest(unittest.TestCase):
         stateDAO = self.daofactory(classname = "Jobs.GetStateID")
         self.stateID = stateDAO.execute('cleanout')
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def createSubscriptionWithFileABC(self):
         """

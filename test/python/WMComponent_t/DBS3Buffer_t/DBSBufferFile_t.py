@@ -27,7 +27,8 @@ class DBSBufferFileTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 
@@ -51,7 +52,7 @@ class DBSBufferFileTest(unittest.TestCase):
 
         Drop all the DBSBuffer tables.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testCreateDeleteExists(self):
         """

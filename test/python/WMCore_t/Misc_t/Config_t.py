@@ -50,7 +50,8 @@ class ConfigTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMComponent.DBSBuffer.Database",
                                                  'WMCore.ResourceControl',
@@ -73,7 +74,7 @@ class ConfigTest(unittest.TestCase):
 
         Tear things down and go home
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
         return
 

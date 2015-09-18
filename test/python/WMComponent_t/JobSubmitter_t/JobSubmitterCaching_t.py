@@ -34,7 +34,8 @@ class JobSubmitterCachingTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir",
                                                  "WMCore.ResourceControl"],
                                 useDefault = False)
@@ -58,7 +59,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         Tear everything down.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)

@@ -88,11 +88,6 @@ class ServiceTest(unittest.TestCase):
         #shutil.rmtree(self.cache_path, ignore_errors = True)
         self.testInit.delWorkDir()
 
-        if self._exc_info()[0] == None:
-            self.logger.info('test "%s" passed' % testname)
-        else:
-            self.logger.info('test "%s" failed' % testname)
-
     def testClear(self):
         """
         Populate the cache, and then check that it's deleted

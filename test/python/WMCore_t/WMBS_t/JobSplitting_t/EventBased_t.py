@@ -48,17 +48,13 @@ class EventBasedTest(unittest.TestCase):
                                   'memoryRequirement' : 2300,
                                   'sizePerEvent' : 400}
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
-        return
 
     def populateWMBS(self):
         """

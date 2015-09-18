@@ -33,7 +33,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules=["WMCore.WMBS"],
                                 useDefault=False)
 
@@ -41,7 +42,6 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
                                      logger=myThread.logger,
                                      dbinterface=myThread.dbi)
-        return
 
     def tearDown(self):
         """
@@ -49,8 +49,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def stuffWMBS(self):
         """

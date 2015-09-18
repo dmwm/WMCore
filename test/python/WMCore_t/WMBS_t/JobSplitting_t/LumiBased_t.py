@@ -57,8 +57,8 @@ class LumiBasedTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        # self.testInit.clearDatabase(modules = ['WMCore.WMBS'])
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules=["WMCore.WMBS"], useDefault=False)
         self.testInit.setupCouch("lumi_t", "GroupUser", "ACDC")
 
@@ -76,16 +76,13 @@ class LumiBasedTest(unittest.TestCase):
                                   'memoryRequirement': 2300,
                                   'sizePerEvent': 400}
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
-        return
 
     def createSubscription(self, nFiles, lumisPerFile, twoSites=False, rand=False):
         """

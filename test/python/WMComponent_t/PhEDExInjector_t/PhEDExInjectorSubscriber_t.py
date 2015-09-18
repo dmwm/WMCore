@@ -52,8 +52,8 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
                                                  "WMCore.WMBS"],
                                 useDefault = False)
@@ -63,15 +63,13 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.testDatasetA = "/BogusPrimary/Run2012Z-PromptReco-v1/RECO"
         self.testDatasetB = "/BogusPrimary/CRUZET11-v1/RAW"
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Delete the database.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         EmulatorHelper.resetEmulators()
 
     def createConfig(self):

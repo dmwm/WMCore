@@ -39,14 +39,15 @@ class DaemonTest(unittest.TestCase):
         "make a logger instance and create tables"
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.tempDir = tempfile.mkdtemp()
 
     def tearDown(self):
         """
         Deletion of the databases
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         shutil.rmtree( self.tempDir, True )
 
     def testA(self):

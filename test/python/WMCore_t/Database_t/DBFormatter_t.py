@@ -36,7 +36,8 @@ class DBFormatterTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema()
 
         myThread = threading.currentThread()
@@ -61,8 +62,6 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.transaction.processData(myThread.insert, myThread.insert_binds)
         myThread.transaction.commit()
 
-        return
-
     def tearDown(self):
         """
         Delete the databases
@@ -71,7 +70,7 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.processData("drop table test")
         myThread.transaction.commit()
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     @attr("integration")
     def testBFormatting(self):

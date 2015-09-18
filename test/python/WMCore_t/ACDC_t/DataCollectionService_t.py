@@ -26,12 +26,9 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
-        return
 
     def tearDown(self):
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
-        return
 
     def testChunking(self):
         """

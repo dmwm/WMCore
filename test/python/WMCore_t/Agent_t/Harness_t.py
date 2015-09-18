@@ -39,14 +39,15 @@ class HarnessTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema()
 
     def tearDown(self):
         """
         Delete database
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testB(self):
         raise nose.SkipTest

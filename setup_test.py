@@ -139,9 +139,7 @@ if can_nose:
         # if you set this to true, I will really delete your database
         #  after every test
         # WARNING WARNING WARNING
-        user_options = [('reallyDeleteMyDatabaseAfterEveryTest=',
-                         None,
-                         'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM'),
+        user_options = [\
                          ('buildBotMode=',
                           None,
                           'Are we running inside buildbot?'),
@@ -258,13 +256,6 @@ if can_nose:
             else:
                 quickTestArg = []
                 
-            if self.reallyDeleteMyDatabaseAfterEveryTest:
-                print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
-                print "#### buildbotmode is %s" % self.buildBotMode
-                sys.stdout.flush()
-                import WMQuality.TestInit
-                WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
-                time.sleep(4)
             if self.workerNodeTestsOnly:
                 args = [__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest',self.testingRoot]
                 args.extend( quickTestArg )

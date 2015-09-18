@@ -93,7 +93,21 @@ class WMInit:
             myThread.logger = logging.getLogger()
 
 
-    def setDatabaseConnection(self, dbConfig, dialect, socketLoc = None):
+    def dropDatabaseConnection(self, connectUrl):
+        """
+        Drop database connection from current thread. To do that properly we
+        dispose the DB engine as well as clean-up DBFactory cache for given
+        connection URL.
+        """
+        myThread = threading.currentThread()
+        myThread.dbi.engine.dispose()
+        if connectUrl in myThread.dbFactory._engineMap:
+            myThread.dbFactory._engineMap.pop(connectUrl)
+        for attr in ['dialect', 'logging', 'dbFactory', 'dbi', 'transaction', 'factory']:
+            if hasattr(myThread, attr):
+                delattr(myThread, attr)
+
+    def setDatabaseConnection(self, dbConfig, dialect, socketLoc = None, reuse=False):
         """
         Sets the default connection parameters, without having to worry
         much on what attributes need to be set. This is esepcially
@@ -105,15 +119,16 @@ class WMInit:
         it by setting the flavor flag.
         """
         myThread = threading.currentThread()
-        if getattr(myThread, "dialect", None) != None:
-            # Database is already initialized, we'll create a new
-            # transaction and move on.
-            if hasattr(myThread, "transaction"):
-                if myThread.transaction != None:
-                    myThread.transaction.commit()
-
-            myThread.transaction = Transaction(myThread.dbi)
-            return
+        # reuse block check that existing thread has dbi object, if so, it returns
+        if  reuse:
+            if getattr(myThread, "dialect", None) != None:
+                # Database is already initialized, we'll create a new
+                # transaction and move on.
+                if hasattr(myThread, "transaction"):
+                    if myThread.transaction != None:
+                        myThread.transaction.commit()
+                myThread.transaction = Transaction(myThread.dbi)
+                return
 
         options = {}
         if dialect.lower() == 'mysql':
@@ -139,7 +154,6 @@ class WMInit:
         # it here.
         myThread.transaction = Transaction(myThread.dbi)
         myThread.transaction.commit()
-        return
 
     def setSchema(self, modules = [], params = None):
         """
@@ -173,9 +187,31 @@ class WMInit:
                 logging.debug("Tables " + factoryName + " could not be created.")
         myThread.transaction.commit()
 
-    def clearDatabase(self, modules = []):
+    def createDatabase(self, dbname):
         """
-        Database deletion. Global, ignore modules.
+        Create Database.
+        """
+        # Setup the DAO
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.Database",
+                                logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+        destroyDAO = daoFactory(classname = "Create")
+
+        # Actually run a transaction and delete the DB
+        try:
+            destroyDAO.execute(dbName=dbname)
+        except Exception as ex:
+            msg =  "Critical error while attempting to create DB!\n"
+            msg += str(ex)
+            msg += str(traceback.format_exc())
+            logging.error(msg)
+            raise WMInitException(msg)
+
+    def destroyDatabase(self, dbname=None, modules = []):
+        """
+        Destroy database. User can either provide database name or
+        current DB will be used.
         """
         myThread = threading.currentThread()
         if hasattr(myThread, 'transaction') and getattr(myThread.transaction, 'transaction', None):
@@ -198,15 +234,13 @@ class WMInit:
 
         # Actually run a transaction and delete the DB
         try:
-            destroyDAO.execute()
+            destroyDAO.execute(dbname)
         except Exception as ex:
             msg =  "Critical error while attempting to delete entire DB!\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise WMInitException(msg)
-
-        return
 
     def checkDatabaseContents(self):
         """

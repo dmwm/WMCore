@@ -41,7 +41,8 @@ class FileBasedTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -56,18 +57,13 @@ class FileBasedTest(unittest.TestCase):
             locationAction.execute(siteName = "site%i" % site,
                                    seName = "site%i.cern.ch" % site)
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
-
-        return
-
+        self.testInit.destroyDatabase(self.testDB, modules = ["WMCore.WMBS"])
 
     def createTestSubscription(self, nFiles, nSites = 1, closeFileset = False):
         """

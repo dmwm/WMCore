@@ -63,8 +63,8 @@ class JobCreatorTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.tearDown()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ['WMCore.WMBS',
                                                  'WMCore.ResourceControl',
                                                  'WMCore.Agent.Database'], useDefault = False)
@@ -115,7 +115,8 @@ class JobCreatorTest(unittest.TestCase):
 
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase(modules = ['WMCore.WMBS', 'WMCore.ResourceControl',
+        self.testInit.destroyDatabase(self.testDB, 
+                modules = ['WMCore.WMBS', 'WMCore.ResourceControl',
                                                'WMCore.Agent.Database'])
 
         self.testInit.delWorkDir()

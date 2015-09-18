@@ -37,7 +37,8 @@ class CouchappTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "couchapp_t_0"
@@ -64,16 +65,12 @@ class CouchappTest(unittest.TestCase):
         # Create testDir
         self.testDir = self.testInit.generateWorkDir()
 
-        return
-
     def tearDown(self):
 
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.destroyDatabase(self.testDB, modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         #self.testInit.tearDownCouch()
-        return
-
 
     def createWorkload(self, workloadName = 'Test', emulator = True):
         """

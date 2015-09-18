@@ -37,7 +37,8 @@ class SizeBasedTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -100,7 +101,6 @@ class SizeBasedTest(unittest.TestCase):
                                                      split_algo = "SizeBased",
                                                      type = "Processing")
         self.multipleSiteSubscription.create()
-        return
 
     def tearDown(self):
         """
@@ -108,8 +108,7 @@ class SizeBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testExactEvents(self):
         """

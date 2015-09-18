@@ -31,7 +31,7 @@ class InsertWorkflow(DBFormatter):
     def execute(self, requestName, taskPath,
                 blockMaxCloseTime, blockMaxFiles,
                 blockMaxEvents, blockMaxSize,
-                conn = None, transaction = False):
+                conn = None, transaction = True):
         """
         _execute_
 
@@ -43,7 +43,7 @@ class InsertWorkflow(DBFormatter):
                  'blockMaxEvents' : blockMaxEvents,
                  'blockMaxSize' : blockMaxSize}
 
-        self.dbi.processData(self.sql, binds, conn = conn,
+        result = self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 
         binds = {'name': requestName, 'task': taskPath}

@@ -42,7 +42,8 @@ class WorkQueueTestCase(unittest.TestCase):
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
         self.testInit.setupCouch(self.queueDB, *self.couchApps)
@@ -73,5 +74,5 @@ class WorkQueueTestCase(unittest.TestCase):
         """
         #self.localCouchMonitor.deleteReplicatorDocs()
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()

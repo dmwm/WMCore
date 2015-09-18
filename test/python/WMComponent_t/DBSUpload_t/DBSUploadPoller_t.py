@@ -54,9 +54,10 @@ class DBSUploadTest(unittest.TestCase):
         self.configURL    = "RANDOM;;URL;;NAME"
         self.configString = "This is a random string"
 
+        self.testDB = 'unittest_%s' % self.__class__.__name__
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules =
                                 ["WMComponent.DBS3Buffer",
                                  'WMCore.Agent.Database'],
@@ -105,7 +106,7 @@ class DBSUploadTest(unittest.TestCase):
         tearDown function for unittest
         """
 
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         return

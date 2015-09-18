@@ -42,7 +42,8 @@ class FileBasedTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -115,7 +116,6 @@ class FileBasedTest(unittest.TestCase):
         self.performanceParams = {'timePerEvent' : 12,
                                   'memoryRequirement' : 2300,
                                   'sizePerEvent' : 400}
-        return
 
     def tearDown(self):
         """
@@ -123,8 +123,7 @@ class FileBasedTest(unittest.TestCase):
 
         Clear out WMBS.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def createLargeFileBlock(self):
         """

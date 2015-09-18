@@ -50,7 +50,8 @@ class JobAccountantTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setupCouch("jobaccountant_t", "JobDump")
         self.testInit.setupCouch("jobaccountant_acdc_t", "ACDC", "GroupUser")
         self.testInit.setupCouch("jobaccountant_wmstats_t", "WMStats")
@@ -85,7 +86,6 @@ class JobAccountantTest(unittest.TestCase):
         dbsLocationAction.execute(siteName = "srm-cms.cern.ch")
 
         self.testDir = self.testInit.generateWorkDir()
-        return
 
     def tearDown(self):
         """
@@ -93,10 +93,9 @@ class JobAccountantTest(unittest.TestCase):
 
         Clear out the WMBS and DBSBuffer database schemas.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
-        return
 
     def createConfig(self):
         """

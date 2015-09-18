@@ -25,16 +25,7 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.WMException         import WMException
 from WMCore.WMBase import getWMBASE
 
-hasDatabase = True
-try:
-    from WMCore.WMInit import WMInit
-except ImportError as ex:
-    print str(ex)
-    print "NOTE: TestInit is being loaded without database support"
-    hasDatabase = False
-
-# Sorry for the global, but I think this should go here
-trashDatabases = False  # delete databases after every test?
+from WMCore.WMInit import WMInit
 
 class TestInitException(WMException):
     """
@@ -43,20 +34,6 @@ class TestInitException(WMException):
     You should see this only if something is wrong setting up the database connection
     Still, just in case...
     """
-
-def deleteDatabaseAfterEveryTest(areYouSerious):
-    """
-    this method handles whether or not TestInit will be vicious to databases
-    """
-    # python is idiotic for its scoping system
-    global trashDatabases
-    if areYouSerious == "I'm Serious":
-        print "We are going to trash databases after every test"
-        trashDatabases = True
-    else:
-        #"I'm glad you weren't serious"
-        print "We are not going to trash databases after every test"
-        trashDatabases = False
 
 def requiresPython26(testMethod, *args, **kwargs):
     """
@@ -91,10 +68,7 @@ class TestInit:
         self.testClassName = testClassName
         self.testDir = None
         self.currModules = []
-        global hasDatabase
-        self.hasDatabase = hasDatabase
-        if self.hasDatabase:
-            self.init = WMInit()
+        self.init = WMInit()
         self.deleteTmp = True
 
     def __del__(self):
@@ -116,7 +90,6 @@ class TestInit:
         Sets logging parameters
         """
         # remove old logging instances.
-        return
         logger1 = logging.getLogger()
         logger2 = logging.getLogger(self.testClassName)
         for logger in [logger1, logger2]:
@@ -155,7 +128,19 @@ class TestInit:
         else:
             raise RuntimeError("Unrecognized dialect %s" % dialectPart)
 
-    def setDatabaseConnection(self, connectUrl=None, socket=None, destroyAllDatabase = False):
+    def connectUrl(self, dbName=None):
+        "Helper function to fetch construct connectURL for given database name"
+        dbUrl = os.getenv("DATABASE", None)
+        if not dbUrl:
+            raise Exception("Please setup DATABASE in your environment")
+        dialect, dburn = dbUrl.split("://")
+        if dbName: # we'll create full url, e.g. mysql://localhost/dbname
+            dburn = '%s/%s' % (dburn.split('/')[0], dbName)
+        else: # we'll create short url, e.g. mysql://localhost
+            dburn = dburn.split('/')[0]
+        return '%s://%s' % (dialect, dburn)
+
+    def setDatabaseConnection(self, connectUrl=None, socket=None, reuse=False):
         """
         Set up the database connection by retrieving the environment
         parameters.
@@ -163,27 +148,12 @@ class TestInit:
         The destroyAllDatabase option is for testing ONLY.  Never flip that switch
         on in any other instance where you don't know what you're doing.
         """
-        if not self.hasDatabase:
-            return
         config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
         self.coreConfig = config
         self.init.setDatabaseConnection(config.CoreDatabase.connectUrl,
                                         config.CoreDatabase.dialect,
-                                        config.CoreDatabase.socket)
+                                        config.CoreDatabase.socket, reuse=reuse)
 
-        if trashDatabases or destroyAllDatabase:
-            self.clearDatabase()
-
-        # Have to check whether or not database is empty
-        # If the database is not empty when we go to set the schema, abort!
-        result = self.init.checkDatabaseContents()
-        if len(result) > 0:
-            msg = "Database not empty, cannot set schema !\n"
-            msg += str(result)
-            logging.error(msg)
-            raise TestInitException(msg)
-
-        return
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -196,8 +166,6 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
-        if not self.hasDatabase:
-            return
         defaultModules = ["WMCore.WMBS"]
         if not useDefault:
             defaultModules = []
@@ -222,13 +190,11 @@ class TestInit:
 
         return
 
-    def getDBInterface(self):
-        "shouldbe called after connection is made"
-        if not self.hasDatabase:
-            return
-        myThread = threading.currentThread()
-
-        return myThread.dbi
+### VK no one use it I commented out
+#    def getDBInterface(self):
+#        "shouldbe called after connection is made"
+#        myThread = threading.currentThread()
+#        return myThread.dbi
 
     def getConfiguration(self, configurationFile = None, connectUrl = None, socket=None):
         """
@@ -289,16 +255,33 @@ class TestInit:
 
         return config
 
-    def clearDatabase(self, modules = []):
+    def prepareDatabase(self, dbname, socket=None):
         """
-        Database deletion. Global, ignore modules.
+        Prepare given database name to be used for tests.
+        Steps includes:
+        - connect to back-end using short url, i.e. without specifying database
+        - destroy existing db
+        - create db
+        - drop connection to database which will clean DBFactory object cache
+        - connect to back-end again using full url, i.e with database in URL
         """
-        if not self.hasDatabase:
-            return
+        self.setDatabaseConnection(self.connectUrl(), socket=socket, reuse=False)
+        self.init.destroyDatabase(dbname)
+        self.init.createDatabase(dbname)
+        self.init.dropDatabaseConnection(self.connectUrl(dbname))
+        self.setDatabaseConnection(self.connectUrl(dbname), socket=socket, reuse=False)
 
-        self.init.clearDatabase()
+    def createDatabase(self, dbname):
+        """
+        Create Database.
+        """
+        self.init.createDatabase(dbname)
 
-        return
+    def destroyDatabase(self, dbname=None, modules = []):
+        """
+        Destroy given database.
+        """
+        self.init.destroyDatabase(dbname)
 
     def attemptToCloseDBConnections(self):
         return

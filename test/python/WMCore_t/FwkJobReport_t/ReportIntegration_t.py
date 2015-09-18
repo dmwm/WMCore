@@ -40,7 +40,8 @@ class ReportIntegrationTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
                                                  "WMCore.WMBS"],
                                 useDefault = False)
@@ -119,7 +120,6 @@ class ReportIntegrationTest(unittest.TestCase):
         self.stateChangeAction.execute(jobs = [self.testJob])
 
         self.tempDir = tempfile.mkdtemp()
-        return
 
     def tearDown(self):
         """
@@ -127,7 +127,7 @@ class ReportIntegrationTest(unittest.TestCase):
 
         Clear out the database and the pickled report file.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
         try:
             os.remove(os.path.join(self.tempDir, "ProcReport.pkl"))
@@ -139,8 +139,6 @@ class ReportIntegrationTest(unittest.TestCase):
             os.rmdir(self.tempDir)
         except Exception as ex:
             pass
-
-        return
 
     def createConfig(self, workerThreads):
         """

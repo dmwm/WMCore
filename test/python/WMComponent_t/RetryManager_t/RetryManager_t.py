@@ -50,7 +50,8 @@ class RetryManagerTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.testInit.setupCouch("retry_manager_t/jobs", "JobDump")
@@ -65,17 +66,15 @@ class RetryManagerTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
-        return
 
     def tearDown(self):
         """
         Database deletion
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)
-        return
 
     def getConfig(self):
         """

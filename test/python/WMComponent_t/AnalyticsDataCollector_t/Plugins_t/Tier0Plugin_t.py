@@ -35,7 +35,8 @@ class Tier0PluginTest(unittest.TestCase):
         Setup the test environment
         """
         self.testInit = TestInit(__file__)
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(["WMCore.WMBS"])
         self.requestCouchDB = 'wmstats_plugin_t'
         self.testInit.setupCouch(self.requestCouchDB, 'T0Request')
@@ -57,7 +58,7 @@ class Tier0PluginTest(unittest.TestCase):
         Clear databases and delete files
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
 
         return

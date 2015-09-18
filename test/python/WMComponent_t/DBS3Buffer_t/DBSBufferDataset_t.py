@@ -26,13 +26,14 @@ class DBSBufferDatasetTest(unittest.TestCase):
     """
     def setUp(self):
         self.testInit = TestInit(__file__)
+        self.testDB = 'unittest_%s' % self.__class__.__name__
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 
     def tearDown(self):
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testBasic(self):
         """

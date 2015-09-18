@@ -40,7 +40,8 @@ class ResourceControlTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
                                                  "WMCore.ResourceControl",
                                                  "WMCore.BossAir"],
@@ -61,7 +62,6 @@ class ResourceControlTest(unittest.TestCase):
         self.insertState.execute(states)
 
         self.tempDir = self.testInit.generateWorkDir()
-        return
 
     def tearDown(self):
         """
@@ -70,8 +70,7 @@ class ResourceControlTest(unittest.TestCase):
         Clear the schema.
         """
         EmulatorHelper.resetEmulators()
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def createJobs(self):
         """

@@ -136,8 +136,8 @@ class JobTrackerTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"],
                                 useDefault = False)
         self.testInit.setupCouch("jobtracker_t/jobs", "JobDump")
@@ -174,7 +174,8 @@ class JobTrackerTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
+        self.testInit.destroyDatabase(self.testDB,
+                modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)

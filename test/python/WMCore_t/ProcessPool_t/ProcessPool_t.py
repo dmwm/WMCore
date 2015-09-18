@@ -18,18 +18,17 @@ class ProcessPoolTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.Agent.Database"],
                                 useDefault = False)
-        return
 
     def tearDown(self):
         """
         _tearDown_
 
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testA_ProcessPool(self):
         """

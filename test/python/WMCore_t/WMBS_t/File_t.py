@@ -32,7 +32,8 @@ class FileTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -45,16 +46,13 @@ class FileTest(unittest.TestCase):
         locationAction.execute(siteName = "site1", seName = "se1.cern.ch")
         locationAction.execute(siteName = "site2", seName = "se1.fnal.gov")
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testCreateDeleteExists(self):
         """

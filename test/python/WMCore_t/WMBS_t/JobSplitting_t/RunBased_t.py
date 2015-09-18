@@ -44,7 +44,8 @@ class EventBasedTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -131,17 +132,13 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunSubscription.create()
         self.singleRunMultipleLumiSubscription.create()
 
-
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Tear down WMBS architechture.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testExactRuns(self):
         """

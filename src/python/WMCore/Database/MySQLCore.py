@@ -39,6 +39,10 @@ def stringLengthCompare(a, b):
         return 1
 
 class MySQLInterface(DBInterface):
+
+    def __init__(self, logger, engine):
+        DBInterface.__init__(self, logger, engine)
+
     def substitute(self, origSQL, origBindsList):
         """
         _substitute_

@@ -42,7 +42,6 @@ class ReRecoTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         return
 

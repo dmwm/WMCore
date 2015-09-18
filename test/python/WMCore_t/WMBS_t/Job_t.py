@@ -40,7 +40,8 @@ class JobTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -53,15 +54,13 @@ class JobTest(unittest.TestCase):
         locationNew.execute(siteName = "test.site.ch", seName = "setest.site.ch")
         locationNew.execute(siteName = "test2.site.ch", seName = "setest2.site.ch")
 
-        return
-
     def tearDown(self):
         """
         _tearDown_
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def createTestJob(self, subscriptionType = "Merge"):
         """

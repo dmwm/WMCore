@@ -15,6 +15,19 @@ from WMCore.WMInit import WMInit, getWMBASE
 
 class WMInit_t(unittest.TestCase):
 
+    def setUp(self):
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.init = WMInit()
+        url     = os.environ.get("DATABASE")
+        dialect = os.environ.get("DIALECT", "mysql")
+        sock    = os.environ.get("DBSOCK", None)
+        self.init.setDatabaseConnection(url, dialect, sock)
+        self.init.destroyDatabase(self.testDB)
+        self.init.createDatabase(self.testDB)
+
+    def tierDown(self):
+        self.init.destroyDatabase(self.testDB)
+
     def testA(self):
 
         try:
@@ -29,53 +42,31 @@ class WMInit_t(unittest.TestCase):
 
         Testing the database stuff.
         """
+        self.init.createDatabase(self.testDB)
+        self.init.destroyDatabase(self.testDB)
 
-        init = WMInit()
-        url     = os.environ.get("DATABASE")
-        dialect = os.environ.get("DIALECT")
-        sock    = os.environ.get("DBSOCK", None)
+        self.init.createDatabase(self.testDB)
+        myThread = threading.currentThread()
+        fount = False
+        for row in myThread.dbi.processData("SHOW DATABASES"):
+            dbs = [r[0] for r in row.fetchall()]
+            if self.testDB in dbs:
+                found = True
+        self.assertEqual(found, True)
+        self.init.destroyDatabase(self.testDB)
 
-        init.setDatabaseConnection(url, dialect, sock)
-
-        try:
-            # Initial clear should work
-            myThread = threading.currentThread()
-            init.clearDatabase()
-
-            # Clear one after another should work
-            init.setSchema(modules = ['WMCore.WMBS'])
-            init.clearDatabase()
-            init.setSchema(modules = ['WMCore.WMBS'])
-            init.clearDatabase()
-
-            # Clear non-existant DB should work
-            # Drop the database, and then make sure the database gets recreated
-            a = myThread.dbi.engine.url.database
-            dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
-            myThread.dbi.processData("DROP DATABASE %s" % dbName)
-            dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
-            self.assertEqual(dbName, None)
-            init.clearDatabase()
-            dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
-            self.assertEqual(dbName, a)
-
-
-            init.setSchema(modules = ['WMCore.WMBS'])
-            myThread.transaction.begin()
-            myThread.transaction.processData("SELECT * FROM wmbs_job")
-            init.clearDatabase()
-            dbName = myThread.dbi.processData("SELECT DATABASE() AS dbname")[0].fetchall()[0][0]
-            self.assertEqual(dbName, a)
-            myThread.transaction.begin()
-            init.setSchema(modules = ['WMCore.WMBS'])
-            myThread.transaction.commit()
-        except:
-            init.clearDatabase()
-            raise
-
-        init.clearDatabase()
-
-        return
+        self.init.createDatabase(self.testDB)
+        self.init.setSchema(modules = ['WMCore.WMBS'])
+        myThread = threading.currentThread()
+        fount = False
+        for row in myThread.dbi.processData("SHOW DATABASES"):
+            dbs = [r[0] for r in row.fetchall()]
+            if self.testDB in dbs:
+                found = True
+        self.assertEqual(found, True)
+        myThread.transaction.begin()
+        myThread.transaction.commit()
+        self.init.destroyDatabase(self.testDB)
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,23 +31,19 @@ class ResultSetTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMQuality.TestDB"],
                                    useDefault = False)
 
         self.myThread = threading.currentThread()
-
-        return
 
     def tearDown(self):
         """
         Delete the ResultSet test class
 
         """
-        self.testInit.clearDatabase()
-        return
-
-
+        self.testInit.destroyDatabase(self.testDB)
 
     def testFullResultSet(self):
         """

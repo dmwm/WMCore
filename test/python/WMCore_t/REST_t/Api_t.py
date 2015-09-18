@@ -255,12 +255,12 @@ def load_server(engine):
 
 def start_server(engine):
     webtest.WebCase.PORT = PORT
-    cherrypy.log.screen = True
+#    cherrypy.log.screen = True
     engine.start()
     engine.block()
 
 def stop_server(proc, engine):
-    cherrypy.log.screen = True
+#    cherrypy.log.screen = True
     engine.stop()
     proc.terminate()
 

@@ -87,8 +87,8 @@ class BossAirTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
-        self.tearDown()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
         self.testInit.setupCouch("bossair_t/jobs", "JobDump")
@@ -147,15 +147,10 @@ class BossAirTest(unittest.TestCase):
         """
         Database deletion
         """
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
-
+        self.testInit.destroyDatabase(self.testDB,
+                modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
         self.testInit.delWorkDir()
-
         self.testInit.tearDownCouch()
-
-        return
-
-
 
     def getConfig(self):
         """

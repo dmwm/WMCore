@@ -25,12 +25,12 @@ class Create(DBCreator):
               """CREATE TABLE dbsbuffer_dataset
                         (
                            id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-                           path            VARCHAR(500) COLLATE latin1_general_cs UNIQUE NOT NULL,
+                           path            VARCHAR(255) COLLATE latin1_general_cs UNIQUE NOT NULL,
                            processing_ver  VARCHAR(255),
                            acquisition_era VARCHAR(255),
                            valid_status    VARCHAR(20),
                            global_tag      VARCHAR(255),
-                           parent          VARCHAR(500),
+                           parent          VARCHAR(255),
                            prep_id         VARCHAR(255)
                         ) ENGINE=InnoDB"""
 
@@ -58,7 +58,7 @@ class Create(DBCreator):
                            app_name varchar(100),
                            app_ver  varchar(100),
                            app_fam  varchar(100),
-                           pset_hash varchar(700),
+                           pset_hash varchar(255),
                            config_content LONGTEXT,
                            in_dbs int, 
                            UNIQUE (app_name, app_ver, app_fam, pset_hash)
@@ -80,8 +80,8 @@ class Create(DBCreator):
         self.create["03dbsbuffer_workflow"] = \
           """CREATE TABLE dbsbuffer_workflow (
                id                           INTEGER PRIMARY KEY AUTO_INCREMENT,
-               name                         VARCHAR(700),
-               task                         VARCHAR(700),
+               name                         VARCHAR(255),
+               task                         VARCHAR(255),
                block_close_max_wait_time    INTEGER UNSIGNED,
                block_close_max_files        INTEGER UNSIGNED,
                block_close_max_events       INTEGER UNSIGNED,
@@ -93,7 +93,7 @@ class Create(DBCreator):
         self.create["04dbsbuffer_file"] = \
           """CREATE TABLE dbsbuffer_file (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             lfn          VARCHAR(500) NOT NULL,
+             lfn          VARCHAR(255) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
              dataset_algo BIGINT UNSIGNED   NOT NULL,

@@ -44,7 +44,8 @@ class JobGroupTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
 
@@ -65,7 +66,7 @@ class JobGroupTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def createTestJobGroup(self, commitFlag = True):
         """

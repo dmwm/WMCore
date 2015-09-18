@@ -66,7 +66,7 @@ class CreateWMBSBase(DBCreator):
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             name        VARCHAR(700) NOT NULL,
+             name        VARCHAR(255) NOT NULL,
              open        INT(1)       NOT NULL DEFAULT 0,
              last_update INTEGER      NOT NULL,
              UNIQUE (name))"""
@@ -74,7 +74,7 @@ class CreateWMBSBase(DBCreator):
         self.create["02wmbs_file_details"] = \
           """CREATE TABLE wmbs_file_details (
              id           INTEGER      PRIMARY KEY AUTO_INCREMENT,
-             lfn          VARCHAR(700) NOT NULL,
+             lfn          VARCHAR(255) NOT NULL,
              filesize     BIGINT,
              events       INTEGER,
              first_event  BIGINT       NOT NULL DEFAULT 0,
@@ -148,9 +148,9 @@ class CreateWMBSBase(DBCreator):
         self.create["07wmbs_workflow"] = \
           """CREATE TABLE wmbs_workflow (
              id           INTEGER          PRIMARY KEY AUTO_INCREMENT,
-             spec         VARCHAR(700)     NOT NULL,
-             name         VARCHAR(700)     NOT NULL,
-             task         VARCHAR(700)     NOT NULL,
+             spec         VARCHAR(70)     NOT NULL,
+             name         VARCHAR(70)     NOT NULL,
+             task         VARCHAR(70)     NOT NULL,
              type         VARCHAR(255),
              owner        INTEGER          NOT NULL,
              alt_fs_close INT(1)           NOT NULL,
@@ -278,15 +278,15 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_job (
              id           INTEGER       PRIMARY KEY AUTO_INCREMENT,
              jobgroup     INTEGER       NOT NULL,
-             name         VARCHAR(255),
+             name         VARCHAR(70),
              state        INTEGER       NOT NULL,
              state_time   INTEGER       NOT NULL,
              retry_count  INTEGER       DEFAULT 0,
              couch_record VARCHAR(255),
              location     INTEGER,
              outcome      INTEGER       DEFAULT 0,
-             cache_dir    VARCHAR(767)  DEFAULT 'None',
-             fwjr_path    VARCHAR(767),
+             cache_dir    VARCHAR(70)  DEFAULT 'None',
+             fwjr_path    VARCHAR(70),
              FOREIGN KEY (jobgroup)
              REFERENCES wmbs_jobgroup(id) ON DELETE CASCADE,
              FOREIGN KEY (state) REFERENCES wmbs_job_state(id),

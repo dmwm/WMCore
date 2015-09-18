@@ -39,10 +39,9 @@ class ThreadPoolTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema()
-
-
 
     def tearDown(self):
         """
@@ -50,7 +49,7 @@ class ThreadPoolTest(unittest.TestCase):
         """
         # FIXME: this might not work if your not using socket.
 
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def testA(self):
         """

@@ -26,10 +26,10 @@ class WorkflowTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        return
 
     def tearDown(self):
         """
@@ -37,8 +37,7 @@ class WorkflowTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()
-        return
+        self.testInit.destroyDatabase(self.testDB)
 
     def testCreateDeleteExists(self):
         """

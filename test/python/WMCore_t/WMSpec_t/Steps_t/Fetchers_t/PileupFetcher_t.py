@@ -43,7 +43,6 @@ class PileupFetcherTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         EmulatorHelper.resetEmulators()
 

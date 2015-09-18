@@ -49,7 +49,8 @@ class JobSubmitterTest(unittest.TestCase):
         """
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
         self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
         self.testInit.setupCouch("jobsubmitter_t/fwjrs", "FWJRDump")
@@ -79,7 +80,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         Standard tearDown
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         EmulatorSetup.deleteConfig(self.configFile)

@@ -45,8 +45,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
-
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
 
@@ -73,7 +73,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Delete the database.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
 
     def stuffDatabase(self, spec = "TestWorkload.pkl"):
         """

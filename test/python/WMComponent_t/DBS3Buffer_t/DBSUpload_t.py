@@ -46,10 +46,10 @@ class DBSUploadTest(unittest.TestCase):
         setUp function for unittest
 
         """
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
         self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
@@ -78,7 +78,7 @@ class DBSUploadTest(unittest.TestCase):
 
         tearDown function for unittest
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
         EmulatorSetup.deleteConfig(self.configFile)
 

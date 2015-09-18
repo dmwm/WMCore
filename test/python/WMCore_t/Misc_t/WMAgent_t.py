@@ -108,7 +108,8 @@ class WMAgentTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",'WMCore.MsgService',
                                                  'WMCore.ResourceControl', 'WMCore.ThreadPool',
                                                  'WMCore.Agent.Database'],
@@ -148,26 +149,15 @@ class WMAgentTest(unittest.TestCase):
 
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
-        return
-
-
     def tearDown(self):
         """
         _tearDown_
 
         Tear down everything and go home.
         """
-
-        self.testInit.clearDatabase()
-
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.delWorkDir()
-        
         EmulatorSetup.deleteConfig(self.configFile)
-
-        return
-
-
-
 
     def createTestWorkload(self, workloadName = 'Test', emulator = True):
         """

@@ -9,34 +9,26 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class Destroy(DBFormatter):
 
-    def execute(self, subscription = None, conn = None, transaction = False):
-
-        sql = """SELECT DATABASE() AS dbname"""
-
-        results = self.dbi.processData(sql, {}, conn = conn,
-                                       transaction = transaction)
-
-        dbName = self.formatDict(results)[0]['dbname']
-
+    def execute(self, dbName = None, subscription = None, conn = None):
+        """Destroy database"""
+        # if dbname is not given we'll lookup current database name
+        if not dbName:
+            sql = """SELECT DATABASE() AS dbname"""
+            results = self.dbi.processData(sql, {}, conn = conn)
+            dbName = self.formatDict(results)[0]['dbname']
+        # if no database found, e.g. we connected to MySQL but not to specific database
+        # we exit, nothing to delete
         if dbName == None or dbName == 'None':
-            # Then we have no database.
-            # This presents us with a problem.  We've been asked to clear a
-            # non-existant DB.
-            # Obviously we can't drop it, so what we have to do is try
-            # to pull the URL from the threaded dbi and use that
-            # to create the proper db
-            dbName = self.dbi.engine.url.database
-        else:
+            return
+        # check among list of database if dbName is present
+        sql = """SHOW DATABASES"""
+        results = self.dbi.processData(sql, {}, conn = conn)
+        found = False
+        for row in self.formatDict(results):
+            if row['database'] == dbName:
+                found = True
+                break
+        # if dbName is found we can delete it
+        if found:
             sql = """DROP DATABASE %s""" % dbName
-            self.dbi.processData(sql, {}, conn = conn,
-                                 transaction = transaction)
-
-        sql = """CREATE DATABASE %s""" % dbName
-        self.dbi.processData(sql, {}, conn = conn,
-                             transaction = transaction)
-
-        sql = """USE %s""" % dbName
-        self.dbi.processData(sql, {}, conn = conn,
-                             transaction = transaction)
-
-        return
+            self.dbi.processData(sql, {}, conn = conn)

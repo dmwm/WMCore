@@ -17,7 +17,7 @@ class Exists(DBFormatter):
     def format(self, result):
         result = DBFormatter.format(self, result)
         if len(result) == 0:
-            return False
+            return None
         else:
             return int(result[0][0])
 

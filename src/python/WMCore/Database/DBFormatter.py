@@ -38,6 +38,18 @@ class DBFormatter(WMObject):
         t = datetime.datetime.now()
         return self.convertdatetime(t)
 
+# VK this is example of format method re-factoring if
+# we'll use ResultSetExampleDictConverter class
+#    def format(self, result):
+#        """
+#        Some standard formatting, put all records into a list
+#        """
+#        out = []
+#        for res in result:
+#            for row in res.fetchall():
+#                out.append(row)
+#            res.close()
+#        return out
     def format(self, result):
         """
         Some standard formatting, put all records into a list
@@ -61,6 +73,15 @@ class DBFormatter(WMObject):
             for i in r.fetchone():
                 out.append(i)
         return out
+
+# VK this is example of formatDict method re-factoring if
+# we'll use ResultSetExampleDictConverter class
+#    def formatDict(self, result):
+#        out = []
+#        for row in result:
+#            for item in row.fetchall():
+#                out.append(item)
+#        return out
 
     def formatDict(self, result):
         """
@@ -86,6 +107,16 @@ class DBFormatter(WMObject):
 
         return dictOut
 
+# VK this is example of formatOneDict method re-factoring if
+# we'll use ResultSetExampleDictConverter class
+#    def formatOneDict(self, result):
+#        """
+#        Return a dictionary representing the first record
+#        """
+#        if (len(result) == 0):
+#            return {}
+#        return result[0]
+
     def formatOneDict(self, result):
         """
         Return a dictionary representing the first record
@@ -109,7 +140,7 @@ class DBFormatter(WMObject):
         Use fetchmany(size = default arraysize = 50)
 
         """
-	if type(cursor.keys) == types.MethodType:
+        if type(cursor.keys) == types.MethodType:
             keys = [x.lower() for x in cursor.keys()]
         else:
             keys = [x.lower() for x in cursor.keys]

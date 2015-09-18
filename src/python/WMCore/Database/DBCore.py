@@ -7,10 +7,12 @@ Core Database APIs
 
 """
 
+import sqlalchemy
 
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Database.ResultSet import ResultSet
+from WMCore.WMException import WMException
 from copy import copy
 import WMCore.WMLogging
 
@@ -28,9 +30,6 @@ class DBInterface(WMObject):
         Test the hell out of it
         Support executemany()
     """
-
-    logger = None
-    engine = None
 
     def __init__(self, logger, engine):
         self.logger = logger
@@ -63,14 +62,9 @@ class DBInterface(WMObject):
             resultProxy = connection.execute(s)
         else:
             resultProxy = connection.execute(s, b)
-
-        if returnCursor:
-            return resultProxy
-
-        result = ResultSet()
-        result.add(resultProxy)
-        resultProxy.close()
-        return result
+        yield resultProxy
+        if not returnCursor:
+            resultProxy.close()
 
     def executemanybinds(self, s=None, b=None, connection=None,
                          returnCursor=False):
@@ -92,27 +86,18 @@ class DBInterface(WMObject):
 
         s = s.strip()
         if s.lower().endswith('select', 0, 6):
-            """
-            Trying to select many
-            """
+            # Trying to select many
             if returnCursor:
-                result = []
                 for bind in b:
-                    result.append(connection.execute(s, bind))
+                    result = connection.execute(s, bind)
+                    yield result
             else:
-                result = ResultSet()
                 for bind in b:
                     resultproxy = connection.execute(s, bind)
-                    result.add(resultproxy)
+                    yield resultproxy
                     resultproxy.close()
-
-            return self.makelist(result)
-
-        """
-        Now inserting or updating many
-        """
         result = connection.execute(s, b)
-        return self.makelist(result)
+        yield result
 
     def connection(self):
         """
@@ -120,85 +105,91 @@ class DBInterface(WMObject):
         """
         return self.engine.connect()
 
-
     def processData(self, sqlstmt, binds={}, conn=None,
-                    transaction=False, returnCursor=False):
+                    transaction=True, returnCursor=False):
+        """Wrapper around _processData generator"""
+        results = []
+        connection = conn if conn else self.connection()
+#        print("### VK processData engine obj=%s, engine=%s, sql=%s, binds=%s, conn=%s, trainsaction=%s" \
+#                % (hex(id(self.engine)), self.engine.__dict__['engine'], sqlstmt, binds, conn, transaction))
+        gen = self._processData(sqlstmt, binds, connection, transaction, returnCursor)
+        for resultproxy in gen:
+            results.append(ResultSet(resultproxy))
+        if not conn:
+            connection.close()
+        return results
+
+    def _processData(self, sqlstmt, binds={}, connection=None,
+                    transaction=True, returnCursor=False):
         """
         set conn if you already have an active connection to reuse
         set transaction = True if you already have an active transaction
 
         """
-        connection = None
-        try:
-            if not conn:
-                connection = self.connection()
-            else:
-                connection = conn
+        # Can take either a single statement or a list of statements and binds
+        sqlstmt = self.makelist(sqlstmt)
+        binds = self.makelist(binds)
+        if len(sqlstmt) > 0 and (len(binds) == 0 or (binds[0] == {} or binds[0] == None)):
+            if transaction:
+                trans = connection.begin()
 
-            result = []
-            # Can take either a single statement or a list of statements and binds
-            sqlstmt = self.makelist(sqlstmt)
-            binds = self.makelist(binds)
-            if len(sqlstmt) > 0 and (len(binds) == 0 or (binds[0] == {} or binds[0] == None)):
-                # Should only be run by create statements
-                if not transaction:
-                    #WMCore.WMLogging.sqldebug("transaction created in DBInterface")
-                    trans = connection.begin()
+            for i in sqlstmt:
+                gen = self.executebinds(i, connection=connection,
+                                      returnCursor=returnCursor)
+                for rec in gen:
+                    yield rec
 
-                for i in sqlstmt:
-                    r = self.executebinds(i, connection=connection,
-                                          returnCursor=returnCursor)
-                    result.append(r)
+            if transaction:
+                trans.commit()
+        elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
+            #Run single SQL statement for a list of binds - use execute_many()
+            if transaction:
+                trans = connection.begin()
+            while(len(binds) > self.maxBindsPerQuery):
+                gen = self._processData(sqlstmt, binds[:self.maxBindsPerQuery],
+                                               conn=connection, transaction=True,
+                                               returnCursor=returnCursor)
+                for rec in gen:
+                    yield rec
+                binds = binds[self.maxBindsPerQuery:]
 
-                if not transaction:
-                    trans.commit()
-            elif len(binds) > len(sqlstmt) and len(sqlstmt) == 1:
-                #Run single SQL statement for a list of binds - use execute_many()
-                if not transaction:
-                    trans = connection.begin()
-                while(len(binds) > self.maxBindsPerQuery):
-                    result.extend(self.processData(sqlstmt, binds[:self.maxBindsPerQuery],
-                                                   conn=connection, transaction=True,
-                                                   returnCursor=returnCursor))
-                    binds = binds[self.maxBindsPerQuery:]
+            for i in sqlstmt:
+                gen = self.executemanybinds(i, binds, connection=connection,
+                                                    returnCursor=returnCursor)
+                for rec in gen:
+                    yield rec
 
-                for i in sqlstmt:
-                    result.extend(self.executemanybinds(i, binds, connection=connection,
-                                                        returnCursor=returnCursor))
-                if not transaction:
-                    trans.commit()
-            elif len(binds) == len(sqlstmt):
-                # Run a list of SQL for a list of binds
-                if not transaction:
-                    trans = connection.begin()
+            if transaction:
+                trans.commit()
+        elif len(binds) == len(sqlstmt):
+            # Run a list of SQL for a list of binds
+            if transaction:
+                trans = connection.begin()
 
-                for i, s in enumerate(sqlstmt):
-                    b = binds[i]
+            for i, s in enumerate(sqlstmt):
+                b = binds[i]
 
-                    r = self.executebinds(s, b, connection=connection,
-                                          returnCursor=returnCursor)
-                    result.append(r)
+                gen = self.executebinds(s, b, connection=connection,
+                                      returnCursor=returnCursor)
+                for rec in gen:
+                    yield rec
 
-                if not transaction:
-                    trans.commit()
-            else:
-                self.logger.exception(
-                    "DBInterface.processData Nothing executed, problem with your arguments")
-                self.logger.exception(
-                    "DBInterface.processData SQL = %s" % sqlstmt)
-                WMCore.WMLogging.sqldebug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
-                WMCore.WMLogging.sqldebug('DBInterface.processData  binds are %s items long' % len(binds))
-                assert_value = False
-                if len(binds) == len(sqlstmt):
-                    assert_value = True
-                WMCore.WMLogging.sqldebug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
-                WMCore.WMLogging.sqldebug('sql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' %
-                                           (sqlstmt, binds, connection, transaction))
-                WMCore.WMLogging.sqldebug('type check:\nsql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' %
-                                           (type(sqlstmt), type(binds), type(connection), type(transaction)))
-                raise Exception("""DBInterface.processData Nothing executed, problem with your arguments
-                Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds)))
-        finally:
-            if not conn and connection != None:
-                connection.close() # Return connection to the pool
-        return result
+            if transaction:
+                trans.commit()
+        else:
+            self.logger.exception(
+                "DBInterface.processData Nothing executed, problem with your arguments")
+            self.logger.exception(
+                "DBInterface.processData SQL = %s" % sqlstmt)
+            WMCore.WMLogging.sqldebug('DBInterface.processData  sql is %s items long' % len(sqlstmt))
+            WMCore.WMLogging.sqldebug('DBInterface.processData  binds are %s items long' % len(binds))
+            assert_value = False
+            if len(binds) == len(sqlstmt):
+                assert_value = True
+            WMCore.WMLogging.sqldebug('DBInterface.processData are binds and sql same length? : %s' % (assert_value))
+            WMCore.WMLogging.sqldebug('sql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' %
+                                       (sqlstmt, binds, connection, transaction))
+            WMCore.WMLogging.sqldebug('type check:\nsql: %s\n binds: %s\n, connection:%s\n, transaction:%s\n' %
+                                       (type(sqlstmt), type(binds), type(connection), type(transaction)))
+            raise Exception("""DBInterface.processData Nothing executed, problem with your arguments
+            Probably mismatched sizes for sql (%i) and binds (%i)""" % (len(sqlstmt), len(binds)))

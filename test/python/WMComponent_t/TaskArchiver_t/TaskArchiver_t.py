@@ -67,7 +67,8 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMComponent.DBS3Buffer"],
                                 useDefault = False)
         self.databaseName = "taskarchiver_t_0"
@@ -100,21 +101,18 @@ class TaskArchiverTest(unittest.TestCase):
         self.uploadPublishInfo = False
         self.uploadPublishDir  = None
 
-        return
-
     def tearDown(self):
         """
         Database deletion
         """
         myThread = threading.currentThread()
 
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.destroyDatabase(self.testDB, modules = ["WMCore.WMBS"])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
         if self.alertsReceiver:
             self.alertsReceiver.shutdown()
             self.alertsReceiver = None
-        return
 
     def getConfig(self):
         """

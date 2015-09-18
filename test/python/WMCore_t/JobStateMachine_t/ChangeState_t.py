@@ -44,7 +44,8 @@ class TestChangeState(unittest.TestCase):
         self.transitions = Transitions()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testDB = 'unittest_%s' % self.__class__.__name__
+        self.testInit.prepareDatabase(self.testDB)
         self.testInit.setupCouch("changestate_t/jobs", "JobDump")
         self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")
         self.testInit.setupCouch("job_summary", "WMStats")
@@ -61,7 +62,6 @@ class TestChangeState(unittest.TestCase):
         self.couchServer = CouchServer(dburl = couchurl)
         self.config = self.testInit.getConfiguration()
         self.taskName = "/TestWorkflow/Task"
-        return
 
     def tearDown(self):
         """
@@ -69,9 +69,8 @@ class TestChangeState(unittest.TestCase):
 
         Cleanup the databases.
         """
-        self.testInit.clearDatabase()
+        self.testInit.destroyDatabase(self.testDB)
         self.testInit.tearDownCouch()
-        return
 
     def testCheck(self):
         """

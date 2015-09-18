@@ -139,7 +139,9 @@ if can_nose:
         # if you set this to true, I will really delete your database
         #  after every test
         # WARNING WARNING WARNING
-        user_options = [\
+        user_options = [('reallyDeleteMyDatabaseAfterEveryTest=',
+                         None,
+                         'If you set this I WILL DELETE YOUR DATABASE AFTER EVERY TEST. DO NOT RUN ON A PRODUCTION SYSTEM'),
                          ('buildBotMode=',
                           None,
                           'Are we running inside buildbot?'),

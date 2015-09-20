@@ -135,7 +135,10 @@ class UserFileCache(Service):
         Upload the tarfile fileName to the user file cache. Returns the hash of the content of the file
         which can be used to retrieve the file later on.
         """
-        params = [('hashkey', calculateChecksum(fileName, excludeList))]
+
+        #The parameter newchecksum tells the crabcace to use the new algorithm. It's there
+        #for guarantee backward compatibility
+        params = [('hashkey', calculateChecksum(fileName, excludeList)), ('newchecksum', '1')]
 
         resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'file',

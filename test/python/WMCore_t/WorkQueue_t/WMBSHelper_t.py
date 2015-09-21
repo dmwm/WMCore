@@ -955,6 +955,12 @@ class WMBSHelperTest(unittest.TestCase):
 
     def testMCFakeFileInjection(self):
         """Inject fake Monte Carlo files into WMBS"""
+
+        # This test is failing because the name of the couch DB is set to None
+        # in TestMonteCarloWorkloadFactory.getMCArgs() but changing it to
+        # "reqmgr_config_cache_t" from StdBase test arguments does not fix the
+        # situation. testDuplicateSubscription probably has the same issue
+
         self.setupMCWMSpec()
 
         mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,

@@ -13,7 +13,6 @@ class Request(dict):
         self.setdefault("RequestPriority", None)
         self.setdefault("RequestNumEvents", None)
         self.setdefault("RequestSizeFiles", None)
-        self.setdefault("AcquisitionEra", None)
         self.setdefault("Group", None)
         self.setdefault("Requestor", None)
         self.setdefault("RequestWorkflow", None)

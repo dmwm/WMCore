@@ -16,7 +16,21 @@ from WMCore.ReqMgr.Tools.cms import releases, architectures
 def workqueue_stat_validation(request_args):
     stat_keys = ['total_jobs', 'input_lumis', 'input_events', 'input_num_files']
     return set(request_args.keys()) == set(stat_keys)
+
+def update_args_resubmission(request_args):
+    """
+    update the proper values for resubmission requst
+    """
+    request_name = request_args["OriginalRequestName"]
+    workload = WMWorkloadHelper()
+    workload.loadSpecFromCouch(request_args["OriginalRequestCouchURL"], request_name)
+    task = workload.getTaskByPath(request_args["InitialTaskPath"])
     
+    # overwrite the argument with value (This need to be overwirted from workflow params to specific task in acdc)
+    request_args["AcquisitionEra"] = task.getAcquisitionEra()
+    request_args["ProcessingVersion"] = task.getProcessingVersion()
+    request_args["ProcessingString"] = task.getProcessingString()
+ 
 def validate_request_update_args(request_args, config, reqmgr_db_service, param):
     """
     param and safe structure is RESTArgs structure: named tuple
@@ -86,9 +100,13 @@ def validate_request_create_args(request_args, config, *args, **kwargs):
     
     # get the spec type and validate arguments
     spec = loadSpecByType(request_args["RequestType"])
+    
+    #If it is resumission request need to do some special update
     if request_args["RequestType"] == "Resubmission":
         request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host, 
                                                              config.couch_reqmgr_db)
+        update_args_resubmission(request_args)
+        
     workload = spec.factoryWorkloadConstruction(request_args["RequestName"], 
                                                 request_args)
     return workload, request_args

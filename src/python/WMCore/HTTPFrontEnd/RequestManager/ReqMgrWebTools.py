@@ -352,6 +352,19 @@ def getNewRequestSchema(reqInputArgs):
         reqSchema['Requestor'], requestString, currentTime, secondFraction)
     else:
         reqSchema['RequestName'] = "%s_%s_%s" % (reqSchema['Requestor'], currentTime, secondFraction)
+    
+    if reqSchema["RequestType"] == "Resubmission":
+        #If request is resubmission type update the Schema with some parameters
+        request_name = reqSchema["OriginalRequestName"]
+        originalRequest = GetRequest.getRequestByName(request_name)
+        workload = loadWorkload(originalRequest)
+            
+        task = workload.getTaskByPath(reqSchema["InitialTaskPath"])
+        
+        # overwrite the argument with value (This need to be overwirted from workflow params to specific task in acdc)
+        reqSchema["AcquisitionEra"] = task.getAcquisitionEra()
+        reqSchema["ProcessingVersion"] = task.getProcessingVersion()
+        reqSchema["ProcessingString"] = task.getProcessingString()
     return reqSchema
 
 
@@ -484,6 +497,8 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign()) 
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
+    schema['ProcessingVersion']  = str(helper.getProcessingVersion())
+    schema['ProcessingString']  = str(helper.getProcessingString())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
 

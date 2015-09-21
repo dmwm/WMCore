@@ -7,7 +7,6 @@ Handles site whitelist/blacklist info as well.
 
 """
 
-import types
 import cherrypy
 import threading
 
@@ -174,7 +173,6 @@ class Assign(WebAPI):
         blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
         blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
         blockCloseMaxSize = helper.getBlockCloseMaxSize()
-
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
 
         return self.templatepage("Assign", requests = [request], teams = teams,
@@ -270,7 +268,7 @@ class Assign(WebAPI):
         for key in kwargs.keys():
             try:
                 decodedArgs[key] = JsonWrapper.loads(kwargs[key])
-            except:
+            except Exception:
                 #Probably wasn't JSON
                 decodedArgs[key] = kwargs[key]
         kwargs = decodedArgs
@@ -312,32 +310,36 @@ class Assign(WebAPI):
         helper = Utilities.loadWorkload(request)
 
         #Validate the different parts of the processed dataset
-        processedDatasetParts = ["AcquisitionEra", "ProcessingVersion"]
-        if kwargs.get("ProcessingString", None):
-            processedDatasetParts.append("ProcessingString")
-        for field in processedDatasetParts:
-            if type(kwargs[field]) == dict:
+        processedDatasetParts = {"AcquisitionEra": helper.getAcquisitionEra(),
+                                 "ProcessingString": helper.getProcessingString(),
+                                 "ProcessingVersion": helper.getProcessingVersion()}
+        for field, origValue in processedDatasetParts.iteritems():
+            if field in kwargs and isinstance(kwargs[field], dict):
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:
-                self.validate(kwargs[field], field)
+                self.validate(kwargs.get(field, origValue))
 
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
         blackList = kwargs.get("SiteBlacklist", [])
-        if type(whiteList) != list:
+        if not isinstance(whiteList, list):
             whiteList = [whiteList]
-        if type(blackList) != list:
+        if not isinstance(blackList, list):
             blackList = [blackList]
         helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
                                      wildcardDict = self.wildcardSites)
         res = set(whiteList) & set(blackList)
         if len(res):
             raise cherrypy.HTTPError(400, "White and blacklist the same site is not allowed %s" % list(res))
-        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
-        helper.setProcessingVersion(kwargs["ProcessingVersion"])
-        helper.setAcquisitionEra(kwargs["AcquisitionEra"])
-        helper.setProcessingString(kwargs.get("ProcessingString", None))
+        # Set AcquisitionEra, ProcessingString and ProcessingVersion
+        # which could be json encoded dicts
+        if 'AcquisitionEra' in kwargs:
+            helper.setAcquisitionEra(kwargs["AcquisitionEra"])
+        if 'ProcessingString' in kwargs:
+            helper.setProcessingString(kwargs["ProcessingString"])
+        if 'ProcessingVersion' in kwargs:
+            helper.setProcessingVersion(kwargs["ProcessingVersion"])
 
         # Now verify the output datasets
         datatier = []

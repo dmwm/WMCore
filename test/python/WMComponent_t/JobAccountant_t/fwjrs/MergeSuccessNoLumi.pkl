@@ -466,7 +466,7 @@ p150
 sg142
 (lp151
 sg143
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p152
 sg144
 (dp153

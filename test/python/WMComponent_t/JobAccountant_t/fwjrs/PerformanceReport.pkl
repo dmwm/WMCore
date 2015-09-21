@@ -798,7 +798,7 @@ aS'processingVer'
 p259
 atRp260
 sg251
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p261
 sg49
 (lp262
@@ -866,7 +866,7 @@ g22
 sg29
 g220
 sbsg258
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/backfill/1/Backfill/MinBias_TuneZ2_7TeV-pythia6/GEN-SIM-RAWDEBUG/110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/0000/D0740DBC-DF66-E011-A386-002618943858.root'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/backfill/1/Backfill/MinBias_TuneZ2_7TeV-pythia6/GEN-SIM-RAWDEBUG/110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6-v1/0000/D0740DBC-DF66-E011-A386-002618943858.root'
 p277
 sg256
 Nsg259
@@ -981,7 +981,7 @@ sg29
 g11
 sbsbsS'seName'
 p306
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p307
 sS'siteName'
 p308
@@ -1407,12 +1407,12 @@ g22
 g426
 atRp443
 sg436
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p444
 sg345
 g421
 sg434
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/logs/prod/2011/4/15/cmsdataops_Backfill_110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6_110414_162941/ReDigi/0000/0/6357ba44-66df-11e0-9b50-00221959e72f-0-0-logArchive.tar.gz'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/logs/prod/2011/4/15/cmsdataops_Backfill_110414_Type4_Redigi_01_T1_US_FNAL_MinBias_TuneZ2_7TeV-pythia6_110414_162941/ReDigi/0000/0/6357ba44-66df-11e0-9b50-00221959e72f-0-0-logArchive.tar.gz'
 p445
 sg402
 I0

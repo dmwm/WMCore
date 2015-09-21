@@ -517,7 +517,7 @@ p160
 (lp161
 sS'location'
 p162
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p163
 sS'checksums'
 p164

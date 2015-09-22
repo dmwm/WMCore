@@ -283,7 +283,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
-        self.assertEqual(len(jobs), 8, "Eight jobs must be in the jobgroup")
+        self.assertEqual(len(jobs), 7, "7 jobs must be in the jobgroup")
         self.assertEqual(jobs[0]["mask"].getRunAndLumis(), {0 : [[0, 2]]}, "Wrong mask for the first job")
         self.assertEqual(jobs[0]["estimatedJobTime"], 150 * 12)
         self.assertEqual(jobs[0]["estimatedDiskUsage"], 150 * 400)
@@ -303,12 +303,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
                          {3 : [[3, 3]], 4 : [[4, 4]], 5 : [[5, 5]]}, "Wrong mask for the sixth job")
         self.assertEqual(jobs[5]["estimatedJobTime"], 140 * 12)
         self.assertEqual(jobs[5]["estimatedDiskUsage"], 140 * 400)
-        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6 : [[18, 19]]}, "Wrong mask for the seventh job")
-        self.assertEqual(jobs[6]["estimatedJobTime"], (151.0 * 2 / 3) * 12)
-        self.assertEqual(jobs[6]["estimatedDiskUsage"], (151.0 * 2 / 3) * 400)
-        self.assertEqual(jobs[7]["mask"].getRunAndLumis(), {6 : [[20, 20]]}, "Wrong mask for the seventh job")
-        self.assertEqual(jobs[7]["estimatedJobTime"], (151.0 / 3) * 12)
-        self.assertEqual(jobs[7]["estimatedDiskUsage"], (151.0 / 3) * 400)
+        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6 : [[18, 20]]}, "Wrong mask for the seventh job")
+        self.assertEqual(jobs[6]["estimatedJobTime"], 150 * 12)
+        self.assertEqual(jobs[6]["estimatedDiskUsage"], 150 * 400)
+
         for job in jobs:
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
         # Test interactions of this algorithm with splitOnRun = True

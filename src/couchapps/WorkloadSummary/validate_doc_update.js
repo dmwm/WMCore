@@ -16,8 +16,7 @@ function(newDoc, oldDoc, userCtx) {
 
     // Either Developer or DataOps Operator/Manager required
     if (validation.hasGroupRole("dataops", "developer") ||
-        validation.hasGroupRole("dataops", "production-operator") ||
-        validation.hasGroupRole("dataops", "production-manager")) {
+        validation.hasGroupRole("dataops", "production-operator") {
         return true;
     }
 

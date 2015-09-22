@@ -7,7 +7,7 @@
     "CMSSWVersion": "CMSSW_7_2_0",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev;https://cmsweb.cern.ch/dqm/relval-test",
     "EnableHarvesting": "True",
     "DQMConfigCacheID": "cf0f08f510b46c89e73b3c1c3624d5d4",
     "DQMHarvestUnit": "multiRun",

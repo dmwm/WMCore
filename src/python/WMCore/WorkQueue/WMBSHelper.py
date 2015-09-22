@@ -728,7 +728,7 @@ class WMBSHelper(WMConnectionBase):
         else:
             lumiMask = None
             if runBlackList:
-                blackMask = LumiList(runs=runWhiteList)
+                blackMask = LumiList(runs=runBlackList)
 
         results = []
         for f in files:

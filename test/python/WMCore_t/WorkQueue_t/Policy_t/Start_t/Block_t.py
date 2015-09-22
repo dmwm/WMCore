@@ -92,80 +92,93 @@ class BlockTestCase(unittest.TestCase):
             count += 1
         self.assertEqual(tasks, count)
 
-
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
+
+        # No white/black lists
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
+        self.assertEqual(len(units), 47)
+        self.assertEqual(len(rejectedWork), 0)
 
         # Block blacklist
-        rerecoArgs2 = {'BlockBlacklist' : [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']}
-        rerecoArgs2.update(rerecoArgs)
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs2)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'BlockBlacklist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 46)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertNotEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockBlacklist'])
+        self.assertNotEqual(units[0]['Inputs'].keys(), newArgs['BlockBlacklist'])
 
         # Block Whitelist
-        rerecoArgs2['BlockWhitelist'] = [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']
-        rerecoArgs2['BlockBlacklist'] = []
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs2)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'BlockWhitelist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
+        self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
 
         # Block Mixed Whitelist
-        rerecoArgs2['BlockWhitelist'] = [dataset + '#04be2fcc-0b8f-11e1-b764-003048caaace']
-        rerecoArgs2['BlockBlacklist'] = [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs2)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'BlockWhitelist': [dataset + '#04be2fcc-0b8f-11e1-b764-003048caaace'],
+                        'BlockBlacklist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertEqual(units[0]['Inputs'].keys(), rerecoArgs2['BlockWhitelist'])
+        self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
 
         # Run Whitelist
-        rerecoArgs3 = {'RunWhitelist' : [181367]}
-        rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs3)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'RunWhitelist': [181367]})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace'])
 
         # Run Blacklist
-        rerecoArgs3 = {'RunBlacklist' : [180899, 180992, 1]}
-        rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs3)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'RunBlacklist': [180899, 180992, 1]})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 45)
         self.assertEqual(len(rejectedWork), 2)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#217ea8d8-0c4f-11e1-b764-003048caaace'])
 
         # Run Mixed Whitelist
-        rerecoArgs3 = {'RunBlacklist' : [180899], 'RunWhitelist' : [180992]}
-        rerecoArgs3.update(rerecoArgs)
-        blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                                     rerecoArgs3)
-        task = getFirstTask(blacklistBlockWorkload)
-        units, rejectedWork = Block(**self.splitArgs)(blacklistBlockWorkload, task)
+        newArgs = {}
+        newArgs.update(rerecoArgs)
+        newArgs.update({'RunBlacklist': [180899], 'RunWhitelist': [180992]})
+        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+
+        task = getFirstTask(workload)
+        units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])

@@ -1,16 +1,10 @@
 """
-Hello world example using WMCore.REST handling framework.
-Info class giving information about ReqMgr database.
-Teams, Groups, Software versions handling for ReqMgr.
-
+Gets the cache data from server cache. This shouldn't update the server cache.
+Just wait for the server cache to be updated
 """
-
-import logging
-import cherrypy
-
+from __future__ import (division, print_function)
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
-from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 
 from WMCore.REST.Format import JSONFormat
@@ -22,12 +16,8 @@ class ActiveRequestJobInfo(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)  
-        wmstats_url = "%s/%s" % (self.config.couch_host, self.config.couch_wmstats_db)
-        reqdb_url = "%s/%s" % (self.config.couch_host, self.config.couch_reqmgr_db)
-        self.wmstats = WMStatsReader(wmstats_url, reqdb_url, reqdbCouchApp = "ReqMgr")             
         
     def validate(self, apiobj, method, api, param, safe):
-        args_length = len(param.args)
         return            
 
     

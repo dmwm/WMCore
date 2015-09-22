@@ -67,6 +67,14 @@ class WMStatsReader():
                  "aborted-completed",
                  "rejected"]
     
+    T0_ACTIVE_STATUS = ["new",
+                        "Closed",
+                        "Merge",
+                        "Harvesting",
+                        "Processing Done",
+                        "AlcaSkim",
+                        "completed"]
+    
     def __init__(self, couchURL, reqdbURL = None, reqdbCouchApp = "ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
@@ -114,7 +122,7 @@ class WMStatsReader():
         
         options = self.setDefaultStaleOptions(options)
             
-        if keys and type(keys) == str:
+        if keys and isinstance(keys, str):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
             
@@ -282,6 +290,11 @@ class WMStatsReader():
     def getActiveData(self, jobInfoFlag = False):
         
         return self.getRequestByStatus(WMStatsReader.ACTIVE_STATUS, jobInfoFlag)
+    
+    
+    def getT0ActiveData(self, jobInfoFlag = False):
+        
+        return self.getRequestByStatus(WMStatsReader.T0_ACTIVE_STATUS, jobInfoFlag)
     
     def getRequestByStatus(self, statusList, jobInfoFlag = False, limit = None, skip = None, 
                            legacyFormat = False):

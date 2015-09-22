@@ -274,6 +274,8 @@ def processLocalStageOut():
                 localReport['option'] = subnode.attrs.get('value', None)
             elif subnode.name == 'catalog':
                 localReport['catalog'] = subnode.attrs.get('url', None)
+            elif subnode.name == 'phedex-node':
+                localReport['phedex-node'] = subnode.attrs.get('value', None)
         report['localStageOut'] = localReport
 
 @coroutine

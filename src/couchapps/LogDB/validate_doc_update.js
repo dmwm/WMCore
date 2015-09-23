@@ -40,7 +40,6 @@ function(newDoc, oldDoc, userCtx) {
    // The following rule aplies for all operation types
    var allowed = isGlobalAdm || matchesRole("admin", "group:reqmgr")
                              || matchesRole("web-service", "group:facops")
-                             || matchesRole("production-manager","group:dataops")
                              || matchesRole("t0-operator","group:dataops")
                              || matchesRole("production-operator", "group:dataops");
    

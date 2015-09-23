@@ -14,13 +14,12 @@ from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
 from WMCore.DataStructs.Run import Run
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
+
 
 class EventAwareLumiBasedTest(unittest.TestCase):
     """
@@ -213,7 +212,6 @@ class EventAwareLumiBasedTest(unittest.TestCase):
             self.assertEqual(job['estimatedDiskUsage'], 10000 * 400)
             self.assertEqual(job['estimatedJobTime'], 10000 * 12)
 
-
     def testB_NoFileSplitNoHardLimit(self):
         """
         _testB_NoFileSplitNoHardLimit_
@@ -225,18 +223,18 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
 
         # Create 100 files with 7 lumi per file and 0 events per lumi on average.
-        testSubscription = self.createSubscription(nFiles = 100, lumisPerFile = 7, twoSites = False,
-                                                   nEventsPerFile = 0)
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
+        testSubscription = self.createSubscription(nFiles=100, lumisPerFile=7, twoSites=False,
+                                                   nEventsPerFile=0)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
 
         # First test, the optimal settings are 360 events per job
         # As we have files with 0 events per lumi, this will configure the splitting to
         # a single job containing all files
-        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
-                               splitOnRun = False,
-                               events_per_job = 360,
-                               performance = self.performanceParams)
+        jobGroups = jobFactory(halt_job_on_file_boundaries=False,
+                               splitOnRun=False,
+                               events_per_job=360,
+                               performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 1, "There should be 1 job")
@@ -246,7 +244,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[0]['estimatedJobTime'], 0)
 
         # Create 7 files, each one with different lumi/event distributions
-        testFileset = Fileset(name = "FilesetA")
+        testFileset = Fileset(name="FilesetA")
         testFileset.create()
         testFileA = self.createFile("/this/is/file1", 250, 0, 5, "otherse.cern.ch")
         testFileB = self.createFile("/this/is/file2", 600, 1, 1, "otherse.cern.ch")
@@ -264,57 +262,55 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         testFileset.addFile(testFileG)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = self.testWorkflow,
-                                        split_algo = "EventAwareLumiBased",
-                                        type = "Processing")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiBased",
+                                        type="Processing")
         testSubscription.create()
 
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
         # Optimal settings are: jobs with 150 events per job
         # This means, the first file must be splitted in 3 lumis per job which would leave room
         # for another lumi in the second job, but the second file has a lumi too big for that
         # The 3rd job only contains the second file, the fourth and fifth job split the third file
-        jobGroups = jobFactory(halt_job_on_file_boundaries = False,
-                               splitOnRun = False,
-                               events_per_job = 150,
-                               performance = self.performanceParams)
+        jobGroups = jobFactory(halt_job_on_file_boundaries=False,
+                               splitOnRun=False,
+                               events_per_job=150,
+                               performance=self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
-        self.assertEqual(len(jobs), 8, "Eight jobs must be in the jobgroup")
-        self.assertEqual(jobs[0]["mask"].getRunAndLumis(), {0 : [[0, 2]]}, "Wrong mask for the first job")
+        self.assertEqual(len(jobs), 7, "7 jobs must be in the jobgroup")
+        self.assertEqual(jobs[0]["mask"].getRunAndLumis(), {0: [[0, 2]]}, "Wrong mask for the first job")
         self.assertEqual(jobs[0]["estimatedJobTime"], 150 * 12)
         self.assertEqual(jobs[0]["estimatedDiskUsage"], 150 * 400)
-        self.assertEqual(jobs[1]["mask"].getRunAndLumis(), {0 : [[3, 4]]}, "Wrong mask for the second job")
+        self.assertEqual(jobs[1]["mask"].getRunAndLumis(), {0: [[3, 4]]}, "Wrong mask for the second job")
         self.assertEqual(jobs[1]["estimatedJobTime"], 100 * 12)
         self.assertEqual(jobs[1]["estimatedDiskUsage"], 100 * 400)
-        self.assertEqual(jobs[2]["mask"].getRunAndLumis(), {1 : [[1, 1]]}, "Wrong mask for the third job")
+        self.assertEqual(jobs[2]["mask"].getRunAndLumis(), {1: [[1, 1]]}, "Wrong mask for the third job")
         self.assertEqual(jobs[2]["estimatedJobTime"], 600 * 12)
         self.assertEqual(jobs[2]["estimatedDiskUsage"], 600 * 400)
-        self.assertEqual(jobs[3]["mask"].getRunAndLumis(), {2 : [[4, 4]]}, "Wrong mask for the fourth job")
+        self.assertEqual(jobs[3]["mask"].getRunAndLumis(), {2: [[4, 4]]}, "Wrong mask for the fourth job")
         self.assertEqual(jobs[3]["estimatedJobTime"], 600 * 12)
         self.assertEqual(jobs[3]["estimatedDiskUsage"], 600 * 400)
-        self.assertEqual(jobs[4]["mask"].getRunAndLumis(), {2 : [[5, 5]]}, "Wrong mask for the fifth job")
+        self.assertEqual(jobs[4]["mask"].getRunAndLumis(), {2: [[5, 5]]}, "Wrong mask for the fifth job")
         self.assertEqual(jobs[4]["estimatedJobTime"], 600 * 12)
         self.assertEqual(jobs[4]["estimatedDiskUsage"], 600 * 400)
         self.assertEqual(jobs[5]["mask"].getRunAndLumis(),
-                         {3 : [[3, 3]], 4 : [[4, 4]], 5 : [[5, 5]]}, "Wrong mask for the sixth job")
+                         {3: [[3, 3]], 4: [[4, 4]], 5: [[5, 5]]}, "Wrong mask for the sixth job")
         self.assertEqual(jobs[5]["estimatedJobTime"], 140 * 12)
         self.assertEqual(jobs[5]["estimatedDiskUsage"], 140 * 400)
-        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6 : [[18, 19]]}, "Wrong mask for the seventh job")
-        self.assertEqual(jobs[6]["estimatedJobTime"], (151.0 * 2 / 3) * 12)
-        self.assertEqual(jobs[6]["estimatedDiskUsage"], (151.0 * 2 / 3) * 400)
-        self.assertEqual(jobs[7]["mask"].getRunAndLumis(), {6 : [[20, 20]]}, "Wrong mask for the seventh job")
-        self.assertEqual(jobs[7]["estimatedJobTime"], (151.0 / 3) * 12)
-        self.assertEqual(jobs[7]["estimatedDiskUsage"], (151.0 / 3) * 400)
+        self.assertEqual(jobs[6]["mask"].getRunAndLumis(), {6: [[18, 20]]}, "Wrong mask for the seventh job")
+        self.assertEqual(jobs[6]["estimatedJobTime"], 150 * 12)
+        self.assertEqual(jobs[6]["estimatedDiskUsage"], 150 * 400)
+
         for job in jobs:
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
         # Test interactions of this algorithm with splitOnRun = True
         # Make 2 files, one with 3 runs and a second one with the last run of the first
-        fileA = File(lfn = "/this/is/file1a", size = 1000,
-                       events = 2400)
+        fileA = File(lfn="/this/is/file1a", size=1000,
+                     events=2400)
         lumiListA = []
         lumiListB = []
         lumiListC = []
@@ -329,24 +325,24 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         fileB = self.createFile('/this/is/file2a', 200, 3, 5, "somese.cern.ch")
 
-        testFileset = Fileset(name = 'FilesetB')
+        testFileset = Fileset(name='FilesetB')
         testFileset.create()
         testFileset.addFile(fileA)
         testFileset.addFile(fileB)
         testFileset.commit()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = self.testWorkflow,
-                                        split_algo = "EventAwareLumiBased",
-                                        type = "Processing")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=self.testWorkflow,
+                                        split_algo="EventAwareLumiBased",
+                                        type="Processing")
         testSubscription.create()
 
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
         # The settings for this splitting are 700 events per job
-        jobGroups = jobFactory(splitOnRun = True,
-                               halt_job_on_file_boundaries = False,
-                               events_per_job = 700,
-                               performance = self.performanceParams)
+        jobGroups = jobFactory(splitOnRun=True,
+                               halt_job_on_file_boundaries=False,
+                               events_per_job=700,
+                               performance=self.performanceParams)
         self.assertEqual(len(jobGroups), 1, "There should be only one job group")
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 6, "Six jobs must be in the jobgroup")
@@ -362,7 +358,6 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[4]["estimatedDiskUsage"], 700 * 400)
         self.assertEqual(jobs[5]["estimatedJobTime"], 300 * 12)
         self.assertEqual(jobs[5]["estimatedDiskUsage"], 300 * 400)
-
 
     def testC_HardLimitSplitting(self):
         """

@@ -30,7 +30,7 @@ class LogDBTest(unittest.TestCase):
         logging.basicConfig()
         self.logger = logging.getLogger('LogDBTest')
 #        self.logger.setLevel(logging.DEBUG)
-        url = 'http://localhost:5984/logdb_t'
+        url = os.environ.get('COUCHURL', 'http://localhost:5984') + '/logdb_t'
         identifier = 'agentname'
         self.agent_inst = LogDB(url, identifier, logger=self.logger, create=True)
         self.agent_inst2 = LogDB(url, identifier, logger=self.logger, create=True, thread_name="Test")

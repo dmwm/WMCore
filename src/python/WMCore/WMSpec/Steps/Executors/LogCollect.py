@@ -69,7 +69,13 @@ class LogCollect(Executor):
 
         stageOutParams = {"command": "srmv2-lcg",
                           "se-name": seName,  "lfn-prefix": lfnPrefix}
+
+        # Set EOS stage out params
+        seEOSName    = overrides.get('seName',    "srm-eoscms.cern.ch")
+        lfnEOSPrefix = overrides.get('lfnPrefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms/store/logs") 
         
+        stageEOSOutParams = {"command": "srmv2-lcg",
+                             "se-name": seEOSName,  "lfn-prefix": lfnEOSPrefix}    
         # Okay, we need a stageOut Manager
         useNewStageOutCode = False
         if getattr(self.step, 'newStageout', False) or \
@@ -79,6 +85,7 @@ class LogCollect(Executor):
             if not useNewStageOutCode:
                 # old style
                 stageOutMgr = StageOutMgr(**stageOutParams)
+                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
                 stageInMgr = StageInMgr()
                 deleteMgr = DeleteMgr()
             else:
@@ -92,6 +99,7 @@ class LogCollect(Executor):
                 #deleteMgr = DeleteMgr(retryPauseTime  = 0,
                 #                      numberOfRetries = 0)
                 stageOutMgr = StageOutMgr(**stageOutParams)
+                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
                 stageInMgr = StageInMgr()
                 deleteMgr = DeleteMgr()
         except Exception as ex:
@@ -206,6 +214,15 @@ class LogCollect(Executor):
             raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
+        try:
+            # try eos statge out
+            stageOutEOSMgr(tarInfo)
+        except Exception as ex:
+            #When stageOut fails print the message but do nothing.
+            msg = "Unable to stage out log archive to EOS:\n"
+            msg += str(ex)
+            print "MSG: %s" % msg
+            
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']

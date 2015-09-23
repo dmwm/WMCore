@@ -448,12 +448,8 @@ class ReqMgrRESTModel(RESTModel):
     def putRequest(self, requestName=None, status=None, priority=None, stats=None):
         request = None
         if requestName:
-            try:
-                request = self.getRequest(requestName)
-            except Exception as ex:
-                # request presumably doesn't exist                
-                request = None
-    
+            request = self.getRequest(requestName)
+            
         if request == None:
             # Create a new request, with a JSON-encoded schema that is
             # sent in the body of the HTTP request

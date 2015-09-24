@@ -2,7 +2,6 @@
 
 '''
 from __future__ import (division, print_function) 
-import cherrypy
 
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
@@ -30,7 +29,7 @@ class T0DataCacheUpdate(CherryPyPeriodicTask):
                                           reqdbCouchApp = "T0Request")
                 jobData = wmstatsDB.getT0ActiveData(jobInfoFlag = True)
                 DataCache.setlatestJobData(jobData)
-            
+                self.logger.info("DataCache is updated: %s" % len(jobData))
         except Exception as ex:
-            cherrypy.log.error(str(ex))
+            self.logger.error(str(ex))
         return

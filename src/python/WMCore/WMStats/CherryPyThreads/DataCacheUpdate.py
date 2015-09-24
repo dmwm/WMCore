@@ -1,12 +1,8 @@
 '''
 
 '''
-import cherrypy
-
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
-from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 class DataCacheUpdate(CherryPyPeriodicTask):
@@ -31,7 +27,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
                                           reqdbCouchApp = "ReqMgr")
                 jobData = wmstatsDB.getActiveData(jobInfoFlag = True)
                 DataCache.setlatestJobData(jobData)
-            
+                self.logger.info("DataCache is updated: %s" % len(jobData))
         except Exception as ex:
-            cherrypy.log.error(str(ex))
+            self.logger.error(str(ex))
         return

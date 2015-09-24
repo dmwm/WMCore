@@ -80,7 +80,7 @@ class WMStatsReader():
         # set the connection for local couchDB call
         self._commonInit(couchURL)
         if reqdbURL:
-            self.reqDB = RequestDBReader(reqdbURL)
+            self.reqDB = RequestDBReader(reqdbURL, reqdbCouchApp)
         else:
             self.reqDB = None
         

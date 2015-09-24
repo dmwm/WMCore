@@ -9,7 +9,7 @@ Description: Base class for WMCore database related unit tests.
              environment variables and setup logic to setup/tear down actions
              based on database.
 """
-from __future__ import print_function, divide
+from __future__ import print_function, division
 
 # system modules
 import os
@@ -51,14 +51,14 @@ class DBTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         dao = daoFactory(classname = "CreateDatabase")
         try:
-            dao.execute(dbName=dbname)
+            dao.execute(dbName=dbName)
         except Exception as ex:
             msg =  "Critical error while attempting to create database=%s\n" % dbName
             msg += str(ex)
             myThread.logger.error(msg)
-            raise WMInitException(msg)
+            raise WMException(msg)
 
-    def deleteDatabase(self, dbname=None, modules = []):
+    def deleteDatabase(self, dbName=None):
         """Delete test database"""
         myThread = threading.currentThread()
         # close open transactions
@@ -76,9 +76,9 @@ class DBTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
         dao = daoFactory(classname = "DeleteDatabase")
         try:
-            dao.execute(dbname)
+            dao.execute(dbName)
         except Exception as ex:
             msg =  "Critical error while attempting to delete database=%s\n" % dbName
             msg += str(ex)
             myThread.logger.error(msg)
-            raise WMInitException(msg)
+            raise WMException(msg)

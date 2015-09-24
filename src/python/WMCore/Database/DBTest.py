@@ -9,7 +9,7 @@ Description: Base class for WMCore database related unit tests.
              environment variables and setup logic to setup/tear down actions
              based on database.
 """
-from __future__ import print_function
+from __future__ import print_function, divide
 
 # system modules
 import os

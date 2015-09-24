@@ -13,12 +13,11 @@ from __future__ import print_function
 
 # system modules
 import os
-import sys
 import unittest
 
 class DBTest(unittest.TestCase):
     def __init__(self, methodName='runTest'):
-        super(WMCoreUnitTest, self).__init__(methodName)
+        super(DBTest, self).__init__(methodName)
         self.dbName = os.environ.get('WMCORE_TEST_DATABASE', \
                 'unittest_%s' % self.__class__.__name__)
         print("WMCoreTestDB test %s database" % self.dbName)

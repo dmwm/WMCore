@@ -16,6 +16,7 @@ import socket
 from operator import itemgetter
 import traceback
 import threading
+from httplib import HTTPException
 
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
@@ -259,11 +260,21 @@ class WorkQueueReqMgrInterface():
             try:
                 # try reqmgr1 call if it fails
                 self.reqMgr.reportRequestStatus(request, reqmgrStatus)
+            except HTTPException as ex:
+                # If we get an HTTPException of 404 means reqmgr2 request
+                if ex.status == 404:
+                    # try reqmgr2 call
+                    msg = "%s : reqmgr2 request: %s" % (request, str(ex))
+                    self.logdb.post(request, msg, 'info')
+                    self.reqMgr2.updateRequestStatus(request, reqmgrStatus)
+                else:
+                    msg = "%s : fail to update status with HTTP error: %s" % (request, str(ex))
+                    self.logdb.post(request, msg, 'warning')
+                    raise ex
             except Exception as ex:
-                # try reqmgr2 call
-                msg = "%s : reqmgr2 request: %s" % (request, str(ex))
+                msg = "%s : fail to update status will try later: %s" % (request, str(ex))
                 self.logdb.post(request, msg, 'warning')
-                self.reqMgr2.updateRequestStatus(request, reqmgrStatus)                
+                raise ex                
 
     def markAcquired(self, request, url = None):
         """Mark request acquired"""

@@ -280,27 +280,19 @@ class FileTest(unittest.TestCase):
         assert testFileA == testFileC, \
                "ERROR: File load by ID didn't work"
 
-        assert type(testFileB["id"]) == int, \
-               "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int, \
-               "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int, \
-               "ERROR: File events is not an integer type."
-        assert type(testFileB["checksums"]) == dict, \
+        for attr in ["id", "size", "events", "first_event"]:
+            cond = isinstance(testFileB[attr], int) or isinstance(testFileB[attr], long)
+            msg = "ERROR: File %s is not an integer type" % attr
+            assert cond == True, "ERROR: File id is not an integer type."
+        assert isinstance(testFileB["checksums"], dict), \
                "ERROR: File cksum is not a string type."
-        assert type(testFileB["first_event"]) == int, \
-               "ERROR: File first_event is not an integer type."
 
-        assert type(testFileC["id"]) == int, \
-               "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int, \
-               "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int, \
-               "ERROR: File events is not an integer type."
-        assert type(testFileC["checksums"]) == dict, \
+        for attr in ["id", "size", "events", "first_event"]:
+            cond = isinstance(testFileC[attr], int) or isinstance(testFileC[attr], long)
+            msg = "ERROR: File %s is not an integer type" % attr
+            assert cond == True, "ERROR: File id is not an integer type."
+        assert isinstance(testFileC["checksums"], dict), \
                "ERROR: File cksum is not an string type."
-        assert type(testFileC["first_event"]) == int, \
-               "ERROR: File first_event is not an integer type."
 
         self.assertEqual(testFileC['checksums'], {'cksum': '101'})
 

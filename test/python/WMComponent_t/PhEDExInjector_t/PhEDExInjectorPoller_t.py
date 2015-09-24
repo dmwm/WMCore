@@ -14,7 +14,7 @@ import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
@@ -75,7 +75,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
 
-    def stuffDatabase(self, spec = "TestWorkload.pkl"):
+    def stuffDatabase(self):
         """
         _stuffDatabase_
 
@@ -165,15 +165,15 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
 
-        newBlockA = DBSBlock(name = self.blockAName,
-                             location = "srm-cms.cern.ch",
-                             das = None, workflow = None)
+        newBlockA = DBSBufferBlock(name = self.blockAName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
         newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
         newBlockA.status = 'Closed'
 
-        newBlockB = DBSBlock(name = self.blockBName,
-                             location = "srm-cms.cern.ch",
-                             das = None, workflow = None)
+        newBlockB = DBSBufferBlock(name = self.blockBName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
         newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
         newBlockB.status = 'Closed'
 

@@ -11,14 +11,12 @@ import threading
 import time
 import unittest
 import json
-import logging
 
 from tempfile import mkstemp
 from nose.plugins.attrib import attr
 
 from dbs.apis.dbsClient import DbsApi
 
-from WMCore.Agent.Configuration import Configuration
 from WMCore.DAOFactory      import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUID   import makeUUID
@@ -26,7 +24,7 @@ from WMCore.Services.UUID   import makeUUID
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
 
@@ -406,10 +404,9 @@ class DBSUploadTest(unittest.TestCase):
         for i in range(4):
             DBSBufferDataset(parentFiles[0]["datasetPath"]).create()
             blockName = parentFiles[0]["datasetPath"] + "#" + makeUUID()
-            dbsBlock = DBSBlock(blockName,
-                                location = "malpaquet",
-                                das =  None,
-                                workflow = None)
+            dbsBlock = DBSBufferBlock(blockName,
+                                      location = "malpaquet",
+                                      datasetpath =  None)
             dbsBlock.status = "Open"                
             dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
@@ -424,10 +421,9 @@ class DBSUploadTest(unittest.TestCase):
 
         DBSBufferDataset(childFiles[0]["datasetPath"]).create()
         blockName = childFiles[0]["datasetPath"] + "#" + makeUUID()
-        dbsBlock = DBSBlock(blockName,
-                            location = "malpaquet",
-                            das =  None,
-                            workflow = None)
+        dbsBlock = DBSBufferBlock(blockName,
+                                  location = "malpaquet",
+                                  datasetpath =  None)
         dbsBlock.status = "InDBS"
         dbsBlock.setDataset(childFiles[0]["datasetPath"], 'data', 'VALID')
         dbsUtil.createBlocks([dbsBlock])

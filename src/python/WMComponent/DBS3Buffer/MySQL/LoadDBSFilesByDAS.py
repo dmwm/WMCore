@@ -5,43 +5,47 @@ _LoadDBSFilesByDAS_
 MySQL implementation of LoadDBSFilesByDAS
 """
 
-
-
-
-import logging
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class LoadDBSFilesByDAS(DBFormatter):
-    fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
-                    files.events AS events,
-                    files.status AS status,
-                    files.block_id AS block,
-                    dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
-                    dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
-                    dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,
-                    dbsbuffer_dataset.global_tag AS global_tag,
-                    dbsbuffer_dataset.prep_id AS prep_id,
-                    dbsbuffer_workflow.name AS workflow,
-                    dbsbuffer_workflow.block_close_max_wait_time,
-                    dbsbuffer_workflow.block_close_max_files,
-                    dbsbuffer_workflow.block_close_max_events,
-                    dbsbuffer_workflow.block_close_max_size
-             FROM dbsbuffer_file files
-             INNER JOIN dbsbuffer_algo_dataset_assoc ON
-               files.dataset_algo = dbsbuffer_algo_dataset_assoc.id
-             INNER JOIN dbsbuffer_algo ON
-               dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
-             INNER JOIN dbsbuffer_dataset ON
-               dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id
-             INNER JOIN dbsbuffer_workflow ON
-               dbsbuffer_workflow.id = files.workflow
-             WHERE dbsbuffer_algo_dataset_assoc.id = :das
-             AND files.status = :status
-             AND NOT EXISTS (SELECT parent FROM dbsbuffer_file_parent dbfp
-                              INNER JOIN dbsbuffer_file dbf2 ON dbfp.parent = dbf2.id
-                              WHERE dbfp.child = files.id AND dbf2.status = :status)
-             ORDER BY files.id"""
+    fileInfoSQL = """SELECT dbsbuffer_file.id AS id,
+                            dbsbuffer_file.lfn AS lfn,
+                            dbsbuffer_file.filesize AS filesize,
+                            dbsbuffer_file.events AS events,
+                            dbsbuffer_file.status AS status,
+                            dbsbuffer_file.block_id AS block,
+                            dbsbuffer_algo.app_name AS app_name,
+                            dbsbuffer_algo.app_ver AS app_ver,
+                            dbsbuffer_algo.app_fam AS app_fam,
+                            dbsbuffer_algo.pset_hash AS pset_hash,
+                            dbsbuffer_algo.config_content,
+                            dbsbuffer_dataset.path AS dataset_path,
+                            dbsbuffer_dataset.global_tag AS global_tag,
+                            dbsbuffer_dataset.prep_id AS prep_id,
+                            dbsbuffer_workflow.name AS workflow,
+                            dbsbuffer_workflow.block_close_max_wait_time,
+                            dbsbuffer_workflow.block_close_max_files,
+                            dbsbuffer_workflow.block_close_max_events,
+                            dbsbuffer_workflow.block_close_max_size
+                     FROM dbsbuffer_file
+                     INNER JOIN dbsbuffer_algo_dataset_assoc ON
+                       dbsbuffer_file.dataset_algo = dbsbuffer_algo_dataset_assoc.id
+                     INNER JOIN dbsbuffer_algo ON
+                       dbsbuffer_algo_dataset_assoc.algo_id = dbsbuffer_algo.id
+                     INNER JOIN dbsbuffer_dataset ON
+                       dbsbuffer_algo_dataset_assoc.dataset_id = dbsbuffer_dataset.id AND
+                       dbsbuffer_dataset.path = :datasetpath
+                     INNER JOIN dbsbuffer_workflow ON
+                       dbsbuffer_workflow.id = dbsbuffer_file.workflow
+                     WHERE dbsbuffer_file.status = 'NOTUPLOADED'
+                     AND NOT EXISTS ( SELECT *
+                                      FROM dbsbuffer_file_parent
+                                      INNER JOIN dbsbuffer_file parent_file ON
+                                        parent_file.id = dbsbuffer_file_parent.parent AND
+                                        parent_file.status = 'NOTUPLOADED'
+                                      WHERE dbsbuffer_file_parent.child = dbsbuffer_file.id )
+                     ORDER BY dbsbuffer_file.id
+                     """
 
     getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id
                           FROM dbsbuffer_location
@@ -222,13 +226,14 @@ class LoadDBSFilesByDAS(DBFormatter):
             binds.append({'fileid': f})
         return binds
 
-    def execute(self, das, conn = None, transaction = False):
+    def execute(self, datasetpath, conn = None, transaction = False):
         """
         Execute multiple SQL queries to extract all binding information
         Use the first query to get the fileIDs
 
         """
-        result   = self.dbi.processData(self.fileInfoSQL, {'das': das, 'status': 'NOTUPLOADED'},
+        result   = self.dbi.processData(self.fileInfoSQL,
+                                        { 'datasetpath' : datasetpath },
                                         conn = conn,
                                         transaction = transaction)
         fileInfo = self.formatFileInfo(result)

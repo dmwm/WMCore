@@ -1049,7 +1049,7 @@ class PyCondorPlugin(BasePlugin):
                 if results[i].get("JobStatus",0)==3:
                     continue
                 else :
-                    ## For some strange race condition, schedd sometimes does not publish StatDate for a Running Job
+                    ## For some strange race condition, schedd sometimes does not publish StartDate for a Running Job
                     ## Get the entire classad for such a job
                     ## Do not crash WMA, wait for next polling cycle to get all the info.
                     if results[i].get("JobStatus",0)==2 and results[i].get("JobStartDate") is None :
@@ -1079,7 +1079,7 @@ class PyCondorPlugin(BasePlugin):
         __readCondorLog
         
         If schedd fails to give information about a job
-        Check the condor log file for ths job
+        Check the condor log file for this job
         Extract Exit status
 
         """
@@ -1117,20 +1117,26 @@ class PyCondorPlugin(BasePlugin):
             cres=condor.read_events(logfileobj,1)
             ulog=list(cres)
             if len(ulog) > 0:
-                _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
-                tmpDict["JobStatus"]=LogToScheddExitCodeMap(_tmpStat)
-                tmpDict["submitTime"]=int(ulog[-1]["QDate"])
-                tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"]) if ulog[-1]["JobStartDate"] is not None else 0
-                tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
-                tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
-                tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
-                _tmpID = tmpDict["WMAgentID"]
-                jobLogInfo[_tmpID] = tmpDict
+                if all (key in ulog[-1] for key in ("TriggerEventTypeNumber", "QDate", "JobStartDate",
+                                                    "EnteredCurrentStatus", "MachineAttrGLIDEIN_CMSSite0",
+                                                    "WMAgent_JobID")):
+
+                    _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
+                    tmpDict["JobStatus"]=LogToScheddExitCodeMap(_tmpStat)
+                    tmpDict["submitTime"]=int(ulog[-1]["QDate"])
+                    tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"])
+                    tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
+                    tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
+                    tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
+                    _tmpID = tmpDict["WMAgentID"]
+                    jobLogInfo[_tmpID] = tmpDict
+                else:
+                    logging.debug('%s is CORRUPT' % str(logFile))
             else :
                 logging.debug('%s is EMPTY' % str(logFile))
 
         logging.info("Retrieved %i Info from Condor Job Log file %s" % (len(jobLogInfo), logFile))
-                    
+
         return jobLogInfo
 
         

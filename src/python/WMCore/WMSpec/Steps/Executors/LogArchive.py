@@ -15,6 +15,7 @@ import signal
 import traceback
 
 from WMCore.WMException import WMException
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
@@ -140,18 +141,17 @@ class LogArchive(Executor):
                           "checksums": {'adler32': adler32, 'cksum' : cksum}}
             self.report.addOutputFile(outputModule = "logArchive", file = reportFile)
         except Alarm:
-            msg = "Indefinite hang during stageOut of logArchive"
-            logging.error(msg)
-            self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
+            logging.error(WM_JOB_ERROR_CODES[60405])
+            self.report.addError(self.stepName, 60405, "LogArchiveTimeout", WM_JOB_ERROR_CODES[60405])
             self.report.persist("Report.pkl")
-            raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
+            raise WMExecutionFailure(60405, "LogArchiveTimeout", WM_JOB_ERROR_CODES[60405])
         except WMException as ex:
-            self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
+            self.report.addError(self.stepName, 60406, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             raise ex
         except Exception as ex:
-            self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
+            self.report.addError(self.stepName, 60406, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             msg = "Failure in transferring logArchive tarball\n"

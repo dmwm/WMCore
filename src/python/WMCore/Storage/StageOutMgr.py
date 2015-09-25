@@ -71,7 +71,6 @@ class StageOutMgr:
         else:
             self.initialiseSiteConf()
 
-        self.failed = {}
         self.completedFiles = {}
         return
 
@@ -217,8 +216,6 @@ class StageOutMgr:
                 fileToStage['StageOutCommand'] = fallback['command']
                 print "attempting fallback"
                 self.completedFiles[fileToStage['LFN']] = fileToStage
-                if lfn in self.failed:
-                    del self.failed[lfn]
 
                 print "===> Stage Out Successful: %s" % fileToStage
                 return fileToStage

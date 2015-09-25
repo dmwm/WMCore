@@ -259,7 +259,8 @@ class Request(RESTEntity):
         campaign = kwargs.get("campaign", False)
         workqueue = kwargs.get("workqueue", False)
         team = kwargs.get("team", False)
-        
+        mc_pileup = kwargs.get("mc_pileup", False)
+        data_pileup = kwargs.get("data_pileup", False)
         # eventhing should be stale view. this only needs for test
         _nostale = kwargs.get("_nostale", False)
         option = {}
@@ -288,7 +289,10 @@ class Request(RESTEntity):
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bycampaign", option, campaign))
         if workqueue:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("byworkqueue", option, workqueue))
-        
+        if mc_pileup:
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bymcpileup", option, mc_pileup))
+        if data_pileup:
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydatapileup", option, data_pileup))
         #get interaction of the request
         result = self._intersection_of_request_info(request_info);
         if len(result) == 0:

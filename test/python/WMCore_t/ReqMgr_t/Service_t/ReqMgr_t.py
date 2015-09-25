@@ -70,6 +70,8 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         rerecoArgs = JsonWrapper.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoCreateArgs["PrepID"] = "test_prepid"
+        self.rerecoCreateArgs["MCPileup"] = "/MCdata/pileup/RAW"
+        self.rerecoCreateArgs["DataPileup"] = "/Data/pileup/RAW" 
         self.rerecoAssignArgs = rerecoArgs["assignRequest"]
         # overwrite rereco args
         self.rerecoAssignArgs["AcquisitionEra"] = "test_aqc"
@@ -166,6 +168,14 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(self.resultLength(respond), 1)
         
         respond = self.getRequestWithNoStale('inputdataset=%s' % self.rerecoCreateArgs["InputDataset"])
+        self.assertEqual(respond[1], 200)
+        self.assertEqual(self.resultLength(respond), 1)
+        
+        respond = self.getRequestWithNoStale('mc_pileup=%s' % self.rerecoCreateArgs["MCPileup"])
+        self.assertEqual(respond[1], 200)
+        self.assertEqual(self.resultLength(respond), 1)
+        
+        respond = self.getRequestWithNoStale('data_pileup=%s' % self.rerecoCreateArgs["DataPileup"])
         self.assertEqual(respond[1], 200)
         self.assertEqual(self.resultLength(respond), 1)
         

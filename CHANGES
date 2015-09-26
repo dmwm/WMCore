@@ -1,3 +1,138 @@
+1.0.9 to 1.0.10.pre5:
+  - Merge pull request #6287 from ticoann/pileupview
+  - create the view for MCPileup and DataPileup
+  - Merge pull request #6282 from hufnagel/pycondorplugin-corrupt-condorlog
+  - Merge pull request #6280 from ticoann/t0_wmstatsserver
+  - don't crash if the condor log has missing fields
+  - Merge pull request #6272 from amaltaro/double-dqm-upload
+  - fix tier0 wmstats using REST server
+  - Merge pull request #6279 from ticoann/reqmgr_2_reportstatus
+  - fix status mismatch when reqmgr is down but couch server is running
+  - Merge pull request #6277 from ericvaandering/fix_logdb
+  - Merge pull request #6271 from amaltaro/sync-roles
+  - Merge pull request #6276 from ericvaandering/8jobs
+  - LogDB has to use environment settings
+  - Cleanup the one function
+  - Fix this after Alan rounded
+  - Merge pull request #6275 from ericvaandering/46vs47
+  - Fix unit tests, variables were setup in the wrong order
+  - Enable double harvesting upload in the templates
+  - Update groups:roles authorized
+  - 1.0.10.pre4
+  - Merge pull request #6270 from ticoann/tier0_wmstatsserver2
+  - call directly couchdb for tier0_wmstats temporary
+  - 1.0.10.pre3
+  - Merge pull request #6267 from ticoann/tier0_wmagent_info_update
+  - Merge pull request #6269 from ticoann/tier0_wmstatsserver
+  - Merge pull request #6203 from amaltaro/redigi-tplt
+  - Merge pull request #6237 from AndresTanasijczuk/lumimaskFileBased
+  - Merge pull request #6218 from emaszs/iss4895push
+  - Merge pull request #6265 from ericvaandering/fix_blacklist
+  - tier0 wmstats server
+  - Merge pull request #6266 from amaltaro/merge-acdc
+  - Merge pull request #6268 from ericvaandering/0921a
+  - Doesn't fix anything, just adds a comment on what I found
+  - Do not override settings if they are not provided
+  - direct update agent status for Tier0 agent as well
+  - Should be set from blacklist, not whitelist
+  - 1.0.10.pre2
+  - Merge pull request #6261 from yuyiguo/master
+  - add DBSRESTFormatter.py
+  - Merge pull request #6259 from amaltaro/tstamp-view
+  - Fix tstamp LogDB view
+  - 1.0.10.pre1
+  - 1.1.0.pre1
+  - Merge pull request #6253 from amaltaro/workqueue-keyerror
+  - Merge pull request #6255 from AndresTanasijczuk/harness
+  - Merge pull request #6254 from amaltaro/dbs-log
+  - Merge pull request #6221 from vkuznet/jsonstreamer
+  - Read log messages format from config.
+  - Merge pull request #6252 from amaltaro/test-errorHandler
+  - Making DBS3Upload logs more friendly
+  - Replace a traceback by a warning in GQ
+  - fix ErrorHandler unittest
+  - Merge pull request #6225 from mmascher/lumi_corrections_eventaware
+  - Merge pull request #6248 from ericvaandering/fix_promptreco_test
+  - Merge pull request #6250 from amaltaro/reqmgr2-client
+  - Merge pull request #6249 from ericvaandering/fix_testaddfile
+  - Merge pull request #6204 from ericvaandering/mock_unittest
+  - fix key name in reqmgr2 client
+  - assertTrue is not a global
+  - Copy default arguments for non-optional args
+  - Merge pull request #6244 from ericvaandering/fix_lumi_max
+  - Merge pull request #6245 from ericvaandering/fix_setup_pset
+  - Merge pull request #6246 from ericvaandering/fix_service_tests
+  - Code reformatting
+  - Fix four tests on Services which fail because CVS does not exist at CERN anymore
+  - Remove exception in tearDown, get further with pileup fetcher
+  - Fix the case where a lumi in the list is completely inside the previous
+  - Merge pull request #6239 from ericvaandering/no_executable
+  - Adding phedex-node to localStageOut report, integration test for site-local-config.xml correctness
+  - Merge pull request #6238 from ericvaandering/compact_lumilist
+  - Fix format exception handling, in case of HTTPError it pass expires to the method, while method does not accept it; re-factor the code
+  - Add info() to the FakeLogger, replaces sets with builtin set
+  - Add a compacter to make these lists smaller and unique and a Unit test that checks it
+  - Executable bit prevents tests from running
+  - Support usage of a lumi-mask in FileBased splitting.
+  - Fix lumi correction bug when Nth and Nth-1 jobs share the same lumi. Fixes https://github.com/dmwm/CRABServer/issues/4747
+  - Implement correction for split lumis in EventAwareLumiBased splitting. See https://github.com/dmwm/CRABServer/issues/4801#issuecomment-139542046
+  - Merge pull request #6232 from ticoann/remove_alert_unittest
+  - Merge pull request #6199 from ticoann/workqueue_unittest_fix
+  - Merge pull request #6229 from ericvaandering/fix_harvestfix
+  - remove unittest related to Alert system
+  - fix wq errors
+  - Fix unit test
+  - Merge pull request #6226 from ericvaandering/fix_parentless_merge
+  - fixup pylint stuff
+  - Multiply disk usage numbers by 2 to account for PR 5812
+  - Merge pull request #6223 from ericvaandering/fix_CMSSW
+  - Minor reformatting
+  - Allow ARCH to be set, remove it
+  - Change type to instance as suggested by pylint
+  - Changes to support generator data as json stream
+  - Merge pull request #6213 from amaltaro/bump-deploy
+  - Merge pull request #6191 from vkuznet/fix_api_t4
+  - Merge pull request #6211 from ericvaandering/remove_archive
+  - Merge pull request #6201 from amaltaro/cap-resources-master
+  - Merge pull request #6216 from ericvaandering/update_psutil
+  - A few pylint complaints fixed
+  - Update to use both psutil 0.6.1 and 3.1.1
+  - Just update the deployment example
+  - Turn off oscillating test
+  - Merge pull request #6210 from vkuznet/pycurl-fix4
+  - Handle params=None use case
+  - Apply glideIn restrictions to resource estimation - master
+  - Merge pull request #6205 from vkuznet/pycurl-fix3
+  - Broke my own rules
+  - Fix pycurl to support HEAD verb; bug fix for data parsing
+  - Add stub/start for mocked unit tests and start of DBS
+  - New Redigi template to exercise other spec param
+  - Merge pull request #6194 from ticoann/fix_memory_leak
+  - Merge pull request #6196 from ticoann/1.0.9_cmsweb_fix_memory_leak
+  - Merge pull request #6169 from ericvaandering/fix_psutil_deprecation
+  - Merge pull request #6174 from ericvaandering/fix_flap_827a
+  - Merge pull request #6179 from amaltaro/scram-fix
+  - Merge pull request #6188 from amaltaro/poller-errors
+  - fix the memory leak in wmstats
+  - fix the memory leak in wmstats
+  - Use cherrypy.engine explicitly to avoid conflicts; remove unused imports
+  - All set of changes to make Api_t/Simple_t/Daemon_t unit test to work. PLEASE DO NOTE MERGE until the work is done
+  - Merge pull request #6190 from dmwm/revert-6183-fix_api_t2
+  - Revert "Fix unittest to work with cherrypy 3.2.2"
+  - Merge pull request #6184 from mmascher/fix_pycurl
+  - Merge pull request #6183 from vkuznet/fix_api_t2
+  - Add log=true to see why other tests are failing
+  - Changes to fix Api_t/Simple_t/Daemon_t tests; remove global authz key state; explicitly define cherrypy port; use local server within seprate process for unit tests
+  - Adapt error message in StatusPoller
+  - Use CMSSW python2.6 instead of the comp one
+  - Add a unit test for user file cache file removal
+  - pycurl_manager: really decode body data
+  - Fix unittest to work with cherrypy 3.2.2
+  - Update a type to isinstance
+  - Reformat and organize imports
+  - Fix lumi mask in ReReco test
+  - Updated for psutil 0.6.0 and virtual_memory()
+
 1.0.9 to 1.0.10.pre4:
   - Merge pull request #6270 from ticoann/tier0_wmstatsserver2
   - call directly couchdb for tier0_wmstats temporary

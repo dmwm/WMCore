@@ -21,8 +21,18 @@ class Run(WMObject):
     def __init__(self, runNumber = None, *newLumis):
         WMObject.__init__(self)
         self.run = runNumber
-        self.lumis = []
-        self.lumis.extend(newLumis)
+        self._lumis = []
+        self._lumis.extend(newLumis)
+
+    def __setattr__(self, name, value):
+        if name == "lumis":
+            self._lumis = value
+        else:
+            super(Run, self).__setattr__(name, value)
+
+    @property
+    def lumis(self):
+        return list(set(self._lumis))
 
     def __str__(self):
         return "Run%s:%s" % (self.run, list(self.lumis))
@@ -40,7 +50,7 @@ class Run(WMObject):
 
 
     def extend(self, items):
-        self.lumis.extend(items)
+        self._lumis.extend(items)
         return
 
     def __cmp__(self, rhs):

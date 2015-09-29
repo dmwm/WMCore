@@ -69,16 +69,25 @@ class LogCollect(Executor):
 
         stageOutParams = {"command": "srmv2-lcg",
                           "se-name": seName,  "lfn-prefix": lfnPrefix}
+
+        # Set EOS stage out params
+        seEOSName    = overrides.get('seName', "srm-eoscms.cern.ch")
+        lfnEOSPrefix = overrides.get('lfnPrefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms") 
         
+        stageEOSOutParams = {"command": "srmv2-lcg",
+                             "se-name": seEOSName,  "lfn-prefix": lfnEOSPrefix}    
+
         # Okay, we need a stageOut Manager
         useNewStageOutCode = False
         if getattr(self.step, 'newStageout', False) or \
             ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
+
         try:
             if not useNewStageOutCode:
                 # old style
                 stageOutMgr = StageOutMgr(**stageOutParams)
+                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
                 stageInMgr = StageInMgr()
                 deleteMgr = DeleteMgr()
             else:
@@ -92,6 +101,7 @@ class LogCollect(Executor):
                 #deleteMgr = DeleteMgr(retryPauseTime  = 0,
                 #                      numberOfRetries = 0)
                 stageOutMgr = StageOutMgr(**stageOutParams)
+                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
                 stageInMgr = StageInMgr()
                 deleteMgr = DeleteMgr()
         except Exception as ex:
@@ -189,7 +199,9 @@ class LogCollect(Executor):
                    'PFN'    : tarLocation,
                    'SEName' : None,
                    'GUID'   : None}
+        tarInfoEOS = tarInfo.copy()
 
+        # perform mandatory stage out to CERN Castor
         signal.signal(signal.SIGALRM, alarmHandler)
         signal.alarm(waitTime)
         try:
@@ -206,6 +218,14 @@ class LogCollect(Executor):
             raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
+        # then, perform best effort stage out to CERN EOS
+        try:
+            stageOutEOSMgr(tarInfoEOS)
+        except Exception as ex:
+            msg = "Unable to stage out log archive to EOS:\n"
+            msg += str(ex)
+            print "WARNING: %s" % msg
+            
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']

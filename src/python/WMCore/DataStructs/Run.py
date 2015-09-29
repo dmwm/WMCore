@@ -32,7 +32,7 @@ class Run(WMObject):
 
     @property
     def lumis(self):
-        return list(set(self._lumis))
+        return sorted(list(set(self._lumis)))
 
     def __str__(self):
         return "Run%s:%s" % (self.run, list(self.lumis))
@@ -75,7 +75,7 @@ class Run(WMObject):
 
         #newRun = Run(self.run, *self)
         #[ newRun.append(x) for x in rhs if x not in newRun ]
-        [ self.lumis.append(x) for x in rhs.lumis if x not in self.lumis ]
+        [ self._lumis.append(x) for x in rhs.lumis if x not in self._lumis ]
 
         return self
     def __iter__(self):

@@ -107,10 +107,10 @@ class Mask(dict):
 
         Add a run object
         """
-        run.lumis.sort()
-        firstLumi = run.lumis[0]
-        lastLumi  = run.lumis[0]
-        for lumi in run.lumis:
+        lumis = sorted(list(run.lumis))
+        firstLumi = lumis[0]
+        lastLumi  = lumis[0]
+        for lumi in lumis:
             if lumi <= lastLumi + 1:
                 lastLumi = lumi
             else:
@@ -144,7 +144,7 @@ class Mask(dict):
               with duplicate lumis.
         """
 
-        if not type(lumis) == list:
+        if not isinstance(lumis, list):
             lumis = list(lumis)
 
         if not run in self['runAndLumis'].keys():

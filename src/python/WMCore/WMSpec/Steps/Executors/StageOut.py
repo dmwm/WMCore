@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable=E1101, W6501, W0142
+#pylint: disable=E1101, W0142
 # E1101:  Doesn't recognize section_() as defining objects
-# W6501:  String formatting in log output
 # W0142:  Dave likes himself some ** magic
 
 """
@@ -22,7 +21,6 @@ from WMCore.WMExceptions          import WM_JOB_ERROR_CODES
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
-import WMCore.Storage.DeleteMgr   as DeleteMgr
 
 from WMCore.Lexicon               import lfn     as lfnRegEx
 from WMCore.Lexicon               import userLfn as userLfnRegEx
@@ -126,7 +124,6 @@ class StageOut(Executor):
             # First, get everything from a file and 'unpersist' it
             stepReport = Report()
             stepReport.unpersist(reportLocation, step)
-            taskID = getattr(stepReport.data, 'id', None)
 
             # Don't stage out files from bad steps.
             if not stepReport.stepSuccessful(step):

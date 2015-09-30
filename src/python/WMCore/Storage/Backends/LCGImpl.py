@@ -5,11 +5,9 @@ _LCGImpl_
 Implementation of StageOutImpl interface for lcg-cp
 
 """
-import os, re
+import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutError import StageOutError
-
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
@@ -115,7 +113,7 @@ class LCGImpl(StageOutImpl):
 
             result += copyCommand
         else:
-            result += self.setups 
+            result += self.setups
             result += copyCommand
 
         if _CheckExitCodeOption:

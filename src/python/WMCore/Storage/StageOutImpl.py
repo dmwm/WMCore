@@ -9,9 +9,9 @@ inherit this object and implement the methods accordingly
 import time
 import os
 from WMCore.Storage.Execute import runCommand
-from WMCore.Storage.StageOutError import StageOutError, StageOutInvalidPath
+from WMCore.Storage.StageOutError import StageOutError
 
-class StageOutImpl:
+class StageOutImpl(object):
     """
     _StageOutImpl_
 

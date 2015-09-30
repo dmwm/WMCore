@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#pylint: disable=E0702
+# E0702: known bug in pylint about raising NoneType
+
 """
 _StageOutMgr_
 
@@ -7,8 +10,6 @@ Util class to provide stage out functionality as an interface object.
 Based of RuntimeStageOut.StageOutManager, that should probably eventually
 use this class as a basic API
 """
-
-import os
 
 from WMCore.WMException import WMException
 
@@ -20,7 +21,7 @@ from WMCore.Storage.Registry import retrieveStageOutImpl
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
-class StageOutMgr:
+class StageOutMgr(object):
     """
     _StageOutMgr_
 
@@ -223,7 +224,8 @@ class StageOutMgr:
                 lastException = ex
                 continue
 
-        raise lastException
+        if lastException:
+            raise lastException
 
     def fallbackStageOut(self, lfn, localPfn, fbParams, checksums):
         """
@@ -271,7 +273,6 @@ class StageOutMgr:
         Given the lfn and local stage out params, invoke the local stage out
 
         """
-        seName = self.siteCfg.localStageOut['se-name']
         command = self.siteCfg.localStageOut['command']
         options = self.siteCfg.localStageOut.get('option', None)
         pfn = self.searchTFC(lfn)

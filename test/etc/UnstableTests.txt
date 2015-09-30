@@ -1,0 +1,3 @@
+WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testWhiteBlackLists
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testBlackList
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testProcessing

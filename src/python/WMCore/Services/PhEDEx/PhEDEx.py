@@ -103,6 +103,7 @@ class PhEDEx(Service):
         args['custodial'] = subscription.custodial
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
+        args['no_mail'] = subscription.no_mail
 
         return self._getResult(callname, args = args, verb = "POST")
 

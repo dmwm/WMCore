@@ -24,8 +24,9 @@ class PhEDExSubscription(object):
     PhEDEx subscription data service
     """
     def __init__(self, datasetPathList, nodeList, group,
-                 level = 'dataset', priority = 'normal', move = 'n', static = 'n',
-                 custodial = 'n', request_only = 'y', blocks = None, subscriptionId = -1):
+                 level='dataset', priority='normal', move='n', static='n',
+                 custodial='n', request_only ='y', no_mail='n', 
+                 blocks=None, subscriptionId = -1):
         """
         Initialize PhEDEx subscription with default value
         """
@@ -44,6 +45,7 @@ class PhEDExSubscription(object):
         self.group = group
         self.custodial = custodial.lower()
         self.request_only = request_only.lower()
+        self.no_mail = no_mail.lower()
         self.requesterID = None
         self.status = "New"
 

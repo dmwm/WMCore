@@ -14,6 +14,7 @@ from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 
 from WMCore.DAOFactory import DAOFactory
 
@@ -79,7 +80,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.getUninjected = daofactory(classname = "GetUninjectedFiles")
         self.getMigrated = daofactory(classname = "GetMigratedBlocks")
-
+        
         daofactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                 logger = self.logger,
                                 dbinterface = myThread.dbi)
@@ -248,7 +249,35 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             myThread.transaction.commit()
 
         return
+    
+    def subscribeBlocksInDataset(self, datasetPaths, node, xmlData):
+        """
+        _subscribeBlocksInDataset_
+        :arg list datasetPaths: list of datasetPath
+        :arg str node: site location
+        :arg str xmlData: xml formatted data
+        """
+        
+        subs = []
 
+        # Create the subscription objects and add them to the list
+        # The list takes care of the sorting internally 
+        for datasetPath in datasetPaths:
+            phedexSub = PhEDExSubscription(datasetPath, node, self.group, level = 'block',
+                                           move='n', custodial='n', static='y',
+                                           request_only='n', no_mail='y')
+            # Add it to the list
+            subs.append(phedexSub)
+
+        for subscription in subs:
+            
+            msg = "Subscribing: %s to %s, with options: " % (subscription.getDatasetPaths(), subscription.getNodes())
+            msg += "Move: %s, Custodial: %s, Request Only: %s, Level: %s,  No mail: %s" % (
+                                subscription.move, subscription.custodial, subscription.request_only, 
+                                subscription.level, subscription.no_mail)
+            logging.debug(msg)
+            self.phedex.subscribe(subscription, xmlData)
+            
     def closeBlocks(self):
         """
         _closeBlocks_
@@ -286,6 +315,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             myThread.transaction.begin()
             try:
                 xmlData = self.createInjectionSpec(migratedBlocks[siteName])
+                # inject and subscribe when closing the block
+                subRes = self.subscribeBlocksInDataset(migratedBlocks[siteName].keys(), location, xmlData)
                 injectRes = self.phedex.injectBlocks(location, xmlData)
                 logging.info("Block closing result: %s" % injectRes)
             except HTTPException as ex:

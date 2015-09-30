@@ -63,7 +63,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "PhEDExInjector")
 
-        self.blocksToRecover = None
+        self.blocksToRecover = []
 
     def setup(self, parameters):
         """
@@ -91,7 +91,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if node["kind"] not in self.seMap:
                 self.seMap[node["kind"]] = {}
 
-            logging.info("Adding mapping %s -> %s" % (node["se"], node["name"]))
+            logging.info("Adding mapping %s -> %s", node["se"], node["name"])
             self.seMap[node["kind"]][node["se"]] = node["name"]
             self.nodeNames.append(node["name"])
 
@@ -168,10 +168,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         logging.info("Starting injectFiles method")
 
-        myThread = threading.currentThread()
         uninjectedFiles = self.getUninjected.execute()
 
-        injectedFiles = []
         for siteName in uninjectedFiles.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
@@ -208,46 +206,84 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.sendAlert(7, msg = msg)
                 continue
 
-            myThread.transaction.begin()
-            xmlData = self.createInjectionSpec(uninjectedFiles[siteName])
-            try:
-                injectRes = self.phedex.injectBlocks(location, xmlData)
-            except HTTPException as ex:
-                # If we get an HTTPException of certain types, raise it as an error
-                if ex.status == 400:
-                    # assume it is duplicate injection error. but if that is not the case
-                    # needs to be investigated
-                    self.blocksToRecover = self.createRecoveryFileFormat(uninjectedFiles[siteName])
-                
-                msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
-                raise PhEDExInjectorPassableError(msg)
-            except Exception as ex:
-                # If we get an error here, assume that it's temporary (it usually is)
-                # log it, and ignore it in the algorithm() loop
-                msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
-                msg += str(ex)
-                logging.error(msg)
-                logging.debug("Traceback: %s" % str(traceback.format_exc()))
-                
-                raise PhEDExInjectorPassableError(msg)
-            logging.info("Injection result: %s" % injectRes)
+            maxDataset = 20
+            maxBlocks = 50
+            maxFiles = 5000
+            numberDatasets = 0
+            numberBlocks = 0
+            numberFiles = 0
+            injectData = {}
+            lfnList = []
+            for dataset in uninjectedFiles[siteName]:
 
-            if "error" not in injectRes:
-                for datasetName in uninjectedFiles[siteName]:
-                    for blockName in uninjectedFiles[siteName][datasetName]:
-                        for f in uninjectedFiles[siteName][datasetName][blockName]["files"]:
-                            injectedFiles.append(f["lfn"])
-            else:
-                msg = ("Error injecting data %s: %s" %
-                       (uninjectedFiles[siteName], injectRes["error"]))
-                logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                numberDatasets += 1
+                injectData[dataset] = uninjectedFiles[siteName][dataset]
 
-            self.setStatus.execute(injectedFiles, 1,
+                for block in injectData[dataset]:
+                    numberBlocks += 1
+                    numberFiles += len(injectData[dataset][block]['files'])
+                    for fileInfo in injectData[dataset][block]['files']:
+                        lfnList.append(fileInfo['lfn'])
+
+                if numberDatasets >= maxDataset or numberBlocks >= maxBlocks or numberFiles >= maxFiles:
+
+                    self.injectFilesPhEDExCall(location, injectData, lfnList)
+                    numberDatasets = 0
+                    numberBlocks = 0
+                    numberFiles = 0
+                    injectData = {}
+                    lfnList = []
+
+            if len(injectData) > 0:
+                self.injectFilesPhEDExCall(location, injectData, lfnList)
+
+        return
+
+    def injectFilesPhEDExCall(self, location, injectData, lfnList):
+        """
+        _injectFilesPhEDExCall_
+
+        actual PhEDEx call for file injection
+        """
+        myThread = threading.currentThread()
+
+        xmlData = self.createInjectionSpec(injectData)
+
+        myThread.transaction.begin()
+
+        try:
+            injectRes = self.phedex.injectBlocks(location, xmlData)
+        except HTTPException as ex:
+            # If we get an HTTPException of certain types, raise it as an error
+            if ex.status == 400:
+                # assume it is duplicate injection error. but if that is not the case
+                # needs to be investigated
+                self.blocksToRecover.extend( self.createRecoveryFileFormat(injectData) )
+
+            msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
+            raise PhEDExInjectorPassableError(msg)
+        except Exception as ex:
+            # If we get an error here, assume that it's temporary (it usually is)
+            # log it, and ignore it in the algorithm() loop
+            msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
+            msg += str(ex)
+            logging.error(msg)
+            logging.debug("Traceback: %s" % str(traceback.format_exc()))
+            raise PhEDExInjectorPassableError(msg)
+
+        logging.info("Injection result: %s", injectRes)
+
+        if "error" in injectRes:
+            msg = ("Error injecting data %s: %s" %
+                   (injectData, injectRes["error"]))
+            logging.error(msg)
+            self.sendAlert(6, msg = msg)
+        else:
+            self.setStatus.execute(lfnList, 1,
                                    conn = myThread.transaction.conn,
                                    transaction = myThread.transaction)
-            injectedFiles = []
-            myThread.transaction.commit()
+
+        myThread.transaction.commit()
 
         return
 
@@ -291,21 +327,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             try:
                 xmlData = self.createInjectionSpec(migratedBlocks[siteName])
                 injectRes = self.phedex.injectBlocks(location, xmlData)
-                logging.info("Block closing result: %s" % injectRes)
+                logging.info("Block closing result: %s", injectRes)
             except HTTPException as ex:
                 # If we get an HTTPException of certain types, raise it as an error
                 if ex.status == 400:
                     msg =  "Received 400 HTTP Error From PhEDEx: %s" % str(ex.result)
                     logging.error(msg)
                     self.sendAlert(6, msg = msg)
-                    logging.debug("Blocks: %s" % migratedBlocks[siteName])
-                    logging.debug("XMLData: %s" % xmlData)
+                    logging.debug("Blocks: %s", migratedBlocks[siteName])
+                    logging.debug("XMLData: %s", xmlData)
                     raise
                 else:
                     msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
                     msg += str(ex)
                     logging.error(msg)
-                    logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                    logging.debug("Traceback: %s", str(traceback.format_exc()))
                     raise PhEDExInjectorPassableError(msg)
             except Exception as ex:
                 # If we get an error here, assume that it's temporary (it usually is)
@@ -313,13 +349,13 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
                 msg += str(ex)
                 logging.error(msg)
-                logging.debug("Traceback: %s" % str(traceback.format_exc()))
+                logging.debug("Traceback: %s", str(traceback.format_exc()))
                 raise PhEDExInjectorPassableError(msg)
 
             if "error" not in injectRes:
                 for datasetName in migratedBlocks[siteName]:
                     for blockName in migratedBlocks[siteName][datasetName]:
-                        logging.debug("Closing block %s" % blockName)
+                        logging.debug("Closing block %s", blockName)
                         self.setBlockClosed.execute(blockName,
                                                     conn = myThread.transaction.conn,
                                                     transaction = myThread.transaction)
@@ -339,7 +375,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         In that case run the recovery mode
         1. first check whether files which injection status = 0 are in the PhEDEx.
         2. if those file exist set the in_phedex status to 1
-        3. set self.blocksToRecover = None
+        3. set self.blocksToRecover = []
 
         Run this recovery one block at a time, with too many blocks
         the call to the PhEDEx data service on cmsweb can time out
@@ -356,9 +392,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 myThread.transaction.begin()
                 self.setStatus.execute(injectedFiles, 1)
                 myThread.transaction.commit()
-                logging.info("%s files already injected: changed status in dbsbuffer db" % len(injectedFiles))
+                logging.info("%s files already injected: changed status in dbsbuffer db", len(injectedFiles))
 
-        self.blocksToRecover = None
+        self.blocksToRecover = []
         return
         
     def algorithm(self, parameters):
@@ -371,12 +407,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         try:
             logging.info("Running PhEDEx injector poller algorithm...")
-            if self.blocksToRecover != None:
+            if len(self.blocksToRecover) > 0:
                 logging.info(""" Running PhEDExInjector Recovery: 
                                  previous injection call failed, 
                                  check if files were injected to PhEDEx anyway""")
                 self.recoverInjectedFiles()
-                        
+
             self.injectFiles()
             self.closeBlocks()
         except PhEDExInjectorPassableError:

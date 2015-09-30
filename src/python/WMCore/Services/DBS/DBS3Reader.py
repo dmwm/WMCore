@@ -29,7 +29,7 @@ def remapDBS3Keys(data, stringify = False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    format = lambda x: str(x) if stringify and type(x) == unicode else x
+    format = lambda x: str(x) if stringify and isinstance(x, unicode) else x
     for name, newname in mapping.iteritems():
         if name in data:
             data[newname] = format(data[name])

@@ -233,7 +233,7 @@ def runHandler():
                           if "ID" in lumi.attrs]
 
                 runInfo = Run(runNumber = runId)
-                runInfo.lumis.extend(lumis)
+                runInfo._lumis.extend(lumis)
 
                 Report.addRunInfoToFile(fileSection, runInfo)
 

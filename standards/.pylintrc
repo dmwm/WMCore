@@ -135,7 +135,9 @@ enable-variables=yes
 # Tells wether we should check for unused import in __init__ files.
 init-import=no
 
-
+# A regular expression matching the name of dummy variables (i.e. expectedly
+# not used).
+dummy-variables-rgx=^dummy
 
 # checks for :
 #     * methods without self as first argument

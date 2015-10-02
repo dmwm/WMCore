@@ -232,11 +232,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         else:
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
             
-            if self.config.TaskArchiver.reqmgr2Only:
-                self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-            else:
-                #TODO this need to be remove when reqmgr is not used
-                self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
+            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            #TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
+            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
             
         # Start a couch server for getting job info
         # from the FWJRs for committal to archive
@@ -414,12 +412,23 @@ class TaskArchiverPoller(BaseWorkerThread):
                             # reqmgr
                             self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
                         else:
-                            if self.config.TaskArchiver.reqmgr2Only:
-                                self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                            else:
-                                #TODO this need to be remove when reqmgr is not used 
+                            try:
+                                #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
                                 logging.info("Updating status to '%s' in both oracle and couchdb ..." % newState)
                                 self.reqmgrSvc.updateRequestStatus(workflow, newState)
+                                #And replace with this - remove all the excption
+                                #self.reqmgr2Svc.updateRequestStatus(workflow, newState)
+                            except httplib.HTTPException as ex:
+                                # If we get an HTTPException of 404 means reqmgr2 request
+                                if ex.status == 404:
+                                    # try reqmgr2 call
+                                    msg = "%s : reqmgr2 request: %s" % (workflow, str(ex))
+                                    logging.warning(msg)
+                                    self.reqmgr2Svc.updateRequestStatus(workflow, newState)
+                                else:
+                                    msg = "%s : fail to update status %s  with HTTP error: %s" % (workflow, newState, str(ex))
+                                    logging.error(msg)
+                                    raise ex
                             
                         logging.info("status updated to '%s' : %s" % (newState, workflow))
                     

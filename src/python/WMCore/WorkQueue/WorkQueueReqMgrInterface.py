@@ -25,8 +25,8 @@ class WorkQueueReqMgrInterface():
             import logging
             kwargs['logger'] = logging
         self.logger = kwargs['logger']
+        #TODO: (reqmgr2Only - remove this line when reqmgr is replaced)
         self.reqMgr = RequestManager(kwargs)
-        self.reqmgr2Only = kwargs.get("reqmgr2_only", False)
         #this will break all in one test
         self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
         
@@ -258,8 +258,10 @@ class WorkQueueReqMgrInterface():
         reqmgrStatus = self._workQueueToReqMgrStatus(status)
         if reqmgrStatus: # only send known states
             try:
-                # try reqmgr1 call if it fails
+                #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
                 self.reqMgr.reportRequestStatus(request, reqmgrStatus)
+                # And replace with this (remove all Exceptins)
+                #self.reqMgr2.updateRequestStatus(request, reqmgrStatus)
             except HTTPException as ex:
                 # If we get an HTTPException of 404 means reqmgr2 request
                 if ex.status == 404:

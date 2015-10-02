@@ -293,7 +293,6 @@ config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
 config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
-config.TaskArchiver.reqmgr2Only = False
 
 config.webapp_('WMBSService')
 config.WMBSService.default_expires = 0

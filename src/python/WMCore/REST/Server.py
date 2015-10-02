@@ -625,7 +625,8 @@ class MiniRESTApi:
         self.compression_chunk = 64 * 1024
         self.compression = ['deflate']
         self.formats = [ ('application/json', JSONFormat()),
-                         ('application/xml', XMLFormat(self.app.appname)) ]
+                         ('application/xml', XMLFormat(self.app.appname)),
+                         ('*/*', JSONFormat()) ]
         self.methods = {}
         self.default_expires = 3600
         self.default_expires_opts = []

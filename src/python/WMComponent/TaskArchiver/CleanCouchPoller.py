@@ -83,27 +83,27 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("%s docs deleted" % report)
 
             # archiving only workflows that I own (same team)
-            logging.info("Getting requests in '%s' state for team '%s'" % (self.deletableState,
-                                                                           self.teamName))
+            logging.info("Getting requests in '%s' state for team '%s'", self.deletableState,
+                                                                           self.teamName)
             endTime = int(time.time()) - self.archiveDelayHours * 3600
             wfs = self.centralRequestDBReader.getRequestByTeamAndStatus(self.teamName,
                                                                         self.deletableState)
             commonWfs = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
                                                                                    False, endTime)
             deletableWorkflows = list(set(wfs) & set(commonWfs))
-            logging.info("Ready to archive normal %s workflows" % len(deletableWorkflows))
+            logging.info("Ready to archive normal %s workflows", len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
-            logging.info("archive normal %s workflows" % numUpdated)
+            logging.info("archive normal %s workflows", numUpdated)
             
             abortedWorkflows = self.centralRequestDBReader.getRequestByStatus(["aborted-completed"])
-            logging.info("Ready to archive aborted %s workflows" % len(abortedWorkflows))
+            logging.info("Ready to archive aborted %s workflows", len(abortedWorkflows))
             numUpdated = self.archiveWorkflows(abortedWorkflows, "aborted-archived")
-            logging.info("archive aborted %s workflows" % numUpdated)
+            logging.info("archive aborted %s workflows", numUpdated)
             
             rejectedWorkflows = self.centralRequestDBReader.getRequestByStatus(["rejected"])
-            logging.info("Ready to archive rejected %s workflows" % len(rejectedWorkflows))
+            logging.info("Ready to archive rejected %s workflows", len(rejectedWorkflows))
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
-            logging.info("archive rejected %s workflows" % numUpdated)
+            logging.info("archive rejected %s workflows", numUpdated)
 
         except Exception as ex:
             logging.error(str(ex))
@@ -132,7 +132,7 @@ class CleanCouchPoller(BaseWorkerThread):
                             raise ex
                             
                     updated += 1 
-                    logging.debug("status updated to %s %s" % (archiveState, workflowName))
+                    logging.debug("status updated to %s %s",  archiveState, workflowName)
                 else:
                     # tier0 update case
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
@@ -203,16 +203,16 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.info("Deleting %s from JobCouch" % workflowName)
         
         jobReport = self.deleteWorkflowFromJobCouch(workflowName, "JobDump")
-        logging.debug("%s docs deleted from JobDump" % jobReport)
+        logging.debug("%s docs deleted from JobDump", jobReport)
         
         fwjrReport = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
-        logging.debug("%s docs deleted from FWJRDump" % fwjrReport)
+        logging.debug("%s docs deleted from FWJRDump", fwjrReport)
         
         summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
-        logging.debug("%s docs deleted from SummaryStats" % summaryReport)
+        logging.debug("%s docs deleted from SummaryStats", summaryReport)
         
         wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStatsAgent")
-        logging.debug("%s docs deleted from wmagent_summary" % wmstatsReport)
+        logging.debug("%s docs deleted from wmagent_summary", wmstatsReport)
         
         # if one of the procedure fails return False
         if (jobReport["status"] == "error" or fwjrReport["status"] == "error" or 

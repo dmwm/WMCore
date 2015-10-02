@@ -25,7 +25,7 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                         }},
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
-                            return formatReqDetailUrl(o.aData.workflow);
+                            return formatReqDetailUrl(o.aData.workflow, o.aData.ReqMgr2Only);
                   }, 
               "bUseRendered": false, "sWidth": "150px"
             },

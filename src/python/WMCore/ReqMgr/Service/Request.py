@@ -445,6 +445,8 @@ class Request(RESTEntity):
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
             request_args['RequestWorkflow'] = sanitizeURL("%s/%s/%s/spec" % (request_args["CouchURL"], 
                                             request_args["CouchWorkloadDBName"], workload.name()))['url']
+            #TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
+            request_args['ReqMgr2Only'] = True
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                               metadata=request_args)
             out.append({'request':workload.name()})

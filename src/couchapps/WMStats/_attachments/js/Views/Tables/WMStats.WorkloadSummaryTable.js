@@ -27,7 +27,7 @@ WMStats.WorkloadSummaryTable = function (data, containerDiv) {
             */
             { "mDataProp": "workflow", "sTitle": "workflow",
               "fnRender": function ( o, val ) {
-                            return formatReqDetailUrl(o.aData._id);
+                            return formatReqDetailUrl(o.aData._id, o.aData.ReqMgr2Only);
                       },
               "bUseRendered": false, "sWidth": "150px"
             },

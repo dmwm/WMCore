@@ -1,3 +1,11 @@
+1.0.10 to 1.0.11.pre1:
+  - Merge pull request #6313 from vkuznet/fix_formatter
+  - Fix unit tests and add testGenerator method to verify that return type for generator is appropriate
+  - Use internal json method for generator data type
+  - Dict and list should be handled by json.dumps instead of str
+  - Fix message for assert
+  - Fix formatter method to handle generator type
+
 1.0.9 to 1.0.10:
   - Merge pull request #6300 from amaltaro/logcollect-eos
   - Transfer logCollect tarballs to CERN EOS

@@ -5,6 +5,7 @@ __all__ = []
 
 import logging
 import time
+from httplib import HTTPException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestManager.RequestManager import RequestManager
@@ -51,11 +52,9 @@ class CleanCouchPoller(BaseWorkerThread):
             self.deletableState = "announced"
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL, 
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
-            if self.config.TaskArchiver.reqmgr2Only:
-                self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-            else:
-                #TODO: remove this for reqmgr2
-                self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
+            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            #TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
+            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableState = "completed"
@@ -84,27 +83,27 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("%s docs deleted" % report)
 
             # archiving only workflows that I own (same team)
-            logging.info("Getting requests in '%s' state for team '%s'" % (self.deletableState,
-                                                                           self.teamName))
+            logging.info("Getting requests in '%s' state for team '%s'", self.deletableState,
+                                                                           self.teamName)
             endTime = int(time.time()) - self.archiveDelayHours * 3600
             wfs = self.centralRequestDBReader.getRequestByTeamAndStatus(self.teamName,
                                                                         self.deletableState)
             commonWfs = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
                                                                                    False, endTime)
             deletableWorkflows = list(set(wfs) & set(commonWfs))
-            logging.info("Ready to archive normal %s workflows" % len(deletableWorkflows))
+            logging.info("Ready to archive normal %s workflows", len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
-            logging.info("archive normal %s workflows" % numUpdated)
+            logging.info("archive normal %s workflows", numUpdated)
             
             abortedWorkflows = self.centralRequestDBReader.getRequestByStatus(["aborted-completed"])
-            logging.info("Ready to archive aborted %s workflows" % len(abortedWorkflows))
+            logging.info("Ready to archive aborted %s workflows", len(abortedWorkflows))
             numUpdated = self.archiveWorkflows(abortedWorkflows, "aborted-archived")
-            logging.info("archive aborted %s workflows" % numUpdated)
+            logging.info("archive aborted %s workflows", numUpdated)
             
             rejectedWorkflows = self.centralRequestDBReader.getRequestByStatus(["rejected"])
-            logging.info("Ready to archive rejected %s workflows" % len(rejectedWorkflows))
+            logging.info("Ready to archive rejected %s workflows", len(rejectedWorkflows))
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
-            logging.info("archive rejected %s workflows" % numUpdated)
+            logging.info("archive rejected %s workflows", numUpdated)
 
         except Exception as ex:
             logging.error(str(ex))
@@ -115,14 +114,27 @@ class CleanCouchPoller(BaseWorkerThread):
         for workflowName in workflows:
             if self.cleanAllLocalCouchDB(workflowName):
                 if self.useReqMgrForCompletionCheck:
-                    
-                    if self.config.TaskArchiver.reqmgr2Only:
-                        self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
-                    else:
-                        self.reqmgrSvc.updateRequestStatus(workflowName, archiveState);
+                    try:
+                        #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
+                        self.reqmgrSvc.updateRequestStatus(workflowName, archiveState)
+                        #And replace with this - remove all the excption
+                        #self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
+                    except HTTPException as ex:
+                        # If we get an HTTPException of 404 means reqmgr2 request
+                        if ex.status == 404:
+                            # try reqmgr2 call
+                            msg = "%s : reqmgr2 request: %s" % (workflowName, str(ex))
+                            logging.warning(msg)
+                            self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
+                        else:
+                            msg = "%s : fail to update status with HTTP error: %s" % (workflowName, str(ex))
+                            logging.error(msg)
+                            raise ex
+                            
                     updated += 1 
-                    logging.debug("status updated to %s %s" % (archiveState, workflowName))
+                    logging.debug("status updated to %s %s",  archiveState, workflowName)
                 else:
+                    # tier0 update case
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
         return updated
     
@@ -191,16 +203,16 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.info("Deleting %s from JobCouch" % workflowName)
         
         jobReport = self.deleteWorkflowFromJobCouch(workflowName, "JobDump")
-        logging.debug("%s docs deleted from JobDump" % jobReport)
+        logging.debug("%s docs deleted from JobDump", jobReport)
         
         fwjrReport = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
-        logging.debug("%s docs deleted from FWJRDump" % fwjrReport)
+        logging.debug("%s docs deleted from FWJRDump", fwjrReport)
         
         summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
-        logging.debug("%s docs deleted from SummaryStats" % summaryReport)
+        logging.debug("%s docs deleted from SummaryStats", summaryReport)
         
         wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStatsAgent")
-        logging.debug("%s docs deleted from wmagent_summary" % wmstatsReport)
+        logging.debug("%s docs deleted from wmagent_summary", wmstatsReport)
         
         # if one of the procedure fails return False
         if (jobReport["status"] == "error" or fwjrReport["status"] == "error" or 

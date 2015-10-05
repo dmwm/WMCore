@@ -7,6 +7,7 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
+import json
 import unittest
 import logging
 
@@ -53,15 +54,17 @@ class RESTFormatTest(RESTBaseUnitTest):
         textType = 'text/plain'
 
         url = self.urlbase + 'list3?a=a%&b=b'
+        data = json.dumps({'a': 'a%', 'b': 'b'})
         methodTest('GET', url, accept=textType,
-                         output={'code':200, 'data':"{'a': 'a%', 'b': 'b'}"})
+                         output={'code':200, 'data':data})
 
         request_input={'a':'%', 'b':'b'}
 
         #methodTest encoded input with urlencode
         url = self.urlbase +'list3'
+        data = json.dumps({'a': '%', 'b': 'b'})
         methodTest('GET', url, accept=textType, request_input=request_input,
-                 output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
+                 output={'code':200, 'data':data})
 
     def testReturnFormat(self):
         return_type = 'application/json'
@@ -84,6 +87,17 @@ class RESTFormatTest(RESTBaseUnitTest):
         expected_data = """{"exception": 400, "message": "Invalid input: Arguments added where none allowed", "type": "HTTPError"}"""
         methodTest('GET', url, accept=return_type, output={'code':400, 'data':expected_data})
 
+    def testGenerator(self):
+        rf = RESTFormatter(config=self.config.Webtools)
+        url = self.urlbase +'gen'
+        # gen method from DummyRESTModel will return this generator
+        gen = ({'idx':i} for i in range(10))
+        # the WMCore should convert it into list regardless of accept type
+        data = rf.json(gen)
+        methodTest('GET', url, accept='application/json',
+                         output={'code':200, 'data':data})
+        methodTest('GET', url, accept='*/*',
+                         output={'code':200, 'data':data})
 
 if __name__ == "__main__":
     unittest.main()

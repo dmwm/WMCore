@@ -65,8 +65,13 @@ WMStats.Utils.get = function (baseObj, objStr, val) {
     return WMStats.Utils.getOrDefault(baseObj, objList, val); 
 };
 
-WMStats.Utils.formatReqDetailUrl = function (request) {
-    return '<a href="' + WMStats.Globals.REQ_DETAIL_URL_PREFIX + 
+WMStats.Utils.formatReqDetailUrl = function (request, reqmgr2Flag) {
+	if (reqmgr2Flag) {
+		urlLink = WMStats.Globals.REQ_DETAIL_URL_PREFIX;
+	} else {
+		urlLink = WMStats.Globals.REQMGR1_REQ_DETAIL_URL_PREFIX;
+	};
+    return '<a href="' + urlLink + 
             encodeURIComponent(request) + '" target="requestDetailFrame">' + request + '</a>';
 };
 

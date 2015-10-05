@@ -31,7 +31,8 @@ WMStats.Globals = function($){
 		   "TotalInputLumis": "input_lumis",
 		   "TotalInputFiles": "input_num_files",
 		   "Run": "run",
-		   "AgentJobInfo": "AgentJobInfo"
+		   "AgentJobInfo": "AgentJobInfo",
+		   "ReqMgr2Only": "ReqMgr2Only"
 		};
 
     function convertRequestDocToWMStatsFormat(doc) {
@@ -65,6 +66,16 @@ WMStats.Globals = function($){
     };
     
     function getReqDetailPrefix () {
+        if (_dbVariants[dbname] == "tier1") {
+            return "/reqmgr2/fetch?rid=";
+        } else {
+            return null;
+        }
+        
+    };
+    
+    // this function need to be removed when reqmgr dropped (reqmgr2Only)
+    function getReqDetailPrefixReqMgr1 () {
         if (_dbVariants[dbname] == "tier1") {
             return "/reqmgr/view/details/";
         } else if (_dbVariants[dbname] == "analysis") {
@@ -135,6 +146,7 @@ WMStats.Globals = function($){
 
     return {
         REQ_DETAIL_URL_PREFIX: getReqDetailPrefix(),
+        REQMGR1_REQ_DETAIL_URL_PREFIX: getReqDetailPrefixReqMgr1(),
         WORKLOAD_SUMMARY_URL_PREFIX: getWorkloadSummaryPrefix(),
         AJAX_LOADING_STATUS: {beforeSend: function(){$('#loading_page').addClass('front').show();}, 
                               complete: function(){$('#loading_page').hide();}},

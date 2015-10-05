@@ -48,16 +48,22 @@ class RESTFormatter(TemplatedPage):
         return JsonWrapper.dumps(data)
 
     def xml(self, data):
+        if isinstance(data, GeneratorType):
+            data = [i for i in data]
         return self.templatepage('XML', data = data,
                                 config = self.config,
                                 path = request.path_info)
 
     def atom(self, data):
+        if isinstance(data, GeneratorType):
+            data = [i for i in data]
         return self.templatepage('Atom', data = data,
                                 config = self.config,
                                 path = request.path_info)
 
     def to_string(self, data):
+        if isinstance(data, GeneratorType):
+            data = [i for i in data]
         return str(data)
 
     def format(self, data, datatype, expires):

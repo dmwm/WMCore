@@ -64,6 +64,8 @@ class RESTFormatter(TemplatedPage):
     def to_string(self, data):
         if isinstance(data, GeneratorType):
             data = [i for i in data]
+        if isinstance(data, dict) or isinstance(data, list):
+            return json.dumps(data)
         return str(data)
 
     def format(self, data, datatype, expires):

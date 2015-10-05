@@ -9,9 +9,9 @@ inherit this object and implement the methods accordingly
 import time
 import os
 from WMCore.Storage.Execute import runCommand
-from WMCore.Storage.StageOutError import StageOutError, StageOutInvalidPath
+from WMCore.Storage.StageOutError import StageOutError
 
-class StageOutImpl:
+class StageOutImpl(object):
     """
     _StageOutImpl_
 
@@ -30,17 +30,6 @@ class StageOutImpl:
         self.numRetries = 3
         self.retryPause = 600
         self.stageIn = stagein
-        # tuple of exit codes of copy when dest directory does not exist
-        self.directoryErrorCodes = tuple()
-
-
-    def deferDirectoryCreation(self):
-        """
-        Can we defer directory creation, hoping it exists,
-        only to create on a given error condition
-        """
-        return len(self.directoryErrorCodes) != 0
-
 
     def executeCommand(self, command):
         """
@@ -52,16 +41,13 @@ class StageOutImpl:
         """
         try:
             exitCode = runCommand(command)
-            msg = "Command exited with status: %s" % (exitCode)
-            print msg
         except Exception as ex:
             raise StageOutError(str(ex), Command = command, ExitCode = 60311)
-        if exitCode in self.directoryErrorCodes:
-            raise StageOutInvalidPath()
-        elif exitCode:
+
+        print "Command exited with status: %s" % exitCode
+        if exitCode:
             msg = "Command exited non-zero"
-            print "ERROR: Exception During Stage Out:\n"
-            print msg
+            print "ERROR: Exception during Stage Out:\n%s" % msg
             raise StageOutError(msg, Command = command, ExitCode = exitCode)
         return
 
@@ -149,7 +135,6 @@ class StageOutImpl:
         This operator does the actual stage out by invoking the overridden
         plugin methods of the derived object.
 
-
         """
         #  //
         # // Generate the source PFN from the plain PFN if needed
@@ -161,53 +146,32 @@ class StageOutImpl:
         targetPFN = self.createTargetName(protocol, targetPFN)
 
         #  //
-        # // Create the output directory if implemented
-        #//
-        for retryCount in range(1, self.numRetries + 1):
-            try:
-                # if we can detect directory problems later
-                # defer directory creation till then, only applies to stageOut
-                if not self.deferDirectoryCreation() or self.stageIn:
-                    self.createOutputDirectory(targetPFN)
-                break
-
-            except StageOutError as ex:
-                msg = "Attempted directory creation for stageout %s failed\n" % retryCount
-                msg += "Automatically retrying in %s secs\n " % self.retryPause
-                msg += "Error details:\n%s\n" % str(ex)
-                if retryCount == self.numRetries :
-                    #  //
-                    # // last retry, propagate exception
-                    #//
-                    raise ex
-                time.sleep(self.retryPause)
-
-        #  //
         # // Create the command to be used.
         #//
         command = self.createStageOutCommand(sourcePFN, targetPFN, options, checksums)
+        print "ALAN StageOutImpl command created %s" % command
+        print "ALAN StageOutImpl checksums created %s" % checksums
         #  //
         # // Run the command
         #//
         for retryCount in range(1, self.numRetries + 1):
             try:
-
                 try:
                     self.executeCommand(command)
-                except StageOutInvalidPath as ex:
-                    # plugin indicated directory missing,create and retry
-                    msg = "Copy failure indicates directory does not exist.\n"
-                    msg += "Create now"
+                except StageOutError as ex:
+                    msg = "Possible there is a directory missing.\n"
+                    msg += "Creating it now ..."
                     print msg
                     self.createOutputDirectory(targetPFN)
                     self.executeCommand(command)
                 return
 
             except StageOutError as ex:
+                print "ALAN StageOutImpl command raised StageOutError"
                 msg = "Attempted stage out %s failed\n" % retryCount
                 msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)
-                if retryCount == self.numRetries :
+                if retryCount == self.numRetries:
                     #  //
                     # // last retry, propagate exception
                     #//

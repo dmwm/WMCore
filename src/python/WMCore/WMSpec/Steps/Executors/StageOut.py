@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable=E1101, W6501, W0142
+#pylint: disable=E1101, W0142
 # E1101:  Doesn't recognize section_() as defining objects
-# W6501:  String formatting in log output
 # W0142:  Dave likes himself some ** magic
 
 """
@@ -16,15 +15,15 @@ import os.path
 import logging
 import signal
 
-from WMCore.WMSpec.Steps.Executor           import Executor
-from WMCore.FwkJobReport.Report             import Report
+from WMCore.WMSpec.Steps.Executor import Executor
+from WMCore.FwkJobReport.Report   import Report
+from WMCore.WMExceptions          import WM_JOB_ERROR_CODES
 
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
-import WMCore.Storage.DeleteMgr   as DeleteMgr
 
-from WMCore.Lexicon                  import lfn     as lfnRegEx
-from WMCore.Lexicon                  import userLfn as userLfnRegEx
+from WMCore.Lexicon               import lfn     as lfnRegEx
+from WMCore.Lexicon               import userLfn as userLfnRegEx
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
@@ -64,17 +63,14 @@ class StageOut(Executor):
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
 
-
+        # Pull out StageOutMgr Overrides
         overrides = {}
         if hasattr(self.step, 'override'):
             overrides = self.step.override.dictionary_()
-
-        # Set wait to over an hour
-        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
-
         logging.info("StageOut override is: %s " % self.step)
 
-        # Pull out StageOutMgr Overrides
+        # total wait time for this wrapper before timing out the whole operation
+        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
@@ -94,12 +90,7 @@ class StageOut(Executor):
 
         # naw man, this is real
         # iterate over all the incoming files
-        if not useNewStageOutCode:
-            # old style
-            manager = StageOutMgr.StageOutMgr(**stageOutCall)
-            manager.numberOfRetries = self.step.retryCount
-            manager.retryPauseTime  = self.step.retryDelay
-        else:
+        if useNewStageOutCode:
             # new style
             logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
             print "STAGEOUT IS USING NEW STAGEOUT CODE"
@@ -107,6 +98,11 @@ class StageOut(Executor):
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,
                                 **stageOutCall)
+        else:
+            # old style
+            manager = StageOutMgr.StageOutMgr(**stageOutCall)
+            manager.numberOfRetries = self.step.retryCount
+            manager.retryPauseTime  = self.step.retryDelay
 
         # We need to find a list of steps in our task
         # And eventually a list of jobReports for out steps
@@ -128,7 +124,6 @@ class StageOut(Executor):
             # First, get everything from a file and 'unpersist' it
             stepReport = Report()
             stepReport.unpersist(reportLocation, step)
-            taskID = getattr(stepReport.data, 'id', None)
 
             # Don't stage out files from bad steps.
             if not stepReport.stepSuccessful(step):
@@ -170,13 +165,11 @@ class StageOut(Executor):
                             manager.cleanSuccessfulStageOuts()
                             stepReport.addError(self.stepName, 60401,
                                                 "DirectToMergeFailure", str(ex))
-                    elif getattr(self.step.output, 'maxMergeEvents', None) != None\
-                             and getattr(file, 'events', None) != None\
+                    elif getattr(self.step.output, 'maxMergeEvents', None) \
+                             and getattr(file, 'events', None) \
                              and not getattr(file, 'merged', False):
-                        # Then direct-to-merge due to events if
-                        # the file is large enough:
                         if file.events >= self.step.output.maxMergeEvents:
-                            # straight to merge
+                            # Then direct-to-merge since it has enough events
                             try:
                                 file = self.handleLFNForMerge(mergefile = file, step = step)
                             except Exception as ex:
@@ -211,16 +204,19 @@ class StageOut(Executor):
                     file.StageOutCommand = fileForTransfer['StageOutCommand']
                     file.location        = fileForTransfer['SEName']
                     file.OutputPFN       = fileForTransfer['PFN']
+                    print "ALAN StageOut calling manager succeeded"
                 except Alarm:
-                    msg = "Indefinite hang during stageOut of logArchive"
-                    logging.error(msg)
+                    print "ALAN StageOut manager raised Alarm"
+                    logging.error(WM_JOB_ERROR_CODES[60403])
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60403,
-                                        "StageOutTimeout", msg)
+                                        "StageOutTimeout", WM_JOB_ERROR_CODES[60403])
+                    stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist("Report.pkl")
                 except Exception as ex:
+                    print "ALAN StageOut manager raised Exception"
                     manager.cleanSuccessfulStageOuts()
-                    stepReport.addError(self.stepName, 60307,
+                    stepReport.addError(self.stepName, 60404,
                                         "StageOutFailure", str(ex))
                     stepReport.setStepStatus(self.stepName, 1)
                     stepReport.persist("Report.pkl")
@@ -228,17 +224,12 @@ class StageOut(Executor):
 
                 signal.alarm(0)
 
-
-
-            # Am DONE with report
-            # Persist it
+            # DONE iterating over files and with the report
             stepReport.persist(reportLocation)
 
-
-
-        #Done with all steps, and should have a list of
-        #stagedOut files in fileForTransfer
-        logging.info("Transferred %i files" %(len(filesTransferred)))
+        # DONE with all stepsDone with all steps
+        # should have a list of stagedOut files in filesTransferred
+        logging.info("Transferred %i files" % (len(filesTransferred)))
         return
 
 

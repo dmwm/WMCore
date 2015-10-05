@@ -31,6 +31,18 @@ WM_JOB_ERROR_CODES = {50660:
                       "Application terminated by wrapper for using too much VSize",
                       50664:
                       "Application terminated by wrapper for using too much wallclock time",
+                      60401:
+                      "Failed to directly merge file by file size constraint",
+                      60402:
+                      "Failed to directly merge file by number of events constraint",
+                      60403:
+                      "Stage out operation took too long and timed out",
+                      60404:
+                      "Stage out operation failed unexpectedly",
+                      60405:
+                      "LogArchive transfer took too long and timed out",
+                      60406:
+                      "LogArchive transfer failed unexpectedly",
                       60450:
                       "No output files present in the report",
                       60451:

@@ -41,7 +41,6 @@ function(newDoc, oldDoc, userCtx) {
    var allowed = isGlobalAdm || matchesRole("admin", "group:reqmgr")
                              || matchesRole("data-manager", "group:reqmgr")
                              || matchesRole("web-service", "group:facops")
-                             || matchesRole("production-operator", "group:dataops")
                              || matchesRole("production-operator", "group:dataops");
    
    // Throw if user not validated

@@ -2,9 +2,10 @@
 Define Authentiction roles and groups for the access permission for writing the the database
 WMCore.REST.Auth authz_match
 """
-ALL_ROLES = ['developer', 'admin', 'data-manager', 'dataops', 'web-service']
+ALL_ROLES = ['developer', 'admin', 'data-manager', 'production-operator', 'web-service']
 ADMIN_ROLES = ['admin', 'web-service']
 ADMIN_GROUP = ['reqmgr', 'facops']
+#OTHER_GROUP = ['dataops']
 
 DEFAULT_PERMISSION =  {'role': ALL_ROLES,
                       'group': []}

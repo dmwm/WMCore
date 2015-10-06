@@ -1,3 +1,36 @@
+1.0.10 to 1.0.11.pre2:
+  - Merge pull request #5989 from alexanderrichards/merging_updated
+  - Merge pull request #6315 from amaltaro/comps-logging
+  - Log components activity
+  - Renaming new ClassAd
+  - unittest fixup
+  - Change the DBS URL
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - fixing unittests
+  - adding new syntax requirements
+  - migrate SiteLocalConfig to use same key for pnn as in xml
+  - populate database from dataProcessing siteDB call
+  - caching PSN2PNN from database
+  - SE to PNN Migration
+  - Merge pull request #6308 from ticoann/wmagent_reqmgr2_support
+  - Merge pull request #6311 from ticoann/wmstats_reqmgr2_support
+  - 1.0.11.pre1
+  - Merge pull request #6313 from vkuznet/fix_formatter
+  - Fix unit tests and add testGenerator method to verify that return type for generator is appropriate
+  - Use internal json method for generator data type
+  - Dict and list should be handled by json.dumps instead of str
+  - Fix message for assert
+  - Fix formatter method to handle generator type
+  - create wmstats link according to request origin
+  - change logging args due to pylint warning
+  - make reqmgr and reqmgr2 call automatically
+
 1.0.10 to 1.0.11.pre1:
   - Merge pull request #6313 from vkuznet/fix_formatter
   - Fix unit tests and add testGenerator method to verify that return type for generator is appropriate

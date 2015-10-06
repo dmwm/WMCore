@@ -168,7 +168,7 @@ def _remapBlockParentage(dsPath, data):
 #  //
 # // Util lambda for matching files with the same dataset and se name
 #//
-fileMatcher = lambda x, dataset, seName: (x['CompleteDatasetName'] == dataset) and (x['SEName'] == seName)
+fileMatcher = lambda x, dataset, pnn: (x['CompleteDatasetName'] == dataset) and (x['PNN'] == pnn)
 makeDSName = lambda x: "/%s/%s/%s" % (x['PrimaryDataset'],
                                       x['DataTier'],
                                       x['ProcessedDataset'])
@@ -182,9 +182,9 @@ makeDBSDSName = lambda x: "/%s/%s/%s" % (
 
 
 class _InsertFileList(list):
-    def __init__(self, seName, dataset):
+    def __init__(self, pnn, dataset):
         list.__init__(self)
-        self.seName = seName
+        self.pnn = pnn
         self.dataset = dataset
 
 class DBSWriter:
@@ -250,7 +250,7 @@ class DBSWriter:
         affectedBlocks = []
         insertFiles =  []
         addedRuns=[]
-        seName = None
+        pnn = None
 
         #Get the algos in insertable form
         # logging.error("About to input algos")
@@ -326,11 +326,11 @@ class DBSWriter:
 
             #This check comes from ProdAgent, not sure if its required
             if len(outFile["locations"]) > 0:
-                seName = list(outFile["locations"])[0]
-                logging.debug("SEname associated to file is: %s"%seName)
+                pnn = list(outFile["locations"])[0]
+                logging.debug("PNN associated to file is: %s"%pnn)
             else:
                 msg = "Error in DBSWriter.insertFiles\n"
-                msg += "No SEname associated to file"
+                msg += "No PNN associated to file"
                 #print "FAKING seName for now"
                 #seName="cmssrm.fnal.gov"
                 raise DBSWriterError(msg)
@@ -349,7 +349,7 @@ class DBSWriter:
             fileBlock = DBSWriterObjects.getDBSFileBlock(
                 self.dbs,
                 procDataset,
-                seName)
+                pnn)
             fileBlock['files'] = []
             #if not fileBlock in affectedBlocks:
             #    affectedBlocks.append(fileBlock)
@@ -376,7 +376,7 @@ class DBSWriter:
                     fileBlock = DBSWriterObjects.getDBSFileBlock(
                         self.dbs,
                         procDataset,
-                        seName)
+                        pnn)
                     fileBlock['files'] = []
                 except DbsException as ex:
                     msg = "Error in DBSWriter.insertFilesForDBSBuffer\n"
@@ -563,11 +563,11 @@ class DBSWriter:
             #  //
             # // Convert each file into a DBS File object
             #//
-            seName = None
-            if "SEName" in outFile:
-                if outFile['SEName'] :
-                    seName = outFile['SEName']
-                    logging.debug("SEname associated to file is: %s"%seName)
+            pnn = None
+            if "PNN" in outFile:
+                if outFile['PNN'] :
+                    pnn = outFile['PNN']
+                    logging.debug("PNN associated to file is: %s"%pnn)
 ## remove the fallback to site se-name if no SE is associated to File
 ## because it's likely that there is some stage out problem if there
 ## is no SEName associated to the file.
@@ -576,9 +576,9 @@ class DBSWriter:
 #                   seName = fwkJobRep.siteDetails['se-name']
 #                   seName = str(seName)
 #                   logging.debug("site SEname: %s"%seName)
-            if not seName:
+            if not pnn:
                 msg = "Error in DBSWriter.insertFiles\n"
-                msg += "No SEname associated to files in FrameWorkJobReport for "
+                msg += "No PNN associated to files in FrameWorkJobReport for "
 #                msg += "No SEname found in FrameWorkJobReport for "
                 msg += "==> JobSpecId: %s"%fwkJobRep.jobSpecId
                 msg += " Workflow: %s"%fwkJobRep.workflowSpecId
@@ -606,10 +606,10 @@ class DBSWriter:
 
             for f in dbsFiles:
                 datasetName = makeDBSDSName(f)
-                hashName = "%s-%s" % (seName, datasetName)
+                hashName = "%s-%s" % (pnn, datasetName)
 
                 if hashName not in insertLists:
-                    insertLists[hashName] = _InsertFileList(seName,
+                    insertLists[hashName] = _InsertFileList(pnn,
                                                             datasetName)
                 insertLists[hashName].append(f)
 
@@ -631,13 +631,14 @@ class DBSWriter:
                 fileBlock = DBSWriterObjects.getDBSFileBlock(
                     self.dbs,
                     procDataset,
-                    fileList.seName)
+                    fileList.pnn)
 
             except DbsException as ex:
                 msg = "Error in DBSWriter.insertFiles\n"
                 msg += "Cannot retrieve FileBlock for dataset:\n"
                 msg += " %s\n" % procDataset
-                msg += "In Storage Element:\n %s\n" % fileList.seName
+#                msg += "In Storage Element:\n %s\n" % fileList.seName
+                msg += "In PNN:\n %s\n" % fileList.pnn
                 msg += "%s\n" % formatEx(ex)
                 raise DBSWriterError(msg)
 
@@ -942,9 +943,9 @@ class DBSWriter:
                         msg += "Block has no locations defined: %s" % block
                         raise DBSWriterError(msg)
                     logging.info("Update block locations to:")
-                    for sename in locations:
-                        self.dbs.addReplicaToBlock(block,sename)
-                        logging.info(sename)
+                    for pnn in locations:
+                        self.dbs.addReplicaToBlock(block,pnn)
+                        logging.info(pnn)
                     continue
 
 
@@ -976,8 +977,8 @@ class DBSWriter:
                 msg = "Error in DBSWriter.importDatasetWithExistingParents\n"
                 msg += "Block has no locations defined: %s" % block
                 raise DBSWriterError(msg)
-            for sename in locations:
-                self.dbs.addReplicaToBlock(block,sename)
+            for pnn in locations:
+                self.dbs.addReplicaToBlock(block,pnn)
 
         return
 
@@ -1023,9 +1024,9 @@ class DBSWriter:
                         msg += "Block has no locations defined: %s" % block
                         raise DBSWriterError(msg)
                     logging.info("Update block locations to:")
-                    for sename in locations:
-                        self.dbs.addReplicaToBlock(block,sename)
-                        logging.info(sename)
+                    for pnn in locations:
+                        self.dbs.addReplicaToBlock(block,pnn)
+                        logging.info(pnn)
                     continue
 
             try:
@@ -1045,8 +1046,8 @@ class DBSWriter:
                 msg = "Error in DBSWriter.importDataset\n"
                 msg += "Block has no locations defined: %s" % block
                 raise DBSWriterError(msg)
-            for sename in locations:
-                self.dbs.addReplicaToBlock(block,sename)
+            for pnn in locations:
+                self.dbs.addReplicaToBlock(block,pnn)
 
         return
 
@@ -1089,9 +1090,9 @@ class DBSWriter:
                         msg += "Block has no locations defined: %s" % block
                         raise DBSWriterError(msg)
                     logging.info("Update block locations to:")
-                    for sename in locations:
-                        self.dbs.addReplicaToBlock(block,sename)
-                        logging.info(sename)
+                    for pnn in locations:
+                        self.dbs.addReplicaToBlock(block,pnn)
+                        logging.info(pnn)
                     continue
 
             try:
@@ -1110,8 +1111,8 @@ class DBSWriter:
                 msg = "Error in DBSWriter.importDatasetWithoutParentage\n"
                 msg += "Block has no locations defined: %s" % block
                 raise DBSWriterError(msg)
-            for sename in locations:
-                self.dbs.addReplicaToBlock(block,sename)
+            for pnn in locations:
+                self.dbs.addReplicaToBlock(block,pnn)
 
         return
 

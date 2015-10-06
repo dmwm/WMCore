@@ -20,7 +20,7 @@ class SiblingSubscriptionsComplete(DBFormatter):
     sql = """SELECT wmbs_file_details.id,
                     wmbs_file_details.events,
                     wmbs_file_details.lfn,
-                    wmbs_location_senames.se_name
+                    wmbs_location_senames.se_name AS pnn
              FROM (
                SELECT wmbs_sub_files_available.fileid
                FROM wmbs_sub_files_available

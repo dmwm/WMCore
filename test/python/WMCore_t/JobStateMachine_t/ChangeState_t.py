@@ -100,7 +100,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -113,9 +113,9 @@ class TestChangeState(unittest.TestCase):
         testSubscription.create()
 
         testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["somese.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["somese.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.create()
         testFileB.create()
 
@@ -237,7 +237,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -250,7 +250,7 @@ class TestChangeState(unittest.TestCase):
         testSubscription.create()
 
         testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["somese.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.create()
         testFileset.addFile(testFileA)
         testFileset.commit()
@@ -282,7 +282,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -291,7 +291,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -352,7 +352,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -361,7 +361,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -425,7 +425,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -433,7 +433,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -505,7 +505,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -513,7 +513,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -568,7 +568,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -577,7 +577,7 @@ class TestChangeState(unittest.TestCase):
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -642,7 +642,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -650,7 +650,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -716,7 +716,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -724,7 +724,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -788,7 +788,7 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -796,7 +796,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -844,7 +844,7 @@ class TestChangeState(unittest.TestCase):
         testFileset = Fileset(name = "TestFilesetB")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNB", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNB", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
@@ -882,8 +882,8 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site2", seName = "somese2.cern.ch")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction.execute("site2", pnn = "T1_US_FNAL_Disk")
 
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
                                 name = "wf001", task = self.taskName)
@@ -896,9 +896,9 @@ class TestChangeState(unittest.TestCase):
         testSubscription.create()
 
         testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["somese.cern.ch", "somese2.cern.ch"]))
+                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
         testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["somese.cern.ch", "somese2.cern.ch"]))
+                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
         testFileA.create()
         testFileB.create()
 

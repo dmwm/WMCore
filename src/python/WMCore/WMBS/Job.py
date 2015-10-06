@@ -297,7 +297,6 @@ class Job(WMBSBase, WMJob):
 
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(thunker._thunk(inputFile))
-
         # These attributes are added to the job object by the ChangeState
         # code, and we want to store them in couch.
         if "_id" in self:

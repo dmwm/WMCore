@@ -81,13 +81,13 @@ class JobCreatorTest(unittest.TestCase):
 
         locationAction = self.daoFactory(classname = "Locations.New")
         for site in self.sites:
-            locationAction.execute(siteName = site, seName = site)
+            locationAction.execute(siteName = site, pnn = site)
 
         #Create sites in resourceControl
 
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = site, ceName = site)
+            resourceControl.insertSite(siteName = site, pnn = site, ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 10000, pendingSlots = 10000)
 
@@ -464,7 +464,7 @@ class JobCreatorTest(unittest.TestCase):
         well as to the output fileset for their jobgroups.
         """
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "s1", pnn = "somese.cern.ch")
 
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 

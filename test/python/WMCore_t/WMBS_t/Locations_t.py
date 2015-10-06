@@ -218,9 +218,9 @@ class LocationsTest(unittest.TestCase):
 
         locationNew = daoFactory(classname = "Locations.New")
 
-        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", seName = "Satsuma", runningSlots = 50, pendingSlots = 20)
-        locationNew.execute(siteName = "Choshu", ceName = "Choshu", seName = "Choshu", runningSlots = 50, pendingSlots = 20)
-        locationNew.execute(siteName = "Tosa", ceName = "Tosa", seName = "Choshu", runningSlots = 50, pendingSlots = 20)
+        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", pnn = "Satsuma", runningSlots = 50, pendingSlots = 20)
+        locationNew.execute(siteName = "Choshu", ceName = "Choshu", pnn = "Choshu", runningSlots = 50, pendingSlots = 20)
+        locationNew.execute(siteName = "Tosa", ceName = "Tosa", pnn = "Choshu", runningSlots = 50, pendingSlots = 20)
 
 
         locationInfo = daoFactory(classname = "Locations.GetSiteInfo")
@@ -228,7 +228,7 @@ class LocationsTest(unittest.TestCase):
         result = locationInfo.execute(siteName = "Choshu")
 
         self.assertEqual(result[0]['ce_name'], 'Choshu')
-        self.assertEqual(result[0]['se_name'], 'Choshu')
+        self.assertEqual(result[0]['pnn'], 'Choshu')
         self.assertEqual(result[0]['site_name'], 'Choshu')
         self.assertEqual(result[0]['pending_slots'], 20)
         self.assertEqual(result[0]['running_slots'], 50)
@@ -245,7 +245,7 @@ class LocationsTest(unittest.TestCase):
         setState = daoFactory(classname = "Locations.SetState")
 
         # add site and check it's in normal
-        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", seName = "Satsuma")
+        locationNew.execute(siteName = "Satsuma", ceName = "Satsuma", pnn = "Satsuma")
         result = locationInfo.execute(siteName = "Satsuma")
         self.assertEqual(result[0]['site_name'], 'Satsuma')
         self.assertEqual(result[0]['state'], 'Normal')

@@ -981,6 +981,12 @@ class PyCondorPlugin(BasePlugin):
         if job.get('taskType', None):
             jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
 
+        # dataset info
+        if job.get('inputDataset', None):
+            jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])
+        if job.get('inputDatasetLocations', None):
+            jdl.append('+DESIRED_CMSDataLocations = "%s"\n' % ','.join(job['inputDatasetLocations']))
+
         # Performance estimates
         if job.get('estimatedJobTime', None):
             jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime']/60.0))

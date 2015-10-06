@@ -29,7 +29,7 @@ class ResourceControl(WMConnectionBase):
         return
 
     def insertSite(self, siteName, pendingSlots = 0, runningSlots = 0,
-                   seName = None, ceName = None, cmsName = None,
+                   pnn = None, ceName = None, cmsName = None,
                    plugin = None):
         """
         _insertSite_
@@ -40,7 +40,7 @@ class ResourceControl(WMConnectionBase):
         insertAction = self.wmbsDAOFactory(classname = "Locations.New")
         insertAction.execute(siteName = siteName, pendingSlots = pendingSlots,
                              runningSlots = runningSlots,
-                             seName = seName, ceName = ceName,
+                             pnn = pnn, ceName = ceName,
                              plugin = plugin, cmsName = cmsName,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
@@ -115,11 +115,11 @@ class ResourceControl(WMConnectionBase):
 
         # We get a row back for every single SE.  Return a single dict with a
         # list in the SE field.
-        seNames = []
+        pnns = []
         for result in results:
-            seNames.append(result["se_name"])
+            pnns.append(result["pnn"])
 
-        results[0]["se_name"] = seNames
+        results[0]["pnn"] = pnns
         return results[0]
 
     def changeTaskPriority(self, taskType, priority):
@@ -184,7 +184,7 @@ class ResourceControl(WMConnectionBase):
         returned in the form of a two level dictionary.  The first level is
         keyed by the site name.  The second level has the following keys:
           cms_name            - CMS name of the site
-          se_names            - List with associated SEs
+          pnns                - List with associated PNNs
           state               - State of the site
           total_pending_slots - Total number of pending slots available at the site
           total_running_slots - Total number of running slots available at the site
@@ -284,11 +284,11 @@ class ResourceControl(WMConnectionBase):
 
         cmsNames = siteDB.getAllCMSNames()
         for cmsName in cmsNames:
-            seNames = siteDB.cmsNametoSE(cmsName)
-            for SE in seNames:
-                sName = '%s_%s' % (siteName, SE)
+            pnns = siteDB.cmsNametoPhEDExNode(cmsName)
+            for pnn in pnns:
+                sName = '%s_%s' % (siteName, pnn)
                 self.insertSite(siteName = sName, pendingSlots = pendingSlots,
-                                seName = SE, runningSlots = runningSlots,
+                                pnn = pnn, runningSlots = runningSlots,
                                 ceName = ceName, cmsName = cmsName, plugin = plugin)
                 for task in taskList:
                     if 'maxSlots' not in task or 'taskType' not in task:

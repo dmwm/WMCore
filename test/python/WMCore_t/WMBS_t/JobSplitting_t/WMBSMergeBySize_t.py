@@ -60,8 +60,8 @@ class WMBSMergeBySize(unittest.TestCase):
         well as to the output fileset for their jobgroups.
         """
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")
+        locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "s1", pnn = "T1_US_FNAL_Disk")
 
         changeStateDAO = self.daoFactory(classname = "Jobs.ChangeState")
 
@@ -222,81 +222,81 @@ class WMBSMergeBySize(unittest.TestCase):
         changeStateDAO.execute([testJob7])
 
         badFile1 = File(lfn = "badFile1", size = 10241024, events = 10241024,
-                        first_event = 0, locations = set(["somese.cern.ch"]))
+                        first_event = 0, locations = set(["T2_CH_CERN"]))
         badFile1.addRun(Run(1, *[45]))
         badFile1.create()
         badFile1.addParent(parentFile5["lfn"])
 
         file1 = File(lfn = "file1", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         file1.addRun(Run(1, *[45]))
         file1.create()
         file1.addParent(parentFile1["lfn"])
         file2 = File(lfn = "file2", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+                     first_event = 1024, locations = set(["T2_CH_CERN"]))
         file2.addRun(Run(1, *[45]))
         file2.create()
         file2.addParent(parentFile1["lfn"])
         file3 = File(lfn = "file3", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+                     first_event = 2048, locations = set(["T2_CH_CERN"]))
         file3.addRun(Run(1, *[45]))
         file3.create()
         file3.addParent(parentFile1["lfn"])
         file4 = File(lfn = "file4", size = 1024, events = 1024,
-                     first_event = 3072, locations = set(["somese.cern.ch"]))
+                     first_event = 3072, locations = set(["T2_CH_CERN"]))
         file4.addRun(Run(1, *[45]))
         file4.create()
         file4.addParent(parentFile1["lfn"])
 
         fileA = File(lfn = "fileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+                     first_event = 0, locations = set(["T2_CH_CERN"]))
         fileA.addRun(Run(1, *[46]))
         fileA.create()
         fileA.addParent(parentFile2["lfn"])
         fileB = File(lfn = "fileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+                     first_event = 1024, locations = set(["T2_CH_CERN"]))
         fileB.addRun(Run(1, *[46]))
         fileB.create()
         fileB.addParent(parentFile2["lfn"])
         fileC = File(lfn = "fileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+                     first_event = 2048, locations = set(["T2_CH_CERN"]))
         fileC.addRun(Run(1, *[46]))
         fileC.create()
         fileC.addParent(parentFile2["lfn"])
 
         fileI = File(lfn = "fileI", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+                     first_event = 0, locations = set(["T2_CH_CERN"]))
         fileI.addRun(Run(2, *[46]))
         fileI.create()
         fileI.addParent(parentFile3["lfn"])
         fileII = File(lfn = "fileII", size = 1024, events = 1024,
-                      first_event = 1024, locations = set(["somese.cern.ch"]))
+                      first_event = 1024, locations = set(["T2_CH_CERN"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
         fileII.addParent(parentFile3["lfn"])
         fileIII = File(lfn = "fileIII", size = 1024, events = 1024,
-                       first_event = 2048, locations = set(["somese.cern.ch"]))
+                       first_event = 2048, locations = set(["T2_CH_CERN"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
         fileIII.addParent(parentFile3["lfn"])
         fileIV = File(lfn = "fileIV", size = 1024, events = 1024,
-                      first_event = 3072, locations = set(["somese.cern.ch"]))
+                      first_event = 3072, locations = set(["T2_CH_CERN"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
         fileIV.addParent(parentFile3["lfn"])
 
         fileX = File(lfn = "badFileA", size = 1024, events = 1024,
-                     first_event = 0, locations = set(["somese.cern.ch"]))
+                     first_event = 0, locations = set(["T2_CH_CERN"]))
         fileX.addRun(Run(1, *[47]))
         fileX.create()
         fileX.addParent(parentFile4["lfn"])
         fileY = File(lfn = "badFileB", size = 1024, events = 1024,
-                     first_event = 1024, locations = set(["somese.cern.ch"]))
+                     first_event = 1024, locations = set(["T2_CH_CERN"]))
         fileY.addRun(Run(1, *[47]))
         fileY.create()
         fileY.addParent(parentFile4["lfn"])
         fileZ = File(lfn = "badFileC", size = 1024, events = 1024,
-                     first_event = 2048, locations = set(["somese.cern.ch"]))
+                     first_event = 2048, locations = set(["T2_CH_CERN"]))
         fileZ.addRun(Run(1, *[47]))
         fileZ.create()
         fileZ.addParent(parentFile4["lfn"])
@@ -397,7 +397,7 @@ class WMBSMergeBySize(unittest.TestCase):
                 file.loadData()
                 assert file["lfn"] in goldenFiles, \
                        "Error: Unknown file: %s" % file["lfn"]
-                assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+                assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                        "Error: File is missing a location."
                 goldenFiles.remove(file["lfn"])
 
@@ -468,7 +468,7 @@ class WMBSMergeBySize(unittest.TestCase):
         for file in jobFiles:
             assert file["lfn"] in goldenFiles, \
                    "Error: Unknown file: %s" % file["lfn"]
-            assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+            assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                    "Error: File is missing a location."
             goldenFiles.remove(file["lfn"])
 
@@ -545,7 +545,7 @@ class WMBSMergeBySize(unittest.TestCase):
             for file in jobFiles:
                 assert file["lfn"] in goldenFiles, \
                        "Error: Unknown file in merge jobs."
-                assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+                assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                        "Error: File is missing a location."
 
                 goldenFiles.remove(file["lfn"])
@@ -617,7 +617,7 @@ class WMBSMergeBySize(unittest.TestCase):
         currentLumi = 0
         currentEvent = 0
         for file in jobFiles:
-            assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+            assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                    "Error: File is missing a location."
 
             if file["lfn"] in goldenFilesA:
@@ -702,7 +702,7 @@ class WMBSMergeBySize(unittest.TestCase):
             for file in jobFiles:
                 assert file["lfn"] in goldenFiles, \
                        "Error: Unknown file in merge jobs."
-                assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+                assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                        "Error: File is missing a location: %s" % file["locations"]
 
                 goldenFiles.remove(file["lfn"])
@@ -774,7 +774,7 @@ class WMBSMergeBySize(unittest.TestCase):
         currentLumi = 0
         currentEvent = 0
         for file in jobFiles:
-            assert file["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]), \
+            assert file["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]), \
                    "Error: File is missing a location."
 
             if file["lfn"] in goldenFilesA:
@@ -825,8 +825,8 @@ class WMBSMergeBySize(unittest.TestCase):
         subscriptions.
         """
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "s1", seName = "somese2.cern.ch")
+        locationAction.execute(siteName = "s1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "s1", pnn = "T1_US_FNAL_Disk")
 
 
         mergeFilesetA = Fileset(name = "mergeFilesetA")
@@ -949,12 +949,12 @@ class WMBSMergeBySize(unittest.TestCase):
                                 testJobE, testJobF])
 
         fileA = File(lfn = "fileA", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileA.addRun(Run(1, *[45]))
         fileA.create()
         fileA.addParent(inputFileA["lfn"])
         fileB = File(lfn = "fileB", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileB.addRun(Run(1, *[45]))
         fileB.create()
         fileB.addParent(inputFileB["lfn"])
@@ -968,12 +968,12 @@ class WMBSMergeBySize(unittest.TestCase):
         mergeFilesetA.commit()
 
         fileC = File(lfn = "fileC", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileC.addRun(Run(1, *[45]))
         fileC.create()
         fileC.addParent(inputFileA["lfn"])
         fileD = File(lfn = "fileD", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileD.addRun(Run(1, *[45]))
         fileD.create()
         fileD.addParent(inputFileB["lfn"])
@@ -996,12 +996,12 @@ class WMBSMergeBySize(unittest.TestCase):
                "Error: No merge jobs should have been created."
 
         fileE = File(lfn = "fileE", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileE.addRun(Run(1, *[45]))
         fileE.create()
         fileE.addParent(inputFileA["lfn"])
         fileF = File(lfn = "fileF", size = 1024, events = 1024, first_event = 0,
-                     locations = set(["somese.cern.ch"]))
+                     locations = set(["T2_CH_CERN"]))
         fileF.addRun(Run(1, *[45]))
         fileF.create()
         fileF.addParent(inputFileB["lfn"])
@@ -1038,10 +1038,10 @@ class WMBSMergeBySize(unittest.TestCase):
         self.stuffWMBS()
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s2", seName = "somese3.cern.ch")
+        locationAction.execute(siteName = "s2", pnn = "T1_UK_RAL_Disk")
 
         fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
-                         first_event = 0, locations = set(["somese3.cern.ch"]))
+                         first_event = 0, locations = set(["T1_UK_RAL_Disk"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
         fileSite2.addParent(self.parentFileSite2["lfn"])
@@ -1067,8 +1067,8 @@ class WMBSMergeBySize(unittest.TestCase):
             baseLocation = list(firstInputFile["locations"])[0]
 
             for inputFile in job.getFiles():
-                assert inputFile["locations"] == set(["somese.cern.ch", "somese2.cern.ch"]) or \
-                       inputFile["locations"] == set(["somese3.cern.ch"]), \
+                assert inputFile["locations"] == set(["T2_CH_CERN", "T1_US_FNAL_Disk"]) or \
+                       inputFile["locations"] == set(["T1_UK_RAL_Disk"]), \
                        "Error: Wrong number of locations"
 
                 assert list(inputFile["locations"])[0] == baseLocation, \

@@ -195,6 +195,6 @@ class StartPolicyInterface(PolicyInterface):
         for dbsUrl in datasets:
             dbs = self.dbs(dbsUrl)
             for datasetPath in datasets[dbsUrl]:
-                locations = sitesFromStorageEelements(dbs.listDatasetLocation(datasetPath))
+                locations = dbs.listDatasetLocation(datasetPath)
                 result[datasetPath] = locations
         return result

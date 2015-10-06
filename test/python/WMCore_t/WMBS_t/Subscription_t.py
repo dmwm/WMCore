@@ -45,9 +45,9 @@ class SubscriptionTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "testse.cern.ch")
-        locationAction.execute(siteName = "site3", seName = "badse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "goodse.cern.ch")
+        locationAction.execute(siteName = "site2", pnn = "testse.cern.ch")
+        locationAction.execute(siteName = "site3", pnn = "badse.cern.ch")
 
         stateDAO = self.daofactory(classname = "Jobs.GetStateID")
         self.stateID = stateDAO.execute('cleanout')

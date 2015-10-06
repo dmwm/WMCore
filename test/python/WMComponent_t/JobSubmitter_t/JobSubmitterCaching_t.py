@@ -43,7 +43,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         resourceControl = ResourceControl()
         for siteName in ["T1_US_FNAL", "T1_UK_RAL"]:
-            resourceControl.insertSite(siteName = siteName, seName = "se.%s" % (siteName),
+            resourceControl.insertSite(siteName = siteName, pnn = "se.%s" % (siteName),
                                        ceName = siteName, plugin = "CondorPlugin", cmsName = siteName)
             resourceControl.insertThreshold(siteName = siteName, taskType = "Processing",
                                             maxSlots = 10000, pendingSlots = 10000)

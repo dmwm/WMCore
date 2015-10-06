@@ -60,7 +60,7 @@ class ErrorHandlerTest(unittest.TestCase):
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "malpaquet", seName = "malpaquet")
+        locationAction.execute(siteName = "malpaquet", pnn = "T2_CH_CERN")
         self.testDir = self.testInit.generateWorkDir()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
@@ -172,17 +172,17 @@ class ErrorHandlerTest(unittest.TestCase):
 
         testFile0 = File(lfn = "/this/is/a/parent%s" % fileModifier, size = 1024, events = 10)
         testFile0.addRun(Run(10, *[12312]))
-        testFile0.setLocation('malpaquet')
+        testFile0.setLocation('T2_CH_CERN')
 
         testFileA = File(lfn = "/this/is/a/lfnA%s" % fileModifier, size = 1024, events = 10,
                          first_event = 88)
         testFileA.addRun(Run(10, *[12312, 12313]))
-        testFileA.setLocation('malpaquet')
+        testFileA.setLocation('T2_CH_CERN')
 
         testFileB = File(lfn = "/this/is/a/lfnB%s" % fileModifier, size = 1024, events = 10,
                          first_event = 88)
         testFileB.addRun(Run(10, *[12314, 12315, 12316]))
-        testFileB.setLocation('malpaquet')
+        testFileB.setLocation('T2_CH_CERN')
 
         testFile0.create()
         testFileA.create()

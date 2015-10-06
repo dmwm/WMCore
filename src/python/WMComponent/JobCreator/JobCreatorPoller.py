@@ -120,7 +120,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
             owner = None, ownerDN = None,
             ownerGroup = '', ownerRole = '',
             scramArch = None, swVersion = None, agentNumber = 0,
-            numberOfCores = 1):
+            numberOfCores = 1, inputDataset = None, inputDatasetLocations = None):
     """
     _saveJob_
 
@@ -145,6 +145,9 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['scramArch'] = scramArch
     job['swVersion'] = swVersion
     job['numberOfCores'] = numberOfCores
+    job['inputDataset'] = inputDataset
+    job['inputDatasetLocations'] = inputDatasetLocations
+
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
     cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
     output.close()
@@ -175,6 +178,8 @@ def creatorProcess(work, jobCacheDir):
         swVersion    = work.get('swVersion', None)
         agentNumber  = work.get('agentNumber', 0)
         numberOfCores = work.get('numberOfCores', 1)
+        inputDataset = work.get('inputDataset', None)
+        inputDatasetLocations = work.get('inputDatasetLocations', None)
 
         if ownerDN == None:
             ownerDN = owner
@@ -213,7 +218,9 @@ def creatorProcess(work, jobCacheDir):
                     scramArch = scramArch,
                     swVersion = swVersion,
                     agentNumber = agentNumber,
-                    numberOfCores = numberOfCores)
+                    numberOfCores = numberOfCores,
+                    inputDataset = inputDataset,
+                    inputDatasetLocations = inputDatasetLocations)
 
     except Exception as ex:
         # Register as failure; move on
@@ -570,7 +577,8 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
-                               'numberOfCores': 1,}
+                               'numberOfCores': 1,
+                               'inputDataset': wmTask.getInputDatasetPath()}
                 try:
                     maxCores = 1
                     stepNames = wmTask.listAllStepNames()
@@ -600,6 +608,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
                     tempDict['agentNumber'] = self.agentNumber
+                    tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)

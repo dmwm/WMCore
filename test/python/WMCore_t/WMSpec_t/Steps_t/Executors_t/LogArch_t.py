@@ -239,6 +239,7 @@ class LogArchiveTest(unittest.TestCase):
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
+        step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
 class otherLogArchiveTexst:#(unittest.TestCase):
@@ -500,6 +501,7 @@ class otherLogArchiveTexst:#(unittest.TestCase):
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
+        step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
 

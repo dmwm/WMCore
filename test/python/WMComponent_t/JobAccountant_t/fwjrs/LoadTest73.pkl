@@ -572,7 +572,7 @@ g18
 g52
 atRp176
 sg169
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p177
 sg170
 (dp178

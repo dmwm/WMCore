@@ -70,7 +70,7 @@ def createOptionParser():
                            help = "Apply site running/pending threshold to all task types")
     myOptParser.add_option("--ce-name", dest = "ceName",
                            help = "Specify the CEName for the site")
-    myOptParser.add_option("--se-name", dest = "seName",
+    myOptParser.add_option("--pnn", dest = "pnn",
                            help = "Specify the SEName for the site")
     myOptParser.add_option("--cms-name", dest = "cmsName",
                            help = "Specify the name of the site in SiteDB")
@@ -95,32 +95,16 @@ def createOptionParser():
 
     return myOptParser
 
-def getCMSSiteInfo(pattern):
+def getCMSSiteInfo(pattern=''):
     """
     _getCMSSiteInfo_
 
     Query SiteDB for the site and SE names matching the pattern.  Return a
     dictionary keyed by site name.
     """
-    nameSEMapping = {}
     print "Querying SiteDB for site information..."
 
-    siteDB = SiteDBJSON()
-    for seName in siteDB.cmsNametoList(pattern, "SE", "result.json"):
-        cmsNames = siteDB.seToCMSName(seName)
-        for cmsName in cmsNames:
-            if cmsName in nameSEMapping:
-                nameSEMapping[cmsName].append(seName)
-            else:
-                nameSEMapping[cmsName] = [seName]
-
-    if options.addDisk:
-        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems()
-                        if not k.endswith("_Disk"))
-    else:
-        nameSEMapping = dict((k, list(set(v))) for k, v in nameSEMapping.iteritems())
-
-    return nameSEMapping
+    return SiteDBJSON().PSNtoPNNMap(pattern.replace('*', '.*').replace('%', '.*'))
 
 def addSites(resourceControl, allSites, ceName, plugin, pendingSlots, runningSlots,
              tier0Option = False, cmsName = None, state=None):
@@ -194,7 +178,7 @@ def printThresholds(resourceControl, desiredSiteName):
         print ""
 
 def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
-                   runningSlots = None, ceName = None, seName = None,
+                   runningSlots = None, ceName = None, pnn = None,
                    plugin = None, cmsName = None, allTasks = False):
     """
     _updateSiteInfo_
@@ -203,23 +187,23 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
     information about sites in the database if it already exists.
     """
     if resourceControl.listSiteInfo(siteName) is None:
-        if pendingSlots is None or runningSlots is None or ceName is None or seName is None or plugin is None:
+        if pendingSlots is None or runningSlots is None or ceName is None or pnn is None or plugin is None:
             print "You must specify the number of pending or running slots, the SE name,"
             print "the CE name and a plugin when adding a site."
             print "Type --help for more information."
             sys.exit(1)
 
         print "Adding %s to the resource control db..." % siteName
-        if type(seName) == type([]):
-            for singleSEName in seName:
+        if isinstance(pnn, (list, set, tuple)):
+            for singlePNN in pnn:
                 resourceControl.insertSite(siteName = siteName, pendingSlots = int(pendingSlots),
                                            runningSlots = int(runningSlots),
-                                           seName = singleSEName, ceName = ceName,
+                                           pnn = singlePNN, ceName = ceName,
                                            plugin = plugin, cmsName = cmsName)
         else:
             resourceControl.insertSite(siteName = siteName, pendingSlots = int(pendingSlots),
                                        runningSlots = int(runningSlots),
-                                       seName = seName, ceName = ceName,
+                                       pnn = pnn, ceName = ceName,
                                        plugin = plugin, cmsName = cmsName)
 
         return
@@ -233,7 +217,7 @@ def updateSiteInfo(resourceControl, siteName, pendingSlots = None,
             for task in tasksWithPriorities:
                 updateThresholdInfo(resourceControl, siteName, task, runningSlots, pendingSlots)
 
-    if seName != None:
+    if pnn != None:
         print "It's not possible to change a site's SE name after the site has"
         print "been added to the database."
         sys.exit(1)
@@ -339,11 +323,11 @@ else:
         setSiteState(myResourceControl, options.siteName, options.state)
         sys.exit(0)
     elif options.taskType is None:
-        seName = options.seName
-        if options.seName:
-            seName = options.seName.strip().split(',')
+        pnn = options.pnn
+        if options.pnn:
+            pnn = options.pnn.strip().split(',')
         updateSiteInfo(myResourceControl, options.siteName, options.pendingSlots,
-                       options.runningSlots, options.ceName, seName,
+                       options.runningSlots, options.ceName, pnn,
                        options.plugin, options.cmsName, options.allTasks)
         sys.exit(0)
     else:

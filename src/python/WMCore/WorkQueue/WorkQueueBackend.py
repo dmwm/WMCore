@@ -381,6 +381,7 @@ class WorkQueueBackend(object):
                         break
 
             if possibleSite:
+                self.logger.debug("Possible site exists %s" % str(possibleSite))
                 elements.append(element)
                 if site not in siteJobCounts:
                     siteJobCounts[site] = {}

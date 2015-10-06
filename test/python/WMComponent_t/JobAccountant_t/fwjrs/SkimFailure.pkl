@@ -331,7 +331,7 @@ sg34
 sg133
 (lp142
 sg134
-S'srm-cms.cern.ch'
+S'T2_CH_CERN'
 p143
 sg20
 g21

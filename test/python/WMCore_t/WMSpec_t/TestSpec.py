@@ -9,9 +9,6 @@ Test spec with known output modules used for testing.
 
 
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
-from WMCore.Services.Requests import JSONRequests
 
 class TestWorkloadFactory(object):
     """
@@ -49,13 +46,10 @@ class TestWorkloadFactory(object):
         procTask.setSplittingAlgorithm("FileBased", **splitArgs)
         procTask.setTaskType("Processing")
 
-        procTask.addInputDataset(primary = "MinimumBias",
-                                 processed = "Comissioning10-v4",
-                                 tier = "RAW", dbsurl = "dbsbds",
-                                 block_blacklist = [],
-                                 block_whitelist = [],
-                                 run_blacklist = [],
-                                 run_whitelist = [])
+        procTask.addInputDataset(primary="MinimumBias", processed="Comissioning10-v4", tier="RAW",
+                                 dbsurl="https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                                 block_blacklist=[], block_whitelist=[],
+                                 run_blacklist=[], run_whitelist=[])
         procTask.data.constraints.sites.whitelist = []
         procTask.data.constraints.sites.blacklist = []
         

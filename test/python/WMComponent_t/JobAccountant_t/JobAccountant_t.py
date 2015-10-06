@@ -64,9 +64,9 @@ class JobAccountantTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "cmssrm.fnal.gov")
-        locationAction.execute(siteName = "site2", seName = "srm.cern.ch")
-        locationAction.execute(siteName = "site3", seName = "srm-cms.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = "site2", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site3", pnn = "T2_CH_CERN")
 
         self.stateChangeAction = self.daofactory(classname = "Jobs.ChangeState")
         self.setFWJRAction = self.daofactory(classname = "Jobs.SetFWJRPath")
@@ -80,9 +80,9 @@ class JobAccountantTest(unittest.TestCase):
         self.insertWorkflow = self.dbsbufferFactory(classname = "InsertWorkflow")
 
         dbsLocationAction = self.dbsbufferFactory(classname = "DBSBufferFiles.AddLocation")
-        dbsLocationAction.execute(siteName = "cmssrm.fnal.gov")
-        dbsLocationAction.execute(siteName = "srm.cern.ch")
-        dbsLocationAction.execute(siteName = "srm-cms.cern.ch")
+        dbsLocationAction.execute(siteName = "T1_US_FNAL_Disk")
+        dbsLocationAction.execute(siteName = "T2_CH_CERN")
+        dbsLocationAction.execute(siteName = "T2_CH_CERN")
 
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -144,7 +144,7 @@ class JobAccountantTest(unittest.TestCase):
         testWorkflow.create()
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 10, events = 10,
-                         locations = "cmssrm.fnal.gov")
+                         locations = "T1_US_FNAL_Disk")
         inputFile.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -286,7 +286,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testWorkflow.addOutput("ALCARECOStreamCombined", self.cleanupFileset, None)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov")
+                         locations = "T1_US_FNAL_Disk")
         inputFile.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -367,7 +367,7 @@ class JobAccountantTest(unittest.TestCase):
 
         return
 
-    def verifyFileMetaData(self, jobID, fwkJobReportFiles, site = "cmssrm.fnal.gov",
+    def verifyFileMetaData(self, jobID, fwkJobReportFiles, site = "T1_US_FNAL_Disk",
                            skippedJobReportFiles = 0):
         """
         _verifyFileMetaData_
@@ -588,7 +588,7 @@ class JobAccountantTest(unittest.TestCase):
                                     "WMComponent_t/JobAccountant_t/fwjrs/")
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessA.pkl")
-        self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
+        self.verifyFileMetaData(self.testJobA["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "T2_CH_CERN")
         self.verifyJobSuccess(self.testJobA["id"])
 
         self.recoOutputFileset.loadData()
@@ -621,7 +621,7 @@ class JobAccountantTest(unittest.TestCase):
 
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessB.pkl")
-        self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
+        self.verifyFileMetaData(self.testJobB["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "T2_CH_CERN")
         self.verifyJobSuccess(self.testJobB["id"])
 
         self.recoOutputFileset.loadData()
@@ -637,7 +637,7 @@ class JobAccountantTest(unittest.TestCase):
 
         jobReport = Report()
         jobReport.unpersist(fwjrBasePath + "SplitSuccessC.pkl")
-        self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
+        self.verifyFileMetaData(self.testJobC["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "T2_CH_CERN")
         self.verifyJobSuccess(self.testJobC["id"])
 
         for fwjrFile in jobReport.getAllFilesFromStep("cmsRun1"):
@@ -707,7 +707,7 @@ class JobAccountantTest(unittest.TestCase):
         self.testAlcaMergeWorkflow.addOutput("Merged", self.mergedAlcaOutputFileset)
 
         inputFile = File(lfn = "/path/to/some/lfn", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov")
+                         locations = "T1_US_FNAL_Disk")
         inputFile.create()
 
         testFileset = Fileset(name = "TestFileset")
@@ -776,7 +776,7 @@ class JobAccountantTest(unittest.TestCase):
         jobReport.unpersist(os.path.join(WMCore.WMBase.getTestBase(),
                                          "WMComponent_t/JobAccountant_t/fwjrs",
                                          "MergedSkimSuccess.pkl"))
-        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "srm-cms.cern.ch")
+        self.verifyFileMetaData(self.testJob["id"], jobReport.getAllFilesFromStep("cmsRun1"), site = "T2_CH_CERN")
         self.verifyJobSuccess(self.testJob["id"])
 
         self.recoOutputFileset.loadData()
@@ -856,23 +856,23 @@ class JobAccountantTest(unittest.TestCase):
                                             self.mergedAodOutputFileset)
 
         inputFileA = File(lfn = "/path/to/some/lfnA", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
+                         locations = "T1_US_FNAL_Disk", merged = createDBSParents)
         inputFileA.create()
         inputFileB = File(lfn = "/path/to/some/lfnB", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
+                         locations = "T1_US_FNAL_Disk", merged = createDBSParents)
         inputFileB.create()
         inputFileC = File(lfn = "/path/to/some/lfnC", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = createDBSParents)
+                         locations = "T1_US_FNAL_Disk", merged = createDBSParents)
         inputFileC.create()
 
         unmergedFileA = File(lfn = "/path/to/some/unmerged/lfnA", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileA.create()
         unmergedFileB = File(lfn = "/path/to/some/unmerged/lfnB", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileB.create()
         unmergedFileC = File(lfn = "/path/to/some/unmerged/lfnC", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileC.create()
 
         inputFileA.addChild(unmergedFileA["lfn"])
@@ -1251,7 +1251,7 @@ class JobAccountantTest(unittest.TestCase):
             self.stateChangeAction.execute(jobs = [testJob])
 
             newFile = File(lfn = "/some/lfn/for/job/%s" % testJob["id"], size = 600000, events = 60000,
-                           locations = "cmssrm.fnal.gov", merged = True)
+                           locations = "T1_US_FNAL_Disk", merged = True)
             newFile.create()
 
             pFile = DBSBufferFile(lfn = "/some/lfn/for/job/%s" % testJob["id"], size = 600000, events = 60000)
@@ -1381,34 +1381,34 @@ class JobAccountantTest(unittest.TestCase):
                                             self.mergedAodOutputFileset)
 
         masterFile1 = File(lfn = "/path/to/some/lfn1", size = 600000, events = 60000,
-                           locations = "cmssrm.fnal.gov", merged = True)
+                           locations = "T1_US_FNAL_Disk", merged = True)
 
         masterFile1.create()
 
         masterFile2 = File(lfn = "/path/to/some/lfn2", size = 600000, events = 60000,
-                           locations = "cmssrm.fnal.gov", merged = False)
+                           locations = "T1_US_FNAL_Disk", merged = False)
 
         masterFile2.create()
         masterFile1.addChild(masterFile2['lfn'])
 
         inputFileA = File(lfn = "/path/to/some/lfnA", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = False)
+                         locations = "T1_US_FNAL_Disk", merged = False)
         inputFileA.create()
         inputFileB = File(lfn = "/path/to/some/lfnB", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = False)
+                         locations = "T1_US_FNAL_Disk", merged = False)
         inputFileB.create()
         inputFileC = File(lfn = "/path/to/some/lfnC", size = 600000, events = 60000,
-                         locations = "cmssrm.fnal.gov", merged = False)
+                         locations = "T1_US_FNAL_Disk", merged = False)
         inputFileC.create()
 
         unmergedFileA = File(lfn = "/path/to/some/unmerged/lfnA", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileA.create()
         unmergedFileB = File(lfn = "/path/to/some/unmerged/lfnB", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileB.create()
         unmergedFileC = File(lfn = "/path/to/some/unmerged/lfnC", size = 600000, events = 60000,
-                             locations = "cmssrm.fnal.gov", merged = False)
+                             locations = "T1_US_FNAL_Disk", merged = False)
         unmergedFileC.create()
 
         masterFile2.addChild(inputFileA['lfn'])
@@ -1576,13 +1576,13 @@ class JobAccountantTest(unittest.TestCase):
 
             for j in range(inputFilesPerJob):
                 newFile = File(lfn = "input%i" % inputFileCounter, size = 600000, events = 60000,
-                               locations = "cmssrm.fnal.gov", merged = False)
+                               locations = "T1_US_FNAL_Disk", merged = False)
                 newFile.create()
 
                 for k in range(3):
                     lfn = makeUUID()
                     parentFile = File(lfn = lfn, size = 600000, events = 60000,
-                                      locations = "cmssrm.fnal.gov", merged = True)
+                                      locations = "T1_US_FNAL_Disk", merged = True)
                     parentFile.create()
                     newFile.addParent(parentFile["lfn"])
 

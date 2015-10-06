@@ -148,7 +148,7 @@ class CleanUpManager:
         #//
         self.tfc = None
         siteCfg = self.state.getSiteConfig()
-        self.seName =  siteCfg.localStageOutSEName()
+        self.pnn =  siteCfg.localStageOutPNN()
 
         if siteCfg == None:
             msg = "No Site Config Available:\n"
@@ -315,11 +315,11 @@ class CleanUpManager:
         if statusCode == 0 :
             report.status = "Success"
             for lfnRemovedFile in self.success:
-                report.addRemovedFile(lfnRemovedFile, self.seName)
+                report.addRemovedFile(lfnRemovedFile, self.pnn)
 
 
         for lfnUnremovedFile in self.failed:
-            report.addUnremovedFile(lfnUnremovedFile, self.seName)
+            report.addUnremovedFile(lfnUnremovedFile, self.pnn)
 
 
         report.exitCode = statusCode

@@ -151,13 +151,13 @@ class JobTrackerTest(unittest.TestCase):
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'malpaquet', seName = 'se.malpaquet',
+        resourceControl.insertSite(siteName = 'malpaquet', pnn = 'se.malpaquet',
                                    ceName = 'malpaquet', plugin = "CondorPlugin")
         resourceControl.insertThreshold(siteName = 'malpaquet', taskType = 'Processing', \
                                         maxSlots = 10000, pendingSlots = 10000)
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "malpaquet", seName = "malpaquet",
+        locationAction.execute(siteName = "malpaquet", pnn = "malpaquet",
                                ceName = "malpaquet", plugin = "CondorPlugin")
 
         # Create user

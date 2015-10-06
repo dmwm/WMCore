@@ -63,12 +63,13 @@ class LogCollect(Executor):
         # Set wait to over an hour
         waitTime  = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
         seName    = overrides.get('seName',    "srm-cms.cern.ch")
+        pnn       = overrides.get('pnn',    "T2_CERN_CH")
         lfnPrefix = overrides.get('lfnPrefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
         lfnBase   = overrides.get('lfnBase',   "/store/user/jsmith")
         userLogs  = overrides.get('userLogs',  False)
 
         stageOutParams = {"command": "srmv2-lcg",
-                          "se-name": seName,  "lfn-prefix": lfnPrefix}
+                          "se-name": seName,  "phedex-node": pnn, "lfn-prefix": lfnPrefix}
 
         # Set EOS stage out params
         seEOSName    = overrides.get('seName', "srm-eoscms.cern.ch")
@@ -176,6 +177,7 @@ class LogCollect(Executor):
                 fileToDelete = {"LFN": log["lfn"],
                                 "PFN": None,
                                 "SEName": None,
+                                "PNN": None,
                                 "StageOutCommand": None}
                 deleteMgr(fileToDelete = fileToDelete)
             except Alarm:
@@ -198,6 +200,7 @@ class LogCollect(Executor):
         tarInfo = {'LFN'    : lfn,
                    'PFN'    : tarLocation,
                    'SEName' : None,
+                   'PNN'    : None,
                    'GUID'   : None}
         tarInfoEOS = tarInfo.copy()
 
@@ -229,7 +232,7 @@ class LogCollect(Executor):
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']
-        outputRef.output.location = tarInfo['SEName']
+        outputRef.output.location = tarInfo['PNN']
         outputRef.output.lfn = tarInfo['LFN']
 
         return

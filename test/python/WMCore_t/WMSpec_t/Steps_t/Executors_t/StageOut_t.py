@@ -240,6 +240,7 @@ class StageOutTest(unittest.TestCase):
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
+        step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
 class otherStageOutTexst:#(unittest.TestCase):
@@ -501,6 +502,7 @@ class otherStageOutTexst:#(unittest.TestCase):
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
         step.override.__setattr__('se-name','DUMMYSE')
+        step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
 

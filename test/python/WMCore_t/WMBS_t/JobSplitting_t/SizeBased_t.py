@@ -47,14 +47,14 @@ class SizeBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site2", pnn = "T1_US_FNAL_Disk")
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T2_CH_CERN"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -62,7 +62,7 @@ class SizeBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T2_CH_CERN"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -72,12 +72,12 @@ class SizeBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation("somese.cern.ch")
+            newFile.setLocation("T2_CH_CERN")
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation(["somese.cern.ch","otherse.cern.ch"])
+            newFile.setLocation(["T2_CH_CERN","T1_US_FNAL_Disk"])
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()

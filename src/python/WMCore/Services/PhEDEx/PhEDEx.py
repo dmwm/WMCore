@@ -477,7 +477,7 @@ class PhEDEx(Service):
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
     
-    def getReplicaSEForBlocks(self, phedexNodes=False, **kwargs):
+    def getReplicaSEForBlocks(self, **kwargs):
         """
         _blockreplicasSE_
 
@@ -506,7 +506,6 @@ class PhEDEx(Service):
         response = self._getResult(callname, args = kwargs)
         
         blockSE = dict()
-        blockNodes = dict()
 
         blocksInfo = response['phedex']['block']
         if not blocksInfo:
@@ -514,13 +513,50 @@ class PhEDEx(Service):
         
         for blockInfo in blocksInfo:
             se = set()
+            for replica in blockInfo['replica']:
+                se.add(replica['se'])
+            blockSE[blockInfo['name']] = list(se)
+        
+        return blockSE
+
+    def getReplicaPhEDExNodesForBlocks(self, **kwargs):
+        """
+        _blockreplicasPNN_
+
+        Get replicas PNN for given blocks
+        kwargs are options passed through to phedex
+
+        dataset        dataset name, can be multiple (*)
+        block          block name, can be multiple (*)
+        node           node name, can be multiple (*)
+        se             storage element name, can be multiple (*)
+        update_since  unix timestamp, only return replicas updated since this
+                time
+        create_since   unix timestamp, only return replicas created since this
+                time
+        complete       y or n, whether or not to require complete or incomplete
+                blocks. Default is to return either
+        subscribed     y or n, filter for subscription. default is to return either.
+        custodial      y or n. filter for custodial responsibility.  default is
+                to return either.
+        group          group name.  default is to return replicas for any group.
+
+        Returns a dictionary with se names per block
+        """
+
+        callname = 'blockreplicas'
+        response = self._getResult(callname, args = kwargs)
+
+        blockNodes = dict()
+
+        blocksInfo = response['phedex']['block']
+        if not blocksInfo:
+            return {}
+
+        for blockInfo in blocksInfo:
             nodes = set()
             for replica in blockInfo['replica']:
                 nodes.add(replica['node'])
-                se.add(replica['se'])
             blockNodes[blockInfo['name']] = list(nodes)
-            blockSE[blockInfo['name']] = list(se)
-        
-        if phedexNodes:
-            return blockNodes
-        return blockSE
+
+        return blockNodes

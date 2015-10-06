@@ -50,8 +50,8 @@ class JobTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationNew = self.daoFactory(classname = "Locations.New")
-        locationNew.execute(siteName = "test.site.ch", seName = "setest.site.ch")
-        locationNew.execute(siteName = "test2.site.ch", seName = "setest2.site.ch")
+        locationNew.execute(siteName = "test.site.ch", pnn = "T2_CH_CERN")
+        locationNew.execute(siteName = "test2.site.ch", pnn = "T2_CH_CERN")
 
         return
 
@@ -666,9 +666,9 @@ class JobTest(unittest.TestCase):
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "setest.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "setest.site.ch")
-        testFileC = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileA = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileB = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileC = File(lfn = makeUUID(), locations = "T2_CH_CERN")
         testFileA.create()
         testFileB.create()
         testFileC.create()
@@ -754,9 +754,9 @@ class JobTest(unittest.TestCase):
         testSubscription.create()
         bogusSubscription.create()
 
-        testFileA = File(lfn = makeUUID(), locations = "setest.site.ch")
-        testFileB = File(lfn = makeUUID(), locations = "setest.site.ch")
-        testFileC = File(lfn = makeUUID(), locations = "setest.site.ch")
+        testFileA = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileB = File(lfn = makeUUID(), locations = "T2_CH_CERN")
+        testFileC = File(lfn = makeUUID(), locations = "T2_CH_CERN")
         testFileA.create()
         testFileB.create()
         testFileC.create()

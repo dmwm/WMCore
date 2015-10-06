@@ -43,12 +43,12 @@ class FixedDelayTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
             newFile.addRun(Run(i, *[45+i]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
@@ -56,7 +56,7 @@ class FixedDelayTest(unittest.TestCase):
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
-        newFile = File("/some/file/name", size = 1000, events = 100, locations = set(["somese.cern.ch"]))
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
         newFile.addRun(Run(1, *[45]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
@@ -65,7 +65,7 @@ class FixedDelayTest(unittest.TestCase):
         self.multipleFileLumiset = Fileset(name = "TestFileset3")
         self.multipleFileLumiset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
             newFile.addRun(Run(1, *[45+i/3]))
             newFile.create()
             self.multipleFileLumiset.addFile(newFile)
@@ -74,7 +74,7 @@ class FixedDelayTest(unittest.TestCase):
         self.singleLumiFileset = Fileset(name = "TestFileset4")
         self.singleLumiFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["somese.cern.ch"]))
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
             newFile.addRun(Run(1, *[45]))
             newFile.create()
             self.singleLumiFileset.addFile(newFile)

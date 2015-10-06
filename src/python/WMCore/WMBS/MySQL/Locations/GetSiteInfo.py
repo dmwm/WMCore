@@ -12,7 +12,7 @@ class GetSiteInfo(DBFormatter):
     Grab all the relevant information for a given site.
     Usually useful only in the submitter
     """
-    sql = """SELECT site_name, wls.se_name, ce_name, pending_slots, running_slots,
+    sql = """SELECT site_name, wls.se_name as pnn, ce_name, pending_slots, running_slots,
                     plugin, cms_name, wlst.name AS state FROM wmbs_location
                INNER JOIN wmbs_location_senames wls ON wls.location = wmbs_location.id
                INNER JOIN wmbs_location_state wlst ON wlst.id = wmbs_location.state

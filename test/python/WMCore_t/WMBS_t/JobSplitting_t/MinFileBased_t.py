@@ -54,7 +54,7 @@ class FileBasedTest(unittest.TestCase):
         locationAction = daofactory(classname = "Locations.New")
         for site in range(self.nSites):
             locationAction.execute(siteName = "site%i" % site,
-                                   seName = "site%i.cern.ch" % site)
+                                   pnn = "T2_CH_CERN_%i" % site)
 
         return
 
@@ -91,7 +91,7 @@ class FileBasedTest(unittest.TestCase):
         for s in range(nSites):
             for i in range(nFiles):
                 newFile = File(makeUUID(), size = 1024, events = 100,
-                               locations = set(["site%i.cern.ch" % s]))
+                               locations = set(["T2_CH_CERN_%i" % s]))
                 newFile.create()
                 testFileset.addFile(newFile)
         testFileset.commit()

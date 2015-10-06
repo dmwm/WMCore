@@ -19,7 +19,7 @@ class GetSiteSE(DBFormatter):
     Usually useful only in the submitter
     """
 
-    sql = """SELECT wls.se_name FROM wmbs_location_senames wls
+    sql = """SELECT wls.se_name AS pnn FROM wmbs_location_senames wls
              INNER JOIN wmbs_location ON wls.location = wmbs_location.id
              WHERE wmbs_location.ce_name = :site"""
 

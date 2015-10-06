@@ -393,13 +393,12 @@ class WorkQueue(WorkQueueBase):
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():
-                seElements = []
-                for cmsSite in match['Inputs'].values()[0]: #TODO: Allow more than one
-                    ses = self.SiteDB.cmsNametoSE(cmsSite)
-                    seElements.extend(ses)
-                seElements = list(set(seElements))
+                PhEDExNodeNames = set()
+                for pnn in match['Inputs'].values()[0]: #TODO: Allow more than one
+                    PhEDExNodeNames.update(pnn)
+                PhEDExNodeNames = list(PhEDExNodeNames)
                 for fileInfo in block["Files"]:
-                    fileInfo['locations'] = seElements
+                    fileInfo['locations'] = PhEDExNodeNames
             return blockName, block
         else:
             dbs = get_dbs(match['Dbs'])
@@ -410,12 +409,11 @@ class WorkQueue(WorkQueueBase):
 
             if wmspec.locationDataSourceFlag():
                 blockInfo = dbsBlockDict[blockName]
-                seElements = []
-                for cmsSite in match['Inputs'].values()[0]: #TODO: Allow more than one
-                    ses = self.SiteDB.cmsNametoSE(cmsSite)
-                    seElements.extend(ses)
-                seElements = list(set(seElements))
-                blockInfo['StorageElements'] = seElements
+                PhEDExNodeNames = set()
+                for pnn in match['Inputs'].values()[0]: #TODO: Allow more than one
+                    PhEDExNodeNames.update(pnn)
+                PhEDExNodeNames = list(PhEDExNodeNames)
+                blockInfo['PhEDExNodeNames'] = PhEDExNodeNames
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):

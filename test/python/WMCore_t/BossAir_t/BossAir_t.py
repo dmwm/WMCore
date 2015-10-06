@@ -102,22 +102,22 @@ class BossAirTest(unittest.TestCase):
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), cmsName = site,
+            resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site), cmsName = site,
                                        ceName = site, plugin = "CondorPlugin", pendingSlots = 1000,
                                        runningSlots = 2000)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
                                             maxSlots = 1000, pendingSlots = 1000)
-        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',cmsName = site,
+        resourceControl.insertSite(siteName = 'Xanadu', pnn = 'se.Xanadu',cmsName = site,
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
                                         maxSlots = 10000, pendingSlots = 10000)
 
-        resourceControl.insertSite(siteName = 'jade-cms.hip.fi', seName = 'madhatter.csc.fi', cmsName = site,
+        resourceControl.insertSite(siteName = 'jade-cms.hip.fi', pnn = 'madhatter.csc.fi', cmsName = site,
                                    ceName = 'jade-cms.hip.fi', plugin = "ARCPlugin")
         resourceControl.insertThreshold(siteName = 'jade-cms.hip.fi', taskType = 'Processing', \
                                         maxSlots = 100, pendingSlots = 100)
         # using this for glite submissions
-        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', seName = 'storm-se-01.ba.infn.it', cmsName = site,
+        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', pnn = 'storm-se-01.ba.infn.it', cmsName = site,
                                    ceName = 'grid-ce-01.ba.infn.it', plugin = 'gLitePlugin')
         resourceControl.insertThreshold(siteName = 'grid-ce-01.ba.infn.it', taskType = 'Processing', \
                                         maxSlots = 50, pendingSlots = 50)

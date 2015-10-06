@@ -3378,7 +3378,7 @@ g18
 g54
 atRp861
 sg854
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p862
 sg855
 (dp863

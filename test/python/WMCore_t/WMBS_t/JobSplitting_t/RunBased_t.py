@@ -54,12 +54,12 @@ class EventBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
 
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(i, *[45+i]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
@@ -67,7 +67,7 @@ class EventBasedTest(unittest.TestCase):
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
-        newFile = File("/some/file/name", size = 1000, events = 100, locations = "somese.cern.ch")
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = "T2_CH_CERN")
         newFile.addRun(Run(1, *[45]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
@@ -77,7 +77,7 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileRunset = Fileset(name = "TestFileset3")
         self.multipleFileRunset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(i/3, *[45]))
             newFile.create()
             self.multipleFileRunset.addFile(newFile)
@@ -86,7 +86,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunFileset = Fileset(name = "TestFileset4")
         self.singleRunFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(1, *[45]))
             newFile.create()
             self.singleRunFileset.addFile(newFile)
@@ -95,7 +95,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunMultipleLumi = Fileset(name = "TestFileset5")
         self.singleRunMultipleLumi.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(1, *[45+i]))
             newFile.create()
             self.singleRunMultipleLumi.addFile(newFile)

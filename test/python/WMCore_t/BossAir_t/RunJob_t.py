@@ -49,7 +49,7 @@ class RunJobTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+        resourceControl.insertSite(siteName = 'Xanadu', pnn = 'se.Xanadu',
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
                                         maxSlots = 10000, pendingSlots = 10000)

@@ -407,7 +407,7 @@ p143
 (lp144
 sS'location'
 p145
-S'srm-cms.cern.ch'
+S'T2_CH_CERN'
 p146
 sS'checksums'
 p147

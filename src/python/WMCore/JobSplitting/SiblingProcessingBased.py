@@ -56,10 +56,10 @@ class SiblingProcessingBased(JobFactory):
             else:
                 continue
 
-            if completeFile["se_name"] not in fileSites:
-                fileSites[completeFile["se_name"]] = []
+            if completeFile["pnn"] not in fileSites:
+                fileSites[completeFile["pnn"]] = []
 
-            fileSites[completeFile["se_name"]].append(completeFile)
+            fileSites[completeFile["pnn"]].append(completeFile)
 
         for siteName in fileSites.keys():
             if len(fileSites[siteName]) < filesPerJob and not filesetClosed:
@@ -71,7 +71,7 @@ class SiblingProcessingBased(JobFactory):
                 for jobFile in fileSites[siteName][0:filesPerJob]:
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
-                    newFile["locations"] = set([jobFile["se_name"]])
+                    newFile["locations"] = set([jobFile["pnn"]])
                     self.currentJob.addFile(newFile)
 
                 fileSites[siteName] = fileSites[siteName][filesPerJob:]
@@ -81,7 +81,7 @@ class SiblingProcessingBased(JobFactory):
                 for jobFile in fileSites[siteName]:
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
-                    newFile["locations"] = set([jobFile["se_name"]])
+                    newFile["locations"] = set([jobFile["pnn"]])
                     self.currentJob.addFile(newFile)
 
         return

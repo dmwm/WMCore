@@ -414,7 +414,7 @@ p155
 (lp156
 sS'location'
 p157
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p158
 sg12
 g111

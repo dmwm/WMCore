@@ -579,7 +579,7 @@ class DBS3Reader:
             try:
                 blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(block=fileBlockNames, complete='y')
             except Exception as ex:
-                msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockName
+                msg = "Error while getting block location from PhEDEx for block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % str(ex)
                 raise Exception(msg)
 

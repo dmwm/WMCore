@@ -7,18 +7,29 @@ from __future__ import (division, print_function)
 
 import json
 
+from RestClient.ErrorHandling.RestClientExceptions import HTTPError
+
+
 # Read in the data just once so that we don't have to do it for every test (in __init__)
 
+mockData = {}
 try:
     with open('DBSMockData.json', 'r') as mockFile:
-        mockData = json.load(mockFile)
+        mockDataGlobal = json.load(mockFile)
 except IOError:
-    mockData = {}
+    mockDataGlobal = {}
+try:
+    with open('DBSMockData03.json', 'r') as mockFile:
+        mockData03 = json.load(mockFile)
+except IOError:
+    mockData03 = {}
 
+mockData['https://cmsweb.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
+mockData['https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
 
 class MockDbsApi(object):
     def __init__(self, url):
-        self.url = url
+        self.url = url.strip('/')
 
         # print("Initializing MockDBSApi")
 
@@ -42,23 +53,18 @@ class MockDbsApi(object):
             :param kwargs: named arguments it was called with
             :return: the dictionary that DBS would have returned
             """
+            if kwargs:
+                signature = '%s:%s' % (item, sorted(kwargs.iteritems()))
+            else:
+                signature = item
+
             try:
-                return mockData[item]
+                if mockData[self.url][signature] == 'Raises HTTPError':
+                    raise HTTPError
+                else:
+                    return mockData[self.url][signature]
             except KeyError:
-                print("DBS Mock called with method %s, args=%s, and kwargs=%s. No data returned" % (item, args, kwargs))
+                raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
+                               (item, args, kwargs, self.url))
 
         return genericLookup
-
-        # def listBlockParents(self, block_name=None):
-        #     print('Calling mocked listBlockParents on block %s' % block_name)
-        #     try:
-        #         return self.mockData['listBlockParents']['block_name'][block_name]
-        #     except (TypeError, AttributeError):
-        #         raise RuntimeError('Data does not exist for block %s' % block_name)
-        #
-        # def listBlocks(self, block_name=None):
-        #     print('Calling mocked listBlocks on block %s' % block_name)
-        #     try:
-        #         return self.mockData['listBlockParents']['block_name'][block_name]
-        #     except (TypeError, AttributeError):
-        #         raise RuntimeError('Data does not exist for block %s' % block_name)

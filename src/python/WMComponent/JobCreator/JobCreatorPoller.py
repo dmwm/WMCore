@@ -24,7 +24,6 @@ from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.FwkJobReport.Report             import Report
-from WMCore.Services.DBS.DBSReader          import DBSReader
 
 
 def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
@@ -571,13 +570,6 @@ class JobCreatorPoller(BaseWorkerThread):
 
 
                 # Assemble a dict of all the info
-                inputDataset = None
-                locations = None
-                dbsurl = wmTask.inputDatasetDBSURL()
-                if dbsurl is not None:
-                    dbs = DBSReader(dbsurl)
-                    inputDataset = wmTask.getInputDatasetPath()
-                    locations = dbs.listDatasetLocation(inputDataset)
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
@@ -586,8 +578,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
                                'ownerRole': wmWorkload.getOwner().get('vorole', ''),
                                'numberOfCores': 1,
-                               'inputDataset': inputDataset,
-                               'inputDatasetLocations': locations}
+                               'inputDataset': wmTask.getInputDatasetPath()}
                 try:
                     maxCores = 1
                     stepNames = wmTask.listAllStepNames()
@@ -617,6 +608,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
                     tempDict['agentNumber'] = self.agentNumber
+                    tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)

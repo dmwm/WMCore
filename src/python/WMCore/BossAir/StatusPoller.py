@@ -62,6 +62,7 @@ class StatusPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         try:
+            logging.info("Running job status poller algorithm...")
             self.checkStatus()
         except WMException as ex:
             if getattr(myThread, 'transaction', None):

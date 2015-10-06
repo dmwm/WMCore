@@ -123,9 +123,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 blockSpec = datasetSpec.getFileblock(fileBlockName,
                                                      fileBlock["is-open"])
 
-                for file in fileBlock["files"]:
-                    blockSpec.addFile(file["lfn"], file["checksum"],
-                                      file["size"])
+                for f in fileBlock["files"]:
+                    blockSpec.addFile(f["lfn"], f["checksum"],
+                                      f["size"])
 
         return injectionSpec.save()
 
@@ -233,8 +233,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if "error" not in injectRes:
                 for datasetName in uninjectedFiles[siteName]:
                     for blockName in uninjectedFiles[siteName][datasetName]:
-                        for file in uninjectedFiles[siteName][datasetName][blockName]["files"]:
-                            injectedFiles.append(file["lfn"])
+                        for f in uninjectedFiles[siteName][datasetName][blockName]["files"]:
+                            injectedFiles.append(f["lfn"])
             else:
                 msg = ("Error injecting data %s: %s" %
                        (uninjectedFiles[siteName], injectRes["error"]))
@@ -366,6 +366,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         myThread = threading.currentThread()
         try:
+            logging.info("Running PhEDEx injector poller algorithm...")
             if self.blocksToRecover != None:
                 logging.info(""" Running PhEDExInjector Recovery: 
                                  previous injection call failed, 
@@ -374,12 +375,11 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         
             self.injectFiles()
             self.closeBlocks()
-        except PhEDExInjectorPassableError as ex:
+        except PhEDExInjectorPassableError:
             logging.error("Encountered PassableError in PhEDExInjector")
             logging.error("Rolling back current transaction and terminating current loop, but not killing component.")
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
-            pass
         except Exception:
             # Guess we should roll back if we actually have an exception
             if getattr(myThread, 'transaction', None):

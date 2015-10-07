@@ -6,26 +6,34 @@ Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 from __future__ import (division, print_function)
 
 import json
+import os
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
+from WMCore.WMBase import getTestBase
 
 
 # Read in the data just once so that we don't have to do it for every test (in __init__)
 
 mockData = {}
+globalFile = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData.json')
+phys03File = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData03.json')
+
+print (globalFile)
+
 try:
-    with open('DBSMockData.json', 'r') as mockFile:
+    with open(globalFile, 'r') as mockFile:
         mockDataGlobal = json.load(mockFile)
 except IOError:
     mockDataGlobal = {}
 try:
-    with open('DBSMockData03.json', 'r') as mockFile:
+    with open(phys03File, 'r') as mockFile:
         mockData03 = json.load(mockFile)
 except IOError:
     mockData03 = {}
 
 mockData['https://cmsweb.cern.ch/dbs/prod/global/DBSReader'] = mockDataGlobal
 mockData['https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader'] = mockData03
+
 
 class MockDbsApi(object):
     def __init__(self, url):

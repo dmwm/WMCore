@@ -76,7 +76,7 @@ class LogCollect(Executor):
         lfnEOSPrefix = overrides.get('lfnPrefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms") 
         
         stageEOSOutParams = {"command": "srmv2-lcg",
-                             "se-name": seEOSName,  "lfn-prefix": lfnEOSPrefix}    
+                             "se-name": seEOSName, "phedex-node": pnn, "lfn-prefix": lfnEOSPrefix}    
 
         # Okay, we need a stageOut Manager
         useNewStageOutCode = False

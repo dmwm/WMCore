@@ -420,7 +420,7 @@ WMStats.ViewModel = (function (){
                 summary.ACDCDatabase = acdcServiceUrl.couchdb;
             }
             
-            requestInfo = reqMgrRequest.getData();
+            var requestInfo = reqMgrRequest.getData();
             //from passing request info
             summary.Memory = requestInfo.Memory;
             summary.SizePerEvent = requestInfo.SizePerEvent;
@@ -431,6 +431,7 @@ WMStats.ViewModel = (function (){
             summary.RequestString = WMStats.Utils.acdcRequestSting(summary.OriginalRequestName, requestInfo.Requestor);
             summary.PrepID = requestInfo.PrepID;
             summary.SoftwareVersions = requestInfo.SoftwareVersions;
+            summary.CMSSWVersion = requestInfo.SoftwareVersions[0];
             /*
             //TODO this handles the legacy data need to be removed
             requestInfo = WMStats.ActiveRequestModel.getData().getData(summary.OriginalRequestName);

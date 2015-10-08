@@ -18,9 +18,9 @@ class New(NewLocationMySQL):
                                WHERE site_name = :location)"""
 
     seSQL = """INSERT INTO wmbs_location_senames (location, se_name)
-                 SELECT wl.id, :se_name FROM wmbs_location wl
+                 SELECT wl.id, :pnn FROM wmbs_location wl
                  WHERE wl.site_name = :location
                  AND NOT EXISTS (SELECT null FROM wmbs_location_senames wls2 WHERE
-                                  wls2.se_name = :se_name
+                                  wls2.se_name = :pnn
                                   AND wls2.location = wl.id)
                  """

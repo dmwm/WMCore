@@ -11,8 +11,6 @@ __all__ = []
 
 from WMCore.Database.DBFormatter import DBFormatter
 
-import logging
-
 class GetSiteSE(DBFormatter):
     """
     Grab all the relevant information for a given site.

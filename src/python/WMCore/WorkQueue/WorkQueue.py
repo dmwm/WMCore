@@ -350,7 +350,10 @@ class WorkQueue(WorkQueueBase):
                 else:
                     wmspec = wmspecCache[match['RequestName']]
 
-                if match['Inputs']:
+                if match['StartPolicy'] == 'Dataset':
+                    # actually returns dataset name and dataset info
+                    blockName, dbsBlock = self._getDBSDataset(match, wmspec)
+                elif match['Inputs']:
                     blockName, dbsBlock = self._getDBSBlock(match, wmspec)
                 
                 try:
@@ -374,6 +377,29 @@ class WorkQueue(WorkQueueBase):
         del wmspecCache # remove cache explicitly
         self.logger.info('Injected %s units into WMBS' % len(results))
         return results
+
+    def _getDBSDataset(self, match, wmspec):
+        """Get DBS info for this dataset"""
+        tmpDsetDict = {}
+        dbs = get_dbs(match['Dbs'])
+        datasetName = match['Inputs'].keys()[0]
+
+        blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks = True)
+        for blockName in blocks:
+            tmpDsetDict.update(dbs.getFileBlock(blockName))
+
+        dbsDatasetDict = {'Files': [], 'IsOpen': False, 'StorageElements': []}
+        dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
+        dbsDatasetDict['StorageElements'].extend([f for block in tmpDsetDict.values() for f in block['StorageElements']])
+        dbsDatasetDict['StorageElements'] = list(set(dbsDatasetDict['StorageElements']))
+
+        if wmspec.locationDataSourceFlag():
+            seElements = []
+            for cmsSite in match['Inputs'].values()[0]:
+                ses = self.SiteDB.cmsNametoSE(cmsSite)
+                seElements.extend(ses)
+            dbsDatasetDict['StorageElements'] = list(set(seElements))
+        return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
         """Get DBS info for this block"""
@@ -417,8 +443,7 @@ class WorkQueue(WorkQueueBase):
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
-        """Inject data into wmbs and create subscription.
-        """
+        """Inject data into wmbs and create subscription. """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
 
@@ -447,7 +472,7 @@ class WorkQueue(WorkQueueBase):
         for ele in elements:
             if not ele.isRunning() or not ele['SubscriptionId'] or not ele:
                 continue
-            if not ele['Inputs'] or not ele['OpenForNewData']:
+            if not ele['Inputs'] or not ele['OpenForNewData'] or ele['StartPolicy'] == 'Dataset':
                 continue
             if not wmspec:
                 wmspec = self.backend.getWMSpec(ele['RequestName'])

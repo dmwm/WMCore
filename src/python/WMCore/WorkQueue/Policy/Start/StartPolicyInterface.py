@@ -108,6 +108,7 @@ class StartPolicyInterface(PolicyInterface):
         args.setdefault('Dbs', dbsUrl)
         args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
         args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
+        args.setdefault('StartPolicy', self.wmspec.startPolicy())
         args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())
         args.setdefault('Priority', self.wmspec.priority())
         args.setdefault('PileupData', self.pileupData)

@@ -22,10 +22,7 @@ class DQMHarvestWorkloadFactory(StdBase):
         self.workload.setDashboardActivity("harvesting")
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
-        self.workload.setWorkQueueSplitPolicy("DatasetBlock", "FileBased", {"files_per_job": 99999} )
-
-        # TODO maybe it can be removed since LFNBase shouldn't be needed here
-        self.workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
+        self.workload.setWorkQueueSplitPolicy("Dataset", "FileBased", {"files_per_job": 99999} )
 
         # also creates the logCollect job by default
         self.addDQMHarvestTask(uploadProxy = self.dqmUploadProxy,

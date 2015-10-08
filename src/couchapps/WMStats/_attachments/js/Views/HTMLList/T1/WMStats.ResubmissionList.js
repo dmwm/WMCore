@@ -63,8 +63,9 @@ WMStats.namespace('ResubmissionList');
        });
      
      $(WMStats.Globals.Event).on(WMStats.CustomEvents.RESUBMISSION_SUCCESS, 
-        function(event, requestName) {
-            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(requestName));
+        function(event, reqInfo) {
+            $('#acdc_submission div.requestDetailBox').append(WMStats.Utils.formatReqDetailUrl(reqInfo.name, 
+            	                                              reqInfo.reqmgr2Only));
     });
 
 })();

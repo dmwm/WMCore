@@ -4,8 +4,15 @@ WMStats.namespace("Ajax");
 WMStats.Ajax = (function($){
     var reqMgrFuncs = {
         putRequest: function(requestArgs) {
-            $.ajax("/reqmgr/reqMgr/request", 
-                   {type: 'PUT',
+        	var reqMgr2Flag = WMStats.ActiveRequestModel.getData().getData(requestArgs.OriginalRequestName).ReqMgr2Only;
+        	var uri = "/reqmgr2/data/request";
+        	var verb = "POST";
+        	if (!reqMgr2Flag) {
+        		uri = "/reqmgr/reqMgr/request";
+        		verb = "PUT";
+        	} 
+            $.ajax(uri, 
+                   {type: verb,
                     //accept: {json: "application/json"},
                     //contentType: "application/json",
                     headers: {"Accept": "application/json",
@@ -13,15 +20,20 @@ WMStats.Ajax = (function($){
                     data: JSON.stringify(requestArgs),
                     processData: false,
                     success: function(data, textStatus, jqXHR) {
-                            var requestName = data["WMCore.RequestManager.DataStructs.Request.Request"].RequestName;
-                            $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, requestName);
+                    	 	var reqInfo = {};
+                    	 	if (!reqMgr2Flag) {
+                            	reqInfo.name = data["WMCore.RequestManager.DataStructs.Request.Request"].RequestName;
+                            } else {
+                            	reqInfo.name = data.result[0].request;
+                            } 
+                            reqInfo.reqmgr2Only = reqMgr2Flag;
+                            $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, reqInfo);
                             },
                     error: function(jqXHR, textStatus, errorThrown){
                             alert(jqXHR.responseText);
                         }
                     });
-            
-        }
+              },
    };
     
     var phedexFuncs = {

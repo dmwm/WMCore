@@ -13,12 +13,14 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
+
 def getTestFile(partialPath):
     """
     Returns the absolute path for the test json file
     """
     normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
     return os.path.join(normPath, partialPath)
+
 
 class DQMHarvestTests(unittest.TestCase):
     """
@@ -88,7 +90,7 @@ class DQMHarvestTests(unittest.TestCase):
             "ConfigCacheUrl": os.environ["COUCHURL"],
             "CouchDBName": "dqmharvest_t",
             "DQMConfigCacheID": self.injectDQMHarvestConfig()
-            })
+        })
         testArguments.pop("ConfigCacheID", None)
 
         factory = DQMHarvestWorkloadFactory()
@@ -110,7 +112,7 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(sorted(testWorkload.lumiList.keys()), ['139788', '139790', '144011'])
         self.assertEqual(sorted(testWorkload.lumiList.values()),
                          [[[5, 10], [15, 20], [25, 30]], [[25, 75],
-                         [125, 175], [275, 325]], [[50, 100], [110, 125]]])
+                                                          [125, 175], [275, 325]], [[50, 100], [110, 125]]])
         self.assertEqual(testWorkload.data.policies.start.policyName, "Dataset")
 
         # test workload tasks and steps
@@ -125,17 +127,14 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(task.jobSplittingAlgorithm(), "Harvest", "Wrong job splitting algo")
         self.assertFalse(task.inputLocationFlag(), "Wrong input location flag")
         self.assertEqual(sorted(task.inputRunWhitelist()),
-                                [138923, 138924, 138934, 138937, 139788, 139789,
-                                139790, 144011, 144083, 144084, 144086])
+                         [138923, 138924, 138934, 138937, 139788, 139789,
+                          139790, 144011, 144083, 144084, 144086])
 
         self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'logArch1', 'upload1'])
         self.assertEqual(task.getStep("cmsRun1").stepType(), "CMSSW")
         self.assertEqual(task.getStep("logArch1").stepType(), "LogArchive")
         self.assertEqual(task.getStep("upload1").stepType(), "DQMUpload")
 
-        #print "ALAN inspect %s" % inspect.getmembers(allTasks)
-        #for property, value in vars(allTasks).iteritems():
-        #    print property, ": ", value
         return
 
     def testDQMHarvestFailed(self):
@@ -151,12 +150,13 @@ class DQMHarvestTests(unittest.TestCase):
             "ConfigCacheUrl": os.environ["COUCHURL"],
             "CouchDBName": "dqmharvest_t",
             "ConfigCacheID": self.injectDQMHarvestConfig()
-            })
+        })
         testArguments.pop("DQMConfigCacheID", None)
 
         factory = DQMHarvestWorkloadFactory()
         self.assertRaises(WMSpecFactoryException, factory.validateSchema, testArguments)
         return
+
 
 if __name__ == '__main__':
     unittest.main()

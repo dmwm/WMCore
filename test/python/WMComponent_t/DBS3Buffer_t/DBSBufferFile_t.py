@@ -15,7 +15,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil import DBSBufferUtil
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 class DBSBufferFileTest(unittest.TestCase):
     def setUp(self):
@@ -245,24 +245,24 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileC.load()
 
         assert testFileA == testFileB, \
-               "ERROR: File load by LFN didn't work"
+            "ERROR: File load by LFN didn't work"
 
         assert testFileA == testFileC, \
-               "ERROR: File load by ID didn't work"
+            "ERROR: File load by ID didn't work"
 
-        assert type(testFileB["id"]) == int or type(testFileB["id"]) == long, \
-               "ERROR: File id is not an integer type."
-        assert type(testFileB["size"]) == int or type(testFileB["size"]) == long, \
-               "ERROR: File size is not an integer type."
-        assert type(testFileB["events"]) == int or type(testFileB["events"]) == long, \
-               "ERROR: File events is not an integer type."
+        assert isinstance(testFileB["id"], int) or isinstance(testFileB["id"], long), \
+            "ERROR: File id is not an integer type."
+        assert isinstance(testFileB["size"], int) or isinstance(testFileB["size"], long), \
+            "ERROR: File size is not an integer type."
+        assert isinstance(testFileB["events"], int) or isinstance(testFileB["events"], long), \
+            "ERROR: File events is not an integer type."
 
-        assert type(testFileC["id"]) == int or type(testFileC["id"]) == long, \
-               "ERROR: File id is not an integer type."
-        assert type(testFileC["size"]) == int or type(testFileC["size"]) == long, \
-               "ERROR: File size is not an integer type."
-        assert type(testFileC["events"]) == int or type(testFileC["events"]) == long, \
-               "ERROR: File events is not an integer type."
+        assert isinstance(testFileC["id"], int) or isinstance(testFileC["id"], long), \
+            "ERROR: File id is not an integer type."
+        assert isinstance(testFileC["size"], int) or isinstance(testFileC["size"], long), \
+            "ERROR: File size is not an integer type."
+        assert isinstance(testFileC["events"], int) or isinstance(testFileC["events"], long), \
+            "ERROR: File events is not an integer type."
 
         testFileA.delete()
         return
@@ -544,7 +544,7 @@ class DBSBufferFileTest(unittest.TestCase):
         assert (runSet - testFile["runs"]) == set(), \
             "Error: addRunSet is not updating set correctly"
 
-    def testXSetBlock(self):
+    def testSetBlock(self):
         """
         _testSetBlock_
 
@@ -563,9 +563,9 @@ class DBSBufferFileTest(unittest.TestCase):
 
         datasetAction.execute(datasetPath = dataset)
 
-        newBlock = DBSBlock(name = "someblockname",
-                            location = "se1.cern.ch",
-                            das = None, workflow = None)
+        newBlock = DBSBufferBlock(name = "someblockname",
+                                  location = "se1.cern.ch",
+                                  datasetpath = None)
         newBlock.setDataset(dataset, 'data', 'VALID')
 
         createAction.execute(blocks = [newBlock])
@@ -785,9 +785,6 @@ class DBSBufferFileTest(unittest.TestCase):
         _testSetLocationByLFN_
 
         """
-
-        myThread = threading.currentThread()
-
         testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 1024, events = 10)
         testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
                                appFam = "RECO", psetHash = "GIBBERISH",
@@ -821,7 +818,6 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
         testFileA.create()
 
-        checksums = {"adler32": "adler32", "cksum": "cksum", "md5": "md5"}
         setCksumAction = self.daoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         binds = [{'lfn': "/this/is/a/lfn", 'cktype': 'adler32', 'cksum': 201},
                  {'lfn': "/this/is/a/lfn", 'cktype': 'cksum', 'cksum': 101}]
@@ -845,9 +841,6 @@ class DBSBufferFileTest(unittest.TestCase):
 
 
         addToBuffer = DBSBufferUtil()
-
-        bulkLoad = self.daoFactory(classname = "DBSBufferFiles.LoadBulkFilesByID")
-
 
         testFileChildA = DBSBufferFile(lfn = "/this/is/a/child/lfnA", size = 1024,
                                         events = 20)

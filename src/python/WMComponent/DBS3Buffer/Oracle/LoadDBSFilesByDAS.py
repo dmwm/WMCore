@@ -2,19 +2,10 @@
 """
 _LoadDBSFilesByDAS_
 
-Oracle implementation of LoadDBSFilesByDAS
+Oracle implementation of DBS3Buffer.LoadDBSFilesByDAS
 """
-
-
-
-
-import logging
 
 from WMComponent.DBS3Buffer.MySQL.LoadDBSFilesByDAS import LoadDBSFilesByDAS as MySQLLoadDBSFilesByDAS
 
 class LoadDBSFilesByDAS(MySQLLoadDBSFilesByDAS):
-    """
-    _LoadDBSFilesByDAS_
-
-    Oracle implementation, untested
-    """
+    pass

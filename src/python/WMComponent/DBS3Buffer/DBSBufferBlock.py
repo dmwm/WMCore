@@ -1,8 +1,6 @@
 #!/usr/bin/env python
-
-
 """
-DBSBlock
+DBSBufferBlock
 
 This is a block object which will be uploaded to DBS
 """
@@ -17,23 +15,22 @@ from WMCore.WMException import WMException
 
 
 
-class DBSBlockException(WMException):
+class DBSBufferBlockException(WMException):
     """
-    _DBSBlockException_
+    _DBSBufferBlockException_
 
-    Container class for exceptions for the DBSBlock
-    """
-
-
-
-class DBSBlock:
-    """
-    DBSBlock
-
-    Class for holding all the necessary equipment for a DBSBlock
+    Container class for exceptions for the DBSBufferBlock
     """
 
-    def __init__(self, name, location, das, workflow):
+
+
+class DBSBufferBlock:
+    """
+    _DBSBufferBlock_
+
+    """
+
+    def __init__(self, name, location, datasetpath):
         """
         Just the necessary objects
 
@@ -54,15 +51,15 @@ class DBSBlock:
                           'file_parent_list':     [],   # List of file parents
                           'close_settings':       {}}   # Dict of info about block close settings
 
-        self.files     = []
-        self.encoder   = JSONRequests()
-        self.status    = 'Open'
-        self.inBuff    = False
-        self.startTime = time.time()
-        self.name      = name
-        self.location  = location
-        self.das       = das
-        self.workflow = workflow
+        self.files        = []
+        self.encoder      = JSONRequests()
+        self.status       = 'Open'
+        self.inBuff       = False
+        self.startTime    = time.time()
+        self.name         = name
+        self.location     = location
+        self.datasetpath  = datasetpath
+        self.workflows    = set()
         
         self.data['block']['block_name']       = name
         self.data['block']['origin_site_name'] = location
@@ -101,18 +98,19 @@ class DBSBlock:
         Add a DBSBufferFile object to our block
         """
         if dbsFile['id'] in [x['id'] for x in self.files]:
-            msg =  "Duplicate file inserted into DBSBlock: %i\n" % (dbsFile['id'])
+            msg =  "Duplicate file inserted into DBSBufferBlock: %i\n" % (dbsFile['id'])
             msg += "Ignoring this file for now!\n"
             logging.error(msg)
             logging.debug("Block length: %i" % len(self.files))
-            l = [x['id'] for x in self.files]
-            l.sort()
+            l = sorted([x['id'] for x in self.files])
             logging.debug("First file: %s    Last file: %s" % (l[0], l[-1]))
             return
 
         for setting in self.data['close_settings']:
             if self.data['close_settings'][setting] is None:
                 self.data['close_settings'][setting] = dbsFile[setting]
+
+        self.workflows.add(dbsFile['workflow'])
 
         self.files.append(dbsFile)
         self.data['block']['block_size'] += int(dbsFile['size'])
@@ -225,8 +223,9 @@ class DBSBlock:
 
         Set the block's processing version.
         """
+        # compatibility statement for old style proc ver (still needed ?)
         if procVer.count("-") == 1:
-            (junk, self.data["processing_era"]["processing_version"]) = procVer.split("-v")
+            self.data["processing_era"]["processing_version"] = procVer.split("-v")[1]
         else:
             self.data["processing_era"]["processing_version"] = procVer
 
@@ -254,6 +253,14 @@ class DBSBlock:
         self.data['dataset']['physics_group_name'] = group
         return
 
+    def getDatasetPath(self):
+        """
+        _getDatasetPath_
+
+        Return the datasetpath
+        """
+        return self.datasetpath
+
     def getDataset(self):
         """
         _getDataset_
@@ -264,7 +271,7 @@ class DBSBlock:
 
     def setDataset(self, datasetName, primaryType,
                    datasetType, physicsGroup = None, 
-                   prep_id  = None, overwrite = False, valid = 1):
+                   prep_id  = None, overwrite = False):
         """
         _setDataset_
 
@@ -280,17 +287,17 @@ class DBSBlock:
         if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
             msg = "Invalid processedDatasetType %s\n" % datasetType
             logging.error(msg)
-            raise DBSBlockException(msg)
+            raise DBSBufferBlockException(msg)
 
         try:
             if datasetName[0] == '/':
                 junk, primary, processed, tier = datasetName.split('/')
             else:
                 primary, processed, tier = datasetName.split('/')
-        except Exception as ex:
+        except Exception:
             msg = "Invalid dataset name %s" % datasetName
             logging.error(msg)
-            raise DBSBlockException(msg)
+            raise DBSBufferBlockException(msg)
 
         # Do the primary dataset
         self.data['primds']['primary_ds_name'] = primary
@@ -449,8 +456,6 @@ class DBSBlock:
             del blockInfo['status']
             
         for key in blockInfo.keys():
-            if key == "DatasetAlgo":
-                continue
             self.data['block'][key] = blockInfo.get(key)
             
     def convertToDBSBlock(self):
@@ -461,11 +466,11 @@ class DBSBlock:
         
         #TODO: instead of using key to remove need to change to keyToKeep
         # Ask dbs team to publish the list (API)
-        keyToRemove = ['insertedFiles', 'newFiles', 'DatasetAlgo', 'file_count',
-                       'block_size', 'origin_site_name', 'creation_date', 'open',
+        keyToRemove = ['insertedFiles', 'newFiles', 'file_count', 'block_size',
+                       'origin_site_name', 'creation_date', 'open',
                        'Name', 'close_settings']
         
-        nestedKeyToRemove = ['block.block_events', 'block.workflow']
+        nestedKeyToRemove = ['block.block_events', 'block.datasetpath', 'block.workflows']
         
         dbsBufferToDBSBlockKey = {'block_size': 'BlockSize',
                                   'creation_date': 'CreationDate', 

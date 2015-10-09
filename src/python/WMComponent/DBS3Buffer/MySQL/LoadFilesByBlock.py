@@ -5,17 +5,13 @@ _LoadFilesByBlock_
 MySQL implementation of LoadFilesByBlock
 """
 
-
-
-
-import logging
-
 from WMComponent.DBS3Buffer.MySQL.LoadDBSFilesByDAS import LoadDBSFilesByDAS as MySQLLoadDBSFilesByDAS
 
 class LoadFilesByBlock(MySQLLoadDBSFilesByDAS):
     fileInfoSQL = """SELECT files.id AS id, files.lfn AS lfn, files.filesize AS filesize,
                     files.events AS events,
                     files.status AS status,
+                    dbsbuffer_workflow.name AS workflow,
                     dbsbuffer_algo.app_name AS app_name, dbsbuffer_algo.app_ver AS app_ver,
                     dbsbuffer_algo.app_fam AS app_fam, dbsbuffer_algo.pset_hash AS pset_hash,
                     dbsbuffer_algo.config_content, dbsbuffer_dataset.path AS dataset_path,

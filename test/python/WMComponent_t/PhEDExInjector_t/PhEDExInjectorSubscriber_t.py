@@ -11,7 +11,7 @@ import unittest
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBlock
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 
@@ -20,10 +20,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMBase import getTestBase
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 from WMQuality.TestInit import TestInit
@@ -185,15 +181,15 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
 
-        newBlockA = DBSBlock(name = self.blockAName,
-                             location = "srm-cms.cern.ch",
-                             das = None, workflow = None)
+        newBlockA = DBSBufferBlock(name = self.blockAName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
         newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
         newBlockA.status = 'Closed'
 
-        newBlockB = DBSBlock(name = self.blockBName,
-                             location = "srm-cms.cern.ch",
-                             das = None, workflow = None)
+        newBlockB = DBSBufferBlock(name = self.blockBName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
         newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
         newBlockB.status = 'Closed'
 

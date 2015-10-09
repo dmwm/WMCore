@@ -36,3 +36,4 @@ from . import UnittestImpl
 from . import VandyImpl
 from . import TestFallbackToOldBackend
 from . import GFAL2Impl
+from . import AWSS3Impl

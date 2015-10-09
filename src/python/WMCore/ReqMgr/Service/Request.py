@@ -363,6 +363,9 @@ class Request(RESTEntity):
         
         dn = cherrypy.request.user.get("dn", "unknown")
         
+        if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args): 
+            request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
+        
         if "total_jobs" in request_args:
             # only GQ update this stats
             # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
@@ -414,6 +417,22 @@ class Request(RESTEntity):
         # delete should also happen on WMStats
         cherrypy.log("INFO: Delete '%s' done." % request_name)
         
+    def _update_additional_request_args(self, workload, request_args):
+        """
+        add to request_args properties which is not initially set from user.
+        This data will put in to couchdb. 
+        Update request_args here if additional information need to be put in couchdb
+        """
+        request_args['RequestWorkflow'] = sanitizeURL("%s/%s/%s/spec" % (request_args["CouchURL"], 
+                                            request_args["CouchWorkloadDBName"], workload.name()))['url']
+        
+        # Add the output datasets if necessary
+        # for some bizarre reason OutpuDatasets is list of lists    
+        request_args['OutputDatasets'] = workload.listOutputDatasets()
+        
+        #TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
+        request_args['ReqMgr2Only'] = True
+        return
     
     @restcall(formats = [('application/json', JSONFormat())])
     def post(self, workload_pair_list, multi_update_flag = False):
@@ -442,11 +461,10 @@ class Request(RESTEntity):
             
         out = []
         for workload, request_args in workload_pair_list:
+            
+            self._update_additional_request_args(workload, request_args)
+            
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
-            request_args['RequestWorkflow'] = sanitizeURL("%s/%s/%s/spec" % (request_args["CouchURL"], 
-                                            request_args["CouchWorkloadDBName"], workload.name()))['url']
-            #TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
-            request_args['ReqMgr2Only'] = True
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                               metadata=request_args)
             out.append({'request':workload.name()})

@@ -7,15 +7,15 @@ __all__ = []
 
 from WMCore.WorkQueue.Policy.PolicyInterface import PolicyInterface
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
-#from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement as WorkQueueElement
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from dbs.exceptions.dbsClientException import dbsClientException
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore import Lexicon
 
+
 class StartPolicyInterface(PolicyInterface):
     """Interface for start policies"""
+
     def __init__(self, **args):
         PolicyInterface.__init__(self, **args)
         self.workQueueElements = []
@@ -27,7 +27,7 @@ class StartPolicyInterface(PolicyInterface):
         self.data = {}
         self.lumi = None
         self.couchdb = None
-        self.rejectedWork = [] # List of inputs that were rejected
+        self.rejectedWork = []  # List of inputs that were rejected
         self.pileupData = {}
 
     def split(self):
@@ -42,27 +42,29 @@ class StartPolicyInterface(PolicyInterface):
         """Common validation stuff"""
         try:
             Lexicon.requestName(self.wmspec.name())
-        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Workflow name validation error: %s" % str(ex))
             raise error
 
         if self.initialTask.siteWhitelist():
             if isinstance(self.initialTask.siteWhitelist(), basestring):
-                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(self.initialTask.siteWhitelist()))
+                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site whitelist: Must be tuple/list but is %s' % type(
+                    self.initialTask.siteWhitelist()))
                 raise error
             try:
                 [Lexicon.cmsname(site) for site in self.initialTask.siteWhitelist()]
-            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(self.wmspec, "Site whitelist validation error: %s" % str(ex))
                 raise error
 
         if self.initialTask.siteBlacklist():
             if isinstance(self.initialTask.siteBlacklist(), basestring):
-                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(self.initialTask.siteBlacklist()))
+                error = WorkQueueWMSpecError(self.wmspec, 'Invalid site blacklist: Must be tuple/list but is %s' % type(
+                    self.initialTask.siteBlacklist()))
                 raise error
             try:
                 [Lexicon.cmsname(site) for site in self.initialTask.siteBlacklist()]
-            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(self.wmspec, "Site blacklist validation error: %s" % str(ex))
                 raise error
 
@@ -78,7 +80,7 @@ class StartPolicyInterface(PolicyInterface):
         try:
             if self.initialTask.getInputDatasetPath():
                 Lexicon.dataset(self.initialTask.getInputDatasetPath())
-        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Dataset validation error: %s" % str(ex))
             raise error
 
@@ -88,7 +90,7 @@ class StartPolicyInterface(PolicyInterface):
             for dbsUrl in pileupDatasets:
                 for dataset in pileupDatasets[dbsUrl]:
                     Lexicon.dataset(dataset)
-        except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+        except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
             error = WorkQueueWMSpecError(self.wmspec, "Pileup dataset validation error: %s" % str(ex))
             raise error
 
@@ -108,6 +110,7 @@ class StartPolicyInterface(PolicyInterface):
         args.setdefault('Dbs', dbsUrl)
         args.setdefault('SiteWhitelist', self.initialTask.siteWhitelist())
         args.setdefault('SiteBlacklist', self.initialTask.siteBlacklist())
+        args.setdefault('StartPolicy', self.wmspec.startPolicy())
         args.setdefault('EndPolicy', self.wmspec.endPolicyParameters())
         args.setdefault('Priority', self.wmspec.priority())
         args.setdefault('PileupData', self.pileupData)
@@ -122,7 +125,7 @@ class StartPolicyInterface(PolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))
         self.workQueueElements.append(ele)
 
-    def __call__(self, wmspec, task, data = None, mask = None, team = None):
+    def __call__(self, wmspec, task, data=None, mask=None, team=None):
         self.wmspec = wmspec
         # bring in spec specific settings
         self.args.update(self.wmspec.startPolicyParameters())
@@ -153,7 +156,7 @@ class StartPolicyInterface(PolicyInterface):
                 msg = """data: %s, mask: %s, pileup: %s. %s""" % (str(data), str(mask), str(pileupDatasets), str(ex))
                 error = WorkQueueNoWorkError(self.wmspec, msg)
                 raise error
-            raise # propagate other dbs errors
+            raise  # propagate other dbs errors
 
         # if we have no elements then there was no work in the spec, fail it
         if not self.workQueueElements:
@@ -163,7 +166,7 @@ class StartPolicyInterface(PolicyInterface):
             raise error
         return self.workQueueElements, self.rejectedWork
 
-    def dbs(self, dbs_url = None):
+    def dbs(self, dbs_url=None):
         """Get DBSReader"""
         from WMCore.WorkQueue.WorkQueueUtils import get_dbs
         if dbs_url is None:

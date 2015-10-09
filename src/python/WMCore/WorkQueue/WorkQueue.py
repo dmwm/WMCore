@@ -14,7 +14,6 @@ import os
 import threading
 import time
 import traceback
-from httplib import HTTPException
 
 from WMCore.Alerts import API as alertAPI
 
@@ -40,34 +39,34 @@ from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerError
 
 from WMCore import Lexicon
-from WMCore.Services.ReqMgr.ReqMgr         import ReqMgr
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Services.LogDB.LogDB         import LogDB
+from WMCore.Services.LogDB.LogDB import LogDB
 
 
 #  //
 # // Convenience constructor functions
-#//
-def globalQueue(logger = None, dbi = None, **kwargs):
+# //
+def globalQueue(logger=None, dbi=None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use globally
     """
-    defaults = {'PopulateFilesets' : False,
+    defaults = {'PopulateFilesets': False,
                 'LocalQueueFlag': False,
-                'SplittingMapping' : {'DatasetBlock' :
-                                        {'name': 'Dataset',
-                                         'args': {}}
-                                      },
-                }
+                'SplittingMapping': {'DatasetBlock':
+                                         {'name': 'Dataset',
+                                          'args': {}}
+                                    },
+               }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 
-def localQueue(logger = None, dbi = None, **kwargs):
+
+def localQueue(logger=None, dbi=None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use locally
     """
-    defaults = {'TrackLocationOrSubscription' : 'location'}
+    defaults = {'TrackLocationOrSubscription': 'location'}
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
-
 
 
 class WorkQueue(WorkQueueBase):
@@ -76,7 +75,8 @@ class WorkQueue(WorkQueueBase):
 
     WorkQueue object - interface to WorkQueue functionality.
     """
-    def __init__(self, logger = None, dbi = None, **params):
+
+    def __init__(self, logger=None, dbi=None, **params):
 
         WorkQueueBase.__init__(self, logger, dbi)
         self.parent_queue = None
@@ -90,12 +90,12 @@ class WorkQueue(WorkQueueBase):
             raise RuntimeError('CouchUrl config value mandatory')
         self.params.setdefault('DbName', 'workqueue')
         self.params.setdefault('InboxDbName', self.params['DbName'] + '_inbox')
-        self.params.setdefault('ParentQueueCouchUrl', None) # We get work from here
+        self.params.setdefault('ParentQueueCouchUrl', None)  # We get work from here
 
         self.backend = WorkQueueBackend(self.params['CouchUrl'], self.params['DbName'],
                                         self.params['InboxDbName'],
                                         self.params['ParentQueueCouchUrl'], self.params.get('QueueURL'),
-                                        logger = self.logger)
+                                        logger=self.logger)
         if self.params.get('ParentQueueCouchUrl'):
             try:
                 if self.params.get('ParentQueueInboxCouchDBName'):
@@ -108,7 +108,7 @@ class WorkQueue(WorkQueueBase):
             except IndexError as ex:
                 # Probable cause: Someone didn't put the global WorkQueue name in
                 # the ParentCouchUrl
-                msg =  "Parsing failure for ParentQueueCouchUrl - probably missing dbname in input\n"
+                msg = "Parsing failure for ParentQueueCouchUrl - probably missing dbname in input\n"
                 msg += "Exception: %s\n" % str(ex)
                 msg += str("ParentQueueCouchUrl: %s\n" % self.params['ParentQueueCouchUrl'])
                 self.logger.error(msg)
@@ -117,7 +117,7 @@ class WorkQueue(WorkQueueBase):
 
         self.params.setdefault("GlobalDBS",
                                "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
-        self.params.setdefault('QueueDepth', 1) # when less than this locally
+        self.params.setdefault('QueueDepth', 1)  # when less than this locally
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
         self.params.setdefault('TrackLocationOrSubscription', 'subscription')
@@ -134,9 +134,9 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('JobDumpConfig', None)
         self.params.setdefault('BossAirConfig', None)
 
-        self.params['QueueURL'] = self.backend.queueUrl # url this queue is visible on
-                                    # backend took previous QueueURL and sanitized it
-        self.params.setdefault('WMBSUrl', None) # this will only be set on local Queue
+        self.params['QueueURL'] = self.backend.queueUrl  # url this queue is visible on
+        # backend took previous QueueURL and sanitized it
+        self.params.setdefault('WMBSUrl', None)  # this will only be set on local Queue
         if self.params.get('WMBSUrl'):
             self.params['WMBSUrl'] = Lexicon.sanitizeURL(self.params['WMBSUrl'])['url']
         self.params.setdefault('Teams', [])
@@ -156,8 +156,8 @@ class WorkQueue(WorkQueueBase):
                                                   )
         self.params['SplittingMapping'].setdefault('MonteCarlo',
                                                    {'name': 'MonteCarlo',
-                                                    'args':{}}
-                                                   )
+                                                    'args': {}}
+                                                  )
         self.params['SplittingMapping'].setdefault('Dataset',
                                                    {'name': 'Dataset',
                                                     'args': {}}
@@ -173,8 +173,8 @@ class WorkQueue(WorkQueueBase):
 
         self.params.setdefault('EndPolicySettings', {})
 
-        assert(self.params['TrackLocationOrSubscription'] in ('subscription',
-                                                              'location'))
+        assert (self.params['TrackLocationOrSubscription'] in ('subscription',
+                                                               'location'))
         # Can only release blocks on location
         if self.params['TrackLocationOrSubscription'] == 'location':
             if self.params['SplittingMapping']['DatasetBlock']['name'] != 'Block':
@@ -198,44 +198,44 @@ class WorkQueue(WorkQueueBase):
                                     self.params['Teams'].split(',')]
 
         self.dataLocationMapper = WorkQueueDataLocationMapper(self.logger, self.backend,
-                                                              phedex = self.phedexService,
-                                                              sitedb = self.SiteDB,
-                                                              locationFrom = self.params['TrackLocationOrSubscription'],
-                                                              incompleteBlocks = self.params['ReleaseIncompleteBlocks'],
-                                                              requireBlocksSubscribed = not self.params['ReleaseIncompleteBlocks'],
-                                                              fullRefreshInterval = self.params['FullLocationRefreshInterval'],
-                                                              updateIntervalCoarseness = self.params['LocationRefreshInterval'])
-        
+                                                              phedex=self.phedexService,
+                                                              sitedb=self.SiteDB,
+                                                              locationFrom=self.params['TrackLocationOrSubscription'],
+                                                              incompleteBlocks=self.params['ReleaseIncompleteBlocks'],
+                                                              requireBlocksSubscribed=not self.params['ReleaseIncompleteBlocks'],
+                                                              fullRefreshInterval=self.params['FullLocationRefreshInterval'],
+                                                              updateIntervalCoarseness=self.params['LocationRefreshInterval'])
+
         # used for only global WQ
         if self.params.get('ReqMgrServiceURL'):
             self.reqmgrSvc = ReqMgr(self.params['ReqMgrServiceURL'])
-        
+
         if self.params.get('RequestDBURL'):
             # This is need for getting post call
             # TODO: Change ReqMgr api to accept post for for retrieving the data and remove this
             self.requestDB = RequestDBReader(self.params['RequestDBURL'])
-        
+
 
         # initialize alerts sending client (self.sendAlert() method)
         # usage: self.sendAlert(levelNum, msg = msg) ; level - integer 1 .. 10
         #    1 - 4 - lower levels ; 5 - 10 higher levels
         preAlert, self.alertSender = \
-            alertAPI.setUpAlertsMessaging(self, compName = "WorkQueueManager")
-        self.sendAlert = alertAPI.getSendAlert(sender = self.alertSender,
-                                               preAlert = preAlert)
-        
-        # set the thread name before creat the log db. 
+            alertAPI.setUpAlertsMessaging(self, compName="WorkQueueManager")
+        self.sendAlert = alertAPI.getSendAlert(sender=self.alertSender,
+                                               preAlert=preAlert)
+
+        # set the thread name before creat the log db.
         # only sets that when it is not set already
-        #setLogDB
+        # setLogDB
 
         myThread = threading.currentThread()
-        if myThread.getName() == "MainThread": # this should be only GQ case other cases thread name should be set
+        if myThread.getName() == "MainThread":  # this should be only GQ case other cases thread name should be set
             myThread.setName(self.__class__.__name__)
-        
+
         centralurl = self.params.get("central_logdb_url", "")
         identifier = self.params.get("log_reporter", "")
         self.logdb = LogDB(centralurl, identifier, logger=self.logger)
-            
+
         self.logger.debug("WorkQueue created successfully")
 
     def __len__(self):
@@ -251,7 +251,7 @@ class WorkQueue(WorkQueueBase):
         if self.alertSender:
             self.alertSender.unregister()
 
-    def setStatus(self, status, elementIDs = None, SubscriptionId = None, WorkflowName = None):
+    def setStatus(self, status, elementIDs=None, SubscriptionId=None, WorkflowName=None):
         """
         _setStatus_, throws an exception if no elements are updated
 
@@ -265,7 +265,7 @@ class WorkQueue(WorkQueueBase):
         except TypeError:
             elementIDs = [elementIDs]
 
-        if status == 'Canceled': # Cancel needs special actions
+        if status == 'Canceled':  # Cancel needs special actions
             return self.cancelWork(elementIDs, SubscriptionId, WorkflowName)
 
         args = {}
@@ -274,7 +274,7 @@ class WorkQueue(WorkQueueBase):
         if WorkflowName:
             args['RequestName'] = WorkflowName
 
-        affected = self.backend.getElements(elementIDs = elementIDs, **args)
+        affected = self.backend.getElements(elementIDs=elementIDs, **args)
         if not affected:
             raise WorkQueueNoMatchingElements("No matching elements")
 
@@ -293,9 +293,9 @@ class WorkQueue(WorkQueueBase):
         self.logger.info("Priority change request to %s for %s" % (newpriority, str(workflowNames)))
         affected = []
         for wf in workflowNames:
-            affected.extend(self.backend.getElements(returnIdOnly = True, RequestName = wf))
+            affected.extend(self.backend.getElements(returnIdOnly=True, RequestName=wf))
 
-        self.backend.updateElements(*affected, Priority = newpriority)
+        self.backend.updateElements(*affected, Priority=newpriority)
 
         if not affected:
             raise RuntimeError("Priority not changed: No matching elements")
@@ -316,8 +316,8 @@ class WorkQueue(WorkQueueBase):
         except TypeError:
             ids = [ids]
 
-        return self.backend.updateElements(*ids, Status = 'Available',
-                                           ChildQueueUrl = None, WMBSUrl = None)
+        return self.backend.updateElements(*ids, Status='Available',
+                                           ChildQueueUrl=None, WMBSUrl=None)
 
     def getWork(self, jobSlots, siteJobCounts):
         """
@@ -338,7 +338,7 @@ class WorkQueue(WorkQueueBase):
             return results
 
         # cache wmspecs for lifetime of function call, likely we will have multiple elements for same spec.
-        #TODO: Check to see if we can skip spec loading - need to persist some more details to element
+        # TODO: Check to see if we can skip spec loading - need to persist some more details to element
         wmspecCache = {}
         for match in matches:
             skipMatch = False
@@ -350,9 +350,12 @@ class WorkQueue(WorkQueueBase):
                 else:
                     wmspec = wmspecCache[match['RequestName']]
 
-                if match['Inputs']:
+                if match['StartPolicy'] == 'Dataset':
+                    # actually returns dataset name and dataset info
+                    blockName, dbsBlock = self._getDBSDataset(match, wmspec)
+                elif match['Inputs']:
                     blockName, dbsBlock = self._getDBSBlock(match, wmspec)
-                
+
                 try:
                     match['Subscription'] = self._wmbsPreparation(match,
                                                                   wmspec,
@@ -361,40 +364,62 @@ class WorkQueue(WorkQueueBase):
                 except Exception as ex:
                     skipMatch = True
                     msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
-                    self.logger.error(msg)  
+                    self.logger.error(msg)
                     centralurl = self.params.get("central_logdb_url", "")
                     identifier = self.params.get("log_reporter", "")
                     self.logdb = LogDB(centralurl, identifier, logger=self.logger)
                     self.logdb.post(wmspec.name(), msg, 'error')
-                                      
 
             if not skipMatch:
                 results.append(match)
 
-        del wmspecCache # remove cache explicitly
+        del wmspecCache  # remove cache explicitly
         self.logger.info('Injected %s units into WMBS' % len(results))
         return results
 
+    def _getDBSDataset(self, match, wmspec):
+        """Get DBS info for this dataset"""
+        tmpDsetDict = {}
+        dbs = get_dbs(match['Dbs'])
+        datasetName = match['Inputs'].keys()[0]
+
+        blocks = dbs.listFileBlocks(datasetName, onlyClosedBlocks=True)
+        for blockName in blocks:
+            tmpDsetDict.update(dbs.getFileBlock(blockName))
+
+        dbsDatasetDict = {'Files': [], 'IsOpen': False, 'StorageElements': []}
+        dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
+        dbsDatasetDict['StorageElements'].extend(
+            [f for block in tmpDsetDict.values() for f in block['StorageElements']])
+        dbsDatasetDict['StorageElements'] = list(set(dbsDatasetDict['StorageElements']))
+
+        if wmspec.locationDataSourceFlag():
+            seElements = []
+            for cmsSite in match['Inputs'].values()[0]:
+                ses = self.SiteDB.cmsNametoSE(cmsSite)
+                seElements.extend(ses)
+            dbsDatasetDict['StorageElements'] = list(set(seElements))
+        return datasetName, dbsDatasetDict
+
     def _getDBSBlock(self, match, wmspec):
         """Get DBS info for this block"""
-        blockName = match['Inputs'].keys()[0] #TODO: Allow more than one
+        blockName = match['Inputs'].keys()[0]  # TODO: Allow more than one
 
         if match['ACDC']:
             acdcInfo = match['ACDC']
             acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
-            collection = acdc.getDataCollection(acdcInfo['collection'])
             splitedBlockName = ACDCBlock.splitBlockName(blockName)
             fileLists = acdc.getChunkFiles(acdcInfo['collection'],
                                            acdcInfo['fileset'],
                                            splitedBlockName['Offset'],
                                            splitedBlockName['NumOfFiles'],
-                                           user = wmspec.getOwner().get("name"),
-                                           group = wmspec.getOwner().get("group"))
+                                           user=wmspec.getOwner().get("name"),
+                                           group=wmspec.getOwner().get("group"))
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():
                 PhEDExNodeNames = set()
-                for pnn in match['Inputs'].values()[0]: #TODO: Allow more than one
+                for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
                     PhEDExNodeNames.update(pnn)
                 PhEDExNodeNames = list(PhEDExNodeNames)
                 for fileInfo in block["Files"]:
@@ -410,22 +435,21 @@ class WorkQueue(WorkQueueBase):
             if wmspec.locationDataSourceFlag():
                 blockInfo = dbsBlockDict[blockName]
                 PhEDExNodeNames = set()
-                for pnn in match['Inputs'].values()[0]: #TODO: Allow more than one
+                for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
                     PhEDExNodeNames.update(pnn)
                 PhEDExNodeNames = list(PhEDExNodeNames)
                 blockInfo['PhEDExNodeNames'] = PhEDExNodeNames
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
-        """Inject data into wmbs and create subscription.
-        """
+        """Inject data into wmbs and create subscription. """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
 
         mask = match['Mask']
         wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
 
-        sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)
+        sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)
         self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],
                                                                                      match['RequestName'],
                                                                                      match['NumOfFilesAdded']))
@@ -433,8 +457,8 @@ class WorkQueue(WorkQueueBase):
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'
         # do update rather than save to avoid conflicts from other thread writes
-        self.backend.updateElements(match.id, Status = 'Running', SubscriptionId = sub['id'],
-                                    NumOfFilesAdded = match['NumOfFilesAdded'])
+        self.backend.updateElements(match.id, Status='Running', SubscriptionId=sub['id'],
+                                    NumOfFilesAdded=match['NumOfFilesAdded'])
 
         return sub
 
@@ -447,7 +471,7 @@ class WorkQueue(WorkQueueBase):
         for ele in elements:
             if not ele.isRunning() or not ele['SubscriptionId'] or not ele:
                 continue
-            if not ele['Inputs'] or not ele['OpenForNewData']:
+            if not ele['Inputs'] or not ele['OpenForNewData'] or ele['StartPolicy'] == 'Dataset':
                 continue
             if not wmspec:
                 wmspec = self.backend.getWMSpec(ele['RequestName'])
@@ -456,12 +480,12 @@ class WorkQueue(WorkQueueBase):
                 self.logger.info("Adding new files to open block %s (%s)" % (blockName, ele.id))
                 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
                 wmbsHelper = WMBSHelper(wmspec, ele['TaskName'], blockName, ele['Mask'], self.params['CacheDir'])
-                ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block = dbsBlock)[1]
-                self.backend.updateElements(ele.id, NumOfFilesAdded = ele['NumOfFilesAdded'])
+                ele['NumOfFilesAdded'] += wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)[1]
+                self.backend.updateElements(ele.id, NumOfFilesAdded=ele['NumOfFilesAdded'])
             if dbsBlock['IsOpen'] != ele['OpenForNewData']:
                 self.logger.info("Closing open block %s (%s)" % (blockName, ele.id))
-                self.backend.updateInboxElements(ele['ParentQueueId'], OpenForNewData = dbsBlock['IsOpen'])
-                self.backend.updateElements(ele.id, OpenForNewData = dbsBlock['IsOpen'])
+                self.backend.updateInboxElements(ele['ParentQueueId'], OpenForNewData=dbsBlock['IsOpen'])
+                self.backend.updateElements(ele.id, OpenForNewData=dbsBlock['IsOpen'])
                 ele['OpenForNewData'] = dbsBlock['IsOpen']
 
     def _assignToChildQueue(self, queue, *elements):
@@ -476,14 +500,14 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('Acquired work for request(s): %s' % requests)
         return work
 
-    def doneWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None):
+    def doneWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None):
         """Mark work as done
         """
-        return self.setStatus('Done', elementIDs = elementIDs,
-                              SubscriptionId = SubscriptionId,
-                              WorkflowName = WorkflowName)
+        return self.setStatus('Done', elementIDs=elementIDs,
+                              SubscriptionId=SubscriptionId,
+                              WorkflowName=WorkflowName)
 
-    def cancelWork(self, elementIDs = None, SubscriptionId = None, WorkflowName = None, elements = None):
+    def cancelWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None, elements=None):
         """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox
            Elements may be directly provided or determined from series of filter arguments
         """
@@ -493,7 +517,7 @@ class WorkQueue(WorkQueueBase):
                 args['SubscriptionId'] = SubscriptionId
             if WorkflowName:
                 args['RequestName'] = WorkflowName
-            elements = self.backend.getElements(elementIDs = elementIDs, **args)
+            elements = self.backend.getElements(elementIDs=elementIDs, **args)
 
         # take wf from args in case no elements exist for workflow (i.e. work was negotiating)
         requestNames = set([x['RequestName'] for x in elements]) | set([wf for wf in [WorkflowName] if wf])
@@ -501,7 +525,7 @@ class WorkQueue(WorkQueueBase):
             return []
         inbox_elements = []
         for wf in requestNames:
-            inbox_elements.extend(self.backend.getInboxElements(WorkflowName = wf))
+            inbox_elements.extend(self.backend.getInboxElements(WorkflowName=wf))
 
         # if local queue, kill jobs, update parent to Canceled and delete elements
         if self.params['LocalQueueFlag']:
@@ -523,7 +547,7 @@ class WorkQueue(WorkQueueBase):
             # now we remove any wf that failed to be cancelled (and its inbox elements)
             requestNames -= set(badWfsCancel)
             for wf in badWfsCancel:
-                elementsToRemove = self.backend.getInboxElements(WorkflowName = wf)
+                elementsToRemove = self.backend.getInboxElements(WorkflowName=wf)
                 inbox_elements = list(set(inbox_elements) - set(elementsToRemove))
             self.logger.info("New list of cancelled requests: %s" % requestNames)
 
@@ -537,20 +561,23 @@ class WorkQueue(WorkQueueBase):
             elements_to_cancel = [x for x in elements if not x['ChildQueueUrl'] and x['Status'] != 'Canceled']
             # ensure all elements receive cancel request, covers case where initial cancel request missed some elements
             # without this elements may avoid the cancel and not be cleared up till they finish
-            elements_not_requested = [x for x in elements if x['ChildQueueUrl'] and (x['Status'] != 'CancelRequested' and not x.inEndState())]
-            
+            elements_not_requested = [x for x in elements if
+                                      x['ChildQueueUrl'] and (x['Status'] != 'CancelRequested' and not x.inEndState())]
+
             self.logger.info("""Canceling work for workflow(s): %s""" % (requestNames))
             if elements_to_cancel:
-                self.backend.updateElements(*[x.id for x in elements_to_cancel], Status = 'Canceled')
+                self.backend.updateElements(*[x.id for x in elements_to_cancel], Status='Canceled')
                 self.logger.info("Cancel-ed element(s) %s" % str([x.id for x in elements_to_cancel]))
-            
+
             if elements_not_requested:
                 # Don't update as fails sometimes due to conflicts (#3856)
                 [x.load().__setitem__('Status', 'CancelRequested') for x in elements_not_requested]
                 self.backend.saveElements(*elements_not_requested)
                 self.logger.info("CancelRequest-ed element(s) %s" % str([x.id for x in elements_not_requested]))
-            
-            self.backend.updateInboxElements(*[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()], Status = 'CancelRequested')
+
+            self.backend.updateInboxElements(
+                *[x.id for x in inbox_elements if x['Status'] != 'CancelRequested' and not x.inEndState()],
+                Status='CancelRequested')
             # if we haven't had any updates for a while assume agent is dead and move to canceled
             if self.params.get('cancelGraceTime', -1) > 0 and elements:
                 last_update = max([float(x.updatetime) for x in elements])
@@ -562,11 +589,10 @@ class WorkQueue(WorkQueueBase):
 
         return [x.id for x in elements]
 
-
     def deleteWorkflows(self, *requests):
         """Delete requests if finished"""
         for request in requests:
-            request = self.backend.getInboxElements(elementIDs = [request])
+            request = self.backend.getInboxElements(elementIDs=[request])
             if len(request) != 1:
                 raise RuntimeError('Invalid number of requests for %s' % request[0]['RequestName'])
             request = request[0]
@@ -577,7 +603,7 @@ class WorkQueue(WorkQueueBase):
             else:
                 self.logger.debug('Not deleting "%s" as it is %s' % (request.id, request['Status']))
 
-    def queueWork(self, wmspecUrl, request = None, team = None):
+    def queueWork(self, wmspecUrl, request=None, team=None):
         """
         Take and queue work from a WMSpec.
 
@@ -593,25 +619,26 @@ class WorkQueue(WorkQueueBase):
         wmspec = WMWorkloadHelper()
         wmspec.load(wmspecUrl)
 
-        if request: # validate request name
+        if request:  # validate request name
             try:
                 Lexicon.requestName(request)
-            except Exception as ex: # can throw many errors e.g. AttributeError, AssertionError etc.
+            except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(wmspec, "Request name validation error: %s" % str(ex))
                 raise error
             if request != wmspec.name():
-                raise WorkQueueWMSpecError(wmspec, 'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
+                raise WorkQueueWMSpecError(wmspec,
+                                           'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
 
         # Either pull the existing inbox element or create a new one.
         try:
-            inbound = self.backend.getInboxElements(elementIDs = [wmspec.name()], loadSpec = True)
+            inbound = self.backend.getInboxElements(elementIDs=[wmspec.name()], loadSpec=True)
             self.logger.info('Resume splitting of "%s"' % wmspec.name())
         except CouchNotFoundError:
-            inbound = [self.backend.createWork(wmspec, Status = 'Negotiating',
-                                              TeamName = team, WMBSUrl = self.params["WMBSUrl"])]
+            inbound = [self.backend.createWork(wmspec, Status='Negotiating',
+                                               TeamName=team, WMBSUrl=self.params["WMBSUrl"])]
             self.backend.insertElements(inbound)
 
-        work = self.processInboundWork(inbound, throw = True)
+        work = self.processInboundWork(inbound, throw=True)
         return len(work)
 
     def addWork(self, requestName):
@@ -622,19 +649,19 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('addWork() checking "%s"' % requestName)
         inbound = None
         try:
-            inbound = self.backend.getInboxElements(elementIDs = [requestName], loadSpec = True)
+            inbound = self.backend.getInboxElements(elementIDs=[requestName], loadSpec=True)
         except CouchNotFoundError:
-            #This shouldn't happen, the request is in running-open therefore it must exist in the inbox
+            # This shouldn't happen, the request is in running-open therefore it must exist in the inbox
             self.logger.error('Can not find request %s for work addition' % requestName)
             return 0
 
         work = []
         if inbound:
-            work = self.processInboundWork(inbound, throw = True, continuous = True)
+            work = self.processInboundWork(inbound, throw=True, continuous=True)
         return len(work)
 
-    def status(self, status = None, elementIDs = None,
-               dictKey = None, syncWithWMBS = False, loadSpec = False,
+    def status(self, status=None, elementIDs=None,
+               dictKey=None, syncWithWMBS=False, loadSpec=False,
                **filters):
         """
         Return elements in the queue.
@@ -644,17 +671,17 @@ class WorkQueue(WorkQueueBase):
         syncWithWMBS causes elements to be synced with their status in WMBS.
         loadSpec causes the workflow for each spec to be loaded.
         """
-        items = self.backend.getElements(status = status,
-                                         elementIDs = elementIDs,
-                                         loadSpec = loadSpec,
+        items = self.backend.getElements(status=status,
+                                         elementIDs=elementIDs,
+                                         loadSpec=loadSpec,
                                          **filters)
 
         if syncWithWMBS:
             from WMCore.WorkQueue.WMBSHelper import wmbsSubscriptionStatus
-            wmbs_status = wmbsSubscriptionStatus(logger = self.logger,
-                                                 dbi = self.conn.dbi,
-                                                 conn = self.conn.getDBConn(),
-                                    transaction = self.conn.existingTransaction())
+            wmbs_status = wmbsSubscriptionStatus(logger=self.logger,
+                                                 dbi=self.conn.dbi,
+                                                 conn=self.conn.getDBConn(),
+                                                 transaction=self.conn.existingTransaction())
             for item in items:
                 for wmbs in wmbs_status:
                     if item['SubscriptionId'] == wmbs['subscription_id']:
@@ -669,8 +696,7 @@ class WorkQueue(WorkQueueBase):
             items = dict(tmp)
         return items
 
-
-    def statusInbox(self, status = None, elementIDs = None, dictKey = None, **filters):
+    def statusInbox(self, status=None, elementIDs=None, dictKey=None, **filters):
         """
         Return elements in the inbox.
 
@@ -688,7 +714,6 @@ class WorkQueue(WorkQueueBase):
 
         return items
 
-
     def updateLocationInfo(self):
         """
         Update locations info for elements.
@@ -700,14 +725,14 @@ class WorkQueue(WorkQueueBase):
         self.backend.recordTaskActivity('location_refresh')
         return result
 
-    def pullWork(self, resources = None, continuousReplication = True):
+    def pullWork(self, resources=None, continuousReplication=True):
         """
         Pull work from another WorkQueue to be processed
 
         If resources passed in get work for them, if not available resources
         from get from wmbs.
         """
-        
+
         if not self.params['ParentQueueCouchUrl']:
             msg = 'Unable to pull work from parent, ParentQueueCouchUrl not provided'
             self.logger.warning(msg)
@@ -723,7 +748,7 @@ class WorkQueue(WorkQueueBase):
         if not resources:
             # find out available resources from wmbs
             from WMCore.WorkQueue.WMBSHelper import freeSlots
-            thresholds, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites = cmsSiteNames())
+            thresholds, jobCounts = freeSlots(self.params['QueueDepth'], knownCmsSites=cmsSiteNames())
             # resources for new work are free wmbs resources minus what we already have queued
             _, resources, jobCounts = self.backend.availableWork(thresholds, jobCounts)
 
@@ -731,15 +756,15 @@ class WorkQueue(WorkQueueBase):
             self.logger.info('Not pulling more work. No free slots.')
             return 0
 
-        left_over = self.parent_queue.getElements('Negotiating', returnIdOnly = True,
-                                                  ChildQueueUrl = self.params['QueueURL'])
+        left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
+                                                  ChildQueueUrl=self.params['QueueURL'])
         if left_over:
             self.logger.info('Not pulling more work. Still replicating %d previous units, ids:\n%s' % (
-                                                                        len(left_over), left_over))
+                len(left_over), left_over))
 
             return 0
 
-        still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly = True)
+        still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly=True)
         if still_processing:
             self.logger.info('Not pulling more work. Still processing %d previous units' % len(still_processing))
             return 0
@@ -772,12 +797,12 @@ class WorkQueue(WorkQueueBase):
             return
 
         if self.params['LocalQueueFlag']:
-            return # GlobalQueue-only service
+            return  # GlobalQueue-only service
 
         if workflows:
             workflowsToClose = workflows
         else:
-            workflowsToCheck = self.backend.getInboxElements(OpenForNewData = True)
+            workflowsToCheck = self.backend.getInboxElements(OpenForNewData=True)
             workflowsToClose = []
             currentTime = time.time()
             for element in workflowsToCheck:
@@ -802,7 +827,7 @@ class WorkQueue(WorkQueueBase):
                         continue
                     if policyInstance.newDataAvailable(topLevelTask, element):
                         skipElement = True
-                        self.backend.updateInboxElements(element.id, TimestampFoundNewData = currentTime)
+                        self.backend.updateInboxElements(element.id, TimestampFoundNewData=currentTime)
                         msg = "There are blocks still open for writing in DBS."
                         self.logdb.post(element['RequestName'], msg, "warning")
                         break
@@ -813,19 +838,19 @@ class WorkQueue(WorkQueueBase):
                 newDataFoundTime = element.get('TimestampFoundNewData', 0)
                 childrenElements = self.backend.getElementsForParent(element)
                 if len(childrenElements) > 0:
-                    lastUpdate = float(max(childrenElements, key = lambda x: x.timestamp).timestamp)
+                    lastUpdate = float(max(childrenElements, key=lambda x: x.timestamp).timestamp)
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
                 else:
                     msg = "ChildElement is empty for element id %s: investigate" % element.id
                     self.logdb.post(element.id, msg, "error")
-                    #self.logdb.upload2central(element.id)
+                    # self.logdb.upload2central(element.id)
                     self.logger.error(msg)
 
         msg = 'No workflows to close.\n'
         if workflowsToClose:
             try:
-                self.backend.updateInboxElements(*workflowsToClose, OpenForNewData = False)
+                self.backend.updateInboxElements(*workflowsToClose, OpenForNewData=False)
                 msg = 'Closed workflows : %s.\n' % ', '.join(workflows)
             except CouchInternalServerError as ex:
                 msg = 'Failed to close workflows. Error was CouchInternalServerError.'
@@ -845,18 +870,17 @@ class WorkQueue(WorkQueueBase):
         """
         deletes Workflow when workflow is in finished status
         """
-        deletableStates = ["completed", "closed-out", "failed", 
-                           "announced", "aborted-completed", "rejected", 
+        deletableStates = ["completed", "closed-out", "failed",
+                           "announced", "aborted-completed", "rejected",
                            "normal-archived", "aborted-archived", "rejected-archived"]
-     
-        reqNames = self.backend.getWorkflows(includeInbox = True, includeSpecs = True)
+
+        reqNames = self.backend.getWorkflows(includeInbox=True, includeSpecs=True)
         requestsInfo = self.requestDB.getRequestByNames(reqNames)
         deleteRequests = []
         for key, value in requestsInfo.items():
-            if ((value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates)):
+            if (value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
-        return  self.backend.deleteWQElementsByWorkflow(deleteRequests)    
-       
+        return self.backend.deleteWQElementsByWorkflow(deleteRequests)
 
     def performSyncAndCancelAction(self, skipWMBS):
         """
@@ -867,29 +891,29 @@ class WorkQueue(WorkQueueBase):
             return
 
         if self.params['LocalQueueFlag']:
-            self.backend.fixConflicts() # before doing anything fix any conflicts
+            self.backend.fixConflicts()  # before doing anything fix any conflicts
 
-        wf_to_cancel = [] # record what we did for task_activity
+        wf_to_cancel = []  # record what we did for task_activity
         finished_elements = []
 
         useWMBS = not skipWMBS and self.params['LocalQueueFlag']
         # Get queue elements grouped by their workflow with updated wmbs progress
         # Cancel if requested, update locally and remove obsolete elements
-        for wf in self.backend.getWorkflows(includeInbox = True, includeSpecs = True):
+        for wf in self.backend.getWorkflows(includeInbox=True, includeSpecs=True):
             try:
-                elements = self.status(RequestName = wf, syncWithWMBS = useWMBS)
-                parents = self.backend.getInboxElements(RequestName = wf)
+                elements = self.status(RequestName=wf, syncWithWMBS=useWMBS)
+                parents = self.backend.getInboxElements(RequestName=wf)
 
-                
                 self.logger.debug("Queue status follows:")
                 results = endPolicy(elements, parents, self.params['EndPolicySettings'])
                 for result in results:
-                    self.logger.debug("Request %s, Status %s, Full info: %s" % (result['RequestName'], result['Status'], result))
+                    self.logger.debug(
+                        "Request %s, Status %s, Full info: %s" % (result['RequestName'], result['Status'], result))
 
                     # check for cancellation requests (affects entire workflow)
                     if result['Status'] == 'CancelRequested':
-                        canceled = self.cancelWork(WorkflowName = wf)
-                        if canceled: # global wont cancel if work in child queue
+                        canceled = self.cancelWork(WorkflowName=wf)
+                        if canceled:  # global wont cancel if work in child queue
                             wf_to_cancel.append(wf)
                             break
                     elif result['Status'] == 'Negotiating':
@@ -902,7 +926,8 @@ class WorkQueue(WorkQueueBase):
 
                     if result.inEndState():
                         if elements:
-                            self.logger.info("Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
+                            self.logger.info(
+                                "Request %s finished (%s)" % (result['RequestName'], parent.statusMetrics()))
                             finished_elements.extend(result['Elements'])
                         else:
                             self.logger.info('Waiting for parent queue to delete "%s"' % result['RequestName'])
@@ -914,7 +939,7 @@ class WorkQueue(WorkQueueBase):
                     for x in updated_elements:
                         self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
                     if not updated_elements and (float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
-                        self.sendAlert(5, msg = 'Element for %s stuck for 24 hours.' % wf)
+                        self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
                     [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
             except Exception as ex:
                 self.logger.error('Error processing workflow "%s": %s' % (wf, str(ex)))
@@ -923,23 +948,22 @@ class WorkQueue(WorkQueueBase):
                                                                             for x in finished_elements]),
                                                                  ', '.join(wf_to_cancel))
         self.backend.recordTaskActivity('housekeeping', msg)
-        
-    def performQueueCleanupActions(self, skipWMBS = False):
-        
+
+    def performQueueCleanupActions(self, skipWMBS=False):
+
         try:
             self.deleteCompletedWFElements()
         except Exception as ex:
             msg = traceback.format_exc()
             self.logger.error('Error deleting wq elements  "%s": %s' % (str(ex), msg))
-        
+
         try:
             self.performSyncAndCancelAction(skipWMBS)
         except Exception as ex:
             msg = traceback.format_exc()
             self.logger.error('Error canceling wq elements  "%s": %s' % (str(ex), msg))
 
-    def _splitWork(self, wmspec, data = None, mask = None,
-                   inbound = None, continuous = False):
+    def _splitWork(self, wmspec, data=None, mask=None, inbound=None, continuous=False):
         """
         Split work from a parent into WorkQeueueElements.
 
@@ -972,11 +996,12 @@ class WorkQueue(WorkQueueBase):
             if continuous:
                 policy.modifyPolicyForWorkAddition(inbound)
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
-                                                policyName, self.params['SplittingMapping']))
+                                                                          policyName, self.params['SplittingMapping']))
             units, rejectedWork = policy(spec, topLevelTask, data, mask)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
-                                                unit['Task'].getPathName(), unit['Jobs'], policyName)
+                                                                                  unit['Task'].getPathName(),
+                                                                                  unit['Jobs'], policyName)
                 if unit['Inputs']:
                     msg += ' on %s' % unit['Inputs'].keys()[0]
                 if unit['Mask']:
@@ -988,18 +1013,18 @@ class WorkQueue(WorkQueueBase):
                 totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
-        return (totalUnits, {'total_jobs': totalToplevelJobs, 
-                             'input_events': totalEvents, 
-                             'input_lumis': totalLumis, 
+        return (totalUnits, {'total_jobs': totalToplevelJobs,
+                             'input_events': totalEvents,
+                             'input_lumis': totalLumis,
                              'input_num_files': totalFiles}, rejectedWork)
 
-    def processInboundWork(self, inbound_work = None, throw = False, continuous = False):
+    def processInboundWork(self, inbound_work=None, throw=False, continuous=False):
         """Retrieve work from inbox, split and store
         If request passed then only process that request
         """
         if self.params['LocalQueueFlag']:
             self.logger.info("fixing conflict...")
-            self.backend.fixConflicts() # db should be consistent
+            self.backend.fixConflicts()  # db should be consistent
 
         result = []
         if not inbound_work and continuous:
@@ -1015,7 +1040,8 @@ class WorkQueue(WorkQueueBase):
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
                     work, totalStats, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
-                                                                     mask=inbound['Mask'], inbound=inbound, continuous=continuous)
+                                                                     mask=inbound['Mask'], inbound=inbound,
+                                                                     continuous=continuous)
 
                     # if global queue, then update workflow stats to request mgr couch doc
                     # remove the "UnittestFlag" - need to create the reqmgrSvc emulator
@@ -1023,11 +1049,11 @@ class WorkQueue(WorkQueueBase):
                         self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
                     # save inbound work to signal we have completed queueing
-                    self.backend.insertElements(work, parent = inbound) # if this fails, rerunning will pick up here
+                    self.backend.insertElements(work, parent=inbound)  # if this fails, rerunning will pick up here
 
                     if not continuous:
                         # Update to Acquired when it's the first processing of inbound work
-                        self.backend.updateInboxElements(inbound.id, Status = 'Acquired')
+                        self.backend.updateInboxElements(inbound.id, Status='Acquired')
 
                     # store the inputs in the global queue inbox workflow element
                     if not self.params.get('LocalQueueFlag'):
@@ -1040,18 +1066,19 @@ class WorkQueue(WorkQueueBase):
                             chunkRejected = rejectedWork[:chunkSize]
                             # TODO:Make this a POST update, instead of several PUT
                             while processedInputs or rejectedWork:
-                                self.backend.updateInboxElements(inbound.id, ProcessedInputs = chunkProcessed,
-                                                                 RejectedInputs = chunkRejected, options = {'incremental' : True})
+                                self.backend.updateInboxElements(inbound.id, ProcessedInputs=chunkProcessed,
+                                                                 RejectedInputs=chunkRejected,
+                                                                 options={'incremental': True})
                                 processedInputs = processedInputs[chunkSize:]
                                 rejectedWork = rejectedWork[chunkSize:]
                                 chunkProcessed = processedInputs[:chunkSize]
                                 chunkRejected = rejectedWork[:chunkSize]
-                    
+
             except TERMINAL_EXCEPTIONS as ex:
                 if not continuous:
                     # Only fail on first splitting
                     self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
-                    self.backend.updateInboxElements(inbound.id, Status = 'Failed')
+                    self.backend.updateInboxElements(inbound.id, Status='Failed')
                     if throw:
                         raise
             except Exception as ex:
@@ -1061,9 +1088,10 @@ class WorkQueue(WorkQueueBase):
                 # last update time was when element was assigned to this queue
                 if (float(inbound.updatetime) + self.params['QueueRetryTime']) < time.time():
                     self.logger.info('Failing workflow "%s" as not queued in %d secs: %s' % (inbound['RequestName'],
-                                                                                             self.params['QueueRetryTime'],
+                                                                                             self.params[
+                                                                                                 'QueueRetryTime'],
                                                                                              str(ex)))
-                    self.backend.updateInboxElements(inbound.id, Status = 'Failed')
+                    self.backend.updateInboxElements(inbound.id, Status='Failed')
                 else:
                     self.logger.info('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))
                 if throw:
@@ -1078,7 +1106,7 @@ class WorkQueue(WorkQueueBase):
 
         return result
 
-    def getWMBSInjectionStatus(self, workflowName = None):
+    def getWMBSInjectionStatus(self, workflowName=None):
         """
         if the parent queue exist return the result from parent queue.
         other wise return the result from the current queue.
@@ -1091,4 +1119,3 @@ class WorkQueue(WorkQueueBase):
             return self.parent_queue.getWMBSInjectStatus(workflowName)
         else:
             return self.backend.getWMBSInjectStatus(workflowName)
-        

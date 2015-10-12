@@ -21,7 +21,6 @@ import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 import WMCore.WMSpec.Utilities as SpecUtils
-from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 
 def getTaskFromStep(stepRef):
@@ -323,13 +322,11 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def execute(self, wmbsJob, emulator = None):
+    def execute(self, wmbsJob):
         """
         _execute_
 
-        Invoke execution of the steps using an optional Emulator
-
-        TODO: emulator is now deprecated, remove from API
+        Invoke execution of the steps
 
         """
         self.startTime = time.time()
@@ -876,7 +873,8 @@ class WMTaskHelper(TreeHelper):
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
                                          autoApproveSites = None, custodialSubType = "Replica",
                                          nonCustodialSubType = "Replica", priority = "Low",
-                                         primaryDataset = None, dataTier = None):
+                                         primaryDataset = None, dataTier = None,
+                                         deleteFromSource = False):
         """
         _setSubscriptionsInformation_
 
@@ -922,6 +920,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.custodialSubType = "Replica"
                 outputModuleSection.nonCustodialSubType = "Replica"
                 outputModuleSection.priority = "Low"
+                outputModuleSection.deleteFromSource = False
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
             if custodialSites is not None:
@@ -931,6 +930,7 @@ class WMTaskHelper(TreeHelper):
             if autoApproveSites  is not None:
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
+            outputModuleSection.deleteFromSource = deleteFromSource
             outputModuleSection.custodialSubType = custodialSubType
             outputModuleSection.nonCustodialSubType = nonCustodialSubType
 
@@ -979,6 +979,8 @@ class WMTaskHelper(TreeHelper):
                                        "NonCustodialSites" : outputModuleSection.nonCustodialSites,
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
+                                       # DeleteFromSource is optional
+                                       "DeleteFromSource" : getattr(outputModuleSection, "deleteFromSource", False),
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
                                        "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Replica"),
                                        "NonCustodialSubType" : getattr(outputModuleSection, "nonCustodialSubType", "Replica")}
@@ -1121,7 +1123,7 @@ class WMTaskHelper(TreeHelper):
         return
     
     def setMaxRSS(self, maxRSS):
-        if type(maxRSS) == dict:
+        if isinstance(maxRSS, dict):
             maxRSS = maxRSS.get(self.name(), None)
         
         if maxRSS:
@@ -1132,7 +1134,7 @@ class WMTaskHelper(TreeHelper):
         return
     
     def setMaxVSize(self, maxVSize):
-        if type(maxVSize) == dict:
+        if isinstance(maxVSize, dict):
             maxVSize = maxVSize.get(self.name(), None)
 
         if maxVSize:
@@ -1232,8 +1234,7 @@ class WMTaskHelper(TreeHelper):
 
         Set the task processing version
         """
-        
-        if type(procVer) == dict:
+        if isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
         else:
             taskProcVer = procVer
@@ -1257,8 +1258,7 @@ class WMTaskHelper(TreeHelper):
 
         Set the task processing string
         """
-        
-        if type(procString) == dict:
+        if isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
         else:
             taskProcString = procString
@@ -1283,8 +1283,7 @@ class WMTaskHelper(TreeHelper):
 
         Set the task acquisition era
         """
-        
-        if type(era) == dict:
+        if isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
         else:
             taskEra = era
@@ -1440,7 +1439,7 @@ class WMTaskHelper(TreeHelper):
                 getattr(self.data, 'unmergedLFNBase', "/store/unmerged"))
     
     
-    def updateLFNsAndDatasets(self, initialTask = None, runNumber = None):
+    def updateLFNsAndDatasets(self, runNumber = None):
         """
         _updateLFNsAndDatasets_
 

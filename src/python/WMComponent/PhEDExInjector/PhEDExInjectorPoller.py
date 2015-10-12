@@ -166,6 +166,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         Inject any uninjected files in PhEDEx.
         """
+        logging.info("Starting injectFiles method")
+
         myThread = threading.currentThread()
         uninjectedFiles = self.getUninjected.execute()
 
@@ -255,6 +257,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         Close any blocks that have been migrated to global DBS.
         """
+        logging.info("Starting closeBlocks method")
+
         myThread = threading.currentThread()
         migratedBlocks = self.getMigrated.execute()
 

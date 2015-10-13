@@ -646,6 +646,78 @@ class TaskChainTests(unittest.TestCase):
 
         return
 
+    def testPileupTaskChain(self):
+        """
+        Test for multithreaded task chains where each step
+        may run with a different number of cores
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments = {
+            "AcquisitionEra": "ReleaseValidation",
+            "Requestor": "alan.malta@cern.ch",
+            "CMSSWVersion": "CMSSW_3_5_8",
+            "ScramArch": "slc5_ia32_gcc434",
+            "ProcessingVersion": 1,
+            "GlobalTag": "GR10_P_v4::All",
+            "CouchURL": self.testInit.couchUrl,
+            "CouchDBName": self.testInit.couchDbName,
+            "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
+            "DashboardHost": "127.0.0.1",
+            "DashboardPort": 8884,
+            "TaskChain" : 2,
+            "Task1" :{
+                "InputDataset" : "/cosmics/whatever-input-v1/GEN-SIM",
+                "TaskName" : "DIGI",
+                "ConfigCacheID" : processorDocs['DigiHLT'],
+                "SplittingAlgo" : "LumiBased",
+                "LumisPerJob": 4,
+                "MCPileup": "/some/cosmics-mc-v1/GEN-SIM",
+                "DeterministicPileup": True,
+                "CMSSWVersion" : "CMSSW_5_2_6",
+                "GlobalTag" : "GR_39_P_V5:All",
+                "PrimaryDataset" : "PURelValTTBar",
+                "AcquisitionEra": "CMSSW_5_2_6",
+                "ProcessingString": "ProcStr_Task1"
+            },
+            "Task2" : {
+                "TaskName" : "RECO",
+                "InputTask" : "DIGI",
+                "InputFromOutputModule" : "writeRAWDIGI",
+                "ConfigCacheID" : processorDocs['Reco'],
+                "DataPileup": "/some/minbias-data-v1/GEN-SIM",
+                "SplittingAlgo" : "LumiBased",
+                "LumisPerJob": 2,
+                "GlobalTag": "GR_R_62_V3::All",
+                "AcquisitionEra": "CMSSW_5_2_7",
+                "ProcessingString": "ProcStr_Task2"
+            },
+        }
+        
+        testArguments.update(arguments)
+        arguments = testArguments
+
+        factory = TaskChainWorkloadFactory()
+        self.workload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
+
+        firstTask = self.workload.getTaskByPath("/PullingTheChain/DIGI")
+        cmsRunStep = firstTask.getStep("cmsRun1").getTypeHelper()
+        pileupData = cmsRunStep.getPileup()
+        self.assertFalse(hasattr(pileupData, "data"))
+        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics-mc-v1/GEN-SIM"])
+        splitting = firstTask.jobSplittingParameters()
+        self.assertTrue(splitting["deterministicPileup"])
+
+        secondTask = self.workload.getTaskByPath("/PullingTheChain/DIGI/DIGIMergewriteRAWDIGI/RECO")
+        cmsRunStep = secondTask.getStep("cmsRun1").getTypeHelper()
+        pileupData = cmsRunStep.getPileup()
+        self.assertFalse(hasattr(pileupData, "mc"))
+        self.assertEqual(pileupData.data.dataset, ["/some/minbias-data-v1/GEN-SIM"])
+        splitting = secondTask.jobSplittingParameters()
+        self.assertFalse(splitting["deterministicPileup"])
+
+
     def buildMultithreadedTaskChain(self, filename):
         """    d
         Build a TaskChain from several sources and customization

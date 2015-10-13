@@ -281,6 +281,7 @@ class MonteCarloTest(unittest.TestCase):
         # Add pileup inputs
         defaultArguments["MCPileup"] = "/some/cosmics/dataset1"
         defaultArguments["DataPileup"] = "/some/minbias/dataset1"
+        defaultArguments["DeterministicPileup"] = True
 
         factory = MonteCarloWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
@@ -296,6 +297,8 @@ class MonteCarloTest(unittest.TestCase):
         self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
         self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
 
+        splitting = productionTask.jobSplittingParameters()
+        self.assertTrue(splitting["deterministicPileup"])
         return
 
     def testMCWithLHE(self):
@@ -328,6 +331,7 @@ class MonteCarloTest(unittest.TestCase):
         self.assertEqual(splitting["events_per_job"], 200)
         self.assertEqual(splitting["events_per_lumi"], 50)
         self.assertEqual(splitting["lheInputFiles"], True)
+        self.assertFalse(splitting["deterministicPileup"])
 
         return
 

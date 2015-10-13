@@ -88,6 +88,10 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterRECO-v1/RECO" in outputDatasets)
         self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterALCARECO-v1/ALCARECO" in outputDatasets)
 
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
+        splitting = productionTask.jobSplittingParameters()
+        self.assertFalse(splitting["deterministicPileup"])
+
         testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
@@ -243,6 +247,35 @@ class MonteCarloFromGENTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         return
+
+    def testMCFromGENWithPileup(self):
+        """
+        _testMonteCarloFromGEN_
+
+        Create a MonteCarloFromGEN workflow and verify it installs into WMBS
+        correctly.
+        """
+        arguments = MonteCarloFromGENWorkloadFactory.getTestArguments()
+        arguments["ConfigCacheID"] = self.injectConfig()
+        arguments["CouchDBName"] = "mclhe_t"
+        arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
+
+        # Add pileup inputs
+        arguments["MCPileup"] = "/some/cosmics/dataset1"
+        arguments["DataPileup"] = "/some/minbias/dataset1"
+        arguments["DeterministicPileup"] = True
+
+        factory = MonteCarloFromGENWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
+
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
+        cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
+        pileupData = cmsRunStep.getPileup()
+        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
+        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+
+        splitting = productionTask.jobSplittingParameters()
+        self.assertTrue(splitting["deterministicPileup"])
 
 if __name__ == '__main__':
     unittest.main()

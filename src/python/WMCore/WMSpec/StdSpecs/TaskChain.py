@@ -87,8 +87,8 @@ Example initial processing task
 
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
-     validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, \
+    validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary
@@ -122,17 +122,17 @@ class ParameterStorage(object):
         in StdBase to the argument key in the task dictionaries
         """
         self.func = func
-        self.validParameters = {'globalTag' : 'GlobalTag',
-                                'frameworkVersion' : 'CMSSWVersion',
-                                'scramArch' : 'ScramArch',
-                                'processingVersion' : 'ProcessingVersion',
-                                'processingString' : 'ProcessingString',
-                                'acquisitionEra' : 'AcquisitionEra',
-                                'timePerEvent' : 'TimePerEvent',
-                                'sizePerEvent' : 'SizePerEvent',
-                                'memory' : 'Memory',
-                                'dqmConfigCacheID' : 'DQMConfigCacheID'
-                                }
+        self.validParameters = {'globalTag': 'GlobalTag',
+                                'frameworkVersion': 'CMSSWVersion',
+                                'scramArch': 'ScramArch',
+                                'processingVersion': 'ProcessingVersion',
+                                'processingString': 'ProcessingString',
+                                'acquisitionEra': 'AcquisitionEra',
+                                'timePerEvent': 'TimePerEvent',
+                                'sizePerEvent': 'SizePerEvent',
+                                'memory': 'Memory',
+                                'dqmConfigCacheID': 'DQMConfigCacheID'
+                               }
         return
 
     def __get__(self, instance, owner):
@@ -156,7 +156,7 @@ class ParameterStorage(object):
         self.storeParameters()
         self.alterParameters(taskConf)
         self.func(self.obj, task, taskConf)
-        self.restoreParameters(taskConf)
+        self.restoreParameters()
         self.resetParameters()
         return
 
@@ -183,7 +183,7 @@ class ParameterStorage(object):
                 setattr(self.obj, param, taskValue)
         return
 
-    def restoreParameters(self, taskConf):
+    def restoreParameters(self):
         """
         _restoreParameters_
 
@@ -203,6 +203,7 @@ class ParameterStorage(object):
         for param in self.validParameters:
             setattr(self, param, None)
         return
+
 
 class TaskChainWorkloadFactory(StdBase):
     def __init__(self):
@@ -224,7 +225,7 @@ class TaskChainWorkloadFactory(StdBase):
             originalTaskConf = arguments["Task%d" % i]
             taskConf = {}
             # Make a shallow copy of the taskConf
-            for k,v in originalTaskConf.items():
+            for k, v in originalTaskConf.items():
                 taskConf[k] = v
             parent = taskConf.get("InputTask", None)
 
@@ -233,16 +234,16 @@ class TaskChainWorkloadFactory(StdBase):
             # Set task-specific global parameters
             self.blockBlacklist = taskConf["BlockBlacklist"]
             self.blockWhitelist = taskConf["BlockWhitelist"]
-            self.runBlacklist   = taskConf["RunBlacklist"]
-            self.runWhitelist   = taskConf["RunWhitelist"]
-            
+            self.runBlacklist = taskConf["RunBlacklist"]
+            self.runWhitelist = taskConf["RunWhitelist"]
+
             if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
                 self.multicoreNCores = int(taskConf['Multicore'])
 
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]
-                
+
             task = self.makeTask(taskConf, parentTask)
 
             if i == 1:
@@ -257,7 +258,7 @@ class TaskChainWorkloadFactory(StdBase):
                 else:
                     # process an existing dataset
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                     taskConf['SplittingArguments'])
+                                                          taskConf['SplittingArguments'])
                     self.setupTask(task, taskConf)
                 self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
@@ -269,8 +270,7 @@ class TaskChainWorkloadFactory(StdBase):
 
         return self.workload
 
-
-    def makeTask(self, taskConf, parentTask = None):
+    def makeTask(self, taskConf, parentTask=None):
         """
         _makeTask_
 
@@ -286,8 +286,8 @@ class TaskChainWorkloadFactory(StdBase):
         return task
 
     def _updateCommonParams(self, task, taskConf):
-    # sets the prepID  all the properties need to be set by
-            # self.workload.setTaskPropertiesFromWorkload manually for the task
+        # sets the prepID  all the properties need to be set by
+        # self.workload.setTaskPropertiesFromWorkload manually for the task
         task.setPrepID(taskConf.get("PrepID", self.workload.getPrepID()))
         task.setAcquisitionEra(taskConf.get("AcquisitionEra", self.workload.acquisitionEra))
         task.setProcessingString(taskConf.get("ProcessingString", self.workload.processingString))
@@ -295,11 +295,10 @@ class TaskChainWorkloadFactory(StdBase):
         lumiMask = taskConf.get("LumiList", self.workload.lumiList)
         if lumiMask:
             task.setLumiMask(lumiMask)
-        
+
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
-        
-        
+
     @ParameterStorage
     def setupGeneratorTask(self, task, taskConf):
         """
@@ -317,20 +316,20 @@ class TaskChainWorkloadFactory(StdBase):
 
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
         outputMods = self.setupProcessingTask(task, "Production",
-                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = configCacheID, splitAlgo = splitAlgorithm,
-                                              configCacheUrl = self.configCacheUrl,
-                                              splitArgs = splitArguments, stepType = cmsswStepType,
-                                              seeding = taskConf['Seeding'], totalEvents = taskConf['RequestNumEvents'],
-                                              forceUnmerged = forceUnmerged,
-                                              timePerEvent = taskConf.get('TimePerEvent', None),
-                                              sizePerEvent = taskConf.get('SizePerEvent', None),
-                                              memoryReq = taskConf.get('Memory', None),
-                                              taskConf = taskConf)
+                                              couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                              configDoc=configCacheID, splitAlgo=splitAlgorithm,
+                                              configCacheUrl=self.configCacheUrl,
+                                              splitArgs=splitArguments, stepType=cmsswStepType,
+                                              seeding=taskConf['Seeding'], totalEvents=taskConf['RequestNumEvents'],
+                                              forceUnmerged=forceUnmerged,
+                                              timePerEvent=taskConf.get('TimePerEvent', None),
+                                              sizePerEvent=taskConf.get('SizePerEvent', None),
+                                              memoryReq=taskConf.get('Memory', None),
+                                              taskConf=taskConf)
 
         # this need to be called after setpuProcessingTask since it will overwrite some values
         self._updateCommonParams(task, taskConf)
-        
+
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
 
         # Do the output module merged/unmerged association
@@ -338,7 +337,7 @@ class TaskChainWorkloadFactory(StdBase):
                              keepOutput, transientModules)
 
         return
-        
+
     @ParameterStorage
     def setupTask(self, task, taskConf):
         """
@@ -348,11 +347,11 @@ class TaskChainWorkloadFactory(StdBase):
         and set the parents appropriately to handle a processing task
         """
 
-        cmsswStepType  = "CMSSW"
-        configCacheID  = taskConf["ConfigCacheID"]
+        cmsswStepType = "CMSSW"
+        configCacheID = taskConf["ConfigCacheID"]
         splitAlgorithm = taskConf["SplittingAlgo"]
         splitArguments = taskConf["SplittingArguments"]
-        keepOutput     = taskConf["KeepOutput"]
+        keepOutput = taskConf["KeepOutput"]
         transientModules = taskConf["TransientOutputModules"]
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
@@ -375,12 +374,12 @@ class TaskChainWorkloadFactory(StdBase):
                 inpMod = taskConf["InputFromOutputModule"]
                 # Check if the splitting has to be changed
                 if inputTaskConf["SplittingAlgo"] == 'EventBased' \
-                   and (inputTaskConf["InputDataset"] or inputTaskConf["InputTask"]):
+                        and (inputTaskConf["InputDataset"] or inputTaskConf["InputTask"]):
                     splitAlgorithm = 'WMBSMergeBySize'
-                    splitArguments = {'max_merge_size'   : self.maxMergeSize,
-                                      'min_merge_size'   : self.minMergeSize,
-                                      'max_merge_events' : self.maxMergeEvents,
-                                      'max_wait_time'    : self.maxWaitTime}
+                    splitArguments = {'max_merge_size': self.maxMergeSize,
+                                      'min_merge_size': self.minMergeSize,
+                                      'max_merge_events': self.maxMergeEvents,
+                                      'max_wait_time': self.maxWaitTime}
             else:
                 inpMod = "Merged"
 
@@ -392,24 +391,24 @@ class TaskChainWorkloadFactory(StdBase):
         couchDB = self.couchDBName
         outputMods = self.setupProcessingTask(task, "Processing",
                                               inputDataset,
-                                              inputStep = inpStep,
-                                              inputModule = inpMod,
-                                              couchURL = couchUrl,
-                                              couchDBName = couchDB,
-                                              configCacheUrl = self.configCacheUrl,
-                                              configDoc = configCacheID,
-                                              splitAlgo = taskConf["SplittingAlgo"],
-                                              splitArgs = taskConf["SplittingArguments"],
-                                              stepType = cmsswStepType,
-                                              forceUnmerged = forceUnmerged,
-                                              timePerEvent = taskConf.get('TimePerEvent', None),
-                                              sizePerEvent = taskConf.get('SizePerEvent', None),
-                                              memoryReq = taskConf.get("Memory", None),
-                                              taskConf = taskConf)
-        
+                                              inputStep=inpStep,
+                                              inputModule=inpMod,
+                                              couchURL=couchUrl,
+                                              couchDBName=couchDB,
+                                              configCacheUrl=self.configCacheUrl,
+                                              configDoc=configCacheID,
+                                              splitAlgo=taskConf["SplittingAlgo"],
+                                              splitArgs=splitArguments,
+                                              stepType=cmsswStepType,
+                                              forceUnmerged=forceUnmerged,
+                                              timePerEvent=taskConf.get('TimePerEvent', None),
+                                              sizePerEvent=taskConf.get('SizePerEvent', None),
+                                              memoryReq=taskConf.get("Memory", None),
+                                              taskConf=taskConf)
+
         # this need to be called after setpuProcessingTask since it will overwrite some values
         self._updateCommonParams(task, taskConf)
-        
+
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         self.setUpMergeTasks(task, outputMods, splitAlgorithm,
                              keepOutput, transientModules)
@@ -417,8 +416,7 @@ class TaskChainWorkloadFactory(StdBase):
         self.inputPrimaryDataset = currentPrimaryDataset
 
         return
-    
-        
+
     def setUpMergeTasks(self, parentTask, outputModules, splittingAlgo,
                         keepOutput, transientOutputModules):
         """
@@ -432,8 +430,8 @@ class TaskChainWorkloadFactory(StdBase):
         modulesToMerge = []
         unmergedModules = outputModules.keys()
         if keepOutput:
-            unmergedModules = filter(lambda x : x in transientOutputModules, outputModules.keys())
-            modulesToMerge = filter(lambda x : x not in transientOutputModules, outputModules.keys())
+            unmergedModules = filter(lambda x: x in transientOutputModules, outputModules.keys())
+            modulesToMerge = filter(lambda x: x not in transientOutputModules, outputModules.keys())
 
         procMergeTasks = {}
         for outputModuleName in modulesToMerge:
@@ -451,7 +449,7 @@ class TaskChainWorkloadFactory(StdBase):
         return
 
     def modifyTaskConfiguration(self, taskConf,
-                                firstTask = False, generator = False):
+                                firstTask=False, generator=False):
         """
         _modifyTaskConfiguration_
 
@@ -479,7 +477,7 @@ class TaskChainWorkloadFactory(StdBase):
                                        taskConf.get("FilterEfficiency")
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0)/(taskConf.get("TimePerEvent", self.timePerEvent)))
+            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / (taskConf.get("TimePerEvent", self.timePerEvent)))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 
@@ -497,6 +495,9 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
         taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
+        # Adjust the pileup splitting
+        taskConf["SplittingArguments"].setdefault("deterministicPileup", taskConf['DeterministicPileup'])
+
         return
 
     @staticmethod
@@ -504,39 +505,39 @@ class TaskChainWorkloadFactory(StdBase):
         baseArgs = StdBase.getWorkloadArguments()
         reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
         baseArgs.update(reqMgrArgs)
-        specArgs = {"RequestType" : {"default" : "TaskChain", "optional" : False,
-                                      "attr" : "requestType"},
-                    "GlobalTag" : {"default" : "GT_TC_V1", "type" : str,
-                                   "optional" : False, "validate" : None,
-                                   "attr" : "globalTag", "null" : False},
-                    "CouchURL" : {"default" : "http://localhost:5984", "type" : str,
-                                  "optional" : False, "validate" : couchurl,
-                                  "attr" : "couchURL", "null" : False},
-                    "CouchDBName" : {"default" : "dp_configcache", "type" : str,
-                                     "optional" : False, "validate" : identifier,
-                                     "attr" : "couchDBName", "null" : False},
-                    "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : None,
-                                        "attr" : "configCacheUrl", "null" : True},
-                    "IgnoredOutputModules" : {"default" : [], "type" : makeList,
-                                              "optional" : True, "validate" : None,
-                                              "attr" : "ignoredOutputModules", "null" : False},
-                    "TaskChain" : {"default" : 1, "type" : int,
-                                   "optional" : False, "validate" : lambda x : x > 0,
-                                   "attr" : "taskChain", "null" : False},
-                    "FirstEvent" : {"default" : 1, "type" : int,
-                                    "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstEvent", "null" : False},
-                    "FirstLumi" : {"default" : 1, "type" : int,
-                                    "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstLumi", "null" : False}
-                    }
+        specArgs = {"RequestType": {"default": "TaskChain", "optional": False,
+                                    "attr": "requestType"},
+                    "GlobalTag": {"default": "GT_TC_V1", "type": str,
+                                  "optional": False, "validate": None,
+                                  "attr": "globalTag", "null": False},
+                    "CouchURL": {"default": "http://localhost:5984", "type": str,
+                                 "optional": False, "validate": couchurl,
+                                 "attr": "couchURL", "null": False},
+                    "CouchDBName": {"default": "dp_configcache", "type": str,
+                                    "optional": False, "validate": identifier,
+                                    "attr": "couchDBName", "null": False},
+                    "ConfigCacheUrl": {"default": None, "type": str,
+                                       "optional": True, "validate": None,
+                                       "attr": "configCacheUrl", "null": True},
+                    "IgnoredOutputModules": {"default": [], "type": makeList,
+                                             "optional": True, "validate": None,
+                                             "attr": "ignoredOutputModules", "null": False},
+                    "TaskChain": {"default": 1, "type": int,
+                                  "optional": False, "validate": lambda x: x > 0,
+                                  "attr": "taskChain", "null": False},
+                    "FirstEvent": {"default": 1, "type": int,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "attr": "firstEvent", "null": False},
+                    "FirstLumi": {"default": 1, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "attr": "firstLumi", "null": False}
+                   }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     @staticmethod
-    def getTaskArguments(firstTask = False, generator = False):
+    def getTaskArguments(firstTask=False, generator=False):
         """
         _getTaskArguments_
 
@@ -545,86 +546,90 @@ class TaskChainWorkloadFactory(StdBase):
         defined in StdBase.getWorkloadArguments and those do not appear here
         since they are all optional. Here only new arguments are listed.
         """
-        specArgs = {"TaskName" : {"default" : None, "type" : str,
-                                  "optional" : False, "validate" : None,
-                                  "null" : False},
-                    "ConfigCacheUrl" : {"default" : "https://cmsweb.cern.ch/couchdb", "type" : str,
-                                        "optional" : False, "validate" : None,
-                                        "attr" : "configCacheUrl", "null" : False},
-                    "ConfigCacheID" : {"default" : None, "type" : str,
-                                       "optional" : False, "validate" : None,
-                                       "null" : False},
-                    "KeepOutput" : {"default" : True, "type" : strToBool,
-                                    "optional" : True, "validate" : None,
-                                    "null" : False},
-                    "TransientOutputModules" : {"default" : [], "type" : makeList,
-                                                "optional" : True, "validate" : None,
-                                                "null" : False},
-                    "PrimaryDataset" : {"default" : None, "type" : str,
-                                        "optional" : not generator, "validate" : primdataset,
-                                        "null" : False},
-                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
-                                 "optional" : True, "validate" : lambda x : x in ["ReproducibleSeeding", "AutomaticSeeding"],
-                                 "null" : False},
-                    "RequestNumEvents" : {"default" : 1000, "type" : int,
-                                          "optional" : not generator, "validate" : lambda x : x > 0,
-                                          "null" : False},
-                    "MCPileup" : {"default" : None, "type" : str,
-                                  "optional" : True, "validate" : dataset,
-                                  "null" : False},
-                    "DataPileup" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : dataset,
-                                    "null" : False},
-                    "InputDataset" : {"default" : None, "type" : str,
-                                      "optional" : generator or not firstTask, "validate" : dataset,
-                                      "null" : False},
-                    "InputTask" : {"default" : None, "type" : str,
-                                   "optional" : firstTask, "validate" : None,
-                                   "null" : False},
-                    "InputFromOutputModule" : {"default" : None, "type" : str,
-                                               "optional" : firstTask, "validate" : None,
-                                               "null" : False},
-                    "BlockBlacklist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "null" : False},
-                    "BlockWhitelist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "null" : False},
-                    "RunBlacklist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "null" : False},
-                    "RunWhitelist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "null" : False},
-                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
-                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                                       "EventAwareLumiBased", "FileBased"],
-                                       "null" : False},
-                    "EventsPerJob" : {"default" : None, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "null" : False},
-                    "LumisPerJob" : {"default" : 8, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "null" : False},
-                    "FilesPerJob" : {"default" : 1, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "null" : False},
-                    "EventsPerLumi" : {"default" : None, "type" : int,
-                                       "optional" : True, "validate" : lambda x : x > 0,
-                                       "attr" : "eventsPerLumi", "null" : True},
-                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
-                                          "optional" : True, "validate" : lambda x : x > 0.0,
-                                          "attr" : "filterEfficiency", "null" : False},
-                    "LheInputFiles" : {"default" : False, "type" : strToBool,
-                                       "optional" : True, "validate" : None,
-                                       "attr" : "lheInputFiles", "null" : False},
-                    "PrepID": {"default" : None, "type": str,
-                               "optional" : True, "validate" : None,
-                                "attr" : "prepID",  "null" : True},
-                    "Multicore" : {"default" : None, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "null" : False},
-                    }
+        specArgs = {"TaskName": {"default": None, "type": str,
+                                 "optional": False, "validate": None,
+                                 "null": False},
+                    "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "type": str,
+                                       "optional": False, "validate": None,
+                                       "attr": "configCacheUrl", "null": False},
+                    "ConfigCacheID": {"default": None, "type": str,
+                                      "optional": False, "validate": None,
+                                      "null": False},
+                    "KeepOutput": {"default": True, "type": strToBool,
+                                   "optional": True, "validate": None,
+                                   "null": False},
+                    "TransientOutputModules": {"default": [], "type": makeList,
+                                               "optional": True, "validate": None,
+                                               "null": False},
+                    "PrimaryDataset": {"default": None, "type": str,
+                                       "optional": not generator, "validate": primdataset,
+                                       "null": False},
+                    "Seeding": {"default": "AutomaticSeeding", "type": str,
+                                "optional": True,
+                                "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
+                                "null": False},
+                    "RequestNumEvents": {"default": 1000, "type": int,
+                                         "optional": not generator, "validate": lambda x: x > 0,
+                                         "null": False},
+                    "MCPileup": {"default": None, "type": str,
+                                 "optional": True, "validate": dataset,
+                                 "null": False},
+                    "DataPileup": {"default": None, "type": str,
+                                   "optional": True, "validate": dataset,
+                                   "null": False},
+                    "DeterministicPileup": {"default": False, "type": strToBool,
+                                            "optional": True, "validate": None,
+                                            "attr": "deterministicPileup", "null": False},
+                    "InputDataset": {"default": None, "type": str,
+                                     "optional": generator or not firstTask, "validate": dataset,
+                                     "null": False},
+                    "InputTask": {"default": None, "type": str,
+                                  "optional": firstTask, "validate": None,
+                                  "null": False},
+                    "InputFromOutputModule": {"default": None, "type": str,
+                                              "optional": firstTask, "validate": None,
+                                              "null": False},
+                    "BlockBlacklist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "null": False},
+                    "BlockWhitelist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "null": False},
+                    "RunBlacklist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "null": False},
+                    "RunWhitelist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "null": False},
+                    "SplittingAlgo": {"default": "EventAwareLumiBased", "type": str,
+                                      "optional": True, "validate": lambda x: x in ["EventBased", "LumiBased",
+                                                                                    "EventAwareLumiBased", "FileBased"],
+                                      "null": False},
+                    "EventsPerJob": {"default": None, "type": int,
+                                     "optional": True, "validate": lambda x: x > 0,
+                                     "null": False},
+                    "LumisPerJob": {"default": 8, "type": int,
+                                    "optional": True, "validate": lambda x: x > 0,
+                                    "null": False},
+                    "FilesPerJob": {"default": 1, "type": int,
+                                    "optional": True, "validate": lambda x: x > 0,
+                                    "null": False},
+                    "EventsPerLumi": {"default": None, "type": int,
+                                      "optional": True, "validate": lambda x: x > 0,
+                                      "attr": "eventsPerLumi", "null": True},
+                    "FilterEfficiency": {"default": 1.0, "type": float,
+                                         "optional": True, "validate": lambda x: x > 0.0,
+                                         "attr": "filterEfficiency", "null": False},
+                    "LheInputFiles": {"default": False, "type": strToBool,
+                                      "optional": True, "validate": None,
+                                      "attr": "lheInputFiles", "null": False},
+                    "PrepID": {"default": None, "type": str,
+                               "optional": True, "validate": None,
+                               "attr": "prepID", "null": True},
+                    "Multicore": {"default": None, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "null": False},
+                   }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 
@@ -641,14 +646,14 @@ class TaskChainWorkloadFactory(StdBase):
             taskName = "Task%s" % i
             if taskName not in schema:
                 msg = "No Task%s entry present in request" % i
-                self.raiseValidationException(msg = msg)
+                self.raiseValidationException(msg=msg)
 
             task = schema[taskName]
             # We can't handle non-dictionary tasks
-            if type(task) != dict:
-                msg =  "Non-dictionary input for task in TaskChain.\n"
+            if not isinstance(task, dict):
+                msg = "Non-dictionary input for task in TaskChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
-                self.raiseValidationException(msg = msg)
+                self.raiseValidationException(msg=msg)
 
             # Generic task parameter validation
             self.validateTask(task, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in task))
@@ -656,10 +661,10 @@ class TaskChainWorkloadFactory(StdBase):
             # Validate the existence of the configCache
             if task["ConfigCacheID"]:
                 configCacheUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-                self.validateConfigCacheExists(configID = task['ConfigCacheID'],
-                                               couchURL = configCacheUrl,
-                                               couchDBName = schema["CouchDBName"],
-                                               getOutputModules = True)
+                self.validateConfigCacheExists(configID=task['ConfigCacheID'],
+                                               couchURL=configCacheUrl,
+                                               couchDBName=schema["CouchDBName"],
+                                               getOutputModules=True)
 
             # Validate the chaining of transient output modules, need to make a copy of the lists
             transientMapping[task['TaskName']] = [x for x in task.get('TransientOutputModules', [])]
@@ -685,16 +690,15 @@ class TaskChainWorkloadFactory(StdBase):
         msg = validateArgumentsCreate(taskConf, taskArgumentDefinition)
         if msg is not None:
             self.raiseValidationException(msg)
-            
+
         # Also retrieve the "main" arguments which may be overriden in the task
         # Change them all to optional for validation
         baseArgs = self.getWorkloadArguments()
         validateArgumentsNoOptionalCheck(taskConf, baseArgs)
-        
+
         for arg in baseArgs:
             baseArgs[arg]["optional"] = True
         msg = validateArgumentsCreate(taskConf, baseArgs)
         if msg is not None:
             self.raiseValidationException(msg)
         return
-

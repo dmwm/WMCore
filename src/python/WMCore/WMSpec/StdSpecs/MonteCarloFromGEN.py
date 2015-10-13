@@ -40,19 +40,19 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs,
-                                         OpenRunningTimeout = self.openRunningTimeout)
+                                         OpenRunningTimeout=self.openRunningTimeout)
         procTask = workload.newTask("MonteCarloFromGEN")
 
         outputMods = self.setupProcessingTask(procTask, "Processing",
                                               self.inputDataset,
-                                              couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
-                                              configCacheUrl = self.configCacheUrl,
-                                              configDoc = self.configCacheID,
-                                              splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs,
-                                              stepType = "CMSSW",
-                                              primarySubType = "Production")
+                                              couchURL=self.couchURL,
+                                              couchDBName=self.couchDBName,
+                                              configCacheUrl=self.configCacheUrl,
+                                              configDoc=self.configCacheID,
+                                              splitAlgo=self.procJobSplitAlgo,
+                                              splitArgs=self.procJobSplitArgs,
+                                              stepType="CMSSW",
+                                              primarySubType="Production")
         self.addLogCollectTask(procTask)
 
         # pile up support
@@ -70,7 +70,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -98,34 +98,34 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         """
         DataProcessing.validateSchema(self, schema)
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                       couchURL = couchUrl,
-                                       couchDBName = schema["CouchDBName"])
+        self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
+                                       couchURL=couchUrl,
+                                       couchDBName=schema["CouchDBName"])
         return
 
     @staticmethod
     def getWorkloadArguments():
         baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "MonteCarloFromGEN", "optional" : True,
-                                      "attr" : "requestType"},
-                    "PrimaryDataset" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : primdataset,
-                                        "attr" : "inputPrimaryDataset", "null" : False},
-                    "ConfigCacheUrl" : {"default" : None, "type" : str,
-                                        "optional" : True, "validate" : None,
-                                        "attr" : "configCacheUrl", "null" : False},
-                    "ConfigCacheID" : {"default" : None, "type" : str,
-                                       "optional" : False, "validate" : None,
-                                       "attr" : "configCacheID", "null" : False},
-                    "MCPileup" : {"default" : None, "type" : str,
-                                  "optional" : True, "validate" : dataset,
-                                  "attr" : "mcPileup", "null" : False},
-                    "DataPileup" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : dataset,
-                                    "attr" : "dataPileup", "null" : False},
-                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
-                                             "optional" : True, "validate" : None,
-                                             "attr" : "deterministicPileup", "null" : False}}
+        specArgs = {"RequestType": {"default": "MonteCarloFromGEN", "optional": True,
+                                    "attr": "requestType"},
+                    "PrimaryDataset": {"default": None, "type": str,
+                                       "optional": True, "validate": primdataset,
+                                       "attr": "inputPrimaryDataset", "null": False},
+                    "ConfigCacheUrl": {"default": None, "type": str,
+                                       "optional": True, "validate": None,
+                                       "attr": "configCacheUrl", "null": False},
+                    "ConfigCacheID": {"default": None, "type": str,
+                                      "optional": False, "validate": None,
+                                      "attr": "configCacheID", "null": False},
+                    "MCPileup": {"default": None, "type": str,
+                                 "optional": True, "validate": dataset,
+                                 "attr": "mcPileup", "null": False},
+                    "DataPileup": {"default": None, "type": str,
+                                   "optional": True, "validate": dataset,
+                                   "attr": "dataPileup", "null": False},
+                    "DeterministicPileup": {"default": False, "type": strToBool,
+                                            "optional": True, "validate": None,
+                                            "attr": "deterministicPileup", "null": False}}
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

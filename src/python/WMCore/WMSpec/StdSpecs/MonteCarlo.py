@@ -16,6 +16,7 @@ from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
 
+
 class MonteCarloWorkloadFactory(StdBase):
     """
     _MonteCarloWorkloadFactory_
@@ -44,15 +45,15 @@ class MonteCarloWorkloadFactory(StdBase):
         prodTask = workload.newTask("Production")
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,
-                                              couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
-                                              configDoc = self.configCacheID,
-                                              splitAlgo = self.prodJobSplitAlgo,
-                                              splitArgs = self.prodJobSplitArgs,
-                                              configCacheUrl = self.configCacheUrl,
-                                              seeding = self.seeding,
-                                              totalEvents = self.totalEvents,
-                                              eventsPerLumi = self.eventsPerLumi)
+                                              couchURL=self.couchURL,
+                                              couchDBName=self.couchDBName,
+                                              configDoc=self.configCacheID,
+                                              splitAlgo=self.prodJobSplitAlgo,
+                                              splitArgs=self.prodJobSplitArgs,
+                                              configCacheUrl=self.configCacheUrl,
+                                              seeding=self.seeding,
+                                              totalEvents=self.totalEvents,
+                                              eventsPerLumi=self.eventsPerLumi)
         self.addLogCollectTask(prodTask)
 
         # pile up support
@@ -62,7 +63,7 @@ class MonteCarloWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
                               outputModuleName,
-                              lfn_counter = self.previousJobCount)
+                              lfn_counter=self.previousJobCount)
 
         maxFiles = workload.getBlockCloseMaxFiles()
         if self.eventsPerLumi != self.eventsPerJob:
@@ -82,7 +83,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # set the LFN bases (normally done by request manager)
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
-                            runNumber = self.runNumber)
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -108,8 +109,8 @@ class MonteCarloWorkloadFactory(StdBase):
         if self.eventsPerLumi is None:
             self.eventsPerLumi = self.eventsPerJob
         self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
-                                  "events_per_lumi" : self.eventsPerLumi,
-                                  "lheInputFiles" : self.lheInputFiles}
+                                 "events_per_lumi": self.eventsPerLumi,
+                                 "lheInputFiles": self.lheInputFiles}
 
         # Transform the pileup as required by the CMSSW step
         self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
@@ -127,9 +128,9 @@ class MonteCarloWorkloadFactory(StdBase):
 
     def validateSchema(self, schema):
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                       couchURL = couchUrl,
-                                       couchDBName = schema["CouchDBName"])
+        self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
+                                       couchURL=couchUrl,
+                                       couchDBName=schema["CouchDBName"])
         return
 
     @staticmethod
@@ -137,49 +138,48 @@ class MonteCarloWorkloadFactory(StdBase):
         baseArgs = StdBase.getWorkloadArguments()
         reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
         baseArgs.update(reqMgrArgs)
-        specArgs = {"RequestType" : {"default" : "MonteCarlo", "optional" : True,
-                                      "attr" : "requestType"},
-                    "PrimaryDataset" : {"default" : "BlackHoleTest", "type" : str,
-                                        "optional" : False, "validate" : primdataset,
-                                        "attr" : "inputPrimaryDataset", "null" : False},
-                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str,
-                                 "optional" : True, "validate" : lambda x : x in ["ReproducibleSeeding",
-                                                                                  "AutomaticSeeding"],
-                                 "attr" : "seeding", "null" : False},
-                    "GlobalTag" : {"default" : "GT_MC_V1:All", "type" : str,
-                                   "optional" : False, "validate" : None,
-                                   "attr" : "globalTag", "null" : False},
-                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
-                                          "optional" : True, "validate" : lambda x : x > 0.0,
-                                          "attr" : "filterEfficiency", "null" : False},
-                    "RequestNumEvents" : {"default" : 1000, "type" : int,
-                                          "optional" : False, "validate" : lambda x : x > 0,
-                                          "attr" : "requestNumEvents", "null" : False},
-                    "FirstEvent" : {"default" : 1, "type" : int,
-                                    "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstEvent", "null" : False},
-                    "FirstLumi" : {"default" : 1, "type" : int,
-                                    "optional" : True, "validate" : lambda x : x > 0,
-                                    "attr" : "firstLumi", "null" : False},
-                    "MCPileup" : {"default" : None, "type" : str,
-                                  "optional" : True, "validate" : dataset,
-                                  "attr" : "mcPileup", "null" : False},
-                    "DataPileup" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : dataset,
-                                    "attr" : "dataPileup", "null" : False},
-                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
-                                             "optional" : True, "validate" : None,
-                                             "attr" : "deterministicPileup", "null" : False},
-                    "EventsPerJob" : {"default" : None, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "eventsPerJob", "null" : True},
-                    "EventsPerLumi" : {"default" : None, "type" : int,
-                                       "optional" : True, "validate" : lambda x : x > 0,
-                                       "attr" : "eventsPerLumi", "null" : True},
-                    "LheInputFiles" : {"default" : False, "type" : strToBool,
-                                       "optional" : True, "validate" : None,
-                                       "attr" : "lheInputFiles", "null" : False}
-                    }
+        specArgs = {"RequestType": {"default": "MonteCarlo", "optional": True,
+                                    "attr": "requestType"},
+                    "PrimaryDataset": {"default": "BlackHoleTest", "type": str,
+                                       "optional": False, "validate": primdataset,
+                                       "attr": "inputPrimaryDataset", "null": False},
+                    "Seeding": {"default": "AutomaticSeeding", "type": str,
+                                "optional": True, "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
+                                "attr": "seeding", "null": False},
+                    "GlobalTag": {"default": "GT_MC_V1:All", "type": str,
+                                  "optional": False, "validate": None,
+                                  "attr": "globalTag", "null": False},
+                    "FilterEfficiency": {"default": 1.0, "type": float,
+                                         "optional": True, "validate": lambda x: x > 0.0,
+                                         "attr": "filterEfficiency", "null": False},
+                    "RequestNumEvents": {"default": 1000, "type": int,
+                                         "optional": False, "validate": lambda x: x > 0,
+                                         "attr": "requestNumEvents", "null": False},
+                    "FirstEvent": {"default": 1, "type": int,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "attr": "firstEvent", "null": False},
+                    "FirstLumi": {"default": 1, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "attr": "firstLumi", "null": False},
+                    "MCPileup": {"default": None, "type": str,
+                                 "optional": True, "validate": dataset,
+                                 "attr": "mcPileup", "null": False},
+                    "DataPileup": {"default": None, "type": str,
+                                   "optional": True, "validate": dataset,
+                                   "attr": "dataPileup", "null": False},
+                    "DeterministicPileup": {"default": False, "type": strToBool,
+                                            "optional": True, "validate": None,
+                                            "attr": "deterministicPileup", "null": False},
+                    "EventsPerJob": {"default": None, "type": int,
+                                     "optional": True, "validate": lambda x: x > 0,
+                                     "attr": "eventsPerJob", "null": True},
+                    "EventsPerLumi": {"default": None, "type": int,
+                                      "optional": True, "validate": lambda x: x > 0,
+                                      "attr": "eventsPerLumi", "null": True},
+                    "LheInputFiles": {"default": False, "type": strToBool,
+                                      "optional": True, "validate": None,
+                                      "attr": "lheInputFiles", "null": False}
+                   }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

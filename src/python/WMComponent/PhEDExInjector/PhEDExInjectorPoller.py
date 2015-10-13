@@ -245,11 +245,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         actual PhEDEx call for file injection
         """
-        myThread = threading.currentThread()
-
         xmlData = self.createInjectionSpec(injectData)
-
-        myThread.transaction.begin()
 
         try:
             injectRes = self.phedex.injectBlocks(location, xmlData)
@@ -279,11 +275,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             logging.error(msg)
             self.sendAlert(6, msg = msg)
         else:
-            self.setStatus.execute(lfnList, 1,
-                                   conn = myThread.transaction.conn,
-                                   transaction = myThread.transaction)
-
-        myThread.transaction.commit()
+            self.setStatus.execute(lfnList, 1, transaction = False)
 
         return
 

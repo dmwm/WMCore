@@ -33,6 +33,12 @@ class EventBased(JobFactory):
         timePerEvent, sizePerEvent, memoryRequirement = \
                     self.getPerformanceParameters(kwargs.get('performance', {}))
         acdcFileList = []
+        deterministicPileup = kwargs.get('deterministicPileup', False)
+
+        if deterministicPileup and self.package == 'WMCore.WMBS':
+            getJobNumber = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
+            self.nJobs = getJobNumber.execute(workflow = self.subscription.getWorkflow().id)
+            logging.info('Creating %d jobs in DeterministicPileup mode' % self.nJobs)
 
         # If we have runLumi info, we need to load it from couch
         if collectionName:
@@ -91,11 +97,12 @@ class EventBased(JobFactory):
 
                 if acdcFileList:
                     if f['lfn'] in [x['lfn'] for x in acdcFileList]:
-                        totalJobs = self.createACDCJobs(f, acdcFileList,
-                                                        timePerEvent, sizePerEvent, memoryRequirement,
-                                                        lheInput, eventsPerJob, eventsPerLumi, totalJobs)
+                        totalJobs = self.createACDCJobs(f, acdcFileList, timePerEvent,
+                                                        sizePerEvent, memoryRequirement,
+                                                        lheInput, eventsPerJob, eventsPerLumi, 
+                                                        deterministicPileup, totalJobs)
                     continue
-                elif not f['lfn'].startswith("MCFakeFile"):
+                if not f['lfn'].startswith("MCFakeFile"):
                     # Very very uncommon, but it has real input dataset
                     if eventsInFile >= eventsPerJob:
                         while currentEvent < eventsInFile:
@@ -113,6 +120,9 @@ class EventBased(JobFactory):
                             self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                                  memory = memoryRequirement,
                                                                  disk = diskRequired)
+                            if deterministicPileup:
+                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
+
                             logging.debug("Job created for real input with %s" % self.currentJob)
                             currentEvent += eventsPerJob
                             totalJobs    += 1
@@ -124,6 +134,8 @@ class EventBased(JobFactory):
                         self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                              memory = memoryRequirement,
                                                              disk = diskRequired)
+                        if deterministicPileup:
+                            self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
                         logging.debug("Last job created for real input with %s" % self.currentJob)
                         totalJobs += 1
                 else:
@@ -158,6 +170,9 @@ class EventBased(JobFactory):
                                                                             currentEvent)
                                 self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
                                                                            currentLumi)
+
+                            if deterministicPileup:
+                                self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
                             currentLumi  += lumisPerJob
                             currentEvent += eventsPerJob
                             totalEvents  += eventsPerJob
@@ -181,11 +196,13 @@ class EventBased(JobFactory):
                         self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                              memory = memoryRequirement,
                                                              disk = diskRequired)
+                        if deterministicPileup:
+                            self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
                         totalJobs += 1
 
-    def createACDCJobs(self, fakeFile, acdcFileInfo,
-                       timePerEvent, sizePerEvent, memoryRequirement,
-                       lheInputOption, eventsPerJob, eventsPerLumi, totalJobs = 0):
+    def createACDCJobs(self, fakeFile, acdcFileInfo, timePerEvent, sizePerEvent,
+                       memoryRequirement, lheInputOption, eventsPerJob,
+                       eventsPerLumi, deterministicPileup, totalJobs = 0):
         """
         _createACDCJobs_
 
@@ -221,6 +238,8 @@ class EventBased(JobFactory):
                     self.currentJob.addResourceEstimates(jobTime = jobTime,
                                                          memory = memoryRequirement,
                                                          disk = diskRequired)
+                    if deterministicPileup:
+                        self.currentJob.addBaggageParameter("skipPileupEvents", (self.nJobs - 1) * eventsPerJob)
                     logging.info("ACDC job created with %s" % self.currentJob)
                     eventsToRun  -= eventsPerJob
                     currentEvent += eventsPerJob

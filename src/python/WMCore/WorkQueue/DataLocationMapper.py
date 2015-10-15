@@ -47,6 +47,14 @@ def timeFloor(number, interval = UPDATE_INTERVAL_COARSENESS):
     from math import floor
     return floor(number / interval) * interval
 
+
+def isDataset(inputData):
+    """Check whether we're handling a block or a dataset"""
+    if '#' in inputData.split('/')[-1]:
+        return False
+    return True
+
+
 class DataLocationMapper():
     """Map data to locations for WorkQueue"""
     def __init__(self, **kwargs):
@@ -113,13 +121,13 @@ class DataLocationMapper():
                 args['update_since'] = timeFloor(self.lastLocationUpdate, self.params['updateIntervalCoarseness'])
             for dataItem in dataItems:
                 try:
-                    if datasetSearch:
+                    if datasetSearch or isDataset(dataItem):
                         response = self.phedex.getReplicaInfoForBlocks(dataset = [dataItem], **args)['phedex']
                     else:
                         response = self.phedex.getReplicaInfoForBlocks(block = [dataItem], **args)['phedex']
                     for block in response['block']:
-                        nodes = [se['node'] for se in block['replica']]
-                        if datasetSearch:
+                        nodes = [replica['node'] for replica in block['replica']]
+                        if datasetSearch or isDataset(dataItem):
                             result[dataItem].update(nodes)
                         else:
                             result[block['name']].update(nodes)
@@ -143,7 +151,7 @@ class DataLocationMapper():
         result = defaultdict(set)
         for item in dataItems:
             try:
-                if datasetSearch:
+                if datasetSearch or isDataset(dataItem):
                     phedexNodeNames = dbs.listDatasetLocation(item, dbsOnly = True)
                 else:
                     phedexNodeNames = dbs.listFileBlockLocation(item, dbsOnly = True)

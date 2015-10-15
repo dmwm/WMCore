@@ -24,7 +24,7 @@ def mapSitetoSE(sites):
     fakeSEs = []
     rControl = ResourceControl()
     for site in sites:
-        fakeSEs.extend(rControl.listSiteInfo(site)['se_name'])
+        fakeSEs.extend(rControl.listSiteInfo(site)['pnn'])
     return fakeSEs
 
 class PileupFetcher(FetcherInterface):

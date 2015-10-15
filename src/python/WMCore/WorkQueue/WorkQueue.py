@@ -387,18 +387,17 @@ class WorkQueue(WorkQueueBase):
         for blockName in blocks:
             tmpDsetDict.update(dbs.getFileBlock(blockName))
 
-        dbsDatasetDict = {'Files': [], 'IsOpen': False, 'StorageElements': []}
+        dbsDatasetDict = {'Files': [], 'IsOpen': False, 'PhEDExNodeNames': []}
         dbsDatasetDict['Files'] = [f for block in tmpDsetDict.values() for f in block['Files']]
-        dbsDatasetDict['StorageElements'].extend(
-            [f for block in tmpDsetDict.values() for f in block['StorageElements']])
-        dbsDatasetDict['StorageElements'] = list(set(dbsDatasetDict['StorageElements']))
+        dbsDatasetDict['PhEDExNodeNames'].extend(
+            [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
+        dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         if wmspec.locationDataSourceFlag():
-            seElements = []
-            for cmsSite in match['Inputs'].values()[0]:
-                ses = self.SiteDB.cmsNametoSE(cmsSite)
-                seElements.extend(ses)
-            dbsDatasetDict['StorageElements'] = list(set(seElements))
+            PhEDExNodeNames = []
+            for pnn in match['Inputs'].values()[0]:
+                PhEDExNodeNames.append(pnn)
+            dbsDatasetDict['PhEDExNodeNames'] = list(set(PhEDExNodeNames))
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
@@ -418,10 +417,10 @@ class WorkQueue(WorkQueueBase):
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():
-                PhEDExNodeNames = set()
+                PhEDExNodeNames = []
                 for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
-                    PhEDExNodeNames.update(pnn)
-                PhEDExNodeNames = list(PhEDExNodeNames)
+                    PhEDExNodeNames.append(pnn)
+                PhEDExNodeNames = list(set(PhEDExNodeNames))
                 for fileInfo in block["Files"]:
                     fileInfo['locations'] = PhEDExNodeNames
             return blockName, block
@@ -434,10 +433,10 @@ class WorkQueue(WorkQueueBase):
 
             if wmspec.locationDataSourceFlag():
                 blockInfo = dbsBlockDict[blockName]
-                PhEDExNodeNames = set()
+                PhEDExNodeNames = []
                 for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
-                    PhEDExNodeNames.update(pnn)
-                PhEDExNodeNames = list(PhEDExNodeNames)
+                    PhEDExNodeNames.append(pnn)
+                PhEDExNodeNames = list(set(PhEDExNodeNames))
                 blockInfo['PhEDExNodeNames'] = PhEDExNodeNames
         return blockName, dbsBlockDict[blockName]
 

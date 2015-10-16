@@ -65,6 +65,9 @@ class SiteDBJSON(object):
                             {u'phedex_name': u'T1_UK_RAL_Disk',  u'psn_name': u'T1_UK_RAL',  u'site_name': u'RAL-LCG2-DISK'},
                             {u'phedex_name': u'T1_US_FNAL_Disk',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'USCMS-FNAL-WC1-DISK'},
                             {u'phedex_name': u'T2_UK_London_IC',  u'psn_name': u'T2_UK_London_IC',  u'site_name': u'UKI-LT2-IC-HEP'},
+                            {u'phedex_name': u'T2_XX_SiteA_MSS',  u'psn_name': u'T2_XX_SiteA',  u'site_name': u'XX_T2_XX_SiteA'},
+                            {u'phedex_name': u'T2_XX_SiteB_MSS',  u'psn_name': u'T2_XX_SiteB',  u'site_name': u'XX_T2_XX_SiteB'},
+                            {u'phedex_name': u'T2_XX_SiteC_MSS',  u'psn_name': u'T2_XX_SiteC',  u'site_name': u'XX_T2_XX_SiteC'},
                            ]
 
     def __init__(self, config={}):

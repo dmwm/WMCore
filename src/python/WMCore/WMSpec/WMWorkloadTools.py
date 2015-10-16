@@ -61,7 +61,7 @@ def strToBool(string):
 def _verifyDBSCall(dbsURL, uri):
     try:
         #from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-        #DBS3Reader(dbsUrl).dbs.serverinfo()
+        #DBS3Reader(dbsURL).dbs.serverinfo()
         from WMCore.Services.Requests import JSONRequests
         jsonSender = JSONRequests(dbsURL)
         result = jsonSender.get("/%s" % uri)

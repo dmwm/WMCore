@@ -102,7 +102,7 @@ class WorkQueueTest(unittest.TestCase):
         storedElements = globalQ.backend.getElementsForWorkflow(specName)
         for element in storedElements:
             self.assertEqual(element['Priority'], 100)
-        self.assertTrue(localQ.pullWork({'T2_XX_SiteA' : 10}, continuousReplication = False) > 0)
+        self.assertTrue(localQ.pullWork({'T2_XX_SiteA' : 10}) > 0)
         localQ.processInboundWork(continuous = False)
         storedElements = localQ.backend.getElementsForWorkflow(specName)
         for element in storedElements:

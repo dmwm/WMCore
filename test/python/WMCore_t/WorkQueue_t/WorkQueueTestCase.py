@@ -38,6 +38,7 @@ class WorkQueueTestCase(unittest.TestCase):
         self.localQInboxDB2 = 'workqueue_t_local2_inbox'
         self.configCacheDB = 'workqueue_t_config_cache'
         self.logDBName = 'logdb_t'
+        self.requestDBName = 'workqueue_t_reqmgr_workload_cache'
         
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
@@ -55,14 +56,17 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.setupCouch(self.localQInboxDB2, *self.couchApps)
         self.testInit.setupCouch(self.configCacheDB, 'ConfigCache')
         self.testInit.setupCouch(self.logDBName, 'LogDB')
+        self.testInit.setupCouch(self.requestDBName, 'ReqMgr')
         
 
         couchServer = CouchServer(os.environ.get("COUCHURL"))
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
         
         self.localCouchMonitor = CouchMonitor(os.environ.get("COUCHURL"))
-    
+        self.localCouchMonitor.deleteReplicatorDocs()
+
         self.workDir = self.testInit.generateWorkDir()
+
         return
 
     def tearDown(self):
@@ -71,7 +75,7 @@ class WorkQueueTestCase(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        #self.localCouchMonitor.deleteReplicatorDocs()
+        self.localCouchMonitor.deleteReplicatorDocs()
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()

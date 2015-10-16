@@ -725,7 +725,7 @@ class WorkQueue(WorkQueueBase):
         self.backend.recordTaskActivity('location_refresh')
         return result
 
-    def pullWork(self, resources=None, continuousReplication=True):
+    def pullWork(self, resources=None):
         """
         Pull work from another WorkQueue to be processed
 
@@ -880,6 +880,7 @@ class WorkQueue(WorkQueueBase):
         for key, value in requestsInfo.items():
             if (value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
+            
         return self.backend.deleteWQElementsByWorkflow(deleteRequests)
 
     def performSyncAndCancelAction(self, skipWMBS):

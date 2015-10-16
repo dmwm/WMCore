@@ -13,7 +13,8 @@ import time
 
 from WMCore.Configuration import Configuration
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WMCore.WorkQueue.WorkQueueExceptions import *
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, \
+     WorkQueueNoMatchingElements, WorkQueueNoWorkError
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.Lexicon import sanitizeURL
 
@@ -42,9 +43,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File as WMFile
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Lexicon import sanitizeURL
-
-
 
 
 def monteCarloWorkload(workloadName, arguments):
@@ -75,17 +73,18 @@ def getFirstTask(wmspec):
     # pylint: disable=E1101,E1103
     return next(wmspec.taskIterator())
 
-def syncQueues(queue):
+def syncQueues(queue, skipWMBS=False):
     """Sync parent & local queues and split work
         Workaround having to wait for couchdb replication and splitting polling
     """
     
     queue.backend.forceQueueSync()
+    time.sleep(2)
     work = queue.processInboundWork()
-    queue.performQueueCleanupActions()
+    queue.performQueueCleanupActions(skipWMBS=skipWMBS)
     queue.backend.forceQueueSync()
     # after replication need to wait a while to update result
-    time.sleep(3)
+    time.sleep(2)
     return work
 
 
@@ -203,12 +202,14 @@ class WorkQueueTest(WorkQueueTestCase):
         # Create queues
         globalCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
         logdbCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.logDBName)
+        reqdbUrl = "%s/%s" % (self.testInit.couchUrl, self.requestDBName)
         self.globalQueue = globalQueue(DbName = self.globalQDB,
                                        InboxDbName = self.globalQInboxDB,
                                        QueueURL = globalCouchUrl,
                                        central_logdb_url = logdbCouchUrl,
                                        log_reporter = "WorkQueue_Unittest",
-                                       UnittestFlag = True)
+                                       UnittestFlag =  True,
+                                       RequestDBURL = reqdbUrl)
 #        self.midQueue = WorkQueue(SplitByBlock = False, # mid-level queue
 #                            PopulateFilesets = False,
 #                            ParentQueue = self.globalQueue,
@@ -219,6 +220,8 @@ class WorkQueueTest(WorkQueueTestCase):
         jobCouchConfig.section_("JobStateMachine")
         jobCouchConfig.JobStateMachine.couchurl = os.environ["COUCHURL"]
         jobCouchConfig.JobStateMachine.couchDBName = "testcouchdb"
+        jobCouchConfig.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
+        jobCouchConfig.JobStateMachine.summaryStatsDBName = "stat_summary_test"
         # copy bossAir configuration here since we don't want/need to pass whole configuration
         bossAirConfig = Configuration()
         bossAirConfig.section_("BossAir")
@@ -226,6 +229,11 @@ class WorkQueueTest(WorkQueueTestCase):
         bossAirConfig.BossAir.pluginNames = ["CondorPlugin"]
         bossAirConfig.section_("Agent")
         bossAirConfig.Agent.agentName = "TestAgent"
+        bossAirConfig.section_("JobStateMachine")
+        bossAirConfig.JobStateMachine.couchurl = os.environ["COUCHURL"]
+        bossAirConfig.JobStateMachine.couchDBName = "testcouchdb"
+        bossAirConfig.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
+        bossAirConfig.JobStateMachine.summaryStatsDBName = "stat_summary_test"
 
         self.localQueue = localQueue(DbName = self.localQDB,
                                      InboxDbName = self.localQInboxDB,
@@ -235,7 +243,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                      BossAirConfig = bossAirConfig,
                                      CacheDir = self.workDir,
                                      central_logdb_url = logdbCouchUrl,
-                                     log_reporter = "WorkQueue_Unittest")
+                                     log_reporter = "WorkQueue_Unittest",
+                                     RequestDBURL = reqdbUrl)
 
         self.localQueue2 = localQueue(DbName = self.localQDB2,
                                       InboxDbName = self.localQInboxDB2,
@@ -245,7 +254,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                       BossAirConfig = bossAirConfig,
                                       CacheDir = self.workDir,
                                       central_logdb_url = logdbCouchUrl,
-                                      log_reporter = "WorkQueue_Unittest")
+                                      log_reporter = "WorkQueue_Unittest",
+                                      RequestDBURL = reqdbUrl)
 
         # configuration for the Alerts messaging framework, work (alerts) and
         # control  channel addresses to which alerts
@@ -263,7 +273,8 @@ class WorkQueueTest(WorkQueueTestCase):
                                CacheDir = self.workDir,
                                config = config,
                                central_logdb_url = logdbCouchUrl,
-                               log_reporter = "WorkQueue_Unittest")
+                               log_reporter = "WorkQueue_Unittest",
+                               RequestDBURL = reqdbUrl)
 
         # create relevant sites in wmbs
         rc = ResourceControl()
@@ -416,8 +427,7 @@ class WorkQueueTest(WorkQueueTestCase):
         numWork = self.localQueue2.pullWork({'T2_XX_SiteA' : total})
         self.assertEqual(numUnit, numWork)
         print "second"
-        self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA' : total},
-                                                     continuousReplication = False))
+        self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA' : total}))
         syncQueues(self.localQueue)
         syncQueues(self.localQueue2)
         self.assertEqual(0, len(self.localQueue.status(status = 'Available')))
@@ -480,7 +490,6 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'T2_XX_SiteA' : 0,
                                    'T2_XX_SiteB' : 0}, {})
         self.assertEqual(len(work), 0)
-
         # Only 1 block at SiteB - get 1 work element when any resources free
         work = self.queue.getWork({'T2_XX_SiteB' : 1}, {})
         self.assertEqual(len(work), 1)
@@ -572,21 +581,19 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(2, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteC' : 1000},
-                                                  continuousReplication = False), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteC' : 1000}), 0)
 
         # put at correct site
         self.globalQueue.updateLocationInfo()
-
+ 
         # check work isn't passed down to the wrong agent
         work = self.localQueue.getWork({'T2_XX_SiteC' : 1000},
-                                       {}) # Not in subscription
+                                      {}) # Not in subscription
         self.assertEqual(0, len(work))
         self.assertEqual(2, len(self.globalQueue))
 
         # pull work down to the lowest queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
-                                                  continuousReplication = False), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), 2)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 2)
         # parent state should be negotiating till we verify we have it
@@ -623,8 +630,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # pull to local queue
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
-                                                  continuousReplication = False), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), 2)
         syncQueues(self.localQueue) # Tell parent local has acquired
         self.assertEqual(len(self.globalQueue.status('Acquired')), 2)
         self.assertEqual(len(self.localQueue.status('Available')), 2)
@@ -642,6 +648,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # finish work locally and propagate to global
         self.localQueue.doneWork([x.id for x in work])
+        #just update the elements but not using the result
         [self.localQueue.backend.updateElements(x.id, PercentComplete = 100, PercentSuccess = 99) for x in work]
         elements = self.localQueue.status('Done')
         self.assertEqual(len(elements), len(work))
@@ -649,9 +656,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          [100] * len(work))
         self.assertEqual([x['PercentSuccess'] for x in elements],
                          [99] * len(work))
-
-        self.localQueue.performQueueCleanupActions(skipWMBS = True) # will delete elements from local
-        syncQueues(self.localQueue)
+        syncQueues(self.localQueue, skipWMBS = True)
 
         elements = self.globalQueue.status('Done')
         self.assertEqual(len(elements), 2)
@@ -659,7 +664,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([x['PercentSuccess'] for x in elements], [99, 99])
 
         self.globalQueue.performQueueCleanupActions()
-        self.assertEqual(0, len(self.globalQueue.status()))
+        # gq still has 2 elements since elements won't be cleaned up untill requset status updated
+        self.assertEqual(2, len(self.globalQueue.status()))
         elements = self.globalQueue.backend.getInboxElements('Done')
         self.assertEqual(len(elements), 1)
         self.assertEqual([x['PercentComplete'] for x in elements], [100])
@@ -757,8 +763,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.updateLocationInfo()
 
         self.localQueue.params['Teams'] = ['The B-Team', 'The C-Team']
-        self.assertEqual(self.localQueue.pullWork(slots,
-                                                  continuousReplication = False), 3)
+        self.assertEqual(self.localQueue.pullWork(slots), 3)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork(slots, {})), 3)
 
@@ -798,8 +803,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # pull to local
         # location info should already be added
         #self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
-                                                  continuousReplication = False),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
                          totalBlocks)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
@@ -816,7 +820,7 @@ class WorkQueueTest(WorkQueueTestCase):
                          totalBlocks)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
-                         0)
+                         totalBlocks)
         self.assertEqual(len(self.globalQueue.status(status = 'Done')),
                          totalBlocks)
 
@@ -839,8 +843,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # pull to local
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
-                                                  continuousReplication = False),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
                          totalSpec)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(status = 'Available')),
@@ -856,9 +859,9 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
                          totalBlocks)
         syncQueues(self.localQueue)
-        # elements in local deleted at end of update, only global ones left
+        # elements are not deleted untill request status is changed
         self.assertEqual(len(self.localQueue.status(status = 'Done')),
-                         0)
+                         totalBlocks)
         self.assertEqual(len(self.globalQueue.status(status = 'Done')),
                          totalSpec)
 
@@ -869,8 +872,7 @@ class WorkQueueTest(WorkQueueTestCase):
         totalBlocks = 2
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000},
-                                                  continuousReplication = False),
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
                          totalBlocks)
         syncQueues(self.localQueue)
         work = self.localQueue.getWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000},
@@ -889,13 +891,12 @@ class WorkQueueTest(WorkQueueTestCase):
         work_at_local = [x for x in self.globalQueue.status(status = 'Running') \
                          if x['ChildQueueUrl'] == sanitizeURL(self.localQueue.params['QueueURL'])['url']]
         self.assertEqual(len(work_at_local), 0)
-
+ 
         # now 2nd queue calls and acquires work
-        self.assertEqual(self.localQueue2.pullWork({'T2_XX_SiteA' : 1000},
-                                                   continuousReplication = False),
+        self.assertEqual(self.localQueue2.pullWork({'T2_XX_SiteA' : 1000}),
                          totalBlocks)
         syncQueues(self.localQueue2)
-
+ 
         # check work in global assigned to local2
         self.assertEqual(len(self.localQueue2.status(status = 'Available')),
                          2) # work in local2
@@ -917,7 +918,7 @@ class WorkQueueTest(WorkQueueTestCase):
         canceled = self.queue.cancelWork(ids)
         self.assertEqual(sorted(canceled), sorted(ids))
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status()), 0)
+        self.assertEqual(len(self.queue.status()), 2)
         self.assertEqual(len(self.queue.statusInbox(status='Canceled')), 1)
 
         # now cancel a request
@@ -926,7 +927,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000},
                                   {})
         self.assertEqual(len(self.queue), 0)
-        self.assertEqual(len(self.queue.status(status='Running')), elements)
+        self.assertEqual(len(self.queue.status(status='Running')), len(self.queue.status()))
         ids = [x.id for x in work]
         canceled = self.queue.cancelWork(WorkflowName = 'testProduction')
         self.assertEqual(canceled, ids)
@@ -937,8 +938,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """Cancel work in global queue"""
         # queue to global & pull an element to local
         self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         syncQueues(self.localQueue)
 
         # cancel in global and propagate to local
@@ -949,53 +949,53 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.statusInbox(status='Acquired')), 1)
 
         # will cancel element left in global, one sent to local queue stays CancelRequested
-        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.globalQueue)
         self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
         self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
         self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
         # global parent stays CancelRequested till child queue cancels
-        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.globalQueue)
         self.assertEqual(len(self.globalQueue.status(status='CancelRequested')), 1)
         self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
         self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
 
-        # during sync local will delete elements and mark inbox as canceled
+        # during sync local queue will synced with globalQueue but not gets deleted until workflow finished
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.status()), 0)
-        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1) # inbox is synced
         self.assertEqual(len(self.globalQueue.status(status='Canceled')), 2)
         self.assertEqual(len(self.globalQueue.statusInbox(status='CancelRequested')), 1)
-        self.globalQueue.performQueueCleanupActions()
-        self.assertEqual(len(self.globalQueue.status()), 0)
+        syncQueues(self.globalQueue)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 2)
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         syncQueues(self.localQueue)
-        # local now empty
-        self.assertEqual(len(self.localQueue.statusInbox()), 0)
+        # local cancelded
+        print self.localQueue.status()
+        #self.assertEqual(len(self.localQueue.status(status='Canceled')), 1)
         # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())
         self.assertEqual(len(self.globalQueue.statusInbox()), 0)
 
-
         ### check cancel of work negotiating in agent works
         self.globalQueue.queueWork(self.whitelistSpec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1}), 1)
         self.localQueue.backend.forceQueueSync()
+        time.sleep(2)
         self.assertEqual(len(self.localQueue.statusInbox(status='Negotiating')), 1)
 
         # now cancel
         service.cancelWorkflow(self.whitelistSpec.name())
-        self.globalQueue.performQueueCleanupActions()
+        syncQueues(self.globalQueue)
         self.localQueue.backend.forceQueueSync() # pull in cancelation
-        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 1)
+        self.assertEqual(len(self.globalQueue.status(status='Canceled')), 3)
         self.assertEqual(len(self.localQueue.statusInbox(status='CancelRequested')), 1)
-        self.localQueue.performQueueCleanupActions(skipWMBS = True)
-        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 1)
+        syncQueues(self.localQueue, skipWMBS = True)
+        self.assertEqual(len(self.localQueue.statusInbox(status='Canceled')), 2)
         syncQueues(self.localQueue)
-        self.globalQueue.performQueueCleanupActions()
-        syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.whitelistSpec.name())), 0)
-        self.assertEqual(len(self.globalQueue.status(WorkflowName = self.whitelistSpec.name())), 0)
+        syncQueues(self.globalQueue)
+
+        self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.whitelistSpec.name())), 1)
+        self.assertEqual(len(self.globalQueue.status(WorkflowName = self.whitelistSpec.name())), 2)
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         # clear global
         self.globalQueue.deleteWorkflows(self.whitelistSpec.name())
@@ -1026,7 +1026,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # no dataset
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
-                                                    'testProcessingInvalid.spec'))
+                                                   'testProcessingInvalid.spec'))
         processingSpec.save(processingSpec.specUrl())
         getFirstTask(processingSpec).data.input.dataset = None
         processingSpec.save(processingSpec.specUrl())
@@ -1035,7 +1035,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # invalid dbs url
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
-                                                    'testProcessingInvalid.spec'))
+                                                   'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
@@ -1076,6 +1076,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
+
     def testIgnoreDuplicates(self):
         """Ignore duplicate work"""
         specfile = self.spec.specUrl()
@@ -1090,8 +1091,7 @@ class WorkQueueTest(WorkQueueTestCase):
     def testConflicts(self):
         """Resolve conflicts between global & local queue"""
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.localQueue.pullWork({'T2_XX_SiteA' : 10000},
-                                 continuousReplication = False)
+        self.localQueue.pullWork({'T2_XX_SiteA' : 10000})
         self.localQueue.getWork({'T2_XX_SiteA' : 10000},
                                 {})
         syncQueues(self.localQueue)
@@ -1099,8 +1099,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.backend.updateInboxElements(*global_ids, Status = 'Done', PercentComplete = 69)
         self.globalQueue.backend.updateElements(*global_ids, Status = 'Canceled')
         self.localQueue.backend.forceQueueSync()
+        time.sleep(2)
         self.localQueue.backend.fixConflicts()
         self.localQueue.backend.forceQueueSync()
+        time.sleep(2)
         self.assertEqual([x['Status'] for x in self.globalQueue.status(elementIDs = global_ids)],
                          ['Canceled'])
         self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(elementIDs = global_ids)],
@@ -1108,11 +1110,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([x for x in self.localQueue.statusInbox()],
                          [x for x in self.globalQueue.status()])
 
+
     def testDeleteWork(self):
-        """Delete finished work"""
+        """Delete finished work
+        TODO: do emulate the reqmgr2 and change the status of request 
+        so actually request gets deleted when performCleanupAction is run.
+        """
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 10000},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 10000}), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 10000},
                                                      {})), 1)
@@ -1120,20 +1125,21 @@ class WorkQueueTest(WorkQueueTestCase):
         self.localQueue.doneWork(WorkflowName = self.spec.name())
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status(WorkflowName = self.spec.name())),
-                         0) # deleted once inbox updated
+                         1) # not deleted until request status is updated
         self.assertEqual('Done',
                          self.globalQueue.status(WorkflowName = self.spec.name())[0]['Status'])
         self.globalQueue.performQueueCleanupActions()
         self.assertEqual('Done',
                          self.globalQueue.statusInbox(WorkflowName = self.spec.name())[0]['Status'])
         self.assertEqual(len(self.globalQueue.status(WorkflowName = self.spec.name())),
-                         0) # deleted once inbox updated
+                         1) # not deleted until request status is update
         self.globalQueue.deleteWorkflows(self.spec.name())
         self.assertEqual(len(self.globalQueue.statusInbox(WorkflowName = self.spec.name())),
                          0)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.spec.name())),
-                         0)
+                         1) # not deleted until request status is update
+
 
     def testResubmissionWorkflow(self):
         """Test workflow resubmission via ACDC"""
@@ -1146,11 +1152,11 @@ class WorkQueueTest(WorkQueueTestCase):
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100}), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork({"T1_US_FNAL": 100}, {})), 1)
 
+ 
     def testResubmissionWithParentsWorkflow(self):
         """Test workflow resubmission with parentage via ACDC"""
         acdcCouchDB = "workqueue_t_acdc"
@@ -1162,11 +1168,11 @@ class WorkQueueTest(WorkQueueTestCase):
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.localQueue.pullWork({"T1_US_FNAL": 100},
-                                 continuousReplication = False)
+        self.localQueue.pullWork({"T1_US_FNAL": 100})
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100}, {})
 
+ 
     def testResubmissionWorkflowSiteWhitelistLocations(self):
         """ Test an ACDC workflow where we use the site whitelist as locations"""
         acdcCouchDB = "workqueue_t_acdc"
@@ -1175,46 +1181,44 @@ class WorkQueueTest(WorkQueueTestCase):
         spec = self.createResubmitSpec(self.testInit.couchUrl,
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
-        spec.setSiteWhitelist('T1_UK_RAL')
+        spec.setSiteWhitelist('T1_US_FNAL')
         spec.setLocationDataSourceFlag()
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")
-        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100},
-                                 continuousReplication = False), 0)
-        self.assertEqual(self.localQueue.pullWork({"T1_UK_RAL": 100},
-                                 continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({"T1_UK_RAL": 100}), 0)
+        self.assertEqual(self.localQueue.pullWork({"T1_US_FNAL": 100}), 1)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.getWork({"T1_UK_RAL": 100}, {})),1)
+        self.assertEqual(len(self.localQueue.getWork({"T1_US_FNAL": 100}, {})),1) 
 
+ 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(2, len(self.globalQueue))
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         # further pull will fail till we replicate to child
         # hopefully couch replication wont happen till we manually sync
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 0)
         self.assertEqual(1, len(self.globalQueue))
         self.assertEqual(0, len(self.localQueue))
         syncQueues(self.localQueue)
         self.assertEqual(1, len(self.localQueue))
         # pull works again
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
 
+ 
     def testSitesFromResourceControl(self):
         """Test sites from resource control"""
         # Most tests pull work for specific sites (to give us control)
         # In reality site list will come from resource control so test
         # that here (just a simple check that we can get sites from rc)
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.assertEqual(self.localQueue.pullWork(continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork(), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 1)
 
+ 
     def testParentProcessing(self):
         """
         Enqueue and get work for a processing WMSpec.
@@ -1251,13 +1255,14 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total},
                                                    {})))
 
+ 
     def testDrainMode(self):
         """Stop acquiring work when DrainMode set"""
         self.localQueue.params['DrainMode'] = True
         self.globalQueue.queueWork(self.spec.specUrl())
         self.assertEqual(1, len(self.globalQueue))
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000},
-                                                  continuousReplication = False), 0)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000}), 0)
+ 
 
     def testWMBSInjectionStatus(self):
 
@@ -1269,7 +1274,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(self.globalQueue.getWMBSInjectionStatus(self.spec.name()),
                          False)
 
-        self.assertEqual(self.localQueue.pullWork(continuousReplication = False),3)
+        self.assertEqual(self.localQueue.pullWork(),3)
         # test local queue status with parents (globalQueue is not synced yet
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': False}, {'testProduction': False}])
@@ -1303,20 +1308,18 @@ class WorkQueueTest(WorkQueueTestCase):
         #test not existing workflow
         self.assertRaises(WorkQueueNoMatchingElements,
                           self.localQueue.getWMBSInjectionStatus,
-                          "NotExistWorkflow"
-                         )
+                          "NotExistWorkflow")
+
 
     def testEndPolicyNegotiating(self):
         """Test end policy processing of request before splitting"""
         work = self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(work, 2)
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         self.localQueue.backend.pullFromParent() # pull work into inbox (Negotiating state)
         self.localQueue.processInboundWork()
         syncQueues(self.localQueue)
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         # should print message but not raise an error
         self.localQueue.performQueueCleanupActions(skipWMBS = True)
         self.localQueue.backend.pullFromParent(continuous = False)
@@ -1342,8 +1345,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.queueWork(self.spec.specUrl())
         # acquire 1 element of a wf and then mark site as draining.
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         syncQueues(self.localQueue)
         existing_wf = [x['RequestName'] for x in self.localQueue.statusInbox()]
         self.assertEqual(1, len(existing_wf))
@@ -1361,7 +1363,7 @@ class WorkQueueTest(WorkQueueTestCase):
         rc.changeSiteState('T2_XX_SiteA', 'Draining')
         rc.changeSiteState('T2_XX_SiteB', 'Draining')
         # pull more work, no work should be acquired
-        self.localQueue.pullWork(continuousReplication = False)
+        self.localQueue.pullWork()
         syncQueues(self.localQueue)
         [self.fail('Got new wf %s for draining site' % x['RequestName']) for x in self.localQueue.statusInbox() if x['RequestName'] != existing_wf]
         # wmbs injection for draining sites continues to work
@@ -1369,7 +1371,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                                 {}))
         # re-enable site and get remainder of work
         rc.changeSiteState('T2_XX_SiteA', 'Normal')
-        self.assertTrue(self.localQueue.pullWork(continuousReplication = False))
+        self.assertTrue(self.localQueue.pullWork())
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWork({'T2_XX_SiteA' : 100},
                                                 {}))
@@ -1383,8 +1385,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.processingSpec.save(self.processingSpec.specUrl())
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         # all blocks pulled as each has 0 jobs
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 2)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 2)
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1},
@@ -1402,6 +1403,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.globalQueue.status(status = 'Done')), 2)
 
+
     def testOpenBlocks(self):
         """New files added to open blocks are inserted correctly"""
         # open block
@@ -1410,8 +1412,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.closeWork(self.processingSpec.name())
-        self.localQueue.pullWork({'T2_XX_SiteA' : 100, 'T2_XX_SiteB' : 100},
-                                 continuousReplication = False)
+        self.localQueue.pullWork({'T2_XX_SiteA' : 100, 'T2_XX_SiteB' : 100})
         syncQueues(self.localQueue)
         work = self.localQueue.getWork({'T2_XX_SiteA' : 1},
                                        {})
@@ -1440,6 +1441,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # cleanup now progresses
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWMBSInjectionStatus(self.processingSpec.name()))
+
 
     def testCloseWorkTimeout(self):
         """Check that it can close inbox elements on demand and on timeout"""
@@ -1475,6 +1477,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(openRunningElements), 0, "There are still open elements")
         self.assertEqual(len(closedRunningElements), 4, "Not all elements are closed after the last poll cycle")
         return
+
 
     def testCloseWorkOpenBlocks(self):
         """Check that it can close inbox elements and keep them open when there are open blocks"""
@@ -1535,8 +1538,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(GlobalParams.numOfBlocksPerDataset(), len(self.globalQueue))
 
         # Now pull work to the local queue and WMBS
-        self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                 continuousReplication = False)
+        self.localQueue.pullWork({'T2_XX_SiteA' : 1})
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 1)
         self.assertEqual(len(self.globalQueue), 1)
@@ -1554,8 +1556,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.backend.getInboxElements(status = "Running")), 1)
 
         # Now pull the new work to the local queue
-        self.localQueue.pullWork({'T2_XX_SiteB' : 1000, 'T2_XX_SiteC' : 1000},
-                                 continuousReplication = False)
+        self.localQueue.pullWork({'T2_XX_SiteB' : 1000, 'T2_XX_SiteC' : 1000})
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 4)
         self.assertEqual(len(self.globalQueue), 0)
@@ -1564,6 +1565,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, self.globalQueue.addWork(self.processingSpec.name()))
 
         return
+
 
     def testProcessingWithPileup(self):
         """Test a full WorkQueue cycle in a request with pileup datasets"""
@@ -1576,17 +1578,14 @@ class WorkQueueTest(WorkQueueTestCase):
         # We should not be able to pull the work.
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1,
                                                    'T2_XX_SiteB' : 3,
-                                                   'T2_XX_SiteC' : 4},
-                                                  continuousReplication = False), 0)
+                                                   'T2_XX_SiteC' : 4}), 0)
         # The PhEDEx emulator will move the pileup blocks to site A
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteB' : 1,
-                                                   'T2_XX_SiteC' : 4},
-                                                  continuousReplication = False), 0)
+                                                   'T2_XX_SiteC' : 4}), 0)
 
         # Now try with site A
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1},
-                                                  continuousReplication = False), 1)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), 1)
         self.assertEqual(len(self.globalQueue), 1)
@@ -1602,6 +1601,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 1)
         self.assertEqual(len(self.localQueue), 0)
 
+
     def testPileupOnProduction(self):
         """Test that we can split properly a Production workflow with pileup"""
         specfile = self.productionPileupSpec.specUrl()
@@ -1611,6 +1611,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.backend.getActivePileupData()),1)
         self.assertNotEqual(self.globalQueue.backend.getActivePileupData()[0]['dbs_url'], None)
 
+
     def testPrioritiesWorkPolling(self):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior
            for acquiring and injecting work"""
@@ -1619,8 +1620,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(self.highPrioReReco.specUrl())
 
         # Pull all into local queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 200},
-                                                  continuousReplication = False), 4)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 200}), 4)
         syncQueues(self.localQueue)
 
         # Try pulling work into WMBS when "there is" a job of higher priority than the high prio workflow
@@ -1638,7 +1638,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                                  {'T2_XX_SiteA' : {1 : 50}})),
                          1)
         self.assertEqual(len(self.localQueue.backend.getElements(WorkflowName = self.highPrioReReco.name())),
-                         2)
+                        2)
 
 if __name__ == "__main__":
     unittest.main()

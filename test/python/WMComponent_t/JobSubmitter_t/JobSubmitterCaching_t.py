@@ -122,8 +122,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
             newJobA = Job(name = "testJobA-%s" % i, files = [newFile])
             newJobA["workflow"] = "wf001"
-            newJobA["siteWhitelist"] = ["T1_US_FNAL"]
-            newJobA["siteBlacklist"] = []
+            newJobA["possiblePSN"] = ["T1_US_FNAL"]
             newJobA["sandbox"] = "%s/somesandbox" % self.testDir
             newJobA["owner"] = "Steve"
 
@@ -141,8 +140,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
             newJobB = Job(name = "testJobB-%s" % i, files = [newFile])
             newJobB["workflow"] = "wf001"
-            newJobB["siteWhitelist"] = ["T1_UK_RAL"]
-            newJobB["siteBlacklist"] = []
+            newJobB["possiblePSN"] = ["T1_UK_RAL"]
             newJobB["sandbox"] = "%s/somesandbox" % self.testDir
             newJobB["owner"] = "Steve"
 

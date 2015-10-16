@@ -63,10 +63,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         well as to the output fileset for their jobgroups.
         """
         locationAction = self.daoFactory(classname="Locations.New")
-        locationAction.execute(siteName="s1", pnn="T1_US_FNAL_Disk")
-        locationAction.execute(siteName="s1", pnn="T1_US_FNAL_MSS")
-
-        changeStateDAO = self.daoFactory(classname="Jobs.ChangeState")
+        locationAction.execute(siteName="T1_US_FNAL", pnn="T1_US_FNAL_Disk")
 
         self.mergeFileset = Fileset(name="mergeFileset")
         self.mergeFileset.create()
@@ -192,6 +189,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
 
         self.assertEqual(result[0].jobs[0]["estimatedDiskUsage"], 10 + 2 * 100)
 
+        self.assertEqual(result[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
+
         goldenFiles = ["file1", "file2", "file3", "file4", "fileA", "fileB",
                        "fileC", "fileI", "fileII", "fileIII", "fileIV"]
 
@@ -202,10 +201,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         currentEvent = 0
         for jobFile in jobFiles:
             jobFile.loadData()
-            assert jobFile["lfn"] in goldenFiles, \
-                "Error: Unknown file: %s" % jobFile["lfn"]
-            self.assertTrue(jobFile["locations"] == set(["T1_US_FNAL_Disk", "T1_US_FNAL_MSS"]),
-                            "Error: File is missing a location.")
+            self.assertTrue(jobFile["lfn"] in goldenFiles,
+                            "Error: Unknown file: %s" % jobFile["lfn"])
             goldenFiles.remove(jobFile["lfn"])
 
             fileRun = list(jobFile["runs"])[0].run
@@ -264,6 +261,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         goldenFilesB = ["fileIV"]
 
         for job in result[0].jobs:
+
+            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL"]))
+
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
@@ -277,10 +277,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentLumi = 0
             currentEvent = 0
             for jobFile in jobFiles:
-                assert jobFile["lfn"] in goldenFiles, \
-                    "Error: Unknown file in merge jobs."
-                assert jobFile["locations"] == set(["T1_US_FNAL_Disk"]), \
-                    "Error: File is missing a location."
+                self.assertTrue(jobFile["lfn"] in goldenFiles,
+                                "Error: Unknown file: %s" % jobFile["lfn"])
 
                 goldenFiles.remove(jobFile["lfn"])
 
@@ -341,6 +339,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         goldenFilesB = ["fileIII"]
 
         for job in result[0].jobs:
+
+            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL"]))
+
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
@@ -354,10 +355,8 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentLumi = 0
             currentEvent = 0
             for jobFile in jobFiles:
-                assert jobFile["lfn"] in goldenFiles, \
-                    "Error: Unknown file in merge jobs."
-                assert jobFile["locations"] == set(["T1_US_FNAL_Disk"]), \
-                    "Error: File is missing a location: %s" % jobFile["locations"]
+                self.assertTrue(jobFile["lfn"] in goldenFiles,
+                                "Error: Unknown file: %s" % jobFile["lfn"])
 
                 goldenFiles.remove(jobFile["lfn"])
 
@@ -416,13 +415,16 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         assert len(result[0].jobs) == 2, \
             "Error: Two jobs should have been returned: %s" % len(result[0].jobs)
 
-        goldenFilesA = ["file1", "file2", "file3", "file4", "fileA", "fileB",
-                        "fileC"]
+        goldenFilesA = ["file1", "file2", "file3", "file4",
+                        "fileA", "fileB", "fileC"]
         goldenFilesB = ["fileI", "fileII", "fileIII", "fileIV"]
         goldenFilesA.sort()
         goldenFilesB.sort()
 
         for job in result[0].jobs:
+
+            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL"]))
+
             currentRun = 0
             currentLumi = 0
             currentEvent = 0
@@ -431,8 +433,6 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             for jobFile in job.getFiles():
                 jobFile.loadData()
                 jobLFNs.append(jobFile["lfn"])
-                self.assertTrue(jobFile["locations"] == set(["T1_US_FNAL_Disk", "T1_US_FNAL_MSS"]),
-                                "Error: File is missing a location.")
 
                 fileRun = list(jobFile["runs"])[0].run
                 fileLumi = min(list(jobFile["runs"])[0])
@@ -501,6 +501,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         goldenFilesC = ["fileIV"]
 
         for job in result[0].jobs:
+
+            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL"]))
+
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
@@ -518,9 +521,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentEvent = 0
             for jobFile in jobFiles:
                 self.assertTrue(jobFile["lfn"] in goldenFiles,
-                                "Error: Unknown file in merge jobs.")
-                self.assertTrue(jobFile["locations"] == set(["T1_US_FNAL_Disk"]),
-                                "Error: File is missing a location.")
+                                "Error: Unknown file: %s" % jobFile["lfn"])
 
                 goldenFiles.remove(jobFile["lfn"])
 
@@ -580,6 +581,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         goldenFilesC = ["fileIII"]
 
         for job in result[0].jobs:
+
+            self.assertEqual(job["possiblePSN"], set(["T1_US_FNAL"]))
+
             jobFiles = job.getFiles()
 
             if jobFiles[0]["lfn"] in goldenFilesA:
@@ -597,9 +601,7 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
             currentEvent = 0
             for jobFile in jobFiles:
                 self.assertTrue(jobFile["lfn"] in goldenFiles,
-                                "Error: Unknown file in merge jobs.")
-                self.assertTrue(jobFile["locations"] == set(["T1_US_FNAL_Disk"]),
-                                "Error: File is missing a location: %s" % jobFile["locations"])
+                                "Error: Unknown file: %s" % jobFile["lfn"])
 
                 goldenFiles.remove(jobFile["lfn"])
 
@@ -641,9 +643,9 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         self.stuffWMBS()
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "s3", pnn = "T1_UK_RAL_Disk")
+        locationAction.execute(siteName = "T1_UK_RAL", pnn = "T1_UK_RAL_Disk")
 
-        fileSite2 = File(lfn = "fileSite2", size = 4098, events = 1024,
+        fileSite2 = File(lfn = "fileRAL", size = 4098, events = 1024,
                          first_event = 0, locations = set(["T1_UK_RAL_Disk"]))
         fileSite2.addRun(Run(1, *[46]))
         fileSite2.create()
@@ -664,16 +666,16 @@ class ParentlessMergeBySizeTest(unittest.TestCase):
         assert len(result[0].jobs) == 3, \
             "ERROR: Three jobs should have been returned."
 
+        ralJobs = 0
+        fnalJobs = 0
         for job in result[0].jobs:
-            firstInputFile = job.getFiles()[0]
-            baseLocation = list(firstInputFile["locations"])[0]
+            if job["possiblePSN"] == set(["T1_UK_RAL"]):
+                ralJobs += 1
+            elif job["possiblePSN"] == set(["T1_US_FNAL"]):
+                fnalJobs += 1
 
-            for inputFile in job.getFiles():
-                assert len(inputFile["locations"]) == 1, \
-                    "Error: Wrong number of locations"
-
-                assert list(inputFile["locations"])[0] == baseLocation, \
-                    "Error: Wrong location."
+        self.assertEqual(ralJobs, 1)
+        self.assertEqual(fnalJobs, 2)
 
         return
 

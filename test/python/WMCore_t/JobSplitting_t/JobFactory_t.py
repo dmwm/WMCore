@@ -53,8 +53,6 @@ class JobFactoryTest(unittest.TestCase):
                 self.assertEqual(job["task"], "TestTask", "Error: Task is wrong.")
                 self.assertEqual(job["workflow"], "TestWorkflow", "Error: Workflow is wrong.")
                 self.assertEqual(job["owner"], "Steve", "Error: Owner is wrong.")
-                self.assertEqual(job["siteWhitelist"], ["site1"], "Error: Site white list is wrong.")
-                self.assertEqual(job["siteBlacklist"], ["site2"], "Error: Site black list is wrong.")
         return
 
     def testProductionRunNumber(self):

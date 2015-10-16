@@ -91,7 +91,6 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.sandboxPackage     = {}
         self.siteKeys           = {}
         self.locationDict       = {}
-        self.cmsNames           = {}
         self.drainSites         = set()
         self.abortSites         = set()
         self.sortedSites        = []
@@ -115,8 +114,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.error(msg)
             self.sendAlert(6, msg = msg)
             try:
-                logging.debug("PackageDir: %s" % self.packageDir)
-                logging.debug("Config: %s" % config)
+                logging.debug("PackageDir: %s", self.packageDir)
+                logging.debug("Config: %s", config)
             except:
                 pass
             raise JobSubmitterPollerException(msg)
@@ -131,9 +130,6 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-
-        # cache the psn to pnn mappings
-        self.pnn_to_psn = self.daoFactory(classname = "Locations.GetPNNtoPSNMapping").execute()
 
         return
 
@@ -258,7 +254,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Querying WMBS for jobs to be submitted...")
         newJobs = self.listJobsAction.execute()
-        logging.info("Found %s new jobs to be submitted." % len(newJobs))
+        logging.info("Found %s new jobs to be submitted.", len(newJobs))
 
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
@@ -270,13 +266,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             jobCount += 1
             if jobCount % 5000 == 0:
-                logging.info("Processed %d/%d new jobs." % (jobCount, len(newJobs)))
+                logging.info("Processed %d/%d new jobs.", jobCount, len(newJobs))
 
             pickledJobPath = os.path.join(newJob["cache_dir"], "job.pkl")
 
             if not os.path.isfile(pickledJobPath):
                 # Then we have a problem - there's no file
-                logging.error("Could not find pickled jobObject %s" % pickledJobPath)
+                logging.error("Could not find pickled jobObject %s", pickledJobPath)
                 badJobs[61103].append(newJob)
                 continue
             try:
@@ -292,55 +288,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             loadedJob['retry_count'] = newJob['retry_count']
 
-            siteWhitelist = loadedJob.get("siteWhitelist", [])
-            siteBlacklist = loadedJob.get("siteBlacklist", [])
-            trustSitelists = loadedJob.get("trustSitelists", False)
-            # convert site lists into correct format
-            if len(siteWhitelist) > 0:
-                whitelist = []
-                for cmsName in siteWhitelist:
-                    whitelist.extend(self.cmsNames.get(cmsName, []))
-                siteWhitelist = whitelist
-            if len(siteBlacklist) > 0:
-                blacklist = []
-                for cmsName in siteBlacklist:
-                    blacklist.extend(self.cmsNames.get(cmsName, []))
-                siteBlacklist = blacklist
-
             # figure out possible locations for job
-            if trustSitelists:
-                possibleLocations = set(siteWhitelist) - set(siteBlacklist)
-            else:
-                possibleLocations = set()
-
-                # all files in job have same location (in se names)
-                rawLocations = loadedJob["input_files"][0]["locations"]
-                
-#                sitedb = SiteDB()
- #               sitedb_names = set()
-                for l in rawLocations:
-#                    sitedb_names.update(sitedb.PNNtoPSN(l) or [])
-                    possibleLocations.update(self.pnn_to_psn.get(l, []))
-#                    possibleLocations.update(sitedb.PNNtoPSN(l) or [])
-#                    if l in self.cmsNames:
-#                        possibleLocations.update(self.cmsNames.get(l))
-
-
-                # transform se names into site names
-#                for loc in rawLocations:
-#                    if not loc in self.siteKeys.keys():
-#                        # Then we have a problem
-#                        logging.error('Encountered unknown location %s for job %i' % (loc, jobID))
-#                        logging.error('Ignoring for now, but watch out for this')
-#                    else:
-#                        for siteName in self.siteKeys[loc]:
-#                            possibleLocations.add(siteName)
-
-                # filter with site lists
-                if len(siteWhitelist) > 0:
-                    possibleLocations = possibleLocations & set(siteWhitelist)
-                if len(siteBlacklist) > 0:
-                    possibleLocations = possibleLocations - set(siteBlacklist)
+            possibleLocations = loadedJob["possiblePSN"]
 
             # Create another set of locations that may change when a site goes white/black listed
             # Does not care about the non_draining or aborted sites, they may change and that is the point
@@ -439,7 +388,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         # Register failures in submission
         for errorCode in badJobs:
             if badJobs[errorCode]:
-                logging.debug("The following jobs could not be submitted: %s, error code : %d" % (badJobs, errorCode))
+                logging.debug("The following jobs could not be submitted: %s, error code : %d", badJobs, errorCode)
                 self._handleSubmitFailedJobs(badJobs[errorCode], errorCode)
 
         # If there are any leftover jobs, we want to get rid of them.
@@ -492,7 +441,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job['fwjr'].save(fwjrPath)
                 fwjrBinds.append({"jobid" : job["id"], "fwjrpath" : fwjrPath})
             except IOError as ioer:
-                logging.error("Failed to write FWJR for submit failed job %d, message: %s" % (job['id'], str(ioer)))
+                logging.error("Failed to write FWJR for submit failed job %d, message: %s",  job['id'], str(ioer))
         self.changeState.propagate(badJobs, "submitfailed", "created")
         self.setFWJRPathAction.execute(binds = fwjrBinds)
         return
@@ -512,13 +461,8 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         for siteName in rcThresholds.keys():
             # Add threshold if we don't have it already
-            cmsName = rcThresholds[siteName]["cms_name"]
             state   = rcThresholds[siteName]["state"]
 
-            if not cmsName in self.cmsNames.keys():
-                self.cmsNames[cmsName] = []
-            if not siteName in self.cmsNames[cmsName]:
-                self.cmsNames[cmsName].append(siteName)
             if state == "Draining":
                 newDrainSites.add(siteName)
             if state in ["Down", "Aborted"]:
@@ -548,7 +492,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                                   key = lambda x : rcThresholds[x]["total_pending_slots"],
                                   reverse = True)
         self.sortedSites = sorted(self.sortedSites, key = lambda x : rcThresholds[x]["cms_name"][0:2])
-        logging.debug('Sites will be filled in the following order: %s' % str(self.sortedSites))
+        logging.debug('Sites will be filled in the following order: %s', self.sortedSites)
 
         self.currentRcThresholds = rcThresholds
         self.abortSites = newAbortSites
@@ -581,9 +525,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             totalPending = None
             if siteName not in self.cachedJobs:
-                logging.debug("No jobs for site %s" % siteName)
+                logging.debug("No jobs for site %s", siteName)
                 continue
-            logging.debug("Have site %s" % siteName)
+            logging.debug("Have site %s", siteName)
             try:
                 totalPendingSlots   = self.currentRcThresholds[siteName]["total_pending_slots"]
                 totalRunningSlots   = self.currentRcThresholds[siteName]["total_running_slots"]
@@ -639,7 +583,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 # Calculate number of jobs we need
                 nJobsRequired = min(totalPendingSlots - totalPending, taskPendingSlots - taskPending)
                 breakLoop = False
-                logging.debug("nJobsRequired for task %s: %i" % (taskType, nJobsRequired))
+                logging.debug("nJobsRequired for task %s: %i", taskType, nJobsRequired)
 
                 while nJobsRequired > 0:
                     # Do this until we have all the jobs for this threshold
@@ -787,7 +731,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if workflow not in allWorkflows:
                 del self.workflowPrios[workflow]
 
-        logging.info("Have %s packages to submit." % len(jobsToSubmit))
+        logging.info("Have %s packages to submit.", len(jobsToSubmit))
         logging.info("Done assigning site locations.")
         return jobsToSubmit
 
@@ -826,7 +770,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Run the actual underlying submit code using bossAir
         successList, failList = self.bossAir.submit(jobs = jobList)
-        logging.info("Jobs that succeeded/failed submission: %d/%d." % (len(successList),len(failList)))
+        logging.info("Jobs that succeeded/failed submission: %d/%d.", len(successList), len(failList))
 
         # Propagate states in the WMBS database
         logging.debug("Propagating success state to WMBS.")

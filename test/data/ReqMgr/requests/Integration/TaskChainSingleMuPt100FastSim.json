@@ -6,7 +6,7 @@
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev;https://cmsweb.cern.ch/dqm/relval-test",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
     "DQMConfigCacheID": "6abb3e122e8727528767e45494098be1",
     "EnableHarvesting": "True",
     "GlobalTag": "START70_V4::All",

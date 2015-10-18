@@ -5,3 +5,4 @@ WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testThrottling
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testTeams
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testConflicts
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testResubmissionWorkflow
+WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testI_MultipleJobTypes

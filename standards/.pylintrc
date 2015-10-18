@@ -91,7 +91,7 @@ method-rgx=([a-z][a-zA-Z0-9]*$)|([_]{2}[a-z]+[_]{2}$)|([a-z][a-zA-Z0-9]*_$)
 argument-rgx=[a-z][a-zA-Z0-9]*$
 
 # Regular expression which should only match correct variable names
-variable-rgx=[a-z][a-zA-Z0-9]*$
+variable-rgx=([a-z][a-zA-Z0-9]*$|^_$)
 
 # Regular expression which should only match correct class attr names
 attr-rgx=[a-z][a-zA-Z0-9]*$
@@ -137,7 +137,7 @@ init-import=no
 
 # A regular expression matching the name of dummy variables (i.e. expectedly
 # not used).
-dummy-variables-rgx=^dummy
+dummy-variables-rgx=(^dummy|^_$)
 
 # checks for :
 #     * methods without self as first argument

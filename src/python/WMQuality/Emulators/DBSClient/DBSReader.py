@@ -180,15 +180,14 @@ class DBSReader:
         return None
 
 
-
     def getDBSSummaryInfo(self, dataset=None, block=None):
-
         """Dataset summary"""
+
         def getLumisectionsInBlock(b):
-            lumis = set()
+            lumis = 0
             for file in self.dataBlocks.getFiles(b):
                 for x in file['LumiList']:
-                    lumis.add(x['LumiSectionNumber'])
+                    lumis =+ len(x['LumiSectionNumber'])
             return lumis
 
         result = {}
@@ -197,7 +196,7 @@ class DBSReader:
                                 for x in self.dataBlocks.getFiles(block)]))
             result['NumberOfFiles'] = str(len(self.dataBlocks.getFiles(block)))
 
-            result['NumberOfLumis'] = str(len(getLumisectionsInBlock(block)))
+            result['NumberOfLumis'] = str(getLumisectionsInBlock(block))
 
             result['path'] = dataset
             result['block'] = block
@@ -209,11 +208,11 @@ class DBSReader:
                                     for x in self.dataBlocks.getBlocks(dataset)]))
                 result['NumberOfFiles'] = str(sum([x['NumberOfFiles']
                                     for x in self.dataBlocks.getBlocks(dataset)]))
-                lumis = set()
+                lumis = 0
                 for b in self.dataBlocks.getBlocks(dataset):
-                    lumis = lumis.union(getLumisectionsInBlock(b['Name']))
+                    lumis += b['NumberOfLumis']
 
-                result['NumberOfLumis'] = str(len(lumis))
+                result['NumberOfLumis'] = str(lumis)
                 result['path'] = dataset
 
         # Weird error handling follows, this is what dbs does

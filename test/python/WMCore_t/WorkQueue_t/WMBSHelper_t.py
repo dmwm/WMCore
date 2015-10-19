@@ -822,7 +822,7 @@ class WMBSHelperTest(unittest.TestCase):
     def testReRecoWhiteRunRestriction(self):
         block = self.dataset + "#2"
         # Run Whitelist
-        self.topLevelTask.setInputRunWhitelist([2])
+        self.topLevelTask.setInputRunWhitelist([1])
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
         self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())

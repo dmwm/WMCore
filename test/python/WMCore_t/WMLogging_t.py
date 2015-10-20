@@ -35,7 +35,7 @@ class WMLoggingTest(unittest.TestCase):
         handler.setFormatter(formatter)
         my_logger.addHandler(handler)
 
-        for i in range(10):
+        for _ in range(10):
             my_logger.debug('This is probably all noise.')
             my_logger.info('Jackdaws love my big sphinx of quartz.')
             my_logger.error('HOLLY CRAP!')

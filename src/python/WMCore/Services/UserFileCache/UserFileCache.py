@@ -15,7 +15,7 @@ import tempfile
 from WMCore.Services.Service import Service
 
 
-def calculateChecksum(tarfile_, exclude=[]):
+def calculateChecksum(tarfile_, exclude=None):
     """
     Calculate the checksum of the tar file in input.
 
@@ -36,6 +36,8 @@ def calculateChecksum(tarfile_, exclude=[]):
     to the hasher object. The file is read in chuncks of 4096 bytes to avoid memory
     issues.
     """
+    if exclude==None: #[] is a dangerous value for a param
+        exclude = []
 
     hasher = hashlib.sha256()
 
@@ -81,12 +83,14 @@ class UserFileCache(Service):
     """
     # Should be filled out with other methods: download, exists
 
-    def __init__(self, dict={}):
-        dict['endpoint'] =  dict.get('endpoint', 'https://cmsweb.cern.ch/crabcache/')
-        Service.__init__(self, dict)
+    def __init__(self, mydict=None):
+        if mydict==None: #dangerous {} default value
+            mydict = {}
+        mydict['endpoint'] =  mydict.get('endpoint', 'https://cmsweb.cern.ch/crabcache/')
+        Service.__init__(self, mydict)
         self['requests']['accept_type'] = 'application/json'
 
-        if 'proxyfilename' in dict:
+        if 'proxyfilename' in mydict:
             #in case there is some code I have not updated in ticket #3780. Should not be required... but...
             self['logger'].warning('The UserFileCache proxyfilename parameter has been replace with the more'
                                    ' general (ckey/cert) pair.')
@@ -97,7 +101,7 @@ class UserFileCache(Service):
         url = self['endpoint'] + 'logfile?name=%s' % os.path.split(fileName)[1]
 
         self['logger'].info('Fetching URL %s' % url)
-        fileName, header = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
+        fileName, dummyHeader = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
         self['logger'].debug('Wrote %s' % output)
         return fileName
 
@@ -126,15 +130,17 @@ class UserFileCache(Service):
         url = self['endpoint'] + 'file?hashkey=%s' % hashkey
 
         self['logger'].info('Fetching URL %s' % url)
-        fileName, header = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
+        fileName, dummyHeader = self['requests'].downloadFile(output, str(url)) #unicode broke pycurl.setopt
         self['logger'].debug('Wrote %s' % fileName)
         return fileName
 
-    def upload(self, fileName, excludeList = []):
+    def upload(self, fileName, excludeList = None):
         """
         Upload the tarfile fileName to the user file cache. Returns the hash of the content of the file
         which can be used to retrieve the file later on.
         """
+        if excludeList==None: #pylint says [] is a dangerous default value
+            excludeList = []
 
         #The parameter newchecksum tells the crabcace to use the new algorithm. It's there
         #for guarantee backward compatibility

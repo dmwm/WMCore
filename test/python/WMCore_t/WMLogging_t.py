@@ -21,10 +21,8 @@ class WMLoggingTest(unittest.TestCase):
         self.db = self.server.connectDatabase(self.dbname)
 
     def tearDown(self):
-        if self._exc_info()[0] == None:
-            # This test has passed, clean up after it
-            testname = self.id().split('.')[-1]
-            self.server.deleteDatabase(self.dbname)
+        # This used to test self._exc_info to only run on success. Broke in 2.7. Removed.
+        self.server.deleteDatabase(self.dbname)
 
     def testLog(self):
         """

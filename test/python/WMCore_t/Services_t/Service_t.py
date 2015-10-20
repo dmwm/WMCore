@@ -86,10 +86,9 @@ class ServiceTest(unittest.TestCase):
         #shutil.rmtree(self.cache_path, ignore_errors = True)
         self.testInit.delWorkDir()
 
-        if self._exc_info()[0] == None:
-            self.logger.info('test "%s" passed' % testname)
-        else:
-            self.logger.info('test "%s" failed' % testname)
+        # There was old code here to see if the test passed and send a message to
+        # self.logger.info It broke in 2.7, so if needed find a supported way to do it
+        return
 
     def testClear(self):
         """

@@ -90,11 +90,13 @@ class RequestHandler(object):
             curl.setopt(pycurl.NOBODY, True)
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
-            curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+            if params:
+                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
-            curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+            if params:
+                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 

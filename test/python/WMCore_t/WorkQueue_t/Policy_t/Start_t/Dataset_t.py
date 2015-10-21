@@ -144,10 +144,10 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(4, units[0]['NumberOfLumis'])
-        self.assertEqual(10, units[0]['NumberOfFiles'])
-        self.assertEqual(10000, units[0]['NumberOfEvents'])
+        self.assertEqual(units[0]['Jobs'], 4.0)
+        self.assertEqual(8, units[0]['NumberOfLumis'])
+        self.assertEqual(20, units[0]['NumberOfFiles'])
+        self.assertEqual(20000, units[0]['NumberOfEvents'])
 
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
@@ -175,10 +175,10 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(4, units[0]['NumberOfLumis'])
-        self.assertEqual(10, units[0]['NumberOfFiles'])
-        self.assertEqual(10000, units[0]['NumberOfEvents'])
+        self.assertEqual(units[0]['Jobs'], 4.0)
+        self.assertEqual(8, units[0]['NumberOfLumis'])
+        self.assertEqual(20, units[0]['NumberOfFiles'])
+        self.assertEqual(20000, units[0]['NumberOfEvents'])
 
         # Run Mixed Whitelist
         rerecoArgs3 = {}
@@ -259,11 +259,10 @@ class DatasetTestCase(unittest.TestCase):
             for unit in units:
                 wq_jobs += unit['Jobs']
                 runLumis = dbs[inputDataset.dbsurl].listRunLumis(dataset=unit['Inputs'].keys()[0])
-                print "runLumis", runLumis
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
                         self.assertEqual(runLumis[run], None)  # This is what it is with DBS3 unless we calculate it
-            self.assertEqual(75, int(wq_jobs))
+            self.assertEqual(40, int(wq_jobs))
 
     def testInvalidSpecs(self):
         """Specs with no work"""

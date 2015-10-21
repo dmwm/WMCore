@@ -21,10 +21,8 @@ class WMLoggingTest(unittest.TestCase):
         self.db = self.server.connectDatabase(self.dbname)
 
     def tearDown(self):
-        if self._exc_info()[0] == None:
-            # This test has passed, clean up after it
-            testname = self.id().split('.')[-1]
-            self.server.deleteDatabase(self.dbname)
+        # This used to test self._exc_info to only run on success. Broke in 2.7. Removed.
+        self.server.deleteDatabase(self.dbname)
 
     def testLog(self):
         """
@@ -37,7 +35,7 @@ class WMLoggingTest(unittest.TestCase):
         handler.setFormatter(formatter)
         my_logger.addHandler(handler)
 
-        for i in range(10):
+        for _ in range(10):
             my_logger.debug('This is probably all noise.')
             my_logger.info('Jackdaws love my big sphinx of quartz.')
             my_logger.error('HOLLY CRAP!')

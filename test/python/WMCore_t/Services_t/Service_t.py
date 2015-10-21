@@ -82,14 +82,10 @@ class ServiceTest(unittest.TestCase):
 
 
     def tearDown(self):
-        testname = self.id().split('.')[-1]
-        #shutil.rmtree(self.cache_path, ignore_errors = True)
         self.testInit.delWorkDir()
-
-        if self._exc_info()[0] == None:
-            self.logger.info('test "%s" passed' % testname)
-        else:
-            self.logger.info('test "%s" failed' % testname)
+        # There was old code here to see if the test passed and send a message to
+        # self.logger.info It broke in 2.7, so if needed find a supported way to do it
+        return
 
     def testClear(self):
         """
@@ -295,7 +291,7 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.start()
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
-        logger = logging.getLogger('john')
+        dummyLogger = logging.getLogger('john')
         test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/truncated' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
@@ -313,7 +309,7 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.start()
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
-        logger = logging.getLogger('john')
+        dummyLogger = logging.getLogger('john')
         test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/slow' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
@@ -331,7 +327,7 @@ class ServiceTest(unittest.TestCase):
         """
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
-        logger = logging.getLogger('john')
+        dummyLogger = logging.getLogger('john')
         test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/badstatus' % self.port,
                      'usestalecache': True}
         myService = Service(test_dict)
@@ -355,7 +351,7 @@ class ServiceTest(unittest.TestCase):
         cherrypy.engine.start()
         FORMAT = '%(message)s'
         logging.basicConfig(format=FORMAT)
-        logger = logging.getLogger('john')
+        dummyLogger = logging.getLogger('john')
         test_dict = {'logger': self.logger,'endpoint':'http://127.0.0.1:%i/reg1/regular' % self.port,
                      'usestalecache': True, "cacheduration": 0.005}
         myService = Service(test_dict)

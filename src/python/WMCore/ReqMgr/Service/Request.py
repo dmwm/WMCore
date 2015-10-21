@@ -394,10 +394,10 @@ class Request(RESTEntity):
                 # trailing / is needed for the savecouchUrl function
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
             
-            elif req_status == "closed-out" and request_args.get("cascade", False):
-                closedout_list = self._retrieveResubmissionChildren(workload.name)
-                for req_name in closedout_list:
-                    report = self.reqmgr_db_service.updateRequestStatus(req_name,"closed-out")
+            elif (req_status in ["closed-out"  "announced"]) and request_args.get("cascade", False):
+                cascade_list = self._retrieveResubmissionChildren(workload.name)
+                for req_name in cascade_list:
+                    report = self.reqmgr_db_service.updateRequestStatus(req_name, req_status)
             
             # If it is aborted or force-complete transition call workqueue to cancel the request
             else:

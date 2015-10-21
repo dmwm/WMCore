@@ -1,6 +1,7 @@
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testH_PauseAlgo
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testI_MultipleJobTypes
 WMCore_t.ACDC_t.CouchService_t.CouchService_t:testTimestampAccounting
+WMCore_t.ACDC_t.CouchService_t.CouchService_t:testTimestampAccounting
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testWhiteBlackLists
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testBlackList
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testProcessing

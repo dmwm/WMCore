@@ -111,7 +111,7 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(sorted(testWorkload.lumiList.values()),
                          [[[5, 10], [15, 20], [25, 30]], [[25, 75],
                          [125, 175], [275, 325]], [[50, 100], [110, 125]]])
-        self.assertEqual(testWorkload.data.policies.start.policyName, "DatasetBlock")
+        self.assertEqual(testWorkload.data.policies.start.policyName, "Dataset")
 
         # test workload tasks and steps
         tasks = testWorkload.listAllTaskNames()

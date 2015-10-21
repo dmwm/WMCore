@@ -4,7 +4,7 @@ from WMCore.Database.CMSCouch import Document
 
 class RequestDBWriter(RequestDBReader):
 
-    def __init__(self, couchURL, couchapp = "ReqMgr"):
+    def __init__(self, couchURL, couchapp="ReqMgr"):
         # set the connection for local couchDB call
         # inherited from WMStatsReader
         self._commonInit(couchURL, couchapp)
@@ -25,8 +25,10 @@ class RequestDBWriter(RequestDBReader):
         self.updateRequestStatus(doc["RequestName"], "new")
         return result
 
-    def updateRequestStatus(self, request, status):
+    def updateRequestStatus(self, request, status, dn=None):
         status = {"RequestStatus": status}
+        if dn:
+            status["DN"] = dn
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     status)
         
@@ -40,7 +42,7 @@ class RequestDBWriter(RequestDBReader):
         return self.couchDB.updateDocument(request, self.couchapp, "totalstats",
                     fields = stats)
 
-    def updateRequestProperty(self, request, propDict, dn = None):
+    def updateRequestProperty(self, request, propDict, dn=None):
         if dn:
             propDict["DN"] = dn
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",

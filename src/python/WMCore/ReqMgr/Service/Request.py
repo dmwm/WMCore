@@ -354,7 +354,16 @@ class Request(RESTEntity):
                 requestAgentUrlList.append([request, agentUrl]);
 
         return requestAgentUrlList;
-
+    
+    def _retrieveResubmissionChildren(self, request_name):
+        
+        result = self.reqmgr_db.loadView('ReqMgr', 'childresubmissionrequests', keys = [request_name])['rows']
+        childrenRequestNames = []
+        for child in result:
+            childrenRequestNames.append(child['id'])
+            childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
+        return childrenRequestNames
+    
     def _updateRequest(self, workload, request_args):
                        
         if workload == None:
@@ -372,7 +381,9 @@ class Request(RESTEntity):
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         # if is not just updating status
         else:
-            if len(request_args) > 1 or "RequestStatus" not in request_args:
+            req_status = request_args.get("RequestStatus", None)
+            
+            if len(request_args) >= 1 and req_status == None:
                 try:
                     workload.updateArguments(request_args)
                 except Exception as ex:
@@ -383,12 +394,16 @@ class Request(RESTEntity):
                 # trailing / is needed for the savecouchUrl function
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
             
-            req_status = request_args.get("RequestStatus", None)
+            elif req_status == "closed-out" and request_args.get("cascade", False):
+                closedout_list = self._retrieveResubmissionChildren(workload.name)
+                for req_name in closedout_list:
+                    report = self.reqmgr_db_service.updateRequestStatus(req_name,"closed-out")
+            
             # If it is aborted or force-complete transition call workqueue to cancel the request
-            if req_status == "aborted" or req_status == "force-complete":
-                self.gq_service.cancelWorkflow(workload.name())
-                
-            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+            else:
+                if req_status == "aborted" or req_status == "force-complete":
+                    self.gq_service.cancelWorkflow(workload.name())
+                report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         
         if report == 'OK':
             return {workload.name(): "OK"}

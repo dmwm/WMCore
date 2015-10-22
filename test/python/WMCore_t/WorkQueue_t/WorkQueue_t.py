@@ -987,6 +987,7 @@ class WorkQueueTest(WorkQueueTestCase):
         service.cancelWorkflow(self.whitelistSpec.name())
         syncQueues(self.globalQueue)
         self.localQueue.backend.forceQueueSync() # pull in cancelation
+        time.sleep(2)
         self.assertEqual(len(self.globalQueue.status(status='Canceled')), 3)
         self.assertEqual(len(self.localQueue.statusInbox(status='CancelRequested')), 1)
         syncQueues(self.localQueue, skipWMBS = True)

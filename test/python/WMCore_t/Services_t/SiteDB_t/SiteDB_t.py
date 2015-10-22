@@ -29,7 +29,7 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNametoSE
         """
-        target = ['T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
+        target = ['T1_US_FNAL_Disk', 'T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
         self.failUnless(sorted(results) == sorted(target))
 

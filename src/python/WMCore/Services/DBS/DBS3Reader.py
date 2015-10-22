@@ -580,8 +580,12 @@ class DBS3Reader:
             blocksInfo = {}
             try:
                 for block in fileBlockNames:
-                    blocksInfo.update( dict(((block, blockInfo[0]['origin_site_name']) 
-                                 for blockInfo in self.dbs.listBlockOrigin(block_name = block) if blockInfo)) )
+                    for blockInfo in self.dbs.listBlockOrigin(block_name=block):
+                        if blockInfo:
+                            #TODO remove this line when all DBS origin_site_name is converted to PNN
+                            blockInfo[0]['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo[0]['origin_site_name'])
+                            #upto this
+                            blocksInfo[block] = [blockInfo[0]['origin_site_name']]
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
@@ -763,7 +767,10 @@ class DBS3Reader:
                 return list()
 
             for blockInfo in blocksInfo:
-                locations.update([blockInfo['origin_site_name']])
+                #TODO remove this line when all DBS origin_site_name is converted to PNN
+                blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
+                #upto this
+                locations.update(blockInfo['origin_site_name'])
 
             locations.difference_update(['UNKNOWN', None]) # remove entry when SE name is 'UNKNOWN'
         else:

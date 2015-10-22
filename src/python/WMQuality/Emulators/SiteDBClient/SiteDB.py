@@ -5,6 +5,9 @@ _SiteDBClient_
 Emulating SiteDB
 """
 import re
+import WMCore.Services.SiteDB.SiteDB as RealSiteDB
+#TODO remove this when all DBS origin_site_name is converted to PNN
+pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
 
 class SiteDBJSON(object):
     """
@@ -15,7 +18,12 @@ class SiteDBJSON(object):
                     {'dn' : "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
                      'username' : 'liviof'}]
 
-    _sitenames_data = [{u'site_name': u'FNAL', u'type': u'cms', u'alias': u'T1_US_FNAL'},
+    _sitenames_data = [{u'site_name': u'T0_CH_CERN', u'type': u'cms', u'alias': u'T0_CH_CERN'}, # this is fake record not exists in siteDB
+                       {u'site_name': u'T0_CH_CERN', u'type': u'phedex', u'alias': u'T0_CH_CERN_MSS'}, # this is fake record not exists in siteDB
+                       {u'site_name': u'T0_CH_CERN', u'type': u'phedex', u'alias': u'T0_CH_CERN_Disk'}, # this is fake record not exists in siteDB
+                       {u'site_name': u'T0_CH_CERN', u'type': u'phedex', u'alias': u'T0_CH_CERN_Export'}, # this is fake record not exists in siteDB{u'site_name': u'FNAL', u'type': u'cms', u'alias': u'T1_US_FNAL'},
+                       {u'site_name': u'FNAL', u'type': u'cms', u'alias': u'T1_US_FNAL'},
+                       {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_Disk'},
                        {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_Buffer'},
                        {u'site_name': u'FNAL', u'type': u'phedex', u'alias': u'T1_US_FNAL_MSS'},
                        {u'site_name': u'RAL', u'type': u'cms', u'alias': u'T1_UK_RAL'},
@@ -58,16 +66,25 @@ class SiteDBJSON(object):
                            #{u'type': u'CE', u'site_name': u'CERN Tier-2', u'fqdn': u'ce207.cern.ch', u'is_primary' : u'n'},
                            {u'type': u'SE', u'site_name': u'CERN Tier-2 HLT', u'fqdn': u'srm-eoscms.cern.ch', u'is_primary' : u'n'}]
 
-    _dataProcessing_data = [{u'phedex_name': u'T2_CH_CERN',  u'psn_name': u'T2_CH_CERN',  u'site_name': u'CERN-PROD'},
+    _dataProcessing_data = [{u'phedex_name': u'T0_CH_CERN_MSS',  u'psn_name': u'T0_CH_CERN',  u'site_name': u'T0_CH_CERN'},
+                            {u'phedex_name': u'T0_CH_CERN_Disk',  u'psn_name': u'T0_CH_CERN',  u'site_name': u'T0_CH_CERN'},
+                            {u'phedex_name': u'T0_CH_CERN_Export',  u'psn_name': u'T0_CH_CERN',  u'site_name': u'T0_CH_CERN'},
+                            {u'phedex_name': u'T2_CH_CERN',  u'psn_name': u'T2_CH_CERN',  u'site_name': u'CERN-PROD'},
                             {u'phedex_name': u'T1_DE_KIT_Disk',  u'psn_name': u'T1_DE_KIT',  u'site_name': u'FZK-LCG2'},
                             {u'phedex_name': u'T3_US_Omaha',  u'psn_name': u'T3_US_Omaha',  u'site_name': u'Firefly'},
                             {u'phedex_name': u'T2_US_Nebraska',  u'psn_name': u'T2_US_Nebraska',  u'site_name': u'Nebraska'},
                             {u'phedex_name': u'T1_UK_RAL_Disk',  u'psn_name': u'T1_UK_RAL',  u'site_name': u'RAL-LCG2-DISK'},
-                            {u'phedex_name': u'T1_US_FNAL_Disk',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'USCMS-FNAL-WC1-DISK'},
+                            {u'phedex_name': u'T1_US_FNAL_Disk',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'FNAL'},
+                            {u'phedex_name': u'T1_US_FNAL_Buffer',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'FNAL'},
+                            {u'phedex_name': u'T1_US_FNAL_MSS',  u'psn_name': u'T1_US_FNAL',  u'site_name': u'FNAL'},
                             {u'phedex_name': u'T2_UK_London_IC',  u'psn_name': u'T2_UK_London_IC',  u'site_name': u'UKI-LT2-IC-HEP'},
                             {u'phedex_name': u'T2_XX_SiteA_MSS',  u'psn_name': u'T2_XX_SiteA',  u'site_name': u'XX_T2_XX_SiteA'},
                             {u'phedex_name': u'T2_XX_SiteB_MSS',  u'psn_name': u'T2_XX_SiteB',  u'site_name': u'XX_T2_XX_SiteB'},
                             {u'phedex_name': u'T2_XX_SiteC_MSS',  u'psn_name': u'T2_XX_SiteC',  u'site_name': u'XX_T2_XX_SiteC'},
+                            {u'phedex_name': u'T2_XX_SiteA',  u'psn_name': u'T2_XX_SiteA',  u'site_name': u'XX_T2_XX_SiteA'},
+                            {u'phedex_name': u'T2_XX_SiteAA',  u'psn_name': u'T2_XX_SiteAA',  u'site_name': u'XX_T2_XX_SiteA'},
+                            {u'phedex_name': u'T2_XX_SiteB',  u'psn_name': u'T2_XX_SiteB',  u'site_name': u'XX_T2_XX_SiteB'},
+                            {u'phedex_name': u'T2_XX_SiteC',  u'psn_name': u'T2_XX_SiteC',  u'site_name': u'XX_T2_XX_SiteC'},
                            ]
 
     def __init__(self, config={}):
@@ -199,6 +216,21 @@ class SiteDBJSON(object):
             siteNames.extend(self._sitenames(sitename=resource['site_name']))
         cmsname = filter(lambda x: x['type']=='cms', siteNames)
         return [x['alias'] for x in cmsname]
+    
+    def seToPNNs(self, se):
+        """
+        Convert SE name to the PNN they belong to,
+        this is not a 1-to-1 relation but 1-to-many, return a list of pnns
+        """
+        try:
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())
+        except IndexError:
+            return None
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        pnns = filter(lambda x: x['type']=='phedex', siteNames)
+        return [x['alias'] for x in pnns]
 
     def cmsNametoPhEDExNode(self, cmsName):
         """
@@ -226,6 +258,18 @@ class SiteDBJSON(object):
             return None
         return psns
 
+    def PNNstoPSNs(self, pnns):
+        """
+        Emulator to convert list of PhEDEx node names to Processing Site Name(s)
+        """
+        psns = set()
+        for pnn in pnns:
+            psn_list = self.PNNtoPSN(pnn)
+            if not psn_list:
+                raise Exception("No PSNs for PNN: %s" % pnn)
+            psns.update(psn_list)
+        return list(psns)
+    
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):
             raise TypeError('psn_pattern arg must be of type str')
@@ -237,3 +281,21 @@ class SiteDBJSON(object):
                 continue
             mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
         return mapping
+    
+    #TODO remove this when all DBS origin_site_name is converted to PNN
+    def checkAndConvertSENameToPNN(self, seNameOrPNN):
+        """
+        check whether argument is sename 
+        if it is convert to PNN
+        if not just return argument
+        """
+        if isinstance(seNameOrPNN, str):
+            seNameOrPNN = [seNameOrPNN]
+        
+        newList = []
+        for se in seNameOrPNN:
+            if not pnn_regex.match(se):
+                newList.extend(self.seToPNNs(se))
+            else:
+                newList.extend(se)
+        return newList

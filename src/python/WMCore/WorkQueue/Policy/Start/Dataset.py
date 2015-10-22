@@ -10,7 +10,6 @@ __all__ = []
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from math import ceil
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements
 from WMCore import Lexicon
 
 class Dataset(StartPolicyInterface):

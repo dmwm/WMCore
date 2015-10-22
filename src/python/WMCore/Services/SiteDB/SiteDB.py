@@ -262,6 +262,18 @@ class SiteDBJSON(Service):
             return None
         return psns
 
+    def PNNstoPSNs(self, pnns):
+        """
+        Convert list of PhEDEx node names to Processing Site Name(s)
+        """
+        psns = set()
+        for pnn in pnns:
+            psn_list = self.PNNtoPSN(pnn)
+            if not psn_list:
+                raise Exception("No PSNs for PNN: %s" % pnn)
+            psns.update(psn_list)
+        return list(psns)
+
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):
             raise TypeError('psn_pattern arg must be of type str')

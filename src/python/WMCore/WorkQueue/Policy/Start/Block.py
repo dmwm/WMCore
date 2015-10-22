@@ -5,14 +5,13 @@ WorkQueue splitting by block
 """
 __all__ = []
 
-
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 
 from math import ceil
-
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, makeLocationsList
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore import Lexicon
 
 class Block(StartPolicyInterface):
@@ -29,6 +28,8 @@ class Block(StartPolicyInterface):
         # Initialize modifiers of the policy
         self.blockBlackListModifier = []
 
+        self.siteDB = SiteDB()
+
     def split(self):
         """Apply policy to spec"""
         dbs = self.dbs()
@@ -43,7 +44,7 @@ class Block(StartPolicyInterface):
                     if self.initialTask.inputLocationFlag():
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
-                        parentList[dbsBlock["Name"]] = sitesFromStorageEelements(dbsBlock['PhEDExNodeList'])
+                        parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
 
             self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,

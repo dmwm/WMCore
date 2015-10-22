@@ -22,8 +22,9 @@ __all__ = []
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueUtils import sitesFromStorageEelements, makeLocationsList
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 
@@ -46,6 +47,8 @@ class ResubmitBlock(StartPolicyInterface):
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
         self.sites = []
+        self.siteDB = SiteDB()
+
 
     def split(self):
         """Apply policy to spec"""
@@ -106,7 +109,7 @@ class ResubmitBlock(StartPolicyInterface):
             if task.inputLocationFlag():
                 dbsBlock["Sites"] = self.sites
             else:
-                dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+                dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             validBlocks.append(dbsBlock)
         else:
             if self.args['SplittingAlgo'] in self.unsupportedAlgos:
@@ -138,7 +141,7 @@ class ResubmitBlock(StartPolicyInterface):
             if task.inputLocationFlag():
                 dbsBlock["Sites"] = self.sites
             else:
-                dbsBlock["Sites"] = sitesFromStorageEelements(block["locations"])
+                dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             dbsBlock['ACDC'] = acdcInfo
             if dbsBlock['NumberOfFiles']:
                 fixedSizeBlocks.append(dbsBlock)
@@ -161,7 +164,7 @@ class ResubmitBlock(StartPolicyInterface):
         if task.inputLocationFlag():
             dbsBlock["Sites"] = self.sites
         else:
-            dbsBlock["Sites"] = sitesFromStorageEelements(acdcBlock["locations"])
+            dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(acdcBlock["locations"])
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:
             result.append(dbsBlock)

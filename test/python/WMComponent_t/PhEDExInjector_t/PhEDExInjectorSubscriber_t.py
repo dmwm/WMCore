@@ -6,12 +6,15 @@ Created on Oct 12, 2012
 """
 
 import os
+import time
 import threading
 import unittest
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
+
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 
@@ -251,7 +254,19 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         self.stuffDatabase()
         config = self.createConfig()
-        subscriber = PhEDExInjectorSubscriber(config)
+
+        phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
+        try:
+            nodeMappings = phedex.getNodeMap()
+        except Exception:
+            time.sleep(2)
+            try:
+                nodeMappings = phedex.getNodeMap()
+            except Exception:
+                time.sleep(4)
+                nodeMappings = phedex.getNodeMap()
+
+        subscriber = PhEDExInjectorSubscriber(config, phedex, nodeMappings)
         subscriber.setup({})
         subscriber.algorithm({})
 

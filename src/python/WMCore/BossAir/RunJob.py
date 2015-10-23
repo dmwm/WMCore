@@ -63,6 +63,7 @@ class RunJob(dict):
         self.setdefault('inputDataset', None)
         self.setdefault('inputDatasetLocations', None)
         self.setdefault('allowOpportunistic', False)
+        self.setdefault('highIOjob', False)
 
         return
 

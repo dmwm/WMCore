@@ -14,7 +14,6 @@ import threading
 import os.path
 import cPickle
 
-# WMBS objects
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMExceptions      import WM_JOB_ERROR_CODES
 
@@ -25,7 +24,7 @@ from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
-#from WMCore.Services.SiteDB.SiteDB            import SiteDBJSON as SiteDB
+
 
 def siteListCompare(a, b):
     """
@@ -363,6 +362,11 @@ class JobSubmitterPoller(BaseWorkerThread):
                 numberOfCores = getattr(baggage, "numberOfCores", 1)
             loadedJob['numberOfCores'] = numberOfCores
 
+            # check if job should be submitted as highIO job
+            highIOjob = False
+            if newJob['type'] in ["Repack", "Merge", "Cleanup", "LogCollect"]:
+                highIOjob = True
+
             # Now that we're out of that loop, put the job data in the cache
             jobInfo = (jobID,
                        newJob["retry_count"],
@@ -387,7 +391,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        newJob['task_id'],
                        loadedJob.get('inputDataset', None),
                        loadedJob.get('inputDatasetLocations', None),
-                       loadedJob.get('allowOpportunistic', False))
+                       loadedJob.get('allowOpportunistic', False),
+                       highIOjob)
 
             self.jobDataCache[workflowName][jobID] = jobInfo
 
@@ -708,7 +713,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'taskID' : cachedJob[20],
                                'inputDataset' : cachedJob[21],
                                'inputDatasetLocations' : cachedJob[22],
-                               'allowOpportunistic' : cachedJob[23]}
+                               'allowOpportunistic' : cachedJob[23],
+                               'highIOjob' : cachedJob[24]}
 
                     # Add to jobsToSubmit
                     jobsToSubmit[package].append(jobDict)

@@ -5,6 +5,7 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+import re
 from collections import defaultdict
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
@@ -14,6 +15,7 @@ from WMCore.Services.EmulatorSwitch import emulatorHook
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Lexicon import cmsname, slicedIterator
+pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -580,8 +582,12 @@ class DBS3Reader:
             blocksInfo = {}
             try:
                 for block in fileBlockNames:
-                    blocksInfo.update( dict(((block, blockInfo[0]['origin_site_name']) 
-                                 for blockInfo in self.dbs.listBlockOrigin(block_name = block) if blockInfo)) )
+                    for blockInfo in self.dbs.listBlockOrigin(block_name=block):
+                        if blockInfo:
+                            if pnn_regex.match(blockInfo[0]['origin_site_name']):
+                                blocksInfo[block] = [blockInfo[0]['origin_site_name']]
+                            else:
+                                blocksInfo[block] = self.siteDB.seToPNNs(blockInfo[0]['origin_site_name'])
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
@@ -763,7 +769,10 @@ class DBS3Reader:
                 return list()
 
             for blockInfo in blocksInfo:
-                locations.update([blockInfo['origin_site_name']])
+                if pnn_regex.match(blockInfo['origin_site_name']):
+                    locations.add(blockInfo['origin_site_name'])
+                else:
+                    locations.update(self.siteDB.seToPNNs(blockInfo['origin_site_name']))
 
             locations.difference_update(['UNKNOWN', None]) # remove entry when SE name is 'UNKNOWN'
         else:

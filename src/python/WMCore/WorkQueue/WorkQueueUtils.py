@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Various helper functions for workqueue"""
 
-__all__ = ['get_remote_queue', 'get_dbs', 'sitesFromStorageEelements',
+__all__ = ['get_remote_queue', 'get_dbs',
            'queueConfigFromConfigObject', 'queueFromConfig']
 
 import os
@@ -38,22 +38,6 @@ def get_dbs(url):
         return __dbses[url]
 
 __sitedb = None
-def sitesFromStorageEelements(ses):
-    """Return Sites given Storage Elements"""
-    global __sitedb
-    if not __sitedb:
-        from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-        __sitedb = SiteDB()
-    result = set()
-    for se in ses:
-        try:
-            sites = __sitedb.seToCMSName(se)
-        except:
-            print "Unable to get site name for %s" % se
-        else:
-            result.update(sites)
-    return list(result)
-
 __cmsSiteNames = []
 def cmsSiteNames():
     """Get all cms sites"""

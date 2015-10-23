@@ -234,6 +234,21 @@ class SiteDBJSON(Service):
         cmsname = filter(lambda x: x['type']=='cms', siteNames)
         return [x['alias'] for x in cmsname]
 
+    def seToPNNs(self, se):
+        """
+        Convert SE name to the PNN they belong to,
+        this is not a 1-to-1 relation but 1-to-many, return a list of pnns
+        """
+        try:
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())
+        except IndexError:
+            return None
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        pnns = filter(lambda x: x['type']=='phedex', siteNames)
+        return [x['alias'] for x in pnns]
+
 
     def cmsNametoPhEDExNode(self, cmsName):
         """
@@ -261,6 +276,18 @@ class SiteDBJSON(Service):
         except IndexError:
             return None
         return psns
+
+    def PNNstoPSNs(self, pnns):
+        """
+        Convert list of PhEDEx node names to Processing Site Name(s)
+        """
+        psns = set()
+        for pnn in pnns:
+            psn_list = self.PNNtoPSN(pnn)
+            if not psn_list:
+                raise Exception("No PSNs for PNN: %s" % pnn)
+            psns.update(psn_list)
+        return list(psns)
 
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):

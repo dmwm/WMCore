@@ -185,7 +185,7 @@ class Block(StartPolicyInterface):
             if task.inputLocationFlag():
                 self.data[block['block']] = self.sites
             else:
-                self.data[block['block']] = dbs.listFileBlockLocation(block['block'])
+                self.data[block['block']] = self.siteDB.PNNstoPSNs(dbs.listFileBlockLocation(block['block']))
 
             # TODO: need to decide what to do when location is no find.
             # There could be case for network problem (no connection to dbs, phedex)

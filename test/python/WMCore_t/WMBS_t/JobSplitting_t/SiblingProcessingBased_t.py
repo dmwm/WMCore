@@ -6,7 +6,6 @@ Test SiblingProcessing job splitting.
 """
 
 import unittest
-import os
 import threading
 
 from WMCore.WMBS.File import File
@@ -42,8 +41,8 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
-        locationAction.execute("site2", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute("T2_CH_CERN", pnn = "T2_CH_CERN")
+        locationAction.execute("T1_US_FNAL", pnn = "T1_US_FNAL_Disk")
 
         self.testFilesetA = Fileset(name = "FilesetA")
         self.testFilesetA.create()
@@ -170,12 +169,12 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Only one jobgroup should be returned."
         assert len(result[0].jobs) == 1, \
                "Error: There should only be one job in the jobgroup."
+        assert result[0].jobs[0]["possiblePSN"] == set(["T2_CH_CERN"]), \
+               "Error: possiblePSN is wrong."
         assert len(result[0].jobs[0]["input_files"]) == 1, \
                "Error: Job should only have one input file."
         assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileA", \
                "Error: Input file for job is wrong."
-        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["T2_CH_CERN"], \
-               "Error: File location is wrong."
 
         result = deleteFactoryB(files_per_job = 1)
 
@@ -288,26 +287,24 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         goldenFilesA = ["testFileA", "testFileB", "testFileC"]
         goldenFilesB = ["testFile1", "testFile2", "testFile3"]
 
-        locations = {"testFileA": "T2_CH_CERN", "testFileB": "T2_CH_CERN",
-                     "testFileC": "T2_CH_CERN", "testFile1": "T1_US_FNAL_Disk",
-                     "testFile2": "T1_US_FNAL_Disk", "testFile3": "T1_US_FNAL_Disk"}
-
         for jobGroup in result:
             assert len(jobGroup.jobs) == 1, \
                    "Error: Wrong number of jobs in jobgroup."
             assert len(jobGroup.jobs[0]["input_files"]) == 3, \
                    "Error: Wrong number of input files in job."
 
-            jobSite = list(jobGroup.jobs[0]["input_files"][0]["locations"])[0]
+            jobSite = jobGroup.jobs[0]["possiblePSN"]
 
-            if jobSite == "T2_CH_CERN":
+            assert (jobSite == set(["T2_CH_CERN"])
+                    or jobSite == set(["T1_US_FNAL"])), \
+                    "Error: Wrong site for job."
+
+            if jobSite == set(["T2_CH_CERN"]):
                 goldenFiles = goldenFilesA
             else:
                 goldenFiles = goldenFilesB
 
             for jobFile in jobGroup.jobs[0]["input_files"]:
-                assert list(jobFile["locations"])[0] == locations[jobFile["lfn"]], \
-                       "Error: Wrong site for file."
                 goldenFiles.remove(jobFile["lfn"])
 
             assert len(goldenFiles) == 0,  \

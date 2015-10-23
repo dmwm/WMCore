@@ -16,7 +16,6 @@ import unittest
 
 from nose.plugins.attrib import attr
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -115,7 +114,7 @@ class JobSubmitterTest(unittest.TestCase):
         return
 
     def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site,
-                        bl = [], wl = [], taskType = 'Processing', name = None):
+                        taskType = 'Processing', name = None):
         """
         _createJobGroups_
 
@@ -154,7 +153,7 @@ class JobSubmitterTest(unittest.TestCase):
                            jobGroup = testJobGroup,
                            fileset = testFileset,
                            sub = testSubscription.exists(),
-                           site = site, bl = bl, wl = wl)
+                           site = site)
 
             testFileset.commit()
             testJobGroup.commit()
@@ -162,7 +161,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         return jobGroupList
 
-    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site, bl = [], wl = []):
+    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site):
         """
         _makeNJobs_
 
@@ -178,29 +177,28 @@ class JobSubmitterTest(unittest.TestCase):
             #site = self.sites[0]
             testFile = File(lfn = "/singleLfn/%s/%s" % (name, n),
                             size = 1024, events = 10)
-            if type(site) == list:
-                for singleSite in site:
-                    testFile.setLocation(singleSite)
-            else:
-                testFile.setLocation(site)
-            testFile.create()
             fileset.addFile(testFile)
 
-
         fileset.commit()
+
+        location = None
+        if isinstance(site, list):
+            if len(site) > 0:
+                location = site[0]
+        else:
+            location = site
 
         index = 0
         for f in fileset.files:
             index += 1
             testJob = Job(name = '%s-%i' % (name, index))
             testJob.addFile(f)
-            testJob["location"] = f.getLocations()[0]
+            testJob["location"] = location
+            testJob["possiblePSN"] = set(site) if isinstance(site, list) else set([site])
             testJob['task'] = task.getPathName()
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec'] = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob["siteBlacklist"] = bl
-            testJob["siteWhitelist"] = wl
             testJob['priority'] = 101
             testJob['numberOfCores'] = 1
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
@@ -306,7 +304,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         nSubs = 2
         nJobs = 20
-        site = 'T2_US_UCSD'
+        site = "T2_US_UCSD"
 
         self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 100, tasks = ['Processing', 'Merge'],
                                    Processing = {'pendingSlots' : 50, 'runningSlots' : 100},
@@ -316,7 +314,7 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % site)
+                                            site = site)
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
@@ -355,7 +353,7 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % site,
+                                            site = site,
                                             taskType = "Merge")
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
@@ -388,12 +386,11 @@ class JobSubmitterTest(unittest.TestCase):
 
         nSubs = 5
         nJobs = 10
-        sites = ['T1_US_FNAL']
+        site = "T1_US_FNAL"
 
-        for site in sites:
-            self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 200, tasks = ['Processing', 'Merge'],
-                                       Processing = {'pendingSlots' : 45, 'runningSlots' :-1},
-                                       Merge = {'pendingSlots' : 10, 'runningSlots' : 20, 'priority' : 5})
+        self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 200, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 45, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10, 'runningSlots' : 20, 'priority' : 5})
 
         # Always initialize the submitter after setting the sites, flaky!
         jobSubmitter = JobSubmitterPoller(config = config)
@@ -402,7 +399,7 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL')
+                                            site = site)
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
@@ -440,7 +437,7 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             taskType = 'Merge')
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
@@ -468,12 +465,12 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL')
+                                            site = site)
         jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             taskType = 'Merge'))
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
@@ -514,12 +511,11 @@ class JobSubmitterTest(unittest.TestCase):
 
         nSubs = 1
         nJobs = 10
-        sites = ['T1_US_FNAL']
+        site = "T1_US_FNAL"
 
-        for site in sites:
-            self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
-                                       Processing = {'pendingSlots' : 50, 'runningSlots' :-1},
-                                       Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
+        self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 50, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
 
         # Always initialize the submitter after setting the sites, flaky!
         jobSubmitter = JobSubmitterPoller(config = config)
@@ -528,13 +524,13 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             name = 'OldestWorkflow')
         jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             taskType = 'Merge'))
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
@@ -558,14 +554,14 @@ class JobSubmitterTest(unittest.TestCase):
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             name = 'NewestWorkflow')
 
         jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                     task = workload.getTask("ReReco"),
                                     workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                 workloadName),
-                                    site = 'se.%s' % 'T1_US_FNAL',
+                                    site = site,
                                     name = 'OldestWorkflow'))
 
         for group in jobGroupList:
@@ -604,12 +600,11 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-    def testD_WhiteListBlackList(self):
+    def testD_SubmitFailed(self):
         """
-        _testD_WhiteListBlackList_
+        _testD_SubmitFailed_
 
-        Test the whitelist/blacklist implementation
-        Trust the jobCreator to get this in the job right
+        Check if jobs without a possible site to run at go to SubmitFailed
         """
         workloadName = "basicWorkload"
         workload = self.createTestWorkload()
@@ -619,109 +614,23 @@ class JobSubmitterTest(unittest.TestCase):
         nSubs = 2
         nJobs = 10
 
-        sites = ['T2_US_Florida', 'T2_TW_Taiwan', 'T2_CH_CERN', 'T3_CO_Uniandes']
-
-        for site in sites:
-            self.setResourceThresholds(site, pendingSlots = 1000, runningSlots = -1, tasks = ['Processing', 'Merge'],
-                                       Processing = {'pendingSlots' : 5000, 'runningSlots' :-1},
-                                       Merge = {'pendingSlots' : 1000, 'runningSlots' :-1, 'priority' : 5})
-
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            site = 'se.%s' % sites[-1],
                                             task = workload.getTask("ReReco"),
+                                            site = [],
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
-                                                                        workloadName),
-                                            bl = sites[:-1])
+                                                                        workloadName))
 
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
         jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        # All jobs should be at T3_CO_Uniandes
-        # Check assigned locations
-        getLocationAction = self.daoFactory(classname = "Jobs.GetLocation")
-        locationDict = getLocationAction.execute([{'jobid' : x} for x in result])
-        for entry in locationDict:
-            loc = entry['site_name']
-            self.assertEqual(loc, 'T3_CO_Uniandes')
-
-        # Run again and test the whiteList
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            site = 'se.%s' % 'T2_CH_CERN',
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            wl = ['T2_CH_CERN'])
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        # Run it
-        jobSubmitter.algorithm()
-
-        # You'll have jobs from the previous run still in the database
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-
-        # All jobs should be at CERN or Uniandes
-        locationDict = getLocationAction.execute([{'jobid' : x} for x in result])
-        for entry in locationDict[nSubs * nJobs:]:
-            loc = entry['site_name']
-            self.assertEqual(loc, 'T2_CH_CERN')
-
-        # Run again with an invalid whitelist
-        # After this point, the original two sets of jobs will be executing
-        # The rest of the jobs should move to submitFailed
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            site = 'se.%s' % 'T2_CH_CERN',
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            wl = ['T2_US_Namibia'])
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        jobSubmitter.algorithm()
-
-        # Jobs should be gone
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        # Run again with all sites blacklisted
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            site = ['se.%s' % x for x in sites],
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            bl = sites)
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
         jobSubmitter.algorithm()
 
         # Jobs should go to submit failed
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
         result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
+        self.assertEqual(len(result), nSubs * nJobs)
 
         return
 
@@ -749,7 +658,7 @@ class JobSubmitterTest(unittest.TestCase):
         myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
         # First test that we prefer Normal over drain, and T1 over T2/T3
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            site = ['se.%s' % x for x in sites],
+                                            site = [x for x in sites],
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
@@ -776,7 +685,7 @@ class JobSubmitterTest(unittest.TestCase):
         for site in sites:
             myResourceControl.changeSiteState(site, 'Down')
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            site = ['se.%s' % x for x in sites],
+                                            site = [x for x in sites],
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
@@ -795,7 +704,7 @@ class JobSubmitterTest(unittest.TestCase):
         nSubsMerge = 1
         nJobsMerge = 5
         jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
-                                            site = ['se.%s' % x for x in sites],
+                                            site = [x for x in sites],
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
@@ -818,7 +727,7 @@ class JobSubmitterTest(unittest.TestCase):
         nSubsMerge = 1
         nJobsMerge = 5
         jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
-                                            site = ['se.%s' % x for x in sites],
+                                            site = [x for x in sites],
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
@@ -853,27 +762,26 @@ class JobSubmitterTest(unittest.TestCase):
 
         nSubs = 100
         nJobs = 100
-        sites = ['T1_US_FNAL']
+        site = "T1_US_FNAL"
 
-        for site in sites:
-            self.setResourceThresholds(site, pendingSlots = 20000, runningSlots = -1, tasks = ['Processing', 'Merge'],
-                                       Processing = {'pendingSlots' : 10000, 'runningSlots' :-1},
-                                       Merge = {'pendingSlots' : 10000, 'runningSlots' :-1, 'priority' : 5})
+        self.setResourceThresholds(site, pendingSlots = 20000, runningSlots = -1, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 10000, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10000, 'runningSlots' :-1, 'priority' : 5})
 
         # Always initialize the submitter after setting the sites, flaky!
-        jobSubmitter = JobSubmitterPoller(config = config)
+        JobSubmitterPoller(config = config)
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL')
+                                            site = site)
 
         jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.%s' % 'T1_US_FNAL',
+                                            site = site,
                                             taskType = 'Merge'))
 
         for group in jobGroupList:
@@ -883,7 +791,6 @@ class JobSubmitterTest(unittest.TestCase):
         startTime = time.time()
         cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
         stopTime = time.time()
-
 
         print "Job took %f seconds to complete" % (stopTime - startTime)
 

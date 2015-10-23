@@ -80,11 +80,16 @@ class RequestHandler(object):
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        encoded_data = urllib.urlencode(params, doseq=doseq)
+        if  params:
+            encoded_data = urllib.urlencode(params, doseq=doseq)
+        else:
+            encoded_data = ''
         if  verb == 'GET':
-            url = url + '?' + encoded_data
+            if  encoded_data:
+                url = url + '?' + encoded_data
         elif verb == 'HEAD':
-            url = url + '?' + encoded_data
+            if  encoded_data:
+                url = url + '?' + encoded_data
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HEADER, 1)
             curl.setopt(pycurl.NOBODY, True)

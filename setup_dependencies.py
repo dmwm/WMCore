@@ -25,7 +25,7 @@ dependencies = {'wmc-rest':{
                 'wmc-database':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
                                     'WMCore.Algorithms', 'WMCore.Services', 'WMCore.Cache'],
-                        'modules': ['WMCore.Action', 'WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
+                        'modules': ['WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{

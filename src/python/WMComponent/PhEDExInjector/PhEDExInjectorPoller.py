@@ -8,16 +8,15 @@ Poll the DBSBuffer database and inject files as they are created.
 import threading
 import logging
 import traceback
+import time
 from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx import XMLDrop
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-
 from WMCore.DAOFactory import DAOFactory
-
 from WMCore.WMException import WMException
+
 
 class PhEDExInjectorPassableError(WMException):
     """
@@ -37,7 +36,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
     Poll the DBSBuffer database and inject files as they are created.
     """
-    def __init__(self, config):
+    def __init__(self, config, phedex, nodeMappings):
         """
         ___init___
 
@@ -45,7 +44,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         BaseWorkerThread.__init__(self)
         self.config = config
-        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
+        self.phedex = phedex
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
@@ -55,6 +54,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         # SE name.
         self.seMap = {}
         self.nodeNames = []
+        for node in nodeMappings["phedex"]["node"]:
+            if node["kind"] not in self.seMap:
+                self.seMap[node["kind"]] = {}
+            logging.info("Adding mapping %s -> %s", node["se"], node["name"])
+            self.seMap[node["kind"]][node["se"]] = node["name"]
+            self.nodeNames.append(node["name"])
 
         self.diskSites = getattr(config.PhEDExInjector, "diskSites", ["storm-fe-cms.cr.cnaf.infn.it",
                                                                       "srm-cms-disk.gridpp.rl.ac.uk"])
@@ -85,15 +90,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                 dbinterface = myThread.dbi)
         self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
         self.setBlockClosed = daofactory(classname = "SetBlockClosed")
-
-        nodeMappings = self.phedex.getNodeMap()
-        for node in nodeMappings["phedex"]["node"]:
-            if node["kind"] not in self.seMap:
-                self.seMap[node["kind"]] = {}
-
-            logging.info("Adding mapping %s -> %s", node["se"], node["name"])
-            self.seMap[node["kind"]][node["se"]] = node["name"]
-            self.nodeNames.append(node["name"])
 
         return
 
@@ -264,7 +260,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             msg =  "Encountered error while attempting to inject blocks to PhEDEx.\n"
             msg += str(ex)
             logging.error(msg)
-            logging.debug("Traceback: %s" % str(traceback.format_exc()))
+            logging.debug("Traceback: %s", str(traceback.format_exc()))
             raise PhEDExInjectorPassableError(msg)
 
         logging.info("Injection result: %s", injectRes)
@@ -275,7 +271,12 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             logging.error(msg)
             self.sendAlert(6, msg = msg)
         else:
-            self.setStatus.execute(lfnList, 1, transaction = False)
+            try:
+                self.setStatus.execute(lfnList, 1, transaction = False)
+            except Exception:
+                # possible race conditions, retry once after 1s
+                time.sleep(1)
+                self.setStatus.execute(lfnList, 1, transaction = False)
 
         return
 

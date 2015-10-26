@@ -34,7 +34,6 @@ import logging
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
 from WMCore.Services.PhEDEx import XMLDrop
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
 
@@ -47,18 +46,21 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
     Poll the DBSBuffer database and subscribe datasets as they are
     created.
     """
-    def __init__(self, config):
+    def __init__(self, config, phedex, nodeMappings):
         """
         ___init___
 
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-        self.phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
+        self.phedex = phedex
         self.dbsUrl = config.DBSInterface.globalDBSUrl
         self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         self.phedexNodes = {'MSS':[], 'Disk':[]}
+        for node in nodeMappings["phedex"]["node"]:
+            if node["kind"] in [ "MSS", "Disk" ]:
+                self.phedexNodes[node["kind"]].append(node["name"])
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
@@ -83,10 +85,6 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
         self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
 
-        nodeMappings = self.phedex.getNodeMap()
-        for node in nodeMappings["phedex"]["node"]:
-            if node["kind"] in [ "MSS", "Disk" ]:
-                self.phedexNodes[node["kind"]].append(node["name"])
         return
 
     def algorithm(self, parameters):

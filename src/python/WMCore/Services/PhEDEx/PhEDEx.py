@@ -134,7 +134,7 @@ class PhEDEx(Service):
 
         Update a request approving/disapproving it.
         """
-        if type(nodes) == str:
+        if isinstance(nodes, basestring):
             nodes = [nodes]
         args = {}
         args['decision'] = decision.lower()
@@ -545,7 +545,11 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        response = self._getResult(callname, args = kwargs)
+        # NOTE: VK 20151026
+        # blockreplicas POST requests does not work properly, i.e.
+        # it does not accept json, instead it expects GET parameters
+        # therefore I changed the request to GET
+        response = self._getResult(callname, args = kwargs, verb="GET")
 
         blockNodes = dict()
 

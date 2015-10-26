@@ -10,7 +10,6 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 from __future__ import print_function
-import time
 import pycurl
 import urllib
 import httplib
@@ -27,6 +26,7 @@ class ResponseHeader(object):
         super(ResponseHeader, self).__init__()
         self.header = {}
         self.reason = ''
+        self.status = 0
         self.fromcache = False
         self.parse(response)
 
@@ -72,15 +72,17 @@ class RequestHandler(object):
         """Set options for given curl object, params should be a dictionary"""
         if  params == None:
             params = {}
-        if  not isinstance(params, dict):
-            raise TypeError("pycurl parameters should be passed as dictionary")
+#        if  not isinstance(params, dict):
+#            raise TypeError("pycurl parameters should be passed as dictionary")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        if  params:
+        if isinstance(params, basestring):
+            encoded_data = params
+        elif  params:
             encoded_data = urllib.urlencode(params, doseq=doseq)
         else:
             encoded_data = ''
@@ -96,12 +98,18 @@ class RequestHandler(object):
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
             if params:
-                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+                if isinstance(params, dict):
+                    curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+                else:
+                    curl.setopt(pycurl.POSTFIELDS, params)
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
             if params:
-                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+                if isinstance(params, dict):
+                    curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+                else:
+                    curl.setopt(pycurl.POSTFIELDS, params)
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
@@ -141,7 +149,7 @@ class RequestHandler(object):
         if  decode:
             try:
                 res = json.loads(data)
-            except ValueError as exc:
+            except Exception as exc:
                 msg = 'Unable to load JSON data, %s, data type=%s, pass as is' \
                         % (str(exc), type(data))
                 logging.warning(msg)
@@ -227,8 +235,8 @@ class RequestHandler(object):
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
-            _numq, response, _err = multi.info_read()
-            for _cobj in response:
+            _, response, _ = multi.info_read()
+            for _ in response:
                 data = json.loads(bbuf.getvalue())
                 if  isinstance(data, dict):
                     data.update(params)

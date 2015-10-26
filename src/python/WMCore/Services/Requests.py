@@ -60,7 +60,12 @@ class Requests(dict):
         if  not idict:
             idict = {}
         dict.__init__(self, idict)
-        self.pycurl = idict.get('pycurl', None)
+        try:
+            import pycurl
+            self.pycurl = True
+        except ImportError:
+            logging.debug("Not using pycurl")
+            self.pycurl = False
         self.capath = idict.get('capath', None)
         if self.pycurl:
             self.reqmgr = RequestHandler()
@@ -163,6 +168,29 @@ class Requests(dict):
         #And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
         url = self['host'] + uri
+
+        # NOTE: VK 20151026
+        # this block is added intentionally to immitate makeRequest_httplib
+        # behavior. THIS IS BAD design though since it modifies HTTP requests
+        # and instead of passing dictionary parameters it encodes them.
+        # But we need to leave it as is until WMCore APIs will be adjusted.
+        if verb != 'GET' and params:
+            if isinstance(encoder, type(self.get)) or hasattr(encoder, '__call__'):
+                encoded_data = encoder(params)
+            elif encoder == False:
+                # Don't encode the data more than we have to
+                #  we don't want to URL encode the data blindly,
+                #  that breaks POSTing attachments... ConfigCache_t
+                #encoded_data = urllib.urlencode(data)
+                #  -- Andrew Melo 25/7/09
+                encoded_data = params
+            else:
+                # Either the encoder is set to True or it's junk, so use
+                # self.encode
+                encoded_data = self.encode(params)
+            if isinstance(encoded_data, basestring):
+                headers["Content-length"] = str(len(encoded_data))
+
         response, data = self.reqmgr.request(url, params, headers, \
                     verb=verb, ckey=ckey, cert=cert, capath=capath, decode=decoder)
         return data, response.status, response.reason, response.fromcache
@@ -209,13 +237,8 @@ class Requests(dict):
         #assert type(data) == type({}), \
         #        "makeRequest input data must be a dict (key/value pairs)"
 
-        # There must be a better way to do this...
-        def f():
-            """Dummy function"""
-            pass
-
         if verb != 'GET' and data:
-            if type(encoder) == type(self.get) or type(encoder) == type(f):
+            if isinstance(encoder, type(self.get)) or hasattr(encoder, '__call__'):
                 encoded_data = encoder(data)
             elif encoder == False:
                 # Don't encode the data more than we have to
@@ -235,7 +258,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert type(encoded_data) == type('string'), \
+        assert isinstance(encoded_data, basestring), \
             "Data in makeRequest is %s and not encoded to a string" \
                 % type(encoded_data)
 
@@ -274,7 +297,7 @@ class Requests(dict):
             setattr(e, 'headers', response)
             raise e
 
-        if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
+        if isinstance(decoder, type(self.makeRequest)) or hasattr(decoder, '__call__'):
             result = decoder(result)
         elif decoder != False:
             result = self.decode(result)

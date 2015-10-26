@@ -60,7 +60,10 @@ class Request(RESTEntity):
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
             return
-            
+        
+        if"status" in param.kwargs and param.kwargs["status"].endswith("-archived"):
+            raise InvalidSpecParameterValue("Can't retieve bulk archived status requests, use other search arguments")
+        
         for prop in param.kwargs:
             safe.kwargs[prop] = param.kwargs[prop]
         
@@ -199,7 +202,8 @@ class Request(RESTEntity):
                     self._validateMultiRequests(param, safe, validate_request_update_args)
                 else:
                     self._validateRequestBase(param, safe, validate_request_create_args)    
-                    
+        except InvalidSpecParameterValue as ex:
+            raise ex
         except Exception as ex:
             #TODO add proper error message instead of trace back
             msg = traceback.format_exc()
@@ -261,9 +265,13 @@ class Request(RESTEntity):
         team = kwargs.get("team", False)
         mc_pileup = kwargs.get("mc_pileup", False)
         data_pileup = kwargs.get("data_pileup", False)
+        detail = kwargs.get("detail", True)
+        if detail in (False, "false", "False"):
+            option = {"include_docs": False}
+        else:
+            option = {"include_docs": True}
         # eventhing should be stale view. this only needs for test
         _nostale = kwargs.get("_nostale", False)
-        option = {}
         if _nostale:
             self.reqmgr_db_service._setNoStale()
             
@@ -274,7 +282,7 @@ class Request(RESTEntity):
         if status and team:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
         if status and request_type:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype", option, [[status, request_type]]))
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
         if prep_id:

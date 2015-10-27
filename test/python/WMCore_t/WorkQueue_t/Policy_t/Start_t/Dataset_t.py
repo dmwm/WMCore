@@ -183,7 +183,7 @@ class DatasetTestCase(unittest.TestCase):
         # Run Mixed Whitelist
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        rerecoArgs3.update({'RunBlacklist' : [1], 'RunWhitelist' : [2]})
+        rerecoArgs3.update({'RunBlacklist' : [2], 'RunWhitelist' : [1]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                      rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
@@ -191,10 +191,10 @@ class DatasetTestCase(unittest.TestCase):
         units, _ = Dataset(**self.splitArgs)(blacklistBlockWorkload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset])
-        self.assertEqual(units[0]['Jobs'], 2.0)
-        self.assertEqual(4, units[0]['NumberOfLumis'])
-        self.assertEqual(10, units[0]['NumberOfFiles'])
-        self.assertEqual(10000, units[0]['NumberOfEvents'])
+        self.assertEqual(units[0]['Jobs'], 4.0)
+        self.assertEqual(8, units[0]['NumberOfLumis'])
+        self.assertEqual(20, units[0]['NumberOfFiles'])
+        self.assertEqual(20000, units[0]['NumberOfEvents'])
 
 
     def testDataDirectiveFromQueue(self):

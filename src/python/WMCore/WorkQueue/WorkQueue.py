@@ -394,10 +394,10 @@ class WorkQueue(WorkQueueBase):
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         if wmspec.locationDataSourceFlag():
-            PhEDExNodeNames = []
-            for pnn in match['Inputs'].values()[0]:
-                PhEDExNodeNames.append(pnn)
-            dbsDatasetDict['PhEDExNodeNames'] = list(set(PhEDExNodeNames))
+            PhEDExNodeNames = set()
+            for psn in match['Inputs'].values()[0]:
+                PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
+            dbsDatasetDict['PhEDExNodeNames'] = list(PhEDExNodeNames)
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
@@ -417,10 +417,10 @@ class WorkQueue(WorkQueueBase):
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():
-                PhEDExNodeNames = []
-                for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
-                    PhEDExNodeNames.append(pnn)
-                PhEDExNodeNames = list(set(PhEDExNodeNames))
+                PhEDExNodeNames = set()
+                for psn in match['Inputs'].values()[0]:
+                    PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
+                PhEDExNodeNames = list(PhEDExNodeNames)
                 for fileInfo in block["Files"]:
                     fileInfo['locations'] = PhEDExNodeNames
             return blockName, block
@@ -433,10 +433,10 @@ class WorkQueue(WorkQueueBase):
 
             if wmspec.locationDataSourceFlag():
                 blockInfo = dbsBlockDict[blockName]
-                PhEDExNodeNames = []
-                for pnn in match['Inputs'].values()[0]:  # TODO: Allow more than one
-                    PhEDExNodeNames.append(pnn)
-                PhEDExNodeNames = list(set(PhEDExNodeNames))
+                PhEDExNodeNames = set()
+                for psn in match['Inputs'].values()[0]:
+                    PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
+                PhEDExNodeNames = list(PhEDExNodeNames)
                 blockInfo['PhEDExNodeNames'] = PhEDExNodeNames
         return blockName, dbsBlockDict[blockName]
 

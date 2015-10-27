@@ -11,6 +11,9 @@ from WMCore.Services.EmulatorSwitch import emulatorHook
 import json
 import re
 
+#TODO remove this when all DBS origin_site_name is converted to PNN
+pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
+
 def row2dict(columns, row):
     """Convert rows to dictionaries with column keys from description"""
     robj = {}
@@ -234,6 +237,21 @@ class SiteDBJSON(Service):
         cmsname = filter(lambda x: x['type']=='cms', siteNames)
         return [x['alias'] for x in cmsname]
 
+    def seToPNNs(self, se):
+        """
+        Convert SE name to the PNN they belong to,
+        this is not a 1-to-1 relation but 1-to-many, return a list of pnns
+        """
+        try:
+            siteresources = filter(lambda x: x['fqdn']==se, self._siteresources())
+        except IndexError:
+            return None
+        siteNames = []
+        for resource in siteresources:
+            siteNames.extend(self._sitenames(sitename=resource['site_name']))
+        pnns = filter(lambda x: x['type']=='phedex', siteNames)
+        return [x['alias'] for x in pnns]
+
 
     def cmsNametoPhEDExNode(self, cmsName):
         """
@@ -262,6 +280,18 @@ class SiteDBJSON(Service):
             return None
         return psns
 
+    def PNNstoPSNs(self, pnns):
+        """
+        Convert list of PhEDEx node names to Processing Site Name(s)
+        """
+        psns = set()
+        for pnn in pnns:
+            psn_list = self.PNNtoPSN(pnn)
+            if not psn_list:
+                self["logger"].warning("No PSNs for PNN: %s" % pnn)
+            psns.update(psn_list)
+        return list(psns)
+
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):
             raise TypeError('psn_pattern arg must be of type str')
@@ -273,3 +303,21 @@ class SiteDBJSON(Service):
                 continue
             mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
         return mapping
+    
+    #TODO remove this when all DBS origin_site_name is converted to PNN
+    def checkAndConvertSENameToPNN(self, seNameOrPNN):
+        """
+        check whether argument is sename 
+        if it is convert to PNN
+        if not just return argument
+        """
+        if isinstance(seNameOrPNN, str):
+            seNameOrPNN = [seNameOrPNN]
+        
+        newList = []
+        for se in seNameOrPNN:
+            if not pnn_regex.match(se):
+                newList.extends(self.seToPNNs(se))
+            else:
+                newList.extends(se)
+        return newList

@@ -497,6 +497,9 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
         taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
+        # Adjust the pileup splitting
+        taskConf["SplittingArguments"].setdefault("deterministicPileup", taskConf['DeterministicPileup'])
+
         return
 
     @staticmethod
@@ -575,6 +578,9 @@ class TaskChainWorkloadFactory(StdBase):
                     "DataPileup" : {"default" : None, "type" : str,
                                     "optional" : True, "validate" : dataset,
                                     "null" : False},
+                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
+                                             "optional" : True, "validate" : None,
+                                             "attr" : "deterministicPileup", "null" : False},
                     "InputDataset" : {"default" : None, "type" : str,
                                       "optional" : generator or not firstTask, "validate" : dataset,
                                       "null" : False},

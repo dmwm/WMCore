@@ -12,7 +12,7 @@ fetches from DBS the information about pileup input.
 """
 
 import math
-from WMCore.Lexicon import primdataset, couchurl, identifier, dataset
+from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
 
@@ -113,6 +113,8 @@ class MonteCarloWorkloadFactory(StdBase):
 
         # Transform the pileup as required by the CMSSW step
         self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
+        # Adjust the pileup splitting
+        self.prodJobSplitArgs.setdefault("deterministicPileup", self.deterministicPileup)
 
         # Production can be extending statistics,
         # need to move the initial lfn counter
@@ -165,6 +167,9 @@ class MonteCarloWorkloadFactory(StdBase):
                     "DataPileup" : {"default" : None, "type" : str,
                                     "optional" : True, "validate" : dataset,
                                     "attr" : "dataPileup", "null" : False},
+                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
+                                             "optional" : True, "validate" : None,
+                                             "attr" : "deterministicPileup", "null" : False},
                     "EventsPerJob" : {"default" : None, "type" : int,
                                       "optional" : True, "validate" : lambda x : x > 0,
                                       "attr" : "eventsPerJob", "null" : True},

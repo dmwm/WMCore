@@ -5,8 +5,10 @@ _MonteCarloFromGEN_
 Workflow for processing MonteCarlo GEN files.
 """
 
-from WMCore.Lexicon import primdataset
+from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
+
 
 class MonteCarloFromGENWorkloadFactory(DataProcessing):
     """
@@ -53,6 +55,10 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                                               primarySubType = "Production")
         self.addLogCollectTask(procTask)
 
+        # pile up support
+        if self.pileupConfig:
+            self.setupPileup(procTask, self.pileupConfig)
+
         for outputModuleName in outputMods.keys():
             self.addMergeTask(procTask, self.procJobSplitAlgo,
                               outputModuleName)
@@ -75,6 +81,12 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         Create a MonteCarloFromGEN workload with the given parameters.
         """
         DataProcessing.__call__(self, workloadName, arguments)
+
+        # Transform the pileup as required by the CMSSW step
+        self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
+        # Adjust the pileup splitting
+        self.procJobSplitArgs.setdefault("deterministicPileup", self.deterministicPileup)
+
         return self.buildWorkload()
 
     def validateSchema(self, schema):
@@ -104,7 +116,16 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                                         "attr" : "configCacheUrl", "null" : False},
                     "ConfigCacheID" : {"default" : None, "type" : str,
                                        "optional" : False, "validate" : None,
-                                       "attr" : "configCacheID", "null" : False}}
+                                       "attr" : "configCacheID", "null" : False},
+                    "MCPileup" : {"default" : None, "type" : str,
+                                  "optional" : True, "validate" : dataset,
+                                  "attr" : "mcPileup", "null" : False},
+                    "DataPileup" : {"default" : None, "type" : str,
+                                    "optional" : True, "validate" : dataset,
+                                    "attr" : "dataPileup", "null" : False},
+                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
+                                             "optional" : True, "validate" : None,
+                                             "attr" : "deterministicPileup", "null" : False}}
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

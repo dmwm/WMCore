@@ -16,13 +16,13 @@ class SetLocationByLFN(DBFormatter):
                FROM dbsbuffer_file df
                INNER JOIN dbsbuffer_location dl
                WHERE df.lfn = :lfn
-               AND dl.pnn = :sename
+               AND dl.pnn = :pnn
     """
 
 
     def execute(self, binds, conn = None, transaction = None):
         """
-        Expect binds in the form {lfn, sename}
+        Expect binds in the form {lfn, pnn}
 
         """
         self.dbi.processData(self.sql, binds, conn = conn,

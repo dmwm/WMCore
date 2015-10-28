@@ -332,7 +332,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         binds = []
         for location in self["newlocations"]:
             binds.append({"lfn": self["lfn"],
-                          "sename": location})
+                          "pnn": location})
 
         addAction = self.daoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
         addAction.execute(binds = binds,

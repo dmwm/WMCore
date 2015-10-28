@@ -811,7 +811,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.create()
 
         setLocationAction = self.daoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
-        setLocationAction.execute(binds = {'lfn': "/this/is/a/lfn", 'sename': 'se1.cern.ch'})
+        setLocationAction.execute(binds = {'lfn': "/this/is/a/lfn", 'pnn': 'se1.cern.ch'})
 
         testFileB = DBSBufferFile(id = testFileA["id"])
         testFileB.load()

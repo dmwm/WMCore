@@ -19,5 +19,5 @@ class SetLocationByLFN(MySQLSetLocationByLFN):
                SELECT df.id, dl.id
                FROM dbsbuffer_file df, dbsbuffer_location dl
                WHERE df.lfn = :lfn
-               AND dl.pnn = :sename
+               AND dl.pnn = :pnn
                """

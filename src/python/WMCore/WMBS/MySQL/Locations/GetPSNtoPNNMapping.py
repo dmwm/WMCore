@@ -17,7 +17,7 @@ class GetPSNtoPNNMapping(DBFormatter):
     PhEDEx node names.
     """
 
-    sql = """SELECT wl.site_name AS psn, wls.se_name AS pnn FROM wmbs_location_pnns wls
+    sql = """SELECT wl.site_name AS psn, wls.pnn AS pnn FROM wmbs_location_pnns wls
              INNER JOIN wmbs_location wl ON wls.location = wl.id"""
 
 

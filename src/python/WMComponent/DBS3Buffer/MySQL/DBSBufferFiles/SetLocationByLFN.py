@@ -16,7 +16,7 @@ class SetLocationByLFN(DBFormatter):
                FROM dbsbuffer_file df
                INNER JOIN dbsbuffer_location dl
                WHERE df.lfn = :lfn
-               AND dl.se_name = :sename
+               AND dl.pnn = :sename
     """
 
 

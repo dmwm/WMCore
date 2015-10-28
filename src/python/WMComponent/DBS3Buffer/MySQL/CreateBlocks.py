@@ -14,7 +14,7 @@ class CreateBlocks(DBFormatter):
              (dataset_id, blockname, location, status, create_time)
              SELECT (SELECT id from dbsbuffer_dataset WHERE path = :dataset),
                     :block,
-                    (SELECT id FROM dbsbuffer_location WHERE se_name = :location),
+                    (SELECT id FROM dbsbuffer_location WHERE pnn = :location),
                     :status,
                     :time
              FROM DUAL

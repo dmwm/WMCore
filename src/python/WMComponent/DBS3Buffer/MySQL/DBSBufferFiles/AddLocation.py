@@ -8,7 +8,7 @@ MySQL implementation of DBSBufferFiles.AddLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddLocation(DBFormatter):
-    sql = """INSERT IGNORE INTO dbsbuffer_location (se_name)
+    sql = """INSERT IGNORE INTO dbsbuffer_location (pnn)
                VALUES (:location)"""
 
     def execute(self, siteName, conn = None, transaction = False):

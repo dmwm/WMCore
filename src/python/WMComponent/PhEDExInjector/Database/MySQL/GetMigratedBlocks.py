@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 class GetMigratedBlocks(DBFormatter):
     sql = """SELECT dbsbuffer_block.blockname AS blockname,
                     dbsbuffer_dataset.path AS dataset,
-                    dbsbuffer_location.se_name AS location
+                    dbsbuffer_location.pnn AS location
                     FROM dbsbuffer_block
                INNER JOIN
                  (SELECT block_id, MIN(dbsbuffer_file.id) file_id FROM dbsbuffer_file

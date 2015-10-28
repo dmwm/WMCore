@@ -19,7 +19,7 @@ class New(DBFormatter):
                       :cmsname AS cms_name,
                       (SELECT id FROM wmbs_location_state WHERE name = 'Normal') AS state"""
 
-    seSQL = """INSERT IGNORE INTO wmbs_location_pnns (location, se_name)
+    seSQL = """INSERT IGNORE INTO wmbs_location_pnns (location, pnn)
                  SELECT id, :pnn FROM wmbs_location WHERE site_name = :location """
 
     def execute(self, siteName, runningSlots = 0, pendingSlots = 0,

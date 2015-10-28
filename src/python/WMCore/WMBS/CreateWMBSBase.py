@@ -336,8 +336,8 @@ class CreateWMBSBase(DBCreator):
         self.create["20wmbs_location_pnns"] = \
           """CREATE TABLE wmbs_location_pnns (
                location   INTEGER,
-               se_name    VARCHAR(255),
-               UNIQUE(location, se_name),
+               pnn    VARCHAR(255),
+               UNIQUE(location, pnn),
                FOREIGN KEY (location) REFERENCES wmbs_location(id)
                  ON DELETE CASCADE)"""
 

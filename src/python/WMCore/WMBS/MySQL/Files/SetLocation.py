@@ -14,7 +14,7 @@ class SetLocation(DBFormatter):
     sql = """INSERT INTO wmbs_file_location (fileid, location)
              SELECT :fileid, wmbs_location.id FROM wmbs_location
              INNER JOIN wmbs_location_pnns wls ON wls.location = wmbs_location.id
-             WHERE wls.se_name = :location"""
+             WHERE wls.pnn = :location"""
 
     def getBinds(self, file = None, location = None):
         if type(location) == type('string'):

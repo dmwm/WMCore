@@ -641,12 +641,12 @@ class Create(CreateWMBSBase):
         self.create["20wmbs_location_pnns"] = \
           """CREATE TABLE wmbs_location_pnns (
                location      INTEGER,
-               se_name       VARCHAR(255)
+               pnn       VARCHAR(255)
                ) %s""" % tablespaceTable
 
         self.constraints["01_uq_wmbs_location_pnns"] = \
           """ALTER TABLE wmbs_location_pnns ADD
-               (CONSTRAINT wmbs_location_pnns_uq UNIQUE (location, se_name) %s)""" % tablespaceIndex
+               (CONSTRAINT wmbs_location_pnns_uq UNIQUE (location, pnn) %s)""" % tablespaceIndex
 
         self.constraints["02_fk_wmbs_location_pnns"] = \
           """ALTER TABLE wmbs_location_pnns ADD

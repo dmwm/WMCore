@@ -1388,13 +1388,13 @@ class gLitePlugin(BasePlugin):
         if type(location) == bytes or \
            type(location) == str:
             destlist.append( self.locationAction.execute( \
-                               cesite = location)[0].get('se_name', None) )
+                               cesite = location)[0].get('pnn', None) )
         else:
             for site in location:
                 storages = self.wmsLocationsAction.execute(site)
                 for se in storages:
-                    if se.get('se_name', None) not in destlist:
-                        destlist.append( se.get('se_name', None) )
+                    if se.get('pnn', None) not in destlist:
+                        destlist.append( se.get('pnn', None) )
         return destlist
 
         ## In case we need CE names
@@ -1422,7 +1422,7 @@ class gLitePlugin(BasePlugin):
 
         if not jobSite in self.locationDict.keys():
             siteInfo = self.locationAction.execute(siteName = jobSite)
-            self.locationDict[jobSite] = siteInfo[0].get('se_name', None)
+            self.locationDict[jobSite] = siteInfo[0].get('pnn', None)
         return self.locationDict[jobSite]
 
 

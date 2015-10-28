@@ -17,7 +17,7 @@ class GetPNNtoPSNMapping(DBFormatter):
     processing site names.
     """
 
-    sql = """SELECT wls.se_name AS pnn, wl.site_name AS psn FROM wmbs_location_pnns wls
+    sql = """SELECT wls.pnn AS pnn, wl.site_name AS psn FROM wmbs_location_pnns wls
              INNER JOIN wmbs_location wl ON wls.location = wl.id"""
 
 

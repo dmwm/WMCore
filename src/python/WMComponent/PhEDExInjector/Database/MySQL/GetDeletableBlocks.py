@@ -25,7 +25,7 @@ class GetDeletableBlocks(DBFormatter):
     # FIXME: returns SE, should switch to PNN soon
 
     sql = """SELECT dbsbuffer_block.blockname,
-                    dbsbuffer_location.se_name,
+                    dbsbuffer_location.pnn,
                     dbsbuffer_dataset.path,
                     dbsbuffer_dataset_subscription.site
              FROM dbsbuffer_dataset_subscription
@@ -46,7 +46,7 @@ class GetDeletableBlocks(DBFormatter):
              AND dbsbuffer_block.status = 'Closed'
              AND dbsbuffer_block.deleted = 0
              GROUP BY dbsbuffer_block.blockname,
-                      dbsbuffer_location.se_name,
+                      dbsbuffer_location.pnn,
                       dbsbuffer_dataset.path,
                       dbsbuffer_dataset_subscription.site
              HAVING COUNT(*) = SUM(dbsbuffer_workflow.completed)

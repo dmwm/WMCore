@@ -9,7 +9,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class UpdateBlocks(DBFormatter):
     sql  = """UPDATE dbsbuffer_block SET status = :status, create_time = :time, location =
-                (SELECT dbl.id FROM dbsbuffer_location dbl WHERE dbl.se_name = :location)
+                (SELECT dbl.id FROM dbsbuffer_location dbl WHERE dbl.pnn = :location)
                 WHERE blockname = :block"""
 
     def execute(self, blocks, conn = None, transaction = False):

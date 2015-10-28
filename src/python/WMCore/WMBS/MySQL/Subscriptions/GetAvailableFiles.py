@@ -11,7 +11,7 @@ Available means not acquired, complete or failed.
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wmbs_sub_files_available.fileid, wls.se_name AS pnn
+    sql = """SELECT wmbs_sub_files_available.fileid, wls.pnn AS pnn
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_location ON
                  wmbs_sub_files_available.fileid = wmbs_file_location.fileid

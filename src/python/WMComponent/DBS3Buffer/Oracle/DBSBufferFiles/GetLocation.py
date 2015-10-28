@@ -11,6 +11,6 @@ Oracle implementation of File.GetLocation
 from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetLocation import GetLocation as MySQLGetLocation
 
 class GetLocation(MySQLGetLocation):
-    sql = """select se_name from dbsbuffer_location
+    sql = """select pnn from dbsbuffer_location
                 where id in (select location from dbsbuffer_file_location
                     where filename in (select id from dbsbuffer_file where lfn=:lfn))"""

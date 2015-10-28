@@ -12,7 +12,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class GetBulkLocation(DBFormatter):
     sql = """SELECT wls.se_name as pnn, :id as id
-               FROM wmbs_location_senames wls
+               FROM wmbs_location_pnns wls
                INNER JOIN wmbs_file_location wfl ON wfl.location = wls.location
                WHERE wfl.fileid = :id
     """

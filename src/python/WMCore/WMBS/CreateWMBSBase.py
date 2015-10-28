@@ -57,7 +57,7 @@ class CreateWMBSBase(DBCreator):
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
                                "19wmbs_file_checksums",
-                               "20wmbs_location_senames",]
+                               "20wmbs_location_pnns",]
 
         self.create["01wmbs_fileset"] = \
           """CREATE TABLE wmbs_fileset (
@@ -333,8 +333,8 @@ class CreateWMBSBase(DBCreator):
               FOREIGN KEY (fileid) REFERENCES wmbs_file_details(id)
                 ON DELETE CASCADE)"""
 
-        self.create["20wmbs_location_senames"] = \
-          """CREATE TABLE wmbs_location_senames (
+        self.create["20wmbs_location_pnns"] = \
+          """CREATE TABLE wmbs_location_pnns (
                location   INTEGER,
                se_name    VARCHAR(255),
                UNIQUE(location, se_name),

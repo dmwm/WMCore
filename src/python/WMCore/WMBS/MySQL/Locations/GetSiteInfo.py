@@ -14,7 +14,7 @@ class GetSiteInfo(DBFormatter):
     """
     sql = """SELECT site_name, wls.se_name AS pnn, ce_name, pending_slots, running_slots,
                     plugin, cms_name, wlst.name AS state FROM wmbs_location
-               INNER JOIN wmbs_location_senames wls ON wls.location = wmbs_location.id
+               INNER JOIN wmbs_location_pnns wls ON wls.location = wmbs_location.id
                INNER JOIN wmbs_location_state wlst ON wlst.id = wmbs_location.state
                WHERE wmbs_location.site_name = :site"""
 

@@ -68,7 +68,7 @@ class GetFilesForMerge(DBFormatter):
                wmbs_file_runlumi_map.fileid = merge_files.fileid
              INNER JOIN wmbs_file_location ON
                wmbs_file_details.id = wmbs_file_location.fileid
-             INNER JOIN wmbs_location_senames wls ON
+             INNER JOIN wmbs_location_pnns wls ON
                wmbs_file_location.location = wls.location
              GROUP BY merge_files.fileid, merge_files.parent,
                       wmbs_file_details.events, wmbs_file_details.filesize,

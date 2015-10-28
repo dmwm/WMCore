@@ -44,7 +44,7 @@ class LoadForErrorHandler(DBFormatter):
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                  INNER JOIN wmbs_location wl ON wl.id = wfl.location
-                 INNER JOIN wmbs_location_senames wls ON wls.location = wfl.location
+                 INNER JOIN wmbs_location_pnns wls ON wls.location = wfl.location
                  WHERE wja.job = :jobid"""
 
 

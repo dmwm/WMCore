@@ -19,7 +19,7 @@ def fixDBSmissingFileAssoc():
     problemFilesSql = """
         select dbsbuffer_file.id as fileid, dbsbuffer_location.id as seid from wmbs_file_location fl
             inner join wmbs_file_details fd on fd.id = fl.fileid
-            inner join wmbs_location_senames wls on wls.location = fl.location
+            inner join wmbs_location_pnns wls on wls.location = fl.location
             inner join wmbs_location wl on wl.id = fl.location
             inner join dbsbuffer_location on dbsbuffer_location.se_name = wls.se_name
             inner join dbsbuffer_file on dbsbuffer_file.lfn = fd.lfn

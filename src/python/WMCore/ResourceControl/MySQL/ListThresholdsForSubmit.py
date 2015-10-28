@@ -54,7 +54,7 @@ class ListThresholdsForSubmit(DBFormatter):
     seSql = """SELECT wl.site_name AS site_name,
                       wls.se_name AS pnn
                FROM wmbs_location wl
-                      INNER JOIN wmbs_location_senames wls ON
+                      INNER JOIN wmbs_location_pnns wls ON
                           wls.location = wl.id
             """
 

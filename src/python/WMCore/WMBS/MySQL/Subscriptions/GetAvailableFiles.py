@@ -15,7 +15,7 @@ class GetAvailableFiles(DBFormatter):
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_location ON
                  wmbs_sub_files_available.fileid = wmbs_file_location.fileid
-               INNER JOIN wmbs_location_senames wls ON
+               INNER JOIN wmbs_location_pnns wls ON
                  wmbs_file_location.location = wls.location
              WHERE wmbs_sub_files_available.subscription = :subscription"""
 

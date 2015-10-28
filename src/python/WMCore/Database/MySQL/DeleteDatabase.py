@@ -7,6 +7,8 @@ Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Implementation of DeleteDatabase class for MySQL
 """
 
+from __future__ import print_function, division
+
 # CMS modules
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -149,16 +149,16 @@ class DataLocationMapper():
                          datasetSearch = False):
         """Get data location from dbs"""
         result = defaultdict(set)
-        for item in dataItems:
+        for dataItem in dataItems:
             try:
                 if datasetSearch or isDataset(dataItem):
-                    phedexNodeNames = dbs.listDatasetLocation(item, dbsOnly = True)
+                    phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly = True)
                 else:
-                    phedexNodeNames = dbs.listFileBlockLocation(item, dbsOnly = True)
+                    phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly = True)
                 for pnn in phedexNodeNames:
-                    result[item].update(pnn)
+                    result[dataItem].update(pnn)
             except Exception as ex:
-                logging.error('Error getting block location from dbs for %s: %s' % (item, str(ex)))
+                logging.error('Error getting block location from dbs for %s: %s' % (dataItem, str(ex)))
 
         # convert the sets to lists
         for name, nodes in result.items():

@@ -43,6 +43,7 @@
 },
 "assignRequest":
 {
+    "useSiteListAsLocation" : "True",
     "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
     "Team": "Team-OVERRIDE-ME",
     "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",

@@ -170,10 +170,9 @@ class SiteDBJSON(object):
         cmsnames = map(lambda x: x['alias'], cmsnames)
         return cmsnames
 
-    def cmsNametoList(self, cmsname_pattern, kind, file=None):
+    def cmsNametoList(self, cmsname_pattern, kind):
         """
-        Convert CMS name pattern T1*, T2* to a list of CEs or SEs. The file is
-        for backward compatibility with SiteDBv1
+        Convert CMS name pattern T1*, T2* to a list of CEs or SEs.
         """
         cmsname_pattern = cmsname_pattern.replace('*','.*')
         cmsname_pattern = cmsname_pattern.replace('%','.*')

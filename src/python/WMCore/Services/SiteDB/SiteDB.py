@@ -40,7 +40,7 @@ class SiteDBJSON(Service):
         config['endpoint'] = "https://cmsweb.cern.ch/sitedb/data/prod/"
         Service.__init__(self, config)
 
-    def getJSON(self, callname, file = 'result.json', clearCache = False, verb = 'GET', data={}):
+    def getJSON(self, callname, filename = 'result.json', clearCache = False, verb = 'GET', data={}):
         """
         _getJSON_
 
@@ -51,13 +51,13 @@ class SiteDBJSON(Service):
         """
         result = ''
         if clearCache:
-            self.clearCache(cachefile=file, inputdata=data, verb = verb)
+            self.clearCache(cachefile=filename, inputdata=data, verb = verb)
         try:
             #Set content_type and accept_type to application/json to get json returned from siteDB.
             #Default is text/html which will return xml instead
             #Add accept-encoding to gzip,identity to overwrite httplib default gzip,deflate,
             #which is not working properly with cmsweb
-            f = self.refreshCache(cachefile=file, url=callname, inputdata=data,
+            f = self.refreshCache(cachefile=filename, url=callname, inputdata=data,
                                   verb = verb, contentType='application/json',
                                   incoming_headers={'Accept' : 'application/json',
                                                     'accept-encoding' : 'gzip,identity'})
@@ -70,32 +70,32 @@ class SiteDBJSON(Service):
             results = unflattenJSON(results)
             return results
         except SyntaxError:
-            self.clearCache(file, args, verb = verb)
+            self.clearCache(filename, inputdata=data, verb=verb)
             raise SyntaxError("Problem parsing data. Cachefile cleared. Retrying may work")
 
     def _people(self, username=None, clearCache=False):
         if username:
-            file = 'people_%s.json' % (username)
-            people = self.getJSON("people", file=file, clearCache=clearCache, data=dict(match=username))
+            filename = 'people_%s.json' % (username)
+            people = self.getJSON("people", filename=filename, clearCache=clearCache, data=dict(match=username))
         else:
-            file = 'people.json'
-            people = self.getJSON("people", file=file, clearCache=clearCache)
+            filename = 'people.json'
+            people = self.getJSON("people", filename=filename, clearCache=clearCache)
         return people
 
     def _sitenames(self, sitename=None, clearCache=False):
-        file = 'site-names.json'
-        sitenames = self.getJSON('site-names', file=file, clearCache=clearCache)
+        filename = 'site-names.json'
+        sitenames = self.getJSON('site-names', filename=filename, clearCache=clearCache)
         if sitename:
             sitenames = filter(lambda x: x[u'site_name'] == sitename, sitenames)
         return sitenames
 
     def _siteresources(self, clearCache=False):
-        file = 'site-resources.json'
-        return self.getJSON('site-resources', file=file)
+        filename = 'site-resources.json'
+        return self.getJSON('site-resources', filename=filename)
 
     def _dataProcessing(self, pnn=None, clearCache=False):
-        file = 'data-processing.json'
-        psnMap = self.getJSON('data-processing', file=file, clearCache=clearCache)
+        filename = 'data-processing.json'
+        psnMap = self.getJSON('data-processing', filename=filename, clearCache=clearCache)
         if pnn:
             psnMap = filter(lambda x: x['phedex_name'] == pnn, psnMap)
         return psnMap
@@ -189,10 +189,9 @@ class SiteDBJSON(Service):
             node_names = filter(lambda x: not x.endswith("_Buffer"), node_names)
         return node_names
 
-    def cmsNametoList(self, cmsname_pattern, kind, file=None):
+    def cmsNametoList(self, cmsname_pattern, kind):
         """
-        Convert CMS name pattern T1*, T2* to a list of CEs or SEs. The file is
-        for backward compatibility with SiteDBv1
+        Convert CMS name pattern T1*, T2* to a list of CEs or SEs.
         """
         cmsname_pattern = cmsname_pattern.replace('*','.*')
         cmsname_pattern = cmsname_pattern.replace('%','.*')
@@ -317,7 +316,7 @@ class SiteDBJSON(Service):
         newList = []
         for se in seNameOrPNN:
             if not pnn_regex.match(se):
-                newList.extends(self.seToPNNs(se))
+                newList.extend(self.seToPNNs(se))
             else:
-                newList.extends(se)
+                newList.extend(se)
         return newList

@@ -169,6 +169,13 @@ class Request(RESTEntity):
             safe.kwargs['workload_pair_list'].append((workload, r_args))
             
         safe.kwargs["multi_update_flag"] = True
+        
+        
+    def _getRequestNamesFromBody(self, param, safe, valFunc):
+        
+        request_names = JsonWrapper.loads(cherrypy.request.body.read())
+        safe.kwargs['workload_pair_list'] = request_names
+        safe.kwargs["multi_names_flag"] = True
             
     def validate(self, apiobj, method, api, param, safe):
         # to make validate successful
@@ -200,6 +207,10 @@ class Request(RESTEntity):
                     #special case for multi update from browser.
                     param.args.pop()
                     self._validateMultiRequests(param, safe, validate_request_update_args)
+                elif args_length == 1 and param.args[0] == "bynames":
+                    #special case for multi update from browser.
+                    param.args.pop()
+                    self._getRequestNamesFromBody(param, safe, validate_request_update_args)
                 else:
                     self._validateRequestBase(param, safe, validate_request_create_args)    
         except InvalidSpecParameterValue as ex:
@@ -458,7 +469,7 @@ class Request(RESTEntity):
         return
     
     @restcall(formats = [('application/json', JSONFormat())])
-    def post(self, workload_pair_list, multi_update_flag = False):
+    def post(self, workload_pair_list, multi_update_flag = False, multi_names_flag = False):
         """
         Create and update couchDB with  a new request. 
         request argument is passed from validation 
@@ -481,6 +492,8 @@ class Request(RESTEntity):
         
         if multi_update_flag:
             return self.put(workload_pair_list)
+        if multi_names_flag:
+            return self.get(name = workload_pair_list)
             
         out = []
         for workload, request_args in workload_pair_list:

@@ -317,7 +317,7 @@ class SiteDBJSON(Service):
         newList = []
         for se in seNameOrPNN:
             if not pnn_regex.match(se):
-                newList.extends(self.seToPNNs(se))
+                newList.extend(self.seToPNNs(se))
             else:
-                newList.extends(se)
+                newList.extend(se)
         return newList

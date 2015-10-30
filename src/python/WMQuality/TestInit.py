@@ -24,17 +24,8 @@ from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.WMException         import WMException
 from WMCore.WMBase import getWMBASE
-
-hasDatabase = True
-try:
-    from WMCore.WMInit import WMInit
-except ImportError as ex:
-    print str(ex)
-    print "NOTE: TestInit is being loaded without database support"
-    hasDatabase = False
-
-# Sorry for the global, but I think this should go here
-trashDatabases = False  # delete databases after every test?
+from WMCore.WMInit import WMInit
+from WMCore.Database.DBTest import DBTest
 
 class TestInitException(WMException):
     """
@@ -91,17 +82,14 @@ class TestInit:
         self.testClassName = testClassName
         self.testDir = None
         self.currModules = []
-        global hasDatabase
-        self.hasDatabase = hasDatabase
-        if self.hasDatabase:
-            self.init = WMInit()
+        self.init = WMInit()
+        config = self.getConfiguration()
+        self.dbMgr = DBTest(config.CoreDatabase.connectUrl, config.CoreDatabase.socket)
         self.deleteTmp = True
 
     def __del__(self):
         if self.deleteTmp:
             self.delWorkDir()
-        self.attemptToCloseDBConnections()
-
 
     def delWorkDir(self):
         if self.testDir != None:
@@ -163,27 +151,7 @@ class TestInit:
         The destroyAllDatabase option is for testing ONLY.  Never flip that switch
         on in any other instance where you don't know what you're doing.
         """
-        if not self.hasDatabase:
-            return
-        config = self.getConfiguration(connectUrl=connectUrl, socket=socket)
-        self.coreConfig = config
-        self.init.setDatabaseConnection(config.CoreDatabase.connectUrl,
-                                        config.CoreDatabase.dialect,
-                                        config.CoreDatabase.socket)
-
-        if trashDatabases or destroyAllDatabase:
-            self.clearDatabase()
-
-        # Have to check whether or not database is empty
-        # If the database is not empty when we go to set the schema, abort!
-        result = self.init.checkDatabaseContents()
-        if len(result) > 0:
-            msg = "Database not empty, cannot set schema !\n"
-            msg += str(result)
-            logging.error(msg)
-            raise TestInitException(msg)
-
-        return
+        self.dbMgr.setUp()
 
     def setSchema(self, customModules = [], useDefault = True, params = None):
         """
@@ -196,8 +164,6 @@ class TestInit:
         if useDefault is set to False, it will not instantiate the
         schemas in the defaultModules array.
         """
-        if not self.hasDatabase:
-            return
         defaultModules = ["WMCore.WMBS"]
         if not useDefault:
             defaultModules = []
@@ -224,8 +190,6 @@ class TestInit:
 
     def getDBInterface(self):
         "shouldbe called after connection is made"
-        if not self.hasDatabase:
-            return
         myThread = threading.currentThread()
 
         return myThread.dbi
@@ -293,32 +257,4 @@ class TestInit:
         """
         Database deletion. Global, ignore modules.
         """
-        if not self.hasDatabase:
-            return
-
-        self.init.clearDatabase()
-
-        return
-
-    def attemptToCloseDBConnections(self):
-        return
-        myThread = threading.currentThread()
-        print "Closing DB"
-
-        try:
-            if not myThread.transaction \
-                 and not myThread.transaction.conn \
-                 and not myThread.transaction.conn.closed:
-
-                myThread.transaction.conn.close()
-                myThread.transaction.conn = None
-                print "Connection Closed"
-        except Exception as e:
-            print "tried to close DBI but failed: %s" % e
-
-        try:
-            if hasattr(myThread, "dbFactory"):
-                del myThread.dbFactory
-                print "dbFactory removed"
-        except Exception as e:
-            print "tried to delete factory but failed %s" % e
+        self.dbMgr.tearDown()

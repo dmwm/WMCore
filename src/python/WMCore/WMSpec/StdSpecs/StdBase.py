@@ -8,7 +8,7 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl, block
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -929,6 +929,10 @@ class StdBase(object):
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist" : {"default" : [], "type" : makeList,
                                         "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "BlockBlacklist" : {"default" : [], "type" : makeList, 
+                                         "validate" : lambda x: all([block(y) for y in x])},
+                     "BlockWhitelist" : {"default" : [], "type" : makeList, 
+                                         "validate" : lambda x: all([block(y) for y in x])},
                      "TrustSitelists" : {"default" : False, "type" : strToBool},
                      "UnmergedLFNBase" : {"default" : "/store/unmerged"},
                      "MergedLFNBase" : {"default" : "/store/data"},

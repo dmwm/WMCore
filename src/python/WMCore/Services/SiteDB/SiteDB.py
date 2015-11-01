@@ -287,7 +287,8 @@ class SiteDBJSON(Service):
         for pnn in pnns:
             psn_list = self.PNNtoPSN(pnn)
             if not psn_list:
-                self["logger"].warning("No PSNs for PNN: %s" % pnn)
+                if not pnn.endswith("_MSS") or not pnn.endswith("_Buffer"): 
+                    self["logger"].warning("No PSNs for PNN: %s" % pnn)
             psns.update(psn_list)
         return list(psns)
 

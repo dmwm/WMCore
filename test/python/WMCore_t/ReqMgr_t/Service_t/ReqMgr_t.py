@@ -108,6 +108,9 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         return self.jsonSender.put('data/request/%s' % requestName, data, 
                                      incoming_headers=self.assign_header)
         
+    def getMultiRequestsWithAuth(self, data):
+        return self.jsonSender.post('data/request/bynames', data, incoming_headers=self.create_header)
+        
     def cloneRequestWithAuth(self, requestName, params = {}):
         """
         WMCore.REST doesn take query for the put request.
@@ -126,9 +129,9 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
     
     def insertRequest(self, args):
         # test post method
-        respond = self.postRequestWithAuth(self.rerecoCreateArgs)
-        self.assertEqual(respond[1], 200)
-        requestName = respond[0]['result'][0]['request']
+        response = self.postRequestWithAuth(self.rerecoCreateArgs)
+        self.assertEqual(response[1], 200)
+        requestName = response[0]['result'][0]['request']
         return requestName
         
     def testRequestSimpleCycle(self):
@@ -142,69 +145,73 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         
         ## test get method
         # get by name
-        respond = self.getRequestWithNoStale('name=%s' % requestName)
-        self.assertEqual(respond[1], 200, "get by name")
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('name=%s' % requestName)
+        self.assertEqual(response[1], 200, "get by name")
+        self.assertEqual(self.resultLength(response), 1)
         
         # get by status
-        respond = self.getRequestWithNoStale('status=new')
-        self.assertEqual(respond[1], 200, "get by status")
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('status=new')
+        self.assertEqual(response[1], 200, "get by status")
+        self.assertEqual(self.resultLength(response), 1)
         
         #this create cache
         # need to find the way to reste Etag or not getting from the cache 
-#         respond = self.getRequestWithNoStale('status=assigned')
-#         self.assertEqual(respond[1], 200, "get by status")
-#         self.assertEqual(self.resultLength(respond), 0)
+#         response = self.getRequestWithNoStale('status=assigned')
+#         self.assertEqual(response[1], 200, "get by status")
+#         self.assertEqual(self.resultLength(response), 0)
         
         # get by prepID
-        respond = self.getRequestWithNoStale('prep_id=%s' % self.rerecoCreateArgs["PrepID"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('prep_id=%s' % self.rerecoCreateArgs["PrepID"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 1)
         #import pdb
         #pdb.set_trace()
-        respond = self.getRequestWithNoStale('campaign=%s' % self.rerecoCreateArgs["Campaign"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('campaign=%s' % self.rerecoCreateArgs["Campaign"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 1)
         
-        respond = self.getRequestWithNoStale('inputdataset=%s' % self.rerecoCreateArgs["InputDataset"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('inputdataset=%s' % self.rerecoCreateArgs["InputDataset"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 1)
         
-        respond = self.getRequestWithNoStale('mc_pileup=%s' % self.rerecoCreateArgs["MCPileup"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('mc_pileup=%s' % self.rerecoCreateArgs["MCPileup"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 1)
         
-        respond = self.getRequestWithNoStale('data_pileup=%s' % self.rerecoCreateArgs["DataPileup"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('data_pileup=%s' % self.rerecoCreateArgs["DataPileup"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 1)
         
         
         # test put request with just status change
         data = {'RequestStatus': 'assignment-approved'}
         self.putRequestWithAuth(requestName, data)
-        respond = self.getRequestWithNoStale('status=assignment-approved')
-        self.assertEqual(respond[1], 200, "put request status change")
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('status=assignment-approved')
+        self.assertEqual(response[1], 200, "put request status change")
+        self.assertEqual(self.resultLength(response), 1)
         
         # assign with team
         # test put request with just status change
         data = {'RequestStatus': 'assigned'}
         data.update(self.rerecoAssignArgs)
         self.putRequestWithAuth(requestName, data)
-        respond = self.getRequestWithNoStale('status=assigned')
-        self.assertEqual(respond[1], 200, "put request status change")
-        self.assertEqual(self.resultLength(respond), 1)
+        response = self.getRequestWithNoStale('status=assigned')
+        self.assertEqual(response[1], 200, "put request status change")
+        self.assertEqual(self.resultLength(response), 1)
         
-        respond = self.getRequestWithNoStale('status=assigned&team=%s' % 
+        response = self.getRequestWithNoStale('status=assigned&team=%s' % 
                                              self.rerecoAssignArgs['Team'])
-        self.assertEqual(respond[1], 200, "put request status change")
-        self.assertEqual(self.resultLength(respond), 1)
+        self.assertEqual(response[1], 200, "put request status change")
+        self.assertEqual(self.resultLength(response), 1)
         
-        #respond = self.cloneRequestWithAuth(requestName)
-        #self.assertEqual(respond[1], 200, "put request clone")
-        #respond = self.getRequestWithNoStale('status=new')
-        #self.assertEqual(self.resultLength(respond), 1)
+        response = self.getMultiRequestsWithAuth([requestName])
+        self.assertEqual(self.resultLength(response), 1)
+        self.assertEqual(response[0]['result'][0].keys()[0], requestName)
+        
+        #response = self.cloneRequestWithAuth(requestName)
+        #self.assertEqual(response[1], 200, "put request clone")
+        #response = self.getRequestWithNoStale('status=new')
+        #self.assertEqual(self.resultLength(response), 1)
     
     def atestRequestCombinedGetCall(self):
         """
@@ -219,33 +226,33 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         lheReqName = self.insertRequest(self.lheStep0CreateArgs)
         ## test get method
         # get by name
-        respond = self.getRequestWithNoStale('name=%s&name=%s' % (rerecoReqName, lheReqName))
-        self.assertEqual(respond[1], 200, "get by name")
-        self.assertEqual(self.resultLength(respond), 2)
+        response = self.getRequestWithNoStale('name=%s&name=%s' % (rerecoReqName, lheReqName))
+        self.assertEqual(response[1], 200, "get by name")
+        self.assertEqual(self.resultLength(response), 2)
         
         # get by status
-        respond = self.getRequestWithNoStale('status=new')
-        self.assertEqual(respond[1], 200, "get by status")
-        self.assertEqual(self.resultLength(respond), 2)
+        response = self.getRequestWithNoStale('status=new')
+        self.assertEqual(response[1], 200, "get by status")
+        self.assertEqual(self.resultLength(response), 2)
         
         # get by prepID
-        respond = self.getRequestWithNoStale('prep_id=%s' % self.rerecoCreateArgs["PrepID"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 2)
+        response = self.getRequestWithNoStale('prep_id=%s' % self.rerecoCreateArgs["PrepID"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 2)
         #import pdb
         #pdb.set_trace()
-        respond = self.getRequestWithNoStale('campaign=%s' % self.rerecoCreateArgs["Campaign"])
-        self.assertEqual(respond[1], 200)
-        self.assertEqual(self.resultLength(respond), 2)
+        response = self.getRequestWithNoStale('campaign=%s' % self.rerecoCreateArgs["Campaign"])
+        self.assertEqual(response[1], 200)
+        self.assertEqual(self.resultLength(response), 2)
         
             
     def atestRequestClone(self):
         requestName = self.insertRequest(self.rerecoCreateArgs)
-        respond = self.cloneRequestWithAuth(requestName)
-        print respond
-        self.assertEqual(respond[1], 200, "put request clone")
-        respond = self.getRequestWithNoStale('status=new')
-        self.assertEqual(self.resultLength(respond), 2)
+        response = self.cloneRequestWithAuth(requestName)
+        print response
+        self.assertEqual(response[1], 200, "put request clone")
+        response = self.getRequestWithNoStale('status=new')
+        self.assertEqual(self.resultLength(response), 2)
     
 if __name__ == '__main__':
     unittest.main()

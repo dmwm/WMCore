@@ -165,11 +165,10 @@ class Dataset(StartPolicyInterface):
             else:
                 locations = locations.intersection(dbs.listFileBlockLocation(block['block']))
 
-            locations = set(self.siteDB.PNNstoPSNs(locations))
-            if self.wmspec.locationDataSourceFlag():
-                locations = locations.union(siteWhiteList)
-
         # all needed blocks present at these sites
-        if locations:
-            self.data[datasetPath] = list(locations)
+        if self.wmspec.locationDataSourceFlag():
+            self.data[datasetPath] = locations.union(siteWhiteList)
+        elif locations:
+            self.data[datasetPath] = set(self.siteDB.PNNstoPSNs(locations))
+
         return validBlocks

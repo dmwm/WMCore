@@ -167,8 +167,8 @@ class Dataset(StartPolicyInterface):
 
         # all needed blocks present at these sites
         if self.wmspec.locationDataSourceFlag():
-            self.data[datasetPath] = locations.union(siteWhiteList)
+            self.data[datasetPath] = list(locations.union(siteWhiteList))
         elif locations:
-            self.data[datasetPath] = set(self.siteDB.PNNstoPSNs(locations))
+            self.data[datasetPath] = list(set(self.siteDB.PNNstoPSNs(locations)))
 
         return validBlocks

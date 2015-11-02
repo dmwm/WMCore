@@ -84,7 +84,7 @@ class TestInit:
         self.currModules = []
         self.init = WMInit()
         config = self.getConfiguration()
-        self.dbMgr = DBTest(config.CoreDatabase.connectUrl, config.CoreDatabase.socket)
+        self.dbMgr = DBTest(testClassName, config.CoreDatabase.connectUrl, config.CoreDatabase.socket)
         self.deleteTmp = True
 
     def __del__(self):

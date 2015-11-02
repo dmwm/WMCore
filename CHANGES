@@ -1,3 +1,135 @@
+1.0.10 to 1.0.11.pre7:
+  - Merge pull request #6375 from amaltaro/dataset-location
+  - Fix location for Dataset policy
+  - Merge pull request #6373 from ticoann/debug_message_sitedb
+  - Merge pull request #6374 from ticoann/add_post_request_api
+  - add POST request taking list of request names and returning details
+  - change warning to debug message for missing PNN PSN mapping
+  - Merge pull request #6369 from amaltaro/sitedb-extends
+  - Fixed some pylint messages
+  - Fix typo in SiteDB
+  - 1.0.11.pre6
+  - Merge pull request #6364 from amaltaro/data-location
+  - Fix a fix for DataLocation
+  - 1.0.11.pre5
+  - Merge pull request #6358 from ticoann/fix_pnn_psn_wq
+  - Remove sitesFromStorageElements
+  - Merge pull request #6361 from ticoann/fix_dataset_t
+  - fix Dataset_t
+  - Merge pull request #6359 from ticoann/status_type_view
+  - add api getting request by status and type
+  - Update UnstableTests.txt
+  - Merge pull request #6354 from hufnagel/phedexinjector-improvements
+  - some PhEDExInjector improvements
+  - Merge pull request #6333 from hufnagel/trussitelists-jobsplitting
+  - Merge pull request #6355 from vkuznet/pycurl-fix7
+  - Form url with encoded data only for non empty params, otherwise mailformed url is constructed
+  - Merge pull request #6347 from vkuznet/pycurl-fix6
+  - make the jobsplitting trustsitelists aware
+  - Merge pull request #6348 from ticoann/remove_phedex_only_flag
+  - Merge pull request #6351 from ticoann/announce_cascade
+  - remove phedexOnly flag
+  - add cascade option for announced workflow as well
+  - Merge pull request #6341 from ericvaandering/fix_27_tests
+  - Assign params in POST/DELETE/PUT calls only if params is non empty dict
+  - Update UnstableTests.txt
+  - 1.0.11.pre4
+  - Merge pull request #6336 from ticoann/add_cascade_closeout
+  - Merge pull request #6289 from AndresTanasijczuk/tweakPset
+  - add cascade closeout
+  - Merge pull request #6331 from amaltaro/workqueue-pnns
+  - Merge pull request #6339 from amaltaro/eventbased-pu
+  - Merge pull request #6342 from ticoann/task_archiver_fix
+  - Merge pull request #6343 from ticoann/fix_double_stats
+  - fixed some unittests
+  - fix double calculation of total stats
+  - fix TaskArchiver_t
+  - Merge pull request #6286 from AndresTanasijczuk/phedexonly
+  - Clean up some pylint complaints
+  - Merge pull request #6236 from ticoann/fix_archive_unittest
+  - Remove access to unittest internal variable which is breaking 2.7
+  - fixed pylint messages
+  - Added skipPileupEvents functionality to EventBased algo
+  - Update UnstableTests.txt
+  - Update UnstableTests.txt
+  - Merge pull request #6334 from ticoann/workqueue_t_fix
+  - fix WorkQueue_t test
+  - Update WQ to handle PhEDExNodeNames; fixed remote read
+  - Update UnstableTests.txt
+  - Merge pull request #6338 from ericvaandering/fix_underscore
+  - Allow _ as a variable name and anything that starts with dummy
+  - Update UnstableTests.txt
+  - Update UnstableTests.txt
+  - 1.0.11.pre3
+  - Merge pull request #6327 from amaltaro/monteCarlo-pu
+  - Merge pull request #6330 from hufnagel/phedexinjector-deadlock
+  - added unittests
+  - fix a PhEDExInjector deadlock problem
+  - Merge pull request #6297 from hufnagel/phedexinject-chunks
+  - do the phedex file injection in chunks
+  - Merge pull request #6326 from ticoann/fix_output_dataset_reqmgr2
+  - Added Pileup support to MCFromGEN
+  - Merge pull request #6324 from hufnagel/copy-delete-subscription
+  - implement a copy-delete type subscription mode
+  - add missing output dataset in reqmgr2
+  - Merge pull request #6288 from hufnagel/dbs3upload-chunks
+  - Merge pull request #6322 from amaltaro/dqmHarvest-dset-master
+  - Merge pull request #6189 from hufnagel/merge-force-singlecore
+  - Clean most of the pylint messages
+  - Update UnstableTests.txt
+  - Make dataset workunit for DQMHarvest instead of blocks
+  - Merge pull request #6302 from juztas/patch-2
+  - Merge pull request #6197 from ticoann/update_unittest
+  - use latest version for default rpm
+  - remove alert unittest in job/task archiver
+  - Merge pull request #6319 from ticoann/acdc_reqmgr2
+  - Merge pull request #6320 from ticoann/pnn_oracle
+  - _|dummy used in the end for dummy variables
+  - fix pnn patch for Oracle
+  - simplify/rewrite dbs3upload
+  - Merge pull request #6314 from ticoann/reqmgr_auth_fix
+  - create acdc request depending on the original request creation
+  - Merge pull request #6318 from ticoann/pnn_fix
+  - add pnn in eos stage out
+  - Change pre-python 2.6 idioms to what DMWMBot suggests.
+  - Add phedexOnly flag in listFileBlockLocation and listDatasetLocation DBS3Reader APIs.
+  - Fix: fileBlockName -> fileBlockNames.
+  - 1.0.11.pre2
+  - Merge pull request #5989 from alexanderrichards/merging_updated
+  - Merge pull request #6315 from amaltaro/comps-logging
+  - Log components activity
+  - Renaming new ClassAd
+  - unittest fixup
+  - Change the DBS URL
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - unittest fixup
+  - fixing unittests
+  - adding new syntax requirements
+  - migrate SiteLocalConfig to use same key for pnn as in xml
+  - populate database from dataProcessing siteDB call
+  - caching PSN2PNN from database
+  - SE to PNN Migration
+  - reqmgr2 auth fix
+  - Merge pull request #6308 from ticoann/wmagent_reqmgr2_support
+  - Merge pull request #6311 from ticoann/wmstats_reqmgr2_support
+  - 1.0.11.pre1
+  - Merge pull request #6313 from vkuznet/fix_formatter
+  - Fix unit tests and add testGenerator method to verify that return type for generator is appropriate
+  - Use internal json method for generator data type
+  - Dict and list should be handled by json.dumps instead of str
+  - Fix message for assert
+  - Fix formatter method to handle generator type
+  - create wmstats link according to request origin
+  - change logging args due to pylint warning
+  - make reqmgr and reqmgr2 call automatically
+  - Raise exception if PSet's process could not be loaded, and if process.source does not exist or is None. Fixes #6095
+  - merge jobs should always be run singlecore
+
 1.0.10 to 1.0.11.pre6:
   - Merge pull request #6364 from amaltaro/data-location
   - Fix a fix for DataLocation

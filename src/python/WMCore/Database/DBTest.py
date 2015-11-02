@@ -18,6 +18,7 @@ from __future__ import print_function, division
 
 # system modules
 import os
+import time
 import logging
 import threading
 
@@ -42,7 +43,7 @@ def closeTransactions():
                 pass
 
 class DBTest(object):
-    def __init__(self, dbUrl=None, socket=None):
+    def __init__(self, clsName, dbUrl=None, socket=None):
         myThread = threading.currentThread()
         self.logger = myThread.logger if hasattr(myThread, "logger") else logging.getLogger()
         options = {}
@@ -65,8 +66,9 @@ class DBTest(object):
             myThread.dialect = dialect
         dbFactory = DBFactory(self.logger, dbUrl, options)
         self.dbi = dbFactory.connect()
-        self.dbName = os.environ.get('WMCORE_TEST_DATABASE', \
-                'unittest_%s' % self.__class__.__name__)
+        if not clsName:
+            clsName = '%s_%s' % (self.__class__.__name__, int(time.time()))
+        self.dbName = os.environ.get('WMCORE_TEST_DATABASE', 'unittest_%s' % abs(hash(clsName)))
         if not hasattr(myThread, 'dbi'):
             myThread.dbi = self.dbi
         if not hasattr(myThread, 'transaction'):

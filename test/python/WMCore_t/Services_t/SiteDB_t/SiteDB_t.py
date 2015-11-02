@@ -6,9 +6,6 @@ Test case for SiteDB
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
-
-from nose.plugins.attrib import attr
 
 class SiteDBTest(unittest.TestCase):
     """
@@ -19,18 +16,19 @@ class SiteDBTest(unittest.TestCase):
         """
         Setup for unit tests
         """
-        EmulatorHelper.setEmulators(siteDB = True)
         self.mySiteDB = SiteDBJSON()
 
-    def tearDown(self):
-        EmulatorHelper.resetEmulators()
 
     def testCmsNametoPhEDExNode(self):
         """
         Tests CmsNametoSE
         """
-        target = ['T1_US_FNAL_Disk', 'T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
+        target = ['T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
+        self.failUnless(sorted(results) == sorted(target))
+        
+        target = ['T1_US_FNAL_Disk']
+        results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL_Disk")
         self.failUnless(sorted(results) == sorted(target))
 
     def testCmsNametoSE(self):
@@ -45,8 +43,8 @@ class SiteDBTest(unittest.TestCase):
         """
         Tests CmsNamePatterntoSE
         """
-        target = [u'T2_XX_SiteA', u'T2_XX_SiteB', u'T2_XX_SiteC']
-        results = self.mySiteDB.cmsNametoSE("%T2_XX")
+        target = [u'srm-eoscms.cern.ch', u'srm-eoscms.cern.ch', u'storage01.lcg.cscs.ch', u'eoscmsftp.cern.ch']
+        results = self.mySiteDB.cmsNametoSE("%T2_CH")
         self.failUnless(sorted(results) == sorted(target))
 
     def testSEtoCmsName(self):
@@ -56,8 +54,17 @@ class SiteDBTest(unittest.TestCase):
         target = [u'T1_US_FNAL']
         results = self.mySiteDB.seToCMSName("cmssrm.fnal.gov")
         self.failUnless(results == target)
-        target = sorted([u'T2_CH_CERN', u'T2_CH_CERN_AI', u'T2_CH_CERN_HLT', u'T2_CH_CERN_T0'])
+        
+        target = sorted([u'T2_CH_CERN', u'T2_CH_CERN_HLT'])
         results = sorted(self.mySiteDB.seToCMSName("srm-eoscms.cern.ch"))
+        self.failUnless(sorted(results) == sorted(target))
+        
+        target = sorted([u'T0_CH_CERN', u'T1_CH_CERN'])
+        results = sorted(self.mySiteDB.seToCMSName("srm-cms.cern.ch"))
+        self.failUnless(sorted(results) == sorted(target))
+        
+        target = sorted([u'T2_CH_CERN_AI'])
+        results = sorted(self.mySiteDB.seToCMSName("eoscmsftp.cern.ch"))
         self.failUnless(sorted(results) == sorted(target))
 
     def testDNUserName(self):
@@ -104,6 +111,11 @@ class SiteDBTest(unittest.TestCase):
         result = self.mySiteDB.PNNtoPSN('T2_UK_London_IC')
         self.failUnless(result == ['T2_UK_London_IC'])
         return
+    
+    def testCMSNametoList(self):
+        result = self.mySiteDB.cmsNametoList("T1_US*", "SE")
+        self.failUnless(result == [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,8 +27,6 @@
     "StepThreeConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a467ac3",
     "PrepID": "ReDigi-cmsRun3",            
     "Group": "DATAOPS",
-    "SplittingAlgo": "EventAwareLumiBased",
-    "EventsPerJob": 100,
     "TimePerEvent": 10.5,
     "StepTwoTimePerEvent": 20.5,
     "StepThreeTimePerEvent": 30.5,
@@ -37,16 +35,6 @@
     "StepTwoSizePerEvent": 2600,
     "StepThreeSizePerEvent": 3600,
     "OpenRunningTimeout" : 3600
-},
-"changeSplitting":
-{
-    "StepOneProc" :
-    {
-        "SplittingAlgo" : "LumiBased",
-        "lumis_per_job" : 8,
-        "halt_job_on_file_boundaries" : "True",
-        "include_parents" : "False"
-    }
 },
 "assignRequest":
 {

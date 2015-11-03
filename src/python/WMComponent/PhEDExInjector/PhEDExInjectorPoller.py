@@ -274,8 +274,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             try:
                 self.setStatus.execute(lfnList, 1, transaction = False)
             except Exception:
-                # possible race conditions, retry once after 1s
-                time.sleep(1)
+                # possible deadlock with DBS3Upload, retry once after 5s
+                logging.warning("Oracle exception, possible deadlock due to race condition, retry after 5s sleep")
+                time.sleep(5)
                 self.setStatus.execute(lfnList, 1, transaction = False)
 
         return

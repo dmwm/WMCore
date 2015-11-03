@@ -433,8 +433,6 @@ class Report:
         if "locations" in file:
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
-#        elif "SEName" in file:
-#            fileRef.location = [file["SEName"]]
         elif "PNN" in file:
             fileRef.location = [file["PNN"]]
 

@@ -68,8 +68,6 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
 
-        assert mySiteConfig.localStageOut["se-name"] == "cmssrmdisk.fnal.gov", \
-               "Error: Wrong se name from local stageout."
         assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
                "Error: Wrong stage out command."
         assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
@@ -122,8 +120,6 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
 
-        assert mySiteConfig.localStageOut["se-name"] == "se1.accre.vanderbilt.edu", \
-               "Error: Wrong se name from local stageout."
         assert mySiteConfig.localStageOut["command"] == "srmv2", \
                "Error: Wrong stage out command."
         assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=srmv2", \
@@ -133,8 +129,6 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Incorrect number of fallback stageout methods"
         assert mySiteConfig.fallbackStageOut[0]["command"] == "srmv2-lcg", \
                "Error: Incorrect fallback command."
-        assert mySiteConfig.fallbackStageOut[0]["se-name"] == "se1.accre.vanderbilt.edu", \
-               "Error: Incorrect fallback SE."
         assert mySiteConfig.fallbackStageOut[0]["lfn-prefix"] == "srm://se1.accre.vanderbilt.edu:6288/srm/v2/server?SFN=", \
                "Error: Incorrect fallback LFN prefix."
         return
@@ -166,12 +160,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         os.environ["CMS_PATH"] = "/cvmfs/cms.cern.ch"
 
         phedex = PhEDEx()
-        nodes = phedex.getNodeMap()["phedex"]["node"]
-
-        # Make a dict for translating the se names into regular site names.
-        node_map = {}
-        for node in nodes:
-            node_map[str(node[u"se"])] = str(node[str(u"name")])
+        nodes = [node[u'name'] for node in phedex.getNodeMap()["phedex"]["node"]]
         
         for d in os.listdir("/cvmfs/cms.cern.ch/SITECONF/"):
             # Only T0_, T1_... folders are needed
@@ -182,12 +171,8 @@ class SiteLocalConfigTest(unittest.TestCase):
                 except SiteConfigError as e:
                     print(e.args[0])
                 phedexNode = slc.localStageOut.get("phedex-node")
-                # If slc is correct, perform check
-                if "se-name" in slc.localStageOut and slc.localStageOut["se-name"] in node_map and phedexNode != None:
-                    self.assertEqual(phedexNode, node_map[slc.localStageOut["se-name"]], \
-                            "Error: Node specified in SLC (%s) doesn't match node returned by PhEDEx api (%s)." \
-                            % (phedexNode, node_map[slc.localStageOut["se-name"]]))
-                    
+                self.assertTrue(phedexNode in nodes,
+                                "Error: Node specified in SLC (%s) not in list returned by PhEDEx api" % phedexNode)
         return 
 
 if __name__ == "__main__":

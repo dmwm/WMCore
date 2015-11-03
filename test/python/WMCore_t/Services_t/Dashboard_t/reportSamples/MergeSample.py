@@ -156,7 +156,7 @@ FrameworkJobReport.logArch1.output.logArchive.section_('dataset')
 FrameworkJobReport.logArch1.id = None
 FrameworkJobReport.logArch1.counter = 2
 FrameworkJobReport.WMAgentJobName = 'd0080012-ae33-11e1-a16b-003048c9c3fe-0'
-FrameworkJobReport.seName = 'srmcms.pic.es'
+FrameworkJobReport.pnn = 'srmcms.pic.es'
 FrameworkJobReport.WMAgentJobID = 43441
 FrameworkJobReport.steps = ['cmsRun1', 'stageOut1', 'logArch1']
 FrameworkJobReport.section_('stageOut1')

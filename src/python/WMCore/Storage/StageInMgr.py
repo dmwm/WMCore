@@ -84,13 +84,6 @@ class StageInMgr:
         msg = "Local Stage Out Implementation to be used is:"
         msg += "%s\n" % implName
 
-        seName = self.siteCfg.localStageOut.get("se-name", None)
-        if seName == None:
-            msg = "Unable to retrieve local stage out se-name\n"
-            msg += "From site config file.\n"
-            msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
-        msg += "Local Stage Out SE Name to be used is %s\n" % seName
         pnn = self.siteCfg.localStageOut.get("phedex-node", None)
         if pnn == None:
             msg = "Unable to retrieve local stage out phedex-node\n"
@@ -131,14 +124,12 @@ class StageInMgr:
         overrideParams = {
             "command" : None,
             "option" : None,
-            "se-name" : None,
             "phedex-node" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
-            overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['phedex-node'] = overrideConf['phedex-node']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
         except Exception as ex:
@@ -223,21 +214,18 @@ class StageInMgr:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
-        se-name - the Name of the SE to which the file is being xferred
         phedex-node - the Name of the PNN to which the file is being xferred
 
         """
         localPfn = os.path.join(os.getcwd(), os.path.basename(lfn))
 
         if override:
-            seName = override['se-name']
             pnn = override['phedex-node']
             command = override['command']
             options = override['option']
             pfn = "%s%s" % (override['lfn-prefix'], lfn)
             protocol = command
         else:
-            seName = self.siteCfg.localStageOut['se-name']
             pnn = self.siteCfg.localStageOut['phedex-node']
             command = self.siteCfg.localStageOut['command']
             options = self.siteCfg.localStageOut.get('option', None)

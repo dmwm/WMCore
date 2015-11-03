@@ -495,7 +495,7 @@ class RuntimeTest(unittest.TestCase):
 
         # Now validate the report
         self.assertEqual(report.data.ceName, socket.gethostname())
-        self.assertEqual(report.data.seName, 'cmssrm.fnal.gov')
+        self.assertEqual(report.data.pnn, 'T1_US_FNAL_Disk')
         self.assertEqual(report.data.siteName, 'T1_US_FNAL')
         self.assertEqual(report.data.hostName, socket.gethostname())
         self.assertTrue(report.data.completed)

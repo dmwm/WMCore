@@ -36,7 +36,7 @@ class DBSBufferBlock:
 
         Expects:
           name:  The blockname in full
-          location: The SE-name of the site the block is at
+          location: The PNN of the site the block is at
         """
 
 

@@ -360,12 +360,12 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
     return results
 
 
-def createDBSStorageElement(seName):
+def createDBSStorageElement(pnn):
     """
     _createDBSStorageElement_
 
     """
-    return DbsStorageElement(Name = seName)
+    return DbsStorageElement(Name = pnn)
 
 
 def createDBSFileBlock(blockName):
@@ -379,20 +379,20 @@ def createDBSFileBlock(blockName):
     """
     return DbsFileBlock( Name = blockName)
 
-def getDBSFileBlock(dbsApiRef, procDataset, seName):
+def getDBSFileBlock(dbsApiRef, procDataset, pnn):
     """
     _getDBSFileBlock_
 
-    Given the procDataset and seName provided, get the currently open
+    Given the procDataset and pnn provided, get the currently open
     file block for that dataset/se pair.
     If an open block does not exist, then create a new block and
     return that
 
     """
-    logging.warning("getDBSFileBlocks(): dset, se: %s, %s" % (procDataset, seName))
+    logging.warning("getDBSFileBlocks(): dset, pnn: %s, %s" % (procDataset, pnn))
 
     allBlocks = dbsApiRef.listBlocks(procDataset, block_name = "*",
-                                     storage_element_name = "*")
+                                     phedex_node_name = "*")
 
     logging.warning("getDBSFileBlock(): all blocks %s" % allBlocks)
 
@@ -403,7 +403,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
     blockRef = None
     if len(openBlocks) > 1:
         msg = "Too many open blocks for dataset:\n"
-        msg += "SE: %s\n" % seName
+        msg += "PNN: %s\n" % pnn
         msg += "Dataset: %s\n" %procDataset
         msg += "Using last open block\n"
         logging.warning(msg)
@@ -419,7 +419,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
         logging.warning("getDBSFileBlock(): Creating a new block...")
 
         newBlockName = dbsApiRef.insertBlock (procDataset, None ,
-                                              storage_element_list = [seName])
+                                              phedex_node_list = [pnn])
 
         # get from DBS listBlocks API the DbsFileBlock newly inserted
         blocks = dbsApiRef.listBlocks(procDataset, block_name = newBlockName )
@@ -435,7 +435,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
             logging.error(msg)
             # FIXME: throw an error ?
 
-## StorageElementList below is wrong: it should be a list of dictionary [ { 'Name': seName } ]
+## StorageElementList below is wrong: it should be a list of dictionary [ { 'Name': pnn } ]
 ## In order to define the DbsFileBlock it should be enough to specify its blockname and
 ## it shouldn't be needed to specify the SE and Dataset again,
 ## however since this is not the case, it's safer to get the DbsFileBlock from listBlocks DBS API
@@ -443,10 +443,10 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
 #        blockRef = DbsFileBlock(
 #            Name = newBlockName,
 #            Dataset = procDataset,
-#            StorageElementList = [ seName ]
+#            PhEDExNodeList = [ pnn ]
 #            )
 
 
 
-    logging.warning("Open FileBlock located at SE: %s to use is FileBlock: %s "%(seName,blockRef['Name']))
+    logging.warning("Open FileBlock located at PNN: %s to use is FileBlock: %s "%(pnn,blockRef['Name']))
     return blockRef

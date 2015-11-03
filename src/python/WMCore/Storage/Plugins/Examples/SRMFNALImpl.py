@@ -50,7 +50,7 @@ class SRMImpl(StageOutImplV2):
         """
         return '/pnfs/cms/WAX' + pfn.split('=')[1]
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, pnn, command, options, protocol, checksum  ):
         toPfn   = self.createSourceName(protocol, toPfn)
         fromPfn = self.createSourceName(protocol, fromPfn)
         (_,reportFile) = tempfile.mkstemp()
@@ -98,7 +98,7 @@ class SRMImpl(StageOutImplV2):
 
 
 
-    def doDelete(self, pfn, seName, command, options, protocol  ):
+    def doDelete(self, pfn, pnn, command, options, protocol  ):
         """
         handle both srm and file pfn types
         """

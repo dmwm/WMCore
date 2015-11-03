@@ -124,7 +124,6 @@ class LogArchive(Executor):
 
         fileInfo = {'LFN': self.getLFN(tarName),
             'PFN' : tarBallLocation,
-            'SEName' : None,
             'PNN' : None,
             'GUID' : None
             }
@@ -136,7 +135,6 @@ class LogArchive(Executor):
             self.report.addOutputModule(moduleName = "logArchive")
             (adler32, cksum) = calculateChecksums(tarBallLocation)
             reportFile = {"lfn": fileInfo["LFN"], "pfn": fileInfo["PFN"],
-#                          "location": fileInfo["SEName"], "module_label": "logArchive",
                           "location": fileInfo["PNN"], "module_label": "logArchive",
                           "events": 0, "size": 0, "merged": False,
                           "checksums": {'adler32': adler32, 'cksum' : cksum}}

@@ -73,7 +73,7 @@ def createOptionParser():
     myOptParser.add_option("--ce-name", dest = "ceName",
                            help = "Specify the CEName for the site")
     myOptParser.add_option("--pnn", dest = "pnn",
-                           help = "Specify the SEName for the site")
+                           help = "Specify the PNN for the site")
     myOptParser.add_option("--cms-name", dest = "cmsName",
                            help = "Specify the name of the site in SiteDB")
     myOptParser.add_option("--task-type", dest = "taskType",

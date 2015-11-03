@@ -51,7 +51,7 @@ class VandyImpl(StageOutImplV2):
             logging.error(output)
 
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum):
+    def doTransfer(self, fromPfn, toPfn, stageOut, pnn, command, options, protocol, checksum):
         """
             if stageOut is true:
                 The fromPfn is the LOCAL FILE NAME on the node, without file://
@@ -92,7 +92,7 @@ class VandyImpl(StageOutImplV2):
         return dstPath
 
 
-    def doDelete(self, pfn, seName, command, options, protocol  ):
+    def doDelete(self, pfn, pnn, command, options, protocol  ):
         """
         _removeFile_
 

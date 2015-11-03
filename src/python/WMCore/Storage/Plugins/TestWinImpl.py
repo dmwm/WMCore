@@ -21,8 +21,8 @@ class TestWinImpl(StageOutImplV2):
     Test plugin that always returns success
 
     """
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, pnn, command, options, protocol, checksum  ):
         return "WIN!!!"
 
-    def doDelete(self, lfn, pfn, seName, command, options, protocol  ):
+    def doDelete(self, lfn, pfn, pnn, command, options, protocol  ):
         pass

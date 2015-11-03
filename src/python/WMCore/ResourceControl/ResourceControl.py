@@ -266,10 +266,10 @@ class ResourceControl(WMConnectionBase):
         _insertAllSEs_
 
         Insert all SEs into WMBS ResourceControl
-        This uses the Services.SiteDB to insert all SEs under a common
+        This uses the Services.SiteDB to insert all PNNs under a common
         CE.  It is meant to be used with WMS submission.
 
-        Sites will be named siteName_SEName
+        Sites will be named siteName_PNN
 
         It expects a taskList of the following form:
 

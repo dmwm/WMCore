@@ -20,6 +20,7 @@ from dbs.apis.dbsClient import DbsApi
 from mechanize import Browser
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
 #dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"
@@ -32,6 +33,7 @@ class RequestQuery:
         self.config = config
         
         # Initialise connections
+        self.mySiteDB = SiteDBJSON()
         self.phedex = PhEDEx({"endpoint":"https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
         self.dbsPhys01 = DbsApi(url = dbs_base_url+"phys01/DBSReader/")
         self.dbsPhys02 = DbsApi(url = dbs_base_url+"phys02/DBSReader/")
@@ -180,7 +182,6 @@ class RequestQuery:
         Return a list block origin sites.
         """
         
-        sites=[]
         local_dbs = dbs_url.split('/')[5]
         if local_dbs == 'phys01':
             response = self.dbsPhys01.listBlocks(detail=True,dataset=data)
@@ -188,19 +189,14 @@ class RequestQuery:
             response = self.dbsPhys02.listBlocks(detail=True,dataset=data)
         elif local_dbs == 'phys03':
             response = self.dbsPhys03.listBlocks(detail=True,dataset=data)
-        
-        seList = []
+
+        pnnList = set()
         for block in response:
-            if block['origin_site_name'] not in seList:
-                seList.append(block['origin_site_name'])
+            pnnList.add(block['origin_site_name'])
+        psnList = self.mySiteDB.PNNstoPSNs(pnnList)
         
-        siteNames = []
-        for node in self.nodeMappings['phedex']['node']:
-            if node['se'] in seList:
-                siteNames.append(node['name']) 
-        
-        return siteNames, seList
-    
+        return psnList, list(pnnList)
+
     def phEDExNodetocmsName(self, nodeList):
         """
         Convert PhEDEx node name list to cms names list 
@@ -440,8 +436,7 @@ class RequestQuery:
                 self.br.back()
                 
                 # Get dataset site info:
-                phedex_map, se_names = self.getDatasetOriginSites(dbs_url,input_dataset)
-                sites = self.phEDExNodetocmsName(phedex_map)
+                psnList, pnnList = self.getDatasetOriginSites(dbs_url,input_dataset)
                 
                 infoDict = {}
                 # Build store results json
@@ -468,7 +463,7 @@ class RequestQuery:
                 infoDict["CMSSWVersion"] = release
                 infoDict["ScramArch"] = scram_arch
                 infoDict["ProcessingVersion"] = dataset_version                    
-                infoDict["SiteWhitelist"] = list(sites)
+                infoDict["SiteWhitelist"] = psnList
                 
                 # Create report for Migration2Global
                 report = {}
@@ -486,8 +481,8 @@ class RequestQuery:
                 report["ticketStatus"] = self.StatusByValueDict[status_id[0]]
                 report["assignedTo"] = AssignedToByValueDict[assignedTo_id[0]]
                 report["localUrl"] = dbs_url
-                report["sites"] = list(sites)
-                report["se_names"] = list(se_names)
+                report["sites"] = psnList
+                report["pnns"] = pnnList
 
                 # if the request is closed, change the item status to report to Closed
                 if report["ticketStatus"] == "Done" and RequestStatusByValueDict[request_status_id[0]] == "Closed":
@@ -586,7 +581,7 @@ class RequestQuery:
         """
         Print out a report
         """
-        print("%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','se_names')) 
+        print("%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','pnns')) 
         print("%20s %10s %5s %35s %10s %50s %50s" %( '-'*20,'-'*10,'-'*5,'-'*35,'-'*10,'-'*50,'-'*50 ))
         
         for report in requests:
@@ -597,7 +592,7 @@ class RequestQuery:
             assigned = report["assignedTo"]
             localUrl = report["localUrl"].split('/')[5]
             site = ', '.join(report["sites"])
-            se_names = ', '.join(report["se_names"])
-            print("%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,se_names))  
+            pnns = ', '.join(report["pnns"])
+            print("%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,pnns))  
 
         

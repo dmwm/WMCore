@@ -95,11 +95,11 @@ class LCGImpl(StageOutImpl):
             options = None
             useCVMFS = True
 
-        copyCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose "
+        copyCommand = "lcg-cp -b -D srmv2 --vo cms --srm-timeout 2400 --sendreceive-timeout 2400 --connect-timeout 300 --verbose"
         if options != None:
             copyCommand += " %s " % options
         copyCommand += " %s " % sourcePFN
-        copyCommand += " %s \n" % targetPFN
+        copyCommand += " %s 2> stageout.log" % targetPFN
 
         # for CVMFS skip the usual environment setup and use grid.cern.ch instead
         # also open a sub-shell and remove the cms.cern.ch path elements
@@ -121,12 +121,13 @@ class LCGImpl(StageOutImpl):
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?
-            echo "lcg-cp exit status: $EXIT_STATUS"
+            echo "lcg-cp logging:"; cat stageout.log
+            echo -e "\nlcg-cp exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
-               echo "Non-zero lcg-cp Exit status!!!"
-               echo "Cleaning up failed file:"
+                echo "Non-zero lcg-cp Exit status!!!"
+                echo "Cleaning up failed file:"
                 %s
-               exit 60311
+                exit 60311
             fi
 
             """ % self.createRemoveFileCommand(targetPFN)
@@ -137,7 +138,7 @@ class LCGImpl(StageOutImpl):
             remotePFN, localPFN = targetPFN, sourcePFN.replace("file:", "", 1)
 
         result += "FILE_SIZE=`stat -c %s"
-        result += " %s `\n" % localPFN
+        result += " %s`\n" % localPFN
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
 
         removeCommand = self.createRemoveFileCommand(targetPFN)
@@ -148,44 +149,37 @@ class LCGImpl(StageOutImpl):
             localAdler32 = str(checksums['adler32']).zfill(8)
             checksumCommand = \
             """
-                if [[ "X$SRM_CHECKSUM" != "X" ]]; then
-                    if [[ "$SRM_CHECKSUM" == "%s" ]]; then
-                        exit 0
-                    else
-                        echo "Error: Checksum Mismatch between local and SE"
-                        echo "Cleaning up failed file"
-                        %s
-                        exit 60311
-                    fi
-                else
+            if [[ "X$SRM_CHECKSUM" != "X" ]]; then
+                if [[ "$SRM_CHECKSUM" == "%s" ]]; then
                     exit 0
+                else
+                    echo "ERROR: Checksum Mismatch between local and SE"
+                    echo "Cleaning up failed file"
+                    %s
+                    exit 60311
                 fi
+            else
+                exit 0
+            fi
             """ % (localAdler32, removeCommand)
         else:
             checksumCommand = "exit 0"
 
         metadataCheck = \
         """
-        for ((a=1; a <= 10 ; a++))
-        do
-           LCG_OUTPUT=`lcg-ls -l -b -D srmv2 %s 2>/dev/null`
-           SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
-           SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
-           echo "Remote Size is $SRM_SIZE"
-           echo "Remote Checksum is $SRM_CHECKSUM"
-           if [[ $SRM_SIZE > 0 ]]; then
-              if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-                 %s
-              else
-                 echo "Error: Size Mismatch between local and SE"
-                 echo "Cleaning up failed file:"
-                 %s
-                 exit 60311
-              fi
-           else
-              sleep 2
-           fi
-        done
+        LCG_OUTPUT=`lcg-ls -l -b -D srmv2 --srm-timeout 1800 %s 2>/dev/null`
+        SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
+        SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
+        echo "Remote Size is $SRM_SIZE"
+        echo "Remote Checksum is $SRM_CHECKSUM"
+        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+            %s
+        else
+            echo $LCG_OUTPUT
+            echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+            %s
+            exit 60311
+        fi
         echo "Cleaning up failed file:"
         %s
         exit 60311
@@ -207,7 +201,7 @@ class LCGImpl(StageOutImpl):
         CleanUp pfn provided
 
         """
-        command = "%s lcg-del -b -l -D srmv2 --vo cms %s" % (self.setups, pfnToRemove)
+        command = "%s lcg-del -b -l -D srmv2 --srm-timeout 1800 --vo cms %s" % (self.setups, pfnToRemove)
         self.executeCommand(command)
 
 

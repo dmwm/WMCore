@@ -96,12 +96,14 @@ class DBTest(object):
     def setUp(self):
         """Setup database for unittests"""
         if  self.dbName.startswith('unittest'):
+            print("DBTest setUp")
             self.deleteDatabase()
             self.createDatabase()
 
     def tearDown(self):
         """Tear down database"""
         if self.dbName.startswith('unittest'):
+            print("DBTest tearDown")
             self.deleteDatabase()
 
     def createDatabase(self, dbName=None):

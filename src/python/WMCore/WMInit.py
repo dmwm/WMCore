@@ -150,6 +150,7 @@ class WMInit:
         setDatabaseConnection.
         """
         myThread = threading.currentThread()
+        print("WMInit, setSchema", myThread.__dict__)
 
         parameters = None
         flag = False

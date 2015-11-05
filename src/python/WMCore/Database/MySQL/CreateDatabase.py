@@ -32,3 +32,10 @@ class CreateDatabase(DBFormatter):
                 raise exp
         sql = """USE %s""" % dbName
         self.dbi.processData(sql, {}, conn = conn)
+        sql = """SHOW ENGINES"""
+        results = self.dbi.processData(sql, {}, conn = conn)
+        print("SHOW ENGINES")
+        for row in self.formatDict(results):
+            print(row)
+        sql = """SET storage_engine=INNODB"""
+        self.dbi.processData(sql, {}, conn = conn)

@@ -49,6 +49,9 @@ class DBTest(object):
         options = {}
         if not dbUrl:
             dbUrl = os.getenv('DATABASE', None)
+        # we need bare db connection with any DB name part
+        dialect, rest = dbUrl.split('://')
+        dbUrl = "%s://%s/" % (dialect, rest.split('/')[0])
         if socket and dbUrl.find('unix_socket') == -1:
             dbUrl = '%s?unix_socket=%s' % (dbUrl, socket)
         if not hasattr(myThread, 'dialect'):
@@ -82,6 +85,13 @@ class DBTest(object):
             print("WMCORE_TEST_DATABASE_DELETE=%s, will delete %s" % (enforce, self.dbName))
             self.deleteDatabase()
             self.createDatabase()
+
+    def __del__(self):
+        "Clean-up method"
+        try:
+            self.tearDown()
+        except:
+            pass
 
     def setUp(self):
         """Setup database for unittests"""

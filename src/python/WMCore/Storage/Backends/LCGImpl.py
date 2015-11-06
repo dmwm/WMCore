@@ -5,15 +5,12 @@ _LCGImpl_
 Implementation of StageOutImpl interface for lcg-cp
 
 """
-import os, re
+import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutError import StageOutError
-
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
-
 
 
 class LCGImpl(StageOutImpl):
@@ -31,10 +28,10 @@ class LCGImpl(StageOutImpl):
 
         self.setups = ''
         setupScripts = {
-            'OSG_GRID'           : '/setup.sh',
-            'GLITE_WMS_LOCATION' : '/etc/profile.d/glite-wmsui.sh',
-            'GLITE_LOCATION'     : '/../etc/profile.d/grid-env.sh',
-            'GRID_ENV_LOCATION'  : '/grid-env.sh',
+            'OSG_GRID':           '/setup.sh',
+            'GLITE_WMS_LOCATION': '/etc/profile.d/glite-wmsui.sh',
+            'GLITE_LOCATION':     '/../etc/profile.d/grid-env.sh',
+            'GRID_ENV_LOCATION':  '/grid-env.sh',
         }
 
         for env, script in setupScripts.iteritems():
@@ -42,7 +39,6 @@ class LCGImpl(StageOutImpl):
                 fullScript = os.path.normpath(os.path.join(os.environ[env], script))
                 if os.path.isfile(fullScript):
                     self.setups += 'source %s; ' % fullScript
-
 
     def createSourceName(self, protocol, pfn):
         """
@@ -57,7 +53,6 @@ class LCGImpl(StageOutImpl):
             return "file:%s" % os.path.abspath(pfn)
         else:
             return pfn
-
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -79,8 +74,7 @@ class LCGImpl(StageOutImpl):
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -115,13 +109,13 @@ class LCGImpl(StageOutImpl):
 
             result += copyCommand
         else:
-            result += self.setups 
+            result += self.setups
             result += copyCommand
 
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=$?
-            echo "lcg-cp logging:"; cat stageout.log
+            cat stageout.log
             echo -e "\nlcg-cp exit status: $EXIT_STATUS"
             if [[ $EXIT_STATUS != 0 ]]; then
                 echo "Non-zero lcg-cp Exit status!!!"
@@ -139,7 +133,7 @@ class LCGImpl(StageOutImpl):
 
         result += "FILE_SIZE=`stat -c %s"
         result += " %s`\n" % localPFN
-        result += "echo \"Local File Size is: $FILE_SIZE\"\n"
+        result += "echo \"Local File Size is:  $FILE_SIZE\"\n"
 
         removeCommand = self.createRemoveFileCommand(targetPFN)
 
@@ -148,43 +142,43 @@ class LCGImpl(StageOutImpl):
         if useChecksum:
             localAdler32 = str(checksums['adler32']).zfill(8)
             checksumCommand = \
-            """
-            if [[ "X$SRM_CHECKSUM" != "X" ]]; then
-                if [[ "$SRM_CHECKSUM" == "%s" ]]; then
-                    exit 0
+                """
+                if [[ "X$SRM_CHECKSUM" != "X" ]]; then
+                    if [[ "$SRM_CHECKSUM" == "%s" ]]; then
+                        exit 0
+                    else
+                        echo "ERROR: Checksum Mismatch between local and SE"
+                        echo "Cleaning up failed file"
+                        %s
+                        exit 60311
+                    fi
                 else
-                    echo "ERROR: Checksum Mismatch between local and SE"
-                    echo "Cleaning up failed file"
-                    %s
-                    exit 60311
+                    exit 0
                 fi
-            else
-                exit 0
-            fi
-            """ % (localAdler32, removeCommand)
+                """ % (localAdler32, removeCommand)
         else:
             checksumCommand = "exit 0"
 
         metadataCheck = \
-        """
-        LCG_OUTPUT=`lcg-ls -l -b -D srmv2 --srm-timeout 1800 %s 2>/dev/null`
-        SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
-        SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
-        echo "Remote Size is $SRM_SIZE"
-        echo "Remote Checksum is $SRM_CHECKSUM"
-        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-            %s
-        else
-            echo $LCG_OUTPUT
-            echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+            """
+            LCG_OUTPUT=`lcg-ls -l -b -D srmv2 --srm-timeout 1800 %s 2>/dev/null`
+            SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
+            SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
+            echo "Remote File Size is: $SRM_SIZE"
+            echo "Remote Checksum is:  $SRM_CHECKSUM"
+            if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+                %s
+            else
+                echo $LCG_OUTPUT
+                echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+                %s
+                exit 60311
+            fi
+            echo "Cleaning up failed file:"
             %s
             exit 60311
-        fi
-        echo "Cleaning up failed file:"
-        %s
-        exit 60311
 
-        """ % (remotePFN, checksumCommand, removeCommand, removeCommand)
+            """ % (remotePFN, checksumCommand, removeCommand, removeCommand)
         result += metadataCheck
 
         # close sub-shell for CVMFS use case
@@ -192,7 +186,6 @@ class LCGImpl(StageOutImpl):
             result += ")\n"
 
         return result
-
 
     def removeFile(self, pfnToRemove):
         """

@@ -49,24 +49,23 @@ class DBTest(object):
         options = {}
         if not dbUrl:
             dbUrl = os.getenv('DATABASE', None)
-        # we need bare db connection with any DB name part
+        # we need bare db connection without any DB name part
         dialect, rest = dbUrl.split('://')
         dbUrl = "%s://%s/" % (dialect, rest.split('/')[0])
         if socket and dbUrl.find('unix_socket') == -1:
             dbUrl = '%s?unix_socket=%s' % (dbUrl, socket)
-        if not hasattr(myThread, 'dialect'):
-            dialect = dbUrl.split('://')[0]
-            if dialect.lower() == 'mysql':
-                dialect = 'MySQL'
-            elif dialect.lower() == 'oracle':
-                dialect = 'Oracle'
-            elif dialect.lower() == 'http':
-                dialect = 'CouchDB'
-            else:
-                msg = "Unsupported dialect %s" % dialect
-                self.logger.error(msg)
-                raise Exception(msg)
-            myThread.dialect = dialect
+        dialect = dbUrl.split('://')[0]
+        if dialect.lower() == 'mysql':
+            dialect = 'MySQL'
+        elif dialect.lower() == 'oracle':
+            dialect = 'Oracle'
+        elif dialect.lower() == 'http':
+            dialect = 'CouchDB'
+        else:
+            msg = "Unsupported dialect %s" % dialect
+            self.logger.error(msg)
+            raise Exception(msg)
+        myThread.dialect = dialect
         dbFactory = DBFactory(self.logger, dbUrl, options)
         self.dbi = dbFactory.connect()
         if not clsName:

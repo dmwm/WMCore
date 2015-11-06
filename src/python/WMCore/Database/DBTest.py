@@ -72,12 +72,14 @@ class DBTest(object):
         if not clsName:
             clsName = '%s_%s' % (self.__class__.__name__, int(time.time()))
         self.dbName = os.environ.get('WMCORE_TEST_DATABASE', 'unittest_%s' % abs(hash(clsName)))
-        if not hasattr(myThread, 'dbi'):
-            myThread.dbi = self.dbi
-        if not hasattr(myThread, 'transaction'):
-            myThread.transaction = Transaction(self.dbi)
-        if not hasattr(myThread, 'logger'):
-            myThread.logger = self.logger
+        # VK, 20151106: WMCore interface is poorly designed and relies on
+        # shared attributes of current thread object (myThread)
+        # until sharing attributes will be replaced with arguments
+        # we'll need to assign database/transactions attributes via current thread object
+        myThread.dbFactory = dbFactory
+        myThread.dbi = self.dbi
+        myThread.transaction = Transaction(self.dbi)
+        myThread.logger = self.logger
         print("DBTest dialect=%s dbUrl=%s socket=%s dbName=%s" \
                 % (myThread.dialect, dbUrl, socket, self.dbName))
         enforce = os.environ.get('WMCORE_TEST_DATABASE_DELETE', False)
@@ -96,14 +98,12 @@ class DBTest(object):
     def setUp(self):
         """Setup database for unittests"""
         if  self.dbName.startswith('unittest'):
-            print("DBTest setUp")
             self.deleteDatabase()
             self.createDatabase()
 
     def tearDown(self):
         """Tear down database"""
         if self.dbName.startswith('unittest'):
-            print("DBTest tearDown")
             self.deleteDatabase()
 
     def createDatabase(self, dbName=None):

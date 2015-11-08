@@ -150,7 +150,8 @@ class WMInit:
         setDatabaseConnection.
         """
         myThread = threading.currentThread()
-        print("WMInit, setSchema", myThread.__dict__)
+        print("### WMInit, myThread dict", myThread.__dict__)
+        print("### WMInit, myThread.transaction dict", myThread.transaction.__dict__)
 
         parameters = None
         flag = False
@@ -160,6 +161,7 @@ class WMInit:
             flag = True
 
         myThread.transaction.begin()
+        print("### WMInit, myThread.transaction dict begin", myThread.transaction.__dict__)
         for factoryName in modules:
             # need to create these tables for testing.
             # notice the default structure: <dialect>/Create

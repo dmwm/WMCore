@@ -47,6 +47,9 @@ class DBTest(object):
         myThread = threading.currentThread()
         self.logger = myThread.logger if hasattr(myThread, "logger") else logging.getLogger()
         options = {}
+        if not clsName:
+            clsName = '%s_%s' % (self.__class__.__name__, int(time.time()))
+        self.dbName = os.environ.get('WMCORE_TEST_DATABASE', 'unittest_%s' % abs(hash(clsName)))
         if not dbUrl:
             dbUrl = os.getenv('DATABASE', None)
         # we need bare db connection without any DB name part
@@ -68,9 +71,6 @@ class DBTest(object):
         myThread.dialect = dialect
         dbFactory = DBFactory(self.logger, dbUrl, options)
         self.dbi = dbFactory.connect()
-        if not clsName:
-            clsName = '%s_%s' % (self.__class__.__name__, int(time.time()))
-        self.dbName = os.environ.get('WMCORE_TEST_DATABASE', 'unittest_%s' % abs(hash(clsName)))
         # VK, 20151106: WMCore interface is poorly designed and relies on
         # shared attributes of current thread object (myThread)
         # until sharing attributes will be replaced with arguments

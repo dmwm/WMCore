@@ -160,6 +160,7 @@ class Harvest(JobFactory):
                 if f not in self.currentJob['input_files']:
                     self.currentJob.addFile(f)
 
+        self.currentJob.addBaggageParameter("multiRun", True)
         if endOfRun:
             self.currentJob.addBaggageParameter("runIsComplete", True)
         self.mergeLumiRange(self.currentJob['mask']['runAndLumis'])

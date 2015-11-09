@@ -518,8 +518,11 @@ class SetupCMSSWPset(ScriptInterface):
         """
         baggage = self.job.getBaggage()
         runIsComplete = getattr(baggage, "runIsComplete", False)
+        multiRun = getattr(baggage, "multiRun", False)
         if hasattr(self.process, "dqmSaver"):
             self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
+            if multiRun:
+                self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
             if hasattr(self.step.data.application.configuration, "pickledarguments"):
                 args = pickle.loads(self.step.data.application.configuration.pickledarguments)
                 datasetName = args.get('datasetName', None)

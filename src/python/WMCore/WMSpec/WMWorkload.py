@@ -9,7 +9,7 @@ of related tasks.
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, \
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, strToBool, \
                         loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
@@ -795,6 +795,23 @@ class WMWorkloadHelper(PersistencyHelper):
         """
 
         return getattr(self.data.properties, 'validStatus', None)
+
+    def setAllowOpportunistic(self, allowOpport):
+        """
+        _setAllowOpportunistic_
+
+        Set a flag which enables the workflow to run in cloud resources.
+        """
+        self.data.properties.allowOpportunistic = allowOpport
+        return
+
+    def getAllowOpportunistic(self):
+        """
+        _getAllowOpportunistic_
+
+        Retrieve AllowOpportunitisc flag for the workflow
+        """
+        return getattr(self.data.properties, 'allowOpportunistic', None)
 
     def setPrepID(self, prepID):
         """
@@ -1721,10 +1738,11 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Check whether we should check location for the data
         if self._checkKeys(kwargs, "useSiteListAsLocation"):
-            self.setLocationDataSourceFlag(flag = kwargs["useSiteListAsLocation"])
+            self.setLocationDataSourceFlag(flag = strToBool(kwargs["useSiteListAsLocation"]))
+        if self._checkKeys(kwargs, "allowOpportunistic"):
+            self.setAllowOpportunistic(allowOpport = strToBool(kwargs["allowOpportunistic"]))
 
         # Set phedex subscription information
-
         if self._checkKeys(kwargs, phedexParams):
             self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
                                         custodialSites = kwargs["CustodialSites"],

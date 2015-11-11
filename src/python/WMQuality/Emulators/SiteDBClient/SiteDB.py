@@ -105,8 +105,18 @@ class SiteDBJSON(object):
     def _siteresources(self, clearCache=False):
         return self._siteresources_data
 
-    def _dataProcessing(self, clearCache=False):
-        return self._dataProcessing_data
+    def _dataProcessing(self, pnn=None, psn=None, clearCache=False):
+        """
+        aReturns a mapping between PNNs and PSNs.
+        In case a PSN is provided, then it returns only the PNN(s) it maps to.
+        In case a PNN is provided, then it returns only the PSN(s) it maps to.
+        """
+        mapping = self._dataProcessing_data
+        if pnn:
+            mapping = [item['psn_name'] for item in mapping if item['phedex_name']==pnn]
+        elif psn:
+            mapping = [item['phedex_name'] for item in mapping if item['psn_name']==psn]
+        return mapping
 
     def dnUserName(self, dn):
         """
@@ -248,14 +258,13 @@ class SiteDBJSON(object):
         """
         Emulator to convert PhEDEx node name to Processing Site Name(s)
         """
+        return self._dataProcessing(pnn=pnn)
 
-        psnMap = self._dataProcessing()
-        try:
-            reducedMap = filter(lambda x: x[u'phedex_name']==pnn, psnMap)
-            psns = [x[u'psn_name'] for x in reducedMap]
-        except IndexError:
-            return None
-        return psns
+    def PSNtoPNN(self, psn):
+        """
+        Emulator to convert Processing Site Name to PhEDEx Node Name(s)
+        """
+        return self._dataProcessing(psn=psn)
 
     def PNNstoPSNs(self, pnns):
         """
@@ -263,12 +272,26 @@ class SiteDBJSON(object):
         """
         psns = set()
         for pnn in pnns:
+            if pnn=="T0_CH_CERN_Export" or pnn.endswith("_MSS") or pnn.endswith("_Buffer"):
+                continue
             psn_list = self.PNNtoPSN(pnn)
-            if not psn_list:
-                raise Exception("No PSNs for PNN: %s" % pnn)
             psns.update(psn_list)
+            if not psn_list:
+                self["logger"].warning("No PSNs for PNN: %s" % pnn)
         return list(psns)
-    
+
+    def PSNstoPNNs(self, psns):
+        """
+        Emulator to convert list of Processing Site Names to PhEDEx Node Names
+        """
+        pnns = set()
+        for psn in psns:
+            pnn_list = self.PSNtoPNN(psn)
+            if not pnn_list:
+                self["logger"].warning("No PNNs for PSN: %s" % psn)
+            pnns.update(pnn_list)
+        return list(pnns)
+
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):
             raise TypeError('psn_pattern arg must be of type str')

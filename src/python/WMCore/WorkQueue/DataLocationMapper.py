@@ -139,8 +139,7 @@ class DataLocationMapper():
         # convert from PhEDEx name to cms site name
         for name, nodes in result.items():
             psns = set()
-            for x in nodes:
-                psns.update(self.sitedb.PNNtoPSN(x))
+            psns.update(self.sitedb.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
         return result, fullResync
@@ -163,8 +162,7 @@ class DataLocationMapper():
         # convert the sets to lists
         for name, nodes in result.items():
             psns = set()
-            for x in nodes:
-                psns.update(self.sitedb.PNNtoPSN(x))
+            psns.update(self.sitedb.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
         return result, True # partial dbs updates not supported

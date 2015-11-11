@@ -36,6 +36,7 @@ def fixupGlobalTag(process):
             process.GlobalTag.globaltag = cms.string("")
     return
 
+
 def fixupGlobalTagTransaction(process):
     """
     _fixupGlobalTagTransaction_
@@ -52,6 +53,7 @@ def fixupGlobalTagTransaction(process):
             process.GlobalTag.DBParameters.transactionId = cms.untracked.string("")
     return
 
+
 def fixupFirstRun(process):
     """
     _fixupFirstRun_
@@ -62,6 +64,7 @@ def fixupFirstRun(process):
     if not hasattr(process.source, "firstRun"):
         process.source.firstRun = cms.untracked.uint32(0)
     return
+
 
 def fixupLastRun(process):
     """
@@ -74,6 +77,7 @@ def fixupLastRun(process):
         process.source.lastRun = cms.untracked.uint32(0)
     return
 
+
 def fixupLumisToProcess(process):
     """
     _fixupLumisToProcess_
@@ -84,6 +88,7 @@ def fixupLumisToProcess(process):
     if not hasattr(process.source, "lumisToProcess"):
         process.source.lumisToProcess = cms.untracked.VLuminosityBlockRange()
     return
+
 
 def fixupSkipEvents(process):
     """
@@ -96,6 +101,7 @@ def fixupSkipEvents(process):
         process.source.skipEvents = cms.untracked.uint32(0)
     return
 
+
 def fixupFirstEvent(process):
     """
     _fixupFirstEvent_
@@ -107,6 +113,7 @@ def fixupFirstEvent(process):
         process.source.firstEvent = cms.untracked.uint32(0)
     return
 
+
 def fixupMaxEvents(process):
     """
     _fixupMaxEvents_
@@ -115,10 +122,11 @@ def fixupMaxEvents(process):
 
     """
     if not hasattr(process, "maxEvents"):
-        process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+        process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(-1))
     if not hasattr(process.maxEvents, "input"):
         process.maxEvents.input = cms.untracked.int32(-1)
     return
+
 
 def fixupFileNames(process):
     """
@@ -131,6 +139,7 @@ def fixupFileNames(process):
         process.source.fileNames = cms.untracked.vstring()
     return
 
+
 def fixupSecondaryFileNames(process):
     """
     _fixupSecondaryFileNames_
@@ -142,6 +151,7 @@ def fixupSecondaryFileNames(process):
         process.source.secondaryFileNames = cms.untracked.vstring()
     return
 
+
 def fixupFirstLumi(process):
     """
     _fixupFirstLumi
@@ -151,6 +161,7 @@ def fixupFirstLumi(process):
     if not hasattr(process.source, "firstLuminosityBlock"):
         process.source.firstLuminosityBlock = cms.untracked.uint32(1)
     return
+
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -168,7 +179,6 @@ class SetupCMSSWPset(ScriptInterface):
                  "process.source.lastRun": fixupLastRun,
                  "process.source.lumisToProcess": fixupLumisToProcess,
                  "process.source.firstLuminosityBlock": fixupFirstLumi}
-
 
     def createProcess(self, scenario, funcName, funcArgs):
         """
@@ -218,7 +228,6 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
-
     def loadPSet(self):
         """
         _loadPSet_
@@ -238,7 +247,6 @@ class SetupCMSSWPset(ScriptInterface):
             raise ex
 
         return
-
 
     def fixupProcess(self):
         """
@@ -272,7 +280,6 @@ class SetupCMSSWPset(ScriptInterface):
                 outModRef.logicalFileName = cms.untracked.string("")
         return
 
-
     def applyTweak(self, psetTweak):
         """
         _applyTweak_
@@ -283,7 +290,6 @@ class SetupCMSSWPset(ScriptInterface):
         tweak.unpersist(psetTweak)
         applyTweak(self.process, tweak, self.fixupDict)
         return
-
 
     def handleSeeding(self):
         """
@@ -317,7 +323,8 @@ class SetupCMSSWPset(ScriptInterface):
 
         # include the default performance report services
         if getattr(self.step.data.application.command, 'silentMemoryCheck', False):
-            self.process.add_(PSetConfig.Service("SimpleMemoryCheck", jobReportOutputOnly=PSetConfig.untracked.bool(True)))
+            self.process.add_(
+                PSetConfig.Service("SimpleMemoryCheck", jobReportOutputOnly=PSetConfig.untracked.bool(True)))
         else:
             self.process.add_(PSetConfig.Service("SimpleMemoryCheck"))
 
@@ -342,9 +349,9 @@ class SetupCMSSWPset(ScriptInterface):
         inputFile = ("../%s/%s.root" % (self.step.data.input.inputStepName,
                                         self.step.data.input.inputOutputModule))
         tfc.addMapping("direct", inputFile, inputFile,
-                       mapping_type = "lfn-to-pfn")
+                       mapping_type="lfn-to-pfn")
         tfc.addMapping("direct", inputFile, inputFile,
-                       mapping_type = "pfn-to-lfn")
+                       mapping_type="pfn-to-lfn")
 
         fixupFileNames(self.process)
         fixupMaxEvents(self.process)
@@ -359,7 +366,7 @@ class SetupCMSSWPset(ScriptInterface):
         tfcFile = open(tfcPath, 'w')
         tfcFile.write(tfcStr)
         tfcFile.close()
-        self.step.data.application.overrideCatalog = "trivialcatalog_file:" +tfcPath + "?protocol=direct"
+        self.step.data.application.overrideCatalog = "trivialcatalog_file:" + tfcPath + "?protocol=direct"
 
         return
 
@@ -441,7 +448,8 @@ class SetupCMSSWPset(ScriptInterface):
                             # same for every job in the task and skip events
                             random.seed(self.job['task'])
                             print "Skipping %d pileup events for deterministic data mixing" % baggage.skipPileupEvents
-                            inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
+                            inputTypeAttrib.skipEvents = cms.untracked.uint32(
+                                int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
                     # Shuffle according to the seed above or randomly
                     random.shuffle(inputTypeAttrib.fileNames)
@@ -461,7 +469,7 @@ class SetupCMSSWPset(ScriptInterface):
         prodsAndFilters.update(self.process.producers)
         prodsAndFilters.update(self.process.filters)
         for key, value in prodsAndFilters.items():
-            if value.type_() in [ "MixingModule", "DataMixingModule"] :
+            if value.type_() in ["MixingModule", "DataMixingModule"]:
                 mixModules.append(value)
             if value.type_() == "DataMixingModule":
                 dataMixModules.append(value)
@@ -486,7 +494,7 @@ class SetupCMSSWPset(ScriptInterface):
         try:
             f = open(jsonPileupConfig, 'r')
             json = f.read()
-            pileupDict =  decoder.decode(json)
+            pileupDict = decoder.decode(json)
             f.close()
         except IOError:
             m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig
@@ -541,11 +549,11 @@ class SetupCMSSWPset(ScriptInterface):
         print "Hardcoding read/cache strategies for repack"
         self.process.add_(
             cms.Service("SiteLocalConfigService",
-                        overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
-                        overrideSourceReadHint = cms.untracked.string("read-ahead-buffered"),
-                        overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
-                        )
-            )
+                        overrideSourceCacheHintDir=cms.untracked.string("storage-only"),
+                        overrideSourceReadHint=cms.untracked.string("read-ahead-buffered"),
+                        overrideSourceTTreeCacheSize=cms.untracked.uint32(20 * 1024 * 1024)
+                       )
+        )
 
         try:
             if int(self.step.data.application.multicore.numberOfCores) > 1:
@@ -583,15 +591,15 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.add_(
                 cms.Service("SiteLocalConfigService",
                             overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")
-                            )
-                )
+                           )
+            )
         elif funcName == "merge":
             print "Using lazydownload"
             self.process.add_(
                 cms.Service("SiteLocalConfigService",
                             overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
-                            )
-                )
+                           )
+            )
         return
 
     def __call__(self):
@@ -649,7 +657,7 @@ class SetupCMSSWPset(ScriptInterface):
                     self.process.options = cms.untracked.PSet()
                     options = getattr(self.process, "options")
                 options.numberOfThreads = cms.untracked.uint32(numCores)
-                options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
+                options.numberOfStreams = cms.untracked.uint32(0)  # For now, same as numCores
         except AttributeError:
             print "No value for numberOfCores. Not setting"
 
@@ -665,7 +673,7 @@ class SetupCMSSWPset(ScriptInterface):
         # If not - apply the per job tweaks
         # If so - create an override TFC (like done in PA) and then modify thePSet accordingly
         if (hasattr(self.step.data.input, "chainedProcessing") and
-            self.step.data.input.chainedProcessing):
+                self.step.data.input.chainedProcessing):
             self.handleChainedProcessing()
         else:
             # Apply per job PSet Tweaks
@@ -705,13 +713,13 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.source.skipBadFiles = \
                 cms.untracked.bool(self.step.data.application.configuration.skipBadFiles)
 
-        #Apply events per lumi section if available
+        # Apply events per lumi section if available
         if hasattr(self.step.data.application.configuration, "eventsPerLumi"):
             self.process.source.numberEventsInLuminosityBlock = \
                 cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
 
         # accept an overridden TFC from the step
-        if hasattr(self.step.data.application,'overrideCatalog'):
+        if hasattr(self.step.data.application, 'overrideCatalog'):
             print "Found a TFC override: %s" % self.step.data.application.overrideCatalog
             self.process.source.overrideCatalog = \
                 cms.untracked.string(self.step.data.application.overrideCatalog)

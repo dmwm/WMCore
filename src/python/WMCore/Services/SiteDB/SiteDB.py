@@ -311,7 +311,7 @@ class SiteDBJSON(Service):
         if it is convert to PNN
         if not just return argument
         """
-        if isinstance(seNameOrPNN, str):
+        if isinstance(seNameOrPNN, basestring):
             seNameOrPNN = [seNameOrPNN]
         
         newList = []
@@ -319,5 +319,5 @@ class SiteDBJSON(Service):
             if not pnn_regex.match(se):
                 newList.extend(self.seToPNNs(se))
             else:
-                newList.extend(se)
+                newList.append(se)
         return newList

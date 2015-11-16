@@ -32,7 +32,7 @@ class ProcessCPUPoller(object):
         """
         try:
             # raises: psutil.error.AccessDenied, psutil.error.NoSuchProcess
-            pollProcess = lambda proc: proc.get_cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
+            pollProcess = lambda proc: proc.cpu_percent(PeriodPoller.PSUTIL_INTERVAL)
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
         except AccessDenied as ex:

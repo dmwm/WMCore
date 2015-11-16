@@ -46,6 +46,13 @@ class ResultRow(object):
     def get(self, key, default=None):
         """Imitate dict get method"""
         return self._data.get(key, default)
+    def items(self):
+        """Imitate dict items method"""
+        return [pair for pair in self.iteritems()]
+    def iteritems(self):
+        """Imitate dict iteritems method"""
+        for key in self._keys:
+            yield (key, self.get(key))
     def __len__(self):
         return len(self._data.values())
     def __str__(self):

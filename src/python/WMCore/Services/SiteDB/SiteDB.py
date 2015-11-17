@@ -93,12 +93,19 @@ class SiteDBJSON(Service):
         filename = 'site-resources.json'
         return self.getJSON('site-resources', filename=filename)
 
-    def _dataProcessing(self, pnn=None, clearCache=False):
+    def _dataProcessing(self, pnn=None, psn=None, clearCache=False):
+        """
+        Returns a mapping between PNNs and PSNs.
+        In case a PSN is provided, then it returns only the PNN(s) it maps to.
+        In case a PNN is provided, then it returns only the PSN(s) it maps to.
+        """
         filename = 'data-processing.json'
-        psnMap = self.getJSON('data-processing', filename=filename, clearCache=clearCache)
+        mapping = self.getJSON('data-processing', filename=filename, clearCache=clearCache)
         if pnn:
-            psnMap = filter(lambda x: x['phedex_name'] == pnn, psnMap)
-        return psnMap
+            mapping = [item['psn_name'] for item in mapping if item['phedex_name']==pnn]
+        elif psn:
+            mapping = [item['phedex_name'] for item in mapping if item['psn_name']==psn]
+        return mapping
 
     def dnUserName(self, dn):
         """
@@ -270,14 +277,13 @@ class SiteDBJSON(Service):
         """
         Convert PhEDEx node name to Processing Site Name(s)
         """
+        return self._dataProcessing(pnn=pnn)
 
-        psnMap = self._dataProcessing()
-        try:
-            reducedMap = filter(lambda x: x[u'phedex_name']==pnn, psnMap)
-            psns = [x[u'psn_name'] for x in reducedMap]
-        except IndexError:
-            return None
-        return psns
+    def PSNtoPNN(self, psn):
+        """
+        Convert Processing Site Name to PhEDEx Node Name(s)
+        """
+        return self._dataProcessing(psn=psn)
 
     def PNNstoPSNs(self, pnns):
         """
@@ -285,12 +291,25 @@ class SiteDBJSON(Service):
         """
         psns = set()
         for pnn in pnns:
+            if pnn=="T0_CH_CERN_Export" or pnn.endswith("_MSS") or pnn.endswith("_Buffer"):
+                continue
             psn_list = self.PNNtoPSN(pnn)
-            if not psn_list:
-                if not pnn.endswith("_MSS") or not pnn.endswith("_Buffer"): 
-                    self["logger"].warning("No PSNs for PNN: %s" % pnn)
             psns.update(psn_list)
+            if not psn_list:
+                self["logger"].warning("No PSNs for PNN: %s" % pnn)
         return list(psns)
+
+    def PSNstoPNNs(self, psns):
+        """
+        Convert list of Processing Site Names to PhEDEx Node Names
+        """
+        pnns = set()
+        for psn in psns:
+            pnn_list = self.PSNtoPNN(psn)
+            if not pnn_list:
+                self["logger"].warning("No PNNs for PSN: %s" % psn)
+            pnns.update(pnn_list)
+        return list(pnns)
 
     def PSNtoPNNMap(self, psn_pattern=''):
         if not isinstance(psn_pattern, str):

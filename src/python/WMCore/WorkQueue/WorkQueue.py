@@ -394,10 +394,9 @@ class WorkQueue(WorkQueueBase):
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
         if wmspec.locationDataSourceFlag():
-            PhEDExNodeNames = set()
-            for psn in match['Inputs'].values()[0]:
-                PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
-            dbsDatasetDict['PhEDExNodeNames'] = list(PhEDExNodeNames)
+            psns = match['Inputs'].values()[0]
+            pnns = self.SiteDB.PSNstoPNNs(psns)
+            dbsDatasetDict['PhEDExNodeNames'] = pnns
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
@@ -417,12 +416,10 @@ class WorkQueue(WorkQueueBase):
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():
-                PhEDExNodeNames = set()
-                for psn in match['Inputs'].values()[0]:
-                    PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
-                PhEDExNodeNames = list(PhEDExNodeNames)
+                psns = match['Inputs'].values()[0]
+                pnns = self.SiteDB.PSNstoPNNs(psns)
                 for fileInfo in block["Files"]:
-                    fileInfo['locations'] = PhEDExNodeNames
+                    fileInfo['locations'] = pnns
             return blockName, block
         else:
             dbs = get_dbs(match['Dbs'])
@@ -433,11 +430,9 @@ class WorkQueue(WorkQueueBase):
 
             if wmspec.locationDataSourceFlag():
                 blockInfo = dbsBlockDict[blockName]
-                PhEDExNodeNames = set()
-                for psn in match['Inputs'].values()[0]:
-                    PhEDExNodeNames.union(self.SiteDB.PSNtoPNNMap(psn)[psn])
-                PhEDExNodeNames = list(PhEDExNodeNames)
-                blockInfo['PhEDExNodeNames'] = PhEDExNodeNames
+                psns = match['Inputs'].values()[0]
+                pnns = self.SiteDB.PSNstoPNNs(psns)
+                blockInfo['PhEDExNodeNames'] = pnns
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):

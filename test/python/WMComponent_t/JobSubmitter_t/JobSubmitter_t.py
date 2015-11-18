@@ -789,7 +789,7 @@ class JobSubmitterTest(unittest.TestCase):
 
         # Actually run it
         startTime = time.time()
-        cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
+        cProfile.runctx("JobSubmitterPoller(config=config).algorithm()", globals(), locals(), filename="testStats.stat")
         stopTime = time.time()
 
         print "Job took %f seconds to complete" % (stopTime - startTime)

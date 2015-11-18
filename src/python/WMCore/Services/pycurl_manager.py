@@ -110,6 +110,8 @@ class RequestHandler(object):
                     curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
                 else:
                     curl.setopt(pycurl.POSTFIELDS, params)
+            else:
+                curl.setopt(pycurl.POSTFIELDS, "")
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 

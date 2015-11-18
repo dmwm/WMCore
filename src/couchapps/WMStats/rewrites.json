@@ -49,6 +49,26 @@
   },
 
   {
+    "from": "_view/cooledoffRequests",
+    "to": "../WMStatsErl/_view/cooledoffRequests"
+  },
+
+  {
+    "from": "_view/latestAgentSite",
+    "to": "../WMStatsErl/_view/latestAgentSite"
+  },
+
+  {
+    "from": "_view/latestRequest",
+    "to": "../WMStatsErl/_view/latestRequest"
+  },
+
+  {
+    "from": "_view/requestAgentUrl",
+    "to": "../WMStatsErl/_view/requestAgentUrl"
+  },
+
+  {
     "from": "_view/requestHistory",
     "to": "../WMStatsErl/_view/requestHistory"
   },

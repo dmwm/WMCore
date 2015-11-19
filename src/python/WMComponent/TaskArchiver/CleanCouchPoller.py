@@ -81,7 +81,11 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("Cleaning up the old request docs")
             report = self.wmstatsCouchDB.deleteOldDocs(self.config.TaskArchiver.DataKeepDays)
             logging.info("%s docs deleted" % report)
-
+            
+            logging.info("Cleaning up the archived request docs")
+            report = self.cleanAlreadyArchivedWorkflows()
+            logging.info("%s archived workflows deleted" % report)
+            
             # archiving only workflows that I own (same team)
             logging.info("Getting requests in '%s' state for team '%s'", self.deletableState,
                                                                            self.teamName)
@@ -148,6 +152,8 @@ class CleanCouchPoller(BaseWorkerThread):
         Load the document IDs and revisions out of couch by workflowName,
         then order a delete on them.
         """
+        options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
+        
         if db == "JobDump":
             couchDB = self.jobsdatabase
             view = "jobsByWorkflowName"
@@ -159,15 +165,15 @@ class CleanCouchPoller(BaseWorkerThread):
             view = None
         elif db == "WMStatsAgent":
             couchDB = self.wmstatsCouchDB.getDBInstance()
-            view = "jobsByStatusWorkflow"
-        
+            view = "allWorkflows"
+            options = {"key": workflowName, "reduce": False}
+            
         if view == None:
             try:
                 committed = couchDB.delete_doc(workflowName)
             except CouchNotFoundError as ex:
                 return {'status': 'warning', 'message': "%s: %s" % (workflowName, str(ex))}
         else:
-            options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
             try:
                 jobs = couchDB.loadView(db, view, options = options)['rows']
             except Exception as ex:
@@ -221,3 +227,29 @@ class CleanCouchPoller(BaseWorkerThread):
         # other wise return True.
         return True
         
+    def cleanAlreadyArchivedWorkflows(self):
+        """
+        loop through the workflows in couchdb, if archived delete all the data in couchdb
+        """
+        
+        numDeletedRequests = 0
+        try:
+            localWMStats = self.wmstatsCouchDB.getDBInstance()
+            options = {"group_level": 1, "reduce": True}
+            
+            results = localWMStats.loadView("WMStatsAgent", "allWorkflows", options = options)['rows']
+            requestNames = [x['key'] for x in results]
+            logging.info("There are %s workfows to check for archived status" % len(requestNames))
+            
+            workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
+            
+            for request, value in workflowDict.items():
+                if value[0].endswith("-archived"):
+                    self.cleanAllLocalCouchDB(request)
+                    numDeletedRequests += 1
+        
+        except Exception as ex:
+            errorMsg = "Error on loading workflow list from wmagent_summary db"
+            logging.warning("%s/n%s" % (errorMsg, str(ex)))
+            
+        return numDeletedRequests

@@ -981,6 +981,9 @@ class PyCondorPlugin(BasePlugin):
         if job.get('taskType', None):
             jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
 
+        # Handling for AWS, cloud and opportunistic resources
+        jdl.append('+AllowOpportunistic = %s\n' % job.get('allowOpportunistic', False))
+
         # dataset info
         if job.get('inputDataset', None):
             jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])

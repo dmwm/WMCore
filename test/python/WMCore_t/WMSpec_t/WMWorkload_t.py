@@ -1818,5 +1818,20 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(sorted(taskList), sorted(expectedTasks))
         return
 
+    def testAllowOpportunistic(self):
+        """
+        _testAllowOpportunistic_
+
+        Verify that the allowOpportunistic flag can be read and set.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        self.assertFalse(testWorkload.getAllowOpportunistic(), "Should be None, I did not set you yet.")
+        testWorkload.setAllowOpportunistic(True)
+        self.assertTrue(testWorkload.getAllowOpportunistic(), "Bad job!! You should be True")
+        testWorkload.setAllowOpportunistic(False)
+        self.assertFalse(testWorkload.getAllowOpportunistic(), "Bad job!! You should be False")
+        return
+
+
 if __name__ == '__main__':
     unittest.main()

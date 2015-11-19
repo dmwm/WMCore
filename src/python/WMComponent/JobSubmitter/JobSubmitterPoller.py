@@ -380,7 +380,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                        loadedJob.get("numberOfCores", 1),
                        newJob['task_id'],
                        loadedJob.get('inputDataset', None),
-                       loadedJob.get('inputDatasetLocations', None)
+                       loadedJob.get('inputDatasetLocations', None),
+                       loadedJob.get('allowOpportunistic', False)
                        )
 
             self.jobDataCache[workflowName][jobID] = jobInfo
@@ -693,7 +694,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                                'numberOfCores' : cachedJob[19],
                                'taskID' : cachedJob[20],
                                'inputDataset' : cachedJob[21],
-                               'inputDatasetLocations' : cachedJob[22]
+                               'inputDatasetLocations' : cachedJob[22],
+                               'allowOpportunistic' : cachedJob[23]
                                }
 
                     # Add to jobsToSubmit

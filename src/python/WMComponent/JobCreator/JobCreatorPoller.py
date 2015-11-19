@@ -117,10 +117,9 @@ def capResourceEstimates(jobGroups, nCores, constraints):
 
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            owner = None, ownerDN = None,
-            ownerGroup = '', ownerRole = '',
-            scramArch = None, swVersion = None, agentNumber = 0,
-            numberOfCores = 1, inputDataset = None, inputDatasetLocations = None):
+            owner = None, ownerDN = None, ownerGroup = '', ownerRole = '',
+            scramArch = None, swVersion = None, agentNumber = 0, numberOfCores = 1,
+            inputDataset = None, inputDatasetLocations = None, allowOpportunistic=False):
     """
     _saveJob_
 
@@ -147,6 +146,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['numberOfCores'] = numberOfCores
     job['inputDataset'] = inputDataset
     job['inputDatasetLocations'] = inputDatasetLocations
+    job['allowOpportunistic'] = allowOpportunistic
 
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
     cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
@@ -180,6 +180,7 @@ def creatorProcess(work, jobCacheDir):
         numberOfCores = work.get('numberOfCores', 1)
         inputDataset = work.get('inputDataset', None)
         inputDatasetLocations = work.get('inputDatasetLocations', None)
+        allowOpportunistic = work.get('allowOpportunistic', False)
 
         if ownerDN == None:
             ownerDN = owner
@@ -220,7 +221,8 @@ def creatorProcess(work, jobCacheDir):
                     agentNumber = agentNumber,
                     numberOfCores = numberOfCores,
                     inputDataset = inputDataset,
-                    inputDatasetLocations = inputDatasetLocations)
+                    inputDatasetLocations = inputDatasetLocations,
+                    allowOpportunistic = allowOpportunistic)
 
     except Exception as ex:
         # Register as failure; move on
@@ -497,6 +499,9 @@ class JobCreatorPoller(BaseWorkerThread):
 
             logging.debug("Have loaded subscription %i with workflow %i\n" % (subscriptionID, workflow.id))
 
+            # retrieve information from the workload to propagate down to the job configuration
+            allowOpport =  wmWorkload.getAllowOpportunistic()
+
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
 
@@ -609,6 +614,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['jobNumber'] = jobNumber
                     tempDict['agentNumber'] = self.agentNumber
                     tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
+                    tempDict['allowOpportunistic'] = allowOpport
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)

@@ -62,7 +62,7 @@ class ProcessMemoryPoller(object):
         try:
             # get_memory_info(): returns RSS, VMS tuple (for reference)
             # raises: psutil.error.AccessDenied, psutil.error.NoSuchProcess
-            pollProcess = lambda proc: proc.get_memory_percent()
+            pollProcess = lambda proc: proc.memory_percent()
             v = sum([pollProcess(p) for p in processDetail.allProcs])
             return v
         except AccessDenied as ex:

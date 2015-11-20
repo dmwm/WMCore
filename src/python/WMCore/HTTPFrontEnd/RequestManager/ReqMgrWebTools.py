@@ -179,11 +179,8 @@ def changePriority(requestName, priority, wmstatUrl = None):
     fields = {"RequestPriority": newPrior}
     couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody = True)
     # push the change to the WorkQueue
-    response = ProdManagement.getProdMgr(requestName)
-    if response == [] or response[0] is None or response[0] == "":
-        # Request must not be assigned yet, we are safe here
-        return
-    workqueue = WorkQueue.WorkQueue(response[0])
+    gqURL = "%s/workqueue" % request["CouchURL"]
+    workqueue = WorkQueue.WorkQueue(gqURL)
     workqueue.updatePriority(requestName, priority)
     return
 

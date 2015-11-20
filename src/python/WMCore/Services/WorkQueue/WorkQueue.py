@@ -133,7 +133,7 @@ class WorkQueue(object):
         data = self.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                 {'startkey' : [wf], 'endkey' : [wf, {}],
                                  'reduce' : False})
-        elementsToUpdate = [x['id'] for x in data.get('rows', []) if x['key'][1] == 'Available']
+        elementsToUpdate = [x['id'] for x in data.get('rows', [])]
         if elementsToUpdate:
             self.updateElements(*elementsToUpdate, Priority = priority)
         # Update the spec, if it exists
@@ -160,7 +160,7 @@ class WorkQueue(object):
         """
         deleted = 0
         dbs = [self.db, self.inboxDB]
-        if type(workflowNames) != list:
+        if not isinstance(workflowNames, list):
             workflowNames = [workflowNames]
         
         if len(workflowNames) == 0:

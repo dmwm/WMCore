@@ -25,7 +25,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase

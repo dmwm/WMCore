@@ -14,7 +14,7 @@ from WMCore.WMFactory        import WMFactory
 from WMCore.DAOFactory       import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
 
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMCore.DataStructs.Run import Run
 
 

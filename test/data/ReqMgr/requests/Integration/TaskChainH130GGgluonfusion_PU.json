@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain MC PU with 2 tasks. Harvesting enabled",
+    "Comments": "TaskChain MC PU with 2 tasks. AllowOpportunistic and Harvesting enabled",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
@@ -54,6 +54,7 @@
     "ProcessingString": {"DIGIPU1" : "ProcessingString-OVERRIDE-ME",
                          "RECOPU1" : "ProcessingString-1-OVERRIDE-ME"},
     "Dashboard": "Dashboard-OVERRIDE-ME",
+    "allowOpportunistic": "True",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",

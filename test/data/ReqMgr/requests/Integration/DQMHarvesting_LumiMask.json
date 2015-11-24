@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "DQMHarvest byRun with runWhiteList and LumiList. Multi url upload.",
+    "Comments": "DQMHarvest byRun  (3 jobs only) with runWhiteList and LumiList. Multi url upload.",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_3_1_patch1",

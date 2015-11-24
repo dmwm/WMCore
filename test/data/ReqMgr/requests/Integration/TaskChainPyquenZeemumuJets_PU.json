@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "PU with PrimaryDataset override. 5 lumis per job. Doomed to have MaxRSS and VSize failures",
+    "Comments": "PU with PrimaryDataset override. 5 lumis per job. Doomed to have MaxRSS and maxVSize failures. Harvesting enabled.",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
     "Campaign": "Campaign-OVERRIDE-ME",
     "ConfigCacheUrl": "https://cmsweb-testbed.cern.ch/couchdb",
@@ -14,7 +14,7 @@
     "Group": "DATAOPS",
     "ProcessingVersion": 1,
     "RequestString": "RequestString-OVERRIDE-ME",
-    "RequestPriority": 50000,
+    "RequestPriority": 450000,
     "RequestType": "TaskChain",
     "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,

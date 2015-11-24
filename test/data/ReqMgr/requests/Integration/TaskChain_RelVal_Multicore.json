@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain data with 3 tasks, 4-cores task1, 8-cores task2 and 1-core task3. Harvesting enabled",
+    "Comments": "TaskChain data with 3 tasks, 4-cores task1, 8-cores task2 and 1-core task3. Memory per task. Harvesting enabled",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_4_0_pre8",
@@ -16,7 +16,7 @@
     "RequestPriority": 500000,
     "RequestType": "TaskChain",
     "ScramArch": "slc6_amd64_gcc491",
-    "Memory": 2400,
+    "Memory": 4000,
     "SizePerEvent": 1234,
     "TimePerEvent": 0.8,
     "MergedLFNBase": "/store/relval",
@@ -33,7 +33,7 @@
         "TaskName": "HLTD"},
     "Task2": {"AcquisitionEra": "CMSSW_7_4_0_pre8",
         "Multicore": 8,
-        "Memory" : 3200,
+        "Memory" : 8000,
         "ConfigCacheID": "0d6d2c921e3ce552e8f513db7f91acbb",
         "GlobalTag": "GR_R_74_V8A",
         "InputFromOutputModule": "RAWoutput",

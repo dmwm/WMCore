@@ -413,6 +413,11 @@ class WorkQueue(WorkQueueBase):
                                            splitedBlockName['NumOfFiles'],
                                            user=wmspec.getOwner().get("name"),
                                            group=wmspec.getOwner().get("group"))
+            # since we may still be recovering ACDCs with SE location,
+            # we have to convert them to PNN before adding to wmbs
+            for elem in fileLists:
+                elem['locations'] = self.SiteDB.checkAndConvertSENameToPNN(elem['locations'])
+
             block = {}
             block["Files"] = fileLists
             if wmspec.locationDataSourceFlag():

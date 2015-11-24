@@ -32,6 +32,8 @@ from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.Algorithms                 import SubprocessAlgos
 
+GROUP_NAME_RE = re.compile("^[a-zA-Z0-9]+_([A-Z]+)-")
+
 def submitWorker(input, results, timeout = None):
     """
     _outputWorker_
@@ -1024,6 +1026,10 @@ class CondorPlugin(BasePlugin):
 
         if job.get('requestName', None):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
+            m = GROUP_NAME_RE.match(job['requestName'])
+            if m:
+                jdl.append('+CMSGroups = "%s"' % m.groups()[0])
+
 
         if job.get('taskName', None):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])

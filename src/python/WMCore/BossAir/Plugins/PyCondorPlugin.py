@@ -10,6 +10,7 @@ For glide-in use.
 """
 
 import os
+import re
 import time
 import Queue
 import os.path
@@ -35,6 +36,7 @@ from WMCore.Algorithms                 import SubprocessAlgos
 import htcondor as condor
 import classad
 
+GROUP_NAME_RE = re.compile("^[a-zA-Z0-9]+_([A-Z]+)-")
 
 def submitWorker(input, results, timeout = None):
     """
@@ -974,6 +976,9 @@ class PyCondorPlugin(BasePlugin):
 
         if job.get('requestName', None):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
+            m = GROUP_NAME_RE.match(job['requestName'])
+            if m:
+                jdl.append('+CMSGroups = %s' % classad.quote(m.groups()[0]))
 
         if job.get('taskName', None):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])

@@ -394,6 +394,9 @@ class Request(RESTEntity):
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args): 
             request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
         
+        if 'RequestPriority' in request_args:
+            self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
+        
         if "total_jobs" in request_args:
             # only GQ update this stats
             # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}

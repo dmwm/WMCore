@@ -33,7 +33,7 @@ class WMStatsTest(unittest.TestCase):
         wmstatsURL = "%s/%s" % (self.testInit.couchUrl, dbName)
         reqDBURL = "%s/%s" % (self.testInit.couchUrl, reqDBName)
         self.reqDBWriter = RequestDBWriter(reqDBURL)
-        self.wmstatsReader = WMStatsReader(wmstatsURL, reqDBURL)
+        self.wmstatsReader = WMStatsReader(wmstatsURL, reqdbURL=reqDBURL)
         self.wmstatsReader.defaultStale = {}
         self.wmstatsReader.reqDB.defaultStale = {}
         return

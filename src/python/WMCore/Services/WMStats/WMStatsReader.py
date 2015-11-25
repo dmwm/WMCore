@@ -47,7 +47,7 @@ def convertToLegacyFormat(requestDoc):
             
     return converted
 
-class WMStatsReader():
+class WMStatsReader(object):
     
     #TODO need to get this from reqmgr api
     ACTIVE_STATUS = ["new",
@@ -75,14 +75,17 @@ class WMStatsReader():
                         "AlcaSkim",
                         "completed"]
     
-    def __init__(self, couchURL, reqdbURL = None, reqdbCouchApp = "ReqMgr"):
-        couchURL = sanitizeURL(couchURL)['url']
+    def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
+        self._sanitizeURL(couchURL)
         # set the connection for local couchDB call
-        self._commonInit(couchURL)
+        self._commonInit(couchURL, appName)
         if reqdbURL:
             self.reqDB = RequestDBReader(reqdbURL, reqdbCouchApp)
         else:
             self.reqDB = None
+    
+    def _sanitizeURL(self, couchURL):
+        return sanitizeURL(couchURL)['url']
         
     def _commonInit(self, couchURL, appName = "WMStats"):
         """
@@ -266,8 +269,14 @@ class WMStatsReader():
                     response[team] += 1
         return response
     
+    def getServerInstance(self):
+        return self.couchServer
+        
     def getDBInstance(self):
         return self.couchDB
+
+    def getRequestDBInstance(self):
+        return self.reqDB
     
     def getHeartbeat(self):
         try:
@@ -326,5 +335,21 @@ class WMStatsReader():
         self._updateRequestInfoWithJobInfo(requestInfo)
         return requestInfo
         
+    def getArchivedRequests(self):
+        """
+        get list of archived workflow in wmstats db.
+        """
         
+        options = {"group_level": 1, "reduce": True}
+        
+        results = self.couchDB.loadView(self.couchapp, "allWorkflows", options = options)['rows']
+        requestNames = [x['key'] for x in results]
+        
+        workflowDict = self.reqDB.getStatusAndTypeByRequest(requestNames)
+        archivedRequests = []
+        for request, value in workflowDict.items():
+            if value[0].endswith("-archived"):
+                archivedRequests.append(request)
+        
+        return archivedRequests
     

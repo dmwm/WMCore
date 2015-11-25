@@ -25,7 +25,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         gather active data statistics
         """
         
-        testbedWMStats = WMStatsReader(config.wmstats_url, config.reqmgrdb_url)
+        testbedWMStats = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url)
         reqdbWriter = RequestDBWriter(config.reqmgrdb_url)
         
          

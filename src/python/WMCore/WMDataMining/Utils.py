@@ -27,7 +27,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
     analyticsServer = CouchServer(server)
     couchdb = analyticsServer.connectDatabase(database)
 
-    WMStats = WMStatsReader(wmstatsUrl, reqmgrUrl, reqdbCouchApp = "ReqMgr")
+    WMStats = WMStatsReader(wmstatsUrl, reqdbURL=reqmgrUrl, reqdbCouchApp="ReqMgr")
 
     reqMgrServer, reqMgrDB = splitCouchServiceURL(reqmgrUrl)
 

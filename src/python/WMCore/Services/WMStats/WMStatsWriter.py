@@ -1,7 +1,4 @@
 import time
-import logging
-from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
@@ -40,18 +37,23 @@ def monitorDocFromRequestSchema(schema):
 
 class WMStatsWriter(WMStatsReader):
 
-    def __init__(self, couchURL, appName= "WMStats"):
+    def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):
         # set the connection for local couchDB call
-        # inherited from WMStatsReader
-        self._commonInit(couchURL, appName)
-
+        WMStatsReader.__init__(self, couchURL, appName, reqdbURL, reqdbCouchApp)
+        
+    def _sanitizeURL(self, couchURL):
+        """
+        don't sanitize url for writer
+        """
+        return couchURL
+    
     def uploadData(self, docs):
         """
         upload to given couchURL using cert and key authentication and authorization
         """
         # add delete docs as well for the compaction
         # need to check whether delete and update is successful
-        if type(docs) == dict:
+        if isinstance(docs, dict):
             docs = [docs]
         for doc in docs:
             self.couchDB.queue(doc)
@@ -153,13 +155,10 @@ class WMStatsWriter(WMStatsReader):
         return self.couchServer.replicate(self.dbName, target, continuous = True,
                                           filter = 'WMStats/repfilter')
     
-    def getDBInstance(self):
-        return self.couchDB
-
-    def getServerInstance(self):
-        return self.couchServer
-    
     def getActiveTasks(self):
+        """
+        This is in Writter instance since it needs admin permission
+        """
         couchStatus = self.couchServer.status()
         return couchStatus['active_tasks']
 
@@ -208,3 +207,19 @@ class WMStatsWriter(WMStatsReader):
             self.couchDB.updateDocument(requestName, self.couchapp,
                         'generalFields',
                         fields={'general_fields': JSONEncoder().encode(requestTransition)})
+    
+    def deleteDocsByWorkflow(self, requestName):
+        """
+        delete all wmstats docs for a given requestName
+        """
+        view = "allWorkflows"
+        options = {"key": requestName, "reduce": False}
+        docs = self.couchDB.loadView(self.couchapp, view, options = options)['rows']
+   
+        for j in docs:
+            doc = {}
+            doc["_id"]  = j['value']['id']
+            doc["_rev"] = j['value']['rev']
+            self.couchDB.queueDelete(doc)
+        committed = self.couchDB.commit()
+        return committed

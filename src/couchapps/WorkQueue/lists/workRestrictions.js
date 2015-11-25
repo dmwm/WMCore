@@ -47,7 +47,12 @@ function(head, req) {
         if (resources.length == 0) {
             break;
         }
-
+        
+        //in case document is already deleted	
+        if (!row.doc) {
+        	continue;
+        };
+		
         var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
 
         // check work is for a team in the request

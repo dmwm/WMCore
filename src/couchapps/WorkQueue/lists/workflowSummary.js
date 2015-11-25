@@ -1,6 +1,6 @@
 function(head, req) {
     // this function is used for elementsDetailByWorkflowAndStatus
-    var mainDoc = this
+    var mainDoc = this;
     provides("html", function() {
         var Mustache = require("lib/mustache");
         var requestInfo;
@@ -11,11 +11,11 @@ function(head, req) {
         }
         return Mustache.to_html(mainDoc.templates.WorkflowSummary,
                                 requestInfo, mainDoc.templates.partials, send);
-    })
+    });
 
     provides("json", function() {
         send("[");
-        var row = getRow()
+        var row = getRow();
         if (row) {
             send(toJSON(row.value));
             while (row = getRow()){
@@ -24,5 +24,5 @@ function(head, req) {
             }
         }// end rows
         send("]");
-    })
+    });
 } // end function

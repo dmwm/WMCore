@@ -11,7 +11,7 @@ function(head, req) {
     
     provides("json", function() {
         send("[");
-        var row = getRow()
+        var row = getRow();
         if (row) {
         	var ele = row['doc']['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'];
         	ele.InsertTime = row['doc'].timestamp;
@@ -20,15 +20,19 @@ function(head, req) {
         	ele.id = row['id'];
         	send(toJSON(ele));
             while (row = getRow()) {
+                //in case document is already deleted	
+                if (!row.doc) {
+                	continue;
+                };
                 send(",");
                 var ele = row['doc']['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'];
                 ele.InsertTime = row['doc'].timestamp;
-            	ele.UpdateTime = row['doc'].updatetime
-            	ele.reason = row['key'];
-            	ele.id = row['id'];
-            	send(toJSON(ele));
-            }
+                ele.UpdateTime = row['doc'].updatetime;
+                ele.reason = row['key'];
+                ele.id = row['id'];
+                send(toJSON(ele));
+            };
         }// end rows
         send("]");
-    })
-} // end function
+    });
+}; // end function

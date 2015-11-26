@@ -1,3 +1,45 @@
+1.0.11 to 1.0.12.pre2:
+  - Merge pull request #6414 from ticoann/add_check_for_null_doc
+  - Merge pull request #6409 from bbockelm/avoid_overloading_pending
+  - check when documents gets deleted between view and include_docs call
+  - Merge pull request #6404 from ticoann/set_wq_priority
+  - Merge pull request #6402 from ticoann/clean_archived_workflows
+  - fix priority update for reqmgr/reqmgr2
+  - Merge pull request #6408 from bbockelm/advertise_groups
+  - Merge pull request #6406 from amaltaro/fix-oracle-seqs
+  - Merge pull request #6410 from amaltaro/acdc-se-pnn
+  - cleanup archieved workflows from various agent couchdb
+  - Convert SE to PNN for old ACDC requests
+  - Avoid random distribution of pending jobs.
+  - Advertise group name for workflow.
+  - Use DBSBufferFile module from DBS3 package
+  - 1.0.12.pre1
+  - Merge pull request #6401 from ticoann/fix_alert
+  - fix method name for memory_percent
+  - Merge pull request #6394 from hufnagel/alert-fix-cpu
+  - Merge pull request #6397 from amaltaro/aws-flag
+  - Added unittests; pylint fixes
+  - Add AllowOpportunistic flag to job classAd
+  - Merge pull request #6372 from ticoann/add_block_validation
+  - add BlockWhiteList validation
+  - Merge pull request #6383 from hufnagel/dbs_phedex_deadlock
+  - Merge pull request #6399 from geneguvo/reqmon-erlang-views
+  - Merge pull request #6389 from amaltaro/wmstats-views-removal
+  - Set rewrite rules for new erlang views in wmstats.
+  - Add erlang views for wmstats.
+  - Merge pull request #6385 from amaltaro/stageout-minor
+  - Merge pull request #6392 from ticoann/fix_gq_resubmit_location_error
+  - Merge pull request #6387 from amaltaro/sitedb-pnns
+  - Merge pull request #6379 from ticoann/sitedb_t_fix
+  - stop endless spamming cpu alarms
+  - fix unicode is passed on location
+  - Remove 2 wmstats views that are available in erlang
+  - fix pylint stuff
+  - Fix location flag; Improved PNNxPSN sitedb apis
+  - reworking dbsbuffer schema to help fix race condition between dbs and phedex updates
+  - Remove inner retries on LCG stage out
+  - don't use emulator for siteDB unittest
+
 1.0.11 to 1.0.12.pre1:
   - Merge pull request #6401 from ticoann/fix_alert
   - fix method name for memory_percent

@@ -13,6 +13,12 @@ function(head, req) {
 	send("[");
 	var first = true;
 	while (row = getRow()) {
+		
+		//in case document is already deleted	
+		if (!row.doc) {
+			continue;
+		};
+		
 		ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
 		// is this an element
 		if (!ele) {

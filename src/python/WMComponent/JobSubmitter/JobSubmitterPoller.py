@@ -484,15 +484,18 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.cachedJobs         = {}
             self.jobDataCache       = {}
 
-        #Sort the sites using the following criteria:
-        #T1 sites go first, then T2, then T3
-        #After that we fill first the bigger ones
-        #Python sorting is stable so let's do 2 sort passes, it should be fast
-        #Assume  that all CMS names start with T[0-9]+, which the lexicon guarantees
+        # Sort the sites, utilizing the fact python has a stable sort function - we can simply
+        # sort twice.
+        # - First, fill up the smaller tiers
+        # - Within a tier, fill up the smallest sites first
+        # Of course, condor does not care about our submission order.  We sort the sites because
+        # WMAgent will stop submitting once we hit a pending threshold.  We assume the T1s
+        # will have the workflows with the most restrictive whitelist and want to hit their
+        # WMAgent-calculated limit last.
         self.sortedSites = sorted(rcThresholds.keys(),
-                                  key = lambda x : rcThresholds[x]["total_pending_slots"],
-                                  reverse = True)
-        self.sortedSites = sorted(self.sortedSites, key = lambda x : rcThresholds[x]["cms_name"][0:2])
+                                  key = lambda x : rcThresholds[x]["total_pending_slots"])
+        #T3 sites go first, then T2, then T1
+        self.sortedSites = sorted(self.sortedSites, key = lambda x : rcThresholds[x]["cms_name"][0:2], reverse = True)
         logging.debug('Sites will be filled in the following order: %s', self.sortedSites)
 
         self.currentRcThresholds = rcThresholds
@@ -664,14 +667,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                     self.sandboxPackage[package] = cachedJob[3]
 
                     possibleSites = cachedJob[8]
-                    possibleSiteList = list(possibleSites)
-                    fakeAssignedSiteName = random.choice(possibleSiteList)
+                    # We used to pick a site at random from all the possible ones and
+                    # attribute the job as 'pending' there (some WMAgent components and
+                    # Dashboard doesn't understand jobs pending at multiple sites).  HOWEVER,
+                    # this caused some sites to go way over their pending job limit (for
+                    # example, what if the site name "Nebraska" comes up 10,000 jobs in a row).
+                    # This would cause acquired high-priority jobs to starve on future rounds.
+                    assignedSiteName = siteName
                     potentialSites = cachedJob[18]
 
                     # Create a job dictionary object
                     jobDict = {'id': cachedJob[0],
                                'retry_count': cachedJob[1],
-                               'custom': {'location': fakeAssignedSiteName},
+                               'custom': {'location': assignedSiteName},
                                'cache_dir': cachedJob[4],
                                'packageDir': package,
                                'userdn': cachedJob[5],

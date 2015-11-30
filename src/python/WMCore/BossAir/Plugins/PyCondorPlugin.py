@@ -978,7 +978,7 @@ class PyCondorPlugin(BasePlugin):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
             m = GROUP_NAME_RE.match(job['requestName'])
             if m:
-                jdl.append('+CMSGroups = %s' % classad.quote(m.groups()[0]))
+                jdl.append('+CMSGroups = %s\n' % classad.quote(m.groups()[0]))
 
         if job.get('taskName', None):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])

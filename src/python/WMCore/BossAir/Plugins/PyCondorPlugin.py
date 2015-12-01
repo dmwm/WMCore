@@ -36,7 +36,7 @@ from WMCore.Algorithms                 import SubprocessAlgos
 import htcondor as condor
 import classad
 
-GROUP_NAME_RE = re.compile("^[a-zA-Z0-9]+_([A-Z]+)-")
+GROUP_NAME_RE = re.compile("^[a-zA-Z0-9_]+_([A-Z]+)-")
 
 def submitWorker(input, results, timeout = None):
     """

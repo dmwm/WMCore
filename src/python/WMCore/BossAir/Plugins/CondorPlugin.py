@@ -32,7 +32,7 @@ from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.Algorithms                 import SubprocessAlgos
 
-GROUP_NAME_RE = re.compile("^[a-zA-Z0-9]+_([A-Z]+)-")
+GROUP_NAME_RE = re.compile("^[a-zA-Z0-9_]+_([A-Z]+)-")
 
 def submitWorker(input, results, timeout = None):
     """

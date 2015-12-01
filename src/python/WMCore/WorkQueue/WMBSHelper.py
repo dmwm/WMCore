@@ -309,8 +309,12 @@ class WMBSHelper(WMConnectionBase):
             logging.info("Child subscription created: %s" % subscription["id"])
 
         outputModules = task.getOutputModulesForTask()
+        ignoredOutputModules = task.getIgnoredOutputModulesForTask()
         for outputModule in outputModules:
             for outputModuleName in outputModule.listSections_():
+                if outputModuleName in ignoredOutputModules:
+                    logging.info("IgnoredOutputModule set for %s, skipping fileset creation.", outputModuleName)
+                    continue
                 outputFileset = Fileset(self.outputFilesetName(task, outputModuleName))
                 outputFileset.create()
                 outputFileset.markOpen(True)

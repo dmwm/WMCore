@@ -270,8 +270,19 @@ class WMTaskHelper(TreeHelper):
         outputModules = []
         for stepName in self.listAllStepNames():
             outputModules.append(self.getOutputModulesForStep(stepName))
-
         return outputModules
+
+    def getIgnoredOutputModulesForTask(self):
+        """
+        _getIgnoredOutputModulesForTask_
+
+        Retrieve the ignored output modules in the given task.
+        """
+        ignoredOutputModules = []
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            ignoredOutputModules.extend(stepHelper.getIgnoredOutputModules())
+        return ignoredOutputModules
 
     def getOutputModulesForStep(self, stepName):
         """

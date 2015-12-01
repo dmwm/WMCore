@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReDigi with 3 steps, steps 2 and 3 in the same job. Two blocks whitelisted. 100 events per job",
+    "Comments": "ReDigi with 3 steps, steps 1 and 2 in the same job. Two blocks whitelisted. 100 events per job",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0_patch1",

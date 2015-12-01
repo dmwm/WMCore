@@ -1,5 +1,5 @@
 {"createRequest": {
-    "Comments": "StepChain ReDigi with 3 steps and LumiList (18l). EventAware based on TpE (~50evts - 2l)",
+    "Comments": "StepChain ReDigi with 3 steps and LumiList (19l). EventAware based on TpE (~50evts - 2l)",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0_patch1",
@@ -11,7 +11,7 @@
     "PrepID": "PrepID-DataStepChain",            
     "Group": "DATAOPS",
     "ProcessingVersion": 1,
-    "RequestPriority": 120000,
+    "RequestPriority": 420000,
     "RequestType": "StepChain",
     "ScramArch": "slc6_amd64_gcc481",
     "Memory": 2200,

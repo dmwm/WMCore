@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain MC from scratch + DeterministicPU. EventBased based on TpE (~200  evts - 4l). Harvesting enabled",
+    "Comments": "TaskChain MC from scratch + DeterministicPU. AcqEra/ProcStr per task. EventBased based on TpE (~200  evts - 4l). Harvesting enabled",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
@@ -12,7 +12,7 @@
     "EnableHarvesting": "True",
     "GlobalTag": "START70_V4::All",
     "Group": "DATAOPS",
-    "RequestPriority": 95000,
+    "RequestPriority": 495000,
     "RequestType": "TaskChain",
     "ScramArch": "slc5_amd64_gcc481",
     "Memory": 2400,
@@ -20,7 +20,7 @@
     "TimePerEvent": 144,
     "mergedLFNBase": "/store/relval",
     "unmergedLFNBase": "/store/unmerged",
-    "Task1": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "Task1": {"AcquisitionEra": "CMSSW_7_2_0_pre11",
         "PrimaryDataset": "RelValZTT",
         "ConfigCacheID": "564b9ff125f090d3385206a0b48e4f32",
         "GlobalTag": "START70_V4::All",
@@ -30,7 +30,7 @@
         "RequestNumEvents": 2000,
         "EventsPerLumi": 50,
         "TaskName": "ZTT"},
-    "Task2": {"AcquisitionEra": "CMSSW_7_0_0_pre11",
+    "Task2": {"AcquisitionEra": "CMSSW_7_1_0_pre11",
         "MCPileup": "/RelValMinBias/CMSSW_6_2_0_pre8-PRE_ST62_V8-v1/GEN-SIM",
         "DeterministicPileup": "True",
         "ConfigCacheID": "564b9ff125f090d3385206a0b48e52c6",

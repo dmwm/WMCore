@@ -161,7 +161,7 @@ class TaskChainTests(unittest.TestCase):
         self.testInit.generateWorkDir()
         self.workload = None
 
-        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_Task_Multicore.json')
+        self.differentNCores = getTestFile('data/ReqMgr/requests/Integration/TaskChain_RelVal_Multicore.json')
         return
 
 
@@ -640,9 +640,9 @@ class TaskChainTests(unittest.TestCase):
         self.assertEqual(recoStep.getNumberOfCores(), 8)
         self.assertEqual(miniAODStep.getNumberOfCores(), 1)
 
-        self.assertEqual(recoMemory, 3200.0)
+        self.assertEqual(recoMemory, 8000.0)
         self.assertEqual(aodMemory, 2000.0)
-        self.assertEqual(hltMemory, 2400.0)
+        self.assertEqual(hltMemory, 4000.0)
 
         return
 

@@ -61,7 +61,7 @@ def json2form(jsondata, indent=2, keep_first_value=True):
                     jsondata[key] = val[0]
     return json.dumps(jsondata, indent=2)
 
-def json2table(jsondata, web_ui_map, visible_attr=None):
+def json2table(jsondata, web_ui_map, visible_attrs=None):
     """
     Convert input json dict into HTML table based on assumtion that
     input json is in a simple key:value form.

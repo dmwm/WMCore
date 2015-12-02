@@ -375,14 +375,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                 try:
                     #Upload summary to couch
                     spec = retrieveWMSpec(wmWorkloadURL = finishedwfs[workflow]["spec"])
-                    if not spec:
-                        raise Exception(msg = "Couldn't load spec for %s" % workflow)
-                    self.archiveWorkflowSummary(spec = spec)
+                    if spec:
+                        self.archiveWorkflowSummary(spec = spec)
+                        # Send Reconstruciton performance information to DashBoard
+                        if self.dashBoardUrl != None:
+                            self.publishRecoPerfToDashBoard(spec)
+                    else:
+                        logging.warn("Workflow spec was not found for %s", workflow)
                     
-                    #Send Reconstruciton performance information to DashBoard
-                    if self.dashBoardUrl != None:
-                        self.publishRecoPerfToDashBoard(spec)
-
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []
@@ -443,8 +443,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     continue
                 except Exception as ex:
                     #Something didn't go well on couch, abort!!!
-                    msg = "Couldn't upload summary for workflow %s, will try again next time\n" % workflow
-                    msg += "Nothing will be deleted until the summary is in couch\n"
+                    msg = "Problem while archiving tasks for workflow %s\n" % workflow
                     msg += "Exception message: %s" % str(ex)
                     msg += "\nTraceback: %s" % traceback.format_exc()
                     logging.error(msg)
@@ -492,9 +491,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         for workflow in deletablewfs:
             try:
                 spec = retrieveWMSpec(wmWorkloadURL = deletablewfs[workflow]["spec"])
-                if not spec:
-                    raise Exception(msg = "Couldn't load spec for %s" % workflow)
-                # check workfow is alredy completed or archived (which means
                 
                 #This is used both tier0 and normal agent case
                 result = self.centralCouchDBWriter.getStatusAndTypeByRequest(workflow)
@@ -502,11 +498,11 @@ class TaskArchiverPoller(BaseWorkerThread):
                 if wfStatus in safeStatesToDelete:
                     wfsToDelete[workflow] = {"spec" : spec, "workflows": deletablewfs[workflow]["workflows"]}
                 else:
-                    logging.error("%s is in %s, will be deleted later" % (workflow, wfStatus))
+                    logging.info("%s is in %s, will be deleted later" % (workflow, wfStatus))
             
             except Exception as ex:
                 #Something didn't go well on couch, abort!!!
-                msg = "Couldn't delete %s " % workflow
+                msg = "Couldn't delete %s\n" % workflow
                 msg += "Exception message: %s" % str(ex)
                 msg += "\nTraceback: %s" % traceback.format_exc()
                 logging.error(msg)
@@ -578,6 +574,10 @@ class TaskArchiverPoller(BaseWorkerThread):
                     else:
                         msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
                         logging.debug(msg)
+
+                if workflows[workflow]["spec"] is None:
+                    logging.warn("Workflow spec not found for %s", workflow)
+                    continue
 
                 spec = workflows[workflow]["spec"]
                 topTask = spec.getTopLevelTask()[0]

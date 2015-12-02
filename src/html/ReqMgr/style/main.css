@@ -141,3 +141,9 @@ th { background: #B3B3B3; color: white; font-weight: bold; }
     top: -40px;
     bottom: -40px;
 }
+.visible {
+    border: 3px solid #408000;
+}
+.invisible {
+    background-color: #dddddd;
+}

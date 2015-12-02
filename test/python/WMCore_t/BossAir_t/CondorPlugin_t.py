@@ -461,7 +461,7 @@ class CondorPluginTest(BossAirTest):
         #
         jtok = baAPI.updateSiteInformation(idleJobs, "T2_US_UCSD", True)
         if jtok != None :
-            baAPI.kill(jtok, errorCode=61301)  # errorCode can be either 61301/61302/61303 (Aborted/Draining/Down)
+            baAPI.kill(jtok, errorCode=71301)  # errorCode can be either 71301/71302/71303 (Aborted/Draining/Down)
 
         return
 

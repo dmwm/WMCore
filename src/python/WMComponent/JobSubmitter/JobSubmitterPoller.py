@@ -243,7 +243,7 @@ class JobSubmitterPoller(BaseWorkerThread):
           - Path to sanbox
           - Path to cache directory
         """
-        badJobs = dict([(x, []) for x in range(61101,61105)])
+        badJobs = dict([(x, []) for x in range(71101,71105)])
         dbJobs = set()
 
         logging.info("Refreshing priority cache...")
@@ -273,7 +273,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if not os.path.isfile(pickledJobPath):
                 # Then we have a problem - there's no file
                 logging.error("Could not find pickled jobObject %s", pickledJobPath)
-                badJobs[61103].append(newJob)
+                badJobs[71103].append(newJob)
                 continue
             try:
                 jobHandle = open(pickledJobPath, "r")
@@ -300,7 +300,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             # also check if there is at least one site left to run the job
             if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
-                badJobs[61101].append(newJob)
+                badJobs[71101].append(newJob)
                 continue
             else :
                 non_abort_sites = [x for x in possibleLocations if x not in self.abortSites]
@@ -309,7 +309,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     newJob['name'] = loadedJob['name']
                     newJob['possibleLocations'] = possibleLocations
-                    badJobs[61102].append(newJob)
+                    badJobs[71102].append(newJob)
                     continue
 
             # try to remove draining sites if possible, this is needed to stop
@@ -322,7 +322,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 else:
                     newJob['name'] = loadedJob['name']
                     newJob['possibleLocations'] = possibleLocations
-                    badJobs[61104].append(newJob)
+                    badJobs[71104].append(newJob)
                     continue
 
             batchDir = self.addJobsToPackage(loadedJob)
@@ -431,7 +431,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         for job in badJobs:
             job['couch_record'] = None
             job['fwjr'] = Report()
-            if exitCode in (61102, 61104):
+            if exitCode in (71102, 71104):
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
             else:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] )

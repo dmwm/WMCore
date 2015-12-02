@@ -632,7 +632,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.checkForRunLumiInformation(stepName = "cmsRun1")
 
-        self.assertNotEqual(myReport.getExitCode(), 60452)
+        self.assertNotEqual(myReport.getExitCode(), 70452)
 
         # Remove the lumi information on purpose
         myReport2 = Report("cmsRun1")
@@ -642,7 +642,7 @@ cms::Exception caught in EventProcessor and rethrown
             fRef.runs = ConfigSection()
         myReport2.checkForRunLumiInformation(stepName = "cmsRun1")
         self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
-        self.assertEqual(myReport2.getExitCode(), 60452)
+        self.assertEqual(myReport2.getExitCode(), 70452)
 
         return
 

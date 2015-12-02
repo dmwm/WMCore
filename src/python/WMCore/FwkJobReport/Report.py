@@ -1439,7 +1439,7 @@ class Report:
         Some steps require that all output files have run lumi information.
         This will go through all output files in a step and make sure
         they have run/lumi informaiton. If they don't it creates an error
-        with code 60452 for the step, failing it.
+        with code 70452 for the step, failing it.
 
         """
         error = None
@@ -1454,9 +1454,9 @@ class Report:
                         error = f.get('lfn', None)
                         break
         if error:
-            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60452], error)
-            self.addError(stepName, 60452, "NoRunLumiInformation", msg)
-            self.setStepStatus(stepName = stepName, status = 60452)
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[70452], error)
+            self.addError(stepName, 70452, "NoRunLumiInformation", msg)
+            self.setStepStatus(stepName = stepName, status = 70452)
         return
 
     def checkForOutputFiles(self, stepName):

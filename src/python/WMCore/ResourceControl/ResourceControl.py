@@ -66,13 +66,13 @@ class ResourceControl(WMConnectionBase):
         jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in ("Aborted","Draining","Down"))
 
         if state == "Aborted":
-            ercode=61301
+            ercode=71301
         elif state == "Draining":
-            ercode=61302
+            ercode=71302
         elif state == "Down":
-            ercode=61303
+            ercode=71303
         else:
-            ercode=61300
+            ercode=71300
         bossAir.kill(jobtokill, errorCode=ercode)
         
         return

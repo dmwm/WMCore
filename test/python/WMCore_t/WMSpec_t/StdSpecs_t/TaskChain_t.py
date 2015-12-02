@@ -346,6 +346,8 @@ class TaskChainTests(unittest.TestCase):
         workflow.load()
 
         outputMods = outputModuleList(task)
+        ignoredOutputMods = task.getIgnoredOutputModulesForTask()
+        outputMods = set(outputMods) - set(ignoredOutputMods)
         self.assertEqual(len(workflow.outputMap.keys()), len(outputMods),
                          "Error: Wrong number of WF outputs")
 

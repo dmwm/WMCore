@@ -10,6 +10,7 @@ running program will receive SIGINFO signal. E.g., in unix shell
 just do
 shell# kill -s SIGINFO <pid>
 """
+from __future__ import print_function, division
 
 # system modules
 import sys

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable=W1201
-# W1201: Allow string formatting in logging messages
+
 """
 _Step.Executor.CMSSW_
 
@@ -95,12 +94,12 @@ class CMSSW(Executor):
         cmsswArguments = self.step.application.command.arguments
         userTarball = ','.join(self.step.user.inputSandboxes)
         userFiles = ','.join(self.step.user.userFiles)
-        logging.info('User files are %s' % userFiles)
-        logging.info('User sandboxes are %s' % userTarball)
+        logging.info('User files are %s', userFiles)
+        logging.info('User sandboxes are %s', userTarball)
 
         multicoreSettings = self.step.application.multicore
         try:
-            logging.info("CMSSW configured for %s cores" % multicoreSettings.numberOfCores)
+            logging.info("CMSSW configured for %s cores", multicoreSettings.numberOfCores)
         except AttributeError:
             logging.info("No value set for multicore.numberOfCores")
 
@@ -112,7 +111,7 @@ class CMSSW(Executor):
         try:
             os.environ['FRONTIER_ID'] = 'wmagent_%s' % (self.report.data.workload)
         except Exception as ex:
-            logging.error('Have critical error in setting FRONTIER_ID: %s' % str(ex))
+            logging.error('Have critical error in setting FRONTIER_ID: %s', str(ex))
             logging.error('Continuing, as this is not a critical function yet.')
 
         #
@@ -166,7 +165,7 @@ class CMSSW(Executor):
                 sys.executable,
                 stepModule,
                 script)
-            logging.info("    Invoking command: %s" % invokeCommand)
+            logging.info("    Invoking command: %s", invokeCommand)
             scriptProcess.stdin.write(invokeCommand)
             stdout, stderr = scriptProcess.communicate()
             retCode = scriptProcess.returncode
@@ -218,7 +217,7 @@ class CMSSW(Executor):
                 userTarball,
                 userFiles,
                 cmsswArguments]
-        logging.info("Executing CMSSW. args: %s" % args)
+        logging.info("Executing CMSSW. args: %s", args)
         returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
 
         stdoutHandle.close()

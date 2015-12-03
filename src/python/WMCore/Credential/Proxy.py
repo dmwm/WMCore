@@ -687,7 +687,7 @@ class Proxy(Credential):
 
         return result
 
-    def getAttributeFromProxy(self, proxy):
+    def getAttributeFromProxy(self, proxy, allAttributes=False):
         """
         Get proxy attribute.
         Build the proxy attribute from existing and not from parameters as
@@ -698,7 +698,10 @@ class Proxy(Credential):
                                              self.logger,
                                              self.commandTimeout)
         if retcode == 0:
-            return attribute.split('\n')[0]
+            if allAttributes:
+                return filter(bool, attribute.split('\n'))
+            else:
+                return attribute.split('\n')[0]
         else:
             return ''
 
@@ -717,3 +720,16 @@ class Proxy(Credential):
                 role = attributeToList[2].split('=')[1]
 
         return group , role
+
+    def getAllUserGroups(self, proxy):
+        """
+        Get all the attributes for the user using getAttributeFromProxy
+        and strip the ROLE and CAPABILITIES part.
+
+        Return a generator of things like '/cms/integration', '/cms'
+        """
+        attributes = self.getAttributeFromProxy(proxy, allAttributes=True)
+        for attribute in attributes:
+            splAttr = attribute.split('/') #splitted attribut
+            filtAttr = [part for part in splAttr if not (part.startswith('Role=') or part.startswith('Capability='))] #filtered attribute
+            yield '/'.join(filtAttr)

@@ -144,14 +144,12 @@ class CMSSW(Executor):
 
         if projectOutcome > 0:
             msg = scram.diagnostic()
-            #self.report.addError(60513, "ScramSetupFailure", msg)
             logging.critical("Error running SCRAM")
             logging.critical(msg)
             raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
         runtimeOutcome = scram.runtime()
         if runtimeOutcome > 0:
             msg = scram.diagnostic()
-            #self.report.addError(60513, "ScramSetupFailure", msg)
             logging.critical("Error running SCRAM")
             logging.critical(msg)
             raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
@@ -184,7 +182,7 @@ class CMSSW(Executor):
                 msg += "%s\n %s\n %s\n" % (retCode, stdout, stderr)
                 logging.critical("Error running command")
                 logging.critical(msg)
-                raise WMExecutionFailure(60514, "PreScriptFailure", msg)
+                raise WMExecutionFailure(50513, "PreScriptFailure", msg)
 
 
         #
@@ -203,7 +201,7 @@ class CMSSW(Executor):
                 msg += "%s\n " % retCode
                 msg += scram.diagnostic()
                 logging.critical(msg)
-                raise WMExecutionFailure(60515, "PreScriptScramFailure", msg)
+                raise WMExecutionFailure(50513, "PreScriptScramFailure", msg)
 
 
         configPath = "%s/%s-main.sh" % (self.step.builder.workingDir, self.stepName)

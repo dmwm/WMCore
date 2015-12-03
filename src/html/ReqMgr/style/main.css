@@ -142,7 +142,17 @@ th { background: #B3B3B3; color: white; font-weight: bold; }
     bottom: -40px;
 }
 .visible {
-    border: 3px solid #408000;
+    padding: 15px;
+    border: solid 10px #408000;
+    box-shadow: inset 5px 1px 20px 0px #ACBCD8;
+    transition: box-shadow 0.3s;
+}
+.visible_input {
+    padding: 0.4em 0.25em;
+    width: 100%;
+    background: transparent;
+    color: red;
+    font-weight: bold;
 }
 .invisible {
     background-color: #dddddd;

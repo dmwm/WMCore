@@ -157,3 +157,10 @@ th { background: #B3B3B3; color: white; font-weight: bold; }
 .invisible {
     background-color: #dddddd;
 }
+.invisible_input {
+    width: 100%;
+    color: #CCCCCC;
+    box-shadow: 0 0 5px #333333;
+    outline-color: #333333;
+    background-color: #F5F5F5;
+}

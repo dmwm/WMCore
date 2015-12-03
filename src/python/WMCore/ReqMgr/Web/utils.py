@@ -118,6 +118,7 @@ def json2table(jsondata, web_ui_map, visible_attrs=None):
             val = val.replace('<input', '<input readonly')
             val = val.replace('<textarea', '<textarea readonly')
             val = val.replace('<select', '<select disabled')
+            val = val.replace('width-100', 'width-100 invisible_input')
         table += "<tr><td>%s</td><td>%s</td></tr>\n" % (kname, val)
     table += "</table>"
     return table

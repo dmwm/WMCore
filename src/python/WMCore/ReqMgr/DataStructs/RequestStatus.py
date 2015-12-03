@@ -85,6 +85,27 @@ ACTIVE_STATUS = ["new",
                  "aborted-completed",
                  "rejected"]
 
+# if the state is not defined here (new, assignment-approved) allows all the property to get 
+ALLOWED_ACTIONS_FOR_STATUS = {
+                 "assigned": ["RequestPriority"],
+                 "negotiating": ["RequestPriority"],
+                 "acquired": ["RequestPriority"],
+                 "running": ["RequestPriority"],
+                 "running-open": ["RequestPriority"],
+                 "running-closed": ["RequestPriority"],
+                 "failed": ["RequestPriority"],
+                 "force-complete": [],
+                 "completed": [],
+                 "closed-out": [],
+                 "announced": [],
+                 "aborted": [],
+                 "aborted-completed": [],
+                 "rejected": [],
+                 "normal-archived": [],
+                 "aborted-archived": [],
+                 "rejected-archived": [],
+                }
+
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status
 REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
@@ -95,5 +116,16 @@ def check_allowed_transition(preState, postState):
         return True
     else:
         return False
+    
+def get_modifiable_properties(status = None):
+    """
+    returns mondifiable property list by status.
+    if status is not defined return dictionarly of all the status and property list
+    TODO: Currently gets the result from hardcoded list. change to get from configuration or db
+    """
+    if status:
+        return ALLOWED_ACTIONS_FOR_STATUS.get(status, None)
+    else:
+        return ALLOWED_ACTIONS_FOR_STATUS
     
     

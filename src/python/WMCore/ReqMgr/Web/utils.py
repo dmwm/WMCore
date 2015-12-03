@@ -61,7 +61,7 @@ def json2form(jsondata, indent=2, keep_first_value=True):
                     jsondata[key] = val[0]
     return json.dumps(jsondata, indent=2)
 
-def json2table(jsondata, web_ui_map):
+def json2table(jsondata, web_ui_map, visible_attrs=None):
     """
     Convert input json dict into HTML table based on assumtion that
     input json is in a simple key:value form.
@@ -78,6 +78,7 @@ def json2table(jsondata, web_ui_map):
             priority_keys.append(key)
         else:
             rest_keys.append(key)
+    cells = {}
     for key in priority_keys+rest_keys:
         val = jsondata[key]
         if  isinstance(val, list) and not val: # empty list replace with input text tag
@@ -105,6 +106,19 @@ def json2table(jsondata, web_ui_map):
             kname = web_ui_map[key]
         else:
             kname = key.capitalize().replace('_', ' ')
+        cells[key] = (kname, val)
+    if  visible_attrs:
+        for attr in visible_attrs:
+            kname, val = cells.pop(attr)
+            val = val.replace('width-100', 'width-100 visible_input')
+            table += "<tr><td>%s</td><td class=\"visible\">%s</td></tr>\n" % (kname, val)
+    for key, pair in cells.items():
+        kname, val = pair
+        if  visible_attrs:
+            val = val.replace('<input', '<input readonly')
+            val = val.replace('<textarea', '<textarea readonly')
+            val = val.replace('<select', '<select disabled')
+            val = val.replace('width-100', 'width-100 invisible_input')
         table += "<tr><td>%s</td><td>%s</td></tr>\n" % (kname, val)
     table += "</table>"
     return table

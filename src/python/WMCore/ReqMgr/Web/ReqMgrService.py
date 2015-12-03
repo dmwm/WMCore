@@ -42,6 +42,7 @@ from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team, Software
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.Request import Request
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
+from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties
 from WMCore.REST.Main import RESTMain
 from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
@@ -429,8 +430,9 @@ class ReqMgrService(TemplatedPage):
             transitions = REQUEST_STATE_TRANSITION.get(status, [])
             if  status in transitions:
                 transitions.remove(status)
+            visible_attrs = get_modifiable_properties(status)
             content = self.templatepage('doc', title=title, status=status, name=name,
-                    table=json2table(doc, web_ui_names()),
+                    table=json2table(doc, web_ui_names(), visible_attrs),
                     jsondata=json2form(doc, indent=2, keep_first_value=False),
                     transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
         elif len(doc) > 1:

@@ -127,7 +127,19 @@ class StdBase(object):
                                        'TopMuEG' : 'RAW-RECO',
                                        'EcalActivity' : 'RAW-RECO',
                                        'CosmicSP' : 'RAW-RECO',
-                                       'CosmicTP' : 'RAW-RECO'
+                                       'CosmicTP' : 'RAW-RECO',
+                                       'ZMM' : 'RAW-RECO',
+                                       'Onia' : 'RECO',
+                                       'HighPtJet' : 'RAW-RECO',
+                                       'D0Meson' : 'RECO',
+                                       'Photon' : 'AOD',
+                                       'ZEE' : 'AOD',
+                                       'BJet' : 'AOD',
+                                       'OniaCentral' : 'RECO',
+                                       'OniaPeripheral' : 'RECO',
+                                       'SingleTrack' : 'AOD',
+                                       'MinBias' : 'AOD',
+                                       'OniaUPC' : 'RAW-RECO'
                                        }
                     dataTier = skimToDataTier.get(physicsSkim, 'USER')
                     moduleLabel = "SKIMStream%s" % physicsSkim

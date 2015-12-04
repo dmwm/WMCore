@@ -60,13 +60,13 @@ class DBS3Reader:
         # connection to PhEDEx (Use default endpoint url)
         self.phedex = PhEDEx(responseType = "json")
 
-    def _getLumiList(self, blockName = None, lfns = None):
+    def _getLumiList(self, blockName = None, lfns = None, validFileOnly = 1):
         """
         currently only take one lfn but dbs api need be updated
         """
         try:
             if blockName:
-                lumiLists = self.dbs.listFileLumis(block_name=blockName, validFileOnly = 1)
+                lumiLists = self.dbs.listFileLumis(block_name=blockName, validFileOnly = validFileOnly)
             elif lfns:
                 lumiLists = []
                 for slfn in slicedIterator(lfns, 50):
@@ -444,7 +444,7 @@ class DBS3Reader:
         return True
 
 
-    def listFilesInBlock(self, fileBlockName, lumis = True):
+    def listFilesInBlock(self, fileBlockName, lumis = True, validFileOnly = 1):
         """
         _listFilesInBlock_
 
@@ -460,7 +460,7 @@ class DBS3Reader:
             raise DBSReaderError(msg % fileBlockName)
 
         try:
-            files = self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = 1, detail = True)
+            files = self.dbs.listFileArray(block_name = fileBlockName, validFileOnly = validFileOnly, detail = True)
         except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlock(%s)\n" % fileBlockName
@@ -468,7 +468,7 @@ class DBS3Reader:
             raise DBSReaderError(msg)
 
         if lumis:
-            lumiDict = self._getLumiList(blockName = fileBlockName)
+            lumiDict = self._getLumiList(blockName = fileBlockName, validFileOnly = validFileOnly)
 
         result = []
         for fileInfo in files:
@@ -477,7 +477,7 @@ class DBS3Reader:
             result.append(remapDBS3Keys(fileInfo, stringify = True))
         return result
 
-    def listFilesInBlockWithParents(self, fileBlockName, lumis = True):
+    def listFilesInBlockWithParents(self, fileBlockName, lumis = True, validFileOnly = 1):
         """
         _listFilesInBlockWithParents_
 
@@ -495,7 +495,7 @@ class DBS3Reader:
         try:
             #TODO: shoud we get only valid block for this?
             files = self.dbs.listFileParents(block_name = fileBlockName)
-            fileDetails = self.listFilesInBlock(fileBlockName, lumis)
+            fileDetails = self.listFilesInBlock(fileBlockName, lumis, validFileOnly)
 
         except dbsClientException as ex:
             msg = "Error in "

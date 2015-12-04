@@ -108,7 +108,7 @@ class AccountantWorker(WMConnectionBase):
         jobDBName = config.JobStateMachine.couchDBName
         jobCouchdb  = CouchServer(jobDBurl)
         self.fwjrCouchDB = jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
-        self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL, "WMStatsAgent")
+        self.localWMStats = WMStatsWriter(config.TaskArchiver.localWMStatsURL, appName="WMStatsAgent")
 
         # Hold data for later commital
         self.dbsFilesToCreate  = []

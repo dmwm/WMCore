@@ -1,3 +1,7 @@
 function(doc, req) {
-  return !doc._id.match('_design/(.*)');
+  if (doc._deleted){
+    return false;
+  } else {
+  	return !doc._id.match('_design/(.*)');
+  }  
 }

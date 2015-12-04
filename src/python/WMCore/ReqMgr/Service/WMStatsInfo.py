@@ -23,7 +23,7 @@ class WMStatsInfo(RESTEntity):
         RESTEntity.__init__(self, app, api, config, mount)
         wmstats_url = "%s/%s" % (self.config.couch_host, self.config.couch_wmstats_db)
         reqdb_url = "%s/%s" % (self.config.couch_host, self.config.couch_reqmgr_db)
-        self.wmstats = WMStatsReader(wmstats_url, reqdb_url, reqdbCouchApp = "ReqMgr")           
+        self.wmstats = WMStatsReader(wmstats_url, reqdbURL=reqdb_url, reqdbCouchApp="ReqMgr")           
         
     def validate(self, apiobj, method, api, param, safe):
         args_length = len(param.args)

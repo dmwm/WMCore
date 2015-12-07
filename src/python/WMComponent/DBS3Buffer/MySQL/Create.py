@@ -83,7 +83,7 @@ class Create(DBCreator):
                  block_close_max_wait_time    INTEGER,
                  block_close_max_files        INTEGER,
                  block_close_max_events       INTEGER,
-                 block_close_max_size         INTEGER,
+                 block_close_max_size         BIGINT,
                  completed                    INTEGER       DEFAULT 0,
                  PRIMARY KEY (id),
                  CONSTRAINT uq_dbs_wor UNIQUE (name, task)
@@ -93,7 +93,7 @@ class Create(DBCreator):
             """CREATE TABLE dbsbuffer_file (
                  id                    INTEGER      AUTO_INCREMENT,
                  lfn                   VARCHAR(500) NOT NULL,
-                 filesize              INTEGER,
+                 filesize              BIGINT,
                  events                INTEGER,
                  dataset_algo          INTEGER      NOT NULL,
                  block_id              INTEGER,

@@ -40,9 +40,9 @@ USER_AGENT = \
 def addTextNode(document, parent, name, value):
     """
     _addTextNode_
-    
+
     Add a text node with name and value to the parent node within the document
-    
+
     """
     node = document.createElement(name)
     parent.appendChild(node)
@@ -54,26 +54,26 @@ def addTextNode(document, parent, name, value):
 def HTTPpost(params, url, onFailureFile = None):
     """
     Do a http post with params to url
-    
+
     params is a list of tuples of key,value pairs
 
     Taken directly from ProdAgent ProdMon DashboardInterface
     """
-    
+
     try:
-        logging.debug("contacting %s" % url)    
-    
+        logging.debug("contacting %s" % url)
+
         data = urllib.urlencode(params)
         #put who we are in headers
         headers = { 'User-Agent' : USER_AGENT }
         req = urllib2.Request(url, data, headers)
-    
+
         response = urllib2.urlopen(req, data)
-        
+
         logging.debug("received http code: %s, message: %s, response: %s" \
                       % (response.code, response.msg, str(response.read())))
-        
-    except IOError, ex:
+
+    except IOError as ex:
         #record the report that failed then rethrow
 
         if onFailureFile != None:
@@ -82,8 +82,8 @@ def HTTPpost(params, url, onFailureFile = None):
             file.close()
             msg = str(ex)
             msg += "\nA copy of the failed report is in %s" % onFailureFile
-        
-        raise IOError, msg
+
+        raise IOError(msg)
 
     return
 
@@ -103,7 +103,7 @@ class DashboardInterface(object):
         Put the job somewhere convenient
 
         """
-        
+
         self.job       = None
         self.task      = None
         self.report    = None
@@ -122,7 +122,7 @@ class DashboardInterface(object):
     def __call__(self, job, task, report, export = True, startTime = 'None', endTime = 'None'):
         """
         __call__
-        
+
         Does everything.  Basically it runs all the other functions.
 
         Accepts three arguments, a DS Job object, a WMTaskHelper,
@@ -145,7 +145,7 @@ class DashboardInterface(object):
 
         self.createDocument()
 
-        
+
         if export:
             self.exportDocument()
 
@@ -235,7 +235,7 @@ class DashboardInterface(object):
         jobDoc.appendChild(instance_node)
         try:
             self.createInstanceDocument(instance = instance_node)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error while trying to create instances\n"
             msg += str(traceback.format_exc())
             msg += str(ex)
@@ -251,7 +251,7 @@ class DashboardInterface(object):
     def createInstanceDocument(self, instance):
         """
         _createInstanceDocument_
-        
+
         Put job info in an instance
 
         Which is not a job because it's super special
@@ -272,8 +272,8 @@ class DashboardInterface(object):
                     "exit_code", str(self.report.taskSuccessful()))
 
 
-        # Do output files and then set seName
-        seName = None
+        # Do output files and then set phedex node name (pnn)
+        pnn = None
         output_node = self.document.createElement("output_files")
         instance.appendChild(output_node)
         outLFNs = []
@@ -281,13 +281,13 @@ class DashboardInterface(object):
 
         # Get output files
         for outfile in self.report.getAllFiles():
-            seName = outfile.get('location', 'None')
+            pnn = outfile.get('location', 'None')
             eventsWritten += outfile.get('events', 0)
             addTextNode(self.document, output_node, "LFN",
                         str(outfile.get('lfn', 'None')))
 
-        # Add SEName and events written
-        resource.setAttribute("se_name", seName)
+        # Add PNN and events written
+        resource.setAttribute("pnn", pnn)
         addTextNode(self.document, instance,
                     "events_written", str(eventsWritten))
 
@@ -322,7 +322,7 @@ class DashboardInterface(object):
 
         return
 
-    
+
 
     def exportDocument(self):
         """
@@ -336,7 +336,7 @@ class DashboardInterface(object):
         try:
             HTTPpost(contents, self.url,
                      onFailureFile = os.path.join(os.getcwd(), "Failed.txt"))
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error exporting data to external monitoring: "
             msg += str(traceback.format_exc())
             msg += str(ex)
@@ -372,4 +372,3 @@ class DashboardInterface(object):
             error = getattr(stepSection.errors, 'error%i' % (errorNum), None)
             if error:
                 value += '%s:' % (str(getattr(error, 'exitCode', 0)))
-        

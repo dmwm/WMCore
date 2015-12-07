@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import threading
 import re
-import getopt
 import sys
 import os
+
+from optparse import OptionParser
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.Configuration     import loadConfigurationFile
@@ -12,90 +13,166 @@ from WMCore.WMBS.Job          import Job
 from WMCore.DAOFactory        import DAOFactory
 
 
-class pausedTool:
+class PausedTool:
 
     def __init__(self):
         # Connecting to DB
-        myThread = threading.currentThread() 
+        myThread = threading.currentThread()
         connectToDB()
-        self.dbi = myThread.dbi 
+        self.dbi = myThread.dbi
 
         # Creating DAO stuff for job discovery 
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = self.dbi)
-        self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
-        self.getTask = self.daoFactory(classname = "Jobs.GetTask")       
+        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.getTask = self.daoFactory(classname = "Jobs.GetTask")
+        self.getTaskType = self.daoFactory(classname = "Jobs.GetType")
         # Instantiating a changer so we can change jobState
         Config = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
         self.changer = ChangeState(Config)
 
+        return
+
 
     def getOptions(self):
 
-        opts, args = getopt.getopt(sys.argv[1:], 'frw:n:', ['fail', 'resume', 'workflow=', 'nJobs='])
+        usage = './config/tier0/manage  execute-agent paused-jobs [options] '
+        myOptParser = OptionParser(usage = usage)
+        myOptParser.add_option('-f', '--fail', dest = 'action',
+                               action = 'store_const', const = 'fail',
+                               help = 'Fail the jobs matching the filters')
+        myOptParser.add_option('-r', '--resume', dest = 'action',
+                               action = 'store_const', const = 'resume',
+                               help = 'Resume the jobs matching the filters')
+        myOptParser.add_option('-w', '--workflow', dest = 'workflow',
+                               help = 'Jobs belonging to WORKFLOW will be resumed/failed',
+                               default = None)
+        myOptParser.add_option('-s', '--site', dest = 'site',
+                               help = 'Only jobs that ran at SITE will be resumed/failed',
+                               default = None)
+        myOptParser.add_option('-t', '--task-type', dest = 'taskType',
+                               help = 'Only jobs of TYPE will be resumed/failed',
+                               default = None)
+        myOptParser.add_option('-j', '--job-id', dest = 'jobId',
+                               help = 'Only the pointed job will be resumed/failed',
+                               default = None)
+        myOptParser.add_option('-d', '--dry-run', dest = 'dryRun',
+                               help = "Don't make any changes, just print out what will happen",
+                               default = False, action = 'store_true')
 
-        for o, a in opts:
-            if o in ('-f', '--fail'):
-                action="fail"
-            elif o in ('-r', '--resume'):
-                action="resume"
-            elif o in ('-w', '--workflow'):
-                workflow=a
-            elif o in ('-n', '--njobs'):
-                self.nJobs=a
+        (options, _) = myOptParser.parse_args()
 
-        if not 'workflow' in locals() or not 'action' in locals():
-            sys.exit('Please give me at least a workflow and a task')
+        if not (options.workflow or options.site or options.taskType or options.jobId):
+            myOptParser.error('At least a workflow, site, type or job-id must be specified')
 
-        self.workflow=workflow
-        self.action=action
+        self.workflow = options.workflow
+        self.action = options.action
+        self.site = options.site
+        self.dryRun = options.dryRun
+        self.taskType = options.taskType
+        self.jobId = options.jobId
+        return
 
     def getPaused(self):
-        pausedJobs = self.getJobs.execute(state = 'jobpaused' )
+
+        # Looks ugly but I didn't find a better idea to get all the 3 states with the current support for the query
+        pausedJobs = []
+        pausedJobs = pausedJobs + self.getJobs.execute(state = 'jobpaused')
+        pausedJobs = pausedJobs + self.getJobs.execute(state = 'createpaused')
+        pausedJobs = pausedJobs + self.getJobs.execute(state = 'submitpaused')
+
         jobs = self.getTask.execute(pausedJobs)
         return jobs
 
-    def filterJobs(self, jobs): 
+    def filterJobs(self, jobs):
 
         matchedJobs = []
-        WMBSJobs = []    
-        workflow = self.workflow
 
-        for jobID in jobs:
-            requestName = jobs[jobID].split("/")[1]
-            if ( re.match( '.*'+workflow+'.*' ,jobs[jobID])):
-                matchedJobs.append(jobID)
+        if self.workflow:
+            for jobID in jobs:
+                if (re.match('.*' + self.workflow + '.*' , jobs[jobID])):
+                    matchedJobs.append(jobID)
+        elif self.jobId:
+            for jobID in jobs:
+                if self.jobId == str(jobID):
+                    matchedJobs.append(jobID)
+        else:
+            matchedJobs = jobs.keys()
+
+        if not matchedJobs:
+            return []
 
         # Now that we know what we want, we instantiate the jobs
-        for jobID in matchedJobs:
-            job = Job(id = jobID)
+        result = self.getTaskType.execute(matchedJobs)
+        WMBSJobs = []
+        for entry in result:
+            job = Job(id = entry['id'])
             job.load()
+            job['taskType'] = entry['type']
             WMBSJobs.append(job)
 
-        return WMBSJobs
+        siteFilteredJobs = []
+        #And now filter by site
+        if self.site:
+            for job in WMBSJobs:
+                if job['location'] == self.site:
+                    siteFilteredJobs.append(job)
+        else:
+            siteFilteredJobs = WMBSJobs
+
+        #Finally if necessary filter by task
+        taskFilteredJobs = []
+        if self.taskType:
+            for job in siteFilteredJobs:
+                if job['taskType'] == self.taskType:
+                    taskFilteredJobs.append(job)
+        else:
+            taskFilteredJobs = siteFilteredJobs
+
+        return taskFilteredJobs
 
     def resumeJobs(self, jobs):
         for job in jobs:
-            self.changer.propagate(job, 'created', 'jobpaused')
-            print ('Resuming job '+job['id'])
+            if self.dryRun:
+                print 'Job %d would be resumed' % job['id']
+            else:
+                self.changer.propagate(job, 'created', 'jobpaused',updatesummary=True)
+                print "Resuming job %d" % job['id']
+        return
 
     def failJobs(self, jobs):
         for job in jobs:
-            self.changer.propagate(job, 'killed', 'jobpaused')
-            print ('Failing job '+job['id'])
+            if self.dryRun:
+                print 'Job %d would be failed' % job['id']
+            else:
+                print "Failing job %d" % job['id']
+                self.changer.propagate(job, 'retrydone', 'jobpaused',updatesummary=True)
+        return
 
-    def main(self):
+    def execute(self):
 
         self.getOptions()
         allJobs = self.getPaused()
         jobs = self.filterJobs(allJobs)
+        if not jobs:
+            print "No paused jobs that matched the filters were found..."
+            return 0
         if self.action == "resume":
             self.resumeJobs(jobs)
         elif self.action == "fail":
-            self.failJobs(jobs)
-        
+            confirm = raw_input("Are you sure you want to fail %d jobs? Type Y or N:\n" % len(jobs))
+            if confirm == "Y":
+                print "Failing the jobs..."
+                self.failJobs(jobs)
+            else:
+                print "Aborting... No changes were made."
+        return 0
 
-tool = pausedTool()
-tool.main()
+def main():
+    tool = PausedTool()
+    tool.execute()
+
+if __name__ == "__main__":
+    sys.exit(main())
 

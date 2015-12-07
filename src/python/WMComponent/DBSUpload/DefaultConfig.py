@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,E1103,C0103,R0902
+#pylint: disable=E1101,E1103,C0103,R0902
 """
 Defines default config values for DBSUpload specific
 parameters.
@@ -17,15 +17,14 @@ config = Configuration()
 
 config.section_("CoreDatabase")
 if (os.getenv('DATABASE') == None):
-    raise RuntimeError, \
-          "You must set the DATABASE environment variable to run tests"
+    raise RuntimeError("You must set the DATABASE environment variable to run tests")
 config.CoreDatabase.connectUrl = os.getenv("DATABASE")
 config.CoreDatabase.dialect = os.getenv('DIALECT', None)
 config.CoreDatabase.socket = os.getenv("DBSOCK")
 
 
 config.component_("DBSUpload")
-#The log level of the component. 
+#The log level of the component.
 config.DBSUpload.logLevel = 'DEBUG'
 
 # maximum number of threads we want to deal
@@ -36,7 +35,7 @@ config.DBSUpload.maxThreads = 1
 #
 config.DBSUpload.bufferSuccessHandler = \
     'WMComponent.DBSUpload.Handler.BufferSuccess'
-    
+
 config.DBSUpload.newWorkflowHandler = \
     'WMComponent.DBSUpload.Handler.NewWorkflowHandler'
 
@@ -63,4 +62,3 @@ config.DBSUpload.globalDBSVer = 'DBS_2_0_9'
 config.DBSUpload.DBSMaxSize      = 999999999
 config.DBSUpload.DBSMaxFiles     = 2
 config.DBSUpload.DBSBlockTimeout = 10000000
-

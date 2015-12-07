@@ -21,7 +21,7 @@ class New(DBFormatter):
     sql = """INSERT INTO reqmgr_software (software_name, scram_arch)
                VALUES (:software_name, :scram_arch)
     """
-    
+
     def execute(self, softwareNames, scramArch = None, conn = None, trans = False):
         """
         _execute_
@@ -31,7 +31,7 @@ class New(DBFormatter):
         """
         if len(softwareNames) < 1:
             return
-        
+
         binds = []
         for version in softwareNames:
             binds.append({'scram_arch': scramArch,
@@ -39,7 +39,3 @@ class New(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
-
-
-
-

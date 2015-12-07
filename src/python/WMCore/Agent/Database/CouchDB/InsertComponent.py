@@ -19,7 +19,7 @@ class InsertComponent(DBFormatter):
         service = CouchService(serverUrl, database)
 
         doc = {}
-        doc = service.loadDoc(name) 
+        doc = service.loadDoc(name)
 
         if doc:
             service.delDoc(doc)

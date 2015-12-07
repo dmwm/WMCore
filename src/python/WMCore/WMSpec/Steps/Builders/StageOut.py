@@ -31,9 +31,3 @@ class StageOut(Builder):
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
         print "Builders.StageOut.build called on %s" % stepName
-
-
-
-
-
-

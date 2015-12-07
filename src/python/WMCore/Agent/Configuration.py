@@ -53,7 +53,7 @@ def loadConfigurationFile(filename):
     Load a Configuration File
 
     """
-    assert filename != "" 
+    assert filename != ""
     return baseLoadConfigurationFile(filename)
 
 def saveConfigurationFile(configInstance, filename, **options):

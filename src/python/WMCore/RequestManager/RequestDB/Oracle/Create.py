@@ -1,8 +1,13 @@
-#!/usr/bin/env python
 """
-_ReqMgr.RequestDB.MySQL_
+_ReqMgr.RequestDB.Oracle_
 
-MySQL Compatibility layer for Request Manager DB
+Oracle Compatibility layer for Request Manager DB
+Create all tables for ReqMgr in Oracle
+
+
+Priorities changed: only reqmgr_request:request_priority is
+really considered, all other priority values are ignored.
+
 """
 
 
@@ -21,7 +26,7 @@ class Create(DBCreator):
     Implementation of ReqMgr DB for MySQL
 
     """
-    requiredTables = ['reqmgr_request_type', 
+    requiredTables = ['reqmgr_request_type',
                       'reqmgr_request_type_seq',
                       'reqmgr_request_type_trg',
                       'reqmgr_request_status',
@@ -340,7 +345,7 @@ class Create(DBCreator):
         request_id NUMBER(11) NOT NULL,
         dataset_name VARCHAR(255) NOT NULL,
         dataset_type VARCHAR(11),
-        CONSTRAINT dataset_type_cons 
+        CONSTRAINT dataset_type_cons
                 CHECK (dataset_type IN ('source', 'secondary', 'pileup')),
         FOREIGN KEY(request_id) references
                 reqmgr_request(request_id)
@@ -565,7 +570,7 @@ class Create(DBCreator):
         FOREIGN KEY (campaign_id) references
            reqmgr_campaign(campaign_id)
 
-        ) 
+        )
         """
 
         for typeName in TypesList:

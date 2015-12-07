@@ -15,25 +15,24 @@ from WMCore.DataStructs.Run import Run
 from WMCore.WMBS.Job      import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.JobStateMachine import DefaultConfig
 
 from WMCore.Services.Requests import Requests, JSONRequests
 import urllib
 from nose.plugins.attrib import attr
 
 class WMBSServiceTest(unittest.TestCase):
-    
+
     def setUp(self):
         """
         _setUp_
 
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also, create some dummy locations.
-        
+
         This doesn't start server automatically.
         You need to start server before - make sure change self.server_url,
         if it is not the same as given one - localhost:8080.
-        
+
         WMCORE/src/python/WMCore/WebTools/Root.py --ini=WMCORE/src/python/WMCore/HTTPFrontEnd/WMBSDefaultConfig.py
         """
         self.server_url = 'http://localhost:8081'
@@ -41,13 +40,13 @@ class WMBSServiceTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+                                useDefault = False )
 
         myThread = threading.currentThread()
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         locationAction = self.daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "test.site.ch")
         locationAction.execute(siteName = "base.site.ch")
@@ -56,17 +55,17 @@ class WMBSServiceTest(unittest.TestCase):
         self.createTestJob(testSubscription, 'TestJob1', testFileA)
         self.createTestJob(testSubscription, 'TestJob2', testFileB)
         self.createTestJob(testSubscription, 'TestJob3', testFileC)
-        
+
         return
 
     def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
         myThread = threading.currentThread()
-        
+
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
@@ -74,8 +73,8 @@ class WMBSServiceTest(unittest.TestCase):
         if not destroyworked:
             raise Exception("Could not complete WMBS tear down.")
         myThread.transaction.commit()
-        
-        
+
+
     def createSubscriptionWithFileABC(self):
         """"
         _createSubscriptionWithFileABC_
@@ -88,27 +87,27 @@ class WMBSServiceTest(unittest.TestCase):
         testWorkflow.create()
         testWorkflow2 = Workflow(spec = "specBOGUS.xml", owner = "Simon",
                                 name = "wfBOGUS", task = "Test")
-        testWorkflow2.create()        
+        testWorkflow2.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
                          locations = set(["test.site.ch"]))
         testFileA.addRun(Run(1, *[45]))
-                                 
+
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = set(["test.site.ch"]))                         
+                         locations = set(["test.site.ch"]))
         testFileB.addRun(Run(1, *[46]))
-        
+
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
                          locations = set(["test.site.ch"]))
         testFileC.addRun(Run(2, *[48]))
-         
+
         testFileA.create()
         testFileB.create()
         testFileC.create()
-        
+
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
-        
+
         testFileset.addFile(testFileA)
         testFileset.addFile(testFileB)
         testFileset.addFile(testFileC)
@@ -121,12 +120,12 @@ class WMBSServiceTest(unittest.TestCase):
                                          workflow = testWorkflow2)
         testSubscription2.create()
         testSubscription2.acquireFiles([testFileA, testFileB])
-        
+
         #return (testSubscription, testFileset, testWorkflow, testFileA,
         #        testFileB, testFileC)
-        
+
         return (testSubscription, testFileA, testFileB, testFileC)
-        
+
     def createTestJob(self, testSubscription, jobName, *testFiles):
         """
         _createTestJob_
@@ -137,49 +136,48 @@ class WMBSServiceTest(unittest.TestCase):
 
         testJobGroup = JobGroup(subscription = testSubscription)
         testJobGroup.create()
-        
+
         testFiles = list(testFiles)
         testJob = Job(name = jobName, files = testFiles)
         testJob["couch_record"] = "somecouchrecord"
         testJob["location"] = "test.site.ch"
         testJob.create(group = testJobGroup)
-        
+
     def wmbsServiceSetup(self, argstring, kargs={}, returnType='text'):
-        
+
         if returnType == 'json':
             request = JSONRequests(self.server_url)
         else:
             request = Requests(self.server_url)
         results = request.get("/wmbs/%s/" % argstring, kargs)
-        
+
         return results
     @attr('integration')
     def testAllMethods(self):
         pass
-    
+
     @attr('integration')
     def testJobs(self):
-        print "\nTesting jobs service: Should return all the job id and state of jobs" 
+        print "\nTesting jobs service: Should return all the job id and state of jobs"
         print self.wmbsServiceSetup('jobs')
-    
-    @attr('integration')    
+
+    @attr('integration')
     def testJobCount(self):
-        print "\nTesting job count service: Should return the job count by and state of jobs" 
-        
+        print "\nTesting job count service: Should return the job count by and state of jobs"
+
         print self.wmbsServiceSetup('jobcount')
-    
+
     @attr('integration')
     def testJobsBySubs(self):
-        print "\nTesting jobsbysubs service: Should return the jobs by given fileset and workflow and specified time" 
+        print "\nTesting jobsbysubs service: Should return the jobs by given fileset and workflow and specified time"
         param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'state_time': 0}
         print self.wmbsServiceSetup('jobsbysubs', param)
-    
+
     @attr('integration')
     def testJobCountBySubsAndRun(self):
-        print "\nTesting jobcountbysubs service: Should return the job count by given subscription and run" 
+        print "\nTesting jobcountbysubs service: Should return the job count by given subscription and run"
         param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'run':1 }
         print self.wmbsServiceSetup('jobcountbysubs', param)
-        
+
 if __name__ == "__main__":
     unittest.main()
-    

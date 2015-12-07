@@ -14,6 +14,7 @@ import threading
 
 from WMCore.Services.UUID       import makeUUID
 from WMQuality.TestInit         import TestInit
+from WMQuality.Emulators        import EmulatorSetup
 from WMCore.Agent.Configuration import Configuration
 from WMCore.DAOFactory          import DAOFactory
 from WMCore.DataStructs.Run     import Run
@@ -42,6 +43,7 @@ class scaleTestFiller:
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         myThread = threading.currentThread()
         self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
@@ -88,9 +90,9 @@ class scaleTestFiller:
             self.dbsUploader.close()
             raise
 
-        
+
         return
-    
+
 
 
     def getConfig(self):
@@ -102,7 +104,8 @@ class scaleTestFiller:
         """
 
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")
@@ -119,17 +122,17 @@ class scaleTestFiller:
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
 
-        config.component_("DBSUpload")
-        config.DBSUpload.pollInterval     = 10
-        config.DBSUpload.logLevel         = 'DEBUG'
-        config.DBSUpload.DBSBlockMaxFiles = 500
-        config.DBSUpload.DBSBlockMaxTime  = 600
-        config.DBSUpload.DBSBlockMaxSize  = 999999999999
-        config.DBSUpload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
-        config.DBSUpload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
-        config.DBSUpload.componentDir     = os.path.join(os.getcwd(), 'Components')
-        config.DBSUpload.nProcesses       = 1
-        config.DBSUpload.dbsWaitTime      = 1
+        config.component_("DBS3Upload")
+        config.DBS3Upload.pollInterval     = 10
+        config.DBS3Upload.logLevel         = 'DEBUG'
+        config.DBS3Upload.DBSBlockMaxFiles = 500
+        config.DBS3Upload.DBSBlockMaxTime  = 600
+        config.DBS3Upload.DBSBlockMaxSize  = 999999999999
+        config.DBS3Upload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
+        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
+        config.DBS3Upload.componentDir     = os.path.join(os.getcwd(), 'Components')
+        config.DBS3Upload.nProcesses       = 1
+        config.DBS3Upload.dbsWaitTime      = 1
 
         return config
 
@@ -175,7 +178,7 @@ class scaleTestFiller:
             testFileChild.setLocation(site)
 
             testFileChild.addParents([f['lfn']])
-            
+
 
         return files
 
@@ -187,12 +190,10 @@ if __name__ == "__main__":
 
     """
 
-    scaleTester = scaleTestFiller()
-
-    while True:
-        print "Ready to begin scale testing"
-        scaleTester()
-        print "Done running for now, sleeping temporarily"
-        time.sleep(random.randint(10, 60))
-
-
+    if False: # Enable test at your own risk
+        scaleTester = scaleTestFiller()
+        while True:
+            print "Ready to begin scale testing"
+            scaleTester()
+            print "Done running for now, sleeping temporarily"
+            time.sleep(random.randint(10, 60))

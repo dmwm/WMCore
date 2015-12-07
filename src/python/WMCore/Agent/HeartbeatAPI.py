@@ -26,23 +26,23 @@ class HeartbeatAPI(WMConnectionBase):
         check to see if a transaction object has been created.  If none exists,
         create one but leave the transaction closed.
         """
-        WMConnectionBase.__init__(self, daoPackage = "WMCore.Agent.Database", 
+        WMConnectionBase.__init__(self, daoPackage = "WMCore.Agent.Database",
                                   logger = logger, dbi = dbi)
-        
+
         self.componentName = componentName
         self.pid = os.getpid()
-        
+
     def registerComponent(self):
-        
+
         insertAction = self.daofactory(classname = "InsertComponent")
         insertAction.execute(self.componentName, self.pid,
                              conn = self.getDBConn(),
                              transaction = self.existingTransaction())
-        
+
     def updateWorkerHeartbeat(self, workerName, state = "Start", pid = None):
-        
+
         existAction = self.daofactory(classname = "ExistWorker")
-        componentID = existAction.execute(self.componentName, workerName, 
+        componentID = existAction.execute(self.componentName, workerName,
                                     conn = self.getDBConn(),
                                     transaction = self.existingTransaction())
         if not componentID:
@@ -55,31 +55,27 @@ class HeartbeatAPI(WMConnectionBase):
             action.execute(componentID, workerName, state, pid,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-    
+
     def updateWorkerError(self, workerName, errorMessage):
-        
+
         action = self.daofactory(classname = "UpdateWorkerError")
         action.execute(self.componentName, workerName, errorMessage,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-            
+
     def getHeartbeatInfo(self):
-        
+
         heartbeatInfo = self.daofactory(classname = "GetHeartbeatInfo")
         results = heartbeatInfo.execute(conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
-        
+
         return results
-        
-    
+
+
     def getAllHeartbeatInfo(self):
-        
+
         heartbeatInfo = self.daofactory(classname = "GetAllHeartbeatInfo")
         results = heartbeatInfo.execute(conn = self.getDBConn(),
                                         transaction = self.existingTransaction())
-        
+
         return results
-        
-            
-    
-        

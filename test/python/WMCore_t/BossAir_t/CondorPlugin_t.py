@@ -50,6 +50,7 @@ class CondorPluginTest(BossAirTest):
 
         baAPI  = BossAirAPI(config = config)
 
+        print self.testDir
 
         jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
         f = open(jobPackage, 'w')
@@ -69,12 +70,12 @@ class CondorPluginTest(BossAirTest):
             tmpJob['cache_dir']   = self.testDir
             tmpJob['retry_count'] = 0
             tmpJob['plugin']      = 'CondorPlugin'
-            tmpJob['owner']       = 'mnorman'
+            tmpJob['owner']       = 'tapas'
             tmpJob['packageDir']  = self.testDir
             tmpJob['sandbox']     = sandbox
             tmpJob['priority']    = None
-            tmpJob['usergroup']   = "phgroup"
-            tmpJob['userrole']    = 'cmsrole'
+            tmpJob['usergroup']   = "wheel"
+            tmpJob['userrole']    = 'cmsuser'
             jobList.append(tmpJob)
 
 
@@ -82,8 +83,6 @@ class CondorPluginTest(BossAirTest):
         #info['packageDir'] = self.testDir
         info['index']      = 0
         info['sandbox']    = sandbox
-
-
 
         baAPI.submit(jobs = jobList, info = info)
 
@@ -111,7 +110,6 @@ class CondorPluginTest(BossAirTest):
 
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), nJobs)
-
 
         baAPI.kill(jobs = jobList)
 
@@ -220,7 +218,7 @@ class CondorPluginTest(BossAirTest):
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
-        
+
         statusPoller.algorithm()
 
         nRunning = getCondorRunningJobs(self.user)
@@ -231,7 +229,7 @@ class CondorPluginTest(BossAirTest):
 
         newJobs = baAPI._loadByStatus(status = 'Idle')
         self.assertEqual(len(newJobs), nSubs * nJobs)
-        
+
 
         # Tracker should do nothing
         jobTracker.algorithm()
@@ -274,7 +272,7 @@ class CondorPluginTest(BossAirTest):
         return
 
 
-    
+
     @attr('integration')
     def testE_FullChain(self):
         """
@@ -398,15 +396,74 @@ class CondorPluginTest(BossAirTest):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, nSubs * nJobs)
 
-        # Now kill 'em manually
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
+        baAPI.track()
+        idleJobs = baAPI._loadByStatus(status = 'Idle')
+        sn = "T2_US_UCSD"
 
+        # Test the Site Info has been updated. Make Sure T2_US_UCSD is not in the sitelist
+        # in BossAir_t.py
+        baAPI.updateSiteInformation(idleJobs, sn, True)
+
+        # Now kill 'em manually
+        #        command = ['condor_rm', self.user]
+        #        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        #        pipe.communicate()
+        
         del jobSubmitter
 
         return
 
+
+    @attr('integration')
+    def testT_updateJobInfo(self):
+        """
+        _updateJobInfo_
+
+        Test the updateSiteInformation method from CondorPlugin.py
+        """
+
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
+        
+        config = self.getConfig()
+        config.BossAir.pluginName = 'CondorPlugin'
+        config.BossAir.submitWMSMode = True
+
+        baAPI  = BossAirAPI(config = config)
+        workload = self.createTestWorkload()
+        workloadName = "basicWorkload"
+        changeState = ChangeState(config)
+
+        nSubs = 1
+        nJobs = 2
+        cacheDir = os.path.join(self.testDir, 'CacheDir')
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            site="se.T2_US_UCSD")
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+        jobSubmitter = JobSubmitterPoller(config = config)
+        jobSubmitter.algorithm()
+        nRunning = getCondorRunningJobs(self.user)
+        self.assertEqual(nRunning, nSubs * nJobs)
+
+        baAPI.track()
+        idleJobs = baAPI._loadByStatus(status = 'Idle')
+
+        ##
+        # Make one of the sites in the sitelist to be True for ABORTED/DRAINING/DOWN 
+        # updateSiteInformation() method should edit the classAd for all the jobs
+        # that are bound for the site
+        # Check the Q manually using condor_q -l <job id>
+        #
+        jtok = baAPI.updateSiteInformation(idleJobs, "T2_US_UCSD", True)
+        if jtok != None :
+            baAPI.kill(jtok, errorCode=61301)  # errorCode can be either 61301/61302/61303 (Aborted/Draining/Down)
+
+        return
 
 
 if __name__ == '__main__':

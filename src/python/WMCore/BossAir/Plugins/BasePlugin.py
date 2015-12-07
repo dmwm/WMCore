@@ -17,7 +17,7 @@ class BossAirPluginException(WMException):
 
     """
 
-    
+
 
 
 class BasePlugin:
@@ -29,19 +29,19 @@ class BasePlugin:
 
 
     # the common states which needs to be mapped from each plugIn states
-    globalState = ['Pending', 'Running', 'Complete','Error'] 
-    
+    globalState = ['Pending', 'Running', 'Complete','Error']
+
     @staticmethod
     def verifyState(map):
         for state in map.values():
             if state not in BasePlugin.globalState:
-                raise BossAirPluginException, "not valid state %s" % state
+                raise BossAirPluginException("not valid state %s" % state)
         return map
-    
+
     @staticmethod
     def stateMap():
-        raise NotImplementedError, "stateMap is not implemented"
-        
+        raise NotImplementedError("stateMap is not implemented")
+
     def __init__(self, config):
 
         self.config = config
@@ -55,7 +55,7 @@ class BasePlugin:
     def submit(self, jobs, info = None):
         """
         _submit_
-        
+
         Submits jobs
         """
 
@@ -65,7 +65,7 @@ class BasePlugin:
     def track(self, jobs):
         """
         _track_
-        
+
         Tracks jobs
         Returns three lists:
         1) the running jobs
@@ -90,9 +90,29 @@ class BasePlugin:
     def kill(self, jobs):
         """
         _kill_
-        
+
         Kill any and all jobs
         """
 
 
         return
+
+    def updateJobInformation(self, workflow, task, **kwargs):
+        """
+        _updateJobInformation_
+
+        Update information on pending jobs
+        where supported, the values are updated
+        are passed through the kwargs
+        """
+        pass
+
+    def updateSiteInformation(self, jobs, siteName, excludeSite) :
+        """
+        _updateSiteInformation_
+
+        Update Site Information
+        """
+        pass
+
+    

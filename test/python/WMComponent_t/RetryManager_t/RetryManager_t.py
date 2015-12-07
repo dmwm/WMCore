@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W0142, C0103
+#pylint: disable=E1101, W0142, C0103
 # E1101: Use configuration files
 # W0142: Use ** magic
 # C0103: Different naming conventions apply for tests
@@ -21,6 +21,7 @@ from WMComponent.RetryManager.RetryManagerPoller import RetryManagerPoller
 import WMCore.WMBase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -39,14 +40,14 @@ from WMCore.FwkJobReport.Report import Report
 
 class RetryManagerTest(unittest.TestCase):
     """
-    TestCase for TestRetryManager module 
+    TestCase for TestRetryManager module
     """
     def setUp(self):
         """
         setup for test.
         """
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -54,13 +55,15 @@ class RetryManagerTest(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setupCouch("retry_manager_t/jobs", "JobDump")
         self.testInit.setupCouch("retry_manager_t/fwjrs", "FWJRDump")
-        
+
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daofactory(classname = "Jobs.GetAllJobs")
         self.setJobTime = self.daofactory(classname = "Jobs.SetStateTime")
+        self.increaseRetry = self.daofactory(classname = "Jobs.IncrementRetry")
         self.testDir = self.testInit.generateWorkDir()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
         self.nJobs = 10
         return
 
@@ -71,6 +74,7 @@ class RetryManagerTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
 
     def getConfig(self):
@@ -78,7 +82,8 @@ class RetryManagerTest(unittest.TestCase):
         _getConfig_
 
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         # First the general stuff
         config.section_("General")
@@ -90,14 +95,14 @@ class RetryManagerTest(unittest.TestCase):
         config.component_("RetryManager")
         config.RetryManager.logLevel     = 'DEBUG'
         config.RetryManager.namespace    = 'WMComponent.RetryManager.RetryManager'
-        config.RetryManager.maxRetries   = 10
         config.RetryManager.pollInterval = 10
         # These are the cooloff times for the RetryManager, the times it waits
         # Before attempting resubmission
-        config.RetryManager.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
+        config.RetryManager.section_("DefaultRetryAlgo")
+        config.RetryManager.DefaultRetryAlgo.section_("default")
+        config.RetryManager.DefaultRetryAlgo.default.coolOffTime  = {'create': 120, 'submit': 120, 'job': 120}
         # Path to plugin directory
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
-        #config.RetryManager.pluginName   = ''
         config.RetryManager.WMCoreBase   = WMCore.WMBase.getWMBASE()
         config.RetryManager.componentDir = os.path.join(os.getcwd(), 'Components')
 
@@ -113,21 +118,21 @@ class RetryManagerTest(unittest.TestCase):
 
         return config
 
-    def createTestJobGroup(self, nJobs):
+    def createTestJobGroup(self, nJobs, subType = "Processing", retryOnce = False):
         """
         _createTestJobGroup_
-        
+
         Creates a group of several jobs
         """
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = makeUUID(), task="Test")
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
-        
         testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+                                        workflow = testWorkflow,
+                                        type = subType)
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription = testSubscription)
@@ -147,173 +152,20 @@ class RetryManagerTest(unittest.TestCase):
             testJob = Job(name = makeUUID())
             testJob.addFile(testFileA)
             testJob.addFile(testFileB)
-            testJob['retry_count'] = 1
             testJob['cache_dir'] = os.path.join(self.testDir, testJob['name'])
             os.mkdir(testJob['cache_dir'])
             testJobGroup.add(testJob)
-        
+
         testJobGroup.commit()
+        if retryOnce:
+            self.increaseRetry.execute(testJobGroup.jobs)
+
         return testJobGroup
-
-
-    def testCreatePaused(self):
-
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
-
-        config = self.getConfig()
-        config.RetryManager.pluginName   = 'PauseAlgo'
-        config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
-        changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
-
-        # Making sure that jobs are in submitcooloff state
-        idList = self.getJobs.execute(state = 'CreateCoolOff')
-        self.assertEqual(len(idList), self.nJobs)
-
-        testRetryManager = RetryManagerPoller(config)
-        testRetryManager.setup(None)
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 20)
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'new')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 400)
-
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'createpaused')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # emulating ops retrying the job
-
-        changer.propagate(testJobGroup.jobs, 'new', 'createpaused')
-
-        # Making sure it did the right thing
-        idList = self.getJobs.execute(state = 'new')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 8000)
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'new')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 160000)
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'createpaused')
-        self.assertEqual(len(idList), self.nJobs)
-
-        return
-
-    def testSubmitPaused(self):
-
-        testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
-
-        config = self.getConfig()
-        config.RetryManager.pluginName   = 'PauseAlgo'
-        config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
-        changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'created', 'new')
-        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
-        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
-
-        # Making sure that jobs are in submitcooloff state
-        idList = self.getJobs.execute(state = 'SubmitCoolOff')
-        self.assertEqual(len(idList), self.nJobs)
-
-        testRetryManager = RetryManagerPoller(config)
-        testRetryManager.setup(None)
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 20)
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'Created')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
-        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 400)
-
-        # Make sure they end up in submitpaused
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'submitpaused')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # emulating ops retrying the job
-
-        changer.propagate(testJobGroup.jobs, 'created', 'submitpaused')
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
-        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 8000)
-
-        # Make sure that the plugin allowed them to go back to created state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'Created')
-        self.assertEqual(len(idList), self.nJobs)
-
-        # Fail them out again   
-        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
-        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
-
-        for job in testJobGroup.jobs:
-            self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 160000)
-
-        # Make sure they end up finally (again) in the paused state
-        testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'submitpaused')
-        self.assertEqual(len(idList), self.nJobs)
-
-        return
-
-
 
     def testA_Create(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testCreate()
-        
+
         Mimics creation of component and test jobs failed in create stage.
         """
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
@@ -342,18 +194,18 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 150)
 
         testRetryManager.algorithm(None)
-        
+
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
+        idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
         return
 
     def testB_Submit(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testSubmit()
-        
+
         Mimics creation of component and test jobs failed in create stage.
         """
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
@@ -382,10 +234,10 @@ class RetryManagerTest(unittest.TestCase):
 
         for job in testJobGroup.jobs:
             self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 150)        
+                                    stateTime = int(time.time()) - 150)
 
         testRetryManager.algorithm(None)
-        
+
         idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
@@ -396,13 +248,12 @@ class RetryManagerTest(unittest.TestCase):
     def testC_Job(self):
         """
         WMComponent_t.RetryManager_t.RetryManager_t:testJob()
-        
+
         Mimics creation of component and test jobs failed in create stage.
         """
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
-        
+
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'DefaultRetryAlgo'
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
@@ -450,8 +301,10 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'SquaredAlgo'
-        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        config.RetryManager.plugins   = {'Processing' : 'SquaredAlgo'}
+        config.RetryManager.section_("SquaredAlgo")
+        config.RetryManager.SquaredAlgo.section_("Processing")
+        config.RetryManager.SquaredAlgo.Processing.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
@@ -480,7 +333,7 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 12)
 
         testRetryManager.algorithm(None)
-        
+
         idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
@@ -499,8 +352,10 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'ExponentialAlgo'
-        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        config.RetryManager.plugins   = {'Processing' : 'ExponentialAlgo'}
+        config.RetryManager.section_("ExponentialAlgo")
+        config.RetryManager.ExponentialAlgo.section_("Processing")
+        config.RetryManager.ExponentialAlgo.Processing.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
@@ -528,7 +383,7 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 12)
 
         testRetryManager.algorithm(None)
-        
+
         idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
@@ -546,8 +401,10 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'ExponentialAlgo'
-        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        config.RetryManager.plugins   = {'Processing' : 'LinearAlgo'}
+        config.RetryManager.section_("LinearAlgo")
+        config.RetryManager.LinearAlgo.section_("Processing")
+        config.RetryManager.LinearAlgo.Processing.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
@@ -575,7 +432,7 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 12)
 
         testRetryManager.algorithm(None)
-        
+
         idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
@@ -594,8 +451,10 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'ProcessingAlgo'
-        config.RetryManager.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
+        config.RetryManager.plugins   = {'Processing' : 'ProcessingAlgo'}
+        config.RetryManager.section_("ProcessingAlgo")
+        config.RetryManager.ProcessingAlgo.section_("default")
+        config.RetryManager.ProcessingAlgo.default.coolOffTime  = {'create': 10, 'submit': 10, 'job': 10}
         changer = ChangeState(config)
         fwjrPath = os.path.join(WMCore.WMBase.getTestBase(),
                                 "WMComponent_t/JobAccountant_t",
@@ -616,7 +475,7 @@ class RetryManagerTest(unittest.TestCase):
         testRetryManager.algorithm()
 
         idList = self.getJobs.execute(state = 'Created')
-        self.assertEqual(len(idList), self.nJobs) 
+        self.assertEqual(len(idList), self.nJobs)
 
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
@@ -629,12 +488,12 @@ class RetryManagerTest(unittest.TestCase):
             self.assertEqual(j['retry_count'], 1)
             report.save(os.path.join(j['cache_dir'], "Report.%i.pkl" % j['retry_count']))
 
-        config.RetryManager.ProcessingAlgoOneMoreErrorCodes = [8020]
+        config.RetryManager.ProcessingAlgo.default.OneMoreErrorCodes = [8020]
         testRetryManager2 = RetryManagerPoller(config)
         testRetryManager2.algorithm()
 
         idList = self.getJobs.execute(state = 'Created')
-        self.assertEqual(len(idList), self.nJobs) 
+        self.assertEqual(len(idList), self.nJobs)
 
         for job in testJobGroup.jobs:
             j = Job(id = job['id'])
@@ -661,8 +520,8 @@ class RetryManagerTest(unittest.TestCase):
             j.load()
             self.assertEqual(j['retry_count'], 0)
 
-        config.RetryManager.ProcessingAlgoOneMoreErrorCodes = []
-        config.RetryManager.ProcessingAlgoMaxRuntime = 1
+        config.RetryManager.ProcessingAlgo.default.OneMoreErrorCodes = []
+        config.RetryManager.ProcessingAlgo.default.MaxRunTime = 1
         testRetryManager3 = RetryManagerPoller(config)
         testRetryManager3.algorithm()
 
@@ -673,83 +532,106 @@ class RetryManagerTest(unittest.TestCase):
             j = Job(id = job['id'])
             j.load()
             self.assertEqual(j['retry_count'], 5)
-        
+
 
         return
 
 
     def testH_PauseAlgo(self):
- 
+        """
+        _testH_PauseAlgo_
+
+        Test the pause algorithm, note that given pauseCount = n, the
+        job will run first n + 1 times before being paused.
+        After that it will be paused each n times
+        """
+
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         config = self.getConfig()
-        config.RetryManager.pluginName   = 'PauseAlgo'
-        config.RetryManager.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
-        config.RetryManager.PauseCount  =   2
+        config.RetryManager.plugins = {'Processing' : 'PauseAlgo'}
+        config.RetryManager.section_("PauseAlgo")
+        config.RetryManager.PauseAlgo.section_("Processing")
+        config.RetryManager.PauseAlgo.Processing.coolOffTime  = {'create': 20, 'submit': 20, 'job': 20}
+        config.RetryManager.PauseAlgo.Processing.pauseCount  =   2
         changer = ChangeState(config)
         changer.propagate(testJobGroup.jobs, 'created', 'new')
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
+        changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
+        changer.propagate(testJobGroup.jobs, 'created', 'jobcooloff')
+        changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
-
-
-        # Making sure that jobs are in submitcooloff state
-        idList = self.getJobs.execute(state = 'JobCoolOff')
-        self.assertEqual(len(idList), self.nJobs)
 
         testRetryManager = RetryManagerPoller(config)
         testRetryManager.setup(None)
 
-        # Giving time so they can be retried   
+        # Making sure that jobs are not created ahead of time
         for job in testJobGroup.jobs:
             self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 20)
+                                    stateTime = int(time.time()) - 15)
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'JobCoolOff')
+        self.assertEqual(len(idList), self.nJobs)
 
+        # Giving time so they can be retried
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 25)
 
         # Make sure that the plugin allowed them to go back to created state
         testRetryManager.algorithm(None)
         idList = self.getJobs.execute(state = 'created')
         self.assertEqual(len(idList), self.nJobs)
 
-        # Fail them out again   
+        # Fail them out again
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
-        changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
 
-        # Make sure that no change happens after timeout
+        # Make sure that no change happens before timeout
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                   stateTime = int(time.time()) - 75)
+        testRetryManager.algorithm(None)
         idList = self.getJobs.execute(state = 'JobCoolOff')
         self.assertEqual(len(idList), self.nJobs)
 
-        # Giving time so they can be retried   
+        # Giving time so they can be paused
         for job in testJobGroup.jobs:
             self.setJobTime.execute(jobID = job["id"],
-                                   stateTime = int(time.time()) - 400)
+                                   stateTime = int(time.time()) - 85)
 
-        # Make sure that the plugin allowed them to go back to created state
+        # Make sure that the plugin pauses them
         testRetryManager.algorithm(None)
         idList = self.getJobs.execute(state = 'jobpaused')
         self.assertEqual(len(idList), self.nJobs)
 
-       # emulating ops retrying the job
-
-        changer.propagate(testJobGroup.jobs, 'new', 'createpaused')
+        # Emulating ops retrying the job
+        changer.propagate(testJobGroup.jobs, 'created', 'jobpaused')
 
         # Making sure it did the right thing
-        idList = self.getJobs.execute(state = 'new')
+        idList = self.getJobs.execute(state = 'created')
         self.assertEqual(len(idList), self.nJobs)
 
-        # Fail them out again   
+        # Fail them out again
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
 
-        # Giving time so they can be retried   
         for job in testJobGroup.jobs:
             self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 8000)
+                                    stateTime = int(time.time()) - 175)
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'JobCoolOff')
+        self.assertEqual(len(idList), self.nJobs)
+
+        # Giving time so they can be retried
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 185)
 
         # Make sure that the plugin allowed them to go back to created state
         testRetryManager.algorithm(None)
@@ -757,16 +639,22 @@ class RetryManagerTest(unittest.TestCase):
         self.assertEqual(len(idList), self.nJobs)
 
 
-        # Fail them out again   
+        # Fail them out again
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobfailed', 'executing')
         changer.propagate(testJobGroup.jobs, 'jobcooloff', 'jobfailed')
 
+        for job in testJobGroup.jobs:
+            self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 315)
+        testRetryManager.algorithm(None)
+        idList = self.getJobs.execute(state = 'jobcooloff')
+        self.assertEqual(len(idList), self.nJobs)
 
         for job in testJobGroup.jobs:
             self.setJobTime.execute(jobID = job["id"],
-                                    stateTime = int(time.time()) - 160000)
+                                    stateTime = int(time.time()) - 325)
 
         # Make sure that the plugin allowed them to go back to created state
         testRetryManager.algorithm(None)
@@ -775,11 +663,187 @@ class RetryManagerTest(unittest.TestCase):
 
         return
 
+    def testI_MultipleJobTypes(self):
+        """
+        _testI_MultipleJobTypes_
+
+        Check that we can configure different retry algorithms for different
+        job types, including a default for nonspecified types.
+        Also check that two job types can share the same retry algorithm
+        but with different parameters
+        """
+
+        #Let's create 4 job groups
+        processingJobGroup = self.createTestJobGroup(nJobs = 10,
+                                                     retryOnce = True)
+        productionJobGroup = self.createTestJobGroup(nJobs = 15,
+                                                     subType = "Production",
+                                                     retryOnce = True)
+        mergeJobGroup = self.createTestJobGroup(nJobs = 20,
+                                                subType = "Merge",
+                                                retryOnce = True)
+        skimJobGroup = self.createTestJobGroup(nJobs = 5,
+                                               subType = "Skim",
+                                               retryOnce = True)
+
+        #Set an adequate config
+        #Processing jobs get the PauseAlgo with pauseCount 4
+        #Production jobs get the ExponentialAlgo
+        #Merge jobs get the PauseAlgo but with pauseCount 2 which is the default
+        #Skim jobs are not configured, so they get the default SquaredAlgo
+        config = self.getConfig()
+        config.RetryManager.plugins = {'Processing' : 'PauseAlgo',
+                                       'Production' : 'ExponentialAlgo',
+                                       'Merge'      : 'PauseAlgo',
+                                       'default'    : 'SquaredAlgo'}
+        config.RetryManager.section_("PauseAlgo")
+        config.RetryManager.PauseAlgo.section_("Processing")
+        config.RetryManager.PauseAlgo.Processing.coolOffTime  = {'create': 30, 'submit': 30, 'job': 30}
+        config.RetryManager.PauseAlgo.Processing.pauseCount  =   4
+        config.RetryManager.PauseAlgo.section_("default")
+        config.RetryManager.PauseAlgo.default.coolOffTime  = {'create': 60, 'submit': 60, 'job': 60}
+        config.RetryManager.PauseAlgo.default.pauseCount  =   2
+        config.RetryManager.section_("ExponentialAlgo")
+        config.RetryManager.ExponentialAlgo.section_("Production")
+        config.RetryManager.ExponentialAlgo.Production.coolOffTime  = {'create': 30, 'submit': 30, 'job': 30}
+        config.RetryManager.ExponentialAlgo.section_("default")
+        config.RetryManager.ExponentialAlgo.default.coolOffTime  = {'create': 60, 'submit': 60, 'job': 60}
+        config.RetryManager.section_("SquaredAlgo")
+        config.RetryManager.SquaredAlgo.section_("Skim")
+        config.RetryManager.SquaredAlgo.Skim.coolOffTime  = {'create': 30, 'submit': 30, 'job': 30}
+        config.RetryManager.SquaredAlgo.section_("default")
+        config.RetryManager.SquaredAlgo.default.coolOffTime  = {'create': 60, 'submit': 60, 'job': 60}
+
+        #Start the state changer and RetryManager
+        changer = ChangeState(config)
+        testRetryManager = RetryManagerPoller(config)
+        testRetryManager.setup(None)
+
+        #Create the jobs for the first time
+        changer.propagate(processingJobGroup.jobs, 'created', 'new')
+
+        # Let's start with the processing jobs and the pauseAlgo
+        for count in range(1,5):
+            #Fail the jobs
+            changer.propagate(processingJobGroup.jobs, 'executing', 'created')
+            changer.propagate(processingJobGroup.jobs, 'jobfailed', 'executing')
+            changer.propagate(processingJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+            #Check  that the cooloff time is strictly enforced
+            #First a job time just below the cooloff time
+            for job in processingJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - 30*pow(count,2) + 5)
+            testRetryManager.algorithm(None)
+            idList = self.getJobs.execute(state = 'JobCoolOff')
+            self.assertEqual(len(idList), len(processingJobGroup.jobs),
+                             "Jobs went into cooloff without the proper timing")
+
+            #Now above the cooloff time
+            for job in processingJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - 30*pow(count,2) - 5)
+            testRetryManager.algorithm(None)
+
+            #Make sure the jobs get created again or go to paused
+            if count < 4:
+                idList = self.getJobs.execute(state = 'created')
+            else:
+                idList = self.getJobs.execute(state = 'jobpaused')
+            self.assertEqual(len(idList), len(processingJobGroup.jobs),
+                             "Jobs didn't change state correctly")
+
+        #Unpause them so they don't interfere with subsequent tests
+        changer.propagate(processingJobGroup.jobs, 'created', 'jobpaused')
+        changer.propagate(processingJobGroup.jobs, 'executing', 'created')
+
+        #Now the production jobs and the exponential algo
+        changer.propagate(productionJobGroup.jobs, 'created', 'new')
+
+        for count in range(1,3):
+            changer.propagate(productionJobGroup.jobs, 'executing', 'created')
+            changer.propagate(productionJobGroup.jobs, 'jobfailed', 'executing')
+            changer.propagate(productionJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+            for job in productionJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - pow(30,count) + 5)
+            testRetryManager.algorithm(None)
+            idList = self.getJobs.execute(state = 'JobCoolOff')
+            self.assertEqual(len(idList), len(productionJobGroup.jobs),
+                             "Jobs went into cooloff without the proper timing")
+            for job in productionJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - pow(30,count) - 5)
+            testRetryManager.algorithm(None)
+
+            idList = self.getJobs.execute(state = 'created')
+            self.assertEqual(len(idList), len(productionJobGroup.jobs),
+                             "Jobs didn't change state correctly")
+
+        #Send them to executing
+        changer.propagate(productionJobGroup.jobs, 'executing', 'created')
+
+        #Now the merge jobs and the paused algo with different parameters
+        changer.propagate(mergeJobGroup.jobs, 'created', 'new')
+
+        for count in range(1,3):
+            changer.propagate(mergeJobGroup.jobs, 'executing', 'created')
+            changer.propagate(mergeJobGroup.jobs, 'jobfailed', 'executing')
+            changer.propagate(mergeJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+            for job in mergeJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                    stateTime = int(time.time()) - 30*pow(count,2) - 5)
+            testRetryManager.algorithm(None)
+            idList = self.getJobs.execute(state = 'JobCoolOff')
+            self.assertEqual(len(idList), len(mergeJobGroup.jobs),
+                             "Jobs went into cooloff without the proper timing")
+
+            for job in mergeJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - 60*pow(count,2) - 5)
+            testRetryManager.algorithm(None)
+
+            if count < 2:
+                idList = self.getJobs.execute(state = 'created')
+            else:
+                idList = self.getJobs.execute(state = 'jobpaused')
+            self.assertEqual(len(idList), len(mergeJobGroup.jobs),
+                             "Jobs didn't change state correctly")
+
+        #Send them to executing
+        changer.propagate(mergeJobGroup.jobs, 'created', 'jobpaused')
+        changer.propagate(mergeJobGroup.jobs, 'executing', 'created')
+
+        #Now the skim jobs and the squared algo
+        changer.propagate(skimJobGroup.jobs, 'created', 'new')
+
+        for count in range(1,3):
+            changer.propagate(skimJobGroup.jobs, 'executing', 'created')
+            changer.propagate(skimJobGroup.jobs, 'jobfailed', 'executing')
+            changer.propagate(skimJobGroup.jobs, 'jobcooloff', 'jobfailed')
+
+            for job in skimJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - 30*pow(count,2) + 5)
+            testRetryManager.algorithm(None)
+            idList = self.getJobs.execute(state = 'JobCoolOff')
+            self.assertEqual(len(idList), len(skimJobGroup.jobs),
+                             "Jobs went into cooloff without the proper timing")
+            for job in skimJobGroup.jobs:
+                self.setJobTime.execute(jobID = job["id"],
+                                        stateTime = int(time.time()) - 30*pow(count,2) - 5)
+            testRetryManager.algorithm(None)
+
+            idList = self.getJobs.execute(state = 'created')
+            self.assertEqual(len(idList), len(skimJobGroup.jobs),
+                             "Jobs didn't change state correctly")
 
     def testY_MultipleIterations(self):
         """
         _MultipleIterations_
-        
+
         Paranoia based check to see if I'm saving class instances correctly
         """
 
@@ -787,10 +851,10 @@ class RetryManagerTest(unittest.TestCase):
 
         config = self.getConfig()
         changer = ChangeState(config)
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'Created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
 
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
 
         testRetryManager = RetryManagerPoller(config)
@@ -801,7 +865,7 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 50)
 
         testRetryManager.algorithm(None)
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), self.nJobs)
 
         for job in testJobGroup.jobs:
@@ -809,11 +873,11 @@ class RetryManagerTest(unittest.TestCase):
                                     stateTime = int(time.time()) - 150)
 
         testRetryManager.algorithm(None)
-        
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
+        idList = self.getJobs.execute(state = 'Created')
         self.assertEqual(len(idList), self.nJobs)
 
 
@@ -822,8 +886,8 @@ class RetryManagerTest(unittest.TestCase):
         testJobGroup = self.createTestJobGroup(nJobs = self.nJobs)
 
         # Set job state
-        changer.propagate(testJobGroup.jobs, 'createfailed', 'new')
-        changer.propagate(testJobGroup.jobs, 'createcooloff', 'createfailed')
+        changer.propagate(testJobGroup.jobs, 'submitfailed', 'created')
+        changer.propagate(testJobGroup.jobs, 'submitcooloff', 'submitfailed')
 
         # Set them to go off
         for job in testJobGroup.jobs:
@@ -832,12 +896,12 @@ class RetryManagerTest(unittest.TestCase):
 
 
         testRetryManager.algorithm(None)
-        
-        idList = self.getJobs.execute(state = 'CreateCooloff')
+
+        idList = self.getJobs.execute(state = 'SubmitCooloff')
         self.assertEqual(len(idList), 0)
 
-        idList = self.getJobs.execute(state = 'New')
-        self.assertEqual(len(idList), self.nJobs * 2)   
+        idList = self.getJobs.execute(state = 'Created')
+        self.assertEqual(len(idList), self.nJobs * 2)
 
 
         return
@@ -885,7 +949,7 @@ class RetryManagerTest(unittest.TestCase):
         #cProfile.runctx("testRetryManager.algorithm()", globals(), locals(), filename = "profStats.stat")
         testRetryManager.algorithm(None)
         stopTime  = time.time()
-        
+
         idList = self.getJobs.execute(state = 'CreateCooloff')
         self.assertEqual(len(idList), 0)
 

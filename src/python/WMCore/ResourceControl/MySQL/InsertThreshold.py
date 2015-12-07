@@ -16,36 +16,40 @@ class InsertThreshold(DBFormatter):
     _InsertThreshold_
 
     This module inserts thresholds for the given sites for MySQL.  If the thresholds
-    have already been inserted this will modify them.    
+    have already been inserted this will modify them.
     """
     selSQL = """SELECT * FROM rc_threshold WHERE
                   site_id = (SELECT id FROM wmbs_location WHERE site_name = :sitename) AND
                   sub_type_id = (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype)"""
 
-    updSQL = """UPDATE rc_threshold SET max_slots = :maxslots, priority = :priority
+    updSQL = """UPDATE rc_threshold SET max_slots = :maxslots, pending_slots = :pendslots
                 WHERE site_id = (SELECT id FROM wmbs_location WHERE site_name = :sitename) AND
                       sub_type_id = (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype)"""
-    
-    addSQL = """INSERT INTO rc_threshold (site_id, sub_type_id, max_slots, priority) VALUES (
+
+    addSQL = """INSERT INTO rc_threshold (site_id, sub_type_id, max_slots, pending_slots) VALUES (
                  (SELECT id FROM wmbs_location WHERE site_name = :sitename),
                  (SELECT id FROM wmbs_sub_types WHERE name  = :tasktype),
-                 :maxslots, :priority)"""
+                 :maxslots, :pendslots)"""
 
-    def execute(self, siteName, taskType, maxSlots, priority = None, conn = None,
+    def execute(self, siteName, taskType, maxSlots, pendingSlots, conn = None,
                 transaction = False):
         binds = {"sitename": siteName, "tasktype": taskType,
-                 "maxslots": maxSlots, "priority": priority}
+                 "maxslots": maxSlots, "pendslots": pendingSlots}
         result = self.dbi.processData(self.selSQL, {"sitename": siteName, "tasktype": taskType},
                                       conn = conn, transaction = transaction)
         result = self.formatDict(result)
 
         if len(result) == 0:
-            if priority == None:
-                binds['priority'] = 1
+            if maxSlots is None:
+                binds['maxslots'] = pendingSlots
+            if pendingSlots is None:
+                binds['pendslots'] = maxSlots
             self.dbi.processData(self.addSQL, binds, conn = conn, transaction = transaction)
         else:
-            if priority == None:
-                binds['priority'] = result[0]['priority']
-            self.dbi.processData(self.updSQL, binds, conn = conn, transaction = transaction)            
+            if pendingSlots is None:
+                binds['pendslots'] = result[0]['pending_slots']
+            if maxSlots is None:
+                binds['maxslots'] = result[0]['max_slots']
+            self.dbi.processData(self.updSQL, binds, conn = conn, transaction = transaction)
 
         return

@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.Workflow.LoadFromTask import LoadFromTask as LoadFromTask
 
 class LoadFromTask(LoadFromTaskMySQL):
     sql = LoadFromTaskMySQL.sql
-

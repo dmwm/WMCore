@@ -1,8 +1,12 @@
-#!/usr/bin/env python
 """
 _ReqMgr.RequestDB.MySQL_
 
 MySQL Compatibility layer for Request Manager DB
+Create all tables for ReqMgr in MySQL
+
+Priorities changed: only reqmgr_request:request_priority is
+really considered, all other priority values are ignored.
+
 """
 
 
@@ -39,7 +43,7 @@ class Create(DBCreator):
                       'reqmgr_assigned_prodagent',
                       'reqmgr_campaign',
                       'reqmgr_campaign_assoc' ]
-    
+
     def __init__(self, logger=None, dbi=None, param=None):
         if dbi == None:
             myThread = threading.currentThread()
@@ -423,4 +427,3 @@ class Create(DBCreator):
             i += 1
             sql = "INSERT INTO reqmgr_request_status (status_name) VALUES('%s')" % status
             self.inserts["%03d_reqstatus" % i] = sql
-        

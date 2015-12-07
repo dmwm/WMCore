@@ -9,7 +9,7 @@ import unittest
 import os
 
 from WMCore.BossAir.Plugins.GLiteLIParser import LoggingInfoParser
-
+from WMCore.WMBase import getTestBase
 
 class LoggingInfoParserTest(unittest.TestCase):
     def testParseFile(self):
@@ -23,12 +23,13 @@ class LoggingInfoParserTest(unittest.TestCase):
                   'Cannot move OSB (${globus_transfer_cmd} file:///home/cms509/home_cream_443527690/CREAM443527690/199_0.stderr gsiftp://crabas.lnl.infn.it/home/riahi/deploys/CRAB304bis/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_primo_bisi2_111018_181635/Analysis/JobCollection_2_0/job_199/199_0.stderr): error: globus_ftp_client: the server responded with an error500 500-Command failed. : globus_l_gfs_file_open failed.500-globus_xio: Unable to open file /home/riahi/deploys/CRAB304bis/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_primo_bisi2_111018_181635/Analysis/JobCollection_2_0/job_199/199_0.stderr500-globus_xio: System error in open: Permission denied500-globus_xio: A system call failed: Permission denied500 End.; Cannot move OSB (${globus_transfer_cmd} file:///home/cms509/home_cream_443527690/CREAM443527690/199_0.stderr gsiftp://crabas.lnl.infn.it/home/riahi/deploys/CRAB304bis/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_primo_bisi2_111018_181635/Analysis/JobCollection_2_0/job_199/199_0.stderr): error: globus_ftp_client: the server responded with an error 500 500-Command failed. : globus_l_gfs_file_open failed.  500-globus_xio: Unable to open file /home/riahi/deploys/CRAB304bis/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_primo_bisi2_111018_181635/Analysis/JobCollection_2_0/job_199/199_0.stderr  500-globus_xio: System error in open: Permission denied  500-globus_xio: A system call failed: Permission denied  500 End.',
                   'BLAH error: submission command failed (exit code = 1) (stdout:) (stderr:pbs_iff: cannot read reply from pbs_server-No Permission.-qsub: cannot connect to server gaebatch.ciemat.es (errno=15007) Unauthorized Request -) N/A (jobId = CREAM008087355)',
                   'CREAM Register raised std::exception The endpoint is blacklisted',
+                  'BrokerHelper: no compatible resources',
                   ]
 
         lip = LoggingInfoParser()
         i = 0
         for exp in expected:
-            fileName = os.path.join(os.path.dirname(__file__), "../../../data/loggingInfo/loggingInfo.%s.log" % i)
+            fileName = os.path.join(getTestBase(), "WMCore_t/BossAir_t/loggingInfo/loggingInfo.%s.log" % i)
             i += 1
             res = lip.parseFile(fileName)
             self.assertEqual(res, exp)

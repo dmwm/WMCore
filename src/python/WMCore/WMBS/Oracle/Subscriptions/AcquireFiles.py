@@ -13,4 +13,3 @@ class AcquireFiles(AcquireFilesMySQL):
                SELECT :subscription, :fileid FROM dual WHERE NOT EXISTS
                  (SELECT fileid FROM wmbs_sub_files_acquired
                     WHERE fileid = :fileid AND subscription = :subscription)"""
-

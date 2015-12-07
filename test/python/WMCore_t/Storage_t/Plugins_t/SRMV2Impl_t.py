@@ -6,14 +6,15 @@ import mox
 import tempfile
 import os.path
 import WMCore_t.Storage_t.Plugins_t.PluginTestBase_t
-from WMCore.Storage.Plugins.SRMV2Impl import SRMV2Impl as ourPlugin
-
-import WMCore.Storage.Plugins.SRMV2Impl
-moduleWeAreTesting = WMCore.Storage.Plugins.SRMV2Impl
+from WMCore.Storage.Plugins.LCGImpl import LCGImpl as ourPlugin
+import WMCore.Storage.Plugins.LCGImpl
+moduleWeAreTesting = WMCore.Storage.Plugins.LCGImpl
 
 import subprocess
 from WMCore.WMBase import getWMBASE
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
+
+from nose.plugins.attrib import attr
 
 class popenMockHelper(object):
     def Popen(self,args,**kwargs):
@@ -22,9 +23,9 @@ class popenMockHelper(object):
         pass
 
 
-    
+
 class SRMV2ImplTest(unittest.TestCase):
-    
+
     def setUp(self):
         self.my_mox = mox.Mox()
         self.my_mox.StubOutWithMock(moduleWeAreTesting.os.path, 'getsize')
@@ -32,8 +33,8 @@ class SRMV2ImplTest(unittest.TestCase):
         self.my_mox.StubOutWithMock(moduleWeAreTesting,'tempfile')
         self.popenMocker = self.my_mox.CreateMock(popenMockHelper)
         self.popenBackup = moduleWeAreTesting.Popen
-        
-        
+
+
         self.temporaryFiles = []
         self.rules          = []
     def tearDown(self):
@@ -44,11 +45,12 @@ class SRMV2ImplTest(unittest.TestCase):
                 os.remove(file)
             except:
                 pass
-        
-    def testFailSrmCopy(self): 
+
+    @attr("integration")
+    def testFailSrmCopy(self):
 
         # copy a file and have it fail
-        
+
         # set up the SRM report
         (tempHandle, tempFilename) = tempfile.mkstemp()
         self.temporaryFiles.extend([tempFilename])
@@ -61,22 +63,23 @@ class SRMV2ImplTest(unittest.TestCase):
 
 
         # Actually run the test
-        self.my_mox.ReplayAll()       
+        self.my_mox.ReplayAll()
         testObject = ourPlugin()
         # copy normally and have it work
         self.assertRaises(StageOutFailure, testObject.doTransfer,'file:///store/NONEXISTANTSOURCE',
                               'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET',
-                              True, 
+                              True,
                               None,
                               None,
                               None,
                               None)
         self.my_mox.VerifyAll()
-        
-    def testFailOnFileSize(self): 
+
+    @attr("integration")
+    def testFailOnFileSize(self):
 
         # copy a file and have it succeed
-        
+
         # set up the SRM report
         (tempHandle, tempFilename) = tempfile.mkstemp()
         self.temporaryFiles.extend([tempFilename])
@@ -88,7 +91,7 @@ class SRMV2ImplTest(unittest.TestCase):
 
         moduleWeAreTesting.tempfile.mkstemp().AndReturn((tempHandle,tempFilename))
         os.path.getsize('/store/NONEXISTANTSOURCE').AndReturn(9001)
-        
+
         # this stub will either pass popen calls to mock or run them normal
         # it eats rules to say either way (I just need to inject data to the
         # first bit of a pipeline)
@@ -98,7 +101,7 @@ class SRMV2ImplTest(unittest.TestCase):
                       'SKIP', # skip the cat
                       'SKIP', # skip the cut
                       'SKIP', # skip the grep
-                      'DOIT', # process the srmls on the filesize] 
+                      'DOIT', # process the srmls on the filesize]
                       'SKIP',
                       'SKIP',
                       'SKIP'
@@ -112,43 +115,44 @@ class SRMV2ImplTest(unittest.TestCase):
                     return subprocess.Popen(cmd, **kwargs)
             else:
                 return self.popenMocker.Popen(cmd,**kwargs)
-        
+
         # intercept calls to Popen
         moduleWeAreTesting.Popen = PopenStub
-        
+
         # stub out the stdout
         class tempPopenObjectType:
             stdout = tempfile.TemporaryFile()
-        
+
         tempPopenObject = tempPopenObjectType()
         tempPopenObject.stdout.write('test test test\n')
         tempPopenObject.stdout.write('9002 /store/NONEXISTANTTARGET\n')
         tempPopenObject.stdout.write('test test test\n')
         tempPopenObject.stdout.seek(0)
 
-        
+
         self.popenMocker.Popen(["srmls", '-recursion_depth=0','-retry_num=0',\
                                  'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET'],\
                          stdout=subprocess.PIPE).AndReturn(tempPopenObject)
 
 
         # Actually run the test
-        self.my_mox.ReplayAll()       
+        self.my_mox.ReplayAll()
         testObject = ourPlugin()
         # copy normally and have it work
         self.assertRaises(StageOutFailure, testObject.doTransfer,'file:///store/NONEXISTANTSOURCE',
                               'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET',
-                              True, 
+                              True,
                               None,
                               None,
                               None,
                               None)
         self.my_mox.VerifyAll()
-    
-    def testWin(self): 
+
+    @attr("integration")
+    def testWin(self):
 
         # copy a file and have it succeed
-        
+
         # set up the SRM report
         (tempHandle, tempFilename) = tempfile.mkstemp()
         self.temporaryFiles.extend([tempFilename])
@@ -160,7 +164,7 @@ class SRMV2ImplTest(unittest.TestCase):
 
         moduleWeAreTesting.tempfile.mkstemp().AndReturn((tempHandle,tempFilename))
         os.path.getsize('/store/NONEXISTANTSOURCE').AndReturn(9001)
-        
+
         # this stub will either pass popen calls to mock or run them normal
         # it eats rules to say either way (I just need to inject data to the
         # first bit of a pipeline)
@@ -170,7 +174,7 @@ class SRMV2ImplTest(unittest.TestCase):
                       'SKIP', # skip the cat
                       'SKIP', # skip the cut
                       'SKIP', # skip the grep
-                      'DOIT', # process the srmls on the filesize] 
+                      'DOIT', # process the srmls on the filesize]
                       'SKIP',
                       'SKIP',
                       'SKIP'
@@ -184,40 +188,41 @@ class SRMV2ImplTest(unittest.TestCase):
                     return subprocess.Popen(cmd, **kwargs)
             else:
                 return self.popenMocker.Popen(cmd,**kwargs)
-        
+
         # intercept calls to Popen
         moduleWeAreTesting.Popen = PopenStub
-        
+
         # stub out the stdout
         class tempPopenObjectType:
             stdout = tempfile.TemporaryFile()
-        
+
         tempPopenObject = tempPopenObjectType()
         tempPopenObject.stdout.write('test test test\n')
         tempPopenObject.stdout.write('9001 /store/NONEXISTANTTARGET\n')
         tempPopenObject.stdout.write('test test test\n')
         tempPopenObject.stdout.seek(0)
 
-        
+
         self.popenMocker.Popen(["srmls", '-recursion_depth=0','-retry_num=0',\
                                  'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET'],\
                          stdout=subprocess.PIPE).AndReturn(tempPopenObject)
 
 
         # Actually run the test
-        self.my_mox.ReplayAll()       
+        self.my_mox.ReplayAll()
         testObject = ourPlugin()
         # copy normally and have it work
         newPfn = testObject.doTransfer('file:///store/NONEXISTANTSOURCE',
                               'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET',
-                              True, 
+                              True,
                               None,
                               None,
                               None,
                               None)
         self.assertEqual(newPfn, 'srm://nonexistant.com/blah/?SFN=/store/NONEXISTANTTARGET')
         self.my_mox.VerifyAll()
-    
+
+    @attr("integration")
     def testMkdir(self):
         testObject = ourPlugin()
         self.my_mox.StubOutWithMock(testObject, 'runCommandWarnOnError')
@@ -244,10 +249,9 @@ class SRMV2ImplTest(unittest.TestCase):
 #            print args
 #            return ("asd","SRM_FAILURE")
 #        testObject.runCommandWarnOnError = testFunc
-        self.my_mox.ReplayAll()       
+        self.my_mox.ReplayAll()
         testObject.createOutputDirectory('srm://host:8443/srm/managerv2?SFN=/a/b/c/d/e/f/g/h/i',True)
         self.my_mox.VerifyAll()
 
 if __name__ == "__main__":
     unittest.main()
-

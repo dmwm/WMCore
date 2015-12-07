@@ -2,7 +2,7 @@
 """
 _GetRequestByInput_
 
-Get request ID for an input datasets 
+Get request ID for an input datasets
 
 """
 
@@ -32,6 +32,3 @@ class GetRequestByInput(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return self.format(result)
-
-
-

@@ -20,7 +20,7 @@ class EmulatorHelper(object):
     RequestManager = None
 
     @staticmethod
-    def getEmulatorClass(clsName):
+    def getEmulatorClass(clsName, *args):
 
         if clsName == 'PhEDEx':
             from WMQuality.Emulators.PhEDExClient.PhEDEx \
@@ -28,8 +28,12 @@ class EmulatorHelper(object):
             return PhEDExEmulator
 
         if clsName == 'DBSReader':
-            from WMQuality.Emulators.DBSClient.DBSReader \
-                import DBSReader as DBSEmulator
+            if 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader/' in args:
+                from WMQuality.Emulators.DBSClient.DBS3Reader \
+                    import DBS3Reader as DBSEmulator
+            else:
+                from WMQuality.Emulators.DBSClient.DBSReader \
+                    import DBSReader as DBSEmulator
             return DBSEmulator
 
         if clsName == 'SiteDBJSON':
@@ -57,7 +61,7 @@ class EmulatorHelper(object):
         EmulatorHelper.RequestManager = None
 
     @staticmethod
-    def getClass(cls):
+    def getClass(cls, *args):
         """
         if emulator flag is set return emulator class
         otherwise return original class.
@@ -67,7 +71,7 @@ class EmulatorHelper(object):
         """
         emFlag = getattr(EmulatorHelper, cls.__name__)
         if emFlag:
-            return EmulatorHelper.getEmulatorClass(cls.__name__)
+            return EmulatorHelper.getEmulatorClass(cls.__name__, *args)
         elif emFlag == None:
             try:
                 from WMQuality.Emulators import emulatorSwitch
@@ -79,7 +83,7 @@ class EmulatorHelper(object):
                 envFlag = emulatorSwitch(cls.__name__)
                 setattr(EmulatorHelper, cls.__name__, envFlag)
                 if envFlag:
-                    return EmulatorHelper.getEmulatorClass(cls.__name__)
+                    return EmulatorHelper.getEmulatorClass(cls.__name__, *args)
         # if emulator flag is False, return original class
         return cls
 
@@ -90,7 +94,7 @@ def emulatorHook(cls):
     """
     class EmulatorWrapper:
         def __init__(self, *args, **kwargs):
-            aClass = EmulatorHelper.getClass(cls)
+            aClass = EmulatorHelper.getClass(cls, *args)
             self.wrapped = aClass(*args, **kwargs)
             self.__class__.__name__ = self.wrapped.__class__.__name__
 

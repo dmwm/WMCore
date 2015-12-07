@@ -8,38 +8,38 @@ from WMCore.Database.Dialects import SQLiteDialect
 from WMCore.Database.Dialects import OracleDialect
 
 class DBFactory(object):
-    
+
     # class variable
     _engineMap = {}
-    _defaultEngineParams = {"convert_unicode" : True, 
+    _defaultEngineParams = {"convert_unicode" : True,
                             "strategy": "threadlocal",
                             "pool_recycle": 7200}
-    
+
     def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
         # get the engine parameter from option
         if 'engine_parameters' in options.keys():
-            self._defaultEngineParams.update(options['engine_parameters'])    
+            self._defaultEngineParams.update(options['engine_parameters'])
             del options['engine_parameters']
-        
+
         if dburl:
             self.dburl = dburl
         else:
             #This will be deprecated.
             """
             Need to make the dburl here. Possible formats are:
-            
+
             postgres://username:password@host:port/database
-            
+
             sqlite:////absolute/path/to/database.txt
             sqlite:///relative/path/to/database.txt
             sqlite://
             sqlite://:memory:
-            
+
             mysql://host/database
             mysql://username@host/database
             mysql://username:password@host:port/database
-            
+
             oracle://username:password@tnsName
             oracle://username:password@host:port/sidname
 
@@ -85,15 +85,15 @@ class DBFactory(object):
 
             self.engine = None
             self.dia = None
-                
+
         else:
             if self.dburl.split(':')[0].lower() == "sqlite":
-                self.engine = create_engine(self.dburl, 
+                self.engine = create_engine(self.dburl,
                                             connect_args = options,
                                             **self._defaultEngineParams)
             else:
-                self.engine = self._engineMap.setdefault(self.dburl,     
-                                             create_engine(self.dburl, 
+                self.engine = self._engineMap.setdefault(self.dburl,
+                                             create_engine(self.dburl,
                                                            connect_args = options,
                                                            **self._defaultEngineParams)
                                                       )
@@ -101,14 +101,14 @@ class DBFactory(object):
 
         self.lock = threading.Condition()
 
-        
+
     def connect(self):
         self.lock.acquire()
 
         if self.engine:
 
             self.logger.debug("Using SQLAlchemy v.%s" % sqlalchemy_version)
-                
+
             if isinstance(self.dia, MySQLDialect):
                 from WMCore.Database.MySQLCore import MySQLInterface as DBInterface
             else:

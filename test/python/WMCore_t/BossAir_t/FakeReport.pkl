@@ -51,7 +51,7 @@ S'47f76424-c8b5-11e0-a784-0026b958c394-92'
 p25
 sS'task'
 p26
-S'/mmascher_crab_MyAnalysis_425_CIEMAT_5pj_110817_114217/Analysis'
+S'/username_crab_FakeFile_110817_114217/Analysis'
 p27
 sS'workload'
 p28
@@ -1575,7 +1575,7 @@ p589
 atp590
 Rp591
 sg583
-S'/store/unmerged/logs/prod/2011/8/17/mmascher_crab_MyAnalysis_425_CIEMAT_5pj_110817_114217/Analysis/0000/0/47f76424-c8b5-11e0-a784-0026b958c394-92-0-logArchive.tar.gz'
+S'/store/unmerged/logs/prod/2011/8/17/username_crab_FakeFile_110817_114217/Analysis/0000/0/47f76424-c8b5-11e0-a784-0026b958c394-92-0-logArchive.tar.gz'
 p592
 sg497
 g9
@@ -1609,7 +1609,7 @@ p604
 ssg490
 g565
 sg584
-S'srm://srmcms.pic.es:8443/srm/managerv2?SFN=/pnfs/pic.es/data/cms/store/unmerged/logs/prod/2011/8/17/mmascher_crab_MyAnalysis_425_CIEMAT_5pj_110817_114217/Analysis/0000/0/47f76424-c8b5-11e0-a784-0026b958c394-92-0-logArchive.tar.gz'
+S'srm://srmcms.pic.es:8443/srm/managerv2?SFN=/pnfs/pic.es/data/cms/store/unmerged/logs/prod/2011/8/17/username_crab_FakeFile_110817_114217/Analysis/0000/0/47f76424-c8b5-11e0-a784-0026b958c394-92-0-logArchive.tar.gz'
 p605
 sg501
 I0

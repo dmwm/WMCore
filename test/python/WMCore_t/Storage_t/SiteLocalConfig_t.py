@@ -11,8 +11,11 @@ import unittest
 from WMQuality.TestInit import TestInit
 from WMCore.WMBase import getTestBase
 
-from WMCore.Storage.SiteLocalConfig import SiteLocalConfig
+from WMCore.Storage.SiteLocalConfig import SiteLocalConfig, SiteConfigError
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+
+from nose.plugins.attrib import attr
 
 class SiteLocalConfigTest(unittest.TestCase):
     def setUp(self):
@@ -102,7 +105,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                          "http://cmsfrontier1.cern.ch:8000/FrontierInt",
                          "http://cmsfrontier2.cern.ch:8000/FrontierInt",
                          "http://cmsfrontier3.cern.ch:8000/FrontierInt"]
-                         
+
         for frontierServer in mySiteConfig.frontierServers:
             assert frontierServer in goldenServers, \
                    "Error: Unknown server: %s" % frontierServer
@@ -112,7 +115,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                "Error: Missing frontier servers."
 
         goldenProxies = ["http://se1.accre.vanderbilt.edu:3128"]
-        
+
         for frontierProxy in mySiteConfig.frontierProxies:
             assert frontierProxy in goldenProxies, \
                    "Error: Unknown proxy: %s" % frontierProxy
@@ -144,18 +147,50 @@ class SiteLocalConfigTest(unittest.TestCase):
         test SiteLocalConfig module method loadSiteLocalConfig when loading
         site config from location defined by WMAGENT_SITE_CONFIG_OVERRIDE
         env. variable
-        
-        """        
+
+        """
         vandyConfigFileName = os.path.join(getTestBase(),
                                            "WMCore_t/Storage_t",
                                            "T3_US_Vanderbilt_SiteLocalConfig.xml")
         os.environ["WMAGENT_SITE_CONFIG_OVERRIDE"] = vandyConfigFileName
-        
+
         mySiteConfig = loadSiteLocalConfig()
-        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt", 
+        self.assertEqual(mySiteConfig.siteName, "T3_US_Vanderbilt",
                          "Error: Wrong site name.")
 
 
+    @attr("integration")
+    def testSlcPhedexNodesEqualPhedexApiNodes(self):
+        """
+        For each site, verify that the stageout node specified in
+        site-local-config.xml is the same as the one returned by the PhEDEx api.
+        """
+        os.environ["CMS_PATH"] = "/cvmfs/cms.cern.ch"
+
+        phedex = PhEDEx()
+        nodes = phedex.getNodeMap()["phedex"]["node"]
+
+        # Make a dict for translating the se names into regular site names.
+        node_map = {}
+        for node in nodes:
+            node_map[str(node[u"se"])] = str(node[str(u"name")])
+        
+        for d in os.listdir("/cvmfs/cms.cern.ch/SITECONF/"):
+            # Only T0_, T1_... folders are needed
+            if d[0] == "T":
+                os.environ['WMAGENT_SITE_CONFIG_OVERRIDE'] ='/cvmfs/cms.cern.ch/SITECONF/%s/JobConfig/site-local-config.xml' % (d)
+                try:
+                    slc = loadSiteLocalConfig()
+                except SiteConfigError as e:
+                    print e.args[0]
+                phedexNode = slc.localStageOut.get("phedex-node")
+                # If slc is correct, perform check
+                if "se-name" in slc.localStageOut and slc.localStageOut["se-name"] in node_map and phedexNode != None:
+                    self.assertEqual(phedexNode, node_map[slc.localStageOut["se-name"]], \
+                            "Error: Node specified in SLC (%s) doesn't match node returned by PhEDEx api (%s)." \
+                            % (phedexNode, node_map[slc.localStageOut["se-name"]]))
+                    
+        return 
 
 if __name__ == "__main__":
     unittest.main()

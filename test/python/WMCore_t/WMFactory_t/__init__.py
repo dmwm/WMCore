@@ -7,7 +7,3 @@ WMFactory test methods
 
 """
 __all__ = []
-
-
-
-

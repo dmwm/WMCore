@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0102, W6501, C0103, W0621, W0105, W0703
+#pylint: disable=W0102, W6501, C0103, W0621, W0105, W0703
 """
 _ProcessPool_
 
@@ -58,7 +58,7 @@ class ProcessPoolWorker:
         """
 
         return
-    
+
 
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
@@ -84,11 +84,11 @@ class ProcessPool:
 
         #Use the Services.Requests JSONizer, which handles __to_json__ calls
         self.jsonHandler = JSONRequests()
-        
+
         # heartbeat should be registered at this point
         if getattr(config.Agent, "useHeartbeat", True):
             self.heartbeatAPI = HeartbeatAPI(getattr(config.Agent, "componentName", "ProcPoolSlave"))
-            
+
         self.slaveClassName = slaveClassName
         self.componentDir   = componentDir
         self.config         = config
@@ -138,7 +138,7 @@ class ProcessPool:
                 self.sender.bind("tcp://*:%s" % inPort)
                 self.sink = context.socket(zmq.PULL)
                 self.sink.bind("tcp://*:%s" % outPort)
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Error attempting to open TCP sockets\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -168,11 +168,11 @@ class ProcessPool:
         namespace      = self.namespace
         inPort         = self.inPort
         outPort        = self.outPort
-        
+
         slaveArgs = [self.versionString, __file__, self.slaveClassName, inPort,
                      outPort, self.configPath, self.componentDir, self.namespace]
 
-        count = 0     
+        count = 0
         while totalSlaves > 0:
             #For each worker you want create a slave process
             #That process calls this code (WMCore.ProcessPool) and opens
@@ -185,13 +185,13 @@ class ProcessPool:
 
 
         return
-    
+
     def _subProcessName(self, slaveClassName, sequence):
-        """ subProcessName for heartbeat 
+        """ subProcessName for heartbeat
             could change to use process ID as a suffix
         """
         return "%s_%s" % (slaveClassName, sequence + 1)
-            
+
     def __del__(self):
         """
         __del__
@@ -216,7 +216,7 @@ class ProcessPool:
             try:
                 encodedWork = self.jsonHandler.encode('STOP')
                 self.sender.send(encodedWork)
-            except Exception, ex:
+            except Exception as ex:
                 # Might be already failed.  Nothing you can
                 # really do about that.
                 logging.error("Failure killing running process: %s" % str(ex))
@@ -237,10 +237,10 @@ class ProcessPool:
         for worker in self.workers:
             try:
                 worker.join()
-            except Exception, ex:
+            except Exception as ex:
                 try:
                     worker.terminate()
-                except Exception, ex2:
+                except Exception as ex2:
                     logging.error("Failure to join or terminate process")
                     logging.error(str(ex))
                     logging.error(str(ex2))
@@ -272,7 +272,7 @@ class ProcessPool:
             encodedWork = self.jsonHandler.encode(work)
             self.sender.send(encodedWork)
             self.runningWork += 1
-            
+
         return
 
 
@@ -306,7 +306,7 @@ class ProcessPool:
                 completedWork.append(decode)
                 self.runningWork -= 1
                 totalItems -= 1
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Exception while getting slave outputin ProcessPool.\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -325,7 +325,7 @@ class ProcessPool:
         self.close()
         self.createSlaves()
         return
-        
+
 
 def setupLogging(componentDir):
     """
@@ -358,13 +358,13 @@ def setupDB(config, wmInit):
     socket     = getattr(config.CoreDatabase, 'socket', None)
     connectUrl = config.CoreDatabase.connectUrl
     dialect    = config.CoreDatabase.dialect
-        
+
     wmInit.setDatabaseConnection(dbConfig = connectUrl,
                                  dialect = dialect,
                                  socketLoc = socket)
     return
 
-    
+
 if __name__ == "__main__":
     """
     __main__
@@ -377,7 +377,7 @@ if __name__ == "__main__":
     Input variables:
     className, input port, output port, path to pickled config, component dir, namespace
     """
-    
+
     # Get variables passed in
     slaveClassName = sys.argv[1]
     inPort         = sys.argv[2]
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     configPath     = sys.argv[4]
     componentDir   = sys.argv[5]
     namespace      = sys.argv[6]
-    
+
     # Set up logging
     setupLogging(componentDir)
 
@@ -399,7 +399,7 @@ if __name__ == "__main__":
 
     # Build config
     if not os.path.exists(configPath):
-        # We can do nothing - 
+        # We can do nothing -
         logging.error("Something in the way of the config path")
         sys.exit(1)
 
@@ -422,10 +422,10 @@ if __name__ == "__main__":
 
     while(True):
         encodedInput = receiver.recv()
-        
+
         try:
             input = jsonHandler.decode(encodedInput)
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Error decoding: %s" % str(ex))
             break
 
@@ -435,14 +435,14 @@ if __name__ == "__main__":
         try:
             logging.error(input)
             output = slaveClass(input)
-        except Exception, ex:
+        except Exception as ex:
             crashMessage = "Slave process crashed with exception: " + str(ex)
             crashMessage += "\nStacktrace:\n"
 
             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
             for stackFrame in stackTrace:
                 crashMessage += stackFrame
-                
+
             logging.error(crashMessage)
             try:
                 output        = {'type': 'ERROR', 'msg': crashMessage}
@@ -450,12 +450,12 @@ if __name__ == "__main__":
                 sender.send(encodedOutput)
                 logging.error("Sent error message and now breaking")
                 break
-            except Exception, ex:
+            except Exception as ex:
                 logging.error("Failed to send error message")
                 logging.error(str(ex))
                 del jsonHandler
                 sys.exit(1)
-            
+
         if output != None:
             if type(output) == list:
                 for item in output:
@@ -469,7 +469,3 @@ if __name__ == "__main__":
     logging.info("Process with PID %s finished" %(os.getpid()))
     del jsonHandler
     sys.exit(0)
-
-
-
-

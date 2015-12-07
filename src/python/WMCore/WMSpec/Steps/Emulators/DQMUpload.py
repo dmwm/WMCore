@@ -12,7 +12,7 @@ class DQMUpload(Emulator):
     """
     _DQMUpload_
 
-    Emulate the execution of a StageOut Step
+    Emulate the execution of a DQMUpload Step
 
     """
     def pre(self):

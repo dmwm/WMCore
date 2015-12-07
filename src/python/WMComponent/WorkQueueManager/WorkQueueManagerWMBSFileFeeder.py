@@ -25,9 +25,9 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
-        
+
         self.queue = queue
-        
+
         self.previousWorkList = []
 
     def setup(self, parameters):
@@ -47,7 +47,7 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         if self.checkJobCreation():
             try:
                 self.getWorks()
-            except Exception, ex:
+            except Exception as ex:
                 self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
 
     def getWorks(self):
@@ -57,18 +57,19 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue.logger.info("Getting work and feeding WMBS files")
 
         # need to make sure jobs are created
-        resources = freeSlots(minusRunning = True, knownCmsSites = cmsSiteNames())
+        resources, jobCounts = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
+                              knownCmsSites = cmsSiteNames())
 
         for site in resources:
             self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
 
-        self.previousWorkList = self.queue.getWork(resources)
-        self.queue.logger.info("%s of units of work acquired for file creation" 
+        self.previousWorkList = self.queue.getWork(resources, jobCounts)
+        self.queue.logger.info("%s of units of work acquired for file creation"
                                % len(self.previousWorkList))
         return
 
     def checkJobCreation(self):
-        # check to see whether there is job created for all the file 
+        # check to see whether there is job created for all the file
         # in the given subscription
         self.queue.logger.info("Checking the JobCreation from previous pulled work")
         for workUnit in self.previousWorkList:
@@ -76,14 +77,11 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
             if filesForPeningJobCreation > 0:
                 self.queue.logger.info("""Not all the jobs are created.
                                           %s files left for job creation
-                                          Will get the work later""" % 
+                                          Will get the work later""" %
                                           filesForPeningJobCreation)
                 return False
-        
+
         self.queue.logger.info("All the jobs are created.\nWill get the work now")
         #reset previousWorkList to [] since all the jobs are created
         self.previousWorkList = []
         return True
-        
-        
-        

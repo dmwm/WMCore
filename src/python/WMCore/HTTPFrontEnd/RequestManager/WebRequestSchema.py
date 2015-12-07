@@ -1,12 +1,8 @@
 """ Pages for the creation of requests """
-import WMCore.RequestManager.RequestMaker.Production
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
-from WMCore.RequestManager.RequestMaker.Registry import  retrieveRequestMaker
-import WMCore.RequestManager.RequestMaker.Processing
-import WMCore.RequestManager.RequestMaker.Production
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.Wrappers import JsonWrapper
 import cherrypy
@@ -30,7 +26,8 @@ class WebRequestSchema(WebAPI):
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName
         self.workloadDBName = config.workloadDBName
-        self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"    
+        self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
+        self.defaultSkimConfig = "http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/CMSSW/Configuration/DataOps/python/prescaleskimmer.py?revision=1.1"
         self.yuiroot = config.yuiroot
         cherrypy.engine.subscribe('start_thread', self.initThread)
         self.scramArchs = []
@@ -47,16 +44,16 @@ class WebRequestSchema(WebAPI):
         server = WMCore.Database.CMSCouch.CouchServer(self.couchUrl)
         try:
             database = server.connectDatabase(self.configDBName)
-        except CouchUnauthorisedError, ex:
+        except CouchUnauthorisedError as ex:
             # We can't talk to couch...it's not authorized
             raise cherrypy.HTTPError(400, "Couch has raised an authorisation error on pulling allDocs!")
         docs = database.allDocs()
         result = []
         for row in docs["rows"]:
-           if row["id"].startswith('user') or row["id"].startswith('group'):
-               pass
-           else:
-               result.append(row["id"]) 
+            if row["id"].startswith('user') or row["id"].startswith('group'):
+                pass
+            else:
+                result.append(row["id"])
         return result
 
     @cherrypy.expose
@@ -82,7 +79,7 @@ class WebRequestSchema(WebAPI):
                 if not v in self.versions:
                     self.versions.append(v)
         self.versions.sort()
-        # see if this was configured with a hardcoded user.  If not, take from the request header 
+        # see if this was configured with a hardcoded user.  If not, take from the request header
         requestor = self.requestor
         if not requestor:
             requestor = cherrypy.request.user["login"]
@@ -96,11 +93,11 @@ class WebRequestSchema(WebAPI):
         campaigns = Campaign.listCampaigns()
         return self.templatepage("WebRequestSchema", yuiroot=self.yuiroot,
                                  requestor=requestor,
-                                 groups=groups, 
+                                 groups=groups,
                                  versions=self.versions,
                                  archs = self.scramArchs,
                                  alldocs = Utilities.unidecode(self.allDocs()),
-                                 allcampaigns = campaigns,                     
+                                 allcampaigns = campaigns,
                                  defaultVersion=self.cmsswVersion,
                                  defaultArch = self.defaultArch,
                                  defaultSkimConfig=self.defaultSkimConfig)
@@ -109,7 +106,9 @@ class WebRequestSchema(WebAPI):
     @cherrypy.tools.secmodv2()
     def makeSchema(self, **schema):
         schema.setdefault('CouchURL', Utilities.removePasswordFromUrl(self.couchUrl))
+        # wrong naming ... but it's all over the place, it's the config cache DB name
         schema.setdefault('CouchDBName', self.configDBName)
+        schema.setdefault('CouchWorkloadDBName', self.workloadDBName)
 
         decodedSchema = {}
         for key in schema.keys():
@@ -120,12 +119,26 @@ class WebRequestSchema(WebAPI):
                 # If it does except, it probably wasn't in JSON to begin with.
                 # Anything else should be caught by the parsers and the validation
                 decodedSchema[key] = schema[key]
-
         try:
-            request = Utilities.makeRequest(decodedSchema, self.couchUrl, self.workloadDBName)
-        except RuntimeError, e:
-            raise cherrypy.HTTPError(400, "Error creating request: %s" % e)
-        except KeyError, e:
-            raise cherrypy.HTTPError(400, "Error creating request: %s" % e)        
+            self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
+                      "'%s' ..." % (decodedSchema, self.workloadDBName,
+                                    Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
+            request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
+            # catching here KeyError is just terrible
+        except (RuntimeError, KeyError, Exception) as ex:
+            # TODO problem not to expose logs to the client
+            # e.g. on ConfigCacheID not found, the entire CouchDB traceback is sent in ex_message
+            self.error("Create request failed, reason: %s" % str(ex))
+            if hasattr(ex, "message"):
+                if hasattr(ex.message, '__call__'):
+                    detail = ex.message()
+                else:
+                    detail = str(ex)
+            elif hasattr(ex, "name"):
+                detail = ex.name
+            else:
+                detail = "check logs." 
+            msg = "Create request failed, %s" % detail
+            raise cherrypy.HTTPError(400, msg)            
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, request['RequestName']))

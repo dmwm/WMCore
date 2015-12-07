@@ -7,7 +7,7 @@ Useful little tools that can be handy anywhere.
 """
 import logging
 
-def sortListByKey(input, key):
+def sortListByKey(data, key):
     """
     Return list of dictionaries as a
     dictionary of lists of dictionaries
@@ -16,7 +16,7 @@ def sortListByKey(input, key):
     """
     final = {}
 
-    for entry in input:
+    for entry in data:
         value = entry.get(key, None)
         if value == None:
             # Empty dict value?
@@ -24,7 +24,7 @@ def sortListByKey(input, key):
             logging.error("Found entry with no key in sortListByKey: %s" % entry)
             logging.error("Skipping")
             continue
-        if type(value) == set:
+        if isinstance(value, set):
             try:
                 v     = value
                 value = v.pop()
@@ -55,13 +55,13 @@ def dict_diff(first, second):
     diff = {}
     # Check all keys in first dict
     for key in first.keys():
-        if (not second.has_key(key)):
+        if (key not in second):
             diff[key] = (first[key], KEYNOTFOUND)
         elif (first[key] != second[key]):
             diff[key] = (first[key], second[key])
     # Check all keys in second dict to find missing
     for key in second.keys():
-        if (not first.has_key(key)):
+        if (key not in first):
             diff[key] = (KEYNOTFOUND, second[key])
     return diff
 ## end of http://code.activestate.com/recipes/576644/ }}}

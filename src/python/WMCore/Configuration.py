@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=C0321,C0103
+# pylint: disable=C0321,C0103
 """
 _Configuration_
 
@@ -17,22 +17,24 @@ import types
 import traceback
 
 _SimpleTypes = [
-    types.BooleanType,
-    types.FloatType,
-    types.StringType,
-    types.UnicodeType,
-    types.LongType,
-    types.NoneType,
-    types.IntType,
+    bool,
+    float,
+    str,
+    unicode,
+    long,    # Not needed in python3
+    type(None),
+    int,
     ]
 
-_SupportedTypes = [
-    types.DictType,
-    types.ListType,
-    types.TupleType,
+_ComplexTypes = [
+    dict,
+    list,
+    tuple,
     ]
 
+_SupportedTypes = []
 _SupportedTypes.extend(_SimpleTypes)
+_SupportedTypes.extend(_ComplexTypes)
 
 
 def format(value):
@@ -42,7 +44,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == types.StringType:
+    if type(value) == str:
         value = "\'%s\'" % value
     return str(value)
 
@@ -53,13 +55,13 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == types.IntType:
+    if type(value) == int:
         return value
-    if type(value) == types.FloatType:
+    if type(value) == float:
         return value
-    if type(value) == types.ListType:
+    if type(value) == list:
         return value
-    if type(value) == types.DictType:
+    if type(value) == dict:
         return dict
     else:
         return format(value)
@@ -93,12 +95,30 @@ class ConfigSection(object):
         else:
             return (id(self) == id(other))
 
+    def _complexTypeCheck(self, name, value):
+        
+        if type(value) in _SimpleTypes:
+            return
+        elif type(value) in _ComplexTypes:
+            vallist = value
+            if type(value) == dict:
+                vallist = value.values()
+            for val in vallist:
+                self._complexTypeCheck(name, val)
+        else:
+            msg = "Not supported type in sequence:"
+            msg += "%s\n" % type(value)
+            msg += "for name: %s and value: %s\n" % (name, value)
+            msg += "Added to WMAgent Configuration"
+            raise RuntimeError(msg)
+                
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
             # skip test for internal setting
             object.__setattr__(self, name, value)
             return
+
         if isinstance(value, ConfigSection):
             # child ConfigSection
             self._internal_children.add(name)
@@ -107,23 +127,11 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) not in _SupportedTypes:
-            msg = "Unsupported Type: %s\n" % type(value)
-            msg += "Added to WMAgent Configuration"
-            raise RuntimeError, msg
-        if type(value) == types.UnicodeType:
+        if type(value) == unicode:
             value = str(value)
-        if type(value) in (types.ListType, types.TupleType, types.DictType):
-            vallist = value
-            if type(value) == types.DictType:
-                vallist = value.values()
-            for val in vallist:
-                if type(val) not in _SimpleTypes:
-                    msg = "Complex Value type in sequence:"
-                    msg += "%s\n" % type(val)
-                    msg += "for name: %s and value: %s\n" % (name, value)
-                    msg += "Added to WMAgent Configuration"
-                    raise RuntimeError, msg
+        
+        self._complexTypeCheck(name, value)
+        
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return
@@ -165,7 +173,7 @@ class ConfigSection(object):
                         )
 
 
-                    raise TypeError, msg
+                    raise TypeError(msg)
             self.__setattr__(setting, settingInstance)
         return self
 
@@ -177,7 +185,7 @@ class ConfigSection(object):
         returns a ConfigSection instance
 
         """
-        if self.__dict__.has_key(sectionName):
+        if sectionName in self.__dict__:
             return self.__dict__[sectionName]
         newSection = ConfigSection(sectionName)
         self.__setattr__(sectionName, newSection)
@@ -221,7 +229,7 @@ class ConfigSection(object):
                 result.extend(getattr(self, attr).pythonise_(
                     document = document, comment = comment, prefix = myName))
                 continue
-            if self._internal_docstrings.has_key(attr):
+            if attr in self._internal_docstrings:
                 if comment:
                     result.append("# %s.%s: %s" % (
                         myName, attr,
@@ -232,7 +240,7 @@ class ConfigSection(object):
                 attr, format(getattr(self, attr))
                 ))
 
-            if self._internal_docstrings.has_key(attr):
+            if attr in self._internal_docstrings:
                 if document:
                     result.append(
                         "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
@@ -240,17 +248,48 @@ class ConfigSection(object):
                         self._internal_docstrings[attr], attr))
         return result
 
+
     def dictionary_(self):
         """
         _dictionary_
 
-        Create a dictionary representation of this object
+        Create a dictionary representation of this object.
+
+        This method does not take into account possible ConfigSections
+        as attributes of self (i.e. sub-ConfigSections) as the
+        dictionary_whole_tree_() method does.
+        The reason for this method to stay is that WebTools.Root.py
+        depends on a few places to check itself like:
+        if isinstance(param_value, ConfigSection) ...
 
         """
         result = {}
         [ result.__setitem__(x, getattr(self, x))
           for x in self._internal_settings ]
         return result
+
+
+    def dictionary_whole_tree_(self):
+        """
+        Create a dictionary representation of this object.
+
+        ConfigSection.dictionary_() method needs to expand possible
+        items that are ConfigSection instances (those which appear
+        in the _internal_children set).
+        Also these sub-ConfigSections have to be made dictionaries
+        rather than putting e.g.
+        'Task1': <WMCore.Configuration.ConfigSection object at 0x104ccb50>
+
+        """
+        result = {}
+        for x in self._internal_settings:
+            if x in self._internal_children:
+                v = getattr(self, x)
+                result[x] = v.dictionary_whole_tree_()
+                continue
+            result.__setitem__(x, getattr(self, x)) # the same as result[x] = value
+        return result
+
 
     def document_(self, docstring, parameter = None):
         """
@@ -345,7 +384,7 @@ class Configuration(object):
             return
         if not isinstance(value, ConfigSection):
             msg = "Can only add objects of type ConfigSection to Configuration"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         object.__setattr__(self, name, value)
         return
@@ -364,7 +403,7 @@ class Configuration(object):
                 self._internal_webapps.remove(name)
             object.__delattr__(self, name)
             return
-        
+
     @staticmethod
     def getInstance():
         return getattr(Configuration, "_instance", None)
@@ -407,7 +446,7 @@ class Configuration(object):
         returns a ConfigSection instance
 
         """
-        if self.__dict__.has_key(sectionName):
+        if sectionName in self.__dict__:
             return self.__dict__[sectionName]
         newSection = ConfigSection(sectionName)
         self.__setattr__(sectionName, newSection)
@@ -466,7 +505,7 @@ class Configuration(object):
             elif sectionName in self._internal_webapps:
                 result += "config.webapp_(\'%s\')\n" % sectionName
             else:
-                result += "config.section_(\'%s\')\n" % sectionName                
+                result += "config.section_(\'%s\')\n" % sectionName
 
 
             sectionRef = getattr(self, sectionName)
@@ -519,13 +558,13 @@ def loadConfigurationFile(filename):
     try:
         modRef = imp.load_module(cfgBaseName, modPath[0],
                                  modPath[1], modPath[2])
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to load Configuration File:\n"
         msg += "%s\n" % filename
         msg += "Due to error:\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     for attr in modRef.__dict__.values():
         if isinstance(attr, Configuration):
@@ -536,7 +575,7 @@ def loadConfigurationFile(filename):
     #//
     msg = "Unable to find a Configuration object instance in file:\n"
     msg += "%s\n" % filename
-    raise RuntimeError, msg
+    raise RuntimeError(msg)
 
 
 

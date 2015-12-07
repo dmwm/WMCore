@@ -8,8 +8,9 @@ classes and instantiate them via a factory method
 Note that a schema is retrieved via its corresponding maker.
 
 """
-import copy
+import logging
 import time
+from WMCore.Wrappers import JsonWrapper
 from WMCore.RequestManager.DataStructs.Request import Request
 
 class _Registry:
@@ -21,19 +22,19 @@ class _Registry:
     _Makers = {}
     _Schemas = {}
     _Factories = {}
-    
+
     def __init__(self):
         msg = "Do not init ths class"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
-    
+
 
 def registerRequestType(typename, makerClass, schemaClass):
     """
     _registerRequestType_
 
     Register a request type with its maker class and schema class
-    
+
     """
     _Registry._Makers[typename] = makerClass
     _Registry._Schemas[typename] = schemaClass
@@ -47,13 +48,13 @@ def retrieveRequestMaker(typename):
     _retrieveRequestMaker_
 
     Retrieve a request maker instance for the named type.
-    
+
     """
-    if not _Registry._Makers.has_key(typename):
+    if typename not in _Registry._Makers:
         print _Registry._Makers.keys()
         msg = "No RequestMaker implementation registered with name:"
         msg += " %s" % typename
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     maker = _Registry._Makers[typename]()
     maker.requestType = typename
@@ -65,7 +66,7 @@ def retrieveRequestMaker(typename):
 def buildWorkloadForRequest(typename, schema):
     """
     _buildWorkloadForRequest_
-    
+
     Prototype master class for ReqMgr request creation
 
     Should load factory, use the schema to find arguments,
@@ -81,15 +82,13 @@ def buildWorkloadForRequest(typename, schema):
             factoryInstance = getattr(mod, factoryName)
         except ImportError:
             msg =  "Spec type %s not found in WMCore.WMSpec.StdSpecs" % typename
-            raise RuntimeError, msg
-        except AttributeError, ex:
+            raise RuntimeError(msg)
+        except AttributeError as ex:
             msg = "Factory not found in Spec for type %s" % typename
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         _Registry._Factories[typename] = factoryInstance
     else:
         factoryInstance = _Registry._Factories[typename]
-
-
 
     # So now we have a factory
     # Time to run it
@@ -98,13 +97,28 @@ def buildWorkloadForRequest(typename, schema):
     factory  = factoryInstance()
     workload = factory.factoryWorkloadConstruction(workloadName = requestName,
                                                    arguments = schema)
-    
     # Now build a request
     request = Request()
     request.update(schema)
     loadRequestSchema(workload = workload, requestSchema = schema)
     request['WorkloadSpec'] = workload.data
-    request['SoftwareVersions'].append(schema.get('CMSSWVersion', "CMSSW_5_0_0"))
+    # use the CMSSWVersion from the input schema only if it's defined (like
+    # for a new request). for example for a resubmission request, schema['CMSSWVersion']
+    # is empty and will be worked out later ; do not use any defaults
+    # TODO:
+    # all these fiddling along the route of creating the request should be concentrated
+    #    at single place! Otherwise implementation of things like request cloning is
+    #    unnecessary complicated for there is a lot hidden manipulations
+    #    for for cloning - do this only if it's not defined already!
+    #    seeing what is written above about resubmission, not sure if for resubmission
+    #    this is not now screwed up
+    if schema.get('CMSSWVersion') and schema.get('CMSSWVersion') not in request['SoftwareVersions']:
+        request['SoftwareVersions'].append(schema.get('CMSSWVersion'))
+
+    # Storing the DBSURL causes problems for cloning
+    # If it is not present in the schema then there is no reason to store
+    # it in couch.
+
     return request
 
 
@@ -117,15 +131,29 @@ def loadRequestSchema(workload, requestSchema):
     """
     schema = workload.data.request.section_('schema')
     for key, value in requestSchema.iteritems():
-        try:
+        if type(value) == dict and key == 'LumiList': 
+            value = JsonWrapper.dumps(value)
+        try:            
             setattr(schema, key, value)
-        except Exception, ex:
-            pass
+        except Exception as ex:
+            # Attach TaskChain tasks
+            if type(value) == dict and requestSchema['RequestType'] == 'TaskChain' and 'Task' in key:
+                newSec = schema.section_(key)
+                for k, v in requestSchema[key].iteritems():
+                    if type(value) == dict and key == 'LumiList': 
+                        value = JsonWrapper.dumps(value)
+                    try:
+                        setattr(newSec, k, v)
+                    except Exception as ex:
+                        # this logging need to change to cherry py logging
+                        logging.error("Invalid Value: %s" % str(ex))
+            else:
+                # this logging need to change to cherry py logging 
+                logging.error("Invalid Value: %s" % str(ex))
+
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
-    
+
     # might belong in another method to apply existing schema
     workload.data.owner.Group = schema.Group
     workload.data.owner.Requestor = schema.Requestor
-    if hasattr(schema, 'RequestPriority'):
-        workload.data.request.priority = schema.RequestPriority

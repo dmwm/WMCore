@@ -53,7 +53,7 @@ options.arguments = ''
 # make a list of all boxes turned on.
 allLevels = ["GEN", "SIM", "DIGI", "L1", "DIGI2RAW", "RAW2DIGI", "RECO",
                 "POSTRECO", "ALCA", "DQM"]
-checked = [checkbox for checkbox in allLevels if kwargs.has_key(checkbox) and kwargs[checkbox] != None]
+checked = [checkbox for checkbox in allLevels if checkbox in kwargs and kwargs[checkbox] != None]
 if checked == []:
    sys.exit("No configuration objects checked")
 options.step = ','.join(checked).replace('"', '')

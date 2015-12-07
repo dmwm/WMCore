@@ -36,4 +36,3 @@ class GetAssociation(DBFormatter):
                                       conn = conn, transaction = trans)
         values = [ x[0] for x in self.format(result)]
         return values
-

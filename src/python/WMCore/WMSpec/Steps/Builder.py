@@ -71,7 +71,7 @@ class Builder:
 
         handle = open(self.taskSpaceInitMod, 'w')
         handle.write(taskSpaceInit)
-        handle.write("""args["TaskName"] = "%s"\n""" % self.taskName)        
+        handle.write("""args["TaskName"] = "%s"\n""" % self.taskName)
         handle.write("""args["StepName"] = "%s"\n""" % self.stepName)
         handle.write("""args["Locator"] = _Locator\n""")
         handle.write("""stepSpace = establishStepSpace(**args)\n""")
@@ -91,7 +91,7 @@ class Builder:
         """
         msg = "WMSpec.Steps.Builder.build method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
     def installWorkingArea(self, step, workingArea, **args):

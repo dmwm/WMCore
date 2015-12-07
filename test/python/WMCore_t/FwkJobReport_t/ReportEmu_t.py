@@ -12,8 +12,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.DataStructs.Job import Job
 
 from WMCore.FwkJobReport.ReportEmu import ReportEmu
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 class ReportEmuTest(unittest.TestCase):
     """
@@ -33,7 +32,8 @@ class ReportEmuTest(unittest.TestCase):
         self.acquisitionEra = "WMAgentCommissioining10"
         self.primaryDataset = "MinimumBias"
 
-        self.workload = rerecoWorkload("Tier1ReReco", getTestArguments())
+        self.workload = WMSpecGenerator().createReRecoSpec("Tier1ReReco")
+        print self.workload.data
         return
 
     def verifyOutputMetaData(self, outputFile, job):
@@ -145,7 +145,7 @@ class ReportEmuTest(unittest.TestCase):
                "Error: RECO file has wrong output module."
         assert alcaOutputFiles[0]["module_label"] == "ALCARECOoutput", \
                "Error: ALCA file has wrong output module."
-        
+
         self.verifyOutputMetaData(recoOutputFiles[0], processingJob)
         self.verifyOutputMetaData(alcaOutputFiles[0], processingJob)
 
@@ -168,8 +168,8 @@ class ReportEmuTest(unittest.TestCase):
         emulator is reasonable.
         """
         #emu = ReportEmu(WMStep = self.cmssw, Job = self.job)
-        #report = emu()        
+        #report = emu()
         return
-        
+
 if __name__ == "__main__":
     unittest.main()

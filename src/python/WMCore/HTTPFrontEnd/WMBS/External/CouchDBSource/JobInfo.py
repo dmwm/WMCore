@@ -8,6 +8,7 @@ import sys
 import datetime
 import os
 import time
+import logging
 
 from WMCore.HTTPFrontEnd.WMBS.External.CouchDBSource.CouchDBConnectionBase \
     import CouchDBConnectionBase
@@ -33,7 +34,7 @@ def getJobInfo(jobID, couchConfig):
                                     options)
 
     for row in result["rows"]:
-        if not transitionDocs.has_key(row["value"]["timestamp"]):
+        if row["value"]["timestamp"] not in transitionDocs:
             transitionDocs[row["value"]["timestamp"]] = []
 
         transitionDocs[row["value"]["timestamp"]].append(row["value"])
@@ -79,11 +80,11 @@ def getJobSummaryByWorkflow(couchConfig):
 
     options = {"group": True, "group_level": 1, "stale": "ok"}
     result = changeStateDB.loadView("JobDump", "statusByWorkflowName",
-                                    options)    
+                                    options)
 
     quotedJobsDBName = couchDBBase.getCouchDBName() + "%2Fjobs"
     quotedFWJRDBName = couchDBBase.getCouchDBName() + "%2Ffwjrs"
-    
+
     couchDocBase = couchDBBase.getCouchDBHtmlBase(quotedFWJRDBName, "FWJRDump",
                                                   "workflowSummary")
     # reformat to match other type. (not very performative)
@@ -97,12 +98,12 @@ def getJobSummaryByWorkflow(couchConfig):
                    'endkey':'["%s",{}]' % item['key'][0],
                    "reduce": "false",
                    "stale": "ok"}
-    
+
         dictItem['couch_job_info_base'] = couchDBBase.getCouchDBHtmlBase(quotedJobsDBName,
-                                                                         "JobDump", "replace_to_Jobs", 
+                                                                         "JobDump", "replace_to_Jobs",
                                                                          'statusByWorkflowName', options = options,
                                                                          type = "list")
-        
+
         formatted.append(dictItem)
 
     return formatted
@@ -134,6 +135,9 @@ def getJobStateBySite(couchConfig):
     siteDict = None
     #result is sorted by site.
     for item in result['rows']:
+        if item['key'][1] == None:
+            logging.error("Site info is missing, Ignore data : %s" % item)
+            continue
         if currentSite == item['key'][1]:
             siteDict[item['key'][2]] = item['value']
         else:
@@ -148,4 +152,3 @@ def getJobStateBySite(couchConfig):
         formatted.append(siteDict)
 
     return formatted
-

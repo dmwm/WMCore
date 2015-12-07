@@ -12,13 +12,17 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import sys
 import os
 
+
 def dispatcher(*args):
     """
     _dispatcher_
-    
+
     Examine argument list and route to the appropriate call
-    
+
     """
+    if args[0] == '--arch':
+        args = args[2:]
+
     if args[0] == 'project':
         scramProject(*args)
     elif args[0] == 'runtime':
@@ -26,8 +30,9 @@ def dispatcher(*args):
     elif args[0] == 'ru':
         scramRuntime(*args)
     else:
-        print "Unknown scram command: %s" % args[1]
+        print "Unknown scram command: %s\nFull command: %s" % (args[0], args)
         sys.exit(1)
+
 
 def scramProject(*args):
     print "Emulating scram project command..."
@@ -35,19 +40,14 @@ def scramProject(*args):
     projectVersion = args[2]
     newDir = os.path.join(os.getcwd(), projectVersion)
     if not os.path.exists(newDir):
-        os.makedirs(newDir) 
-    
+        os.makedirs(newDir)
+
     sys.exit(0)
-    
-    
+
+
 def scramRuntime(*args):
     print "export GREETING=\"Hello World\";"
-    
 
 
 if __name__ == '__main__':
-    
     dispatcher(*sys.argv[1:])
-    
-    
-    #dispatcher(*args)

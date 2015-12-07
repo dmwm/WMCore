@@ -32,7 +32,7 @@ class LoadFromID(DBFormatter):
         formattedResult["type"] = formattedResult["name"]
         del formattedResult["name"]
         return formattedResult
-    
+
     def execute(self, id = None, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {"id": id}, conn = conn,
                                       transaction = transaction)

@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # I'm afraid *args, **kwargs magic is needed here
-# pylint: disable-msg=W0142
+# pylint: disable=W0142
 #-*- coding: ISO-8859-1 -*-
 """
 Rest Model abstract implementation
 """
-
+from functools import wraps
 from WMCore.Lexicon import check
 from WMCore.WebTools.WebAPI import WebAPI
 from cherrypy import request, HTTPError
@@ -116,7 +116,7 @@ class RESTModel(WebAPI):
                 self.warning(msg)
             data = methodCall(*params, **kwargs)
         # If a type error is raised the data from the client is bad - 400 error
-        except TypeError, e:
+        except TypeError as e:
             error = e.__str__()
             self.debug(error)
             self.debug(traceback.format_exc())
@@ -167,8 +167,9 @@ class RESTModel(WebAPI):
         receives sanitised input and is marked as 'restexposed'.
         """
 
-        if not self.methods.has_key(verb):
+        if verb not in self.methods:
             self.methods[verb] = {}
+        @wraps(function)
         def wrapper(*input_args, **input_kwargs):
             if secured:
                 # set up security
@@ -241,8 +242,8 @@ class RESTModel(WebAPI):
             else:
                 if len(input_args):
                     input_data[a] = input_args.pop(0)
-        if input_kwargs: 
-            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.') 
+        if input_kwargs:
+            raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))
         self.debug('%s sanitised input_data: %s' % (method, input_data))
         return self._validate_input(input_data, verb, method)
@@ -265,10 +266,10 @@ class RESTModel(WebAPI):
         for fnc in validators:
             try:
                 filteredInput = fnc(input_data)
-            except HTTPError, he:
+            except HTTPError as he:
                 self.debug(he)
                 raise he
-            except Exception, e:
+            except Exception as e:
                 self.debug(e)
                 raise HTTPError(400, 'Invalid input: Input data failed validation.')
             result.update(filteredInput)

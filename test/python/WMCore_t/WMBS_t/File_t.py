@@ -7,13 +7,8 @@ Unit tests for the WMBS File class.
 
 import unittest
 import logging
-import os
-import commands
 import threading
-import random
 
-from WMCore.Database.DBCore    import DBInterface
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.DAOFactory         import DAOFactory
 from WMCore.WMBS.File          import File, addFilesToWMBSInBulk
 from WMCore.WMBS.Fileset       import Fileset
@@ -21,7 +16,6 @@ from WMCore.WMBS.Workflow      import Workflow
 from WMCore.WMBS.Subscription  import Subscription
 from WMCore.WMBS.JobGroup      import JobGroup
 from WMCore.WMBS.Job           import Job
-from WMCore.WMFactory          import WMFactory
 from WMQuality.TestInit        import TestInit
 from WMCore.DataStructs.Run    import Run
 from WMCore.DataStructs.File   import File as WMFile
@@ -48,20 +42,20 @@ class FileTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "se1.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "se1.fnal.gov")
+        locationAction.execute(siteName = "site1", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = "site2", pnn = "T2_CH_CERN")
 
         return
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
         self.testInit.clearDatabase()
         return
-            
+
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -99,7 +93,7 @@ class FileTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10, checksums={'cksum':1111})
 
         assert testFile.exists() == False, \
@@ -115,7 +109,7 @@ class FileTest(unittest.TestCase):
 
         assert testFile.exists() == False, \
                "ERROR: File exists after transaction was rolled back."
-        return    
+        return
 
     def testDeleteTransaction(self):
         """
@@ -141,7 +135,7 @@ class FileTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFile.delete()
 
         assert testFile.exists() == False, \
@@ -170,38 +164,38 @@ class FileTest(unittest.TestCase):
         testFile.addRun(Run(2, *[46, 47]))
         testFile.addRun(Run(2, *[47, 48]))
         testFile.create()
-        testFile.setLocation(se = "se1.fnal.gov", immediateSave = False)
-        testFile.setLocation(se = "se1.cern.ch", immediateSave = False)
+        testFile.setLocation(pnn = "T1_US_FNAL_Disk", immediateSave = False)
+        testFile.setLocation(pnn = "T2_CH_CERN", immediateSave = False)
         testFile.addParent("/this/is/a/parent/lfn")
 
         info = testFile.getInfo()
 
         assert info[0] == testFile["lfn"], \
                "ERROR: File returned wrong LFN"
-        
+
         assert info[1] == testFile["id"], \
                "ERROR: File returned wrong ID"
-        
+
         assert info[2] == testFile["size"], \
                "ERROR: File returned wrong size"
-        
+
         assert info[3] == testFile["events"], \
                "ERROR: File returned wrong events"
-        
+
         assert info[4] == testFile["checksums"], \
                "ERROR: File returned wrong cksum"
-        
+
         assert len(info[5]) == 2, \
-		      "ERROR: File returned wrong runs"
-        
+                      "ERROR: File returned wrong runs"
+
         assert info[5] == [Run(1, *[45]), Run(2, *[46, 47, 48])], \
                "Error: Run hasn't been combined correctly"
-               
+
         assert len(info[6]) == 2, \
                "ERROR: File returned wrong locations"
 
         for testLocation in info[6]:
-            assert testLocation in ["se1.fnal.gov", "se1.cern.ch"], \
+            assert testLocation in ["T1_US_FNAL_Disk", "T2_CH_CERN"], \
                    "ERROR: File returned wrong locations"
 
         assert len(info[7]) == 1, \
@@ -213,7 +207,7 @@ class FileTest(unittest.TestCase):
         testFile.delete()
         testFileParent.delete()
         return
-        
+
     def testGetParentLFNs(self):
         """
         _testGetParentLFNs_
@@ -246,7 +240,7 @@ class FileTest(unittest.TestCase):
         testFile.addParent(testFileParentC["lfn"])
 
         parentLFNs = testFile.getParentLFNs()
-        
+
         assert len(parentLFNs) == 3, \
                "ERROR: Child does not have the right amount of parents"
 
@@ -257,13 +251,13 @@ class FileTest(unittest.TestCase):
             assert parentLFN in goldenLFNs, \
                    "ERROR: Unknown parent lfn"
             goldenLFNs.remove(parentLFN)
-                   
+
         testFile.delete()
         testFileParentA.delete()
         testFileParentB.delete()
         testFileParentC.delete()
         return
-    
+
     def testLoad(self):
         """
         _testLoad_
@@ -274,7 +268,7 @@ class FileTest(unittest.TestCase):
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                         checksums = {'cksum': 101}, first_event = 2, merged = True)
         testFileA.create()
-                                                        
+
         testFileB = File(lfn = testFileA["lfn"])
         testFileB.load()
         testFileC = File(id = testFileA["id"])
@@ -296,7 +290,7 @@ class FileTest(unittest.TestCase):
                "ERROR: File cksum is not a string type."
         assert type(testFileB["first_event"]) == int, \
                "ERROR: File first_event is not an integer type."
-        
+
         assert type(testFileC["id"]) == int, \
                "ERROR: File id is not an integer type."
         assert type(testFileC["size"]) == int, \
@@ -333,12 +327,12 @@ class FileTest(unittest.TestCase):
                         checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        testFileA.setLocation(se = "se1.fnal.gov", immediateSave = False)
-        testFileA.setLocation(se = "se1.cern.ch", immediateSave = False)
+        testFileA.setLocation(pnn = "T1_US_FNAL_Disk", immediateSave = False)
+        testFileA.setLocation(pnn = "T2_CH_CERN", immediateSave = False)
         testFileA.addParent("/this/is/a/parent/lfnA")
         testFileA.addParent("/this/is/a/parent/lfnB")
         testFileA.updateLocations()
-                                                        
+
         testFileB = File(lfn = testFileA["lfn"])
         testFileB.loadData(parentage = 1)
         testFileC = File(id = testFileA["id"])
@@ -353,7 +347,7 @@ class FileTest(unittest.TestCase):
         testFileA.delete()
         testFileParentA.delete()
         testFileParentB.delete()
-        return    
+        return
 
     def testAddChild(self):
         """
@@ -419,7 +413,7 @@ class FileTest(unittest.TestCase):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFileParentB.addChild("/this/is/a/lfn")
 
         testFileB = File(id = testFileA["id"])
@@ -445,9 +439,9 @@ class FileTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
               "ERROR: Some parents are missing"
-        
+
         return
-    
+
     def testCreateWithLocation(self):
         """
         _testCreateWithLocation_
@@ -456,16 +450,16 @@ class FileTest(unittest.TestCase):
         database to make sure that the locations were set correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        checksums = {'cksum':1}, 
-                        locations = set(["se1.fnal.gov", "se1.cern.ch"]))
+                        checksums = {'cksum':1},
+                        locations = set(["T1_US_FNAL_Disk", "T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
-        
+
         testFileB = File(id = testFileA["id"])
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+        goldenLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -473,7 +467,7 @@ class FileTest(unittest.TestCase):
             goldenLocations.remove(location)
 
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"    
+              "ERROR: Some locations are missing"
         return
 
     def testSetLocation(self):
@@ -488,14 +482,14 @@ class FileTest(unittest.TestCase):
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
-        testFileA.setLocation(["se1.fnal.gov", "se1.cern.ch"])
-        testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
+        testFileA.setLocation(["T1_US_FNAL_Disk", "T2_CH_CERN"])
+        testFileA.setLocation(["bunkT1_US_FNAL_Disk", "bunkT2_CH_CERN"],
                               immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+        goldenLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -503,7 +497,7 @@ class FileTest(unittest.TestCase):
             goldenLocations.remove(location)
 
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"    
+              "ERROR: Some locations are missing"
         return
 
     def testSetLocationTransaction(self):
@@ -519,19 +513,19 @@ class FileTest(unittest.TestCase):
                         checksums = {'cksum':1})
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
-        testFileA.setLocation(["se1.fnal.gov"])
+        testFileA.setLocation(["T1_US_FNAL_Disk"])
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
-        testFileA.setLocation(["se1.cern.ch"])
-        testFileA.setLocation(["bunkse1.fnal.gov", "bunkse1.cern.ch"],
+
+        testFileA.setLocation(["T2_CH_CERN"])
+        testFileA.setLocation(["bunkT1_US_FNAL_Disk", "bunkT2_CH_CERN"],
                               immediateSave = False)
 
         testFileB = File(id = testFileA["id"])
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov", "se1.cern.ch"]
+        goldenLocations = ["T1_US_FNAL_Disk", "T2_CH_CERN"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -544,7 +538,7 @@ class FileTest(unittest.TestCase):
         myThread.transaction.rollback()
         testFileB.loadData()
 
-        goldenLocations = ["se1.fnal.gov"]
+        goldenLocations = ["T1_US_FNAL_Disk"]
 
         for location in testFileB["locations"]:
             assert location in goldenLocations, \
@@ -553,7 +547,7 @@ class FileTest(unittest.TestCase):
 
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"
-        return    
+        return
 
     def testLocationsConstructor(self):
         """
@@ -565,38 +559,38 @@ class FileTest(unittest.TestCase):
         single string instead of a set.
         """
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        checksums = {'cksum':1}, locations = set(["se1.fnal.gov"]))
+                        checksums = {'cksum':1}, locations = set(["T1_US_FNAL_Disk"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
 
         testFileB = File(lfn = "/this/is/a/lfn2", size = 1024, events = 10,
-                        checksums = {'cksum':1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum':1}, locations = "T1_US_FNAL_Disk")
         testFileB.addRun(Run( 1, *[45]))
-        testFileB.create()        
+        testFileB.create()
 
         testFileC = File(id = testFileA["id"])
         testFileC.loadData()
 
-        goldenLocations = ["se1.fnal.gov"]
+        goldenLocations = ["T1_US_FNAL_Disk"]
         for location in testFileC["locations"]:
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
-            
+
         assert len(goldenLocations) == 0, \
               "ERROR: Some locations are missing"
 
         testFileC = File(id = testFileB["id"])
         testFileC.loadData()
 
-        goldenLocations = ["se1.fnal.gov"]
+        goldenLocations = ["T1_US_FNAL_Disk"]
         for location in testFileC["locations"]:
             assert location in goldenLocations, \
                    "ERROR: Unknown file location"
             goldenLocations.remove(location)
-            
+
         assert len(goldenLocations) == 0, \
-              "ERROR: Some locations are missing"        
+              "ERROR: Some locations are missing"
         return
 
 
@@ -610,7 +604,7 @@ class FileTest(unittest.TestCase):
         myThread = threading.currentThread()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10)
-        testFileA.setLocation("se1.cern.ch")
+        testFileA.setLocation("T2_CH_CERN")
         testFileA.create()
 
         testFileB = File(lfn = testFileA["lfn"])
@@ -621,10 +615,10 @@ class FileTest(unittest.TestCase):
         locationFac = daoFactory(classname = "Files.GetLocation")
         location  = locationFac.execute(testFileB['lfn']).pop()
 
-        self.assertEqual(location, 'se1.cern.ch')
+        self.assertEqual(location, 'T2_CH_CERN')
 
         return
-        
+
     def testAddRunSet(self):
         """
         _testAddRunSet_
@@ -632,18 +626,18 @@ class FileTest(unittest.TestCase):
         Test the ability to add run and lumi information to a file.
         """
         testFile = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                        checksums = {'cksum':1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum':1}, locations = "T1_US_FNAL_Disk")
         testFile.create()
         runSet = set()
         runSet.add(Run( 1, *[45]))
         runSet.add(Run( 2, *[67, 68]))
         testFile.addRunSet(runSet)
-        
+
         assert (runSet - testFile["runs"]) == set(), \
             "Error: addRunSet is not updating set correctly"
 
         return
-    
+
     def testGetAncestorLFNs(self):
         """
         _testGenAncestorLFNs_
@@ -653,43 +647,43 @@ class FileTest(unittest.TestCase):
         correctly.
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileA.create()
-        
+
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileB.create()
-        
+
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileC.create()
-        
+
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileD.create()
-        
+
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileE.create()
-        
+
         testFileE = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T1_US_FNAL_Disk")
         testFileE.create()
-        
+
         testFileA.addParent(lfn = "/this/is/a/lfnB")
         testFileA.addParent(lfn = "/this/is/a/lfnC")
         testFileB.addParent(lfn = "/this/is/a/lfnD")
         testFileC.addParent(lfn = "/this/is/a/lfnD")
         testFileD.addParent(lfn = "/this/is/a/lfnE")
         testFileD.addParent(lfn = "/this/is/a/lfnF")
-        
+
         level1 = ["/this/is/a/lfnB", "/this/is/a/lfnC"]
         level2 = ["/this/is/a/lfnD"]
         level3 = ["/this/is/a/lfnE", "/this/is/a/lfnF"]
         level4 = level5 = []
-        
+
         decs2 = ["/this/is/a/lfnA"]
-        
+
         assert testFileA.getAncestors(level=1, type='lfn') == level1, \
               "ERROR: level 1 test failed"
         assert testFileA.getAncestors(level=2, type='lfn') == level2, \
@@ -700,7 +694,7 @@ class FileTest(unittest.TestCase):
               "ERROR: level 4 test failed"
         assert testFileA.getAncestors(level=5, type='lfn') == level5, \
               "ERROR: level 5 test failed"
-        
+
         assert testFileD.getDescendants(level=1, type='lfn') == level1, \
               "ERROR: level 1 desc test failed"
         assert testFileD.getDescendants(level=2, type='lfn') == decs2, \
@@ -721,38 +715,38 @@ class FileTest(unittest.TestCase):
 
         daoFactory = DAOFactory(package = "WMCore.WMBS", logger = logging, dbinterface = myThread.dbi)
         locationAction = daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site3", seName = "se2.fnal.gov")
-        locationAction.execute(siteName = "site4", seName = "se3.fnal.gov")
-        locationAction.execute(siteName = "site5", seName = "se4.fnal.gov")
-        locationAction.execute(siteName = "site6", seName = "se5.fnal.gov")
-        locationAction.execute(siteName = "site7", seName = "se6.fnal.gov")
-        
+        locationAction.execute(siteName = "site3", pnn = "T2_CH_CERN2")
+        locationAction.execute(siteName = "site4", pnn = "T2_CH_CERN3")
+        locationAction.execute(siteName = "site5", pnn = "T2_CH_CERN4")
+        locationAction.execute(siteName = "site6", pnn = "T2_CH_CERN5")
+        locationAction.execute(siteName = "site7", pnn = "T2_CH_CERN6")
+
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se1.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN")
         testFileA.create()
-        
+
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se2.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN2")
         testFileB.create()
-        
+
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se3.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN3")
         testFileC.create()
-        
+
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se4.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN4")
         testFileD.create()
-        
+
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se5.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN5")
         testFileE.create()
-        
+
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024, events = 10,
-                        checksums = {'cksum': 1}, locations = "se6.fnal.gov")
+                        checksums = {'cksum': 1}, locations = "T2_CH_CERN6")
         testFileF.create()
 
         files = [testFileA, testFileB, testFileC, testFileD, testFileE, testFileF]
-        
+
 
         locationFac = daoFactory(classname = "Files.GetBulkLocation")
         location  = locationFac.execute(files = files)
@@ -794,14 +788,14 @@ class FileTest(unittest.TestCase):
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
-                                dbinterface = myThread.dbi)        
+                                dbinterface = myThread.dbi)
         bulkParentageAction = daofactory(classname = "Files.AddBulkParentage")
         bulkParentageAction.execute(parentage)
-        
+
         testFileD = File(id = testFileChildA["id"])
         testFileD.loadData(parentage = 1)
         testFileE = File(id = testFileChildB["id"])
-        testFileE.loadData(parentage = 1)        
+        testFileE.loadData(parentage = 1)
 
         goldenFiles = [testFileA, testFileB, testFileC]
         for parentFile in testFileD["parents"]:
@@ -819,7 +813,7 @@ class FileTest(unittest.TestCase):
             goldenFiles.remove(parentFile)
 
         assert len(goldenFiles) == 0, \
-              "ERROR: Some parents are missing"        
+              "ERROR: Some parents are missing"
         return
 
     def testDataStructsFile(self):
@@ -830,14 +824,14 @@ class FileTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         testLFN     = "lfn1"
         testSize    = 1024
         testEvents  = 100
         testCksum   = {"cksum": '1'}
         testParents = set(["lfn2"])
         testRun     = Run( 1, *[45])
-        testSE      = "se1.cern.ch"
+        testSE      = "T2_CH_CERN"
 
         parentFile = File(lfn= "lfn2")
         parentFile.create()
@@ -846,13 +840,13 @@ class FileTest(unittest.TestCase):
 
         inputFile = WMFile(lfn = testLFN, size = testSize, events = testEvents, checksums = testCksum, parents = testParents)
         inputFile.addRun(testRun)
-        inputFile.setLocation(se = testSE)
+        inputFile.setLocation(pnn = testSE)
 
         testFile.loadFromDataStructsFile(file = inputFile)
         testFile.create()
         testFile.save()
 
-        
+
         loadFile = File(lfn = "lfn1")
         loadFile.loadData(parentage = 1)
 
@@ -871,7 +865,7 @@ class FileTest(unittest.TestCase):
     def testParentageByJob(self):
         """
         _testParentageByJob_
-        
+
         Tests the DAO that assigns parentage by Job
         """
 
@@ -886,13 +880,18 @@ class FileTest(unittest.TestCase):
         testJobGroup.create()
 
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
-                              events = 20, checksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['T2_CH_CERN', 'T1_US_FNAL_Disk']))
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
-                              events = 20, checksums = {'cksum': 1})
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['T2_CH_CERN', 'T1_US_FNAL_Disk']))
         testFileParentB.addRun(Run( 1, *[45]))
         testFileParentA.create()
         testFileParentB.create()
+        testFileset.addFile(testFileParentA)
+        testFileset.addFile(testFileParentB)
+        testFileset.commit()
 
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
                          checksums = {'cksum':1})
@@ -900,12 +899,14 @@ class FileTest(unittest.TestCase):
         testFileA.create()
 
         testJobA = Job()
+        testJobA["outcome"] = 'success'
         testJobA.create(group = testJobGroup)
         testJobA.addFile(testFileParentA)
         testJobA.addFile(testFileParentB)
         testJobA.associateFiles()
-
-
+        testSubscription.acquireFiles()
+        testJobA.completeInputFiles()
+        
         parentAction = self.daofactory(classname = "Files.SetParentageByJob")
         parentAction.execute(binds = {'jobid': testJobA.exists(), 'child': testFileA['lfn']})
 
@@ -921,12 +922,138 @@ class FileTest(unittest.TestCase):
 
         self.assertEqual(len(goldenFiles), 0,
                          "ERROR: Some parents are missing")
+        
+        
+        testFileC = File(lfn = "/this/is/c/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileC.addRun(Run( 1, *[46]))
+        testFileC.create()
+        
+        testJobC = Job()
+        testJobC["outcome"] = 'failure'
+        testJobC.create(group = testJobGroup)
+        testJobC.addFile(testFileParentA)
+        testJobC.associateFiles()
+        testSubscription.acquireFiles()
+        testJobC.failInputFiles()
+        
+        parentAction.execute(binds = {'jobid': testJobC.exists(), 'child': testFileC['lfn']})
+        
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+        
+        testFileC_1 = File(id = testFileC["id"])
+        testFileC_1.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileC_1["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+                  
+    
+    def testParentageByMergeJob(self):
+        """
+        _testParentageByJob_
 
+        Tests the DAO that assigns parentage by Job
+        """
+
+        testWorkflow = Workflow(spec = 'hello', owner = "mnorman",
+                                name = "wf001", task="basicWorkload/Production")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset, workflow = testWorkflow, type = "Processing", split_algo = "FileBased")
+        testSubscription.create()
+        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup.create()
+
+        testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['T2_CH_CERN', 'T1_US_FNAL_Disk']))
+        testFileParentA.addRun(Run( 1, *[45]))
+        testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
+                              events = 20, checksums = {'cksum': 1},
+                              locations = set(['T2_CH_CERN', 'T1_US_FNAL_Disk']))
+        testFileParentB.addRun(Run( 1, *[45]))
+        testFileParentA.create()
+        testFileParentB.create()
+        testFileset.addFile(testFileParentA)
+        testFileset.addFile(testFileParentB)
+        testFileset.commit()
+
+        testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileA.addRun(Run( 1, *[45]))
+        testFileA.create()
+
+        testJobA = Job()
+        testJobA["outcome"] = 'success'
+        testJobA.create(group = testJobGroup)
+        testJobA.addFile(testFileParentA)
+        testJobA.addFile(testFileParentB)
+        testJobA.associateFiles()
+        testSubscription.acquireFiles()
+        testJobA.completeInputFiles()
+
+
+        parentAction = self.daofactory(classname = "Files.SetParentageByMergeJob")
+        parentAction.execute(binds = {'jobid': testJobA.exists(), 'child': testFileA['lfn']})
+
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+
+        goldenFiles = [testFileParentA, testFileParentB]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, True,
+                   "ERROR: Unknown parent file")
+            goldenFiles.remove(parentFile)
+
+        self.assertEqual(len(goldenFiles), 0,
+                         "ERROR: Some parents are missing")
+
+        testFileC = File(lfn = "/this/is/c/lfn", size = 1024, events = 10,
+                         checksums = {'cksum':1})
+        testFileC.addRun(Run( 1, *[46]))
+        testFileC.create()
+        
+        testJobC = Job()
+        testJobC["outcome"] = 'failure'
+        testJobC.create(group = testJobGroup)
+        testJobC.addFile(testFileParentA)
+        testJobC.associateFiles()
+        testSubscription.acquireFiles()
+        testJobC.failInputFiles()
+        
+        parentAction.execute(binds = {'jobid': testJobC.exists(), 'child': testFileC['lfn']})
+
+        testFileB = File(id = testFileA["id"])
+        testFileB.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileB["parents"]:
+            self.assertEqual(parentFile in goldenFiles, False,
+                   "ERROR: Unknown parent file")
+        
+        testFileC_1 = File(id = testFileC["id"])
+        testFileC_1.loadData(parentage = 1)
+        
+        goldenFiles = [testFileParentA]
+        for parentFile in testFileC_1["parents"]:
+            self.assertEqual(parentFile in goldenFiles, False,
+                   "ERROR: Unknown parent file")
+             
 
     def testAddChecksumsByLFN(self):
         """
         _testAddChecksumsByLFN_
-        
+
         Tests for adding checksums by DAO by LFN
         """
 
@@ -985,8 +1112,8 @@ class FileTest(unittest.TestCase):
         testFileB.create()
 
         parentAction = self.daofactory(classname = "Files.SetLocationByLFN")
-        binds = [{'lfn': "/this/is/a/lfnA", 'location': 'se1.fnal.gov'},
-                 {'lfn': "/this/is/a/lfnB", 'location': 'se1.fnal.gov'}]
+        binds = [{'lfn': "/this/is/a/lfnA", 'location': 'T1_US_FNAL_Disk'},
+                 {'lfn': "/this/is/a/lfnB", 'location': 'T1_US_FNAL_Disk'}]
         parentAction.execute(lfn = binds)
 
         testFileC = File(id = testFileA["id"])
@@ -994,35 +1121,35 @@ class FileTest(unittest.TestCase):
         testFileD = File(id = testFileB["id"])
         testFileD.loadData()
 
-        self.assertEqual(testFileC['locations'], set(['se1.fnal.gov']))
-        self.assertEqual(testFileD['locations'], set(['se1.fnal.gov']))
+        self.assertEqual(testFileC['locations'], set(['T1_US_FNAL_Disk']))
+        self.assertEqual(testFileD['locations'], set(['T1_US_FNAL_Disk']))
 
-        
+
         return
 
     def testCreateWithParent(self):
-        
+
         """
         Test passing parnents arguments in file creation.
         check if parent file does not exist, it create the file and set the parentage
         """
-        
+
         # create parent file before it got added to child file.
         testFileParentA = File(lfn = "/this/is/a/parent/lfnA", size = 1024,
                               events = 20, checksums = {'cksum': 1})
         testFileParentA.addRun(Run( 1, *[45]))
         testFileParentA.create()
-        
+
         # don't create create parent file before it got added to child file.
         testFileParentB = File(lfn = "/this/is/a/parent/lfnB", size = 1024,
                               events = 20, checksums = {'cksum': 1})
         testFileParentB.addRun(Run( 1, *[45]))
-        
+
         testFileA = File(lfn = "/this/is/a/lfn", size = 1024, events = 10,
-                         checksums = {'cksum':1}, 
+                         checksums = {'cksum':1},
                          parents = [testFileParentA, testFileParentB])
         testFileA.addRun(Run( 1, *[45]))
-        
+
         testFileA.create()
 
 
@@ -1082,17 +1209,17 @@ class FileTest(unittest.TestCase):
         testWorkflowA.create()
         testWorkflowB = Workflow(spec = 'hello', owner = "mnorman",
                                  name = "wf001", task="basicWorkload/Production2")
-        testWorkflowB.create()        
+        testWorkflowB.create()
 
         testFilesetA = Fileset(name = "inputFilesetA")
         testFilesetA.create()
         testFilesetB = Fileset(name = "inputFilesetB")
-        testFilesetB.create()        
+        testFilesetB.create()
 
         testSubscriptionA = Subscription(workflow = testWorkflowA, fileset = testFilesetA)
         testSubscriptionA.create()
         testSubscriptionB = Subscription(workflow = testWorkflowB, fileset = testFilesetB)
-        testSubscriptionB.create()        
+        testSubscriptionB.create()
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 10)
         testFileA.addRun(Run( 1, *[45]))
@@ -1206,25 +1333,21 @@ class FileTest(unittest.TestCase):
 
         self.assertEqual(locations, [])
 
-        binds = [{'lfn': 'myLFN', 'location': 'se1.cern.ch'}]
+        binds = [{'lfn': 'myLFN', 'location': 'T2_CH_CERN'}]
         action.execute(lfns = ['myLFN'], locations = binds)
 
         tFile1.loadData()
         locations = tFile1.getLocations()
-        self.assertEqual(locations, ['se1.cern.ch'])
+        self.assertEqual(locations, ['T2_CH_CERN'])
 
-        binds = [{'lfn': 'myLFN', 'location': 'se1.fnal.gov'}]
+        binds = [{'lfn': 'myLFN', 'location': 'T1_US_FNAL_Disk'}]
         action.execute(lfns = ['myLFN'], locations = binds)
 
         tFile1.loadData()
         locations = tFile1.getLocations()
-        self.assertEqual(locations, ['se1.fnal.gov'])
-        
+        self.assertEqual(locations, ['T1_US_FNAL_Disk'])
+
         return
 
-        
-
-        
-
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

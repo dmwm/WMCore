@@ -1,7 +1,53 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613, W6501
+#pylint: disable=W0613, W6501
 """
-The actual retry algorithm(s)
+__RetryManagerPoller__
+
+This component does the actualy retry logic. It allows to have
+different algorithms for each job type.
+
+The configuration for this component is as follows:
+
+config.RetryManager.plugins is a dictionary with job types as keys and
+plugin names as values, e.g. {'Processing' : 'SquaredAlgo'}. Job types
+that don't appear in the keys of the dictionary will use the algorithm
+defined for the key 'default' which defaults to DefaultRetryAlgo if
+not specified.
+
+For each plugin that appears in the values of config.RetryManager.plugins,
+the params can be configured for each job type with the following syntax:
+
+config.RetryManager.<AlgoName>.<JobType>.<ParamName> = <param>
+
+If a particular job type doesn't appear under the corresponding algorithm
+configuration, the component will use the params configured for 'default'
+or the internal defaults if the default parameters aren't configured either.
+
+An example configuration:
+
+config.RetryManager.plugins = {'Processing' : 'PauseAlgo',
+                               'Cleanup' : 'LinearAlgo',
+                               'default' : 'SquaredAlgo'}
+config.RetryManager.section_('PauseAlgo')
+config.RetryManager.PauseAlgo.section_('Processing')
+config.RetryManager.PauseAlgo.Processing.coolOffTime = {'submit' : 50, 'create' : 50, 'job' : 20}
+config.RetryManager.PauseAlgo.Processing.pauseCount = 3
+config.RetryManager.PauseAlgo.section_('default')
+config.RetryManager.PauseAlgo.default.coolOffTime = {'submit' : 50, 'create' : 50, 'job' : 20}
+config.RetryManager.PauseAlgo.default.pauseCount = 2
+config.RetryManager.section_('LinearAlgo')
+config.RetryManager.LinearAlgo.section_('Cleanup')
+config.RetryManager.LinearAlgo.Cleanup.coolOffTime = {'submit' : 50, 'create' : 50, 'job' : 20}
+config.RetryManager.LinearAlgo.section_('default')
+config.RetryManager.LinearAlgo.default.coolOffTime = {'submit' : 50, 'create' : 50, 'job' : 20}
+config.RetryManager.section_('SquaredAlgo')
+config.RetryManager.SquaredAlgo.section_('default')
+config.RetryManager.SquaredAlgo.default.coolOffTime = {'submit' : 50, 'create' : 50, 'job' : 20}
+
+Note: It is possible to not specify any configuration at all and the
+component won't crash but it won't do anything at all. All
+jobs that get in cooloff would stay there forever.
+Any parameter can be skipped and the component will use internal defaults.
 """
 __all__ = []
 
@@ -11,8 +57,6 @@ import threading
 import logging
 import datetime
 import time
-import os
-import os.path
 import traceback
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -49,7 +93,7 @@ class RetryManagerException(WMException):
 class RetryManagerPoller(BaseWorkerThread):
     """
     _RetryManagerPoller_
-    
+
     Polls for Jobs in CoolOff State and attempts to retry them
     based on the requirements in the selected plugin
     """
@@ -69,23 +113,30 @@ class RetryManagerPoller(BaseWorkerThread):
         pluginPath = getattr(self.config.RetryManager, "pluginPath",
                              "WMComponent.RetryManager.PlugIns")
         self.pluginFactory = WMFactory("plugins", pluginPath)
-        
+
         self.changeState = ChangeState(self.config)
         self.getJobs     = self.daoFactory(classname = "Jobs.GetAllJobs")
-        
-        # initialize the alert framework (if available) (self.sendAlert())
-        self.initAlerts(compName = "RetryManager")        
 
-        try:
-            pluginName  = getattr(self.config.RetryManager, 'pluginName', 'DefaultRetryAlgo')
-            self.plugin = self.pluginFactory.loadObject(classname = pluginName,
-                                                        args = config)
-        except Exception, ex:
-            msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
-            msg += str(ex)
-            logging.error(msg)
-            self.sendAlert(6, msg = msg)
-            raise RetryManagerException(msg)
+        # initialize the alert framework (if available) (self.sendAlert())
+        self.initAlerts(compName = "RetryManager")
+
+        # get needed plugins
+        self.plugins = {}
+
+        self.typePluginsAssoc = getattr(self.config.RetryManager, 'plugins', {})
+        self.typePluginsAssoc.setdefault('default', 'DefaultRetryAlgo')
+
+        for pluginName in self.typePluginsAssoc.values():
+            try:
+                plugin = self.pluginFactory.loadObject(classname = pluginName,
+                                                            args = config)
+                self.plugins[pluginName] = plugin
+            except Exception as ex:
+                msg =  "Error loading plugin %s on path %s\n" % (pluginName, pluginPath)
+                msg += str(ex)
+                logging.error(msg)
+                self.sendAlert(6, msg = msg)
+                raise RetryManagerException(msg)
 
         return
 
@@ -100,7 +151,7 @@ class RetryManagerPoller(BaseWorkerThread):
 
     def algorithm(self, parameters = None):
         """
-	Performs the doRetries method, loading the appropriate
+        Performs the doRetries method, loading the appropriate
         plugin for each job and handling it.
         """
         logging.debug("Running retryManager algorithm")
@@ -109,12 +160,12 @@ class RetryManagerPoller(BaseWorkerThread):
             myThread.transaction.begin()
             self.doRetries()
             myThread.transaction.commit()
-        except WMException, ex:
+        except WMException as ex:
             if getattr(myThread, 'transaction', None) and \
                getattr(myThread.transaction, 'transaction', None):
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg = "Caught exception in RetryManager\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -129,10 +180,10 @@ class RetryManagerPoller(BaseWorkerThread):
             raise Exception(msg)
 
 
-    def processRetries(self, jobs, jobType):
+    def processRetries(self, jobs, cooloffType):
         """
         _processRetries_
-        
+
         Actually does the dirty work of figuring out what to do with jobs
         """
 
@@ -141,22 +192,23 @@ class RetryManagerPoller(BaseWorkerThread):
             return
 
         transitions = Transitions()
-        oldstate = '%scooloff' % (jobType)
+        oldstate = '%scooloff' % (cooloffType)
         if not oldstate in transitions.keys():
-            logging.error('Unknown job type %s' % (jobType))
+            msg = 'Unknown job type %s' % (cooloffType)
+            logging.error(msg)
             self.sendAlert(6, msg = msg)
             return
         propList = []
 
-        newJobType  = transitions[oldstate][0]
+        newJobState  = transitions[oldstate][0]
 
         jobList = self.loadJobsFromList(idList = jobs)
-    
+
         # Now we should have the jobs
-        propList = self.selectRetryAlgo(jobList, jobType)
+        propList = self.selectRetryAlgo(jobList, cooloffType)
 
         if len(propList) > 0:
-            self.changeState.propagate(propList, newJobType, oldstate)
+            self.changeState.propagate(propList, newJobState, oldstate)
 
 
         return
@@ -170,6 +222,7 @@ class RetryManagerPoller(BaseWorkerThread):
         """
 
         loadAction = self.daoFactory(classname = "Jobs.LoadFromID")
+        getTypeAction = self.daoFactory(classname = "Jobs.GetType")
 
 
         binds = []
@@ -177,6 +230,11 @@ class RetryManagerPoller(BaseWorkerThread):
             binds.append({"jobid": jobID})
 
         results = loadAction.execute(jobID = binds)
+        typeResults = getTypeAction.execute(jobID = idList)
+        subTypes = {}
+
+        for typeEntry in typeResults:
+            subTypes[typeEntry['id']] = typeEntry['type']
 
         # You have to have a list
         if type(results) == dict:
@@ -187,13 +245,14 @@ class RetryManagerPoller(BaseWorkerThread):
             # One job per entry
             tmpJob = Job(id = entry['id'])
             tmpJob.update(entry)
+            tmpJob['jobType'] = subTypes[entry['id']]
             listOfJobs.append(tmpJob)
 
 
         return listOfJobs
 
 
-    def selectRetryAlgo(self, jobList, jobType):
+    def selectRetryAlgo(self, jobList, cooloffType):
         """
         _selectRetryAlgo_
 
@@ -207,17 +266,23 @@ class RetryManagerPoller(BaseWorkerThread):
 
         for job in jobList:
             try:
-                if self.plugin.isReady(job = job, jobType = jobType):
+                if job['jobType'] in self.typePluginsAssoc:
+                    pluginName = self.typePluginsAssoc[job['jobType']]
+                else:
+                    pluginName = self.typePluginsAssoc['default']
+                plugin = self.plugins[pluginName]
+
+                if plugin.isReady(job = job, cooloffType = cooloffType):
                     result.append(job)
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Exception while checking for cooloff timeout for job %i\n" % job['id']
                 msg += str(ex)
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)
                 logging.debug("Job: %s\n" % job)
-                logging.debug("jobType: %s\n" % jobType)
+                logging.debug("cooloffType: %s\n" % cooloffType)
                 raise RetryManagerException(msg)
-            
+
 
         return result
 
@@ -236,7 +301,7 @@ class RetryManagerPoller(BaseWorkerThread):
         logging.info("Found %s jobs in submitcooloff" % len(jobs))
         self.processRetries(jobs, 'submit')
 
-	    # Discover the jobs that are in run cooloff
+            # Discover the jobs that are in run cooloff
         jobs = self.getJobs.execute(state = 'jobcooloff')
         logging.info("Found %s jobs in jobcooloff" % len(jobs))
         self.processRetries(jobs, 'job')
@@ -245,3 +310,8 @@ class RetryManagerPoller(BaseWorkerThread):
         jobs = self.getJobs.execute(state = 'jobpaused')
         logging.info("Found %s jobs in jobpaused" % len(jobs))
 
+        jobs = self.getJobs.execute(state = 'createpaused')
+        logging.info("Found %s jobs in createpaused" % len(jobs))
+
+        jobs = self.getJobs.execute(state = 'submitpaused')
+        logging.info("Found %s jobs in submitpaused" % len(jobs))

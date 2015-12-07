@@ -10,7 +10,7 @@ from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 from WMCore.WMSpec.WMTask import  getTaskFromStep
 
 class WMWorkloadTest(unittest.TestCase):
-    
+
     def testOneTaskTwoSTep(self):
         workload = TestSpecs.oneTaskTwoStep()
         tasks = workload.listAllTaskNames()
@@ -25,7 +25,7 @@ class WMWorkloadTest(unittest.TestCase):
         step2= task.getStep(steps[1])
         self.assertTrue( isinstance( step2, WMCore.WMSpec.WMStep.WMStepHelper ) )
         self.assertEqual( id(getTaskFromStep(step)), id(getTaskFromStep(step2)) )
- 
+
     def testOneTaskFourStep(self):
         workload = TestSpecs.oneTaskFourStep()
         tasks = workload.listAllTaskNames()
@@ -46,7 +46,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue( isinstance( step4, WMCore.WMSpec.WMStep.WMStepHelper ) )
         #print step4
         self.assertEqual( id(getTaskFromStep(step)), id(getTaskFromStep(step2)) )
- 
+
     def testTwoTaskTree(self):
         workload = TestSpecs.twoTaskTree()
         tasks = workload.listAllTaskNames()
@@ -56,12 +56,12 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(id(findWorkload.data), id(workload.data))
         self.assertTrue( isinstance( workload, WMCore.WMSpec.WMWorkload.WMWorkloadHelper ) )
         self.assertTrue( isinstance( parenttask, WMCore.WMSpec.WMTask.WMTaskHelper ) )
-        
+
         task = workload.getTask("SecondTask")
         #print task.data
         self.assertTrue( isinstance( task, WMCore.WMSpec.WMTask.WMTaskHelper ) )
         steps = task.listAllStepNames()
-        
+
         # there should be a way to do this with iteration that would be neater
         step = task.getStep(steps[0])
         self.assertTrue( isinstance( step, WMCore.WMSpec.WMStep.WMStepHelper ) )
@@ -72,7 +72,7 @@ class WMWorkloadTest(unittest.TestCase):
         step4= task.getStep(steps[3])
         self.assertTrue( isinstance( step4, WMCore.WMSpec.WMStep.WMStepHelper ) )
         self.assertEqual( id(getTaskFromStep(step)), id(getTaskFromStep(step2)) )
-                                                                                                    
+
 
 if __name__ == '__main__':
     unittest.main()

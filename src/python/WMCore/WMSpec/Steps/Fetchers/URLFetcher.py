@@ -51,7 +51,7 @@ class URLFetcher(FetcherInterface):
                     f = open(fileTarget, 'w')
                     f.write(content)
                     f.close()
-                except IOError, ex:
+                except IOError as ex:
                     msg =  "Could not write to fileTarget %s\n" % fileTarget
                     msg += str(ex)
                     logging.error(msg)
@@ -60,5 +60,3 @@ class URLFetcher(FetcherInterface):
                 fileInfo.injob = fileTarget
 
         return
-
-

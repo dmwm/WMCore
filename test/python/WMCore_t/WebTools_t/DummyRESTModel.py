@@ -67,6 +67,7 @@ class DummyRESTModel(RESTModel):
                                }
                          }
 
+        self._addMethod('GET', 'gen', self.gen)
 
         self._addMethod('GET', 'list', self.list, args=['input_int', 'input_str'],
                               validation=[self.val_0,
@@ -111,6 +112,11 @@ class DummyRESTModel(RESTModel):
         input_data = self._sanitise_input(args, kwargs, 'echo')
         return input_data
 
+    def gen(self):
+        """Generator method which produce generator dicts"""
+        data = ({'idx':i} for i in range(10))
+        return data
+
     def list(self, input_int, input_str):
         return {'input_int':input_int, 'input_str':input_str}
 
@@ -132,7 +138,7 @@ class DummyRESTModel(RESTModel):
         return aList
 
     def listTypeValidate(self, request_input):
-        if type(request_input["aList"]) != list:
+        if not isinstance(request_input["aList"], list):
             request_input["aList"] = [int(request_input["aList"])]
         else:
             request_input["aList"] = map(int, request_input["aList"])
@@ -154,17 +160,17 @@ class DummyRESTModel(RESTModel):
             pass
         # Checks its first request_input contains a int
         try:
-            assert type(request_input['input_int']) == type(123)
+            assert isinstance(request_input['input_int'], type(123))
         except AssertionError:
-            raise AssertionError, 'val_1 failed: %s not int' % type(request_input['input_int'])
+            raise AssertionError('val_1 failed: %s not int' % type(request_input['input_int']))
         return request_input
 
     def val_2(self, request_input):
         # Checks its second request_input is a string
         try:
-            assert type(request_input['input_str']) == type('abc')
+            assert isinstance(request_input['input_str'], basestring)
         except AssertionError:
-            raise HTTPError(400, 'val_2 failed: %s not str' % type(request_input['input_str']))
+            raise HTTPError(400, 'val_2 failed: %s not string or unicode' % type(request_input['input_str']))
         return request_input
 
     def val_3(self, request_input):

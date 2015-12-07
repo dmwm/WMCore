@@ -82,7 +82,6 @@ _TweakParams = [
     "process.source.inputCommands",
     "process.source.dropDescendantsOfDroppedBranches",
 
-
     # maxevents
     "process.maxEvents.input",
     "process.maxEvents.output",
@@ -97,13 +96,30 @@ _TweakParams = [
 
     # random seeds
     "process.RandomNumberGeneratorService.*.initialSeed",
+    "process.GlobalTag.globaltag",
 
     ]
 
-#  //
-# // Standard util to pad a run/job number to make an LFN Group
-#//
-lfnGroup = lambda j : str(j.get("counter", 0) / 1000).zfill(4)
+class WMTweakMaskError(Exception):
+
+    def __init__(self, mask = None, msg = "Cannot set process from job mask"):
+        self.mask = mask
+        self.message = msg
+
+    def __str__(self):
+        return "Error: %s \n Mask: %s" % (self.message, str(self.mask))
+
+def lfnGroup(job):
+    """
+    _lfnGroup_
+
+    Determine the lfnGroup from the job counter and the agent number
+    provided in the job baggage, the job counter and agent number
+    default both to 0. The result will be a 5-digit string.
+    """
+    modifier = str(job.get("agentNumber", 0))
+    lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
+    return lfnGroup
 
 def hasParameter(pset, param, nopop = False):
     """
@@ -296,7 +312,7 @@ def applyTweak(process, tweak, fixup = None):
     making sure all the necessary PSets and configuration values exist).
     """
     for param, value in tweak:
-        if fixup and fixup.has_key(param):
+        if fixup and param in fixup:
             fixup[param](process)
 
         setParameter(process, param, value)
@@ -314,7 +330,7 @@ class ConfigSectionDecomposer:
     where the params contain the section structure.
 
     May turn out to be generally useful for ConfigSections
-    
+
     """
     def __init__(self):
         self.configSects = []
@@ -338,8 +354,8 @@ class ConfigSectionDecomposer:
             paramName = ".".join([csectPath, par])
             paramVal = getattr(configSect, par)
             self.parameters[paramName] = paramVal
-        
-        
+
+
         map(self, childSections(configSect))
         self.queue.pop(-1)
 
@@ -370,9 +386,9 @@ def makeTaskTweak(stepSection):
         if hasattr(stepSection.application, "configuration"):
             if hasattr(stepSection.application.configuration, "pickledarguments"):
                 args = pickle.loads(stepSection.application.configuration.pickledarguments)
-                if args.has_key('globalTag'):
+                if 'globalTag' in args:
                     result.addParameter("process.GlobalTag.globaltag", args['globalTag'])
-                if args.has_key('globalTagTransaction'):
+                if 'globalTagTransaction' in args:
                     result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
 
     return result
@@ -385,6 +401,10 @@ def makeJobTweak(job):
     that can be used to modify a CMSSW process.
     """
     result = PSetTweak()
+    baggage = job.getBaggage()
+
+    # Check in the baggage if we are processing .lhe files
+    lheInput = getattr(baggage, "lheInputFiles", False)
 
     # Input files and secondary input files.
     primaryFiles = []
@@ -393,29 +413,15 @@ def makeJobTweak(job):
         if inputFile["lfn"].startswith("MCFakeFile"):
             # If there is a preset lumi in the mask, use it as the first
             # luminosity setting
-            if getattr(job['mask'], 'FirstLumi', None) != None:
+            if job['mask'].get('FirstLumi', None) != None:
                 result.addParameter("process.source.firstLuminosityBlock",
                                     job['mask']['FirstLumi'])
             else:
-                # Then we don't have a FirstLumi
-                # Set the lumi block equal to the number of the job in the
-                # workflow.  Numbers start at 0, add one so lumis start at
-                # one.
-                logging.debug("MCFakeFile initiated without job FirstLumi - using counter.")
-                result.addParameter("process.source.firstLuminosityBlock",
-                                    int(job["counter"]))
-
-            # Assign the run
-            if getattr(job['mask'], 'FirstRun', None) != None:
-                result.addParameter("process.source.firstRun",
-                                    job['mask']['FirstRun'])
-            else:
-                # Then we have to get the run from the counter instead.
-                logging.debug("MCFakeFile initiated without job FirstRun - using one.")
-                result.addParameter("process.source.firstRun", 1)
-
+                #We don't have lumi information in the mask, raise an exception
+                raise WMTweakMaskError(job['mask'],
+                                       "No first lumi information provided")
             continue
-        
+
         primaryFiles.append(inputFile["lfn"])
         for secondaryFile in inputFile["parents"]:
             secondaryFiles.append(secondaryFile["lfn"])
@@ -423,23 +429,18 @@ def makeJobTweak(job):
     if len(primaryFiles) > 0:
         result.addParameter("process.source.fileNames", primaryFiles)
         if len(secondaryFiles) > 0:
-            result.addParameter("process.source.secondaryFileNames", secondaryFiles)    
-    else:
-        # We need to set the first event parameter for MC jobs but do not want
-        # to set it for regular processing job.  MC jobs don't have input files
-        # so we'll set it here.  
-        baggage = job.getBaggage()        
-        if hasattr(baggage, "eventsPerJob"):
-            # Limit the event number to a 32bit unsigned int.
-            counter = ((int(baggage.eventsPerJob) * (int(job["counter"]) - 1)) + 1) % (2**32 - 1)
-
-            # Catch cases where the counter will roll over during the job.
-            if (counter + int(baggage.eventsPerJob)) > (2**32 - 1):
-                counter = 1
-            elif counter < int(baggage.eventsPerJob):
-                counter = 1
-            
-            result.addParameter("process.source.firstEvent", counter)
+            result.addParameter("process.source.secondaryFileNames", secondaryFiles)
+    elif not lheInput:
+        #First event parameter should be set from whatever the mask says,
+        #That should have the added protection of not going over 2^32 - 1
+        #If there is nothing in the mask, then we fallback to the counter method
+        if job['mask'].get('FirstEvent',None) != None:
+            result.addParameter("process.source.firstEvent",
+                                job['mask']['FirstEvent'])
+        else:
+            #No first event information in the mask, raise and error
+            raise WMTweakMaskError(job['mask'],
+                                   "No first event information provided in the mask")
 
     mask =  job['mask']
 
@@ -451,12 +452,19 @@ def makeJobTweak(job):
     # We don't want to set skip events for MonteCarlo jobs which have
     # no input files.
     firstEvent = mask['FirstEvent']
-    if firstEvent != None and firstEvent >= 0 and len(primaryFiles) > 0:
-        result.addParameter("process.source.skipEvents", firstEvent)
+    if firstEvent != None and firstEvent >= 0 and (len(primaryFiles) > 0 or lheInput):
+        if lheInput:
+            result.addParameter("process.source.skipEvents", firstEvent - 1)
+        else:
+            result.addParameter("process.source.skipEvents", firstEvent)
 
     firstRun = mask['FirstRun']
     if firstRun != None:
         result.addParameter("process.source.firstRun", firstRun)
+    elif not len(primaryFiles):
+        #Then we have a MC job, we need to set firstRun to 1
+        logging.debug("MCFakeFile initiated without job FirstRun - using one.")
+        result.addParameter("process.source.firstRun", 1)
 
     runs = mask.getRunAndLumis()
     lumisToProcess = []
@@ -470,10 +478,8 @@ def makeJobTweak(job):
 
     if len(lumisToProcess) > 0:
         result.addParameter("process.source.lumisToProcess", lumisToProcess)
-                        
-    # install any settings from the per job baggage
-    baggage = job.getBaggage()
 
+    # install any settings from the per job baggage
     procSection = getattr(baggage, "process", None)
     if procSection == None:
         return result
@@ -505,16 +511,9 @@ def makeOutputTweak(outMod, job):
     if lfnBase != None:
         lfn = "%s/%s/%s.root" % (lfnBase, lfnGroup(job), modName)
         result.addParameter("process.%s.logicalFileName" % modName, lfn)
-    
+
 
     #TODO: Nice standard way to meddle with the other parameters in the
     #      output module based on the settings in the section
-    
+
     return result
-
-
-
-
-
-
-

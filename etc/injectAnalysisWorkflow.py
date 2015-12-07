@@ -40,7 +40,7 @@ arguments = {
             "AnalysisConfigCacheDoc" : "746e4e30f9b7545ba4303845ea006003"
         }
 
-if not os.environ.has_key("WMAGENT_CONFIG"):
+if "WMAGENT_CONFIG" not in os.environ:
     print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
     sys.exit(1)
 
@@ -136,11 +136,11 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     """
     print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
     args={}
-    args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_0_9"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
-    dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_block","retrive_lumi", "retrive_run"])
+    dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_block","retrive_lumi", "retrive_run"])
 
     # NOTE : this is to limit the number of jobs to create ... simply using first 10 files get for the needed dataset
     dbsResults =dbsResults[0:2]

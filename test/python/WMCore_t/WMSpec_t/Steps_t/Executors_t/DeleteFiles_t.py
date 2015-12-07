@@ -31,7 +31,7 @@ class deleteFileTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testDir = self.testInit.generateWorkDir()
         shutil.copyfile('/etc/hosts', os.path.join(self.testDir, 'testfile'))
-        
+
         self.workload = newWorkload("UnitTests")
         self.task = self.workload.newTask("DeleterTask")
         stepHelper = step = self.task.makeStep("DeleteTest")
@@ -45,26 +45,26 @@ class deleteFileTest(unittest.TestCase):
         taskMaker = TaskMaker(self.workload, self.testDir)
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
-        
+
         self.sandboxDir = "%s/UnitTests" % self.testDir
-        
+
         self.task.build(self.testDir)
         sys.path.insert(0, self.testDir)
         sys.path.insert(0, self.sandboxDir)
-        
-        
+
+
         self.job = Job(name = "/UnitTest/DeleterTask/DeleteTest-test-job")
-        
+
         binDir = inspect.getsourcefile(ModuleLocator)
         binDir = binDir.replace("__init__.py", "bin")
 
         if not binDir in os.environ['PATH']:
             os.environ['PATH'] = "%s:%s" % (os.environ['PATH'], binDir)
-            
+
     def tearDown(self):
         self.testInit.delWorkDir()
         sys.path.remove(self.testDir)
-        sys.path.remove(self.sandboxDir)   
+        sys.path.remove(self.sandboxDir)
 
     def setLocalOverride(self, step):
         step.section_('override')
@@ -72,7 +72,8 @@ class deleteFileTest(unittest.TestCase):
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', '')
         step.override.__setattr__('se-name','DUMMYSE')
-        
+        step.override.__setattr__('phedex-node','DUMMYPNN')
+
 
     @attr('integration')
     def testManualDeleteOld(self):
@@ -81,7 +82,7 @@ class deleteFileTest(unittest.TestCase):
         self.step.filesToDelete.file1 = os.path.join(self.testDir, 'testfile')
         self.setLocalOverride(self.step)
         self.executor.initialise(self.step, self.job)
-        self.executor.execute()        
+        self.executor.execute()
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
@@ -93,7 +94,7 @@ class deleteFileTest(unittest.TestCase):
         self.setLocalOverride(self.step)
         self.step.override.newStageOut = True
         self.executor.initialise(self.step, self.job)
-        self.executor.execute()        
+        self.executor.execute()
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
@@ -103,7 +104,7 @@ class deleteFileTest(unittest.TestCase):
         self.setLocalOverride(self.step)
         self.job['input_files'] = [ {'lfn': os.path.join(self.testDir, 'testfile') } ]
         self.executor.initialise(self.step, self.job)
-        self.executor.execute()        
+        self.executor.execute()
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
 
@@ -114,9 +115,9 @@ class deleteFileTest(unittest.TestCase):
         self.step.override.newStageOut = True
         self.job['input_files'] = [ {'lfn': os.path.join(self.testDir, 'testfile') } ]
         self.executor.initialise(self.step, self.job)
-        self.executor.execute()        
+        self.executor.execute()
         self.assertFalse(os.path.exists( os.path.join(self.testDir, 'testfile')))
         return
-        
+
 if __name__ == "__main__":
     unittest.main()

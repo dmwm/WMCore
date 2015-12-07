@@ -20,7 +20,6 @@ from WMCore.Credential.Proxy import Proxy
 
 # You may have to set these environment variables to run in a local environment
 
-uiPath = os.environ.get('GLITE_UI', '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh')
 group = os.environ.get('PROXY_GROUP', '')
 role = os.environ.get('PROXY_ROLE', 'NULL')
 myProxySvr = os.environ.get('MYPROXY_SERVER', 'myproxy.cern.ch')
@@ -42,7 +41,7 @@ class ProxyTest(unittest.TestCase):
         self.logger = logging.getLogger(logger_name)
         self.dict = {'logger': self.logger,
                      'vo': 'cms', 'group': group, 'role': role, 'myProxySvr': myProxySvr,
-                     'proxyValidity' : '192:00', 'min_time_left' : 36000, 'uisource' : uiPath}
+                     'proxyValidity' : '192:00', 'min_time_left' : 36000}
 
         self.proxyPath = None
         self.proxy = Proxy( self.dict )
@@ -82,6 +81,16 @@ class ProxyTest(unittest.TestCase):
 
         (stdout, stderr) = vomsProxyInfoCall.communicate()
         return stdout[0:-1]
+
+    @attr("integration")
+    def testGetUserCertEnddate( self ):
+        """
+        Test if getTimeLeft method returns correctly the proxy time left.
+        """
+        daysleft = self.proxy.getUserCertEnddate()
+        self.assertEqual(daysleft, 58) #set this as the number of days left in .globus/usercert.pem
+        daysleft = self.proxy.getUserCertEnddate(openSSL=False)
+        self.assertEqual(daysleft, 58) #set this as the number of days left in .globus/usercert.pem
 
     @attr("integration")
     def testAAACreateProxy( self ):
@@ -208,6 +217,11 @@ class ProxyTest(unittest.TestCase):
     def testGetAttributes( self ):
         """
         Test getAttributeFromProxy method.
+
+        Can tested this with:
+            voms-proxy-init -voms cms:/cms/integration #or any group of yours
+            export PROXY_GROUP=integration
+            python test/python/WMCore_t/Credential_t/Proxy_t.py ProxyTest.testGetAttributes
         """
         self.assertTrue(self.proxy.group, 'No group set. Testing incomplete.')
         if not self.dict['role']:
@@ -217,6 +231,9 @@ class ProxyTest(unittest.TestCase):
         proxyPath = self.proxy.getProxyFilename( )
         self.assertEqual(self.proxy.getAttributeFromProxy(proxyPath).split('/')[2], self.dict['group'])
         self.assertEqual(self.proxy.getAttributeFromProxy(proxyPath).split('/')[3].split('=')[1], role)
+
+        #test with the allAttributes flag
+        self.assertTrue(self.proxy.getAttributeFromProxy(proxyPath, allAttributes=True)>1)
 
     @attr("integration")
     def testGetUserGroupAndRole( self ):
@@ -232,6 +249,15 @@ class ProxyTest(unittest.TestCase):
             self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[0], self.dict['group'])
             self.assertEqual(self.proxy.getUserGroupAndRoleFromProxy(proxyPath)[1], role)
 
+    @attr("integration")
+    def testGetAllUserGroups( self ):
+        """
+        Test GetAllUserGroups method.
+        """
+        proxyPath = self.proxy.getProxyFilename( )
+        groups = self.proxy.getAllUserGroups(proxyPath)
+        print list(groups)
+
+
 if __name__ == '__main__':
     unittest.main()
-

@@ -19,7 +19,7 @@ class LoadBlocksByDAS(DBFormatter):
                 INNER JOIN dbsbuffer_file dbf3 ON dbf3.block_id = dbb.id
                 INNER JOIN dbsbuffer_location dbl ON dbl.id = dbb.location
                 WHERE dbb.status = 'Open'
-                AND dbf3.dataset_algo = :das"""    
+                AND dbf3.dataset_algo = :das"""
 
 
     def format(self, result):
@@ -30,7 +30,7 @@ class LoadBlocksByDAS(DBFormatter):
             final['Name']          = tmp['blockname']
             final['CreationDate']  = tmp['create_time']
             final['NumberOfFiles'] = tmp['nfiles']
-            final['BlockSize']     = tmp['blocksize']
+            final['BlockSize']     = float(tmp['blocksize'])
             final['location']      = tmp['location']
             final['newFiles']      = []
             final['insertedFiles'] = []
@@ -39,8 +39,8 @@ class LoadBlocksByDAS(DBFormatter):
 
         return blockList
 
-    
+
     def execute(self, das, conn = None, transaction = False):
-        result = self.dbi.processData(self.sql, {'das': das}, 
+        result = self.dbi.processData(self.sql, {'das': das},
                          conn = conn, transaction = transaction)
         return self.format(result)

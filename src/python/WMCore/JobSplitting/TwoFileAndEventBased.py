@@ -20,7 +20,7 @@ class TwoFileAndEventBased(JobFactory):
         _algorithm_
 
         An event base splitting algorithm.  All available files are split into a
-        set number of events per job.  
+        set number of events per job.
         """
         jobGroups = []
         fileset = self.subscription.availableFiles()
@@ -29,10 +29,10 @@ class TwoFileAndEventBased(JobFactory):
         # // get the event total
         #//
         eventsPerJob = int(kwargs.get("events_per_job", 5000))
-        
+
         try:
             selectionAlgorithm = kwargs['selection_algorithm']
-        except KeyError, e:
+        except KeyError as e:
             selectionAlgorithm = None
         carryOver = 0
 

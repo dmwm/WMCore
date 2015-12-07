@@ -16,7 +16,7 @@ def connectToDB():
     
     Connect to the database specified in the WMAgent config.
     """
-    if not os.environ.has_key("WMAGENT_CONFIG"):
+    if "WMAGENT_CONFIG" not in os.environ:
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
         sys.exit(1)
         
@@ -52,13 +52,13 @@ for result in myThread.dbi.processData(sql):
 
 blocks = {}
 for row in results:
-    if not blocks.has_key(row[0]):
+    if row[0] not in blocks:
         blocks[row[0]] = []
 
     blocks[row[0]].append(row[1])
 
 args = {}
-args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 args["version"] = "DBS_2_0_9"
 args["mode"] = "GET"
 dbsApi = DbsApi(args)
@@ -69,8 +69,8 @@ for blockName in blocks.keys():
     print "%s:" % blockName
     blockFiles = []
     try:
-        dbsFiles = dbsApi.listFiles(blockName = blockName)
-    except Exception, ex:
+        dbsFiles = dbsApi.listFileArray(blockName = blockName)
+    except Exception as ex:
         dbsFiles = []
         
     for dbsFile in dbsFiles:
@@ -92,10 +92,10 @@ for blockName in blocks.keys():
 
 for badFile in badFiles:
     try:
-        dbsFile = dbsApi.listFiles(patternLFN = badFile)[0]
+        dbsFile = dbsApi.listFileArray(patternLFN = badFile)[0]
         if dbsFile["Block"]["Name"] not in badBlocks:
             badBlocks.append(dbsFile["Block"]["Name"])
-    except Exception, ex:
+    except Exception as ex:
         continue
 
 print "Bad:"

@@ -1,230 +1,137 @@
 #!/bin/env python
-
 """
 _JobSubmitter_t_
 
-JobSubmitter unittest
-Submit jobs to condor in various failure modes
-for the agent and see what they do
+JobSubmitter unit-test, uses the MockPlugin to submit and tests
+the different dynamics that occur inside the JobSubmitter.
 """
 
-import unittest
-import threading
-import os
-import os.path
-import time
-import shutil
-import pickle
 import cProfile
+import os
+import pickle
 import pstats
-import copy
-import getpass
-import re
-import cPickle
-
-from subprocess import Popen, PIPE
-
-
-import WMCore.WMBase
-import WMCore.WMInit
-#from WMQuality.TestInit import TestInit
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
-from WMCore.DAOFactory          import DAOFactory
-from WMCore.WMInit              import getWMBASE
-
-from WMCore.WMBS.File         import File
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup     import JobGroup
-from WMCore.WMBS.Job          import Job
-
-
-
-from WMComponent.JobSubmitter.JobSubmitter       import JobSubmitter
-from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-
-from WMCore.JobStateMachine.ChangeState import ChangeState
-
-from WMCore.Services.UUID import makeUUID
-
-from WMCore.Agent.Configuration             import loadConfigurationFile, Configuration
-from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.DataStructs.JobPackage          import JobPackage
-from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
-
-
-#Workload stuff
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
-from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco  import rerecoWorkload, getTestArguments
-from WMCore_t.WMSpec_t.TestSpec import testWorkload
+import threading
+import time
+import unittest
 
 from nose.plugins.attrib import attr
-
-def parseJDL(jdlLocation):
-    """
-    _parseJDL_
-
-    Parse a JDL into some sort of meaningful dictionary
-    """
-
-
-    f = open(jdlLocation, 'r')
-    lines = f.readlines()
-    f.close()
-
-
-    listOfJobs = []
-    headerDict = {}
-    jobLines   = []
-
-    index = 0
-
-    for line in lines:
-        # Go through the lines until you hit Queue
-        index += 1
-        splits = line.split(' = ')
-        key = splits[0]
-        value = ' = '.join(splits[1:])
-        value = value.rstrip('\n')
-        headerDict[key] = value
-        if key == "Queue 1\n":
-            # Yes, this is clumsy
-            jobLines = lines[index:]
-            break
-
-    tmpDict = {}
-    index   = 2
-    for jobLine in jobLines:
-        splits = jobLine.split(' = ')
-        key = splits[0]
-        value = ' = '.join(splits[1:])
-        value = value.rstrip('\n')
-        if key == "Queue 1\n":
-            # Then we've hit the next block
-            tmpDict["index"] = index
-            listOfJobs.append(tmpDict)
-            tmpDict = {}
-            index += 1
-        else:
-            tmpDict[key] = value
-
-    if tmpDict != {}:
-        listOfJobs.append(tmpDict)
-
-
-    return listOfJobs, headerDict
-
-
-
-def getCondorRunningJobs(user):
-    """
-    _getCondorRunningJobs_
-
-    Return the number of jobs currently running for a user
-    """
-
-
-    command = ['condor_q', user]
-    pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-    stdout, error = pipe.communicate()
-
-    output = stdout.split('\n')[-2]
-
-    nJobs = int(output.split(';')[0].split()[0])
-
-    return nJobs
-
-
-        
+from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
+from WMCore.DAOFactory import DAOFactory
+from WMCore.JobStateMachine.ChangeState import ChangeState
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.UUID import makeUUID
+from WMCore.WMBase import getTestBase
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 
 class JobSubmitterTest(unittest.TestCase):
     """
-    Test class for the JobSubmitter
+    _JobSubmitterTest_
 
+    Test class for the JobSubmitterPoller
     """
-
-    sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN']
 
     def setUp(self):
         """
+        _setUp_
+
         Standard setup: Now with 100% more couch
         """
-
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
-                                useDefault = False)
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
         self.testInit.setupCouch("jobsubmitter_t/jobs", "JobDump")
         self.testInit.setupCouch("jobsubmitter_t/fwjrs", "FWJRDump")
-        
+        self.testInit.setupCouch("wmagent_summary_t", "WMStats")
+
         myThread = threading.currentThread()
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
-
-        # We actually need the user name
-        self.user = getpass.getuser()
-
-        self.ceName = '127.0.0.1'
-
-        #Create sites in resourceControl
-        resourceControl = ResourceControl()
-        for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin", jobSlots = 10000,
-                                       cmsName = site)
-            resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000)
-
+        self.baDaoFactory = DAOFactory(package = "WMCore.BossAir",
+                                       logger = myThread.logger,
+                                       dbinterface = myThread.dbi)
 
         self.testDir = self.testInit.generateWorkDir()
 
         # Set heartbeat
         self.componentName = 'JobSubmitter'
-        self.heartbeatAPI  = HeartbeatAPI(self.componentName)
+        self.heartbeatAPI = HeartbeatAPI(self.componentName)
         self.heartbeatAPI.registerComponent()
-            
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
+
         return
 
     def tearDown(self):
         """
+        _tearDown_
+
         Standard tearDown
-
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS",
-                                               'WMCore.ResourceControl', 'WMCore.BossAir',
-                                               'WMCore.Agent.Database'])
+        self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
+        return
+
+    def setResourceThresholds(self, site, **options):
+        """
+        _setResourceThresholds_
+
+        Utility to set resource thresholds
+        """
+        if not options:
+            options = {'state'        : 'Normal',
+                       'runningSlots' : 10,
+                       'pendingSlots' : 5,
+                       'tasks' : ['Processing', 'Merge'],
+                       'Processing' : {'pendingSlots' : 5,
+                                       'runningSlots' : 10},
+                       'Merge' : {'pendingSlots' : 2,
+                                  'runningSlots' : 5}}
+
+        resourceControl = ResourceControl()
+        resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site),
+                                   ceName = site, plugin = "MockPlugin", pendingSlots = options['pendingSlots'],
+                                   runningSlots = options['runningSlots'], cmsName = site)
+        for task in options['tasks']:
+            resourceControl.insertThreshold(siteName = site, taskType = task,
+                                            maxSlots = options[task]['runningSlots'],
+                                            pendingSlots = options[task]['pendingSlots'])
+        if options.get('state'):
+            resourceControl.changeSiteState(site, options.get('state'))
 
         return
 
-
-
-    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site = None,
-                        bl = [], wl = [], type = 'Processing'):
+    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site,
+                        taskType = 'Processing', name = None):
         """
-        Creates a series of jobGroups for submissions
+        _createJobGroups_
 
+        Creates a series of jobGroups for submissions
         """
 
         jobGroupList = []
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
-                                name = makeUUID(), task="basicWorkload/Production")
+        if name is None:
+            name = makeUUID()
+
+        testWorkflow = Workflow(spec = workloadSpec, owner = "tapas",
+                                name = name, task = "basicWorkload/Production")
         testWorkflow.create()
 
         # Create subscriptions
-        for i in range(nSubs):
+        for _ in range(nSubs):
 
             name = makeUUID()
 
@@ -233,13 +140,12 @@ class JobSubmitterTest(unittest.TestCase):
             testFileset.create()
             testSubscription = Subscription(fileset = testFileset,
                                             workflow = testWorkflow,
-                                            type = type,
+                                            type = taskType,
                                             split_algo = "FileBased")
             testSubscription.create()
 
             testJobGroup = JobGroup(subscription = testSubscription)
             testJobGroup.create()
-
 
             # Create jobs
             self.makeNJobs(name = name, task = task,
@@ -247,19 +153,15 @@ class JobSubmitterTest(unittest.TestCase):
                            jobGroup = testJobGroup,
                            fileset = testFileset,
                            sub = testSubscription.exists(),
-                           site = site, bl = bl, wl = wl)
-                                         
-
+                           site = site)
 
             testFileset.commit()
             testJobGroup.commit()
             jobGroupList.append(testJobGroup)
 
         return jobGroupList
-            
 
-
-    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site = None, bl = [], wl = []):
+    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site):
         """
         _makeNJobs_
 
@@ -273,55 +175,53 @@ class JobSubmitterTest(unittest.TestCase):
         for n in range(nJobs):
             # First make a file
             #site = self.sites[0]
-            testFile = File(lfn = "/singleLfn/%s/%s" %(name, n),
+            testFile = File(lfn = "/singleLfn/%s/%s" % (name, n),
                             size = 1024, events = 10)
-            if site:
-                testFile.setLocation(site)
-            else:
-                for tmpSite in self.sites:
-                    testFile.setLocation('se.%s' % (tmpSite))
-            testFile.create()
             fileset.addFile(testFile)
 
-
         fileset.commit()
+
+        location = None
+        if isinstance(site, list):
+            if len(site) > 0:
+                location = site[0]
+        else:
+            location = site
 
         index = 0
         for f in fileset.files:
             index += 1
-            testJob = Job(name = '%s-%i' %(name, index))
+            testJob = Job(name = '%s-%i' % (name, index))
             testJob.addFile(f)
-            testJob["location"]  = f.getLocations()[0]
-            testJob['task']    = task.getPathName()
+            testJob["location"] = location
+            testJob["possiblePSN"] = set(site) if isinstance(site, list) else set([site])
+            testJob['task'] = task.getPathName()
             testJob['sandbox'] = task.data.input.sandbox
-            testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
+            testJob['spec'] = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob["siteBlacklist"] = bl
-            testJob["siteWhitelist"] = wl
-            testJob['priority']      = 101
+            testJob['priority'] = 101
+            testJob['numberOfCores'] = 1
             jobCache = os.path.join(cacheDir, 'Sub_%i' % (sub), 'Job_%i' % (index))
             os.makedirs(jobCache)
             testJob.create(jobGroup)
             testJob['cache_dir'] = jobCache
             testJob.save()
             jobGroup.add(testJob)
-            output = open(os.path.join(jobCache, 'job.pkl'),'w')
+            output = open(os.path.join(jobCache, 'job.pkl'), 'w')
             pickle.dump(testJob, output)
             output.close()
 
         return testJob, testFile
-        
 
-    def getConfig(self, configPath = os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMComponent/JobSubmitter/DefaultConfig.py')):
+    def getConfig(self):
         """
         _getConfig_
 
         Gets a basic config from default location
         """
 
-        myThread = threading.currentThread()
-
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir
@@ -335,163 +235,96 @@ class JobSubmitterTest(unittest.TestCase):
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
 
         #Now the CoreDatabase information
-        #This should be the dialect, dburl, etc
-
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
 
+        # BossAir and MockPlugin configuration
         config.section_("BossAir")
-        config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
+        config.BossAir.pluginNames = ['MockPlugin']
+        #Here Test the CondorPlugin instead of MockPlugin
+        #config.BossAir.pluginNames = ['CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+        config.BossAir.multicoreTaskTypes = ['MultiProcessing', 'MultiProduction']
+        config.BossAir.nCondorProcesses = 1
+        config.BossAir.section_("MockPlugin")
+        config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
+                                                         'WMComponent_t/JobSubmitter_t',
+                                                         "submit.sh")
 
+
+        # JobSubmitter configuration
         config.component_("JobSubmitter")
-        config.JobSubmitter.logLevel      = 'INFO'
+        config.JobSubmitter.logLevel      = 'DEBUG'
         config.JobSubmitter.maxThreads    = 1
         config.JobSubmitter.pollInterval  = 10
-        config.JobSubmitter.pluginName    = 'CondorGlobusPlugin'
-        config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
-        config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMBase.getTestBase(),
+        config.JobSubmitter.submitScript  = os.path.join(getTestBase(),
                                                          'WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
         config.JobSubmitter.componentDir  = os.path.join(self.testDir, 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
-        config.JobSubmitter.inputFile     = os.path.join(WMCore.WMBase.getTestBase(),
-                                                         'WMComponent_t/JobSubmitter_t',
-                                                         'FrameworkJobReport-4540.xml')
-        config.JobSubmitter.deleteJDLFiles = False
-
 
         #JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName     = "jobsubmitter_t"
-
+        config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
 
         # Needed, because this is a test
         os.makedirs(config.JobSubmitter.componentDir)
 
-
         return config
-    
-    def createTestWorkload(self, workloadName = 'Test', emulator = True):
+
+    def createTestWorkload(self, workloadName = 'Tier1ReReco'):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-        workload = testWorkload("Tier1ReReco")
-        rereco = workload.getTask("ReReco")
+        workload = testWorkload(workloadName)
 
-        
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
 
         return workload
 
-
-    def checkJDL(self, config, cacheDir, submitFile, site = None, indexFlag = False, noIndex = False):
-        """
-        _checkJDL_
-
-        Check the basic JDL setup
-        """
-
-        jobs, head = parseJDL(jdlLocation = os.path.join(config.JobSubmitter.submitDir,
-                                                         submitFile))
-
-        batch = 1
-
-        # Check each job entry in the JDL
-        for job in jobs:
-            # Check each key
-            index = int(job.get('+WMAgent_JobID', 0))
-            self.assertTrue(index != 0)
-
-            argValue = index -1
-            if indexFlag:
-                batch    = index - 1
-            
-            inputFileString = '%s, %s, %s' % (os.path.join(self.testDir, 'workloadTest/TestWorkload',
-                                                           'TestWorkload-Sandbox.tar.bz2'),
-                                              os.path.join(self.testDir, 'workloadTest/TestWorkload',
-                                                           'PackageCollection_0/batch_%i-0/JobPackage.pkl' % (batch)),
-                                              os.path.join(WMCore.WMInit.getWMBASE(), 'src/python/WMCore',
-                                                           'WMRuntime/Unpacker.py'))
-            if not noIndex:
-                self.assertEqual(job.get('transfer_input_files', None),
-                                 inputFileString)
-            # Arguments use a list starting from 0
-            self.assertEqual(job.get('arguments', None),
-                             'TestWorkload-Sandbox.tar.bz2 %i' % (index))
-
-            if site:
-                self.assertEqual(job.get('+DESIRED_Sites', None), '\"%s\"' % site)
-
-            # Check the priority
-            self.assertEqual(job.get('priority', None), '101')
-
-        # Now handle the head
-        self.assertEqual(head.get('should_transfer_files', None), 'YES')
-        self.assertEqual(head.get('Log', None), 'condor.$(Cluster).$(Process).log')
-        self.assertEqual(head.get('Error', None), 'condor.$(Cluster).$(Process).err')
-        self.assertEqual(head.get('Output', None), 'condor.$(Cluster).$(Process).out')
-        self.assertEqual(head.get('when_to_transfer_output', None), 'ON_EXIT')
-        self.assertEqual(head.get('Executable', None), config.JobSubmitter.submitScript)
-
-        return
-
-            
-
-
-    @attr('integration')
     def testA_BasicTest(self):
         """
-        Use the CondorGlobusPlugin to create a very simple test
-        Check to see that all the jobs were submitted
-        Parse and test the JDL files
-        See what condor says
+        Use the MockPlugin to create a simple test
+        Check to see that all the jobs were "submitted",
+        don't care about thresholds
         """
         workloadName = "basicWorkload"
-
-        myThread = threading.currentThread()
-
         workload = self.createTestWorkload()
-
-        config   = self.getConfig()
-
+        config = self.getConfig()
         changeState = ChangeState(config)
 
-        nSubs = 1
-        nJobs = 10
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
+        nSubs = 2
+        nJobs = 20
+        site = "T2_US_UCSD"
+
+        self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 100, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 50, 'runningSlots' : 100},
+                                   Merge = {'pendingSlots' : 50, 'runningSlots' : 100})
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.T2_US_UCSD')
+                                            site = site)
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
-
 
         # Do pre-submit check
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
 
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-        
-
         jobSubmitter = JobSubmitterPoller(config = config)
         jobSubmitter.algorithm()
-
 
         # Check that jobs are in the right state
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
@@ -499,81 +332,291 @@ class JobSubmitterTest(unittest.TestCase):
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nJobs)
 
+        # Check assigned locations
+        getLocationAction = self.daoFactory(classname = "Jobs.GetLocation")
+        for jobId in result:
+            loc = getLocationAction.execute(jobid = jobId)
+            self.assertEqual(loc, [['T2_US_UCSD']])
+
+        # Run another cycle, it shouldn't submit anything. There isn't anything to submit
+        jobSubmitter.algorithm()
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 0)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        nSubs = 1
+        nJobs = 10
+
+        # Submit another 10 jobs
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            taskType = "Merge")
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # Check that the jobs are available for submission and run another cycle
+        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        self.assertEqual(len(result), nSubs * nJobs)
+        jobSubmitter.algorithm()
+
+        #Check that the last 10 jobs were submitted as well.
+        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        self.assertEqual(len(result), 0)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Merge")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        return
+
+    def testB_thresholdTest(self):
+        """
+        _testB_thresholdTest_
+
+        Check that the threshold management is working,
+        this requires checks on pending/running jobs globally
+        at a site and per task/site
+        """
+        workloadName = "basicWorkload"
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+
+        nSubs = 5
+        nJobs = 10
+        site = "T1_US_FNAL"
+
+        self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 200, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 45, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10, 'runningSlots' : 20, 'priority' : 5})
+
+        # Always initialize the submitter after setting the sites, flaky!
+        jobSubmitter = JobSubmitterPoller(config = config)
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site)
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # Do pre-submit check
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        jobSubmitter.algorithm()
+
+        # Check that jobs are in the right state,
+        # here we are limited by the pending threshold for the Processing task (45)
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 5)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), 45)
 
         # Check assigned locations
         getLocationAction = self.daoFactory(classname = "Jobs.GetLocation")
-        for id in result:
-            loc = getLocationAction.execute(jobid = id)
-            self.assertEqual(loc, [['T2_US_UCSD']])
+        for jobId in result:
+            loc = getLocationAction.execute(jobid = jobId)
+            self.assertEqual(loc, [['T1_US_FNAL']])
 
-        
-        # Check on the JDL
-        submitFile = None
-        for file in os.listdir(config.JobSubmitter.submitDir):
-            if re.search('submit', file):
-                submitFile = file
-        self.assertTrue(submitFile != None)
-        self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD')
+        # Run another cycle, it shouldn't submit anything. Jobs are still in pending
+        jobSubmitter.algorithm()
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 5)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), 45)
 
-        
-
-        #if os.path.exists('CacheDir'):
-        #    shutil.rmtree('CacheDir')
-        #shutil.copytree(self.testDir, 'CacheDir')
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs * nSubs)
-
-        # This should do nothing
+        # Now put 10 Merge jobs, only 5 can be submitted, there we hit the global pending threshold for the site
+        nSubs = 1
+        nJobs = 10
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
-                                            site = 'se.T2_US_UCSD')
+                                            site = site,
+                                            taskType = 'Merge')
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
+
         jobSubmitter.algorithm()
+        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        self.assertEqual(len(result), 5)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Merge")
+        self.assertEqual(len(result), 5)
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 5)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), 45)
 
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-        del jobSubmitter
-
-        
-        return
-
-
-    @attr('performance')
-    def testB_TimeLongSubmission(self):
-        """
-        _TimeLongSubmission_
-
-        Submit a lot of jobs and test how long it takes for
-        them to actually be submitted
-        """
-
-
-        return
-
-
-        workloadName = "basicWorkload"
-        myThread     = threading.currentThread()
-        workload     = self.createTestWorkload()
-        config       = self.getConfig()
-        changeState  = ChangeState(config)
-
-        nSubs = 5
+        # Now let's test running thresholds
+        # The scenario will be setup as follows: Move all current jobs as running
+        # Create 300 Processing jobs and 300 merge jobs
+        # Run 5 polling cycles, moving all pending jobs to running in between
+        # Result is, merge is left at 25 running 0 pending and processing is left at 215 running 0 pending
+        # Processing has 135 jobs in queue and Merge 285
+        # This tests all threshold dynamics including the prioritization of merge over processing
+        nSubs = 1
         nJobs = 300
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site)
+        jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            taskType = 'Merge'))
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        getRunJobID = self.baDaoFactory(classname = "LoadByWMBSID")
+        setRunJobStatus = self.baDaoFactory(classname = "SetStatus")
+
+        for _ in range(5):
+            result = getJobsAction.execute(state = 'Executing')
+            binds = []
+            for jobId in result:
+                binds.append({'id' : jobId, 'retry_count' : 0})
+            runJobIds = getRunJobID.execute(binds)
+            setRunJobStatus.execute([x['id'] for x in runJobIds], 'Running')
+            jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state = 'Executing', jobType = 'Processing')
+        self.assertEqual(len(result), 215)
+        result = getJobsAction.execute(state = 'Created', jobType = 'Processing')
+        self.assertEqual(len(result), 135)
+        result = getJobsAction.execute(state = 'Executing', jobType = 'Merge')
+        self.assertEqual(len(result), 25)
+        result = getJobsAction.execute(state = 'Created', jobType = 'Merge')
+        self.assertEqual(len(result), 285)
+
+        return
+
+    def testC_prioritization(self):
+        """
+        _testC_prioritization_
+
+        Check that jobs are prioritized by job type and by oldest workflow
+        """
+        workloadName = "basicWorkload"
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+
+        nSubs = 1
+        nJobs = 10
+        site = "T1_US_FNAL"
+
+        self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 50, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
+
+        # Always initialize the submitter after setting the sites, flaky!
+        jobSubmitter = JobSubmitterPoller(config = config)
 
         jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                             task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            name = 'OldestWorkflow')
+        jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            taskType = 'Merge'))
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        jobSubmitter.algorithm()
+
+        # Merge goes first
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+        self.assertEqual(len(result), 0)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Merge")
+        self.assertEqual(len(result), 10)
+        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+        self.assertEqual(len(result), 10)
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), 0)
+
+        # Create a newer workflow processing, and after some new jobs for an old workflow
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            name = 'NewestWorkflow')
+
+        jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                    task = workload.getTask("ReReco"),
+                                    workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                workloadName),
+                                    site = site,
+                                    name = 'OldestWorkflow'))
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        # Move pending jobs to running
+
+        getRunJobID = self.baDaoFactory(classname = "LoadByWMBSID")
+        setRunJobStatus = self.baDaoFactory(classname = "SetStatus")
+
+        for idx in range(2):
+            result = getJobsAction.execute(state = 'Executing')
+            binds = []
+            for jobId in result:
+                binds.append({'id' : jobId, 'retry_count' : 0})
+            runJobIds = getRunJobID.execute(binds)
+            setRunJobStatus.execute([x['id'] for x in runJobIds], 'Running')
+
+            # Run again on created workflows
+            jobSubmitter.algorithm()
+
+            result = getJobsAction.execute(state = 'Created', jobType = "Merge")
+            self.assertEqual(len(result), 0)
+            result = getJobsAction.execute(state = 'Executing', jobType = "Merge")
+            self.assertEqual(len(result), 10)
+            result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+            self.assertEqual(len(result), 30 - (idx + 1) * 10)
+            result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+            self.assertEqual(len(result), (idx + 1) * 10)
+
+            # Check that older workflow goes first even with newer jobs
+            getWorkflowAction = self.daoFactory(classname = "Jobs.GetWorkflowTask")
+            workflows = getWorkflowAction.execute(result)
+            for workflow in workflows:
+                self.assertEqual(workflow['name'], 'OldestWorkflow')
+
+        return
+
+    def testD_SubmitFailed(self):
+        """
+        _testD_SubmitFailed_
+
+        Check if jobs without a possible site to run at go to SubmitFailed
+        """
+        workloadName = "basicWorkload"
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+
+        nSubs = 2
+        nJobs = 10
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            site = [],
                                             workloadSpec = os.path.join(self.testDir,
                                                                         'workloadTest',
                                                                         workloadName))
@@ -581,36 +624,175 @@ class JobSubmitterTest(unittest.TestCase):
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-
         jobSubmitter = JobSubmitterPoller(config = config)
+        jobSubmitter.algorithm()
+
+        # Jobs should go to submit failed
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        return
+
+    def testE_SiteModesTest(self):
+        """
+        _testE_SiteModesTest_
+
+        Test the behavior of the submitter in response to the different
+        states of the sites
+        """
+        workloadName = "basicWorkload"
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+        nSubs = 1
+        nJobs = 20
+
+        sites = ['T2_US_Florida', 'T2_TW_Taiwan', 'T3_CO_Uniandes', 'T1_US_FNAL']
+        for site in sites:
+            self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
+                                       Processing = {'pendingSlots' : 10, 'runningSlots' :-1},
+                                       Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
+
+        myResourceControl = ResourceControl(config)
+        myResourceControl.changeSiteState('T2_US_Florida', 'Draining')
+        # First test that we prefer Normal over drain, and T1 over T2/T3
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            site = [x for x in sites],
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName))
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+        jobSubmitter = JobSubmitterPoller(config = config)
+        # Actually run it
+        jobSubmitter.algorithm()
+
+        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        # All jobs should be at either FNAL, Taiwan or Uniandes. It's a random selection
+        # Check assigned locations
+        getLocationAction = self.daoFactory(classname = "Jobs.GetLocation")
+        locationDict = getLocationAction.execute([{'jobid' : x} for x in result])
+        for entry in locationDict:
+            loc = entry['site_name']
+            self.assertNotEqual(loc, 'T2_US_Florida')
+
+        # Now set everything to down, check we don't submit anything
+        for site in sites:
+            myResourceControl.changeSiteState(site, 'Down')
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            site = [x for x in sites],
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName))
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+        jobSubmitter.algorithm()
+        # Nothing is submitted despite the empty slots at Uniandes and Florida
+        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        # Now set everything to Drain and create Merge jobs. Those should be submitted
+        for site in sites:
+            myResourceControl.changeSiteState(site, 'Draining')
+
+        nSubsMerge = 1
+        nJobsMerge = 5
+        jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
+                                            site = [x for x in sites],
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            taskType = 'Merge')
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state = 'Executing', jobType = 'Merge')
+        self.assertEqual(len(result), nSubsMerge * nJobsMerge)
+
+        # Now set everything to Aborted, and create Merge jobs. Those should fail
+        # since the can only run at one place
+        for site in sites:
+            myResourceControl.changeSiteState(site, 'Aborted')
+
+        nSubsMerge = 1
+        nJobsMerge = 5
+        jobGroupList = self.createJobGroups(nSubs = nSubsMerge, nJobs = nJobsMerge,
+                                            site = [x for x in sites],
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir,
+                                                                        'workloadTest',
+                                                                        workloadName),
+                                            taskType = 'Merge')
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
+
+        jobSubmitter.algorithm()
+
+        result = getJobsAction.execute(state = 'SubmitFailed', jobType = 'Merge')
+        self.assertEqual(len(result), nSubsMerge * nJobsMerge)
+        result = getJobsAction.execute(state = 'Executing', jobType = 'Processing')
+        self.assertEqual(len(result), nSubs * nJobs)
+
+        return
+
+    @attr('integration')
+    def testF_PollerProfileTest(self):
+        """
+        _testF_PollerProfileTest_
+
+        Submit a lot of jobs and test how long it takes for
+        them to actually be submitted
+        """
+
+        workloadName = "basicWorkload"
+        workload = self.createTestWorkload()
+        config = self.getConfig()
+        changeState = ChangeState(config)
+
+        nSubs = 100
+        nJobs = 100
+        site = "T1_US_FNAL"
+
+        self.setResourceThresholds(site, pendingSlots = 20000, runningSlots = -1, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 10000, 'runningSlots' :-1},
+                                   Merge = {'pendingSlots' : 10000, 'runningSlots' :-1, 'priority' : 5})
+
+        # Always initialize the submitter after setting the sites, flaky!
+        JobSubmitterPoller(config = config)
+
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site)
+
+        jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+                                            task = workload.getTask("ReReco"),
+                                            workloadSpec = os.path.join(self.testDir, 'workloadTest',
+                                                                        workloadName),
+                                            site = site,
+                                            taskType = 'Merge'))
+
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
 
         # Actually run it
         startTime = time.time()
-        cProfile.runctx("jobSubmitter.algorithm()", globals(), locals(), filename = "testStats.stat")
-        #jobSubmitter.algorithm()
-        stopTime  = time.time()
+        cProfile.runctx("JobSubmitterPoller(config=config).algorithm()", globals(), locals(), filename="testStats.stat")
+        stopTime = time.time()
 
-        if os.path.isdir('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs * nSubs)
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-
-        print "Job took %f seconds to complete" %(stopTime - startTime)
-
+        print "Job took %f seconds to complete" % (stopTime - startTime)
 
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
@@ -618,454 +800,5 @@ class JobSubmitterTest(unittest.TestCase):
 
         return
 
-        
-    def testD_CreamCETest(self):
-        """
-        _CreamCETest_
-
-        This is for submitting to Cream CEs.  Don't use it.
-        """
-
-        return
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-
-        workloadName = "basicWorkload"
-
-        myThread = threading.currentThread()
-
-        workload = self.createTestWorkload()
-
-        config   = self.getConfig()
-        config.JobSubmitter.pluginName    = 'CreamPlugin'
-
-        changeState = ChangeState(config)
-
-        nSubs = 1
-        nJobs = 10
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
-
-        # Add a new site
-        siteName = "creamSite"
-        ceName = "https://cream-1-fzk.gridka.de:8443/ce-cream/services/CREAM2  pbs cmsXS"
-        #ceName = "127.0.0.1"
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
-        locationAction.execute(siteName = siteName, seName = siteName, ceName = ceName)
-        locationSlots.execute(siteName = siteName, jobSlots = 1000)
-
-        resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = siteName, seName = siteName, ceName = ceName)
-        resourceControl.insertThreshold(siteName = siteName, taskType = 'Processing', \
-                                        maxSlots = 10000)
-        
-
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            site = siteName)
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-        jobSubmitter.algorithm()
-
-
-        # Check that jobs are in the right state
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
-        self.assertEqual(len(result), 0)
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-        if os.path.exists('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree(self.testDir, 'CacheDir')
-
-        return
-
-    @attr('integration')
-    def testE_WhiteListBlackList(self):
-        """
-        _WhiteListBlackList_
-
-        Test the whitelist/blacklist implementation
-        Trust the jobCreator to get this in the job right
-        """
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-        workloadName = "basicWorkload"
-        myThread     = threading.currentThread()
-        workload     = self.createTestWorkload()
-        config       = self.getConfig()
-        changeState  = ChangeState(config)
-
-        nSubs = 2
-        nJobs = 10
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
-
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            bl = ['T2_US_Florida', 'T2_TW_Taiwan', 'T1_CH_CERN'])
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-        if os.path.isdir('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs * nSubs)
-
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        # All jobs should be at UCSD
-        submitFile = None
-        for file in os.listdir(config.JobSubmitter.submitDir):
-            if re.search('submit', file):
-                submitFile = file
-        self.assertTrue(submitFile != None)
-        #submitFile = os.listdir(config.JobSubmitter.submitDir)[0]
-        self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD')
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-
-
-
-
-
-        # Run again and test the whiteList
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            wl = ['T2_US_UCSD'])
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-        if os.path.isdir('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'CacheDir'))
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs * nSubs)
-
-        # You'll have jobs from the previous run still in the database
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-
-        # All jobs should be at UCSD
-        submitFile = None
-        for file in os.listdir(config.JobSubmitter.submitDir):
-            if re.search('submit', file):
-                submitFile = file
-        self.assertTrue(submitFile != None)
-        self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', noIndex = True)
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-
-
-
-
-
-        # Run again with an invalid whitelist
-        # NOTE: After this point, the original two sets of jobs will be executing
-        # The rest of the jobs should move to submitFailed
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            wl = ['T2_US_Namibia'])
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-
-        # Check to make sure we have running jobs
-        #nRunning = getCondorRunningJobs(self.user)
-        #self.assertEqual(nRunning, 0)
-
-        # Jobs should be gone
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-
-
-
-
-
-        # Run again with all sites blacklisted
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            bl = self.sites)
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0)
-
-        # Jobs should be gone
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-        result = getJobsAction.execute(state = 'SubmitFailed', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs * 2)
-
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-        del jobSubmitter
-        return
-
-
-    @attr('integration')
-    def testF_OverloadTest(self):
-        """
-        _OverloadTest_
-        
-        Test and see what happens if you put in more jobs
-        Then the sites can handle
-        """
-
-        resourceControl = ResourceControl()
-        for site in self.sites:
-            resourceControl.insertThreshold(siteName = site, taskType = 'Silly', \
-                                            maxSlots = 1)
-
-
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-
-        workloadName = "basicWorkload"
-        myThread     = threading.currentThread()
-        workload     = self.createTestWorkload()
-        config       = self.getConfig()
-        changeState  = ChangeState(config)
-
-        nSubs = 2
-        nJobs = 10
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
-
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            type = 'Silly')
-
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-        
-
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-
-        # Actually run it
-        jobSubmitter.algorithm()
-
-        # Should be one job for each site
-        nSites = len(self.sites)
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nSites)
-
-
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Executing', jobType = "Silly")
-        self.assertEqual(len(result), nSites)
-        result = getJobsAction.execute(state = 'Created', jobType = "Silly")
-        self.assertEqual(len(result), nJobs*nSubs - nSites)
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-        del jobSubmitter
-
-        return
-
-
-    @attr('integration')
-    def testG_IndexErrorTest(self):
-        """
-        _IndexErrorTest_
-
-        Check to see you get proper indexes for the jobPackages
-        if you have more jobs then you normally run at once.
-        """
-        workloadName = "basicWorkload"
-
-        myThread = threading.currentThread()
-
-        workload = self.createTestWorkload()
-
-        config   = self.getConfig()
-        config.JobSubmitter.jobsPerWorker  = 1
-        config.JobSubmitter.collectionSize = 1
-
-        changeState = ChangeState(config)
-
-        nSubs = 1
-        nJobs = 10
-        cacheDir = os.path.join(self.testDir, 'CacheDir')
-
-        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
-                                            task = workload.getTask("ReReco"),
-                                            workloadSpec = os.path.join(self.testDir,
-                                                                        'workloadTest',
-                                                                        workloadName),
-                                            site = 'se.T2_US_UCSD')
-        for group in jobGroupList:
-            changeState.propagate(group.jobs, 'created', 'new')
-
-
-        # Do pre-submit check
-        getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, 0, "User currently has %i running jobs.  Test will not continue" % (nRunning))
-        
-
-        jobSubmitter = JobSubmitterPoller(config = config)
-        jobSubmitter.algorithm()
-
-
-        if os.path.exists('CacheDir'):
-            shutil.rmtree('CacheDir')
-        shutil.copytree(self.testDir, 'CacheDir')
-
-
-        # Check that jobs are in the right state
-        result = getJobsAction.execute(state = 'Created', jobType = "Processing")
-        self.assertEqual(len(result), 0)
-        result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nSubs * nJobs)
-
-        
-        # Check on the JDL
-        submitFile = None
-        for file in os.listdir(config.JobSubmitter.submitDir):
-            if re.search('submit', file):
-                submitFile = file
-        self.assertTrue(submitFile != None)
-        self.checkJDL(config = config, cacheDir = cacheDir,
-                      submitFile = submitFile, site = 'T2_US_UCSD', indexFlag = True)
-
-
-
-        # Check to make sure we have running jobs
-        nRunning = getCondorRunningJobs(self.user)
-        self.assertEqual(nRunning, nJobs * nSubs)
-
-        
-
-
-        # Now clean-up
-        command = ['condor_rm', self.user]
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
-        pipe.communicate()
-
-        del jobSubmitter
-        return
-
-
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

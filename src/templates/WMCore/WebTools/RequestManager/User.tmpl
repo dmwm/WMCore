@@ -24,14 +24,6 @@ User $user <br>
 </form>
 </div>
 
-<div id="priority">
-<form action="/reqmgr/admin/handleUserPriority">
-<b>User Priority:</b><input type="text" name="userPriority" size=2 value=$priority />
-<input type="hidden" value=$user name="user"/>
-<input type=submit>
-</form>
-</div>
-
 <div id="requests">
 <b>Requests:</b><br>
 #for $request in $requests

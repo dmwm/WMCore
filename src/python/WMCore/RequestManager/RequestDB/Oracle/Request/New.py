@@ -37,28 +37,28 @@ class New(DBFormatter):
         reqName = request.get('request_name', None)
         if reqName == None:
             msg = "request_name not provided to Request.New.execute"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         reqType = request.get('request_type', None)
         if reqType == None:
             msg = "request_type not provided to Request.New.execute"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         reqStatus = request.get('request_status', None)
         if reqStatus == None:
             msg = "request_status not provided to Request.New.execute"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         requestor = request.get("association_id", None)
         if requestor == None:
             msg = "association_id not provided to Request.New.execute"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         workflow = request.get("workflow", None)
         if workflow == None:
             msg = "workflow not provided to Request.New.execute"
-            raise RuntimeError, msg
-
+            raise RuntimeError(msg)
 
         prep_id = request.get("prep_id", None)
-        priority = request.get("request_priority", 0)
+        priority = request.get("requestPriority", None)
+        priority = priority if priority else 0
 
         self.sql = """
         INSERT INTO reqmgr_request (request_name, request_type,
@@ -80,9 +80,3 @@ class New(DBFormatter):
         if result == []:
             return None
         return result[0]
-
-
-
-
-
-

@@ -1,0 +1,73 @@
+{ 
+"createRequest":
+{         
+    "Comments": "ReReco with LumiMask. 2 runs and 45 lumis in total. Xrootd and harvesting enabled",
+    "Campaign": "Campaign-OVERRIDE-ME",        
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_7_0_3",
+    "GlobalTag": "FT_R_70_V1::All",
+    "RequestPriority": 100000,
+    "ScramArch": "slc6_amd64_gcc481",
+    "RequestType": "ReReco",
+    "RunWhitelist": [203777, 204511],
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "ConfigCacheID": "a6d326cfbc11d3e636125d7b08b6624a",
+    "DQMConfigCacheID": "a6d326cfbc11d3e636125d7b08b54b1b",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "EnableHarvesting": "True",
+    "IncludeParents": "False",
+    "Group": "DATAOPS",
+    "SplittingAlgo": "LumiBased",
+    "LumiList": {"203777": [[1, 15], [50,70], [115,115]], "204511": [[16,18], [30,30], [28,29], [31,32]]},
+    "PrepID": "ReReco-Prep-Alan",
+    "LumisPerJob": 2,
+    "TimePerEvent": 0.2,
+    "Memory": 2394,
+    "SizePerEvent": 2000,
+    "InputDataset": "/DoubleElectron/Run2012D-v1/RAW",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "inputMode": "couchDB",
+    "Scenario": "pp",      
+    "OpenRunningTimeout" : 0
+},
+"changeSplitting":
+{
+    "DataProcessing" :
+    {
+        "SplittingAlgo" : "EventAwareLumiBased",
+        "avg_events_per_job" : 1400,
+        "max_events_per_lumi" : 20000,
+        "halt_job_on_file_boundaries_event_aware" : "True",
+        "include_parents" : "False"
+    }
+},
+"assignRequest":
+{
+    "useSiteListAsLocation" : "True",
+    "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
+    "Team": "Team-OVERRIDE-ME",
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "ProcessingVersion": 1,
+    "MaxRSS": 2352000,
+    "MaxVSize": 20294967,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "CustodialSites": [],
+    "NonCustodialSites": [],
+    "AutoApproveSubscriptionSites": [],
+    "SubscriptionPriority": "Low",
+    "CustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 72000,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 200000000,
+    "BlockCloseMaxSize" : 5000000000000
+}
+}

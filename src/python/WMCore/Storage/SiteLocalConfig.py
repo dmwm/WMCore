@@ -37,30 +37,30 @@ def loadSiteLocalConfig():
         else:
             logging.log(logging.ERROR, "%s env. var. provided but not pointing "
                         "to an existing file, ignoring." % overVarName)
-            
+
     defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
     if os.environ.get("CMS_PATH", None) == None:
         msg = "Unable to find site local config file:\n"
         msg += "CMS_PATH variable is not defined."
-        raise SiteConfigError, msg
-    
+        raise SiteConfigError(msg)
+
     if not os.path.exists(actualPath):
         msg = "Unable to find site local config file:\n"
         msg += actualPath
-        raise SiteConfigError, msg
+        raise SiteConfigError(msg)
 
     config = SiteLocalConfig(actualPath)
     return config
 
 
-class SiteConfigError(StandardError):
+class SiteConfigError(Exception):
     """
     Exception class placeholder
-    
+
     """
     pass
-    
+
 
 class SiteLocalConfig:
     """
@@ -76,10 +76,10 @@ class SiteLocalConfig:
 
         self.frontierProxies = []
         self.frontierServers = []
-        
+
         self.localStageOut = {}
         self.fallbackStageOut = []
-        
+
         self.read()
         return
 
@@ -98,12 +98,12 @@ class SiteLocalConfig:
             tfcProto = tfcProtocol(tfcUrl)
             tfcInstance = readTFC(tfcFile)
             tfcInstance.preferredProtocol = tfcProto
-        except StandardError, ex:
+        except Exception as ex:
             msg = "Unable to load TrivialFileCatalog:\n"
             msg += "URL = %s\n" % tfcUrl
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
         return tfcInstance
-            
+
 
     def localStageOutCommand(self):
         """
@@ -130,7 +130,16 @@ class SiteLocalConfig:
 
         """
         return self.localStageOut['se-name']
-    
+
+    def localStageOutPNN(self):
+        """
+        _localStageOutPNN_
+
+        return the local PhEDExNodeName used for stage out
+
+        """
+        return self.localStageOut['phedex-node']
+
 
     def read(self):
         """
@@ -141,26 +150,26 @@ class SiteLocalConfig:
         """
         try:
             node = xmlFileToNode(self.siteConfigFile)
-        except StandardError, ex:
+        except Exception as ex:
             msg = "Unable to read SiteConfigFile: %s\n" % self.siteConfigFile
             msg += str(ex)
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
 
         nodeResult =  nodeReader(node)
 
-        if not nodeResult.has_key('siteName'):
+        if 'siteName' not in nodeResult:
             msg = "Unable to find site name in SiteConfigFile:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
-        if not nodeResult.has_key('catalog'):
+            raise SiteConfigError(msg)
+        if 'catalog' not in nodeResult:
             msg = "Unable to find catalog entry for event data in SiteConfigFile:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
-        if not nodeResult.has_key('localStageOut'):
+            raise SiteConfigError(msg)
+        if 'localStageOut' not in nodeResult:
             msg = "Error:Unable to find any local-stage-out"
             msg += "information in:\n"
             msg += self.siteConfigFile
-            raise SiteConfigError, msg
+            raise SiteConfigError(msg)
 
         self.siteName             = nodeResult.get('siteName', None)
         self.eventData['catalog'] = nodeResult.get('catalog', None)
@@ -179,7 +188,7 @@ def coroutine(func):
     """
     def start(*args,**kwargs):
         cr = func(*args,**kwargs)
-        cr.next()
+        next(cr)
         return cr
     return start
 
@@ -188,7 +197,7 @@ def coroutine(func):
 def nodeReader(node):
     """
     _nodeReader_
-    
+
     Given a node, see if we can find what we're looking for
     """
     processSiteInfo = {
@@ -246,7 +255,7 @@ def processSite(targets):
 def processEventData():
     """
     Process eventData in a site
-    
+
     """
 
     while True:
@@ -268,12 +277,16 @@ def processLocalStageOut():
         for subnode in node.children:
             if subnode.name == 'se-name':
                 localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'phedex-node':
+                localReport['phedex-node'] = subnode.attrs.get('value', None)
             elif subnode.name == 'command':
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':
                 localReport['option'] = subnode.attrs.get('value', None)
             elif subnode.name == 'catalog':
                 localReport['catalog'] = subnode.attrs.get('url', None)
+            elif subnode.name == 'phedex-node':
+                localReport['phedex-node'] = subnode.attrs.get('value', None)
         report['localStageOut'] = localReport
 
 @coroutine
@@ -289,6 +302,8 @@ def processFallbackStageOut():
         for subnode in node.children:
             if subnode.name == 'se-name':
                 localReport['se-name'] = subnode.attrs.get('value', None)
+            elif subnode.name == 'phedex-node':
+                localReport['phedex-node'] = subnode.attrs.get('value', None)
             elif subnode.name == 'command':
                 localReport['command'] = subnode.attrs.get('value', None)
             elif subnode.name == 'option':
@@ -314,7 +329,7 @@ def processCalibData():
             if subnode.name == "frontier-connect":
                 for frontierSubnode in subnode.children:
                     subNodeUrl = frontierSubnode.attrs.get("url", None)
-                    
+
                     if frontierSubnode.name == "proxy":
                         frontierProxies.append(subNodeUrl)
                     elif frontierSubnode.name == "server":

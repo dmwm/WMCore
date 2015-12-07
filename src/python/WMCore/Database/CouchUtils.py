@@ -17,7 +17,7 @@ class CouchConnectionError(Exception):
     """docstring for CouchConnectionError"""
     def __init__(self, arg):
         super(CouchConnectionError, self).__init__(arg)
-        
+
 
 
 
@@ -29,21 +29,21 @@ def initialiseCouch(objectRef):
         raise CouchConnectionError(msg)
     if objectRef.database == None:
         msg = "database name for couch service not provided"
-        raise CouchConnectionError(msg)  
+        raise CouchConnectionError(msg)
     try:
         objectRef.server = CMSCouch.CouchServer(objectRef.url)
-        objectRef.couchdb = objectRef.server.connectDatabase(objectRef.database)            
+        objectRef.couchdb = objectRef.server.connectDatabase(objectRef.database)
     except Exception as e:
         msg = "Exception instantiating couch services for :\n"
         msg += " url = %s\n database = %s\n" % (objectRef.url, objectRef.database)
         msg += " Exception: %s" % str(e)
         print msg
         raise CouchConnectionError(msg)
-        
+
 def connectToCouch(funcRef):
     """
     _connectToCouch_
-    
+
     Decorator method to connect the function's class object to couch
     """
     @functools.wraps(funcRef)
@@ -51,7 +51,7 @@ def connectToCouch(funcRef):
         initialiseCouch(x)
         return funcRef(x, *args, **opts)
     return wrapper
-    
+
 def requireOwner(func):
     """
     _requireOwner_
@@ -65,7 +65,7 @@ def requireOwner(func):
             raise RuntimeError(msg)
         return func(self, *args, **opts)
     return wrapper
-    
+
 def requireCollection(func):
     """
     _requireCollection_
@@ -79,30 +79,29 @@ def requireCollection(func):
             raise RuntimeError(msg)
         return func(self, *args, **opts)
     return wrapper
-    
+
 def requireFilesetName(func):
     """
     _requireFilesetName_
-    
+
     Decorator to require that a fileset has a name that is not None
-    
+
     """
     def wrapper(self, *args, **opts):
         if not 'name' in self or self['name'] == None:
-            raise RuntimeError, "Filesets must be named"
+            raise RuntimeError("Filesets must be named")
         return func(self, *args, **opts)
     return wrapper
 
 def requireCollectionName(func):
     """
     _requireCollectionName_
-    
+
     Decorator to require that a collection has a name that is not None
-    
+
     """
     def wrapper(self, *args, **opts):
         if not 'name' in self or self['name'] == None:
-            raise RuntimeError, "Filesets must be named"
+            raise RuntimeError("Filesets must be named")
         return func(self, *args, **opts)
     return wrapper
-

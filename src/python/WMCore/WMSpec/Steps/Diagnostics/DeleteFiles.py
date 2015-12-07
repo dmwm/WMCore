@@ -38,11 +38,11 @@ class DFExceptionHandler(DiagnosticHandler):
             msg = "No Job Report Found: %s" % jobRepXml
             executor.report.addError(50115, "MissingJobReport", msg)
             return
-        
+
         # job report XML exists, load the exception information from it
         executor.report.parse(jobRepXml)
-        
-        
+
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
@@ -64,4 +64,4 @@ class DeleteFiles(Diagnostic):
 
 
         catchAll = DFExceptionHandler()
-        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]
+        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers ]

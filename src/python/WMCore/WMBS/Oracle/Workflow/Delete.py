@@ -13,4 +13,3 @@ from WMCore.WMBS.MySQL.Workflow.Delete import Delete as DeleteWorkflowMySQL
 
 class Delete(DeleteWorkflowMySQL):
     sql = DeleteWorkflowMySQL.sql
-    

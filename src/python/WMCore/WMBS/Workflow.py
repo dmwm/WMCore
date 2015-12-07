@@ -36,17 +36,19 @@ class Workflow(WMBSBase, WMWorkflow):
     def __init__(self, spec = None, owner = "unknown", dn = "unknown",
                  group = "unknown", owner_vogroup = "DEFAULT",
                  owner_vorole = "DEFAULT", name = None, task = None,
-                 wfType = None, id = -1):
+                 wfType = None, id = -1, alternativeFilesetClose = False,
+                 priority = None):
         WMBSBase.__init__(self)
         WMWorkflow.__init__(self, spec = spec, owner = owner, dn = dn,
                             group = group, owner_vogroup = owner_vogroup,
                             owner_vorole = owner_vorole, name = name,
-                            task = task, wfType = wfType)
+                            task = task, wfType = wfType, priority = priority)
 
         if self.dn == "unknown":
             self.dn = owner
-            
+
         self.id = id
+        self.alternativeFilesetClose = alternativeFilesetClose
         return
 
     def exists(self):
@@ -116,6 +118,8 @@ class Workflow(WMBSBase, WMWorkflow):
         action = self.daofactory(classname = "Workflow.New")
         action.execute(spec = self.spec, owner = userid, name = self.name,
                        task = self.task, wfType = self.wfType,
+                       alt_fs_close = self.alternativeFilesetClose,
+                       priority = self.priority,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
 
@@ -168,8 +172,11 @@ class Workflow(WMBSBase, WMWorkflow):
         self.owner = result["owner"]
         self.dn = result["dn"]
         self.group = result["grp"]
+        self.vorole = result["vogrp"]
+        self.vogroup = result["vorole"]
         self.task = result["task"]
         self.wfType = result["type"]
+        self.priority = result["priority"]
 
         action = self.daofactory(classname = "Workflow.LoadOutput")
         results = action.execute(workflow = self.id, conn = self.getDBConn(),
@@ -184,7 +191,7 @@ class Workflow(WMBSBase, WMWorkflow):
                 else:
                     mergedOutputFileset = None
 
-                if not self.outputMap.has_key(outputID):
+                if outputID not in self.outputMap:
                     self.outputMap[outputID] = []
 
                 self.outputMap[outputID].append({"output_fileset": outputFileset,
@@ -205,7 +212,7 @@ class Workflow(WMBSBase, WMWorkflow):
         if self.id == False:
             self.create()
 
-        if not self.outputMap.has_key(outputIdentifier):
+        if outputIdentifier not in self.outputMap:
             self.outputMap[outputIdentifier] = []
 
         self.outputMap[outputIdentifier].append({"output_fileset": outputFileset,
@@ -238,4 +245,3 @@ class Workflow(WMBSBase, WMWorkflow):
         self.commitTransaction(existingTransaction)
 
         return result
-

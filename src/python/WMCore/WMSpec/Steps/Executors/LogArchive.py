@@ -5,9 +5,6 @@ _Step.Executor.LogArchive_
 Implementation of an Executor for a LogArchive step
 """
 
-
-
-
 import os
 import os.path
 import logging
@@ -19,14 +16,16 @@ import traceback
 
 from WMCore.WMException import WMException
 
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
+
 from WMCore.WMSpec.Steps.Executor           import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-from WMCore.FwkJobReport.FileInfo           import readAdler32, readCksum
+
+from WMCore.Algorithms.BasicAlgos import calculateChecksums
+
 import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
 
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
 lfnGroup = lambda j : str(j.get("counter", 0) / 1000).zfill(4)
 
@@ -36,7 +35,7 @@ class LogArchive(Executor):
 
     Execute a LogArchive Step
 
-    """        
+    """
 
     def pre(self, emulator = None):
         """
@@ -74,18 +73,20 @@ class LogArchive(Executor):
         logging.info("Step is: %s" % self.step)
         # Wait timout for stageOut
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
-            
+
         matchFiles = [
             ".log$",
             "FrameworkJobReport",
             "Report.pkl",
             "Report.pcl",
-            "^PSet.py$"
+            "^PSet.py$",
+            "^PSet.pkl$"
             ]
 
         #Okay, we need a stageOut Manager
         useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+        if getattr(self.step, 'newStageout', False) or \
+            ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
         if not useNewStageOutCode:
             # old style
@@ -124,6 +125,7 @@ class LogArchive(Executor):
         fileInfo = {'LFN': self.getLFN(tarName),
             'PFN' : tarBallLocation,
             'SEName' : None,
+            'PNN' : None,
             'GUID' : None
             }
 
@@ -132,12 +134,12 @@ class LogArchive(Executor):
         try:
             manager(fileInfo)
             self.report.addOutputModule(moduleName = "logArchive")
+            (adler32, cksum) = calculateChecksums(tarBallLocation)
             reportFile = {"lfn": fileInfo["LFN"], "pfn": fileInfo["PFN"],
-                          "location": fileInfo["SEName"], "module_label": "logArchive",
+#                          "location": fileInfo["SEName"], "module_label": "logArchive",
+                          "location": fileInfo["PNN"], "module_label": "logArchive",
                           "events": 0, "size": 0, "merged": False,
-                          "checksums": {'md5': BasicAlgos.getMD5(tarBallLocation),
-                                        'adler32': readAdler32(tarBallLocation),
-                                        'cksum': readCksum(tarBallLocation)}}
+                          "checksums": {'adler32': adler32, 'cksum' : cksum}}
             self.report.addOutputFile(outputModule = "logArchive", file = reportFile)
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
@@ -145,12 +147,12 @@ class LogArchive(Executor):
             self.report.addError(self.stepName, 60404, "LogArchiveTimeout", msg)
             self.report.persist("Report.pkl")
             raise WMExecutionFailure(60404, "LogArchiveTimeout", msg)
-        except WMException, ex:
+        except WMException as ex:
             self.report.addError(self.stepName, 60307, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
             raise ex
-        except Exception, ex:
+        except Exception as ex:
             self.report.addError(self.stepName, 60405, "LogArchiveFailure", str(ex))
             self.report.setStepStatus(self.stepName, 0)
             self.report.persist("Report.pkl")
@@ -159,7 +161,7 @@ class LogArchive(Executor):
             msg += traceback.format_exc()
             logging.error(msg)
             raise WMException("LogArchiveFailure", message = str(ex))
-        
+
         signal.alarm(0)
         return
 
@@ -175,7 +177,7 @@ class LogArchive(Executor):
         #Another emulator check
         if (emulator != None):
             return emulator.emulatePost( self.step )
-        
+
         logging.info("Steps.Executors.StageOut.post called")
         return None
 
@@ -183,7 +185,7 @@ class LogArchive(Executor):
     def findFilesInDirectory(self, dirName, matchFiles):
         """
         _findFilesInDirectory_
-        
+
         Given a directory, it matches the files to the specified patterns
         """
 
@@ -207,7 +209,7 @@ class LogArchive(Executor):
     def getLFN(self, tarName):
         """
         getLFN
-        
+
         LFNs are messy, do the messy stuff here
         """
 

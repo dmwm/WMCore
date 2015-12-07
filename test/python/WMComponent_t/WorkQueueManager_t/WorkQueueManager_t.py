@@ -31,8 +31,8 @@ from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
-    # pylint: disable-msg=E1101,E1103
-    return wmspec.taskIterator().next()
+    # pylint: disable=E1101,E1103
+    return next(wmspec.taskIterator())
 
 class WorkQueueManagerTest(WorkQueueTestCase):
     """
@@ -45,15 +45,15 @@ class WorkQueueManagerTest(WorkQueueTestCase):
     def setSchema(self):
         self.schema = []
         self.couchApps = ["WorkQueue"]
-    
+
     def setUp(self):
         WorkQueueTestCase.setUp(self)
-        EmulatorHelper.setEmulators(phedex = True, dbs = True, 
+        EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
         EmulatorHelper.resetEmulators()
-        
+
     def getConfig(self):
         """
         _createConfig_
@@ -66,20 +66,20 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         config = self.testInit.getConfiguration()
         # http://www.logilab.org/ticket/8961
-        # pylint: disable-msg=E1101, E1103
+        # pylint: disable=E1101, E1103
         config.component_("WorkQueueManager")
         config.section_("General")
         config.General.workDir = "."
         config.WorkQueueManager.team = 'team_usa'
         config.WorkQueueManager.requestMgrHost = 'cmssrv49.fnal.gov:8585'
         config.WorkQueueManager.serviceUrl = "http://cmssrv18.fnal.gov:6660"
-        
+
         config.WorkQueueManager.logLevel = 'INFO'
         config.WorkQueueManager.pollInterval = 10
         config.WorkQueueManager.level = "GlobalQueue"
 
-        return config        
-        
+        return config
+
     def setupGlobalWorkqueue(self):
         """Return a workqueue instance"""
 
@@ -101,7 +101,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
         testWorkQueueManager = WorkQueueManager(config)
         testWorkQueueManager.prepareToStart()
-        
+
         time.sleep(30)
         print "Killing"
         myThread.workerThreadManager.terminateWorkers()

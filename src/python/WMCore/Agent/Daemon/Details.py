@@ -31,7 +31,7 @@ def run(command):
     proc.stdin.write(command)
     stdout, stderr =  proc.communicate()
     rc = proc.returncode
-    
+
     return stdout, stderr, rc
 
 class Details(dict):
@@ -44,7 +44,7 @@ class Details(dict):
     Components, upon startup, produce a Daemon.xml file in their component
     directory containing the details of the daemon process.
     This util takes that file, reads its fields into a dictionary.
-    
+
     """
     def __init__(self, daemonXmlFile):
         dict.__init__(self)
@@ -78,7 +78,7 @@ class Details(dict):
         Dumb check on /proc/pid existing. Anyone know a better way?
 
         """
-        se, so, rc = run('ps -p %s' % self['ProcessID']) 
+        se, so, rc = run('ps -p %s' % self['ProcessID'])
         if rc != 0:
             return False
         return True
@@ -103,14 +103,14 @@ class Details(dict):
         If it takes more than a couple of seconds, kill -9 it.
 
         """
-        os.kill(self['ProcessID'], signal)
+        os.killpg(self['ProcessGroupID'], signal)
         for count in range(0, 3):
             time.sleep(1)
             if not self.isAlive():
                 self.removeAndBackupDaemonFile()
                 return
             continue
-        os.kill(self['ProcessID'], 9)
+        os.killpg(self['ProcessGroupID'], 9)
         self.removeAndBackupDaemonFile()
         return
 
@@ -122,8 +122,8 @@ class Details(dict):
         path, file = os.path.split(self.daemonXmlFile)
         timeStamp = time.strftime("%d-%M-%Y")
         newFile = "%s.BAK.%s" %(file, str(timeStamp))
-        newLocation = os.path.join(path, newFile) 
-        try:    
+        newLocation = os.path.join(path, newFile)
+        try:
             shutil.move(self.daemonXmlFile, newLocation)
-        except Exception,ex:
+        except Exception as ex:
             print('Move failed. Remove manual: '+str(ex))

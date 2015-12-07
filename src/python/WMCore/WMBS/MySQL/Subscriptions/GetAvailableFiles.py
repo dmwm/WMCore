@@ -11,12 +11,12 @@ Available means not acquired, complete or failed.
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetAvailableFiles(DBFormatter):
-    sql = """SELECT wmbs_sub_files_available.fileid, wmbs_location.se_name
+    sql = """SELECT wmbs_sub_files_available.fileid, wls.se_name AS pnn
                     FROM wmbs_sub_files_available
                INNER JOIN wmbs_file_location ON
                  wmbs_sub_files_available.fileid = wmbs_file_location.fileid
-               INNER JOIN wmbs_location ON
-                 wmbs_file_location.location = wmbs_location.id
+               INNER JOIN wmbs_location_senames wls ON
+                 wmbs_file_location.location = wls.location
              WHERE wmbs_sub_files_available.subscription = :subscription"""
 
     def formatDict(self, results):
@@ -38,10 +38,12 @@ class GetAvailableFiles(DBFormatter):
         #Now the tricky part
         tempResults = {}
         for formattedResult in formattedResults:
-            if formattedResult["file"] not in tempResults.keys():
-                tempResults[formattedResult["file"]] = []
-            if "se_name" in formattedResult.keys():
-                tempResults[formattedResult["file"]].append(formattedResult["se_name"])
+            fileID = formattedResult['file']
+            if fileID not in tempResults.keys():
+                tempResults[fileID] = []
+            if "pnn" in formattedResult.keys():
+                if not formattedResult['pnn'] in tempResults[fileID]:
+                    tempResults[fileID].append(formattedResult["pnn"])
 
         finalResults = []
         for key in tempResults.keys():
@@ -51,13 +53,13 @@ class GetAvailableFiles(DBFormatter):
             finalResults.append(tmpDict)
 
         return finalResults
-           
+
     def execute(self, subscription, conn = None, transaction = False, returnCursor = False):
         if returnCursor:
             return self.dbi.processData(self.sql, {"subscription": subscription},
                                         conn = conn, transaction = transaction,
                                         returnCursor = returnCursor)
-        
+
         results = self.dbi.processData(self.sql, {"subscription": subscription},
                                        conn = conn, transaction = transaction)
         return self.formatDict(results)

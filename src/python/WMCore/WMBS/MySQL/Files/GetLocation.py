@@ -11,19 +11,20 @@ MySQL implementation of File.GetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class GetLocation(DBFormatter):
-    sql = """SELECT se_name FROM wmbs_location
+    sql = """SELECT wls.se_name AS pnn FROM wmbs_location_senames wls
+               INNER JOIN wmbs_location ON wmbs_location.id = wls.location
                INNER JOIN wmbs_file_location wfl ON wfl.location = wmbs_location.id
                INNER JOIN wmbs_file_details wfd ON wfd.id = wfl.fileid
                WHERE wfd.lfn = :lfn"""
-                    
-    
+
+
     def getBinds(self, file=None):
         binds = []
         file = self.dbi.makelist(file)
         for f in file:
             binds.append({'lfn': f})
         return binds
-    
+
     def format(self, result):
         "Return a list of SE FQDN's"
         out = set()
@@ -32,10 +33,10 @@ class GetLocation(DBFormatter):
                 out.add(i[0])
             r.close()
         return out
-    
+
     def execute(self, file=None, conn = None, transaction = False):
         binds = self.getBinds(file)
-        
-        result = self.dbi.processData(self.sql, binds, 
+
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)

@@ -48,23 +48,23 @@ class ScriptInvoke:
         """
         self.job = Bootstrap.loadJobDefinition()
         self.task = Bootstrap.loadTask(self.job)
-        
-        
+
+
         stepSpaceMod = __import__(self.stepModule,
                                   globals(), locals(), ['stepSpace'], -1)
 
         self.stepSpace = stepSpaceMod.stepSpace
 
         self.step = self.task.getStep(self.stepSpace.stepName)
-        
-        
-        
+
+
+
         self.script = getScript(scriptModule)
         self.script.task = self.task
         self.script.step = self.step
         self.script.job = self.job
         self.script.stepSpace = self.stepSpace
-        
+
 
 
     def invoke(self):
@@ -88,35 +88,32 @@ if __name__ == '__main__':
     try:
         stepModule = sys.argv[1]
         scriptModule = sys.argv[2]
-    except Exception, ex:
+    except Exception as ex:
         msg = "Usage: ScriptInvoke.py <Step Module> <Script Module>"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     invoker = ScriptInvoke(stepModule, scriptModule)
 
     try:
         invoker.boot()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error booting script invoker for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)
         msg += "Details:\n"
         for l in traceback.format_tb(sys.exc_info()[2]):
             msg += l
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     try:
         invoker.invoke()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error invoking script for step %s\n" % stepModule
         msg += "withe Script module: %s\n" % scriptModule
         msg += str(ex)
         msg += "Details:\n"
         for l in traceback.format_tb(sys.exc_info()[2]):
             msg += l
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     sys.exit(invoker.exit())
-
-
-

@@ -18,7 +18,7 @@ class CPImpl(StageOutImplV2):
     _CPImpl_
 
     Implement interface for plain cp command
-    
+
     """
 
     def createOutputDirectory(self, targetPFN):
@@ -26,24 +26,20 @@ class CPImpl(StageOutImplV2):
         I guess this masks a directory?
 
         """
-        
+
         dirName = os.path.dirname(targetPFN)
 
         if not os.path.isdir(dirName):
             os.makedirs(dirName)
 
         return
-    
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
         self.createOutputDirectory( toPfn )
         shutil.copy(fromPfn, toPfn)
         if os.path.getsize(fromPfn) != os.path.getsize(toPfn):
-            raise StageOutFailure, "Invalid file size"
+            raise StageOutFailure("Invalid file size")
         return toPfn
-
 
     def doDelete(self, pfn, seName, command, options, protocol  ):
         os.unlink(pfn)
-
-
-

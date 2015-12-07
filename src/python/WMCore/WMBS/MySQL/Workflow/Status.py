@@ -31,7 +31,7 @@ class Status(DBFormatter):
                LEFT OUTER JOIN wmbs_job_state ON
                  wmbs_job.state = wmbs_job_state.id
                GROUP BY wmbs_users.id, wmbs_workflow.task, wmbs_job_state.name"""
-    
+
     def converDecimalToInt(self, results):
         for result in results:
             if result['open'] != None:
@@ -39,7 +39,7 @@ class Status(DBFormatter):
             if result['success'] != None:
                 result['success'] = int(result['success'])
         return results
-    
+
     def execute(self, conn = None, transaction = False):
         results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
         results = self.formatDict(results)

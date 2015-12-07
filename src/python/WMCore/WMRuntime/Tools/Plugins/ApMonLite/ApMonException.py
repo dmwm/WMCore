@@ -28,7 +28,7 @@ class ApMonException(exceptions.Exception):
 
         #  //
         # // Init data dictionary with defaults
-        #// 
+        #//
         self.data = {}
         self.data.setdefault("ClassName", None)
         self.data.setdefault("ModuleName", None)
@@ -36,7 +36,7 @@ class ApMonException(exceptions.Exception):
         self.data.setdefault("ClassInstance", None)
         self.data.setdefault("FileName", None)
         self.data.setdefault("LineNumber", None)
-        
+
         self.message = message
         self.data.update(data)
 
@@ -51,7 +51,7 @@ class ApMonException(exceptions.Exception):
                 modName = excepModule.__name__
                 self['ModuleName'] = modName
 
-                
+
         #  //
         # // Find out where the exception came from
         #//
@@ -80,7 +80,7 @@ class ApMonException(exceptions.Exception):
         make exception look like a dictionary
         """
         self.data[key] = value
-        
+
     def addInfo(self, **data):
         """
         _addInfo_
@@ -100,7 +100,3 @@ class ApMonException(exceptions.Exception):
         for key, value in self.data.items():
             strg += "\t%s : %s\n" % (key, value, )
         return strg
-
-
-
-

@@ -12,7 +12,7 @@ from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMSpec.StdSpecs.PrivateMC import getTestArguments, PrivateMCWorkloadFactory
+from WMCore.WMSpec.StdSpecs.PrivateMC import PrivateMCWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -33,6 +33,7 @@ class PrivateMCTest(unittest.TestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("privatemc_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def injectAnalysisConfig(self):
@@ -63,26 +64,27 @@ class PrivateMCTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
     def testPrivateMC(self):
         """
         _testAnalysis_
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = PrivateMCWorkloadFactory.getTestArguments()
         defaultArguments["CouchURL"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "privatemc_t"
         defaultArguments["AnalysisConfigCacheDoc"] = self.injectAnalysisConfig()
-        defaultArguments["ProcessingVersion"] = 'v1'
+        defaultArguments["ProcessingVersion"] = 1
 
         processingFactory = PrivateMCWorkloadFactory()
-        testWorkload = processingFactory("TestWorkload", defaultArguments)
+        testWorkload = processingFactory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         testWorkload.setSpecUrl("somespec")
         testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
 
-        testWMBSHelper = WMBSHelper(testWorkload, "PrivateMC", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "PrivateMC", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         procWorkflow = Workflow(name = "TestWorkload",
                               task = "/TestWorkload/PrivateMC")
         procWorkflow.load()

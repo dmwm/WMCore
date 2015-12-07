@@ -51,7 +51,6 @@ class UnpackUserTarballTest(unittest.TestCase):
             'rm -rf %s' % self.base,
             'mkdir -p %s/lib/%s/' % (self.base, self.arch),
             'touch %s/lib/%s/libSomething.so' % (self.base, self.arch),
-            'touch %s/lib/%s/libSomefile.so' % (self.base, self.arch),
             'mkdir -p %s/src/Module/Submodule/data/' % (self.base),
             'touch %s/src/Module/Submodule/data/datafile.txt' % (self.base),
             'touch %s/extra_file.txt' % (self.base),
@@ -152,7 +151,7 @@ class UnpackUserTarballTest(unittest.TestCase):
         sys.argv = ['scriptName','unittestTarball.tgz,http://home.fnal.gov/~ewv/unittestTarball.tgz','']
         UnpackUserTarball()
         # First is only in web tarball, second only in local
-        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomewhere.so'))
+        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
         self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomefile.so'))
 
 

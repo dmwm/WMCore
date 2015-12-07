@@ -42,7 +42,7 @@ def initialiseWMTaskSpace(directory, taskName):
     """
     if not os.path.exists(directory):
         msg = "Directory %s not found" % directory
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     spaceDir = "%s/WMTaskSpace" % directory
     if os.path.exists(spaceDir):
@@ -85,4 +85,3 @@ class BuildMaster:
             stepType = step.stepType
             builder = StepFactory.getStepBuilder(stepType)
             builder(step, task.name(), self.taskSpace)
-

@@ -11,7 +11,7 @@ __all__ = []
 from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
 
 class JobCountByState(DefaultFormatter):
-    sql = """SELECT count(wmbs_job.state) AS job_count, wmbs_job_state.name AS job_state 
+    sql = """SELECT count(wmbs_job.state) AS job_count, wmbs_job_state.name AS job_state
              FROM wmbs_job
-             INNER JOIN wmbs_job_state ON wmbs_job.state=wmbs_job_state.id 
+             INNER JOIN wmbs_job_state ON wmbs_job.state=wmbs_job_state.id
              GROUP BY wmbs_job_state.name"""

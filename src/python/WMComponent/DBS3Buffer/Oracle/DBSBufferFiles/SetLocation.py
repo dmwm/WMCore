@@ -13,5 +13,3 @@ from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.SetLocation import SetL
 
 class SetLocation(MySQLSetLocation):
     pass
-
-                

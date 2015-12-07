@@ -1,27 +1,22 @@
 #!/usr/bin/env python
 
 """
-JobArchiver test 
+JobArchiver test
 """
 
 
 
 
 import os
-import logging
 import threading
 import unittest
-import time
 import shutil
 import cProfile, pstats
-import inspect
 
 from subprocess import Popen, PIPE
 
-from WMCore.Agent.Configuration import loadConfigurationFile, Configuration
-
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
@@ -35,21 +30,17 @@ from WMCore.WMBS.Job          import Job
 
 from WMCore.DataStructs.Run   import Run
 
-from WMComponent.JobArchiver.JobArchiver       import JobArchiver
 from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
-from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPollerException
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMComponent_t.AlertGenerator_t.Pollers_t import utils
 
 from nose.plugins.attrib import attr
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
-
 class JobArchiverTest(unittest.TestCase):
     """
-    TestCase for TestJobArchiver module 
+    TestCase for TestJobArchiver module
     """
 
 
@@ -61,7 +52,7 @@ class JobArchiverTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -79,11 +70,10 @@ class JobArchiverTest(unittest.TestCase):
         self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
 
         self.nJobs = 10
-        
-        self.alertsReceiver = None
-        
+
         EmulatorHelper.setEmulators(phedex = True, dbs = True,
                                     siteDB = True, requestMgr = False)
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -95,8 +85,7 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
-        if self.alertsReceiver:
-            self.alertsReceiver.shutdown()
+        EmulatorSetup.deleteConfig(self.configFile)
 
         return
 
@@ -107,7 +96,8 @@ class JobArchiverTest(unittest.TestCase):
 
         General config file
         """
-        config = Configuration()
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         #First the general stuff
         config.section_("General")
@@ -132,25 +122,18 @@ class JobArchiverTest(unittest.TestCase):
         config.JobArchiver.numberOfJobsToCluster = 1000
 
         config.component_('WorkQueueManager')
-	config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
-	config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
-	config.WorkQueueManager.level = 'LocalQueue'
+        config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManager"
+        config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
+        config.WorkQueueManager.level = 'LocalQueue'
         config.WorkQueueManager.logLevel = 'DEBUG'
         config.WorkQueueManager.couchurl = 'https://None'
         config.WorkQueueManager.dbname = 'whatever'
         config.WorkQueueManager.inboxDatabase = 'whatever2'
         config.WorkQueueManager.queueParams = {}
         config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cern.ch/couchdb/workqueue"
-        
-        # addition for Alerts messaging framework, work (alerts) and control
-        # channel addresses to which the component will be sending alerts
-        # these are destination addresses where AlertProcessor:Receiver listens
-        config.section_("Alert")
-        config.Alert.address = "tcp://127.0.0.1:5557"
-        config.Alert.controlAddr = "tcp://127.0.0.1:5559"
 
-        return config        
-        
+        return config
+
 
     def createTestJobGroup(self):
         """
@@ -161,7 +144,7 @@ class JobArchiverTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
 
@@ -178,7 +161,7 @@ class JobArchiverTest(unittest.TestCase):
         testWMBSFileset.addFile(testFileA)
         testWMBSFileset.addFile(testFileB)
         testWMBSFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -193,7 +176,7 @@ class JobArchiverTest(unittest.TestCase):
             testJob['retry_count'] = 1
             testJob['retry_max'] = 10
             testJobGroup.add(testJob)
-        
+
         testJobGroup.commit()
 
         return testJobGroup
@@ -203,7 +186,7 @@ class JobArchiverTest(unittest.TestCase):
     def testA_BasicFunctionTest(self):
         """
         _BasicFunctionTest_
-        
+
         Tests the components, by seeing if they can process a simple set of closeouts
         """
 
@@ -243,13 +226,13 @@ class JobArchiverTest(unittest.TestCase):
         testJobArchiver = JobArchiverPoller(config = config)
         testJobArchiver.algorithm()
 
-        
+
         result = myThread.dbi.processData("SELECT wmbs_job_state.name FROM wmbs_job_state INNER JOIN wmbs_job ON wmbs_job.state = wmbs_job_state.id")[0].fetchall()
-        
+
         for val in result:
             self.assertEqual(val.values(), ['cleanout'])
-        
-        
+
+
         dirList = os.listdir(cacheDir)
         for job in testJobGroup.jobs:
             self.assertEqual(job["name"] in dirList, False)
@@ -278,7 +261,7 @@ class JobArchiverTest(unittest.TestCase):
     def testB_SpeedTest(self):
         """
         _SpeedTest_
-        
+
         Tests the components, as in sees if they load.
         Otherwise does nothing.
         """
@@ -314,7 +297,7 @@ class JobArchiverTest(unittest.TestCase):
 
 
         testJobArchiver = JobArchiverPoller(config = config)
-        cProfile.runctx("testJobArchiver.algorithm()", globals(), locals(), filename = "testStats.stat") 
+        cProfile.runctx("testJobArchiver.algorithm()", globals(), locals(), filename = "testStats.stat")
 
 
         p = pstats.Stats('testStats.stat')
@@ -322,67 +305,7 @@ class JobArchiverTest(unittest.TestCase):
         p.print_stats(.2)
 
         return
-    
-    
-    def testJobArchiverPollerAlertsSending_constructor(self):
-        """
-        Cause exception (alert-worthy situation) in
-        the JobArchiverPoller constructor.
-        
-        """
-        myThread = threading.currentThread()
-        config = self.getConfig()
-        
-        handler, self.alertsReceiver = \
-            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
-        
-        config.JobArchiver.logDir = ""
-        config.JobArchiver.componentDir = ""
-        # invoke exception and thus Alert message
-        self.assertRaises(JobArchiverPollerException, JobArchiverPoller, config = config)
-        # wait for the generated alert to arrive
-        while len(handler.queue) == 0:
-            time.sleep(0.3)
-            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
-        
-        self.alertsReceiver.shutdown()
-        self.alertsReceiver = None
-        # now check if the alert was properly sent
-        self.assertEqual(len(handler.queue), 1)
-        alert = handler.queue[0]
-        self.assertEqual(alert["Source"], "JobArchiverPoller")
 
-
-    def testJobArchiverPollerAlertsSending_cleanJobCache(self):
-        """
-        Cause exception (alert-worthy situation) in 
-        the cleanJobCache method.
-        
-        """
-        myThread = threading.currentThread()
-        config = self.getConfig()
-        
-        handler, self.alertsReceiver = \
-            utils.setUpReceiver(config.Alert.address, config.Alert.controlAddr)
-            
-        testJobArchiver = JobArchiverPoller(config = config)
-        
-        # invoke the problem and thus Alert message
-        job = dict(cache_dir = None)
-        testJobArchiver.cleanJobCache(job)
-        # wait for the generated alert to arrive
-        while len(handler.queue) == 0:
-            time.sleep(0.3)
-            print "%s waiting for alert to arrive ..." % inspect.stack()[0][3]
-        
-        self.alertsReceiver.shutdown()
-        self.alertsReceiver = None
-        # now check if the alert was properly sent
-        self.assertEqual(len(handler.queue), 1)
-        alert = handler.queue[0]
-        self.assertEqual(alert["Source"], testJobArchiver.__class__.__name__)
-        
-        
 
 if __name__ == '__main__':
     unittest.main()

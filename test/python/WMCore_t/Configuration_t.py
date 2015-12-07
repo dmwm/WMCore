@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,C0103,R0902
+#pylint: disable=E1101,C0103,R0902
+
 
 import unittest
 import os
@@ -25,19 +26,17 @@ class ConfigurationTest(unittest.TestCase):
         self.docSave = "%s/WMCore_Agent_Configuration_t_documented.py" % self.testDir
         self.commentSave = "%s/WMCore_Agent_Configuration_t_commented.py" % self.testDir
 
+
     def tearDown(self):
         """clean up"""
         self.testInit.delWorkDir()
-
-
-
 
 
     def testA(self):
         """ctor"""
         try:
             config = Configuration()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Configuration\n"
             msg += str(ex)
             self.fail(msg)
@@ -45,8 +44,6 @@ class ConfigurationTest(unittest.TestCase):
 
     def testB(self):
         """add settings"""
-
-
         config = Configuration()
         config.section_("Section1")
 
@@ -65,9 +62,6 @@ class ConfigurationTest(unittest.TestCase):
         config.Section1.Parameter3 = 123
         config.Section1.Parameter4 = 123.456
 
-
-
-
         self.assertEqual(config.Section1.Parameter1, True)
         self.assertEqual(config.Section1.Parameter2, "string")
         self.assertEqual(config.Section1.Parameter3, 123)
@@ -76,15 +70,15 @@ class ConfigurationTest(unittest.TestCase):
         # dictionary format:
         try:
             section1Dict = config.Section1.dictionary_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error converting section to dictionary:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
-        self.failUnless( section1Dict.has_key("Parameter1"))
-        self.failUnless( section1Dict.has_key("Parameter2"))
-        self.failUnless( section1Dict.has_key("Parameter3"))
-        self.failUnless( section1Dict.has_key("Parameter4"))
+        self.failUnless( "Parameter1" in section1Dict)
+        self.failUnless( "Parameter2" in section1Dict)
+        self.failUnless( "Parameter3" in section1Dict)
+        self.failUnless( "Parameter4" in section1Dict)
 
         self.assertEqual(section1Dict['Parameter1'],
                          config.Section1.Parameter1)
@@ -95,9 +89,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(section1Dict['Parameter4'],
                          config.Section1.Parameter4)
 
-
         # compound types
-
         config.Section2.List = ["string", 123, 123.456, False]
         config.Section2.Dictionary = { "string" : "string",
                                        "int" : 123,
@@ -123,15 +115,17 @@ class ConfigurationTest(unittest.TestCase):
             RuntimeError, setattr,
             config.Section2, "BadList", badList)
 
-        badDict = { "dict" : {}, "list": [], "tuple" : () }
+        badDict = { "dict" : {}, "list": [DummyObject()], "tuple" : () }
         self.assertRaises(
             RuntimeError, setattr,
             config.Section2, "BadDict", badDict)
+        
+        goodDict = { "dict" : {}, "list": [], "tuple" : () }
+        config.Section2.GoodDict = goodDict
 
 
     def testC(self):
         """add components"""
-
         config = Configuration()
         config.component_("Component1")
         config.component_("Component2")
@@ -145,18 +139,13 @@ class ConfigurationTest(unittest.TestCase):
 
     def testD(self):
         """test documentation"""
-
-
         config = Configuration()
         config.section_("Section1")
         config.Section1.Parameter1 = True
         config.Section1.Parameter2 = "string"
         config.Section1.Parameter3 = 123
         config.Section1.Parameter4 = 123.456
-        config.Section1.Parameter5 = {
-            "test1" : "test2", "test3" : 123
-            }
-
+        config.Section1.Parameter5 = {"test1" : "test2", "test3" : 123}
 
         config.Section1.document_("""This is Section1""")
         config.Section1.document_("""This is Section1.Parameter1""",
@@ -166,46 +155,40 @@ class ConfigurationTest(unittest.TestCase):
         config.Section1.document_("""This is Section1.Parameter3\n with multiline comments""",
                                   "Parameter3")
 
-
         try:
             config.Section1.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.Section1.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
         try:
             config.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
 
-
-
-
     def testE(self):
         """test save/load """
-
         testValues = [
             "string", 123, 123.456,
             ["list", 789, 10.1 ],
             { "dict1" : "value", "dict2" : 10.0 }
             ]
-
         config = Configuration()
         for x in range(0, 5):
             config.section_("Section%s" % x)
@@ -227,7 +210,6 @@ class ConfigurationTest(unittest.TestCase):
         documentSave = config.documentedString_()
         commentSave = config.commentedString_()
 
-
         saveConfigurationFile(config, self.normalSave)
         saveConfigurationFile(config, self.docSave, document = True)
         saveConfigurationFile(config, self.commentSave, comment = True)
@@ -236,7 +218,6 @@ class ConfigurationTest(unittest.TestCase):
 
         docConfig = loadConfigurationFile(self.docSave)
 
-
         commentConfig = loadConfigurationFile(self.commentSave)
 
         #print commentConfig.commentedString_()
@@ -244,14 +225,10 @@ class ConfigurationTest(unittest.TestCase):
         #print docConfig.commentedString_()
 
 
-
     def testF(self):
         """
         Test internal functions pythonise_, listSections_
-
-        Added by mnorman for his functions
         """
-
         config = ConfigSection("config")
 
         config.section_("SectionA")
@@ -269,20 +246,17 @@ class ConfigurationTest(unittest.TestCase):
         pythonise = config.SectionA.pythonise_()
 
         assert "SectionA.section_('Section1')" in pythonise, "Pythonise failed: Could not find Section1"
-        assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"        
-        
+        assert "SectionA.Section1.x = 100"     in pythonise, "Pythonise failed: Could not find x"
+
         self.assertEqual(config.listSections_(), ['SectionB', 'SectionA'])
         self.assertEqual(config.SectionA.listSections_(), ['Section2', 'Section1'])
 
 
-        return
-    
-    
     def testG_testStaticReferenceToConfigurationInstance(self):
         """
         test Configuration.getInstance() which returns reference
         to the Configuration object instance.
-        
+
         """
         config = Configuration()
         instance = Configuration.getInstance()
@@ -291,12 +265,25 @@ class ConfigurationTest(unittest.TestCase):
         self.assertTrue(hasattr(instance, "testsection"))
         config.testsection.var = 10
         self.assertEquals(instance.testsection.var, 10)
-        
+
+
+    def testH_ConfigSectionDictionariseInternalChildren(self):
+        """
+        The test checks if any item of the dictionary_whole_tree_()
+        result is not unexpanded instance of ConfigSection.
+
+        """
+        config = ConfigSection("config")
+        config.value1 = "MyValue1"
+        config.section_("Task1")
+        config.Task1.value2 = "MyValue2"
+        config.Task1.section_("subSection")
+        config.Task1.subSection.value3 = "MyValue3"
+        d = config.dictionary_whole_tree_()
+        for values in d.values():
+            self.assertFalse(isinstance(values, ConfigSection))
+        self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
 
 
 if __name__ == '__main__':
-    #config = loadConfigurationFile("/home/evansde/work/cmssrv49/WMCORE/src/python/WMCore/Agent/testConfigs/test2.py")
-
-    #print config.Agent.wibble
-
     unittest.main()

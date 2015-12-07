@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Finished Workflows</title>
+    <link rel="stylesheet" href="style/main.css" type="text/css">
+  <script src="/_utils/script/jquery.js"></script>
+  <script src="/_utils/script/jquery.couch.js"></script>
+  </head>
+  <body>
+
+    <div id="content">
+      <h1>Finished workflows</h1>
+    </div>
+
+  <script type="text/javascript" charset="utf-8">
+    $db = $.couch.db("workloadsummary");
+
+    $db.allDocs({  
+    success: function(data) {
+      // First populate what workflows are there summarized
+      workflows = [];
+      for (row in data.rows){
+          doc = data.rows[row].id;
+          if (! doc.match(/_design.*/) ) {
+            workflows.push(doc);
+          }         
+      }
+      // Now get the content obj
+      var content = document.getElementById("content");
+      for (row in workflows) {
+        var workflow  = workflows[row];
+        var p = document.createElement("p");
+        var workflowLink = document.createElement("a");
+        p.appendChild(workflowLink);
+        workflowLink.innerHTML = workflow;
+        // Make the summary URL :
+        var summaryURL = "_show/histogramByWorkflow/" + workflow;
+        workflowLink.href = summaryURL;
+        content.appendChild(p);
+      }
+    }});
+  </script>
+  </body>
+</html>

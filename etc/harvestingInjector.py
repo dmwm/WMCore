@@ -99,11 +99,11 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     """
     print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
     args={}
-    args["url"] = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+    args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_1_1"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
-    dbsResults = dbsApi.listFiles(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
+    dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
     print "  found %d files, inserting into wmbs..." % (len(dbsResults))
 
     for dbsResult in dbsResults:
@@ -120,7 +120,7 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
         inputFileset.addFile(myFile)
 
     if len(inputFileset) < 1:
-        raise Exception, "No files were selected!"
+        raise Exception("No files were selected!")
 
     inputFileset.commit()
     inputFileset.markOpen(False)
@@ -139,6 +139,6 @@ for workloadTask in workload.taskIterator():
     injectFilesFromDBS(inputFileset, inputDatasetPath, options.RunWhitelist)
 
     myWMBSHelper = WMBSHelper(workload)
-    myWMBSHelper.createSubscription(workloadTash.getPathName())
+    myWMBSHelper._createSubscriptionsInWMBS(workloadTash.getPathName())
 
 myThread.transaction.commit()

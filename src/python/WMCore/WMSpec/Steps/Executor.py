@@ -19,13 +19,13 @@ getStepErrorDestination = lambda step: WMStepHelper(step).getErrorDestinationSte
 def getStepSpace(stepName):
     """
     _getStepSpace_
-    
+
     Util to get the runtime step space.
     This imports dynamic runtime libraries so be careful how
     you use it
-    
+
     """
-    
+
     modName = "WMTaskSpace"
     if modName in sys.modules.keys():
         taskspace = sys.modules[modName]
@@ -33,19 +33,19 @@ def getStepSpace(stepName):
         try:
             #taskspace = __import__(modName, globals(), locals(), ['taskSpace'], -1)
             taskspace = __import__(modName, globals(), locals(), ['taskSpace'])
-            
-        except ImportError, ex:
+
+        except ImportError as ex:
             msg = "Unable to load WMTaskSpace module:\n"
             msg += str(ex)
             #TODO: Generic ExecutionException...
-            raise RuntimeError, msg
-        
+            raise RuntimeError(msg)
+
     try:
         stepSpace = taskspace.taskSpace.stepSpace(stepName)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error retrieving stepSpace from TaskSpace:\n"
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return stepSpace
 
 
@@ -64,7 +64,7 @@ class Executor:
         self.diagnostic = None
         self.emulator = None
         self.emulationMode = False
-        
+
     def initialise(self, step, job):
         """
         _initialise_
@@ -97,17 +97,17 @@ class Executor:
         #  //
         # //  Does the step contain settings for an emulator?
         #//   If so, load it up
-        
+
         emulatorName = getattr(self.step.emulator, "emulatorName", None)
         if emulatorName != None:
             self.emulator = getStepEmulator(emulatorName)
             self.emulator.initialise(self)
             self.emulationMode = True
-            
-            
-            
-            
-            
+
+
+
+
+
 
         return
 
@@ -148,7 +148,7 @@ class Executor:
         """
         msg = "WMSpec.Steps.Executor.execute method not overridden in "
         msg += "implementation: %s\n" % self.__class__.__name__
-        raise NotImplementedError, msg
+        raise NotImplementedError(msg)
 
 
     def post(self, emulator = None):
@@ -163,8 +163,3 @@ class Executor:
 
         """
         return None
-
-
-
-
-

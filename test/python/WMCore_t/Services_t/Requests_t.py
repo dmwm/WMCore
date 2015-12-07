@@ -92,7 +92,7 @@ class testRequestExceptions(unittest.TestCase):
             self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
         try:
             req.makeRequest(url, verb='GET')
-        except HTTPException, e:
+        except HTTPException as e:
             #print e
             self.assertEqual(e.status, 404)
 
@@ -106,7 +106,7 @@ class testRequestExceptions(unittest.TestCase):
             self.assertRaises(HTTPException, req.makeRequest, url, verb=v)
         try:
             req.makeRequest(url, verb='GET')
-        except HTTPException, e:
+        except HTTPException as e:
             #print e
             self.assertEqual(e.status, 404)
 
@@ -145,10 +145,10 @@ class testRepeatCalls(RESTBaseUnitTest):
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
-            except HTTPException, he:
+            except HTTPException as he:
                 print 'test %s raised a %s error' % (i, he.status)
                 fail_count += 1
-            except Exception, e:
+            except Exception as e:
                 print 'test %s raised an unexpected exception of type %s' % (i, type(e))
                 print e
                 fail_count += 1
@@ -167,10 +167,10 @@ class testRepeatCalls(RESTBaseUnitTest):
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'}, decode=False)
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
-            except HTTPException, he:
+            except HTTPException as he:
                 print 'test %s raised a %s error' % (i, he.status)
                 fail_count += 1
-            except Exception, e:
+            except Exception as e:
                 print 'test %s raised an unexpected exception of type %s' % (i, type(e))
                 print e
                 fail_count += 1

@@ -30,25 +30,26 @@ class CouchWorkQueueElement(WorkQueueElement):
         self._couch = couchDB
 
     rev = property(
-        lambda x: str(x._document[u'_rev']) if x._document.has_key(u'_rev') else x._document.__getitem__('_rev'),
+        lambda x: str(x._document[u'_rev']) if u'_rev' in x._document else x._document.__getitem__('_rev'),
         lambda x, newid: x._document.__setitem__('_rev', newid))
     timestamp = property(
-        lambda x: str(x._document[u'timestamp']) if x._document.has_key(u'timestamp') else x._document.__getitem__('timestamp')
+        lambda x: str(x._document[u'timestamp']) if u'timestamp' in x._document else x._document.__getitem__('timestamp')
         )
     updatetime = property(
-        lambda x: str(x._document[u'updatetime']) if x._document.has_key(u'updatetime') else 0
+        lambda x: str(x._document[u'updatetime']) if u'updatetime' in x._document else 0
         )
 
 
     @classmethod
     def fromDocument(cls, couchDB, doc):
         """Create element from couch document"""
+        elementParams = doc.pop('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
+        elementParams["CreationTime"] = doc.pop('timestamp')
         element = CouchWorkQueueElement(couchDB = couchDB,
                                         id = doc['_id'],
-                                        elementParams = doc.pop('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
-                                        )
+                                        elementParams = elementParams)
         element._document['_rev'] = doc.pop('_rev')
-        element._document['timestamp'] = doc.pop('timestamp')
+        element._document['timestamp'] = elementParams["CreationTime"]
         element._document['updatetime'] = doc.pop('updatetime')
         return element
 
@@ -121,7 +122,7 @@ def fixElementConflicts(*elements):
             # we need to merge: Take elements from both that seem most advanced, e.g. status & progress stats
             if key not in allowed_keys:
                 msg = 'Unable to merge conflicting element %s: field "%s" value 1 "%s" value2 "%s"'
-                raise RuntimeError, msg % (ele.id, key, merged_value.get(key), ele.get(key))
+                raise RuntimeError(msg % (ele.id, key, merged_value.get(key), ele.get(key)))
             elif key == 'Status':
                 if ordered_states.index(ele[key]) > ordered_states.index(merged_value[key]):
                     merged_value[key] = ele[key]

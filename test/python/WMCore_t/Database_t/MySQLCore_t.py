@@ -24,7 +24,7 @@ class DBCoreTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         return
-            
+
     def tearDown(self):
         """
         _tearDown_
@@ -58,7 +58,7 @@ class DBCoreTest(unittest.TestCase):
                "Error: First bind parameter is wrong."
         assert bindList[0][1] == "CMSSW_12_1_8", \
                "Error: Second bind parameter is wrong."
-               
+
         return
 
     def testBindSubstitutionB(self):
@@ -68,9 +68,9 @@ class DBCoreTest(unittest.TestCase):
         Test another query that has been causing problems.
         """
         sql = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (:file_lumi_id, :run_num, :lumi_section_num, :file_id)"
-        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1L, "file_id": 1L},
-                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2L, "file_id": 1L},
-                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3L, "file_id": 1L}] 
+        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1, "file_id": 1},
+                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2, "file_id": 1},
+                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3, "file_id": 1}]
 
         myInterface = MySQLInterface(logger = logging, engine = None)
         (updatedSQL, bindList) = myInterface.substitute(sql, binds)
@@ -82,12 +82,12 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(bindList) == 3, \
                "Error: Wrong number of binds."
-        assert bindList[0] == (1L, '1', '27414', 1L), \
+        assert bindList[0] == (1, '1', '27414', 1), \
                "Error: Bind 0 has wrong values."
-        assert bindList[1] == (2L, '1', '26422', 1L), \
+        assert bindList[1] == (2, '1', '26422', 1), \
                "Error: Bind 1 has wrong values."
-        assert bindList[2] == (3L, '1', '29838', 1L), \
-               "Error: Bind 2 has wrong values."        
+        assert bindList[2] == (3, '1', '29838', 1), \
+               "Error: Bind 2 has wrong values."
 
         return
 
@@ -99,9 +99,9 @@ class DBCoreTest(unittest.TestCase):
         the query and the bind variables list have different case.
         """
         sql = "INSERT INTO FILE_LUMIS (FILE_LUMI_ID, RUN_NUM, LUMI_SECTION_NUM, FILE_ID) VALUES (:FILE_LUMI_ID, :RUN_NUM, :LUMI_SECTION_NUM, :FILE_ID)"
-        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1L, "file_id": 1L},
-                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2L, "file_id": 1L},
-                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3L, "file_id": 1L}] 
+        binds = [{"lumi_section_num": "27414", "run_num": "1", "file_lumi_id": 1, "file_id": 1},
+                 {"lumi_section_num": "26422", "run_num": "1", "file_lumi_id": 2, "file_id": 1},
+                 {"lumi_section_num": "29838", "run_num": "1", "file_lumi_id": 3, "file_id": 1}]
 
         myInterface = MySQLInterface(logger = logging, engine = None)
         (updatedSQL, bindList) = myInterface.substitute(sql, binds)
@@ -113,14 +113,14 @@ class DBCoreTest(unittest.TestCase):
 
         assert len(bindList) == 3, \
                "Error: Wrong number of binds."
-        assert bindList[0] == (1L, '1', '27414', 1L), \
+        assert bindList[0] == (1, '1', '27414', 1), \
                "Error: Bind 0 has wrong values."
-        assert bindList[1] == (2L, '1', '26422', 1L), \
+        assert bindList[1] == (2, '1', '26422', 1), \
                "Error: Bind 1 has wrong values."
-        assert bindList[2] == (3L, '1', '29838', 1L), \
-               "Error: Bind 2 has wrong values."        
+        assert bindList[2] == (3, '1', '29838', 1), \
+               "Error: Bind 2 has wrong values."
 
-        return    
+        return
 
 if __name__ == "__main__":
-    unittest.main()     
+    unittest.main()

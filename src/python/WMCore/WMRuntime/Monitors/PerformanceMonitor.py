@@ -1,10 +1,19 @@
 #!/usr/bin/env python
 
+"""
+__PerformanceMonitor_
+
+Monitor object which checks the job to ensure it is working inside
+the agreed limits of virtual memory and wallclock time, and terminate it
+if it exceeds them.
+"""
+
 import os
 import signal
 import os.path
 import logging
 import traceback
+import time
 
 import WMCore.Algorithms.SubprocessAlgos as subprocessAlgos
 import WMCore.FwkJobReport.Report        as Report
@@ -17,14 +26,12 @@ from WMCore.WMException                         import WMException
 
 getStepName = lambda step: WMStepHelper(step).name()
 
-
 def average(numbers):
     """
     Quick averaging function
 
     """
     return float(sum(numbers)) / len(numbers)
-
 
 class PerformanceMonitorException(WMException):
     """
@@ -34,7 +41,6 @@ class PerformanceMonitorException(WMException):
     """
     pass
 
-
 class PerformanceMonitor(WMRuntimeMonitor):
     """
     _PerformanceMonitor_
@@ -42,8 +48,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
     Monitors the performance by pinging ps and
     recording data regarding the current step
     """
-
-
 
     def __init__(self):
         """
@@ -53,8 +57,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         self.pid              = None
         self.uid              = os.getuid()
-        #self.grabCommand      = "ps -u %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd |grep %s |grep -v grep"
-        self.monitorBase      = "ps -p %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd -ww |grep %i"
+        self.monitorBase      = "ps -p %i -o pid,ppid,rss,vsize,pcpu,pmem,cmd -ww | grep %i"
         self.monitorCommand   = None
         self.currentStepSpace = None
         self.currentStepName  = None
@@ -64,9 +67,12 @@ class PerformanceMonitor(WMRuntimeMonitor):
         self.pcpu  = []
         self.pmem  = []
 
-        self.maxRSS   = None
-        self.maxVSize = None
-        self.logPath  = None
+        self.maxRSS      = None
+        self.maxVSize    = None
+        self.softTimeout = None
+        self.hardTimeout = None
+        self.logPath     = None
+        self.startTime   = None
 
         self.watchStepTypes = []
 
@@ -74,9 +80,7 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         WMRuntimeMonitor.__init__(self)
 
-
         return
-
 
     def initMonitor(self, task, job, logPath, args = {}):
         """
@@ -89,10 +93,22 @@ class PerformanceMonitor(WMRuntimeMonitor):
         # Set the steps we want to watch
         self.watchStepTypes = args.get('WatchStepTypes', ['CMSSW', 'PerfTest'])
 
-        self.maxRSS   = args.get('maxRSS', None)
-        self.maxVSize = args.get('maxVSize', None)
+        self.maxRSS      = args.get('maxRSS', None)
+        self.maxVSize    = args.get('maxVSize', None)
+        self.softTimeout = args.get('softTimeout', None)
+        self.hardTimeout = args.get('hardTimeout', None)
 
         self.logPath = os.path.join(logPath)
+
+        return
+
+    def jobStart(self, task):
+        """
+        _jobStart_
+
+        Acknowledge that the job has started and initialize the time
+        """
+        self.startTime = time.time()
 
         return
 
@@ -114,7 +130,6 @@ class PerformanceMonitor(WMRuntimeMonitor):
         else:
             logging.debug("Beginning PeformanceMonitor step Initialization")
             self.disableStep = False
-
 
         return
 
@@ -142,6 +157,12 @@ class PerformanceMonitor(WMRuntimeMonitor):
 
         """
         killProc = False
+        killHard = False
+        reason = ''
+        errorCodeLookup = {'RSS' : 50660,
+                           'VSZ' : 50661,
+                           'Wallclock time' : 50664,
+                           '' : 99999}
 
         if self.disableStep:
             # Then we aren't doing CPU monitoring
@@ -185,11 +206,25 @@ class PerformanceMonitor(WMRuntimeMonitor):
             msg += "Job has exceeded maxRSS: %s\n" % self.maxRSS
             msg += "Job has RSS: %s\n" % rss
             killProc = True
+            reason = 'RSS'
         if self.maxVSize != None and vsize >= self.maxVSize:
             msg += "Job has exceeded maxVSize: %s\n" % self.maxVSize
             msg += "Job has VSize: %s\n" % vsize
             killProc = True
+            reason = 'VSZ'
 
+        #Let's check the running time
+        currentTime = time.time()
+
+        if self.hardTimeout != None and self.softTimeout != None:
+            if (currentTime - self.startTime) > self.softTimeout:
+                killProc = True
+                reason = 'Wallclock time'
+                msg += "Job has been running for more than: %s\n" % str(self.softTimeout)
+                msg += "Job has been running for: %s\n" % str(currentTime - self.startTime)
+            if (currentTime - self.startTime) > self.hardTimeout:
+                killHard = True
+                msg += "Job exceeded soft timeout"
 
         if killProc:
             logging.error(msg)
@@ -202,15 +237,15 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 if os.path.isfile(logPath):
                     # We should be able to find existant job report.
                     # If not, we're in trouble
-                    logging.debug("Found pre-existant error report in DashboardMonitor termination.")
+                    logging.debug("Found pre-existant error report in PerformanceMonitor termination.")
                     report.load(logPath)
                 # Create a new step that won't be overridden by an exiting CMSSW
                 if not report.retrieveStep(step = "PerformanceError"):
                     report.addStep(reportname = "PerformanceError")
-                report.addError(stepName = "PerformanceError", exitCode = 99900,
+                report.addError(stepName = "PerformanceError", exitCode = errorCodeLookup[reason],
                                 errorType = "PerformanceKill", errorDetails = msg)
                 report.save(logPath)
-            except Exception, ex:
+            except Exception as ex:
                 # Basically, we can't write a log report and we're hosed
                 # Kill anyway, and hope the logging file gets written out
                 msg2 =  "Exception while writing out jobReport.\n"
@@ -220,11 +255,14 @@ class PerformanceMonitor(WMRuntimeMonitor):
                 logging.error(msg2)
 
             try:
-                logging.error("Attempting to kill job using SIGUSR2")
-                os.kill(stepPID, signal.SIGUSR2)
+                if not killHard:
+                    logging.error("Attempting to kill step using SIGUSR2")
+                    os.kill(stepPID, signal.SIGUSR2)
+                else:
+                    logging.error("Attempting to kill step using SIGTERM")
+                    os.kill(stepPID, signal.SIGTERM)
             except Exception:
+                logging.error("Attempting to kill step using SIGTERM")
                 os.kill(stepPID, signal.SIGTERM)
 
         return
-
-

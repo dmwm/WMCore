@@ -30,7 +30,7 @@ class FindByStatus(DBFormatter):
            JOIN reqmgr_request_status stat
              ON req.request_status = stat.status_id
            WHERE stat.status_name = :req_status
-         """ 
+         """
         binds = {"req_status": reqStatus}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)

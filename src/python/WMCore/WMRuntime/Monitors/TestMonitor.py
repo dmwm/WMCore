@@ -27,7 +27,7 @@ getStepName = lambda step: WMStepHelper(step).name()
 def getStepPID(stepSpace, stepName):
     """
     _getStepPID_
-    
+
     Find the PID for a step given its stepSpace from the file
     """
     currDir = stepSpace.location
@@ -36,10 +36,10 @@ def getStepPID(stepSpace, stepName):
         msg = "Could not find process ID file for step %s" % stepName
         logging.error(msg)
         return
-    
+
     filehandle=open(pidFile,'r')
     output=filehandle.read()
-    
+
     try:
         stepPID=int(output)
     except ValueError:
@@ -53,7 +53,7 @@ def getStepPID(stepSpace, stepName):
 def searchForEvent(file):
     """
     _searchForEvent_
-    
+
     Searches for the last event output into the CMSSW output file
     """
 
@@ -163,7 +163,7 @@ class TestMonitor(WMRuntimeMonitor):
         Run on the defined intervals.
 
         """
-        
+
         if not self.currentStep or not self.currentStepSpace:
             #We're probably between steps
             return
@@ -187,7 +187,7 @@ class TestMonitor(WMRuntimeMonitor):
 
             #First, get the PID
             stepPID = getStepPID(self.currentStepSpace, self.currentStepName)
-        
+
             #Now kill it!
             msg = ""
             msg += "Start Time: %s\n" % self.startTime
@@ -215,5 +215,3 @@ class TestMonitor(WMRuntimeMonitor):
 
 
             #logging.error(msg)
-        
-        

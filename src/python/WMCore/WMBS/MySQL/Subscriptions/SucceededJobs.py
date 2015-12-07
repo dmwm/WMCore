@@ -28,4 +28,3 @@ class SucceededJobs(DBFormatter):
         result = self.dbi.processData(self.sql, {"subscription": subscription},
                          conn = conn, transaction = transaction)
         return self.format(result)
-

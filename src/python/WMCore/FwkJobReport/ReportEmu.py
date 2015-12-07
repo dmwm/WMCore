@@ -10,7 +10,7 @@ Class for creating bogus framework job reports.
 
 import os.path
 
-from WMCore.Services.UUID import makeUUID 
+from WMCore.Services.UUID import makeUUID
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 
@@ -19,19 +19,19 @@ from WMCore.FwkJobReport import Report
 class ReportEmu(object):
     """
     _ReportEmu_
-    
+
     Job Report Emulator that creates a Report given a WMTask/WMStep and a Job instance.
     """
     def __init__(self, **options):
         """
         ___init___
-        
+
         Options contain the settings for producing the report instance from the provided step
         """
         self.step = options.get("WMStep", None)
         self.job = options.get("Job", None)
         return
-        
+
     def addInputFilesToReport(self, report):
         """
         _addInputFilesToReport_
@@ -58,11 +58,11 @@ class ReportEmu(object):
         """
         totalSize = 0
         totalEvents = 0
-        
+
         outputFirstEvent = 0
         outputTotalEvents = 0
         outputSize = 0
-        
+
         for inputFile in self.job["input_files"]:
             totalSize += inputFile["size"]
             totalEvents += inputFile["events"]
@@ -72,7 +72,7 @@ class ReportEmu(object):
             outputTotalEvents = self.job["mask"]["LastEvent"] - self.job["mask"]["FirstEvent"]
         else:
             outputTotalEvents = totalEvents
-            
+
         outputSize = int(totalSize * ((outputTotalEvents * 1.0) / (totalEvents * 1.0)))
         return (outputSize, outputTotalEvents)
 
@@ -109,20 +109,20 @@ class ReportEmu(object):
                                      "applicationName": "cmsRun",
                                      "applicationVersion": self.step.getCMSSWVersion()}
             outputFile["module_label"] = outputModuleName
-            
+
             outputFileSection = report.addOutputFile(outputModuleName, outputFile)
             for inputFile in self.job["input_files"]:
                 Report.addRunInfoToFile(outputFileSection, inputFile["runs"])
 
         return
-        
+
     def __call__(self):
         report = Report.Report(self.step.name())
-        
+
         report.id = self.job["id"]
         report.task = self.job["task"]
         report.workload = None
-        
+
         self.addInputFilesToReport(report)
         self.addOutputFilesToReport(report)
         return report

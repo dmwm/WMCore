@@ -37,6 +37,3 @@ class ListRequests(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
-
-
-

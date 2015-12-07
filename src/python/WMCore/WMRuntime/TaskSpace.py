@@ -64,10 +64,10 @@ class TaskSpace:
             return self.workload
         try:
             import WMSandbox
-        except ImportError, ex:
+        except ImportError as ex:
             msg = "Error importing WMSandbox module"
             msg += str(ex)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         wmsandboxLoc = inspect.getsourcefile(WMSandbox)
         workloadPcl = wmsandboxLoc.replace("__init__.py","WMWorkload.pkl")
@@ -126,21 +126,19 @@ class TaskSpace:
                 #space = __import__(modName, globals(), locals(), ['stepSpace'], -1)
                 space = __import__(modName, globals(), locals(), ['stepSpace'])
 
-            except ImportError, ex:
+            except ImportError as ex:
                 # TODO: Dedicated exception class
                 msg = "Unable to import StepSpace from %s:\n" % modName
                 msg += str(ex)
-                raise RuntimeError, msg
+                raise RuntimeError(msg)
 
 
         stepSpace = getattr(space, "stepSpace", None)
         if stepSpace == None:
             # TODO: Dedicated Exception class
             msg = "No stepSpace Attribute in module %s" % modName
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         setattr(stepSpace, "taskSpace", self)
 
         return stepSpace
-
-

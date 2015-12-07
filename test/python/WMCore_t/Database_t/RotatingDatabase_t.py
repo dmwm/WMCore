@@ -1,14 +1,13 @@
-from WMCore.Database.CMSCouch import RotatingDatabase, CouchServer, CouchNotFoundError
-from random import random
 import unittest
 import os
-import hashlib
-import base64
 import sys
-
 from datetime import timedelta
 from time import sleep
+
 from nose.plugins.attrib import attr
+
+from WMCore.Database.CMSCouch import RotatingDatabase, CouchServer, CouchNotFoundError
+
 
 class RotatingDatabaseTest(unittest.TestCase):
     def setUp(self):
@@ -54,6 +53,9 @@ class RotatingDatabaseTest(unittest.TestCase):
         self.assertTrue(start_name in databases)
         self.assertTrue(end_name in databases)
 
+    # This test repeatably inserts either 20 or 25 documents into couch.
+    # Disabled until it's stable
+    @attr("integration")
     def testArchive(self):
         """
         Test that archiving views works

@@ -1,0 +1,74 @@
+<html>
+<head>
+	<link href="style/style.css" media="all" rel="Stylesheet" type="text/css"/>
+	
+	<script src="vendor/couchapp/jquery.js?1.3.1"></script>
+	<script src="vendor/couchapp/json2.js"></script>
+	
+    <script src="vendor/alertscollector/alertsview.js"></script>
+    <script src="vendor/alertscollector/atomfeed.js"></script>
+    <script src="vendor/alertscollector/utils.js"></script>
+    <script src="vendor/alertscollector/config.js"></script>
+	
+   	<title>Alerts Collector - Visualisation</title>
+</head>
+
+<body>
+	<div class="template">
+	
+		<div id="sitetitle">
+			Alerts Collector - Visualisation
+		</div>
+		
+		<div id="navigation">
+			<p><a href="./index.html?object=alertsView&limit=yes"
+			      title="Display only most recent Alerts.">
+			      most recent alerts</a>
+			</p>
+			<p><a href="./index.html?object=alertsView&limit=no"
+			      title="Display all Alerts present in the CouchDB database, the loading may take very long.">
+			      all alerts</a>
+			</p>
+			<!--
+			<p><a href="./index.html?object=atomFeed">RSS feed</a></p>
+			 -->
+		</div>
+		
+		<div id="maincontentdivid" class="maincontentdiv">
+		</div>
+		
+		<!--  loading sign div, normally invisible -->
+		<div id="loadingshadowdivid" class="hidden">
+            <div class="loadingsigncentered">
+                <img src="img/loading.gif"</img>
+            </div>
+        </div>
+						
+	</div>
+</body>
+
+<!--  branch according to navigation selection -->
+<script type="text/javascript">
+	var args = utils.getUrlArguments();
+	var feature = null;
+	var input = {contentDivId: "maincontentdivid", limit: null};
+	// don't want to do eval() ...
+	switch(args.object)
+	{
+	case "atomFeed":
+		// atomFeed.update();
+		break;
+    // by default list alerts, only the most recent ones
+	case "alertsView":
+	default:
+		feature = alertsView;
+		if (args.limit === "yes" || args.limit === undefined)
+		{
+			input.limit = config.limitedViewNumOfAlerts;
+		}
+		break;
+	} // switch
+	feature["define"](input);
+	feature["update"]();
+</script>
+</html>

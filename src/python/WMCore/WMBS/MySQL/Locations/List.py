@@ -12,4 +12,4 @@ __all__ = []
 from WMCore.Database.DBFormatter import DBFormatter
 
 class List(DBFormatter):
-    sql = "select id, site_name, job_slots from wmbs_location order by site_name"
+    sql = "select id, site_name, pending_slots, running_slots from wmbs_location order by site_name"

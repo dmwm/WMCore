@@ -28,7 +28,7 @@ class WatchdogException(WMException):
 class Watchdog(threading.Thread):
     """
     Watchdog
-    
+
     It's like a watchdog!  It watches things, and then it barks at them, curls up, and goes to sleep
     Or possibly monitors them and records what they do.  It's a bit of a crapshoot at this point.
     """
@@ -49,7 +49,7 @@ class Watchdog(threading.Thread):
         # Right now we join this, because we don't know
         # Where we'll be when we need this.
         self.logPath      = os.path.join(os.getcwd(), logPath)
-        
+
         self.factory      = WMFactory(self.__class__.__name__,
                                       "WMCore.WMRuntime.Monitors")
 
@@ -89,11 +89,11 @@ class Watchdog(threading.Thread):
     def loadMonitor(self, monitorName):
         try:
             return self.factory.loadObject(monitorName)
-        except WMException, wmEx:
+        except WMException as wmEx:
             msg = "WatchdogFactory Unable to load Object: %s" % monitorName
             logging.error(msg)
             raise WatchdogException(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error creating object %s in WatchdogFactory:\n" % monitorName
             msg += str(ex)
             logging.error(msg)
@@ -115,10 +115,10 @@ class Watchdog(threading.Thread):
         event driven monitoring still occurs
         """
         self.doMonitoring = False
-        
-        
 
-    
+
+
+
     def shutdown(self):
         """
         Shutdown the monitor.
@@ -144,7 +144,7 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.jobStart(task)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyJobStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -162,7 +162,7 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.stepStart(step)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyTaskStart for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -181,7 +181,7 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.stepEnd(step = step, stepReport = stepReport)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyTaskEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -203,7 +203,7 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.jobEnd(task)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyJobEnd for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -222,7 +222,7 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.jobKilled()
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyKillJob for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
@@ -241,14 +241,14 @@ class Watchdog(threading.Thread):
         for monitor in self._Monitors:
             try:
                 monitor.stepKilled(step)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Error in notifyKillTask for monitor class %s in Watchdog:\n" % monitor.__class__
                 msg += str(ex)
                 msg += str(traceback.format_exc())
                 logging.error(msg)
                 raise WatchdogException(msg)
         #self._MonMgr.taskKilled()
-        
+
     #  //
     # // Override Thread.run() to do the periodic update
     #//  of the MonitorState object and dispatch it to the monitors
@@ -257,7 +257,7 @@ class Watchdog(threading.Thread):
         Override Thread.run() to do the periodic update
         of the MonitorState object and dispatch it to the monitors
         """
-        while 1:
+        while True:
             #  //
             # // shutdown signal
             #//
@@ -271,7 +271,7 @@ class Watchdog(threading.Thread):
                 for monitor in self._Monitors:
                     try:
                         monitor.periodicUpdate()
-                    except Exception, ex:
+                    except Exception as ex:
                         msg = "Error in periodicUpdate for monitor class %s in Watchdog:\n" % monitor.__class__
                         msg += str(ex)
                         msg += str(traceback.format_exc())
@@ -286,7 +286,7 @@ class Watchdog(threading.Thread):
 
             #time.sleep(self._Interval)
             self._Finished.wait(self._Interval)
-           
+
 
     #  //
     # // Load Monitor Objects based on Cfg settings passed

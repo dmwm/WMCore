@@ -11,7 +11,7 @@ import time
 
 from WMCore.Services.UUID import makeUUID
 import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import SubscriptionList
 from WMCore.Storage.TrivialFileCatalog import readTFC
@@ -23,7 +23,7 @@ class PhEDExTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
-        
+
         Initialize the PhEDEx API to point at the test server.
         """
         phedexTestDS = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
@@ -31,7 +31,7 @@ class PhEDExTest(unittest.TestCase):
         self.phedexApi = PhEDEx({"endpoint": phedexTestDS,
                                  "method": "POST"})
         return
-        
+
     @attr("integration")
     def testInjection(self):
         """
@@ -60,26 +60,26 @@ class PhEDExTest(unittest.TestCase):
         self.phedexApi.injectBlocks("T1_US_FNAL_MSS", xmlData)
         xmlData = XMLDrop.makePhEDExDrop(self.dbsTestUrl, datasetB)
         self.phedexApi.injectBlocks("T1_US_FNAL_MSS", xmlData)
-        
+
         testSub = PhEDExSubscription([datasetA, datasetB], "T1_UK_RAL_MSS",
                                       "Saturn")
-        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
+        xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
                                                    testSub.getDatasetPaths())
         result = self.phedexApi.subscribe(testSub, xmlData)
         requestIDs = result["phedex"]["request_created"]
 
         self.assertEqual(len(requestIDs), 1,
                          "Error: Wrong number of request IDs")
-        self.assertTrue(requestIDs[0].has_key("id"),
+        self.assertTrue("id" in requestIDs[0],
                         "Error: Missing request ID")
         return
-    
+
     @attr("integration")
     def testBestNodeName(self):
         """
         _testBestNodeName_
 
-        Verify that the node name is Buffer first 
+        Verify that the node name is Buffer first
         """
         self.failUnless(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
         return
@@ -118,7 +118,7 @@ class PhEDExTest(unittest.TestCase):
         # Create a dataset level subscription to a node
         testDatasetSub = PhEDExSubscription([testDataset], "T1_UK_RAL_MSS",
                                             "Saturn", requestOnly = "n")
-        datasetSpec = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl, 
+        datasetSpec = XMLDrop.makePhEDExXMLForDatasets(self.dbsTestUrl,
                                                        testDatasetSub.getDatasetPaths())
         self.phedexApi.subscribe(testDatasetSub, datasetSpec)
 

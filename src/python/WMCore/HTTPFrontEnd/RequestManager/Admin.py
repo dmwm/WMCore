@@ -1,5 +1,9 @@
-#!/usr/bin/env python
-""" Main Module for browsing and modifying requests """
+"""
+Main Module for browsing and modifying requests.
+
+"""
+
+
 import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
@@ -36,12 +40,12 @@ class Admin(WebAPI):
         """ Checks if alphanumeric, tolerating spaces """
         if isinstance(v, list):
             for entry in v:
-                 self.validate(entry)
+                self.validate(entry)
         else:
             try:
                 WMCore.Lexicon.identifier(v)
-            except AssertionError:
-                raise cherrypy.HTTPError(400, "Bad input %s" % name)
+            except AssertionError as ex:
+                raise cherrypy.HTTPError(400, "Bad input: %s" % str(ex))
         return v
 
     @cherrypy.expose
@@ -53,42 +57,24 @@ class Admin(WebAPI):
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     def user(self, userName):
-        """ Web page of details about the user, and sets user priority """
+        """ Web page of details about the user. """
         self.validate(userName)
         groups = GroupInfo.groupsForUser(userName).keys()
         requests = UserRequests.listRequests(userName).keys()
-        priority = UserManagement.getPriority(userName)
         allGroups = GroupInfo.listGroups()
         self.validate(groups)
         self.validate(requests)
         self.validate(allGroups)
-        return self.templatepage("User", user=userName, groups=groups, 
-            allGroups=allGroups, requests=requests, priority=priority)
-
-    @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
-    def handleUserPriority(self, user, userPriority):
-        """ Handles setting user priority """
-        self.validate(user)
-        UserManagement.setPriority(user, userPriority)
-        return "Updated user %s priority to %s" % (user, userPriority)
+        return self.templatepage("User", user=userName, groups=groups,
+            allGroups=allGroups, requests=requests)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
     def group(self, groupName):
-        """ Web page of details about the user, and sets user priority """
+        """ Web page of details about the group."""
         self.validate(groupName)
         users = GroupInfo.usersInGroup(groupName)
-        priority = GroupManagement.getPriority(groupName)
-        return self.templatepage("Group", group=groupName, users=users, priority=priority)
-
-    @cherrypy.expose
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
-    def handleGroupPriority(self, group, groupPriority):
-        """ Handles setting group priority """
-        self.validate(group)
-        GroupManagement.setPriority(group, groupPriority)
-        return "Updated group %s priority to %s" % (group, groupPriority)
+        return self.templatepage("Group", group=groupName, users=users)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -101,7 +87,6 @@ class Admin(WebAPI):
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
     def handleAddUser(self, user, email=None):
-        """ Handles setting user priority """
         self.validate(user)
         Registration.registerUser(user, email)
         return "Added user %s" % user
@@ -200,4 +185,3 @@ class Admin(WebAPI):
         """ Registers all versions in the TC """
         Utilities.updateScramArchsAndCMSSWVersions()
         return "Updated versions to current standard"
-

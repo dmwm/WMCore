@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-#pylint: disable-msg=R0913,W0702,R0914,R0912,R0201
+#pylint: disable=R0913,W0702,R0914,R0912,R0201
 """
 File: pycurl_manager.py
 Author: Valentin Kuznetsov <vkuznet@gmail.com>
@@ -9,11 +9,12 @@ The RequestHandler class provides basic APIs to get data
 from a single resource or submit mutliple requests to
 underlying data-services.
 """
-
+from __future__ import print_function
 import time
 import pycurl
 import urllib
-from httplib import HTTPException
+import httplib
+import logging
 from WMCore.Wrappers import JsonWrapper as json
 try:
     import cStringIO as StringIO
@@ -25,9 +26,9 @@ class ResponseHeader(object):
     def __init__(self, response):
         super(ResponseHeader, self).__init__()
         self.header = {}
-        self.parse(response)
         self.reason = ''
         self.fromcache = False
+        self.parse(response)
 
     def parse(self, response):
         """Parse response header and assign class member data"""
@@ -55,7 +56,7 @@ class RequestHandler(object):
     RequestHandler provides APIs to fetch single/multiple
     URL requests based on pycurl library
     """
-    def __init__(self, config=None):
+    def __init__(self, config=None, logger=None):
         super(RequestHandler, self).__init__()
         if  not config:
             config = {}
@@ -64,39 +65,50 @@ class RequestHandler(object):
         self.connecttimeout = config.get('connecttimeout', 30)
         self.followlocation = config.get('followlocation', 1)
         self.maxredirs = config.get('maxredirs', 5)
+        self.logger = logger if logger else logging.getLogger()
 
     def set_opts(self, curl, url, params, headers,
-                 ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True):
-        """Set options for given curl object
-           param needs to be a dictionary in case of GET, while PUT and POST
-           assume it is a string already encoded/quoted with urllib.encode and
-           urllib.quote.
-        """
+                 ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
+        """Set options for given curl object, params should be a dictionary"""
+        if  params == None:
+            params = {}
+        if  not isinstance(params, dict):
+            raise TypeError("pycurl parameters should be passed as dictionary")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        if  verb == 'GET':
+        if  params:
             encoded_data = urllib.urlencode(params, doseq=doseq)
-            url = url + '?' + encoded_data
+        else:
+            encoded_data = ''
+        if  verb == 'GET':
+            if  encoded_data:
+                url = url + '?' + encoded_data
+        elif verb == 'HEAD':
+            if  encoded_data:
+                url = url + '?' + encoded_data
+            curl.setopt(pycurl.CUSTOMREQUEST, verb)
+            curl.setopt(pycurl.HEADER, 1)
+            curl.setopt(pycurl.NOBODY, True)
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
             if params:
-                curl.setopt(pycurl.POSTFIELDS, params)
-        elif verb == 'DELETE':
-            curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
-        elif verb == 'PUT':
-            curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+        elif verb == 'DELETE' or verb == 'PUT':
+            curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
-            curl.setopt(pycurl.POSTFIELDS, params)
+            if params:
+                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
         curl.setopt(pycurl.URL, url)
-        curl.setopt(pycurl.HTTPHEADER, \
-                ["%s: %s" % (k, v) for k, v in headers.items()])
+        if  headers:
+            curl.setopt(pycurl.HTTPHEADER, \
+                    ["%s: %s" % (k, v) for k, v in headers.items()])
         bbuf = StringIO.StringIO()
         hbuf = StringIO.StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -104,6 +116,8 @@ class RequestHandler(object):
         if  capath:
             curl.setopt(pycurl.CAPATH, capath)
             curl.setopt(pycurl.SSL_VERIFYPEER, True)
+            if cainfo:
+                curl.setopt(pycurl.CAINFO, cainfo)
         else:
             curl.setopt(pycurl.SSL_VERIFYPEER, False)
         if  ckey:
@@ -117,7 +131,7 @@ class RequestHandler(object):
 
     def debug(self, debug_type, debug_msg):
         """Debug callback implementation"""
-        print "debug(%d): %s" % (debug_type, debug_msg)
+        print("debug(%d): %s" % (debug_type, debug_msg))
 
     def parse_body(self, data, decode=False):
         """
@@ -128,8 +142,10 @@ class RequestHandler(object):
             try:
                 res = json.loads(data)
             except ValueError as exc:
-                msg = 'Unable to load JSON data\n%s' % data
-                raise ValueError(exc)
+                msg = 'Unable to load JSON data, %s, data type=%s, pass as is' \
+                        % (str(exc), type(data))
+                logging.warning(msg)
+                return data
             return res
         else:
             return data
@@ -142,18 +158,25 @@ class RequestHandler(object):
         return ResponseHeader(header)
 
     def request(self, url, params, headers=None, verb='GET',
-                verbose=0, ckey=None, cert=None, capath=None, doseq=True, decode=False):
+                verbose=0, ckey=None, cert=None, capath=None, doseq=True, decode=False, cainfo=None):
         """Fetch data for given set of parameters"""
         curl = pycurl.Curl()
         bbuf, hbuf = self.set_opts(curl, url, params, headers,
-                ckey, cert, capath, verbose, verb, doseq)
+                ckey, cert, capath, verbose, verb, doseq, cainfo)
         curl.perform()
+        if  verbose:
+            print(verb, url, params, headers)
         header = self.parse_header(hbuf.getvalue())
-        if  header.status == 200:
-            data = self.parse_body(bbuf.getvalue(), decode)
+        if  header.status < 300:
+            if  verb == 'HEAD':
+                data = ''
+            else:
+                data = self.parse_body(bbuf.getvalue(), decode)
         else:
             data = bbuf.getvalue()
-            exc = HTTPException()
+            msg = 'url=%s, code=%s, reason=%s, headers=%s' \
+                    % (url, header.status, header.reason, header.header)
+            exc = httplib.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)
             setattr(exc, 'url', url)
@@ -161,6 +184,8 @@ class RequestHandler(object):
             setattr(exc, 'status', header.status)
             setattr(exc, 'reason', header.reason)
             setattr(exc, 'headers', header.header)
+            bbuf.flush()
+            hbuf.flush()
             raise exc
 
         bbuf.flush()
@@ -170,8 +195,8 @@ class RequestHandler(object):
     def getdata(self, url, params, headers=None, verb='GET',
                 verbose=0, ckey=None, cert=None, doseq=True):
         """Fetch data for given set of parameters"""
-        _, data = self.request(url, params, headers, verb,
-                    verbose, ckey, cert, doseq)
+        _, data = self.request(url=url, params=params, headers=headers, verb=verb,
+                    verbose=verbose, ckey=ckey, cert=cert, doseq=doseq)
         return data
 
     def getheader(self, url, params, headers=None, verb='GET',
@@ -198,7 +223,7 @@ class RequestHandler(object):
                 ret = multi.select(1.0)
                 if  ret == -1:
                     continue
-                while 1:
+                while True:
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break

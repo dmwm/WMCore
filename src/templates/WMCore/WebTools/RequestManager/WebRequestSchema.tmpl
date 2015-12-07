@@ -70,18 +70,43 @@ Software Release:
 </select><br/>
 #end def 
 
+#def performanceBlock
+Time per event (Seconds): <input type="text" name="TimePerEvent" size=10 value=12 />
+Memory (MBytes): <input type="text" name="Memory" size=10 value=2300 />
+Size per event (KBytes): <input type="text" name="SizePerEvent" size=10 value=512 /><br/>
+#end def
+
+#def dqmOptions
+<input type="checkbox" name="EnableHarvesting"/>Enable DQM Harvesting<br/>
+DQM ConfigCacheID: <input type="text" name="DQMConfigCacheID" size=40 /><br/>
+DQM Sequences: <input type="text" name="DqmSequences" size=40 />
+DQM URL:
+<select name="DQMUploadUrl">
+    <option selected> https://cmsweb.cern.ch/dqm/dev </option>
+    <option> https://cmsweb.cern.ch/dqm/offline </option>
+    <option> https://cmsweb.cern.ch/dqm/relval </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/dev </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/offline </option>
+    <option> https://cmsweb-testbed.cern.ch/dqm/relval </option>
+</select><br/>
+
+#end def
+
+#def scenarioBlock
+Scenario:
+  <select name="ProcScenario">
+    <option selected> pp</option>
+    <option>cosmics</option>
+    <option>hcalnzs</option>
+    <option>preprodmc</option>
+    <option>prodmc</option>
+  </select><br/>
+#end def
+
 #def configBlock($radioName, $scenarioName, $cacheName, $type)
 Configuration <br>
-  <input type="radio" name=$radioName value="scenario" /> Scenario
-    <select name="Scenario">
-      <option selected> pp</option>
-      <option>cosmics</option>
-      <option>hcalnzs</option>
-      <option>preprodmc</option>
-      <option>prodmc</option>
-      <option>relvalmc</option>
-      <option>relvalmcfs</option>
-    </select><br/>
+  <input type="radio" name=$radioName value="scenario" /> Scenario <br/>
+  $scenarioBlock
   <input type="radio" name=$radioName value="couchDB" /> $type ConfigCache ID
     <!--<input type="text" name="$cacheName" size=80 />
     <select name=$cacheName>
@@ -93,9 +118,7 @@ Configuration <br>
        <input name="$cacheName" size=80 id="couchinput" type="text">
        <div id="couchcontainer"></div>
     </div>
-  <br/>
-
-Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
+Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp <br>
 #end def
 
 #def campaignBlock
@@ -107,15 +130,14 @@ Campaign: <input type="text" name="Campaign" size=40 id="campaign" />
 
 #def ioBlock
 Input Dataset: <input type="text" name="InputDataset" size=40 /><br/>
-
-DBS: <!--input type="text" name="dbs" value="http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet" size=80/><br/-->
+Open Running Timeout: <input type="text" name="OpenRunningTimeout" size=10 value="0"/><br/>
+DBS: <!--input type="text" name="dbs" value="https://cmsweb.cern.ch/dbs/prod/global/DBSReader" size=80/><br/-->
 <select name="DbsUrl">
-		<option>http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet</option>
-                <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_01/servlet/DBSServlet</option>
-                <option>http://cmsdbsprod.cern.ch/cms_dbs_ph_analysis_02/servlet/DBSServlet</option>
-		<option>https://cmsweb-dev.cern.ch/dbs/prod/global/DBSWriter</option>
-		<option>https://dbs3-dev01.cern.ch/dbs/prod/global/DBSWriter</option>
-		<option>http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/global/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys01/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys02/DBSReader</option>
+	<option>https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader</option>
+	<option>https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader</option>
 </select><br>
 #end def
 
@@ -132,6 +154,9 @@ function addSkim() {
   newdiv.innerHTML = 'Skim Name: <input type="text", name="SkimName'+nskim+'" size=20 value="skim'+nskim+'"/><br/>' 
   + ' Skim Input '+nskim+': <input type="text", name="SkimInput'+nskim+'" size=40"/><br/>' 
   +'Skim ConfigCache ID ' + nskim +': <input type="text" name="Skim'+nskim+'ConfigCacheID"/> <br/>'
+  +'Skim Time per Event ' + nskim +': <input type="text" name="SkimTimePerEvent'+nskim+'" size=10/> <br/>'
+  +'Skim Size per Event ' + nskim +': <input type="text" name="SkimSizePerEvent'+nskim+'" size=10/> <br/>'
+  +'Skim Memory ' + nskim +': <input type="text" name="SkimMemory'+nskim+'" size=10/> <br/>'
   ni.appendChild(newdiv);
   ++nskim;
 }
@@ -163,11 +188,15 @@ Emulator:
      <p><input type="submit" value="Submit"/></p></form>
 #end def
 
+#def initialLumiEventBlock
+First event: <input type="text" name="FirstEvent" size=10 value=1 />
+First lumi: <input type="text" name="FirstLumi" size=10 value=1 /><br/>
+#end def
+
 <div id="tabby" class="yui-navset">
     <ul class="yui-nav">
         <li class="selected"><a href="#rereco"><em>ReReco</em></a></li>
         <li><a href="#mc"><em>Monte Carlo</em></a></li>
-        <li><a href="#relvalmc"><em>RelVal MC</em></a></li>
         <li><a href="#storeResults"><em>StoreResults</em></a></li>
         <li><a href="#DataProcessing"><em>DataProcessing</em></a></li>
         <li><a href="#Resubmission"><em>Resubmission</em></a></li>
@@ -180,40 +209,27 @@ Emulator:
             $softwareBlock
 Include Parents: <select name="IncludeParents"><option>True</option><option selected>False</option></select><br/>
             $campaignBlock
-            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Reco")
+            $configBlock("inputMode", "Scenario", "ConfigCacheID", "Reco")
+            $dqmOptions
             $ioBlock
             $skimBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("ReReco")
         </div>
         <div id="mc">
             $headerBlock
             $softwareBlock
 # of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 />
-Time per event: <input type="text" name="TimePerEvent" size=10 value=60 />
 Filter efficiency: <input type="text" name="FilterEfficiency" size=10 value=1.0 />
-Total job time: <input type="text" name="TotalTime", value=32400 />
-            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "MC")
+Total job time: <input type="text" name="TotalTime", value=32400 /><br/>
+            $performanceBlock
+            $initialLumiEventBlock
+            $configBlock("inputMode", "Scenario", "ConfigCacheID", "MC")
 Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $trailerBlock("MonteCarlo")
-        </div>
-        <div id="relvalmc">
-            $headerBlock
-            $softwareBlock
-            $campaignBlock
-Global Tag: <input type="text" name="GlobalTag" size=20 value=""/> &nbsp &nbsp
-# of Events: <input type="text" name="RequestNumEvents" size=10 value=1000 /><br/>
-Generation ConfigCache ID <input type="text" name="GenConfigCacheID" size=80 /><br/>
-Generation Output Module Name: <input type="text" name="GenOutputModuleName" size=40 /><br/>
-Step One ConfigCache ID <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
-Step Two ConfigCache ID <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
-StepOne Output Module Name: <input type="text" name="StepOneOutputModuleName" size=40 /><br/>
-Primary Dataset: <input type="text" name="PrimaryDataset" size=40 /><br/>
-Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
-MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
-            $trailerBlock("RelValMC")
         </div>
         <div id="storeResults">
             $headerBlock
@@ -224,6 +240,7 @@ CMS Path: <input type="text" name="CmsPath" size=50/><br/>
             $softwareBlock
             $campaignBlock
             $ioBlock
+            $performanceBlock
             $trailerBlock("StoreResults")
         </div>
         <div id="DataProcessing">
@@ -232,9 +249,11 @@ CMS Path: <input type="text" name="CmsPath" size=50/><br/>
 Include Parents: <select name="IncludeParents"><option>True</option><option selected>False</option></select><br/>
             $campaignBlock
 Multicore: <input type="text" name="Multicore" size=2 value="" /> <br/>
-            $configBlock("inputMode", "Scenario", "ProcConfigCacheID", "Processing")
+            $configBlock("inputMode", "Scenario", "ConfigCacheID", "Processing")
+            $dqmOptions
             $ioBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("DataProcessing")
         </div>
         <div id="Resubmission">
@@ -243,6 +262,9 @@ Original Request Name: <input type="text" name="OriginalRequestName" size=30/> <
 Initial Task Path: <input type="text" name="InitialTaskPath" size=30/><br/>
 ACDC Server URL: <input type="text" name="ACDCServer" size=30/><br/>
 ACDC Database Name: <input type="text" name="ACDCDatabase" size=30/><br/>
+Ignored Output Modules: <input type="text" name="IgnoredOutputModules" size=40/><br/>
+Alternative Collection Name: <input type="text" name="CollectionName" size=40/><br/>
+            $performanceBlock
             $trailerBlock("Resubmission")
         </div>
         <div id="ReDigi">
@@ -252,27 +274,31 @@ Include Parents: <select name="IncludeParents"><option>True</option><option sele
             $campaignBlock
             $ioBlock
 <br/>
-Step One CacheCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
+            $scenarioBlock
+            $dqmOptions
+Step One ConfigCache ID: <input type="text" name="StepOneConfigCacheID" size=80 /><br/>
 Step One Output Module Name: <input type="text" name="StepOneOutputModuleName" size=20 /><br/>
-Step Two CacheCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
+Step Two ConfigCache ID: <input type="text" name="StepTwoConfigCacheID" size=80 /><br/>
 Step Two Output Module Name: <input type="text" name="StepTwoOutputModuleName" size=20 /><br/>
-Step Three CacheCache ID: <input type="text" name="StepThreeConfigCacheID" size=80 /><br/>
+Step Three ConfigCache ID: <input type="text" name="StepThreeConfigCacheID" size=80 /><br/>
 Keep Step One Output: <select name="KeepStepOneOutput"><option>True</option><option>False</option></select><br/>
 Keep Step Two Output: <select name="KeepStepTwoOutput"><option>True</option><option>False</option></select><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
 Data Pileup: <input type="text" name="DataPileup" size=80 /><br/>
 MC Pileup: <input type="text" name="MCPileup" size=80 /><br/>
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("ReDigi")
     </div>
         <div id="MonteCarloFromGEN">
             $headerBlock
             $softwareBlock
             $campaignBlock
-ConfigCache ID: <input type="text" name="ProcConfigCacheID" size=80 /><br/>
+ConfigCache ID: <input type="text" name="ConfigCacheID" size=80 /><br/>
 Global Tag: <input type="text" name="GlobalTag" size=20 value=""/><br/>
             $ioBlock
             $runBlockBlock
+            $performanceBlock
             $trailerBlock("MonteCarloFromGEN")
         </div>
 </div>

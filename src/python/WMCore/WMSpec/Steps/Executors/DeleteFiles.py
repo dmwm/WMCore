@@ -18,7 +18,7 @@ import traceback
 from WMCore.WMSpec.Steps.Executor           import Executor
 
 import WMCore.Storage.DeleteMgr as DeleteMgr
-        
+
 from WMCore.WMSpec.Steps.Executors.LogArchive import Alarm, alarmHandler
 import WMCore.Storage.FileManager
 
@@ -42,7 +42,7 @@ class DeleteFiles(Executor):
             return emulator.emulatePre( self.step )
 
 
-        
+
         print "Steps.Executors.DeleteFiles.pre called"
         return None
 
@@ -73,15 +73,17 @@ class DeleteFiles(Executor):
         # Pull out StageOutMgr Overrides
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+        if 'newStageOut' in overrides and overrides.get('newStageOut'):
             useNewStageOutCode = True
-            
+
         stageOutCall = {}
-        if overrides.has_key("command") and overrides.has_key("option") \
-               and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
+        if "command" in overrides and "option" in overrides \
+               and "se-name" in overrides and "phedex-node" in overrides \
+               and"lfn-prefix" in overrides:
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
+            stageOutCall['phedex-node']= overrides.get('phedex-node')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real
@@ -113,6 +115,7 @@ class DeleteFiles(Executor):
             fileForTransfer = {'LFN': file.get('lfn'),
                                'PFN': None,  # PFNs are assigned in the Delete Manager
                                'SEName' : None,  # SEName is assigned in the delete manager
+                               'PNN' : None,  # PNN is assigned in the delete manager
                                'StageOutCommand': None}
             filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
 
@@ -124,43 +127,44 @@ class DeleteFiles(Executor):
                     fileForTransfer = {'LFN' : v,
                                        'PFN' : None,
                                        'SEName' : None,
+                                       'PNN' : None,
                                        'StageOutCommand' : None}
                     filesDeleted.append( self.deleteOneFile(fileForTransfer, manager, waitTime))
-            
+
 
 
         # Now we've got to put things in the report
         for file in filesDeleted:
             self.report.addRemovedCleanupFile(**file)
 
-                
+
         return
 
     def deleteOneFile(self, fileForTransfer, manager, waitTime):
-            signal.signal(signal.SIGALRM, alarmHandler)
-            signal.alarm(waitTime)
+        signal.signal(signal.SIGALRM, alarmHandler)
+        signal.alarm(waitTime)
 
-            try:
-                manager(fileToDelete = fileForTransfer)
-                #Afterwards, the file should have updated info.
-                return fileForTransfer
+        try:
+            manager(fileToDelete = fileForTransfer)
+            #Afterwards, the file should have updated info.
+            return fileForTransfer
 
-            except Alarm:
-                msg = "Indefinite hang during stageOut of logArchive"
-                logging.error(msg)
-            except Exception, ex:
-                msg = "General failure in StageOut for DeleteFiles"
-                msg += str(ex)
-                logging.error(msg)
-                logging.error("Traceback: ")
-                logging.error(traceback.format_exc())
-                self.report.addError(self.stepName, 1, "StageOutFailure", str(msg))
-                self.report.setStepStatus(self.stepName, 1)
-                self.report.persist("Report.pkl")
-                raise
+        except Alarm:
+            msg = "Indefinite hang during stageOut of logArchive"
+            logging.error(msg)
+        except Exception as ex:
+            msg = "General failure in StageOut for DeleteFiles"
+            msg += str(ex)
+            logging.error(msg)
+            logging.error("Traceback: ")
+            logging.error(traceback.format_exc())
+            self.report.addError(self.stepName, 1, "StageOutFailure", str(msg))
+            self.report.setStepStatus(self.stepName, 1)
+            self.report.persist("Report.pkl")
+            raise
 
-            signal.alarm(0)
-    
+        signal.alarm(0)
+
     def post(self, emulator = None):
         """
         _post_
@@ -171,6 +175,6 @@ class DeleteFiles(Executor):
         #Another emulator check
         if (emulator != None):
             return emulator.emulatePost( self.step )
-        
+
         print "Steps.Executors.DeleteFiles.post called"
         return None

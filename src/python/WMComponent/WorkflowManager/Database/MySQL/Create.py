@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103
+#pylint: disable=E1103
 """
 _Create_
 
@@ -18,16 +18,16 @@ from WMCore.Database.DBCreator import DBCreator
 class Create(DBCreator):
     """
     _Create_
-    
+
     Class for creating MySQL specific schema for persistent messages.
     """
-    
+
     def __init__(self,logger=None, dbi=None, params = None):
         myThread = threading.currentThread()
         DBCreator.__init__(self, myThread.logger, myThread.dbi)
         self.create = {}
         self.constraints = {}
-        self.create['taa'] = """      
+        self.create['taa'] = """
 SET AUTOCOMMIT = 0; """
         self.create['ta_wm_managed_workflow'] = """
 CREATE TABLE `wm_managed_workflow` (

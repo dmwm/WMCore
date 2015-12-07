@@ -46,7 +46,8 @@ class TestChangeState(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("changestate_t/jobs", "JobDump")
-        self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")        
+        self.testInit.setupCouch("changestate_t/fwjrs", "FWJRDump")
+        self.testInit.setupCouch("job_summary", "WMStats")
 
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
@@ -55,11 +56,11 @@ class TestChangeState(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-
-        self.couchServer = CouchServer(dburl = os.getenv("COUCHURL"))
-        self.config = Configuration()
-        self.config.component_("JobStateMachine")
-        self.config.JobStateMachine.couchurl = os.getenv("COUCHURL")
+        
+        couchurl = os.getenv("COUCHURL")
+        self.couchServer = CouchServer(dburl = couchurl)
+        self.config = self.testInit.getConfiguration()
+        self.taskName = "/TestWorkflow/Task"
         return
 
     def tearDown(self):
@@ -73,9 +74,9 @@ class TestChangeState(unittest.TestCase):
         return
 
     def testCheck(self):
-    	"""
-    	This is the test class for function Check from module ChangeState
-    	"""
+        """
+        This is the test class for function Check from module ChangeState
+        """
         change = ChangeState(self.config, "changestate_t")
 
         # Run through all good state transitions and assert that they work
@@ -88,22 +89,21 @@ class TestChangeState(unittest.TestCase):
         for state in self.transitions.keys():
             for dest in dummystates:
                 self.assertRaises(AssertionError, change.check, dest, state)
-    	return
+        return
 
     def testRecordInCouch(self):
-    	"""
+        """
         _testRecordInCouch_
-        
-        Verify that jobs, state transitions and fwjrs are recorded into seperate
-        couch documents correctly.
-    	"""
+
+        Verify that jobs, state transitions and fwjrs are recorded correctly.
+        """
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -111,11 +111,11 @@ class TestChangeState(unittest.TestCase):
                                         workflow = testWorkflow,
                                         split_algo = "FileBased")
         testSubscription.create()
-        
+
         testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["somese.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["somese.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.create()
         testFileB.create()
 
@@ -139,7 +139,7 @@ class TestChangeState(unittest.TestCase):
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
         testJobB["taskType"] = "Processing"
-        
+
         change.propagate([testJobA, testJobB], "new", "none")
         change.propagate([testJobA, testJobB], "created", "new")
         change.propagate([testJobA, testJobB], "executing", "created")
@@ -147,11 +147,10 @@ class TestChangeState(unittest.TestCase):
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(type(transition["timestamp"]) in (types.IntType,
-                                                             types.LongType))
+            self.assertTrue(type(transition["timestamp"]) in (int,
+                                                             long))
 
-        assert testJobADoc["jobid"] == testJobA["id"], \
-               "Error: ID parameter is incorrect."
+        self.assertEqual(testJobADoc["jobid"] , testJobA["id"], "Error: ID parameter is incorrect.")
         assert testJobADoc["name"] == testJobA["name"], \
                "Error: Name parameter is incorrect."
         assert testJobADoc["jobgroup"] == testJobA["jobgroup"], \
@@ -174,11 +173,11 @@ class TestChangeState(unittest.TestCase):
         assert testJobADoc["mask"]["FirstRun"] == testJobA["mask"]["FirstRun"], \
                "Error: First run in mask is incorrect."
         assert testJobADoc["mask"]["LastEvent"] == testJobA["mask"]["LastRun"], \
-               "Error: First event in mask is incorrect."        
+               "Error: First event in mask is incorrect."
 
         assert len(testJobADoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
-        
+
         testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
 
         assert testJobBDoc["jobid"] == testJobB["id"], \
@@ -200,7 +199,7 @@ class TestChangeState(unittest.TestCase):
                "Error: First run in mask is incorrect."
         assert testJobBDoc["mask"]["LastEvent"] == testJobB["mask"]["LastRun"], \
                "Error: First event in mask is incorrect."
-        
+
         assert len(testJobBDoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
 
@@ -225,28 +224,74 @@ class TestChangeState(unittest.TestCase):
             couchJobDoc = changeStateDB.document(row["value"]["id"])
             self.assertEqual(couchJobDoc["_rev"], row["value"]["rev"],
                              "Error: Rev is wrong.")
-            
+
+        return
+
+    def testUpdateFailedDoc(self):
+        """
+        _testUpdateFailedDoc_
+
+        Verify that the update function will work correctly and not throw a 500
+        error if the doc didn't make it into the database for some reason.
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = self.taskName)
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
+                         locations = set(["T2_CH_CERN"]))
+        testFileA.create()
+        testFileset.addFile(testFileA)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
+        testJobA["couch_record"] = str(testJobA["id"])
+
+        change.propagate([testJobA], "new", "none")
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
+
+        self.assertTrue("states" in testJobADoc)
+        self.assertTrue("1" in testJobADoc["states"])
         return
 
     def testPersist(self):
         """
         _testPersist_
-        
+
         This is the test class for function Propagate from module ChangeState
         """
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -271,52 +316,52 @@ class TestChangeState(unittest.TestCase):
         testJobB = jobGroup.jobs[1]
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
-        testJobB["taskType"] = "Processing"        
+        testJobB["taskType"] = "Processing"
         testJobC = jobGroup.jobs[2]
         testJobC["user"] = "sfoulkes"
         testJobC["group"] = "DMWM"
-        testJobC["taskType"] = "Processing"        
+        testJobC["taskType"] = "Processing"
         testJobD = jobGroup.jobs[3]
         testJobD["user"] = "sfoulkes"
         testJobD["group"] = "DMWM"
         testJobD["taskType"] = "Processing"
 
         change.persist([testJobA, testJobB], "created", "new")
-        change.persist([testJobC, testJobD], "new", "none")        
+        change.persist([testJobC, testJobD], "new", "none")
 
         stateDAO = self.daoFactory(classname = "Jobs.GetState")
 
         jobAState = stateDAO.execute(id = testJobA["id"])
         jobBState = stateDAO.execute(id = testJobB["id"])
         jobCState = stateDAO.execute(id = testJobC["id"])
-        jobDState = stateDAO.execute(id = testJobD["id"])        
+        jobDState = stateDAO.execute(id = testJobD["id"])
 
         assert jobAState == "created" and jobBState =="created" and \
                jobCState == "new" and jobDState == "new", \
                "Error: Jobs didn't change state correctly."
-        
+
         return
 
     def testRetryCount(self):
         """
         _testRetryCount_
-        
+
         Verify that the retry count is incremented when we move out of the
         submitcooloff or jobcooloff state.
         """
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -341,11 +386,11 @@ class TestChangeState(unittest.TestCase):
         testJobB = jobGroup.jobs[1]
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
-        testJobB["taskType"] = "Processing"        
+        testJobB["taskType"] = "Processing"
         testJobC = jobGroup.jobs[2]
         testJobC["user"] = "sfoulkes"
         testJobC["group"] = "DMWM"
-        testJobC["taskType"] = "Processing"        
+        testJobC["taskType"] = "Processing"
         testJobD = jobGroup.jobs[3]
         testJobD["user"] = "sfoulkes"
         testJobD["group"] = "DMWM"
@@ -353,7 +398,7 @@ class TestChangeState(unittest.TestCase):
 
         change.persist([testJobA], "created", "submitcooloff")
         change.persist([testJobB], "created", "jobcooloff")
-        change.persist([testJobC, testJobD], "new", "none")        
+        change.persist([testJobC, testJobD], "new", "none")
 
         testJobA.load()
         testJobB.load()
@@ -367,9 +412,9 @@ class TestChangeState(unittest.TestCase):
         assert testJobC["retry_count"] == 0, \
                "Error: Retry count is wrong."
         assert testJobD["retry_count"] == 0, \
-               "Error: Retry count is wrong."        
+               "Error: Retry count is wrong."
 
-        return    
+        return
 
     def testJobSerialization(self):
         """
@@ -380,19 +425,19 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -446,7 +491,7 @@ class TestChangeState(unittest.TestCase):
         assert "cmsRun1" in fwjrDoc["fwjr"]["steps"].keys(), \
                "Error: cmsRun1 step is missing from FWJR."
         assert "stageOut1" in fwjrDoc["fwjr"]["steps"].keys(), \
-               "Error: stageOut1 step is missing from FWJR."        
+               "Error: stageOut1 step is missing from FWJR."
 
         return
 
@@ -460,19 +505,19 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -498,7 +543,7 @@ class TestChangeState(unittest.TestCase):
         testJobA["fwjr"] = myReport
 
         change.propagate([testJobA], 'executing', 'created')
-        change.propagate([testJobA], 'executing', 'created')        
+        change.propagate([testJobA], 'executing', 'created')
 
         changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
         allDocs = changeStateDB.document("_all_docs")
@@ -511,138 +556,6 @@ class TestChangeState(unittest.TestCase):
                 fwjrDoc = changeStateDB.document(resultRow["id"])
                 break
 
-        return    
-
-    def testDashboardTransitions(self):
-    	"""
-        _testDashboardTransitions_
-
-        Verify that the dashboard transitions code works correctly.
-    	"""
-        change = ChangeState(self.config, "changestate_t")
-
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test", wfType = "ReDigi")
-        testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
-        testFileset.create()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
-        testSubscription.create()
-        
-        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["somese.cern.ch"]))
-        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["somese.cern.ch"]))
-        testFileA.create()
-        testFileB.create()
-
-        testFileset.addFile(testFileA)
-        testFileset.addFile(testFileB)
-        testFileset.commit()
-
-        splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
-
-        assert len(jobGroup.jobs) == 2, \
-               "Error: Splitting should have created two jobs."
-
-        testJobA = jobGroup.jobs[0]
-        testJobA["user"] = "sfoulkes"
-        testJobA["group"] = "DMWM"
-        testJobB = jobGroup.jobs[1]
-        testJobB["user"] = "sfoulkes"
-        testJobB["group"] = "DMWM"
-
-        # We con't catch executing jobs anymore
-        change.propagate([testJobA, testJobB], "new", "none")
-        change.propagate([testJobA, testJobB], "created", "new")
-        change.propagate([testJobA], "executing", "created")
-        change.propagate([testJobB], "submitfailed", "created")
-        change.propagate([testJobB], "submitcooloff", "submitfailed")
-
-        transitions = change.listTransitionsForDashboard()
-
-        self.assertEqual(len(transitions), 0,
-                         "Error: Wrong number of transitions")        
-
-        change.propagate([testJobB], "created", "submitcooloff")
-        change.propagate([testJobB], "executing", "created")
-        change.propagate([testJobA, testJobB], "complete", "executing")
-        change.propagate([testJobB], "success", "complete")
-        change.propagate([testJobA], "jobfailed", "complete")        
-        timestamp = int(time.time())
-
-        transitions = change.listTransitionsForDashboard()
-
-        for transition in transitions:
-            self.assertTrue(timestamp - 10 < transition["timestamp"] and
-                            timestamp + 10 > transition["timestamp"],
-                            "Error: Timestamp is wrong.")
-            del transition["timestamp"]
-
-        goldenTransitions = [{"name": testJobB["name"], "retryCount": 1, "newState": "success",
-                              "oldState": "complete", "requestName": "wf001", "user": "sfoulkes",
-                              "group": "DMWM", "jobType": "Processing", "taskType": "ReDigi",
-                              "performance": {}, "exitCode": 0}]
-        self.assertEqual(transitions, goldenTransitions,
-                         "Error: Wrong transitions: %s %s" % (transitions, goldenTransitions))
-
-        xmlPath = os.path.join(getTestBase(),
-                               "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-        
-        myReport = Report("cmsRun1")
-        myReport.parse(xmlPath)
-        testJobA["fwjr"] = myReport
-        change.propagate([testJobA], "complete", "executing")
-        change.propagate([testJobA], "success", "complete")        
-
-        transitions = change.listTransitionsForDashboard()
-
-        self.assertEqual(len(transitions), 1,
-                         "Error: Wrong number of transitions.")
-
-        perfSection = transitions[0]["performance"]["cmsRun1"]
-        self.assertTrue(perfSection.has_key("storage"),
-                        "Error: Storage section is missing.")
-        self.assertTrue(perfSection.has_key("memory"),
-                        "Error: Memory section is missing.")
-        self.assertTrue(perfSection.has_key("cpu"),
-                        "Error: CPU section is missing.")
-
-        self.assertEqual(perfSection["cpu"]["AvgEventCPU"], "0.626105",
-                         "Error: AvgEventCPU is wrong.")
-        self.assertEqual(perfSection["cpu"]["TotalJobTime"], "23.5703",
-                         "Error: TotalJobTime is wrong.")
-        self.assertEqual(perfSection["storage"]["readTotalMB"], 39.6166,
-                         "Error: readTotalMB is wrong.")
-        self.assertEqual(perfSection["storage"]["readMaxMSec"], 320.653,
-                         "Error: readMaxMSec is wrong")
-        self.assertEqual(perfSection["memory"]["PeakValueRss"], "492.293",
-                         "Error: PeakValueRss is wrong.")
-        self.assertEqual(perfSection["memory"]["PeakValueVsize"], "643.281",
-                         "Error: PeakValueVsize is wrong.")
-
-        failedReport = Report()
-        failedReport.unpersist(os.path.join(getTestBase(),
-                                            "WMCore_t/JobStateMachine_t/FailedReport.pkl"))
-        change.propagate([testJobB], "complete", "executing")
-        testJobB["fwjr"] = failedReport
-        testJobB["retry_count"] += 1
-        change.propagate([testJobB], "success", "complete")        
-
-        transitions = change.listTransitionsForDashboard()
-
-        self.assertEqual(len(transitions), 1,
-                         "Error: Wrong number of transitions.")
-        self.assertEqual(transitions[0]["exitCode"], "8020",
-                         "Error: Wrong exit code.")
         return
 
 
@@ -655,16 +568,16 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["somese.cern.ch"]))
+            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
@@ -689,11 +602,11 @@ class TestChangeState(unittest.TestCase):
         testJobB = jobGroup.jobs[1]
         testJobB["user"] = "sfoulkes"
         testJobB["group"] = "DMWM"
-        testJobB["taskType"] = "Processing"        
+        testJobB["taskType"] = "Processing"
         testJobC = jobGroup.jobs[2]
         testJobC["user"] = "sfoulkes"
         testJobC["group"] = "DMWM"
-        testJobC["taskType"] = "Processing"        
+        testJobC["taskType"] = "Processing"
         testJobD = jobGroup.jobs[3]
         testJobD["user"] = "sfoulkes"
         testJobD["group"] = "DMWM"
@@ -729,19 +642,19 @@ class TestChangeState(unittest.TestCase):
         change = ChangeState(self.config, "changestate_t")
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = "Test")
+                                name = "wf001", task = self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["somese.cern.ch"]))
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -764,6 +677,7 @@ class TestChangeState(unittest.TestCase):
         reportPath = os.path.join(getTestBase(),
                                   "WMCore_t/JobStateMachine_t/Report.pkl")
         myReport.unpersist(reportPath)
+
         testJobA["fwjr"] = myReport
 
         change.propagate([testJobA], 'executing', 'created')
@@ -789,8 +703,261 @@ class TestChangeState(unittest.TestCase):
 
         self.assertEqual(fwjrDoc["fwjr"]["steps"]['cmsRun1']['input']['source'], [])
 
+        return
+
+
+    def testJobSummary(self):
+        """
+        _testJobSummary_
+
+        verify that job summary for jobs with fwjr are correctly created
+        and that status is updated when updatesummary flag is enabled
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = self.taskName)
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 1, \
+               "Error: Splitting should have created one job."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "cinquo"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Analysis"
+
+        change.propagate([testJobA], 'created', 'new')
+        myReport = Report()
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+
+        change.propagate([testJobA], 'executing', 'created')
+        testJobA["fwjr"] = myReport
+        change.propagate([testJobA], 'jobfailed', 'executing')
+
+        changeStateDB = self.couchServer.connectDatabase(dbname = self.config.JobStateMachine.jobSummaryDBName)
+        allDocs = changeStateDB.document("_all_docs")
+        
+        self.assertEqual(len(allDocs["rows"]), 2,
+                         "Error: Wrong number of documents")
+
+        fwjrDoc = {'state': None}
+        for resultRow in allDocs["rows"]:
+            if resultRow["id"] != "_design/WMStats":
+                fwjrDoc = changeStateDB.document(resultRow["id"])
+                break
+
+        self.assertEqual(fwjrDoc['state'], 'jobfailed',
+                         "Error: summary doesn't have the expected job state")
+
+        del testJobA["fwjr"]
+
+        change.propagate([testJobA], 'jobcooloff', 'jobfailed', updatesummary = True)
+        return
+
+
+    def testIndexConflict(self):
+        """
+        _testIndexConflict_
+
+        Verify that in case of conflict in the job index
+        we discard the old document and replace with a new
+        one
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = self.taskName)
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 1, \
+               "Error: Splitting should have created one job."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "dballest"
+        testJobA["group"] = "CompOps"
+        testJobA["taskType"] = "Processing"
+
+        myReport = Report()
+        reportPath = os.path.join(getTestBase(),
+                                  "WMCore_t/JobStateMachine_t/Report.pkl")
+        myReport.unpersist(reportPath)
+
+        testJobA["fwjr"] = myReport
+        change.propagate([testJobA], 'created', 'new')
+
+        jobdatabase = self.couchServer.connectDatabase('changestate_t/jobs', False)
+        fwjrdatabase = self.couchServer.connectDatabase('changestate_t/fwjrs', False)
+        jobDoc = jobdatabase.document("1")
+        fwjrDoc = fwjrdatabase.document("1-0")
+        self.assertEqual(jobDoc["workflow"], "wf001", "Wrong workflow in couch job document")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], self.taskName, "Wrong task in fwjr couch document")
+
+        testJobA.delete()
+
+        myThread = threading.currentThread()
+        myThread.dbi.processData("ALTER TABLE wmbs_job AUTO_INCREMENT = 1")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf002", task = "/TestWorkflow/Test2")
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFilesetB")
+        testFileset.create()
+
+        testFile = File(lfn = "SomeLFNB", locations = set(["T2_CH_CERN"]))
+        testFile.create()
+        testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow)
+        testSubscription.create()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        testJobB = jobGroup.jobs[0]
+        testJobB["user"] = "dballest"
+        testJobB["group"] = "CompOps"
+        testJobB["taskType"] = "Processing"
+        testJobB["fwjr"] = myReport
+
+        change.propagate([testJobB], 'created', 'new')
+        jobDoc = jobdatabase.document("1")
+        fwjrDoc = fwjrdatabase.document("1-0")
+        self.assertEqual(jobDoc["workflow"], "wf002", "Job document was not overwritten")
+        self.assertEqual(fwjrDoc["fwjr"]["task"], "/TestWorkflow/Test2", "FWJR document was not overwritten")
 
         return
-    
+
+    def testUpdateLocation(self):
+        """
+        _testUpdateLocation_
+
+        Check that we can update the location of a job through
+        the state machine.
+        """
+        change = ChangeState(self.config, "changestate_t")
+
+        locationAction = self.daoFactory(classname = "Locations.New")
+        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction.execute("site2", pnn = "T1_US_FNAL_Disk")
+
+        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
+                                name = "wf001", task = self.taskName)
+        testWorkflow.create()
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+        testSubscription = Subscription(fileset = testFileset,
+                                        workflow = testWorkflow,
+                                        split_algo = "FileBased")
+        testSubscription.create()
+
+        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
+                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
+                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileA.create()
+        testFileB.create()
+
+        testFileset.addFile(testFileA)
+        testFileset.addFile(testFileB)
+        testFileset.commit()
+
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = testSubscription)
+        jobGroup = jobFactory(files_per_job = 1)[0]
+
+        assert len(jobGroup.jobs) == 2, \
+               "Error: Splitting should have created two jobs."
+
+        testJobA = jobGroup.jobs[0]
+        testJobA["user"] = "sfoulkes"
+        testJobA["group"] = "DMWM"
+        testJobA["taskType"] = "Merge"
+        testJobA["site_cms_name"] = "site1"
+        testJobB = jobGroup.jobs[1]
+        testJobB["user"] = "sfoulkes"
+        testJobB["group"] = "DMWM"
+        testJobB["taskType"] = "Processing"
+        testJobB["site_cms_name"] = "site2"
+
+        change.propagate([testJobA, testJobB], "new", "none")
+        change.propagate([testJobA, testJobB], "created", "new")
+        change.propagate([testJobA, testJobB], "executing", "created")
+
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
+
+        maxKey = max(testJobADoc["states"].keys())
+        transition = testJobADoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site1")
+
+        testJobBDoc = change.jobsdatabase.document(testJobB["couch_record"])
+
+        maxKey = max(testJobBDoc["states"].keys())
+        transition = testJobBDoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site2")
+
+        jobs = [{'jobid' : 1, 'location' : 'site2'}]
+
+        change.recordLocationChange(jobs)
+
+        testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
+
+        maxKey = max(testJobADoc["states"].keys())
+        transition = testJobADoc["states"][maxKey]
+        self.assertEqual(transition["location"], "site2")
+
+        listJobsDAO = self.daoFactory(classname = "Jobs.GetLocation")
+        jobid = [{'jobid' : 1}, {'jobid' : 2}]
+        jobsLocation = listJobsDAO.execute(jobid)
+        for job in jobsLocation:
+            self.assertEqual(job['site_name'], 'site2')
+
+        return
+
 if __name__ == "__main__":
     unittest.main()

@@ -34,27 +34,28 @@ class CouchappTest(unittest.TestCase):
 
     def setUp(self):
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "couchapp_t_0"
-        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
-        self.testInit.setupCouch("%s/jobs" % self.databaseName, "JobDump")
-        self.testInit.setupCouch("%s/fwjrs" % self.databaseName, "FWJRDump")
+        
 
         # Setup config for couch connections
         config = self.testInit.getConfiguration()
-        config.section_("JobStateMachine")
-        config.JobStateMachine.couchurl     = os.getenv("COUCHURL", "cmssrv52.fnal.gov:5984")
-        config.JobStateMachine.couchDBName  = self.databaseName
-
+        
+        self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
+        self.testInit.setupCouch("%s/jobs" % config.JobStateMachine.couchDBName, "JobDump")
+        self.testInit.setupCouch("%s/fwjrs" % config.JobStateMachine.couchDBName, "FWJRDump")
+        self.testInit.setupCouch(config.JobStateMachine.summaryStatsDBName, "SummaryStats")
+                                 
         # Create couch server and connect to databases
         self.couchdb      = CouchServer(config.JobStateMachine.couchurl)
         self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)
         self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % config.JobStateMachine.couchDBName)
+        self.statsumdatabase = self.couchdb.connectDatabase(config.JobStateMachine.summaryStatsDBName)
 
         # Create changeState
         self.changeState = ChangeState(config)
@@ -68,6 +69,7 @@ class CouchappTest(unittest.TestCase):
     def tearDown(self):
 
         self.testInit.clearDatabase(modules = ["WMCore.WMBS"])
+        self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         #self.testInit.tearDownCouch()
         return
@@ -81,7 +83,7 @@ class CouchappTest(unittest.TestCase):
         """
 
         workload = testWorkload("Tier1ReReco")
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -95,7 +97,7 @@ class CouchappTest(unittest.TestCase):
                            task = "/TestWorkload/ReReco", nJobs = 10):
         """
         _createTestJobGroup_
-        
+
         Generate a test WMBS JobGroup with real FWJRs
         """
 
@@ -104,7 +106,7 @@ class CouchappTest(unittest.TestCase):
         testWorkflow = Workflow(spec = specLocation, owner = "Simon",
                                 name = name, task = task)
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = name)
         testWMBSFileset.create()
 
@@ -115,7 +117,7 @@ class CouchappTest(unittest.TestCase):
         testFileB = File(lfn = makeUUID(), size = 1024, events = 10)
         testFileB.addRun(Run(10, *[12312]))
         testFileB.setLocation('malpaquet')
-        
+
         testFileA.create()
         testFileB.create()
 
@@ -123,7 +125,7 @@ class CouchappTest(unittest.TestCase):
         testWMBSFileset.addFile(testFileB)
         testWMBSFileset.commit()
         testWMBSFileset.markOpen(0)
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow)
         testSubscription.create()
@@ -139,7 +141,7 @@ class CouchappTest(unittest.TestCase):
             testJob['retry_max'] = 10
             testJob['mask'].addRunAndLumis(run = 10, lumis = [12312, 12313])
             testJobGroup.add(testJob)
-        
+
         testJobGroup.commit()
 
         report = Report()
@@ -157,7 +159,8 @@ class CouchappTest(unittest.TestCase):
         for job in testJobGroup.jobs:
             job['fwjr'] = report
         self.changeState.propagate(testJobGroup.jobs, 'jobfailed', 'complete')
-        self.changeState.propagate(testJobGroup.jobs, 'exhausted', 'jobfailed')
+        self.changeState.propagate(testJobGroup.jobs, 'retrydone', 'jobfailed')
+        self.changeState.propagate(testJobGroup.jobs, 'exhausted', 'retrydone')
         self.changeState.propagate(testJobGroup.jobs, 'cleanout', 'exhausted')
 
         testSubscription.completeFiles([testFileA, testFileB])
@@ -186,10 +189,10 @@ class CouchappTest(unittest.TestCase):
                                                 specLocation = workloadPath,
                                                 error = False, nJobs = 10)
 
-        
+
         jobID = self.jobsdatabase.loadView("JobDump", "highestJobID")['rows'][0]['value']
         self.assertEqual(jobID, 19)
-        
+
         return
 
 

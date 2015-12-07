@@ -40,16 +40,15 @@ class JobSubmitterCachingTest(unittest.TestCase):
                                 useDefault = False)
         self.testInit.setupCouch("jobsubmittercaching_t/jobs", "JobDump")
         self.testInit.setupCouch("jobsubmittercaching_t/fwjrs", "FWJRDump")
-        
+
         resourceControl = ResourceControl()
         for siteName in ["T1_US_FNAL", "T1_UK_RAL"]:
-            resourceControl.insertSite(siteName = siteName, seName = "se.%s" % (siteName),
+            resourceControl.insertSite(siteName = siteName, pnn = "se.%s" % (siteName),
                                        ceName = siteName, plugin = "CondorPlugin", cmsName = siteName)
             resourceControl.insertThreshold(siteName = siteName, taskType = "Processing",
-                                            maxSlots = 10000)
+                                            maxSlots = 10000, pendingSlots = 10000)
 
         self.testDir = self.testInit.generateWorkDir()
-        #os.environ["COUCHDB"] = "jobsubmittercaching_t"
         self.configFile = EmulatorSetup.setupWMAgentConfig()
         return
 
@@ -86,7 +85,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         config.component_("JobSubmitter")
         config.JobSubmitter.submitDir = self.testDir
-        return config        
+        return config
 
     def injectJobs(self):
         """
@@ -99,8 +98,8 @@ class JobSubmitterCachingTest(unittest.TestCase):
         testWorkflowA.create()
         testWorkflowB = Workflow(spec = "specB.pkl", owner = "Steve",
                                  name = "wf002", task = "TestTaskB")
-        testWorkflowB.create()        
-        
+        testWorkflowB.create()
+
         testFileset = Fileset("testFileset")
         testFileset.create()
 
@@ -123,8 +122,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
             newJobA = Job(name = "testJobA-%s" % i, files = [newFile])
             newJobA["workflow"] = "wf001"
-            newJobA["siteWhitelist"] = ["T1_US_FNAL"]
-            newJobA["siteBlacklist"] = []
+            newJobA["possiblePSN"] = ["T1_US_FNAL"]
             newJobA["sandbox"] = "%s/somesandbox" % self.testDir
             newJobA["owner"] = "Steve"
 
@@ -142,8 +140,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
             newJobB = Job(name = "testJobB-%s" % i, files = [newFile])
             newJobB["workflow"] = "wf001"
-            newJobB["siteWhitelist"] = ["T1_UK_RAL"]
-            newJobB["siteBlacklist"] = []
+            newJobB["possiblePSN"] = ["T1_UK_RAL"]
             newJobB["sandbox"] = "%s/somesandbox" % self.testDir
             newJobB["owner"] = "Steve"
 
@@ -158,7 +155,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
             jobHandle.close()
 
             stateChanger.propagate([newJobB], "created", "new")
-            
+
         return
 
     def testCaching(self):
@@ -169,6 +166,7 @@ class JobSubmitterCachingTest(unittest.TestCase):
         """
         config            = self.createConfig()
         mySubmitterPoller = JobSubmitterPoller(config)
+        mySubmitterPoller.getThresholds()
         mySubmitterPoller.refreshCache()
 
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
@@ -176,25 +174,25 @@ class JobSubmitterCachingTest(unittest.TestCase):
 
         self.injectJobs()
         mySubmitterPoller.refreshCache()
-        
+
         # Verify the cache is full
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 20,
-                         "Error: The job cache should contain 20 jobs.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))       
+                         "Error: The job cache should contain 20 jobs.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))
 
         killWorkflow("wf001", jobCouchConfig = config)
         mySubmitterPoller.refreshCache()
-        
+
         # Verify that the workflow is gone from the cache
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 10,
-                         "Error: The job cache should contain 10 jobs. Contains: %i" % len(mySubmitterPoller.cachedJobIDs))        
+                         "Error: The job cache should contain 10 jobs. Contains: %i" % len(mySubmitterPoller.cachedJobIDs))
 
         killWorkflow("wf002", jobCouchConfig = config)
         mySubmitterPoller.refreshCache()
-        
+
         # Verify that the workflow is gone from the cache
         self.assertEqual(len(mySubmitterPoller.cachedJobIDs), 0,
                          "Error: The job cache should be empty.  Contains: %i" % len(mySubmitterPoller.cachedJobIDs))
         return
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

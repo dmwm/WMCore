@@ -33,7 +33,7 @@ class FindByTeam(DBFormatter):
              JOIN reqmgr_assignment assign
                ON req.request_id = assign.request_id
              WHERE stat.status_name = :req_status AND assign.team_id = :team_id
-             """ 
+             """
             binds = {"req_status": reqStatus, "team_id": teamId}
         else:
             self.sql = """
@@ -41,12 +41,8 @@ class FindByTeam(DBFormatter):
              JOIN reqmgr_assignment assign
                ON req.request_id = assign.request_id
              WHERE assign.team_id = :team_id
-            """ 
+            """
             binds = {"team_id": teamId}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return dict(self.format(result))
-
-
-
-

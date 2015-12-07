@@ -1,5 +1,5 @@
 #!/bin/env python
-#pylint: disable-msg=E1103, C0103
+#pylint: disable=E1103, C0103
 # E1103: Threads have things attached to them
 # C0103: We use readable names for method names
 """
@@ -81,7 +81,7 @@ class ConfigTest(unittest.TestCase):
     def initComponents(self, configPath):
         """
         _initComponents_
-        
+
         Start up the various components using the config
         """
 
@@ -144,9 +144,9 @@ class ConfigTest(unittest.TestCase):
             config.WorkloadSummary.couchurl    = os.environ['COUCHURL']
             config.WorkloadSummary.database    = '%s/workloadsummary' % self.dbName
 
-        
+
         # Get all components
-        
+
 
         components.append(JobCreator(config = config))
         components.append(JobSubmitter(config = config))
@@ -190,31 +190,11 @@ class ConfigTest(unittest.TestCase):
         configPath = os.path.join(WMCore.WMInit.getWMBASE(),
                                   'etc', 'WMAgentConfig.py')
 
-    
+
         self.initComponents(configPath = configPath)
 
 
         return
-
-    @attr('integration')
-    def testB_WMAgentPromptSkimConfig(self):
-        """
-        _WMAgentConfig_
-
-        Test the WMAgentConfig file in WMCORE/etc
-        """
-
-        # Get the config
-        configPath = os.path.join(WMCore.WMInit.getWMBASE(),
-                                  'etc', 'WMAgentPromptSkimConfig.py')
-
-    
-        self.initComponents(configPath = configPath)
-
-
-        return
-
-
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

@@ -24,15 +24,15 @@ class SetParentageByJob(DBFormatter):
              WHERE wmbs_job_assoc.job  = :jobid
              AND wmbs_file_details.lfn = :child
     """
-    
-    
+
+
     def execute(self, binds, conn = None, transaction = False):
         """
         Expect binds of form {'jobid', 'child'}
 
         """
 
-        result = self.dbi.processData(self.sql, binds, 
+        result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
 
-        return 
+        return

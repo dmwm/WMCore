@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US" lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="keywords" content="CMS, RequestManager, ReqMgr" />
+
+	<link href="@MOUNT@/static?html/ReqMgr/style/style.css" media="all" rel="Stylesheet" type="text/css"/>	
+	
+	<script src="@MOUNT@/static?html/ReqMgr/javascript/utils.js"></script>
+	<script src="@MOUNT@/static?html/ReqMgr/javascript/config.js"></script>
+    <script src="@MOUNT@/static?html/ReqMgr/javascript/requestsview.js"></script>
+       
+   	<title>ReqMgr</title>
+</head>
+
+<body>
+	<div class="template">
+	
+		<div id="sitetitle">
+            CMS RequestManager
+		</div>
+		
+		<div id="navigation">
+			<p><a href="#"
+			      title="More recent requests.">
+			      most recent requests</a>
+			</p>
+			<!--  another view option ...
+			<p><a href="./index.html?object=arguments1&limit=no"
+			-->
+			<p><a href="#"
+			      title="Another view option.">
+			      another view option</a>
+			</p>
+		</div>
+		
+		<div id="maincontentdivid" class="maincontentdiv">
+		</div>
+		
+		<!--  loading sign div, normally invisible -->
+		<div id="loadingshadowdivid" class="hidden">
+            <div class="loadingsigncentered">
+                <img src="@MOUNT@/static?html/ReqMgr/img/loading.gif"</img>
+            </div>
+        </div>
+						
+	</div>
+</body>
+
+<!--  branch according to navigation selection -->
+<script type="text/javascript">
+	var args = utils.getUrlArguments();
+	var feature = null;
+	var input = {contentDivId: "maincontentdivid", limit: null};
+	// don't want to do eval() ...
+	switch(args.object)
+	{
+    // by default list requests, only the most recent ones (according to configuration)
+	case "requestsView":
+	default:
+		feature = requestsView;
+		break;
+	} // switch
+	feature["define"](input);
+	feature["update"]();
+</script>
+</html>

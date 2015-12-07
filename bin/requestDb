@@ -62,7 +62,7 @@ if not hasattr(config, "CoreDatabase"):
 socketLoc = getattr(config.CoreDatabase, "socket", None)
 connectUrl = getattr(config.CoreDatabase, "connectUrl", None)
 (dialect, junk) = connectUrl.split(":", 1)
-print socketLoc, connectUrl ,dialect, junk
+
 wmInit = WMInit()
 wmInit.setDatabaseConnection(dbConfig = connectUrl, dialect = dialect,
                              socketLoc = socketLoc)
@@ -105,7 +105,7 @@ def doDelete():
     for request in requests:
         if user or args == ['all'] or request['RequestName'] in args:
             print "Deleting " + request['RequestName']
-            RequestAdmin.deleteRequest(request["RequestID"])
+            RequestAdmin.deleteRequest(request["RequestName"])
 
 if sys.argv[1] == 'list':
     for request in getList():

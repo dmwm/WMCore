@@ -25,10 +25,9 @@ class Downloader:
         logging.debug("Download Agent serving file: %s" % name)
 
         if os.path.commonprefix([name,  self.rootdir]) != self.rootdir:
-            raise RuntimeError, "You tried to leave the CacheDir"
+            raise RuntimeError("You tried to leave the CacheDir")
         if not os.path.exists(name):
-            raise RuntimeError, "%s not found" % name
+            raise RuntimeError("%s not found" % name)
         return serve_file(name, "application/x-download", "attachment")
 
     index.exposed = True
-

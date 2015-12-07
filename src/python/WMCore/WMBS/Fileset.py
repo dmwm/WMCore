@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #Turn off to many arguments
-#pylint: disable-msg=R0913
-#Turn off over riding built in id 
-#pylint: disable-msg=W0622
+#pylint: disable=R0913
+#Turn off over riding built in id
+#pylint: disable=W0622
 """
 _Fileset_
 
 A simple object representing a Fileset in WMBS.
 
-A fileset is a collection of files for processing. This could be a 
+A fileset is a collection of files for processing. This could be a
 complete block, a block in transfer, some user defined dataset etc.
 
 workflow + fileset = subscription
@@ -25,27 +25,27 @@ class Fileset(WMBSBase, WMFileset):
     """
     A simple object representing a Fileset in WMBS.
 
-    A fileset is a collection of files for processing. This could be a 
-    complete block, a block in transfer, some user defined dataset, a 
+    A fileset is a collection of files for processing. This could be a
+    complete block, a block in transfer, some user defined dataset, a
     many file lumi-section etc.
-    
+
     workflow + fileset = subscription
     """
-    def __init__(self, name=None, id=-1, is_open=True, files=None, 
+    def __init__(self, name=None, id=-1, is_open=True, files=None,
                  parents=None, parents_open=True, source=None, sourceUrl=None):
         WMBSBase.__init__(self)
         WMFileset.__init__(self, name = name, files=files)
 
         if parents == None:
             parents = set()
-        
+
         # Create a new fileset
         self.id = id
         self.open = is_open
         self.parents = parents
         self.setParentage(parents, parents_open)
         self.source = source
-        self.sourceUrl = sourceUrl 
+        self.sourceUrl = sourceUrl
         self.lastUpdate = 0
 
     def setLastUpdate(self, timeUpdate):
@@ -62,14 +62,14 @@ class Fileset(WMBSBase, WMFileset):
 
         self.lastUpdate = timeUpdate
         return
-    
+
     def addFile(self, file):
         """
         Add the file object to the set, but don't commit to the database
         Call commit() to do that - enables bulk operations
         """
         WMFileset.addFile(self, file)
-    
+
     def setParentage(self, parents, parents_open):
         """
         Set parentage for this fileset - set parents to closed
@@ -79,10 +79,10 @@ class Fileset(WMBSBase, WMFileset):
                 if isinstance(parent, Fileset):
                     self.parents.add(parent)
                 else:
-                    self.parents.add(Fileset(name=parent, 
-                                             is_open=parents_open, 
+                    self.parents.add(Fileset(name=parent,
+                                             is_open=parents_open,
                                              parents_open=False))
-    
+
     def exists(self):
         """
         Does a fileset exist with this name in the database
@@ -99,7 +99,7 @@ class Fileset(WMBSBase, WMFileset):
                 self.id = result
 
         return result
-        
+
     def create(self):
         """
         Add the new fileset to WMBS, and commit the files
@@ -110,7 +110,7 @@ class Fileset(WMBSBase, WMFileset):
             self.load()
             self.commitTransaction(existingTransaction)
             return
-        
+
         createAction = self.daofactory(classname = "Fileset.New")
         createAction.execute(self.name, self.open, conn = self.getDBConn(),
                              transaction = self.existingTransaction())
@@ -119,7 +119,7 @@ class Fileset(WMBSBase, WMFileset):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def delete(self):
         """
         Remove this fileset from WMBS
@@ -129,8 +129,8 @@ class Fileset(WMBSBase, WMFileset):
                                 transaction = self.existingTransaction())
 
         return result
-    
-    def load(self): 
+
+    def load(self):
         """
         _load_
 
@@ -141,7 +141,7 @@ class Fileset(WMBSBase, WMFileset):
             action = self.daofactory(classname = "Fileset.LoadFromID")
             result = action.execute(fileset = self.id,
                                     conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())                                    
+                                    transaction = self.existingTransaction())
         else:
             action = self.daofactory(classname = "Fileset.LoadFromName")
             result = action.execute(fileset = self.name,
@@ -155,11 +155,11 @@ class Fileset(WMBSBase, WMFileset):
 
         return self
 
-    def loadData(self): 
+    def loadData(self, parentage = 1):
         """
         _loadData_
 
-        Load all the files that belong to this fileset.   
+        Load all the files that belong to this fileset.
         """
         existingTransaction = self.beginTransaction()
 
@@ -176,19 +176,19 @@ class Fileset(WMBSBase, WMFileset):
 
         for result in results:
             file = File(id = result["fileid"])
-            file.loadData(parentage = 1)
+            file.loadData(parentage = parentage)
             self.files.add(file)
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def commit(self):
         """
-        Add contents of self.newfiles to the database, 
+        Add contents of self.newfiles to the database,
         empty self.newfiles, reload self
         """
         existingTransaction = self.beginTransaction()
-        
+
         if not self.exists():
             self.create()
 
@@ -201,7 +201,7 @@ class Fileset(WMBSBase, WMFileset):
             ids.append(f["id"])
             self.files.add(f)
 
-        #Add Files to DB only if there are any files on newfiles            
+        #Add Files to DB only if there are any files on newfiles
         if len(ids) > 0:
             addAction = self.daofactory(classname = "Files.AddToFilesetByIDs")
             addAction.execute(file = ids, fileset = self.id,

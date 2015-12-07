@@ -28,14 +28,14 @@ config.Plotter.templates = config.WebtoolsDocs.templates
 #yui.base = "http://localhost:8080/controllers/yui/"
 #yui.path = environ['YUI_ROOT']
 #yui.concat = True
-# Views are all pages 
+# Views are all pages
 config.Plotter.section_('views')
-# These are all the active pages that Root.py should instantiate 
+# These are all the active pages that Root.py should instantiate
 active = config.Plotter.views.section_('active')
 
 #active += config.WebtoolsDocs.views.section_('active')
 
-#active.section_('controllers') 
+#active.section_('controllers')
 #active.controllers = config.WebtoolsDocs.views.active.controllers
 active.section_('plotfairy')
 active.plotfairy.object = 'WMCore.WebTools.RESTApi'

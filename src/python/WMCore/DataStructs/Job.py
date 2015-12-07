@@ -9,14 +9,9 @@ Data object that describes a job
 __all__ = []
 
 
-
-from WMCore.DataStructs.Fileset import Fileset
-from WMCore.DataStructs.JobGroup import JobGroup
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Configuration import ConfigSection
-
-from WMCore.Services.UUID import makeUUID
 
 import time
 
@@ -49,6 +44,9 @@ class Job(WMObject, dict):
         self["fwjr_path"] = None
         self["workflow"] = None
         self["owner"] = None
+        self["estimatedJobTime"] = None
+        self["estimatedMemoryUsage"] = None
+        self["estimatedDiskUsage"] = None
         return
 
     #  //
@@ -99,7 +97,7 @@ class Job(WMObject, dict):
 
         Add a file or list of files to the job's input.
         """
-        if type(file) == list:
+        if isinstance(file, list):
             self["input_files"].extend(file)
         else:
             self["input_files"].append(file)
@@ -124,6 +122,30 @@ class Job(WMObject, dict):
         Change the final outcome of the job, can be either success or fail.
         """
         self["outcome"] = jobOutcome
+        return
+
+    def addResourceEstimates(self, jobTime = None, memory = None, disk = None):
+        """
+        _addResourceEstimates_
+
+        Add to the current resource estimates, if None then initialize them
+        to the given value. Each value can be set independently.
+        """
+        if not self["estimatedJobTime"]:
+            self["estimatedJobTime"] = jobTime
+        elif jobTime:
+            self["estimatedJobTime"] += jobTime
+
+        if not self["estimatedMemoryUsage"]:
+            self["estimatedMemoryUsage"] = memory
+        elif memory:
+            self["estimatedMemoryUsage"] += memory
+
+        if not self["estimatedDiskUsage"]:
+            self["estimatedDiskUsage"] = disk
+        elif disk:
+            self["estimatedDiskUsage"] += disk
+
         return
 
     def getBaggage(self):
@@ -156,5 +178,3 @@ class Job(WMObject, dict):
                 currentPSet = getattr(currentPSet, param)
             else:
                 setattr(currentPSet, param, value)
-
-

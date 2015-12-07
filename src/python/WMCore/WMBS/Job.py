@@ -2,15 +2,15 @@
 """
 _Job_
 
-A job is owned by a jobgroup (which gives it it's workflow) and is 
+A job is owned by a jobgroup (which gives it it's workflow) and is
 associated to a (set of) file(s). The job interacts with its jobgroup
-to acquire/complete/fail files. A job know's it's Workflow via it's 
+to acquire/complete/fail files. A job know's it's Workflow via it's
 jobgroup. A job is meaningless without a jobgroup.
 
-A WMBS job != a job in a batch system, it's more abstract - it's the piece of 
+A WMBS job != a job in a batch system, it's more abstract - it's the piece of
 work that needs to get done.
 
-Jobs are added to the WMBS database by their parent JobGroup, but are 
+Jobs are added to the WMBS database by their parent JobGroup, but are
 responsible for updating their state (and name).
 """
 
@@ -32,8 +32,8 @@ class Job(WMBSBase, WMJob):
     def __init__(self, name = None, files = None, id = None):
         """
         ___init___
-        
-        jobgroup object is used to determine the workflow. 
+
+        jobgroup object is used to determine the workflow.
         inputFiles is a list of files that the job will process.
         """
         WMBSBase.__init__(self)
@@ -50,11 +50,11 @@ class Job(WMBSBase, WMJob):
         self['custom']       = {}  # For local add-ons that we want to send to JSON
 
         return
-            
+
     def create(self, group):
         """
         _create_
-        
+
         Write the job to the database.
         """
         if self["id"] != None:
@@ -82,7 +82,7 @@ class Job(WMBSBase, WMJob):
         self.associateFiles()
         self.commitTransaction(existingTransaction)
         return
-        
+
     def delete(self):
         """
         Remove a job from WMBS
@@ -116,7 +116,7 @@ class Job(WMBSBase, WMJob):
         if MaskAndFiles:
             self['mask'].save(jobID = self['id'])
             self.associateFiles()
-            
+
         self.commitTransaction(existingTransaction)
         return
 
@@ -139,12 +139,12 @@ class Job(WMBSBase, WMJob):
                 self["id"] = result
 
         return result
-                
+
     def load(self):
         """
         _load_
 
-        Load the job's name, id, jobgroup, state, state_time, retry_count, 
+        Load the job's name, id, jobgroup, state, state_time, retry_count,
         couch_record, location and outcome from the database.  Either the ID
         or the name must be set before this is called.
         """
@@ -171,10 +171,10 @@ class Job(WMBSBase, WMJob):
         called.
         """
         existingTransaction = self.beginTransaction()
-        
+
         self.load()
         self.getMask()
-        
+
         fileAction = self.daofactory(classname = "Jobs.LoadFiles")
         files = fileAction.execute(self["id"], conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
@@ -187,16 +187,16 @@ class Job(WMBSBase, WMJob):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def getMask(self):
         """
         _getMask_
-        
+
         Load the job mask from the database and return it.
         """
         self['mask'].load(jobID = self['id'])
         return self["mask"]
-    
+
     def getFiles(self, type = "list"):
         """
         _getFiles_
@@ -205,13 +205,13 @@ class Job(WMBSBase, WMJob):
         """
         if self["id"] == None:
             return WMJob.getFiles(self, type)
-    
+
         existingTransaction = self.beginTransaction()
         idAction = self.daofactory(classname = "Jobs.LoadFiles")
         fileIDs = idAction.execute(self["id"], conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
 
-        currentFileIDs = WMJob.getFiles(self, type = "id") 
+        currentFileIDs = WMJob.getFiles(self, type = "id")
         for fileID in fileIDs:
             if fileID["id"] not in currentFileIDs:
                 self.loadData()
@@ -224,7 +224,7 @@ class Job(WMBSBase, WMJob):
     def getFileLocations(self):
         """
         _getFileLocations_
-        
+
         Assuming that all files have the same locations, this grabs the locations that the
         files are at.
         """
@@ -234,12 +234,12 @@ class Job(WMBSBase, WMJob):
                                       transaction = self.existingTransaction())
 
         return locations
-        
+
 
     def associateFiles(self):
         """
         _associateFiles_
-        
+
         Update the wmbs_job_assoc table with the files in the inputFiles for the
         job.
         """
@@ -259,7 +259,7 @@ class Job(WMBSBase, WMJob):
         Retrieve the state that the job is currently in.
         """
         action = self.daofactory(classname = "Jobs.GetState")
-        state = action.execute(self["id"], conn = self.getDBConn(), 
+        state = action.execute(self["id"], conn = self.getDBConn(),
                                transaction = self.existingTransaction)
 
         return state
@@ -277,7 +277,7 @@ class Job(WMBSBase, WMJob):
         the input for the job consists of a mix of merged and unmerged files.
         """
         action = self.daofactory(classname = "Jobs.GetOutputParentLFNs")
-        parentLFNs = action.execute(self["id"], conn = self.getDBConn(), 
+        parentLFNs = action.execute(self["id"], conn = self.getDBConn(),
                                     transaction = self.existingTransaction)
 
         return parentLFNs
@@ -297,14 +297,13 @@ class Job(WMBSBase, WMJob):
 
         for inputFile in self["input_files"]:
             jobDict["input_files"].append(thunker._thunk(inputFile))
-
         # These attributes are added to the job object by the ChangeState
         # code, and we want to store them in couch.
-        if self.has_key("_id"):
+        if "_id" in self:
             jobDict["_id"] = self["_id"]
-        if self.has_key("state_changes"):
+        if "state_changes" in self:
             jobDict["state_changes"] = self["state_changes"]
-        if self.has_key("fwkjrs"):
+        if "fwkjrs" in self:
             jobDict["fwkjrs"] = []
             for fwkjr in self["fwkjrs"]:
                 jobDict["fwkjrs"].append(thunker._thunk(fwkjr))
@@ -327,7 +326,7 @@ class Job(WMBSBase, WMJob):
             return self['cache_dir']
 
         action = self.daofactory(classname = "Jobs.GetCache")
-        state  = action.execute(self["id"], conn = self.getDBConn(), 
+        state  = action.execute(self["id"], conn = self.getDBConn(),
                                 transaction = self.existingTransaction)
 
         return state
@@ -335,40 +334,46 @@ class Job(WMBSBase, WMJob):
     def setCache(self, cacheDir):
         """
         _setCache_
-        
+
         Set the location of the jobCache
         """
 
         action = self.daofactory(classname = "Jobs.SetCache")
-        state  = action.execute(id = self["id"], cacheDir = cacheDir, 
-                                conn = self.getDBConn(), 
-                                transaction = self.existingTransaction)       
+        state  = action.execute(id = self["id"], cacheDir = cacheDir,
+                                conn = self.getDBConn(),
+                                transaction = self.existingTransaction)
 
         return state
 
-    def completeInputFiles(self):
+    def completeInputFiles(self, skipFiles = None):
         """
         _completeInputFiles_
-        
+
         Set the location of the jobCache
         """
 
         action = self.daofactory(classname = "Jobs.CompleteInput")
-        state  = action.execute(self["id"], conn = self.getDBConn(), 
-                                transaction = self.existingTransaction)       
+        if skipFiles:
+            state  = action.execute(self["id"], lfnsToSkip = {self["id"] : skipFiles},
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction)
+        else:
+            state  = action.execute(self["id"],
+                                    conn = self.getDBConn(),
+                                    transaction = self.existingTransaction)
 
         return state
-    
+
     def failInputFiles(self):
         """
         _failInputFiles_
-        
+
         Set the location of the jobCache
         """
 
         action = self.daofactory(classname = "Jobs.FailInput")
-        state  = action.execute(self["id"], conn = self.getDBConn(), 
-                                transaction = self.existingTransaction)       
+        state  = action.execute(self["id"], conn = self.getDBConn(),
+                                transaction = self.existingTransaction)
 
         return state
 

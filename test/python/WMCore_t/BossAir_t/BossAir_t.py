@@ -4,28 +4,18 @@
 BossAir preliminary test
 """
 
-
-import os
-import time
-import shutil
 import os.path
-import logging
 import threading
 import unittest
 import getpass
 import subprocess
-import traceback
 import cPickle as pickle
-
-from subprocess import Popen, PIPE, STDOUT
 
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp             import TestInitCouchApp as TestInit
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.Services.UUID                   import makeUUID
-from WMCore.Agent.Configuration             import Configuration
 from WMCore.WMSpec.Makers.TaskMaker         import TaskMaker
-from WMCore.WMSpec.StdSpecs.ReReco          import rerecoWorkload, getTestArguments
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
@@ -38,16 +28,10 @@ from WMCore.WMBS.JobGroup     import JobGroup
 from WMCore.WMBS.Job          import Job
 
 from WMCore.BossAir.BossAirAPI   import BossAirAPI, BossAirException
-from WMCore.BossAir.StatusPoller import StatusPoller
 
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
 
-from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
-from WMComponent.JobTracker.JobTrackerPoller     import JobTrackerPoller
-
 from nose.plugins.attrib import attr
-
-
 
 def getNArcJobs():
     """
@@ -92,9 +76,7 @@ class BossAirTest(unittest.TestCase):
 
     """
 
-    sites = ['T2_US_Florida', 'T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN', 'malpaquet']
-
-
+    sites = ['T2_US_UCSD', 'T2_TW_Taiwan', 'T1_CH_CERN', 'T2_US_Florida']
 
     def setUp(self):
         """
@@ -106,7 +88,7 @@ class BossAirTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        #self.tearDown()
+        self.tearDown()
         self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
                                 useDefault = False)
         self.testInit.setupCouch("bossair_t/jobs", "JobDump")
@@ -117,44 +99,39 @@ class BossAirTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
         self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
 
-
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
-
-
-
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site),
-                                       ceName = site, plugin = "CondorPlugin", jobSlots = 1000)
+            resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site), cmsName = site,
+                                       ceName = site, plugin = "CondorPlugin", pendingSlots = 1000,
+                                       runningSlots = 2000)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 1000)
-        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+                                            maxSlots = 1000, pendingSlots = 1000)
+        resourceControl.insertSite(siteName = 'Xanadu', pnn = 'se.Xanadu',cmsName = site,
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
-        resourceControl.insertSite(siteName = 'jade-cms.hip.fi', seName = 'madhatter.csc.fi',
+        resourceControl.insertSite(siteName = 'jade-cms.hip.fi', pnn = 'madhatter.csc.fi', cmsName = site,
                                    ceName = 'jade-cms.hip.fi', plugin = "ARCPlugin")
         resourceControl.insertThreshold(siteName = 'jade-cms.hip.fi', taskType = 'Processing', \
-                                        maxSlots = 100)
+                                        maxSlots = 100, pendingSlots = 100)
         # using this for glite submissions
-        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', seName = 'storm-se-01.ba.infn.it',
+        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', pnn = 'storm-se-01.ba.infn.it', cmsName = site,
                                    ceName = 'grid-ce-01.ba.infn.it', plugin = 'gLitePlugin')
         resourceControl.insertThreshold(siteName = 'grid-ce-01.ba.infn.it', taskType = 'Processing', \
-                                        maxSlots = 50)
+                                        maxSlots = 50, pendingSlots = 50)
 
         # Create user
         newuser = self.daoFactory(classname = "Users.New")
-        newuser.execute(dn = "mnorman", group_name = "phgroup", role_name = "cmsrole")
+        newuser.execute(dn = "tapas", group_name = "phgroup", role_name = "cmsrole")
 
 
         # We actually need the user name
         self.user = getpass.getuser()
 
+        # Change this to the working dir to keep track of error and log files from condor
         self.testDir = self.testInit.generateWorkDir()
-
 
         # Set heartbeat
         componentName = 'test'
@@ -170,7 +147,7 @@ class BossAirTest(unittest.TestCase):
         """
         Database deletion
         """
-        self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
+        #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
 
         self.testInit.delWorkDir()
 
@@ -187,7 +164,7 @@ class BossAirTest(unittest.TestCase):
         Build a basic BossAir config
         """
 
-        config = Configuration()
+        config = self.testInit.getConfiguration()
 
         config.section_("Agent")
         config.Agent.agentName  = 'testAgent'
@@ -202,6 +179,7 @@ class BossAirTest(unittest.TestCase):
         config.section_("BossAir")
         config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+        config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
 
         config.component_("JobSubmitter")
         config.JobSubmitter.logLevel      = 'INFO'
@@ -209,7 +187,7 @@ class BossAirTest(unittest.TestCase):
         config.JobSubmitter.pluginName    = 'AirPlugin'
         config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
         config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
-        config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'badtest.fnal.gov')
+        config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'stevia.hep.wisc.edu')
         config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
                                                          'test/python/WMComponent_t/JobSubmitter_t',
                                                          'submit.sh')
@@ -230,7 +208,6 @@ class BossAirTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName     = "bossair_t"
-
 
         # JobStatusLite
         config.component_('JobStatusLite')
@@ -272,7 +249,7 @@ class BossAirTest(unittest.TestCase):
 
         jobGroupList = []
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "mnorman",
+        testWorkflow = Workflow(spec = workloadSpec, owner = "tapas",
                                 name = makeUUID(), task="basicWorkload/Production",
                                 owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
         testWorkflow.create()
@@ -351,10 +328,10 @@ class BossAirTest(unittest.TestCase):
             testJob['sandbox'] = task.data.input.sandbox
             testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob['owner']   = 'mnorman'
+            testJob['owner']   = 'tapas'
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
-            testJob['ownerDN'] = 'mnorman'
+            testJob['ownerDN'] = 'tapas'
             testJob['ownerRole'] = 'cmsrole'
             testJob['ownerGroup'] = 'phgroup'
 
@@ -384,7 +361,7 @@ class BossAirTest(unittest.TestCase):
 
         nameStr = makeUUID()
 
-        testWorkflow = Workflow(spec = nameStr, owner = "mnorman",
+        testWorkflow = Workflow(spec = nameStr, owner = "tapas",
                                 name = nameStr, task="basicWorkload/Production",
                                 owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
         testWorkflow.create()
@@ -407,8 +384,8 @@ class BossAirTest(unittest.TestCase):
             testJob = Job(name = '%s-%i' % (nameStr, i))
             testJob['location'] = location
             testJob['custom']['location'] = location
-            testJob['userdn']   = 'mnorman'
-            testJob['owner']    = 'mnorman'
+            testJob['userdn']   = 'tapas'
+            testJob['owner']    = 'tapas'
             testJob['userrole'] = 'cmsrole'
             testJob['usergroup'] = 'phgroup'
 
@@ -449,6 +426,7 @@ class BossAirTest(unittest.TestCase):
         nJobs = 10
 
         jobDummies = self.createDummyJobs(nJobs = nJobs)
+        print jobDummies
 
         baAPI.createNewJobs(wmbsJobs = jobDummies)
 
@@ -534,7 +512,7 @@ class BossAirTest(unittest.TestCase):
         # and user assigned
         for job in jobDummies:
             job['plugin']   = 'TestPlugin'
-            job['owner']    = 'mnorman'
+            job['owner']    = 'tapas'
 
         baAPI.submit(jobs = jobDummies)
 
@@ -602,7 +580,7 @@ class BossAirTest(unittest.TestCase):
         # and user assigned
         for job in jobDummies:
             job['plugin']   = 'TestPlugin'
-            job['owner']    = 'mnorman'
+            job['owner']    = 'tapas'
             job['location'] = 'T2_US_UCSD'
             job.save()
 
@@ -620,7 +598,3 @@ class BossAirTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613, W6501
+#pylint: disable=W0613, W6501
 
 """
 _RetryManager_
@@ -23,7 +23,7 @@ class RetryManager(Harness):
     """
     _RetryManager_
 
-    The retry manager picks up jobs from their cooloff state and using a set 
+    The retry manager picks up jobs from their cooloff state and using a set
     of plugins attempts to put them in their non-cooloff state again
     """
 
@@ -42,4 +42,3 @@ class RetryManager(Harness):
         pollInterval = self.config.RetryManager.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(RetryManagerPoller(self.config), pollInterval)
-

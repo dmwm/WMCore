@@ -17,13 +17,9 @@ import socket
 import logging
 import subprocess
 
-
 from WMCore.WMInit import getWMBASE
-
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
-
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.FwkJobReport.Report import Report
-
 
 class LsfPlugin(BasePlugin):
     """
@@ -36,7 +32,8 @@ class LsfPlugin(BasePlugin):
         For a given name, return a global state
 
         """
-        stateDict = {'PEND': 'Pending',
+        stateDict = {'New':  'Pending',
+                     'PEND': 'Pending',
                      'PSUSP': 'Pending',
                      'WAIT': 'Pending',
                      'RUN': 'Running',
@@ -45,7 +42,8 @@ class LsfPlugin(BasePlugin):
                      'DONE': 'Complete',
                      'EXIT': 'Error',
                      'UNKWN': 'Error',
-                     'ZOMBI': 'Error'}
+                     'ZOMBI': 'Error',
+                     'Timeout' : 'Error'}
 
         return stateDict
 
@@ -65,6 +63,7 @@ class LsfPlugin(BasePlugin):
         self.queue       = None
         self.resourceReq = None
         self.jobGroup    = None
+        self.basePrio    = getattr(config.BossAir, 'LsfBasePrio', 50)
 
         return
 
@@ -131,10 +130,10 @@ class LsfPlugin(BasePlugin):
 
                     # make reasonable job name
                     jobName = "WMAgentJob"
-                    regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/([^/]+)/.*')
+                    regExpParser = re.compile('.*/JobCreator/JobCache/([^/]+)/[^/]+/.*')
                     match = regExpParser.match(job['cache_dir'])
                     if ( match != None ):
-                        jobName = "%s-%s-%s" % (match.group(1), match.group(2), job['id'])
+                        jobName = "%s-%s" % (match.group(1), job['id'])
 
                     # //
                     # // Submit LSF job
@@ -155,16 +154,29 @@ class LsfPlugin(BasePlugin):
                         try:
                             os.mkdir(lsfLogDir)
                             logging.debug("Created directory %s" % lsfLogDir)
-                        except OSError, err:
+                        except OSError as err:
                             # suppress LSF log unless it's about an already exisiting directory
                             if err.errno != errno.EEXIST or not os.path.isdir(lsfLogDir):
-                                logging.debug("Can't create directory %s, turning off LSF log" % lsfLogDir)
+                                logging.error("Can't create directory %s, turning off LSF log" % lsfLogDir)
                                 lsfLogDir = None
 
                     if lsfLogDir == None:
                         command += ' -oo /dev/null'
                     else:
-                        command += ' -oo %s' % lsfLogDir
+                        command += ' -oo %s/%s.%%J.out' % (lsfLogDir, jobName)
+
+                    if 'priority' in job:
+                        try:
+                            prio = int(job['priority'])
+                            command += ' -sp %i' % (self.basePrio + prio)
+                        except (ValueError, TypeError):
+                            logging.debug("Priority for job %i not castable to an int\n" % job['id'])
+                            logging.debug("Not setting priority")
+                            logging.debug("Priority: %s" % job['priority'])
+                        except Exception as ex:
+                            logging.debug("Got unhandled exception while setting priority for job %i\n" % job['id'])
+                            logging.debug(str(ex))
+                            logging.debug("Not setting priority")
 
                     command += ' < %s' % submitScriptFile
 
@@ -173,24 +185,28 @@ class LsfPlugin(BasePlugin):
                     p = subprocess.Popen(command, shell = True,
                                          stdout = subprocess.PIPE,
                                          stderr = subprocess.STDOUT)
+
                     stdout = p.communicate()[0]
                     returncode = p.returncode
 
                     if returncode == 0:
                         # check for correct naming convention in PFN
                         regExpParser = re.compile('Job <([0-9]+)> is submitted to queue')
-                        match = regExpParser.match(stdout)
+                        match = regExpParser.search(stdout)
                         if match != None:
                             job['gridid'] = match.group(1)
                             successfulJobs.append(job)
-                            logging.debug("LSF Job ID : %s" % job['gridid'] )
+                            logging.info("LSF Job ID : %s" % job['gridid'] )
                             continue
+                        else:
+                            logging.error("bsub didn't return a valid Job ID. Job is not submitted")
+                            logging.error(stdout)
 
                     lsfErrorReport = Report()
                     lsfErrorReport.addError("JobSubmit", 61202, "LsfError", stdout)
                     job['fwjr'] = lsfErrorReport
                     failedJobs.append(job)
-                    
+
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
         return successfulJobs, failedJobs
@@ -239,7 +255,7 @@ class LsfPlugin(BasePlugin):
             for job in jobs:
 
                 # if LSF doesn't know anything about the job, mark it complete
-                if not jobInfo.has_key(job['gridid']):
+                if job['gridid'] not in jobInfo:
                     completeList.append(job)
 
                 # otherwise act on LSF job status
@@ -304,13 +320,6 @@ class LsfPlugin(BasePlugin):
         script.append("bash %s %s %s\n" % (os.path.basename(self.scriptFile),
                                            os.path.basename(job['sandbox']),
                                            job['id']))
-
-         #script.append("Going to sleep...\n")
-         #script.append("sleep 3600\n")
-
-##         stageHost = os.getenv("STAGE_HOST")
-##         if stageHost:
-##             script.append("export STAGE_HOST=%s\n" % stageHost)
 
         script.append("rfcp Report.%i.pkl %s:%s/\n" % (job["retry_count"], hostname, job['cache_dir']))
 

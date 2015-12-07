@@ -6,25 +6,25 @@ Tests for the PSet configuration code.
 
 """
 
+import imp
 import unittest
-import pickle
 import os
 import sys
+
 import nose
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Job import Job
 from WMCore.Configuration import ConfigSection
 from WMCore.Storage.TrivialFileCatalog import loadTFC
-
 from WMCore.WMSpec.WMStep import WMStep
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSWStepHelper
 from WMCore.WMSpec.Steps import StepFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-
 from WMQuality.TestInit import TestInit
 import WMCore.WMBase
+
 
 class SetupCMSSWPsetTest(unittest.TestCase):
     def setUp(self):
@@ -35,9 +35,9 @@ class SetupCMSSWPsetTest(unittest.TestCase):
                                         "WMCore_t/WMRuntime_t/Scripts_t"))
 
     def tearDown(self):
-        sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(),
-                                     "WMCore_t/WMRuntime_t/Scripts_t"))
-        del sys.modules["WMTaskSpace"]
+        sys.path.remove(os.path.join(WMCore.WMBase.getTestBase(), "WMCore_t/WMRuntime_t/Scripts_t"))
+        if 'WMTaskSpace' in sys.modules:
+            del sys.modules["WMTaskSpace"]
         self.testInit.delWorkDir()
         os.unsetenv("WMAGENT_SITE_CONFIG_OVERRIDE")
 
@@ -46,7 +46,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         _createTestStep_
 
         Create a test step that can be passed to the setup script.
-        
+
         """
         newStep = WMStep("cmsRun1")
         newStepHelper = CMSSWStepHelper(newStep)
@@ -54,16 +54,16 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         newStepHelper.setGlobalTag("SomeGlobalTag")
         stepTemplate = StepFactory.getStepTemplate("CMSSW")
         stepTemplate(newStep)
-        newStep.application.command.configuration = "PSet.pkl"
+        newStep.application.command.configuration = "PSet.py"
         return newStepHelper
-    
+
 
     def createTestJob(self):
         """
         _createTestJob_
 
         Create a test job that has parents for each input file.
-        
+
         """
         newJob = Job(name = "TestJob")
         newJob.addFile(File(lfn = "/some/file/one",
@@ -71,16 +71,39 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         newJob.addFile(File(lfn = "/some/file/two",
                             parents = set([File(lfn = "/some/parent/two")])))
         return newJob
-    
-    
+
+    def loadProcessFromPSet(self):
+        """
+        _loadProcessFromPSet_
+
+        This requires changing the working directory,
+        do so in a safe manner to encapsulate the change to this method only
+        """
+
+        currentPath = os.getcwd()
+        loadedProcess = None
+        try:
+            if not os.path.isdir(self.testDir):
+                raise
+            os.chdir(self.testDir)
+            testFile = "PSet.py"
+            pset = imp.load_source('process', testFile)
+            loadedProcess = pset.process
+        except Exception as ex:
+            self.fail("An exception was caught while trying to load the PSet, %s" % str(ex))
+        finally:
+            os.chdir(currentPath)
+
+        return loadedProcess
+
     def testPSetFixup(self):
         """
         _testPSetFixup_
 
         Verify that all necessary parameters are set in the PSet.
-        
+
         """
-        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -88,9 +111,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         setupScript.job = self.createTestJob()
         setupScript()
 
-        fixedPSetHandle = open(os.path.join(self.testDir, "PSet.pkl"))
-        fixedPSet = pickle.load(fixedPSetHandle)
-        fixedPSetHandle.close()
+        fixedPSet = self.loadProcessFromPSet()
 
         self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
                          "Error: Wrong number of files.")
@@ -107,14 +128,47 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.assertEqual(fixedPSet.maxEvents.input.value, -1,
                          "Error: Wrong maxEvents.")
 
-    
+    def testEventsPerLumi(self):
+        """
+        _testEventsPerLumi_
+        Verify that you can put in events per lumi in the process.
+
+        """
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
+        setupScript = SetupCMSSWPset()
+        setupScript.step = self.createTestStep()
+        setupScript.step.setEventsPerLumi(500)
+        setupScript.stepSpace = ConfigSection(name = "stepSpace")
+        setupScript.stepSpace.location = self.testDir
+        setupScript.job = self.createTestJob()
+        setupScript()
+
+        fixedPSet = self.loadProcessFromPSet()
+
+        self.assertEqual(len(fixedPSet.source.fileNames.value), 2,
+                         "Error: Wrong number of files.")
+        self.assertEqual(len(fixedPSet.source.secondaryFileNames.value), 2,
+                         "Error: Wrong number of secondary files.")
+        self.assertEqual(fixedPSet.source.fileNames.value[0], "/some/file/one",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.fileNames.value[1], "/some/file/two",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.secondaryFileNames.value[0], "/some/parent/one",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.secondaryFileNames.value[1], "/some/parent/two",
+                         "Error: Wrong input file.")
+        self.assertEqual(fixedPSet.source.numberEventsInLuminosityBlock.value,
+                         500, "Error: Wrong number of events per luminosity block")
+        self.assertEqual(fixedPSet.maxEvents.input.value, -1,
+                         "Error: Wrong maxEvents.")
+
     def testChainedProcesing(self):
         """
         test for chained CMSSW processing - check the overriden TFC, its values
         and that input files is / are set correctly.
-        
+
         """
-        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -132,22 +186,22 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         self.assertEqual(tfc.matchLFN("direct", inputFile), inputFile)
 
         self.assertEqual(setupScript.process.source.fileNames.value, [inputFile])
-        
-        
+
+
     def testPileupSetup(self):
         """
         Test the pileup setting.
 
         reference (setupScript.process instance):
         in test/python/WMCore_t/WMRuntime_t/Scripts_t/WMTaskSpace/cmsRun1/PSet.py
-        
+
         """
         try:
-             from DBSAPI.dbsApi import DbsApi
-        except ImportError, ex:
+            from dbs.apis.dbsClient import DbsApi
+        except ImportError as ex:
             raise nose.SkipTest
 
-        # this is modified and shortened version of 
+        # this is modified and shortened version of
         # WMCore/test/python/WMCore_t/Misc_t/site-local-config.xml
         # since the dataset name in question (below) is only present at
         # storm-fe-cms.cr.cnaf.infn.it, need to make the test think it's its local SE
@@ -179,7 +233,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         f.write(siteLocalConfigContent)
         f.close()
 
-        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset        
+        from WMCore.WMRuntime.Scripts.SetupCMSSWPset import SetupCMSSWPset
         setupScript = SetupCMSSWPset()
         setupScript.step = self.createTestStep()
         setupScript.stepSpace = ConfigSection(name = "stepSpace")
@@ -191,7 +245,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # modifications of job input files
         pileupConfig = {"data": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
                         "mc": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
-        dbsUrl = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+        dbsUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
         setupScript.step.setupPileup(pileupConfig, dbsUrl)
         # SetupCMSSWPset pileup handling will be consulting SiteLocalConfig
         # to determine StorageElement (SE) name the job is running on
@@ -206,15 +260,15 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         siteConfig = loadSiteLocalConfig()
         seLocalName = siteConfig.localStageOut["se-name"]
         print "Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName)
-        
+
         # before calling the script, SetupCMSSWPset will try to load JSON
         # pileup configuration file, need to create it in self.testDir
         fetcher = PileupFetcher()
         fetcher.setWorkingDirectory(self.testDir)
-        fetcher._createPileupConfigFile(setupScript.step)
-                
+        fetcher._createPileupConfigFile(setupScript.step, fakeSites=['T1_US_FNAL'])
+
         setupScript()
-        
+
         # now test all modifications carried out in SetupCMSSWPset.__call__
         # which will also test that CMSSWStepHelper.setupPileup run correctly
         mixModules, dataMixModules = setupScript._getPileupMixingModules()
@@ -222,36 +276,36 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # load in the pileup configuration in the form of dict which
         # PileupFetcher previously saved in a JSON file
         pileupDict = setupScript._getPileupConfigFromJson()
-        
+
         # get the sub dict for particular pileup type
         # for pileupDict structure description - see PileupFetcher._queryDbsAndGetPileupConfig
         for pileupType, modules in zip(("data", "mc"), (dataMixModules, mixModules)):
             # getting KeyError here - above pileupConfig is not correct - need
             # to have these two types of pile type
             d = pileupDict[pileupType]
-            self._mixingModulesInputFilesTest(modules, d, seLocalName)        
-        
-         
+            self._mixingModulesInputFilesTest(modules, d, seLocalName)
+
+
     def _mixingModulesInputFilesTest(self, modules, pileupSubDict, seLocalName):
         """
         pileupSubDic - contains only dictionary for particular pile up type
-        
+
         """
-        # consider only locally available files 
+        # consider only locally available files
         filesInConfigDict = []
         for v in pileupSubDict.values():
             if seLocalName in v["StorageElementNames"]:
                 filesInConfigDict.extend(v["FileList"])
-        
+
         for m in modules:
             inputTypeAttrib = getattr(m, "input", None) or getattr(m, "secsource", None)
             fileNames = inputTypeAttrib.fileNames.value
             if fileNames == None:
                 fileNames = []
             m = ("Pileup configuration file list '%s' and mixing modules input "
-                 "filelist '%s' are not identical." % (filesInConfigDict, fileNames)) 
-            self.assertEqual(filesInConfigDict, fileNames, m)
-            
+                 "filelist '%s' are not identical." % (filesInConfigDict, fileNames))
+            self.assertEqual(sorted(filesInConfigDict), sorted(fileNames), m)
+
 
 
 if __name__ == "__main__":

@@ -68,21 +68,21 @@ class XMLFileblock(list):
             result.appendChild(file)
 
         return result
-    
+
 class XMLDataset(list):
     """
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
     <block name='fileblockname' is-open='boolean'>
     <file name='lfn1Here' checksum='cksum:0' bytes ='fileBytes1Here'/>
-    <file name='lfn2Here' checksum='cksum:0' bytes ='fileBytes2Here'/> 
+    <file name='lfn2Here' checksum='cksum:0' bytes ='fileBytes2Here'/>
     </block>
     </dataset>
     """
-    
-    def __init__(self, datasetName, datasetOpen = "y", 
+
+    def __init__(self, datasetName, datasetOpen = "y",
                  datasetTransient = "n" ):
-        
-        self.datasetName = datasetName    
+
+        self.datasetName = datasetName
         self.datasetIsOpen = datasetOpen
         self.datasetIsTransient = datasetTransient
 
@@ -100,9 +100,9 @@ class XMLDataset(list):
         return it
 
         """
-        if self.fileblocks.has_key(fileblockName):
+        if fileblockName in self.fileblocks:
             return self.fileblocks[fileblockName]
-        
+
         newFileblock = XMLFileblock(fileblockName, isOpen)
         self.fileblocks[fileblockName] = newFileblock
         return newFileblock
@@ -121,7 +121,7 @@ class XMLDataset(list):
         dataset.setAttribute('is-open', self.datasetIsOpen)
         dataset.setAttribute('is-transient', self.datasetIsTransient)
         dataset.setAttribute('name', self.datasetName)
-        
+
         for block in self.fileblocks.values():
             dataset.appendChild(block.save())
 
@@ -136,7 +136,7 @@ class XMLInjectionSpec:
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
     <block name='fileblockname' is-open='boolean'>
     <file name='lfn1Here' checksum='cksum:0' bytes ='fileSize1Here'/>
-    <file name='lfn2Here' checksum='cksum:0' bytes ='fileSize2Here'/> 
+    <file name='lfn2Here' checksum='cksum:0' bytes ='fileSize2Here'/>
     </block>
     </dataset>
     <dataset name='DatasetNameHere' is-open='boolean' is-transient='boolean'>
@@ -144,9 +144,9 @@ class XMLInjectionSpec:
     <file name='lfn1Here' checksum='cksum:0' bytes ='fileSize1Here'/>
     <file name='lfn2Here' checksum='cksum:0' bytes ='fileSize2Here'/> </block>
     </dataset>
-    
+
     </dbs>
-    </data> 
+    </data>
     """
     def __init__(self, dbs):
         self.dbs = dbs
@@ -165,9 +165,9 @@ class XMLInjectionSpec:
         _getDataset_
 
         """
-        if self.datasetPaths.has_key(datasetName):
+        if datasetName in self.datasetPaths:
             return self.datasetPaths[datasetName]
-        
+
         newDataset = XMLDataset(datasetName, isOpen, isTransient)
         self.datasetPaths[datasetName] = newDataset
         return newDataset
@@ -183,15 +183,15 @@ class XMLInjectionSpec:
         doc    = impl.createDocument(None, "data", None)
         result = doc.createElement("data")
         result.setAttribute('version', '2')
-        
+
         dbs = doc.createElement('dbs')
         dbs.setAttribute('dls', 'dbs')
         dbs.setAttribute('name', self.dbs)
         result.appendChild(dbs)
-        
+
         for dataset in self.datasetPaths.values():
             dbs.appendChild(dataset.save())
-                
+
         return result.toprettyxml()
 
     def write(self, filename):
@@ -206,12 +206,12 @@ class XMLInjectionSpec:
         handle.write(improv)
         handle.close()
         return
-        
+
 def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     """
     _makePhEDExDrop_
 
-    Given a DBS2 Url, dataset name and list of blockNames,
+    Given a DBS Url, dataset name and list of blockNames,
     generate an XML structure for injection
 
     """
@@ -220,8 +220,8 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
 
     reader = DBSReader(dbsUrl, version = "DBS_2_0_9")
 
-    dataset = spec.getDataset(datasetPath)   
-        
+    dataset = spec.getDataset(datasetPath)
+
     for block in blockNames:
         blockContent = reader.getFileBlock(block)
         isOpen = reader.blockIsOpen(block)
@@ -241,24 +241,36 @@ def makePhEDExDrop(dbsUrl, datasetPath, *blockNames):
     return xml
 
 
-def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):        
-    
+def makePhEDExXMLForDatasets(dbsUrl, datasetPaths):
+
     """
     _makePhEDExDropForDataset_
 
-    Given a DBS Url, list of dataset path name, 
+    Given a DBS Url, list of dataset path name,
     generate an XML structure for injection
-   
+
    TODO: not sure whether merge this interface with makePhEDExDrop
     """
     spec = XMLInjectionSpec(dbsUrl)
     for datasetPath in datasetPaths:
         spec.getDataset(datasetPath)
-        
+
     xmlString = spec.save()
     return xmlString
 
-    
-    
-    
+def makePhEDExXMLForBlocks(dbsUrl, datasets):
+    """
+    _makePhEDExXMLForBlocks_
 
+    Given a DBS Url, dictionary of datasets and blocks,
+    generate an XML structure for injection
+    It assumes that all blocks are closed
+    """
+    spec = XMLInjectionSpec(dbsUrl)
+    for datasetPath in datasets:
+        xmlDataset = spec.getDataset(datasetPath)
+        for blockPath in datasets[datasetPath]:
+            xmlDataset.getFileblock(blockPath, 'n')
+
+    xmlString = spec.save()
+    return xmlString

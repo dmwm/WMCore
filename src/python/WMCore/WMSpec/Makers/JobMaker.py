@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,E1103,C0103,R0902
+#pylint: disable=E1101,E1103,C0103,R0902
 
 """
 Makes jobs in the proper state.
@@ -21,10 +21,10 @@ class JobMaker(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-	print "JobMaker.__init__"
+        print "JobMaker.__init__"
 
     def preInitialization(self):
-	print "JobMaker.preInitialization"
+        print "JobMaker.preInitialization"
 
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')

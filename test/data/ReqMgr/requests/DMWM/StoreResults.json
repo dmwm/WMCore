@@ -1,0 +1,27 @@
+{
+    "createRequest": {
+        "AcquisitionEra": "StoreResults",
+        "CMSSWVersion": "CMSSW_5_3_8",
+        "CmsPath": "/uscmst1/prod/sw/cms",
+        "DataTier": "USER",
+        "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/phys02/DBSReader",
+        "GlobalTag": "UNKNOWN",
+        "Group": "DATAOPS",
+        "InputDataset": "/SingletopWprime_M-1800_right_TuneZ2star_8TeV-comphep/dsperka-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3-99bd99199697666ff01397dad5652e9e/USER",
+        "MaxMergeEvents": 100000,
+        "MaxMergeSize": 5000000000,
+        "Memory": 2394,
+        "MergedLFNBase": "/store/results/b2g",
+        "MinMergeSize": 1500000000,
+        "ProcessingString": "Summer12_DR53X_PU_S10_START53_V7A_v1_TLBSM_53x_v3_99bd99199697666ff01397dad5652e9e",
+        "ProcessingVersion": "1",
+        "RequestType": "StoreResults",
+        "ScramArch": "slc5_amd64_gcc462",
+        "SiteWhitelist": [
+            "T1_US_FNAL"
+        ],
+        "SizePerEvent": 512.0,
+        "TimePerEvent": 40,
+        "UnmergedLFNBase": "/store/unmerged"
+    }
+}

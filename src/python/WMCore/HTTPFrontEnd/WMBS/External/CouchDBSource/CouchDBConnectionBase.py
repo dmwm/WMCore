@@ -47,7 +47,7 @@ class CouchDBConnectionBase(object):
         """
         TODO: currently it is hard code to the front page of ACDC
         When there is more information is available, it can be added
-        through 
+        through
         """
 
         baseURL = '%s/%s/_design/ACDC/collections.html' % (self.couchURL,
@@ -75,4 +75,3 @@ class CouchDBConnectionBase(object):
             else:
                 baseURL = "%s?%s" % (baseURL, data)
         return baseURL
-

@@ -9,7 +9,7 @@ from WMCore.WMBS.Oracle.Subscriptions.GetAvailableFiles import GetAvailableFiles
 
 class GetAvailableFilesByLimit(GetAvailableFilesOracle):
     def execute(self, subscription, limit, conn = None, transaction = False):
-        self.sql = "SELECT * FROM (" + self.sql + ") WHERE rownum <= :maxLimit"        
+        self.sql = "SELECT * FROM (" + self.sql + ") WHERE rownum <= :maxLimit"
         results = self.dbi.processData(self.sql, {"subscription": subscription,
                                                   "maxLimit": limit},
                                        conn = conn, transaction = transaction)

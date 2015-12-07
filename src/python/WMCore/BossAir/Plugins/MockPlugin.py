@@ -31,7 +31,7 @@ def processWorker(myinput, tmp):
 
             taskName = targetDir.split('/')[5]
             if jj['cache_dir'].count("Analysis/LogCollect") > 0:
-                if lcreport is not None: 
+                if lcreport is not None:
                     lcreport.task = "/" + taskName + "/Analysis/LogCollect"
                     f = open(outfile, 'w')
                     logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
@@ -49,7 +49,7 @@ def processWorker(myinput, tmp):
                 tmpname = tmpname + jobid
                 report.cmsRun1.output.output.files.file0.lfn = tmpname + '.root'
 
-            if hasattr(report, 'logAtch1') and hasattr(report.logArch1, 'output'):
+            if hasattr(report, 'logArch1') and hasattr(report.logArch1, 'output'):
                 tmpname = report.logArch1.output.logArchive.files.file0.lfn.split('.tar.gz')[0]
                 tmpname = tmpname + jobid
                 report.logArch1.output.logArchive.files.file0.lfn = tmpname + '.root'
@@ -62,7 +62,7 @@ def processWorker(myinput, tmp):
             logging.debug('Process worker is dumping the report to ' + f.name)
             pickle.dump(report, f)
             f.close()
-    except Exception, ex:
+    except Exception as ex:
         logging.exception(ex)
 
 
@@ -172,7 +172,7 @@ class MockPlugin(BasePlugin):
             f.close()
 
         for jj in jobs:
-            if not self.jobsScheduledEnd.has_key(jj['id']):
+            if jj['id'] not in self.jobsScheduledEnd:
                 self._scheduleJob(jj, currentTime)
             oldState = jj['status']
             jobEnded = datetime.now() > self.jobsScheduledEnd[jj['id']]
@@ -194,6 +194,13 @@ class MockPlugin(BasePlugin):
 
         return runningList, changeList, completeList
 
+    def kill(self, jobs):
+        """
+        _kill_
+
+        Do nothing
+        """
+        pass
 
     def complete(self, jobs):
         """
@@ -246,7 +253,7 @@ class MockPlugin(BasePlugin):
             try:
                 logging.debug("Shutting down %s " % str(x))
                 input.put( ('-1', 'STOP', 'control') )
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Hit some exception in deletion\n"
                 msg += str(ex)
                 logging.error(msg)
@@ -261,3 +268,9 @@ class MockPlugin(BasePlugin):
 
     def __del__(self):
         self.close(self.myinput, None)
+
+    def updateSiteInformation(self, jobs, siteName, excludeSite) :
+        """
+        almost do nothing
+        """
+        return jobs

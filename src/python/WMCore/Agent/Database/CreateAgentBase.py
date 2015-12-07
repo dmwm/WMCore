@@ -15,9 +15,9 @@ from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
 class CreateAgentBase(DBCreator):
-    
+
     requiredTables = ["01wm_components", "02wm_workers"]
-    
+
     def __init__(self, logger = None, dbi = None, params = None):
         """
         _init_
@@ -34,9 +34,9 @@ class CreateAgentBase(DBCreator):
         tablespaceTable = ""
         tablespaceIndex = ""
         if params:
-            if params.has_key("tablespace_table"):
+            if "tablespace_table" in params:
                 tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
-            if params.has_key("tablespace_index"):
+            if "tablespace_index" in params:
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
         DBCreator.__init__(self, logger, dbi)
@@ -48,7 +48,7 @@ class CreateAgentBase(DBCreator):
              pid              INTEGER      NOT NULL,
              update_threshold INTEGER      NOT NULL,
              UNIQUE (name))"""
-             
+
         self.create["02wm_workers"] = \
           """CREATE TABLE wm_workers (
              component_id  INTEGER NOT NULL,
@@ -59,11 +59,11 @@ class CreateAgentBase(DBCreator):
              last_error    INTEGER,
              error_message VARCHAR(1000),
              UNIQUE (component_id, name))"""
-        
+
         self.constraints["FK_wm_component_worker"] = \
               """ALTER TABLE wm_workers ADD CONSTRAINT FK_wm_component_worker
                  FOREIGN KEY(component_id) REFERENCES wm_components(id)"""
-  
+
     def execute(self, conn = None, transaction = None):
         """
         _execute_
@@ -79,6 +79,6 @@ class CreateAgentBase(DBCreator):
         try:
             DBCreator.execute(self, conn, transaction)
             return True
-        except Exception, e:
+        except Exception as e:
             print "ERROR: %s" % e
             return False

@@ -1,0 +1,93 @@
+#if $table
+<header class="group">
+    <nav class="navbar navbar-left">
+    <h3>$title</h3>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-table" onclick="Activate('table', ['json', 'comment'])">Table</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="Activate('json', ['table', 'comment'])">JSON</button></li>
+        <li><button class="btn btn-small btn-yellow" id="btn-comment" onclick="Activate('comment', ['table', 'json'])">Comment</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+<header class="group">
+<nav class="navbar navbar-right">
+<ul>
+<li>
+Status: <b>$status</b> to
+<select id="RequestStatus" name="RequestStatus">
+#for val in $transitions
+<option value="$val">$val</option>
+#end for
+</select>
+</li>
+<li>
+<input type="hidden" id="RequestName" name="RequestName" value="$name" />
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:ChangeRequestStatus()">Submit</button>
+</li>
+</nav>
+</header>
+
+<div name="edit-table" id="edit-table">
+$table
+</div>
+
+<div name="edit-json" id="edit-json" class="hide">
+<h3>Series of requests</h3>
+<pre><code>
+$jsondata
+</code></pre>
+</div>
+#else
+<pre><code>
+$jsondata
+</code></pre>
+#end if
+
+<div name="edit-comment" id="edit-comment">
+#import time
+#set tstamp=$time.strftime("%Y-%m-%d %H:%M:%S", $time.gmtime($ts))
+<form method="post" action="$base/record2logdb" class="forms">
+<fieldset>
+    Name: $user
+    <input type="hidden" name="user" value="$user" />
+    <br/>
+    Time: $tstamp
+    <input type="hidden" name="tstamp" value="$ts" />
+    <input type="hidden" name="userdn" value="$userdn" />
+    <input type="hidden" name="request" value="$name" />
+    <legend>LogDB entry</legend>
+    <label>
+        Add your comment below:
+        <textarea name="message" class="width-100" rows="5"></textarea>
+    </label>
+<p>
+    <input type="submit" class="btn btn-small unit-push-right" value="Add to LogDB" />
+</p>
+</fieldset>
+</form>
+</div>
+
+<script>
+function ChangeRequestStatus() {
+    var parameters = {'RequestStatus':\$('#RequestStatus').val()};
+    ajaxRequest('$base/data/request/$name', parameters, 'PUT');
+}
+function Activate(tag, hidetags) {
+    var id = document.getElementById('btn-'+tag);
+    id.className="btn btn-small btn-active";
+    for(var i=0; i<hidetags.length; i++) {
+        id = document.getElementById('btn-'+hidetags[i]);
+        id.className="btn btn-small";
+        if(hidetags[i]=='comment') id.className += ' btn-yellow';
+        HideTag('edit-'+hidetags[i]);
+    }
+    ShowTag('edit-'+tag);
+}
+function loadSpec(tag) {
+    var url="$base/create?form="+tag.value;
+    load(url);
+}
+</script>

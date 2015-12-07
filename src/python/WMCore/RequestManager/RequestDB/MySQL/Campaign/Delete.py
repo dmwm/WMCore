@@ -26,10 +26,9 @@ class Delete(DBFormatter):
         """
         self.sql = """
         DELETE from reqmgr_campaign where campaign_name=:campaign_name
-        """ 
+        """
         binds = {"campaign_name":campaignName}
 
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
-

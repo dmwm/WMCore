@@ -1,0 +1,60 @@
+.agent-error {
+    background-color: #FF6FCF;
+    margin: 5px;
+}
+.agent-warning {
+    background-color: #FFD732;
+    margin: 5px;
+}
+.agent-info {
+    background-color: #80FF00;
+    margin: 5px;
+}
+.pad-5 {
+    padding: 5px;
+}
+.margin-5 {
+    margin: 5px;
+}
+.request {
+    font-weight: bold;
+    font-size: 20px;
+    margin-left: 10px;
+    padding: 5px;
+}
+.thread {
+    font-style: italic;
+    font-size: 18px;
+    margin-left: 20px;
+    margin-top: 10px;
+}
+.type-ts-msg {
+    margin-left: 30px;
+    font-size: 14px;
+    padding: 5px;
+}
+.logdb-info-records {
+    background-color: #E5E5E5;
+    position: fixed;
+    width: 700px;
+    height: 500px;
+    border-style: groove;
+    border-width: 3px;
+    overflow: scroll;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index:999;
+}
+.shadow {
+    -webkit-box-shadow: 10px 10px 20px #666666;
+    -moz-box-shadow: 10px 10px 20px #666666;
+    -o-box-shadow: 10px 10px 20px #666666;
+    box-shadow: 10px 10px 20px #666666;
+}
+.hide {
+    display: none;
+}
+.show {
+    display: block;
+}

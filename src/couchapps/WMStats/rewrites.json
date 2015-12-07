@@ -1,0 +1,95 @@
+[
+  {
+      "from": "_design/:dname/*",
+      "to": "*"
+  },
+
+  {
+    "from": "_all_docs",
+    "to": "../../_all_docs"
+  },
+  
+  {
+    "from": "vendor/*",
+    "to": "vendor/*"
+  },
+
+  {
+      "from": "index.html",
+      "to": "index.html"
+  },
+  {
+    "from": "",
+    "to": "_show/redirect"
+  },
+
+  {
+    "from": "css/*",
+    "to": "css/*"
+  },
+
+  {
+    "from": "images/*",
+    "to": "images/*"
+  },
+
+  {
+    "from": "js/*",
+    "to": "js/*"
+  },
+
+  {
+    "from": "lib/*",
+    "to": "lib/*"
+  },
+
+  {
+    "from": "_view/agentInfo",
+    "to": "../WMStatsErl/_view/agentInfo"
+  },
+
+  {
+    "from": "_view/cooledoffRequests",
+    "to": "../WMStatsErl/_view/cooledoffRequests"
+  },
+
+  {
+    "from": "_view/latestAgentSite",
+    "to": "../WMStatsErl/_view/latestAgentSite"
+  },
+
+  {
+    "from": "_view/latestRequest",
+    "to": "../WMStatsErl/_view/latestRequest"
+  },
+
+  {
+    "from": "_view/requestAgentUrl",
+    "to": "../WMStatsErl/_view/requestAgentUrl"
+  },
+
+  {
+    "from": "_view/requestHistory",
+    "to": "../WMStatsErl/_view/requestHistory"
+  },
+
+  {
+    "from": "_view/*",
+    "to": "_view/*"
+  },
+
+  {
+    "from": "_list/*",
+    "to": "_list/*"
+  },
+
+  {
+    "from": "_show/*",
+    "to": "_show/*"
+  },
+
+  {
+    "from": "_update/*",
+    "to": "_update/*"
+  }
+]

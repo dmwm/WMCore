@@ -4,6 +4,9 @@ _GetUninjectedFiles_
 
 Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
+
+The location of a file for PhEDEx can be overridden by the spec with the field
+overrides.phedexInjectionSite = 'T0_CH_CERN_Buffer'
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
@@ -13,15 +16,14 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_file.filesize AS filesize,
                     dbsbuffer_block.blockname AS blockname,
                     dbsbuffer_dataset.path AS dataset,
-                    dbsbuffer_dataset.custodial_site AS custodial_site,
                     dbsbuffer_location.se_name AS location,
                     dbsbuffer_file_checksums.cksum as cksum,
-                    dbsbuffer_checksum_type.type as cktype                    
+                    dbsbuffer_checksum_type.type as cktype
                     FROM dbsbuffer_file
                INNER JOIN dbsbuffer_file_checksums ON
                  dbsbuffer_file.id = dbsbuffer_file_checksums.fileid
                INNER JOIN dbsbuffer_checksum_type ON
-                 dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id                 
+                 dbsbuffer_file_checksums.typeid = dbsbuffer_checksum_type.id
                INNER JOIN dbsbuffer_algo_dataset_assoc ON
                  dbsbuffer_file.dataset_algo = dbsbuffer_algo_dataset_assoc.id
                INNER JOIN dbsbuffer_dataset ON
@@ -32,8 +34,7 @@ class GetUninjectedFiles(DBFormatter):
                  dbsbuffer_file.id = dbsbuffer_file_location.filename
                INNER JOIN dbsbuffer_location ON
                  dbsbuffer_file_location.location = dbsbuffer_location.id
-             WHERE dbsbuffer_file.in_phedex = 0 AND
-               (dbsbuffer_file.status = 'LOCAL' OR dbsbuffer_file.status = 'GLOBAL')"""
+             WHERE dbsbuffer_file.in_phedex = 0"""
 
     def format(self, result):
         """
@@ -48,20 +49,17 @@ class GetUninjectedFiles(DBFormatter):
               [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": 4321}},
                {"lfn": "lfn2", "size": 20, "checksum": {"cksum": 4321}]}}}}
 
-        In order to do this, we have to graph the checksum
+        In order to do this, we have to graph the checksum.
         """
         dictResult = DBFormatter.formatDict(self, result)
-
+        self.specCache = {}
         formattedResult = {}
         for row in dictResult:
-            if row['custodial_site'] != None:
-                location = row['custodial_site']
-            else:
-                location = row['location']
-                
+            location = row['location']
+
             if location not in formattedResult.keys():
                 formattedResult[location] = {}
-                
+
             locationDict = formattedResult[location]
             if row["dataset"] not in locationDict.keys():
                 locationDict[row["dataset"]] = {}
@@ -71,7 +69,7 @@ class GetUninjectedFiles(DBFormatter):
                 datasetDict[row["blockname"]] = {"is-open": "y",
                                                  "files": []}
 
-            blockDict = datasetDict[row["blockname"]]            
+            blockDict = datasetDict[row["blockname"]]
             for file in blockDict["files"]:
                 if file["lfn"] == row["lfn"]:
                     file["checksum"][row["cktype"]] = row["cksum"]
@@ -83,7 +81,7 @@ class GetUninjectedFiles(DBFormatter):
                                            "checksum": cksumDict})
 
         return formattedResult
-                 
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

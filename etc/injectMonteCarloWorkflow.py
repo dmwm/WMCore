@@ -75,6 +75,6 @@ for workloadTask in workload.taskIterator():
     inputFileset.commit()
 
     myWMBSHelper = WMBSHelper(workload)
-    myWMBSHelper.createSubscription(workloadTask.getPathName())
+    myWMBSHelper._createSubscriptionsInWMBS(workloadTask.getPathName())
 
 myThread.transaction.commit()

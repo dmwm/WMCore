@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <meta charset="utf-8"></meta>
+  <head>
+    <title>WMStats</title>
+    <style type="text/css" title="currentStyle">
+        @import "css/jquery.dataTables.css";
+        @import "css/ColVis.css";
+        @import "css/jquery-ui-1.8.18.custom.css";
+        @import "css/main_layout.css";
+        @import "css/logdb.css";
+        @import "css/font-awesome.min.css";
+    </style>
+  </head>
+<body>
+    <!-- content to be placed inside <body>…</body> -->
+    <div id="monitor_title">
+        <div id="wmstats_logo"></div>
+        <div id="link_tabs"></div>
+        <div id="clock"></div>
+    </div>
+    <div id="activeRequestPage">
+        <!--
+        <div id="summary_board"></div>
+        <div id="message_board">
+            <div id="agent_alert"></div>
+            <div id="request_alert"></div>
+        </div>
+        //-->
+        <div id="main_board">
+            <fieldset id="filter_board"></fieldset>
+            <fieldset id="filter_summary"></fieldset>
+            <!-- <div id="filter_board"></div>
+                 <div id="filter_summary"></div>
+            -->
+            <div id="status_board"></div>
+            <div id="tab_board"></div>
+            <div id='data_area'>
+                <div id="data_board">
+                    <div id="category_view">
+                        <div id="category_bar"></div>
+                        <div class="detail_data"></div>
+                        <div class="summary_data"></div>
+                    </div>
+                    <div id="request_view">
+                        <div id="view_switch_bar"></div>
+                        <div id="category_title"></div>
+                        <div class="detail_data hideDiv draggable"></div>
+                        <div class="summary_data"></div>
+                    </div>
+                    <div id="job_view">
+                        <div id="request_title"></div>
+                        <div class="task_summary"></div>
+                        <div class="summary_data"></div>
+                        <div class="detail_data"></div>
+                        <div id="acdc_submission" class="hideDiv draggable"></div>
+                    </div>
+                </div>
+                <div id="loading_page" ></div>
+            </div>
+        </div>
+        
+    </div>
+    <div id="requestAlertPage">
+        <div class="summary_data"></div>
+        <div id="alert_job_summary"></div>
+        <div id="alert_job_detail"></div>
+    </div>
+    <div id="agentInfoPage">
+        <div id="agent_summary"></div>
+        <div id="agent_detail"></div>
+    </div>
+    <div id="logDBPage">
+        <div id="logdb_summary" class="logdb_info warning"></div>
+        <div id="logdb_detail"></div>
+    </div>
+    <div id="workloadSummaryPage">
+        <div id="search_option_board"></div>
+        <div id="search_result_board"></div>
+    </div>
+    <!--- templates this should be invisible -->
+    <div id="templates">
+        <div class="viewTemplate">
+            <div class="detail_data hideDiv draggable"></div>
+            <div class="summary_data"></div>
+        </div>
+        <div class="template stringMatch">\
+            <input type="text" size="100" name="workloadSummarySearch" value=""></input>
+        </div>
+        <div class="template dateRange">
+            <input type="text" name="dateRange1" class="dateValue"/> <span>through</span>
+            <input type="text" name="dateRange2" class="dateValue"/>
+        </div>
+    </div>
+</body>
+
+<!-- Brings in all the dependencies needed for this couchapp -->
+    <script src="js/loader.js" type='text/javascript'> </script>
+
+    <!-- Globals is needed to be loaded before other library -->
+    <script src="js/minified/global.min.js" type='text/javascript'> </script>
+    <script src="js/import-all.min.js" type='text/javascript'> </script>
+    <script>
+        WMStats.View.IndexHTML();
+    </script>
+</html>

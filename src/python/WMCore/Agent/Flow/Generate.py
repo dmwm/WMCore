@@ -22,12 +22,12 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 class Generate:
     """
     Generate
- 
+
     A class that parses a workflow specification file
     (or agent specification file) and generates the appropriate
     stub classes.
     """
- 
+
 
     def __init__(self, configFile):
         self.config = loadConfigurationFile(configFile)
@@ -78,10 +78,10 @@ Inheritance is preferred.
             self.synchronizers[synchro['ID']]['components'] = []
         for handler in self.config.General.handlers:
             hndlr = cPickle.loads(handler)
-            if not self.components.has_key(hndlr['component']):
+            if hndlr['component'] not in self.components:
                 self.components[hndlr['component']] = {}
             self.components[hndlr['component']][hndlr['messageIn']] = hndlr
-            if hndlr.has_key('synchronize'):
+            if 'synchronize' in hndlr:
                 self.synchronizers[hndlr['synchronize']]['components'].\
                     append(hndlr['component'])
         for plugin in self.config.General.plugins:
@@ -95,7 +95,7 @@ Inheritance is preferred.
             print('Creating test dir for:'+componentName)
             self.currentDir = os.path.join(self.config.General.testDir, \
                 componentName+'_t')
-            os.makedirs(self.currentDir) 
+            os.makedirs(self.currentDir)
             print('Creating test stub')
             stfile = open(os.path.join(self.currentDir,'__init__.py'), 'w')
             stfile.write('#!/usr/bin/env python\n')
@@ -145,9 +145,9 @@ if __name__ == '__main__':
             stfile.close()
         self.currentDir = os.path.join(self.config.General.baseDir, 'standards')
         try:
-             os.makedirs(self.currentDir) 
+            os.makedirs(self.currentDir)
         except:
-             pass
+            pass
         print('Creating test suite')
         stfile = open(os.path.join(self.currentDir,'defaultTest.py'), 'w')
         stfile.write("#!/usr/bin/env python\n")
@@ -204,7 +204,7 @@ test.summaryText()
             print('Creating component dir for:'+componentName)
             self.currentDir = os.path.join(self.config.General.srcDir, \
                 componentName)
-            os.makedirs(self.currentDir) 
+            os.makedirs(self.currentDir)
             print('Creating component stub')
             stfile = open(os.path.join(self.currentDir,'__init__.py'), 'w')
             stfile.write('#!/usr/bin/env python\n')
@@ -217,9 +217,9 @@ test.summaryText()
             stfile.write("from WMCore.Agent.Harness import Harness\n\n")
             importFact = False
             try:
-                for handlerName in self.components[componentName].keys(): 
+                for handlerName in self.components[componentName].keys():
                     handler = self.components[componentName][handlerName]
-                    if handler.has_key('configurable') and handler['configurable'] == 'yes':
+                    if 'configurable' in handler and handler['configurable'] == 'yes':
                         if not importFact:
                             stfile.write("# we do not import handler " + self.convert(handlerName) + " as they are dynamicly\n")
                             stfile.write("# loaded from the config file.\n")
@@ -229,7 +229,7 @@ test.summaryText()
                         stfile.write('from ' + self.config.General.pythonPrefix + '.' )
                         stfile.write(componentName +'.Handler.' + self.convert(handlerName) +' import')
                         stfile.write(' ' + self.convert(handlerName)+'\n')
-            except Exception, ex:
+            except Exception as ex:
                 print('No messages for component: '+ componentName)
             msg = """
 class %s(Harness):
@@ -249,9 +249,9 @@ class %s(Harness):
                 stfile.write('        # use a factory to dynamically load handlers.\n')
                 stfile.write("        factory = WMFactory('generic')\n")
             try:
-                for handlerName in self.components[componentName].keys(): 
+                for handlerName in self.components[componentName].keys():
                     handler = self.components[componentName][handlerName]
-                    if handler.has_key('configurable') and \
+                    if 'configurable' in handler and \
                         handler['configurable'] == 'yes':
                         msg = """
         # in case nothing was configured we have a fallback.
@@ -267,11 +267,11 @@ class %s(Harness):
                         stfile.write(msg)
                     else:
                         stfile.write("        self.messages['"+handlerName+"'] = "+ self.convert(handlerName)+"(self)\n\n")
-            except Exception,ex:
+            except Exception as ex:
                 print('is this an ERROR? :'+str(ex))
             stfile.flush()
             stfile.close()
-            print('Creating handler stubs')      
+            print('Creating handler stubs')
             self.defaultConfig(componentName)
             self.handlerStubs(componentName)
 
@@ -280,7 +280,7 @@ class %s(Harness):
         Generates the default config file.
         """
 
-        stfile = open(os.path.join(self.currentDir, 'DefaultConfig.py'), 'w') 
+        stfile = open(os.path.join(self.currentDir, 'DefaultConfig.py'), 'w')
         stfile.write('#!/usr/bin/env python\n')
         stfile.write(self.stubmsg)
         msg = """
@@ -295,15 +295,15 @@ config.%s.logLevel = "INFO"
         # check if we need a thread parameter
         threadParam = False
         for handler in self.components[componentName].values():
-            if handler.has_key('threading') and handler['threading'] == 'yes':
+            if 'threading' in handler and handler['threading'] == 'yes':
                 threadParam = True
         if threadParam:
             stfile.write('# maximum number of threads we want to deal\n')
             stfile.write('# with messages per pool.\n')
             stfile.write('config.'+componentName+'.maxThreads = 30\n')
         for handlerName in self.components[componentName].keys():
-            handler = self.components[componentName][handlerName] 
-            if handler.has_key('configurable') and handler['configurable'] == 'yes':
+            handler = self.components[componentName][handlerName]
+            if 'configurable' in handler and handler['configurable'] == 'yes':
                 stfile.write('config.'+componentName+'.'+self.convert(handlerName)+'Handler =\\\n')
                 stfile.write('    "'+self.config.General.pythonPrefix+'.'+componentName+'.Handler.'+self.convert(handlerName)+'"\n')
 
@@ -324,14 +324,14 @@ config.%s.logLevel = "INFO"
         stfile = open(os.path.join(handlerDir, '__init__.py'), 'w')
         stfile.write('#!/usr/bin/env python\n')
         stfile.close()
-        for handlerName in self.components[componentName].keys(): 
+        for handlerName in self.components[componentName].keys():
             # check if we need to create a threaded version
             handler = self.components[componentName][handlerName]
             threaded = False
-            if handler.has_key('threading'):
+            if 'threading' in handler:
                 if handler['threading'] == 'yes':
                     threaded = True
-  
+
             stfile = open(os.path.join(handlerDir, self.convert(handlerName) +'.py'),'w')
             stfile.write('#!/usr/bin/env python\n')
             stfile.write(self.stubmsg)
@@ -360,7 +360,7 @@ class %s(BaseHandler):
 """ %(self.config.General.pythonPrefix, componentName, \
                     self.convert(handlerName), self.convert(handlerName), componentName)
                 stfile.write(msg)
-                
+
             msg = """
      # this we overload from the base handler
     def __call__(self, event, payload):
@@ -382,7 +382,7 @@ class %s(BaseHandler):
                     componentName, self.convert(handlerName))
                 stfile.write(msg)
                 self.triggers(stfile, componentName, handlerName)
-                self.messages(stfile, componentName, handlerName)       
+                self.messages(stfile, componentName, handlerName)
             else:
                 stfile.write('        self.threadpool.enqueue(event, {"event" : event, "payload" : payload})\n')
                 self.threadSlave(componentName, handlerName)
@@ -419,7 +419,7 @@ class %s(BaseHandler):
         stfile.write('\n\n')
         stfile.write('        myThread = threading.currentThread()\n\n')
         self.triggers(stfile, componentName, handlerName)
-        self.messages(stfile, componentName, handlerName)       
+        self.messages(stfile, componentName, handlerName)
         stfile.write('\n\n')
         stfile.write('        # we need to do this in our slave otherwise the \n')
         stfile.write('        # messages that might have been published, will not be send.\n')
@@ -455,22 +455,22 @@ class %s(BaseHandler):
 
         handler = self.components[componentName][handlerName]
 
-        if handler.has_key('createSynchronizer'):
+        if 'createSynchronizer' in handler:
             stfile.write('        flags = []\n')
             for synchronizer in self.synchronizers[handler['createSynchronizer']]['components']:
                 flag = "{'trigger_id' : '"+handler['createSynchronizer']+ "',\\\n" + \
                         "                'id' : yourTaskId,\\\n"+ \
                         "                'flag_id' : '"+synchronizer+"'}"
                 stfile.write('        flag = '+flag+'\n')
-                stfile.write('        flags.append(flag)\n') 
+                stfile.write('        flags.append(flag)\n')
             stfile.write('        myThread.trigger.addFlag(flags)\n')
             action = "{'trigger_id' : '"+ handler['createSynchronizer']+ "',\\\n" + \
                      "                  'id' : yourTaskId,\\\n"+ \
                      "                  'action_name' : '"+self.synchronizers[handler['createSynchronizer']]['action']+"',\\\n" +\
                      "                  'payload' : yourActionPayload}"
-            stfile.write('        action = '+action+'\n')         
+            stfile.write('        action = '+action+'\n')
             stfile.write('        myThread.trigger.setAction(action)\n')
-        if self.components[componentName][handlerName].has_key('synchronize'):
+        if 'synchronize' in self.components[componentName][handlerName]:
             flag = "{'trigger_id' : '"+handler['synchronize']+ "'," + \
                     "'id' : yourTaskId,"+ \
                     "'flag_id' : '"+componentName+"'}"
@@ -486,4 +486,4 @@ class %s(BaseHandler):
 
         for symbol in no:
             textStr = textStr.replace(symbol, '_')
-        return textStr     
+        return textStr

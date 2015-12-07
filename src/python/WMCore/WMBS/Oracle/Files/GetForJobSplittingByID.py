@@ -5,7 +5,7 @@ _GetForJobSplittingByID_
 
 Oracle implementation of File.GetForJobSplittingByID
 """
-from WMCore.WMBS.MySQL.Files.GetForJobSplittingByID import GetForJobSplittingByID as MySQLGetByID 
+from WMCore.WMBS.MySQL.Files.GetForJobSplittingByID import GetForJobSplittingByID as MySQLGetByID
 
 class GetForJobSplittingByID(MySQLGetByID):
     """

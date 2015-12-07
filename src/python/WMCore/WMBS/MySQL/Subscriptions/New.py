@@ -18,11 +18,11 @@ class New(DBFormatter):
     """
     typesSQL = """INSERT IGNORE INTO wmbs_sub_types (name)
                     VALUES (:subtype)"""
-    
+
     sql = """INSERT INTO wmbs_subscription (fileset, workflow, subtype,
-                                            split_algo, last_update) 
+                                            split_algo, last_update)
                SELECT :fileset, :workflow, id, :split_algo, :timestamp
-                      FROM wmbs_sub_types WHERE name = :subtype""" 
+                      FROM wmbs_sub_types WHERE name = :subtype"""
 
     sqlAvail = """INSERT INTO wmbs_sub_files_available (subscription, fileid)
                     SELECT wmbs_subscription.id, wmbs_fileset_files.fileid
@@ -31,7 +31,7 @@ class New(DBFormatter):
                         wmbs_subscription.workflow = :workflow AND
                         wmbs_subscription.fileset = :fileset AND
                         wmbs_fileset_files.fileset = wmbs_subscription.fileset"""
-    
+
     def execute(self, fileset = None, workflow = None, split_algo = "File",
                 type = "Processing", conn = None, transaction = False):
         binds = {"fileset": fileset, "workflow": workflow, "subtype": type,

@@ -122,8 +122,8 @@ class CMSSWStepHelper(CoreHelper):
         # which is only supported in new agents that only look
         # at pickledarguments anyways
         try:
-            self.data.application.configuration.section_('arguments') 
-            [ setattr(self.data.application.configuration.arguments, k, v) 
+            self.data.application.configuration.section_('arguments')
+            [ setattr(self.data.application.configuration.arguments, k, v)
               for k, v in args.items() ]
         except Exception:
             pass
@@ -174,8 +174,8 @@ class CMSSWStepHelper(CoreHelper):
 
         Set the global tag.
         """
-        self.data.application.configuration.section_('arguments') 
-        self.data.application.configuration.arguments.globalTag = globalTag 
+        self.data.application.configuration.section_('arguments')
+        self.data.application.configuration.arguments.globalTag = globalTag
 
         args = {}
         if hasattr(self.data.application.configuration, "pickledarguments"):
@@ -196,6 +196,46 @@ class CMSSWStepHelper(CoreHelper):
                 return self.data.application.configuration.arguments.globalTag
 
         return pickle.loads(self.data.application.configuration.pickledarguments)['globalTag']
+
+    def setDatasetName(self, datasetName):
+        """
+        _setDatasetName_
+
+        Set the dataset name in the pickled arguments
+        """
+        self.data.application.configuration.section_('arguments')
+        self.data.application.configuration.arguments.datasetName = datasetName
+
+        args = {}
+        if hasattr(self.data.application.configuration, "pickledarguments"):
+            args = pickle.loads(self.data.application.configuration.pickledarguments)
+        args['datasetName'] = datasetName
+        self.data.application.configuration.pickledarguments = pickle.dumps(args)
+
+        return
+
+    def getDatasetName(self):
+        """
+        _getDatasetName_
+
+        Retrieve the dataset name from the pickled arguments
+        """
+        if hasattr(self.data.application.configuration, "arguments"):
+            if hasattr(self.data.application.configuration.arguments, "datasetName"):
+                return self.data.application.configuration.arguments.datasetName
+
+        return pickle.loads(self.data.application.configuration.pickledarguments).get('datasetName', None)
+
+    def getScenario(self):
+        """
+        _getScenario_
+
+        Retrieve the scenario from the pickled arguments, if any
+        """
+        if hasattr(self.data.application.configuration, "scenario"):
+            return self.data.application.configuration.scenario
+
+        return None
 
     def setUserSandbox(self, userSandbox):
         """
@@ -248,6 +288,14 @@ class CMSSWStepHelper(CoreHelper):
         self.data.output.keep = keepOutput
         return
 
+    def getPileup(self):
+        """
+        _getPileup_
+
+        Retrieve the pileup config from this step.
+        """
+        return getattr(self.data, "pileup", None)
+
     def setupPileup(self, pileupConfig, dbsUrl):
         """
         include pileup input configuration into this step configuration.
@@ -255,7 +303,7 @@ class CMSSWStepHelper(CoreHelper):
         (user input) and here is available as a dict.
 
         """
-        # so, e.g. this "cosmics": {"/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
+        # so, e.g. this {"cosmics": "/some/cosmics/dataset", "minbias": "/some/minbias/dataset"}
         # would translate into
         # self.data.pileup.comics.dataset = "/some/cosmics/dataset"
         # self.data.pileup.minbias.dataset = "/some/minbias/dataset"
@@ -265,32 +313,62 @@ class CMSSWStepHelper(CoreHelper):
             setattr(getattr(self.data.pileup, pileupType), "dataset", dataset)
         setattr(self.data, "dbsUrl", dbsUrl)
 
-    def setMulticoreCores(self, ncores):
+    def setOverrideCatalog(self, overrideCatalog):
         """
-        _setMulticoreCores_
+        _setOverrideCatalog_
 
-        Preset the number of cores for CMSSW to run on, expect this to dribble away 
-        as batch systems get better at dynamic discovery etc, or be used as an override for 
-        testing
+        set the override catalog
+
+        needed at least at CERN to use production castor pools
+
+        """
+        if overrideCatalog != None:
+            self.data.application.overrideCatalog = overrideCatalog
+
+    def setEventsPerLumi(self, eventsPerLumi):
+        """
+        _setEventsPerLumi_
+        Add event per lumi information to the step, so it can be added later
+        to the process, this comes from user input
+        """
+        if eventsPerLumi != None:
+            setattr(self.data.application.configuration, "eventsPerLumi",
+                    eventsPerLumi)
+
+    def getSkipBadFiles(self):
+        """
+        _getSkipBadFiles_
+
+        Check if we can skip inexistent files instead of failing the job
+        """
+        return getattr(self.data.application.configuration, "skipBadFiles",
+                False)
+
+    def setSkipBadFiles(self, skipBadFiles):
+        """
+        _setSkipBadFiles_
+
+        Add a flag to indicate the CMSSW process if we can
+        skip inexistent files instead of failing the job
+        """
+        setattr(self.data.application.configuration, "skipBadFiles",
+                skipBadFiles)
+
+    def setNumberOfCores(self, ncores):
+        """
+        _setNumberOfCores_
+
+        Set the number of cores for CMSSW to run on
         """
         self.data.application.multicore.numberOfCores = ncores
-        self.data.application.multicore.enabled = True
 
-    def numberOfCores(self):
+    def getNumberOfCores(self):
         """
-        _numberOfCores_
+        _getNumberOfCores_
 
         Get number of cores
         """
         return self.data.application.multicore.numberOfCores
-
-    def multicoreEnabled(self):
-        """
-        _multicoreEnabled_
-        
-        True/False flag to determine wether multicore is enabled
-        """
-        return self.data.application.multicore.enabled 
 
 
 class CMSSW(Template):
@@ -322,6 +400,7 @@ class CMSSW(Template):
         step.application.section_("command")
         step.application.command.executable = "cmsRun"
         step.application.command.configuration = "PSet.py"
+        step.application.command.configurationPickle = "PSet.pkl"
         step.application.command.configurationHash = None
         step.application.command.psetTweak = None
         step.application.command.arguments = ""
@@ -348,6 +427,7 @@ class CMSSW(Template):
         step.user.script = None
         step.user.outputFiles = []
         step.user.userFiles = []
+        step.user.lfnBase = None
 
         step.section_("monitoring")
 
@@ -355,11 +435,7 @@ class CMSSW(Template):
         # support for multicore cmssw running mode
         #
         step.application.section_("multicore")
-        step.application.multicore.enabled =  False
         step.application.multicore.numberOfCores = 1
-        step.application.multicore.inputfilelist = "input.filelist"
-        step.application.multicore.inputmanifest = "manifest.json"
-        step.application.multicore.edmFileUtil = "edmFileUtil --JSON -F input.filelist > manifest.json"
 
 
     def helper(self, step):
@@ -372,4 +448,3 @@ class CMSSW(Template):
 
         """
         return CMSSWStepHelper(step)
-

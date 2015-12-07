@@ -5,6 +5,7 @@ _StageOut.Impl_
 Implementations of the StageOutImpl for specific protocols
 
 """
+from __future__ import absolute_import
 
 
 __all__ = []
@@ -16,21 +17,22 @@ __all__ = []
 # //
 #//
 
-import SRMImpl
-import DCCPFNALImpl
-import FNALImpl
-import DCCPGenericImpl
-import RFCPImpl
-import RFCP1Impl
-import RFCP2Impl
-import RFCPCERNImpl
-import RFCPRALImpl
-import PYDCCPImpl
-import SRMV2Impl
-import XRDCPImpl
-import CPImpl
-import LCGImpl
-import HadoopImpl
-import UnittestImpl
-import VandyImpl
-
+from . import SRMImpl
+from . import DCCPFNALImpl
+from . import FNALImpl
+from . import DCCPGenericImpl
+from . import RFCPImpl
+from . import RFCP1Impl
+from . import RFCP2Impl
+from . import RFCPCERNImpl
+from . import RFCPRALImpl
+from . import PYDCCPImpl
+from . import SRMV2Impl
+from . import XRDCPImpl
+from . import CPImpl
+from . import LCGImpl
+from . import HadoopImpl
+from . import UnittestImpl
+from . import VandyImpl
+from . import TestFallbackToOldBackend
+from . import GFAL2Impl

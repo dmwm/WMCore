@@ -26,6 +26,8 @@ function postUpdate(formName) {
                formElement["type"] != "hidden" && formElement["type"] != "radio") {
       continue;
     };
+    /* firefox in Mac and Windows create the input with the name - hack*/
+    if (isNaN(elementIndex)) continue;
 
     paramCount += 1;
     paramStr += updatedForm.elements[elementIndex].name + "=";
@@ -51,9 +53,12 @@ function generateInputRow(label, key, d) {
   return '<tr>' + generateInput(label, key, d) +'</tr>';
 }
 
-function generateInput(label, key, d) {
+function generateInput(label, key, d, workloadKey) {
   var procStr = '<td>' + label + '</td><td><input type="text" name="' + key + '"';
-  if (key in d) {
+  if (workloadKey && workloadKey in d){
+    procStr += ' value="' + d[workloadKey] + '"';
+  }
+  else if (key in d) {
     procStr += ' value="' + d[key] + '"';
   }
   procStr += '></input></td>\n';
@@ -91,9 +96,29 @@ function generateProcessing(splitAlgo, splitParams) {
       procStr += "<option>True</option><option selected>False</option>\n";
     }
   } else {
-    procStr += "<option>True</option><option select>False</option>\n";
+    procStr += "<option selected>True</option><option>False</option>\n";
   }
- 
+
+  procStr += "</select></input></td></tr>\n";
+  procStr += '<tr><td><input type="radio" name="splittingAlgo" value="EventAwareLumiBased"';
+
+  if (splitAlgo == "EventAwareLumiBased") {
+    procStr += " checked";
+  }
+  procStr += ">Event Aware Lumi Based</input></td>\n";
+  procStr += generateInput("Optimal events per job:", "avg_events_per_job", splitParams, "events_per_job");
+  procStr += generateInput("Max events in single lumi:", "max_events_per_lumi", splitParams);
+  procStr += '<td>Split files between jobs: <select name="halt_job_on_file_boundaries_event_aware">';
+  if ("halt_job_on_file_boundaries" in splitParams) {
+    if (splitParams["halt_job_on_file_boundaries"] == true) {
+      procStr += "<option selected>True</option><option>False</option>\n";
+    } else {
+      procStr += "<option>True</option><option selected>False</option>\n";
+    }
+  } else {
+    procStr += "<option selected>True</option><option>False</option>\n";
+  }
+
   procStr += "</select></input></td></tr>\n";
   procStr += '<tr><td><input type="radio" name="splittingAlgo" value="EventBased"';
 
@@ -103,8 +128,13 @@ function generateProcessing(splitAlgo, splitParams) {
 
   procStr += ">Event Based</input></td>\n";
   procStr += generateInput("Events per job:", "events_per_job", splitParams);
+  if ("events_per_lumi" in splitParams) {
+    if (!splitParams.events_per_lumi) {
+    	splitParams.events_per_lumi = splitParams.events_per_job;
+    };
+    procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
+  }
   procStr += "<td></td></tr>\n"
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
 
   procStr += '<tr><td>Include parents: <select name="include_parents">';
   if ("include_parents" in splitParams) {
@@ -144,9 +174,8 @@ function generateSkim(splitAlgo, splitParams) {
   }
 
   procStr += ">Two File Based</input></td>\n";
-  procStr += generateInput("Files per job:", "files_per_job", splitParams);
+  procStr += generateInput("Files per job:", "two_files_per_job", splitParams);
   procStr += "</tr>";
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
   return procStr;
 }
@@ -155,7 +184,6 @@ function generateCleanupLogCollect(splitParams) {
   var procStr = '<input type="hidden" name="splittingAlgo" value="FileBased"></input>\n';
   procStr += "<table>"
   procStr += generateInputRow("Files per job:", "files_per_job", splitParams);
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   procStr += "</table>\n";
   return procStr;
 }
@@ -167,7 +195,6 @@ function generateMerge(splitAlgo, splitParams) {
   frmStr += generateInputRow("Max merge size:", "max_merge_size", splitParams);
   frmStr += generateInputRow("Max merge events:", "max_merge_events", splitParams);
   frmStr += generateInputRow("Max wait time (seconds):", "max_wait_time", splitParams);
-  frmStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
   frmStr += "</table>\n";
   return frmStr;
 }
@@ -176,7 +203,29 @@ function generateProduction(splitAlgo, splitParams) {
   var procStr = '<input type="hidden" name="splittingAlgo" value="EventBased"></input>\n';
   procStr += "<table>"
   procStr += generateInputRow("Events per job:", "events_per_job", splitParams);
-  procStr += generateInputRow("Max execution time (seconds):", "timeout", splitParams);
+  if ("events_per_lumi" in splitParams) {
+    if (!splitParams.events_per_lumi) {
+    	splitParams.events_per_lumi = splitParams.events_per_job;
+    };
+    procStr += generateInputRow("Events per lumi:", "events_per_lumi", splitParams);
+  }
+  if ("lheInputFiles" in splitParams) {
+    procStr += '<tr><td>Processing LHE files?: <select name="lheInputFiles">';
+      if (splitParams["lheInputFiles"] == true) {
+        procStr += "<option selected>True</option><option>False</option>\n";
+      } else {
+        procStr += "<option>True</option><option selected>False</option>\n";
+      }
+      procStr += '</td></tr>\n'
+  }
+  procStr += "</table>\n";
+  return procStr;
+}
+
+function generateHarvesting(splitAlgo, splitParams) {
+  var procStr = '<input type="hidden" name="splittingAlgo" value="Harvest"></input>\n';
+  procStr += "<table>"
+  procStr += generateInputRow("Periodic harvesting frequency:", "periodic_harvest_interval", splitParams);
   procStr += "</table>\n";
   return procStr;
 }
@@ -187,7 +236,7 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
   frmStr += '<input type="hidden" name="splittingTask" VALUE="' + taskName + '"></input>\n'; 
   frmStr += '<b>' + taskName + ':</b><b id="label' + taskName + '"></b><br>\n';
 
-  if (taskType == "Processing" || taskType == "MultiProcessing") {
+  if (taskType == "Processing") {
     frmStr += generateProcessing(splitAlgo, splitParams);
   } else if (taskType == "LogCollect" || taskType == "Cleanup") {
     frmStr += generateCleanupLogCollect(splitParams);
@@ -195,8 +244,10 @@ function generateForm(taskName, splitAlgo, splitParams, taskType) {
     frmStr += generateMerge(splitAlgo, splitParams);
   } else if (taskType == "Skim") {
     frmStr += generateSkim(splitAlgo, splitParams);
-  } else if (taskType == "Production" || taskType == "MultiProduction") {
+  } else if (taskType == "Production") {
     frmStr += generateProduction(splitAlgo, splitParams);
+  } else if (taskType == "Harvesting") {
+    frmStr += generateHarvesting(splitAlgo, splitParams);
   }
 
   frmStr += submitButton(taskName);

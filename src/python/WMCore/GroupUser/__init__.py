@@ -9,5 +9,3 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import sys
 import os
-
-

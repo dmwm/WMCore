@@ -15,6 +15,7 @@ from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
+from WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
@@ -26,7 +27,7 @@ class FileBasedTest(unittest.TestCase):
     Test file based job splitting.
     """
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -39,11 +40,17 @@ class FileBasedTest(unittest.TestCase):
             newFile = File(makeUUID(), size = 1000, events = 100)
             newFile.setLocation('blenheim')
             newFile.setLocation('malpaquet')
+            lumis = []
+            for lumi in range(20):
+                lumis.append((i * 100) + lumi)
+                newFile.addRun(Run(i, *lumis))
             self.multipleFileFileset.addFile(newFile)
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         newFile = File("/some/file/name", size = 1000, events = 100)
         newFile.setLocation('blenheim')
+        lumis = range(50,60) + range(70,80)
+        newFile.addRun(Run(13, *lumis))
         self.singleFileFileset.addFile(newFile)
 
         testWorkflow = Workflow()
@@ -58,7 +65,11 @@ class FileBasedTest(unittest.TestCase):
 
         #self.multipleFileSubscription.create()
         #self.singleFileSubscription.create()
-        
+
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
+
         return
 
     def tearDown(self):
@@ -79,7 +90,8 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 1)
+        jobGroups = jobFactory(files_per_job = 1,
+                               performance = self.performanceParams)
 
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
@@ -91,7 +103,7 @@ class FileBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def testMoreFiles(self):
@@ -103,9 +115,10 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.singleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 10)
-        
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -116,7 +129,7 @@ class FileBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def test2FileSplit(self):
@@ -128,9 +141,10 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 2)
-        
+
+        jobGroups = jobFactory(files_per_job = 2,
+                               performance = self.performanceParams)
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -159,9 +173,10 @@ class FileBasedTest(unittest.TestCase):
         """
         splitter = SplitterFactory()
         jobFactory = splitter(self.multipleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 3)
-        
+
+        jobGroups = jobFactory(files_per_job = 3,
+                               performance = self.performanceParams)
+
         self.assertEqual(len(jobGroups), 1)
 
         self.assertEqual(len(jobGroups[0].jobs), 4)
@@ -178,7 +193,40 @@ class FileBasedTest(unittest.TestCase):
 
         self.assertEqual(len(fileList), 10)
 
-        return    
+        return
+
+    def test4WithLumiMask(self):
+        """
+        _test4WithLumiMask_
+
+        Test file based job splitting when
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(self.multipleFileSubscription)
+
+        jobGroups = jobFactory(files_per_job = 2,
+                               total_files = 3,
+                               runs = ['1', '2', '4', '5'],
+                               lumis = ['100,130', '203,204,207,221', '401,405', '500, 520'],
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+
+        self.assertEqual(len(jobGroups[0].jobs), 2)
+
+        fileList = []
+        for job in jobGroups[0].jobs:
+            assert len(job.getFiles(type = "list")) in [2, 1], \
+                   "ERROR: Job contains incorrect number of files."
+
+            for file in job.getFiles(type = "lfn"):
+                assert file not in fileList, \
+                       "ERROR: File duplicated!"
+                fileList.append(file)
+
+        self.assertEqual(len(fileList), 3)
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

@@ -28,7 +28,7 @@ for app in ["lib", "lib64"]:
         sys.path.append(libPath)
 
 try :
-    # 'glite_wmsui_LbWrapper' exists on both gLite 3.1 and gLite 3.2 
+    # 'glite_wmsui_LbWrapper' exists on both gLite 3.1 and gLite 3.2
     from glite_wmsui_LbWrapper import Status
     # 'wmsui_api' exists only on gLite 3.2 !!!
     import wmsui_api
@@ -114,7 +114,7 @@ class GLiteStatusQuery(object):
         # Loading dictionary with available parameters list
         self.states = wmsui_api.states_names
         self.attrNumber = wmsui_api.STATE_ATTR_MAX
-        
+
         # defining fields of interest
         self.status = self.states.index('Status')
         self.reason = self.states.index('Reason')
@@ -142,7 +142,7 @@ class GLiteStatusQuery(object):
 
         try:
             runningJob['statusReason'] = str(jobInfo[self.reason])
-        except StandardError :
+        except Exception :
             pass
 
         try:
@@ -152,7 +152,7 @@ class GLiteStatusQuery(object):
                 tmp = wms.split(':')
                 runningJob['service'] = \
                                  "https://" + getfqdn ( tmp[0] ) + ':' + tmp[1]
-        except StandardError :
+        except Exception :
             pass
 
         try:
@@ -160,7 +160,7 @@ class GLiteStatusQuery(object):
             runningJob['destination'] = destCe.replace("https://", "")
             # runningJob['DEST_CE'] = \
             #                     destCe.split(':')[0].replace("https://", "")
-        except StandardError :
+        except Exception :
             pass
 
         timestamp = str(jobInfo[self.stateEnterTimes])
@@ -168,45 +168,45 @@ class GLiteStatusQuery(object):
 
             lst = self.ft.match( timestamp ).group( 6, 7, 8, \
                     self.statusList.index(runningJob['statusScheduler'])+2)
-            
+
             if lst[0] != '0':
                 try:
                     runningJob["scheduledAtSite"] = lst[0]
                 except KeyError :
                     pass
-                
+
             if lst[1] != '0':
                 runningJob["startTime"] = lst[1]
-                
+
             if lst[2] != '0':
                 runningJob["stopTime"] = lst[2]
-                
+
             if lst[3] != '0':
                 runningJob["lbTimestamp"] = lst[3]
 
-        except StandardError :
+        except Exception :
             pass
 
         try:
             if runningJob['statusScheduler'] == 'Done' \
                    and jobInfo[ self.doneCode ] != '0' :
                 runningJob['statusScheduler'] = 'Done(failed)'
-        except StandardError :
+        except Exception :
             pass
 
         runningJob['status'] = self.statusMap[runningJob['statusScheduler']]
-    
+
     ##########################################################################
-    
+
     def checkJobs( self, jobIds, errors ):
         """
         check a list of provided job id
         """
-        
+
         for jobId in jobIds:
 
             try:
-                
+
                 wrapStatus = Status(jobId, 0)
                 # Check for Errors
                 err , apiMsg = wrapStatus.get_error ()
@@ -216,10 +216,10 @@ class GLiteStatusQuery(object):
 
                 # Retrieve the number of status (in this case is always 1)
                 # statusNumber = wrapStatus.getStatusNumber()
- 
+
                 # Retrieve the list of attributes for the current UNIQUE event
                 statusAttribute = wrapStatus.getStatusAttributes(0)
-                
+
                 # Check for Errors
                 err , apiMsg = wrapStatus.get_error ()
                 if err:
@@ -236,18 +236,18 @@ class GLiteStatusQuery(object):
                     job = jobIds[jobSchedId]
                 except :
                     continue
-                    
+
                  # update runningJob
                 self.getJobInfo(jobInfo, job )
-                
+
                 jobIds[jobSchedId] = job
-                
-            except Exception, err :
+
+            except Exception as err :
                 errors.append(
                     "skipping " + jobId + " : " +  str(err) )
-       
+
     ##########################################################################
-    
+
     def checkJobsBulk( self, jobIds, parentIds, errors ):
         """
         check a list of provided job parent ids
@@ -255,15 +255,15 @@ class GLiteStatusQuery(object):
 
         if self.attrNumber == 0 :
             # raise an exception here? What kind of exception?
-            raise 
-        
+            raise
+
         self.st = 0
 
         # convert to string
         # lbJobs = wmsui_api.getJobIdfromList ( parentIds )
 
         for bulkId in parentIds:
-            
+
             try:
 
                 wrapStatus = Status(bulkId, 0)
@@ -282,7 +282,7 @@ class GLiteStatusQuery(object):
                     # Retrieve the list of attributes for the current event
                     statusAttribute = \
                         wrapStatus.getStatusAttributes(statusNumber)
-                    
+
                     # Check for Errors
                     err , apiMsg = wrapStatus.get_error ()
                     if err:
@@ -290,7 +290,7 @@ class GLiteStatusQuery(object):
                         raise Exception(apiMsg)
 
                 bulkInfo = statusAttribute
-                
+
                 # how many jobs in the bulk?
                 intervals = int ( len(bulkInfo) / self.attrNumber )
 
@@ -323,11 +323,11 @@ class GLiteStatusQuery(object):
                     # update runningJob
                     self.getJobInfo( jobInfo, job, forceAborted)
                     jobIds[jobSchedId] = job
-                    
+
 
                 self.st = self.st + 1
 
-            except Exception, err :
+            except Exception as err :
                 errors.append("skipping " + bulkId + " : " +  str(err))
 
 
@@ -335,26 +335,26 @@ def usage():
     """
     print out help
     """
-    usageStr = ''' 
+    usageStr = '''
     python GLiteStatusQuery.py [-p <parentId> -j <jobId1,jobId2,...,jobIdN>][-h]
     Options:
     -h|--help        print this summary
-    -p|--parentId=   id for the collection 
+    -p|--parentId=   id for the collection
     -j|--jobId=      list of job ids (comma separated)
     '''
-        
-    return usageStr 
+
+    return usageStr
 
 def main():
     """
     __main__
     """
-    
+
     # parse options
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 
+        opts, args = getopt.getopt(sys.argv[1:],
                                    "", ["help", "parentId=", "jobId="])
-    except getopt.GetoptError, err:
+    except getopt.GetoptError as err:
         print usage()
         sys.exit(1)
 
@@ -362,7 +362,7 @@ def main():
     jobList = []
 
     for o, a in opts:
-        
+
         if o in ("-h", "--help"):
             print usage()
             sys.exit(1)
@@ -373,12 +373,12 @@ def main():
         else:
             print '\ Unknown parameter.\n'
             sys.exit(1)
-    
+
     if len(jobList)==0 :
         print '\nAt least one jobId is needed.\n'
         sys.exit(1)
 
-    # LB data structures 
+    # LB data structures
     template = { 'schedulerId' : None,
                  'schedulerParentId' : None, # probably useless...
                  'statusScheduler' : None,
@@ -408,13 +408,13 @@ def main():
         jobIds[ job ] = rJob
 
     lbInstance = GLiteStatusQuery()
-    
+
     if parent :
-        lbInstance.checkJobsBulk( jobIds, parent, errors )     
+        lbInstance.checkJobsBulk( jobIds, parent, errors )
     else :
         lbInstance.checkJobs( jobIds, errors )
 
-    json = MyJSONEncoder()      
+    json = MyJSONEncoder()
     if errors :
         print '\nError during API calls.\n'
         print str(errors)

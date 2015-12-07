@@ -3,6 +3,7 @@
 _DestroyAgentBase_
 
 """
+from __future__ import absolute_import
 
 
 
@@ -14,9 +15,9 @@ from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
-from CreateAgentBase import CreateAgentBase
+from .CreateAgentBase import CreateAgentBase
 
-class DestroyAgentBase(DBCreator):    
+class DestroyAgentBase(DBCreator):
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -29,7 +30,7 @@ class DestroyAgentBase(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
         orderedTables = CreateAgentBase.requiredTables[:]
         orderedTables.reverse()

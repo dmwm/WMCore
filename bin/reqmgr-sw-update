@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+"""
+Helper script calling function to update software known to
+ReqMgr - CMSSW versions and scram architectures.
+
+The script takes 1 argument - name of the configuration file (tag
+collector address, target database is all read from there down the line).
+
+Experience tells that it's better (due to CMS tag collector instability)
+to retrieve data asynchronously into a private ReqMgr database. Rather
+than consult TC at every request injection.
+
+"""
+
+import sys
+import os
+
+from WMCore.ReqMgr.Service.Auxiliary import update_software
+
+
+if len(sys.argv) < 2:
+    print ("ERROR: %s: Please specify configuration file as the only "
+           "argument." % sys.argv[0])
+    sys.exit(1)
+config_file = sys.argv[1]
+if not os.path.exists(config_file):
+    print ("ERROR: %s: Specified config file '%s' does not exist." %
+           (sys.argv[0], config_file))
+    sys.exit(1)
+update_software(config_file)

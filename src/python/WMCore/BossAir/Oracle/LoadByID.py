@@ -14,4 +14,3 @@ class LoadByID(MySQLLoadByID):
 
     Load all jobs in full by ID
     """
-

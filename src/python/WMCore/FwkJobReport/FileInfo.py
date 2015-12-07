@@ -10,62 +10,11 @@ Not in the Framework XML
 """
 
 
-
-
-
-
-
 import os
 import os.path
-import subprocess
 import logging
 
-
-def readAdler32(filename):
-    """
-    _readAdler32_
-
-    Get the adler32 checksum of a file. Return None on error
-
-    Process line by line and adjust for known signed vs. unsigned issues
-      http://docs.python.org/library/zlib.html
-
-    """
-    try:
-        from zlib import adler32
-        sum = 1L
-        f = open(filename, 'rb')
-        while True:
-            line = f.readline(4096) #limit so binary files don't blow up
-            if not line:
-                break
-            sum = adler32(line, sum)
-        f.close()
-        return '%x' % (sum & 0xffffffffL) # +ve values and convert to hex
-    except StandardError, e:
-        print('Error computing Adler32 checksum of %s. %s' % (filename, str(e)))
-
-
-
-def readCksum(filename):
-    """
-    _readCksum_
-
-    Run a cksum command on a file an return the checksum value
-
-    """
-    ckproc = subprocess.Popen(['cksum', filename],
-                              stdout = subprocess.PIPE,
-                              stderr = subprocess.PIPE)
-    ckproc.wait()
-    result = ckproc.stdout.readlines()
-
-    result = result[0]  # Get the only list element
-    result = result.strip() # Get rid of crappy characters
-    cksum = result.split()[0] # Take the first one
-    return cksum
-
-
+from WMCore.Algorithms.BasicAlgos import calculateChecksums
 
 class FileInfo:
     """
@@ -102,12 +51,15 @@ class FileInfo:
             return
         if not os.path.isabs(pfn):
             # Get an absolute path
-            pfn = os.path.abspath(pfn) 
+            pfn = os.path.abspath(pfn)
 
 
         # Now we know it, we better set it
         setattr(fileReport, 'pfn', pfn)
-
+        
+        # Set default of merged as false
+        setattr(fileReport, 'merged', False)
+        
         return self.processFile(filename = pfn,
                                 fileReport = fileReport,
                                 step = step,
@@ -122,14 +74,10 @@ class FileInfo:
 
 
         """
-
-        # Get checksums
-        adler32 = readAdler32(filename = filename)
-        cksum   = readCksum(filename = filename)
-
+        # Get checksum
+        (adler32, cksum) = calculateChecksums(filename)
 
         # Get info from spec
-
         output = getattr(step.output.modules, outputModule)
         disableGUID      = getattr(output, 'disableGUID', False)
         fixedLFN         = getattr(output, 'fixedLFN', False)
@@ -139,7 +87,6 @@ class FileInfo:
 
         # Get other file information
         size = os.stat(filename)[6]
-
 
         #Get info from file
         mergedLFNBase    = getattr(fileReport, 'MergedLFNBase', None)
@@ -164,7 +111,7 @@ class FileInfo:
             mergedLFNBase.rstrip('/')
             newLFN = os.path.join(mergedLFNBase, os.path.basename(lfn))
             setattr(fileReport, 'lfn', newLFN)
-        
+
 
 
 
@@ -190,4 +137,3 @@ class FileInfo:
 
 
         self.siteCfg = loadSiteLocalConfig()
-

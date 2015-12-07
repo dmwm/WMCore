@@ -48,7 +48,7 @@ def getSyncCE():
     """
     result = socket.gethostname()
 
-    if os.environ.has_key('GLOBUS_GRAM_JOB_CONTACT'):
+    if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
         #  //
         # // OSG, Sync CE from Globus ID
         #//
@@ -60,22 +60,8 @@ def getSyncCE():
         except:
             pass
         return result
-    if os.environ.has_key('EDG_WL_JOBID'):
-        #  //
-        # // LCG, Sync CE from edg command
-        #//
-        command = "glite-brokerinfo getCE"
-        pop = popen2.Popen3(command)
-        pop.wait()
-        exitCode = pop.poll()
-        if exitCode:
-            return result 
-        
-        content = pop.fromchild.read()
-        result = content.strip()
-        return result
 
-    if os.environ.has_key('NORDUGRID_CE'):
+    if 'NORDUGRID_CE' in os.environ:
         #  //
         # // ARC, Sync CE from env. var. submitted with the job by JobSubmitter
         #//
@@ -117,7 +103,7 @@ def locateWMSandbox():
     """
     try:
         import WMSandbox
-    except ImportError, ex:
+    except ImportError as ex:
         msg = "Error importing WMSandbox module"
         msg += str(ex)
         raise BootstrapException(msg)
@@ -142,29 +128,29 @@ def loadJobDefinition():
     packageLoc = os.path.join(sandboxLoc, "JobPackage.pcl")
     try:
         package.load(packageLoc)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Failed to load JobPackage:%s\n" % packageLoc
         msg += str(ex)
         createErrorReport(exitCode = 11001, errorType = "JobPackageError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
 
     try:
         import WMSandbox.JobIndex
-    except ImportError, ex:
+    except ImportError as ex:
         msg = "Failed to import WMSandbox.JobIndex module\n"
         msg += str(ex)
         createErrorReport(exitCode = 11002, errorType = "JobIndexError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
 
     index = WMSandbox.JobIndex.jobIndex
 
     try:
         job = package[index]
-    except Exception, ex:
+    except Exception as ex:
         msg = "Failed to extract Job %i\n" % (index)
         msg += str(ex)
         createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     diagnostic = """
     Job Index = %s
     Job Instance = %s
@@ -203,24 +189,24 @@ def loadTask(job):
 
     try:
         task = workload.getTaskByPath(job['task'])
-    except KeyError, ex:
+    except KeyError as ex:
         msg =  "Task name not in job object"
         msg += str(ex)
         createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
-    except Exception, ex:
+        raise BootstrapException(msg)
+    except Exception as ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
         createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     if task == None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
         createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg,
                           logLocation = "Report.%i.pkl" % job['retry_count'])
-        raise BootstrapException, msg
+        raise BootstrapException(msg)
     return task
 
 
@@ -239,7 +225,7 @@ def createInitialReport(job, task, logLocation):
         logging.error(msg)
         #TODO: Make less goatballs for testing purposes
         return
-        
+
     report  = Report.Report()
 
 
@@ -247,6 +233,7 @@ def createInitialReport(job, task, logLocation):
     report.data.WMAgentJobName = job.get('name', None)
     report.data.seName         = siteCfg.localStageOut.get('se-name',
                                                            socket.gethostname())
+    report.data.pnn            = siteCfg.localStageOut.get('phedex-node', 'Unknown')
     report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
     report.data.hostName       = socket.gethostname()
     report.data.ceName         = getSyncCE()
@@ -287,6 +274,7 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
 
     report.data.seName         = siteCfg.localStageOut.get('se-name',
                                                            socket.gethostname())
+    report.data.pnn         = siteCfg.localStageOut.get('phedex-node', 'Unknown')
     report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
     report.data.hostName       = socket.gethostname()
     report.data.ceName         = getSyncCE()
@@ -301,7 +289,7 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
 
     return
 
-    
+
 
 
 
@@ -314,7 +302,7 @@ def setupLogging(logDir):
     """
     try:
         logFile = "%s/jobLog.%s.log" % (logDir, os.getpid())
-        
+
         logHandler = RotatingFileHandler(logFile, "a", 1000000000, 3)
         logFormatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
         logHandler.setFormatter(logFormatter)
@@ -326,10 +314,10 @@ def setupLogging(logDir):
 
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger()
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error setting up logging in dir %s:\n" % logDir
         msg += str(ex)
-        raise BootstrapException, msg        
+        raise BootstrapException(msg)
     return
 
 
@@ -344,8 +332,7 @@ def setupMonitoring(logPath):
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor
-    except Exception, ex:
+    except Exception as ex:
         msg = "Error setting up Watchdog monitoring:\n"
         msg += str(ex)
-        raise BootstrapException, msg       
-
+        raise BootstrapException(msg)

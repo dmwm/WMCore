@@ -26,7 +26,7 @@ from signal import SIGTERM
 from xml.dom.minidom import Document, Element
 
 # File mode creation mask of the daemon.
-UMASK = 0022
+UMASK = 0o022
 
 def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
               workdir= None, startmsg = 'started with pid %s', \
@@ -44,11 +44,11 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
     # Do first fork.
     try:
         pid = os.fork()
-        if pid > 0: 
+        if pid > 0:
             if not keepParent:
                 os._exit(0) # Exit first parent.
             return pid
-    except OSError, e:
+    except OSError as e:
         sys.stderr.write("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
         print("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
         sys.exit(1)
@@ -61,7 +61,7 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
     try:
         pid = os.fork()
         if pid > 0: os._exit(0) # Exit second parent.
-    except OSError, e:
+    except OSError as e:
         sys.stderr.write("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
         print("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
         sys.exit(1)
@@ -74,7 +74,7 @@ def daemonize(stdout= '/dev/null', stderr = None, stdin= '/dev/null', \
     pid = str(os.getpid())
     sys.stderr.write("\n%s\n" % startmsg % pid)
     sys.stderr.flush()
-    if workdir: 
+    if workdir:
         #file(pidfile,'w+').write("%s\n" % pid)
         #Since the current working directory may be a mounted filesystem, we
         #avoid the issue of not being able to unmount the filesystem at
@@ -142,7 +142,7 @@ def test():
     sys.stdout.write ('Message to stdout...')
     sys.stderr.write ('Message to stderr...')
     c = 0
-    while 1:
+    while True:
         sys.stdout.write ('%d: %s\n' % (c, time.ctime(time.time())) )
         logging.info('%d: %s\n' % (c, time.ctime(time.time())) )
         sys.stdout.flush()
@@ -157,7 +157,7 @@ def createDaemon(workdir, keepParent = False):
 
     """
     pidfile = os.path.join(workdir, 'Daemon.xml')
-    startmsg = 'started with pid %s' 
+    startmsg = 'started with pid %s'
     try:
         pf  = file(pidfile,'r')
         pid = (pf.read().strip())
@@ -166,8 +166,8 @@ def createDaemon(workdir, keepParent = False):
         pid = None
     if pid :
         mess = """
-Start aborted since pid file '%s' exists. 
-Please kill process and remove file first. 
+Start aborted since pid file '%s' exists.
+Please kill process and remove file first.
 If process is still running this file contains
 information on that.
 """
@@ -179,10 +179,9 @@ information on that.
 
     return daemonize(stdout = stdoutLog, stderr = stderrLog, workdir = workdir,
                      startmsg = startmsg, keepParent = keepParent)
- 
+
 if __name__ == "__main__":
     parent_id = createDaemon('/tmp', keepParent = False)
     if parent_id == 0:
         test()
     print('Kept parent: '+str(parent_id))
-

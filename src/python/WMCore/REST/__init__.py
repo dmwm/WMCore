@@ -1,0 +1,1 @@
+"""WMCore.REST module"""

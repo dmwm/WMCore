@@ -28,10 +28,10 @@ class Collection(dict, WMObject):
     def setOwner(self, userInstance):
         """
         _setOwner_
-        
-        Provide a WMCore.GroupUser.User instance that will act as the owner of this 
+
+        Provide a WMCore.GroupUser.User instance that will act as the owner of this
         collection
-        
+
         """
         self.owner = userInstance
         return
@@ -39,21 +39,21 @@ class Collection(dict, WMObject):
     def create(self, unique = False):
         """
         _create_
-        
+
         Create this Collection in the back end
-        
+
         """
         pass
-    
+
     def populate(self):
         """
         _populate_
-        
+
         Pull in all filesets & file entries
-        
+
         """
         pass
-        
+
     def drop(self):
         """
         _drop_
@@ -69,5 +69,5 @@ class Collection(dict, WMObject):
         Add a fileset to the collection.
         """
         fileset.setCollection(self)
-        self["filesets"].append(fileset)        
+        self["filesets"].append(fileset)
         return

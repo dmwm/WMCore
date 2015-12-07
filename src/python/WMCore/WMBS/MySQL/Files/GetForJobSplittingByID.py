@@ -7,7 +7,7 @@ MySQL implementation of File.GetForJobSplittingByID
 """
 
 from WMCore.Database.DBFormatter     import DBFormatter
-from WMCore.WMBS.MySQL.Files.GetByID import GetByID 
+from WMCore.WMBS.MySQL.Files.GetByID import GetByID
 
 class GetForJobSplittingByID(GetByID):
     sql = """SELECT id, lfn, filesize, events, first_event, merged, MIN(run) AS minrun

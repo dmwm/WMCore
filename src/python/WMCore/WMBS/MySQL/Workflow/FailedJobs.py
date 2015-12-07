@@ -26,7 +26,7 @@ class FailedJobs(DBFormatter):
              WHERE wmbs_job.outcome = 0 AND
                    (wmbs_job_state.name = 'exhausted' OR
                     wmbs_job_state.name = 'cleanout')"""
-        
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
         return self.formatDict(result)

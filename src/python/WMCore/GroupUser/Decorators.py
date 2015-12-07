@@ -24,14 +24,14 @@ def requireConnection(funcRef):
 def requireGroup(funcRef):
     """
     _requireGroup_
-    
+
     Decorator method to enforce setting a group attribute
-    
+
     """
     def wrapper(self, *args, **opts):
         if getattr(self, "group", None) == None:
             msg = "Group Attribute not present/set"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return funcRef(self, *args, **opts)
     return wrapper
 
@@ -39,14 +39,13 @@ def requireGroup(funcRef):
 def requireUser(funcRef):
     """
     _requireUser_
-    
+
     Decorator method to enforce setting a user attribute for another
     object
     """
     def wrapper(self, *args, **opts):
         if getattr(self, "owner", None) == None:
             msg = "Group Attribute not present/set"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return funcRef(self, *args, **opts)
     return wrapper
-

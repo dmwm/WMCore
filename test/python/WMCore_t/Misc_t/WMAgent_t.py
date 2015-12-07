@@ -17,6 +17,7 @@ from subprocess import Popen, PIPE
 
 # Imports for testing
 from WMQuality.TestInit import TestInit
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMInit import getWMBASE
 
@@ -121,20 +122,20 @@ class WMAgentTest(unittest.TestCase):
 
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationSlots  = self.daoFactory(classname = "Locations.SetJobSlots")
+        pendingSlots  = self.daoFactory(classname = "Locations.SetPendingSlots")
 
 
         for site in self.sites:
-            locationAction.execute(siteName = site, seName = 'se.%s' % (site), ceName = site)
-            locationSlots.execute(siteName = site, jobSlots = 1000)
+            locationAction.execute(siteName = site, pnn = 'se.%s' % (site), ceName = site)
+            pendingSlots.execute(siteName = site, pendingSlots = 1000)
 
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, seName = 'se.%s' % (site), ceName = site)
+            resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site), ceName = site)
             resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 10000)
+                                            maxSlots = 10000, pendingSlots = 10000)
 
 
         self.testDir = self.testInit.generateWorkDir()
@@ -145,8 +146,7 @@ class WMAgentTest(unittest.TestCase):
             heartbeatAPI = HeartbeatAPI(component)
             heartbeatAPI.registerComponent()
 
-
-
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
 
@@ -161,11 +161,13 @@ class WMAgentTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
         self.testInit.delWorkDir()
+        
+        EmulatorSetup.deleteConfig(self.configFile)
 
         return
 
 
-    
+
 
     def createTestWorkload(self, workloadName = 'Test', emulator = True):
         """
@@ -178,7 +180,7 @@ class WMAgentTest(unittest.TestCase):
         workload = testWorkload("TestWorkload")
         rereco = workload.getTask("ReReco")
 
-        
+
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
         taskMaker.processWorkload()
@@ -189,31 +191,31 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-    
+
     def getConfig(self):
         """
         _getConfig_
-        
+
         This is the global test configuration object
         """
-        
-        
-        
-        config = Configuration()
-        
+
+
+
+        config = self.testInit.getConfiguration()
+
         config.component_("Agent")
         config.Agent.WMSpecDirectory = self.testDir
         config.Agent.agentName       = 'testAgent'
         config.Agent.componentName   = 'test'
-        
-        
+
+
         # First the general stuff
         config.section_("General")
         config.General.workDir = os.getenv("TESTDIR", self.testDir)
-    
+
         # Now the CoreDatabase information
         # This should be the dialect, dburl, etc
-        
+
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
         config.CoreDatabase.socket     = os.getenv("DBSOCK")
@@ -294,19 +296,19 @@ class WMAgentTest(unittest.TestCase):
         config.TaskArchiver.logLevel        = 'INFO'
         config.TaskArchiver.timeOut         = 0
 
-    
-    
+
+
         # JobStateMachine
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL',
                                                            'mnorman:theworst@cmssrv52.fnal.gov:5984')
         config.JobStateMachine.couchDBName     = "mnorman_test"
-        
-        
+
+
         # Needed, because this is a test
         os.makedirs(config.JobSubmitter.submitDir)
-        
-        
+
+
         return config
 
 
@@ -455,7 +457,7 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-        
+
 
 
 
@@ -515,13 +517,13 @@ class WMAgentTest(unittest.TestCase):
 
         testJobTracker.algorithm()
         time.sleep(5)
-        
+
         # Running the algo without removing the jobs should do nothing
         result = getJobsAction.execute(state = 'Executing', jobType = "Processing")
         self.assertEqual(len(result), 0)
         result = getJobsAction.execute(state = 'Complete', jobType = "Processing")
         self.assertEqual(len(result), nSubs * nFiles)
-        
+
 
 
 
@@ -540,7 +542,7 @@ class WMAgentTest(unittest.TestCase):
 
 
 
-        
+
 
 
         config.Agent.componentName = 'JobAccountant'
@@ -617,7 +619,7 @@ class WMAgentTest(unittest.TestCase):
             shutil.rmtree('testDir')
         shutil.copytree('%s' %self.testDir, os.path.join(os.getcwd(), 'testDir'))
 
-        
+
 
 
         return
@@ -629,4 +631,4 @@ class WMAgentTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

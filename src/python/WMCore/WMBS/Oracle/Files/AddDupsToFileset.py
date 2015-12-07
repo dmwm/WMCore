@@ -46,4 +46,4 @@ class AddDupsToFileset(MySQLAddDupsToFileset):
                           wmbs_fileset_files.fileset != :fileset)
                   AND NOT EXISTS (SELECT * FROM wmbs_sub_files_available
                                     WHERE subscription = wmbs_subscription.id
-                                    AND fileid = wmbs_file_details.id)""" 
+                                    AND fileid = wmbs_file_details.id)"""

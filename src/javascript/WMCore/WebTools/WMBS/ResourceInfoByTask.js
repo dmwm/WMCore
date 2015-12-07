@@ -40,11 +40,15 @@ WMCore.WMBS.ResourceInfoByTask.resourceInfo = function(divID){
             fields: [{
                 key: "site"
             }, {
-                key: "job_slots"
+                key: "pending_slots"
+            }, {
+                key: "running_slots"
             }, {
                 key: "max_slots"
             }, {
                 key: "task_type"
+            }, {
+                key: "task_pending_jobs"
             }, {
                 key: "task_running_jobs"
             }]
@@ -91,7 +95,7 @@ WMCore.WMBS.ResourceInfoByTask.resourceInfo = function(divID){
             }, {
                 key: "total_slots"
             }, {
-                key: "running_jobs",
+                key: "pending_jobs",
                 label: "jobs in wmagents"
             }]
         };

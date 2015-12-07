@@ -15,7 +15,7 @@ def connectToDB():
     
     Connect to the database specified in the WMAgent config.
     """
-    if not os.environ.has_key("WMAGENT_CONFIG"):
+    if "WMAGENT_CONFIG" not in os.environ:
         print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
         sys.exit(1)
         
@@ -51,7 +51,7 @@ for result in myThread.dbi.processData(sql):
 
 blocks = {}
 for row in results:
-    if not blocks.has_key(row[0]):
+    if row[0] not in blocks:
         blocks[row[0]] = []
 
     blocks[row[0]].append(row[1])

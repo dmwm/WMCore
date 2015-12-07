@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """WorkQueue Exceptions"""
 
-class WorkQueueError(StandardError):
+class WorkQueueError(Exception):
     """Standard error baseclass"""
     def __init__(self, error):
-        StandardError.__init__(self, error)
+        Exception.__init__(self, error)
         self.msg = WorkQueueError.__class__.__name__
         self.error = error
 

@@ -1,4 +1,5 @@
 {
-    "name": "Name of your CouchApp",
-    "description": "CouchApp"
+    "appName": "ReqMgr",
+    "description": "CouchApp",
+    "visualisationTitle": "ReqMgr CouchApp"
 }

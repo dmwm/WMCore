@@ -19,17 +19,17 @@ import time, threading
 class MyWorker(BaseWorkerThread):
     def __init__(self):
         BaseWorkerThread.__init__(self)
-        
+
     def algorithm(self, parameters):
         print "Doing work with parameters:", parameters
         myThread = threading.currentThread()
         myThread.transaction.begin()
         # Do DB work here
         myThread.transaction.commit()
-        
+
     def setup(self, parameters):
         print "Setting up worker with parameters:", parameters
-        
+
     def terminate(self, parameters):
         print "Terminating worker with parameters:", parameters
 
@@ -49,6 +49,3 @@ time.sleep(5)
 manager.terminateWorkers()
 
 """
-
-
-

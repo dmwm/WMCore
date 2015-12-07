@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1103
+#pylint: disable=E1103
 # E1103:  Attach objects to threading
 """
 _TwoFileBased_
@@ -48,15 +48,15 @@ class TwoFileBased(JobFactory):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         self.getParentInfoAction     = self.daoFactory(classname = "Files.GetParentInfo")
 
 
 
         return
 
-        
-    
+
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -97,18 +97,18 @@ class TwoFileBased(JobFactory):
                             jobsInGroup = 0
 
                     self.newJob(name = self.getJobName(length=totalJobs))
-                    
+
                     filesInJob   = 0
                     totalJobs   += 1
                     jobsInGroup += 1
-                    
+
                 filesInJob += 1
                 self.currentJob.addFile(file)
-                
+
                 listOfFiles.append(file)
 
 
-            
+
 
         return
 

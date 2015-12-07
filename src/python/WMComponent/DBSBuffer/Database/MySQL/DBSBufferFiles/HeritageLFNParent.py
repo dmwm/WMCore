@@ -17,14 +17,14 @@ class HeritageLFNParent(DBFormatter):
                FROM DUAL
     """
 
-    
+
     #sql = """INSERT INTO dbsbuffer_file_parent (child, parent)
     #           SELECT :child, dbsbuffer_file.id FROM dbsbuffer_file
     #             WHERE dbsbuffer_file.lfn = :lfn AND NOT EXISTS
     #               (SELECT child FROM dbsbuffer_file_parent
     #                WHERE child = :child AND
     #                      parent = (SELECT id FROM dbsbuffer_file WHERE lfn = :lfn))"""
-    
+
     def execute(self, parentLFNs, childLFN, conn = None, transaction = False):
         binds = []
         for parentLFN in parentLFNs:

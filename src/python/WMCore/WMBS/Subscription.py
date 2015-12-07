@@ -4,8 +4,8 @@ _Subscription_
 
 A simple object representing a Subscription in WMBS.
 
-A subscription is just a way to link many sets of jobs to a 
-fileset and track the process of the associated jobs. It is 
+A subscription is just a way to link many sets of jobs to a
+fileset and track the process of the associated jobs. It is
 associated to a single fileset and a single workflow.
 """
 
@@ -38,7 +38,7 @@ class Subscription(WMBSBase, WMSubscription):
             fileset = Fileset()
         if workflow == None:
             workflow = Workflow()
-            
+
         WMSubscription.__init__(self, fileset = fileset, workflow = workflow,
                                 split_algo = split_algo, type = type)
 
@@ -46,7 +46,7 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.bulkDeleteLimit = 500
         return
-        
+
     def create(self):
         """
         Add the subscription to the database
@@ -56,18 +56,18 @@ class Subscription(WMBSBase, WMSubscription):
         if self.exists() != False:
             self.load()
             return
-        
+
         action = self.daofactory(classname = "Subscriptions.New")
         action.execute(fileset = self["fileset"].id, type = self["type"],
                        split_algo = self["split_algo"],
                        workflow = self["workflow"].id,
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        
+
         self.load()
         self.commitTransaction(existingTransaction)
         return
-    
+
     def exists(self):
         """
         See if the subscription is in the database
@@ -78,7 +78,7 @@ class Subscription(WMBSBase, WMSubscription):
                                 conn = self.getDBConn(),
                                 transaction = self.existingTransaction())
         return result
-    
+
     def load(self):
         """
         _load_
@@ -99,20 +99,20 @@ class Subscription(WMBSBase, WMSubscription):
             result = action.execute(fileset = self["fileset"].id,
                                     workflow = self["workflow"].id,
                                     conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())            
+                                    transaction = self.existingTransaction())
 
         self["type"] = result["type"]
         self["id"] = result["id"]
         self["split_algo"] = result["split_algo"]
 
         # Only load the fileset and workflow if they haven't been loaded
-        # already.  
+        # already.
         if self["fileset"].id < 0:
             self["fileset"] = Fileset(id = result["fileset"])
 
         if self["workflow"].id < 0:
             self["workflow"] = Workflow(id = result["workflow"])
-            
+
         self.commitTransaction(existingTransaction)
         return
 
@@ -124,11 +124,11 @@ class Subscription(WMBSBase, WMSubscription):
         files contained in the fileset and the workflow meta data.
         """
         existingTransaction = self.beginTransaction()
-        
+
         if self["id"] < 0 or self["fileset"].id < 0 or \
                self["workflow"].id < 0:
             self.load()
-        
+
         self["fileset"].loadData()
         self["workflow"].load()
 
@@ -152,7 +152,7 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory(classname = "Subscriptions.AddValidation")
         result = action.execute(sites = sites,
                                 conn = self.getDBConn(),
-                                transaction = self.existingTransaction())        
+                                transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
 
@@ -167,20 +167,20 @@ class Subscription(WMBSBase, WMSubscription):
         action = self.daofactory(classname = "Subscriptions.GetValidation")
         result = action.execute(self["id"],
                                 conn = self.getDBConn(),
-                                transaction = self.existingTransaction())        
+                                transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return result
-    
+
     def filesOfStatus(self, status, limit = 0, loadChecksums = True, doingJobSplitting = False):
         """
         _filesOfStatus_
-        
+
         Return a Set of File objects that have the given status with respect
-        to this subscription.        
+        to this subscription.
         """
         existingTransaction = self.beginTransaction()
-        
+
         status = status.title()
         files  = set()
         if limit > 0:
@@ -196,11 +196,11 @@ class Subscription(WMBSBase, WMSubscription):
             fileInfoAct  = self.daofactory(classname = "Files.GetForJobSplittingByID")
         else:
             fileInfoAct  = self.daofactory(classname = "Files.GetByID")
-            
+
         fileInfoDict = fileInfoAct.execute(file = [x["file"] for x in fileList],
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
-            
+
         #Run through all files
         for f in fileList:
             fl = File(id = f['file'])
@@ -210,14 +210,14 @@ class Subscription(WMBSBase, WMSubscription):
             if 'locations' in f.keys():
                 fl.setLocation(f['locations'], immediateSave = False)
             files.add(fl)
-            
+
         self.commitTransaction(existingTransaction)
         return files
-    
+
     def acquireFiles(self, files = None):
         """
         _acuireFiles_
-        
+
         Mark all files objects that are passed in as acquired for this
         subscription.  If now files are passed in then all available files
         will be acquired.
@@ -240,15 +240,15 @@ class Subscription(WMBSBase, WMSubscription):
         action.execute(self['id'], file = [x["id"] for x in files],
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-            
+
         try:
             self.commitTransaction(existingTransaction)
-        except Exception, ex:
+        except Exception as ex:
             print "Found exception %s" % (ex)
             logging.error("Exception found in commiting " \
                           + "acquireFiles transaction: %s" % (ex))
         return
-    
+
     def completeFiles(self, files):
         """
         Mark a (set of) file(s) as completed.
@@ -256,7 +256,7 @@ class Subscription(WMBSBase, WMSubscription):
         existingTransaction = self.beginTransaction()
 
         files = self.makelist(files)
-        
+
         completeAction = self.daofactory(classname = "Subscriptions.CompleteFiles")
         completeAction.execute(subscription = self["id"],
                                file = [x["id"] for x in files],
@@ -265,24 +265,24 @@ class Subscription(WMBSBase, WMSubscription):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def failFiles(self, files):
         """
-        Mark a (set of) file(s) as failed. 
+        Mark a (set of) file(s) as failed.
         """
         existingTransaction = self.beginTransaction()
 
         files = self.makelist(files)
-        
+
         failAction = self.daofactory(classname = "Subscriptions.FailFiles")
         failAction.execute(subscription = self["id"],
                            file = [x["id"] for x in files],
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-        
+
         self.commitTransaction(existingTransaction)
         return
-    
+
     def getJobs(self):
         """
         Return a list of all the jobs associated with a subscription
@@ -293,7 +293,7 @@ class Subscription(WMBSBase, WMSubscription):
                                   transaction = self.existingTransaction())
 
         return jobs
-        
+
     def delete(self):
         """
         _delete_
@@ -305,13 +305,13 @@ class Subscription(WMBSBase, WMSubscription):
                        transaction = self.existingTransaction())
 
         return
-    
+
     def isCompleteOnRun(self, runID):
         """
         _isCompleteOnRun_
-        
+
         Check all the files in the given subscripton and the given run are completed.
-        
+
         To: check query whether performance can be improved
         """
         statusAction = self.daofactory(classname = "Subscriptions.IsCompleteOnRun")
@@ -323,11 +323,11 @@ class Subscription(WMBSBase, WMSubscription):
             return True
         else:
             return False
-        
+
     def filesOfStatusByRun(self, status, runID):
         """
         _filesOfStatusByRun_
-        
+
         Return all the files in the given subscription and the given run which
         have the given status.
         """
@@ -342,13 +342,13 @@ class Subscription(WMBSBase, WMSubscription):
             files.append(fl)
 
         self.commitTransaction(existingTransaction)
-        return files 
+        return files
 
 
     def getNumberOfJobsPerSite(self, location, state):
         """
         _getNumberOfJobsPerSite_
-        
+
         Access the number of jobs at a site in a given status for a given subscription
         """
         jobLocate = self.daofactory(classname = "Subscriptions.GetNumberOfJobsPerSite")
@@ -357,11 +357,11 @@ class Subscription(WMBSBase, WMSubscription):
                                    subscription = self['id'],
                                    state = state).values()[0]
         return result
- 
+
     def getJobGroups(self):
         """
         _getJobGroups_
-        
+
         Returns a list of job group IDs associated with the subscription with new jobs
         """
         action = self.daofactory( classname = "Subscriptions.GetJobGroups" )
@@ -371,7 +371,7 @@ class Subscription(WMBSBase, WMSubscription):
     def getAllJobGroups(self):
         """
         _getAllJobGroups_
-        
+
         Returns a list of ALL jobGroups associated with the subscription
         """
         action = self.daofactory( classname = "Subscriptions.GetAllJobGroups" )
@@ -481,7 +481,7 @@ class Subscription(WMBSBase, WMSubscription):
             if len(filesetFiles) < 1:
                 # if we have unused files, of course
                 continue
-            
+
             parent = self.daofactory(classname = "Files.DeleteParentCheck")
             action = self.daofactory(classname = "Files.DeleteCheck")
 
@@ -527,27 +527,41 @@ class Subscription(WMBSBase, WMSubscription):
         self.delete()
         self.commitTransaction(existingTransaction)
         return
-   
+
     def isFileCompleted(self, files):
         """
         _isFileCompleted_
-        
+
         Returns True if all the given files are in complete status
         Return False if one of files are not in complete status
         """
         if type(files) != list:
-            files = [files] 
-        
+            files = [files]
+
         action = self.daofactory(classname = "Subscriptions.GetCompletedByFileList")
         fileIDs =  action.execute(self['id'], files, conn = self.getDBConn(),
                                   transaction = self.existingTransaction())
-        
+
         for f in files:
             if f['id'] not in fileIDs:
-                return False 
-        
+                return False
+
         return True
 
+    def markFinished(self, finished = True):
+        """
+        _markFinished_
+
+        Sets the finished status of the subscription
+        to the given value
+        """
+
+        action = self.daofactory(classname = "Subscriptions.MarkFinishedSubscriptions")
+        action.execute(self['id'], conn = self.getDBConn(),
+                       transaction = self.existingTransaction())
+        self.commitTransaction(self.existingTransaction)
+
+        return
 
     def bulkCommit(self, jobGroups):
         """
@@ -609,7 +623,7 @@ class Subscription(WMBSBase, WMSubscription):
             for job in jobGroup.newjobs:
                 if job["id"] != None:
                     continue
-            
+
                 job["jobgroup"] = jobGroup.id
 
                 if job["name"] == None:
@@ -636,7 +650,7 @@ class Subscription(WMBSBase, WMSubscription):
 
 
 
-        
+
             # Create a list of mask binds
         maskList = []
         for job in jobList:
@@ -651,11 +665,11 @@ class Subscription(WMBSBase, WMSubscription):
 
 
         maskAction = self.daofactory(classname = "Masks.Save")
-        maskAction.execute(jobid = None, mask = maskList, conn = self.getDBConn(), 
+        maskAction.execute(jobid = None, mask = maskList, conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         fileAction = self.daofactory(classname = "Jobs.AddFiles")
-        fileAction.execute(jobDict = fileDict, conn = self.getDBConn(), 
+        fileAction.execute(jobDict = fileDict, conn = self.getDBConn(),
                            transaction = self.existingTransaction())
 
         fileList = []

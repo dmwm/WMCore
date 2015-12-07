@@ -19,7 +19,7 @@ class GetAllJobs(DBFormatter):
     database.
     """
     sql_all   = "SELECT id FROM wmbs_job"
-    
+
     sql_state = "SELECT id FROM wmbs_job WHERE state = (SELECT id FROM wmbs_job_state WHERE name = :state)"
 
     sql_state_type = """SELECT wmbs_job.id FROM wmbs_job
@@ -48,7 +48,7 @@ class GetAllJobs(DBFormatter):
                 final.append(i.values()[0])
             return final
 
-        
+
     def execute(self, state = None, jobType = None, conn = None, transaction = False):
         """
         _execute_

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" 
+"""
 _Fileset_t_
 
 Unit tests for the WMBS Fileset class.
@@ -25,11 +25,11 @@ from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class FilesetTest(unittest.TestCase):
-    
+
     def setUp(self):
         """
         _setUp_
-        
+
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.
         """
@@ -43,19 +43,19 @@ class FilesetTest(unittest.TestCase):
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "goodse.cern.ch")
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
         return
-                                                                
+
     def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
-        self.testInit.clearDatabase()  
- 
+        self.testInit.clearDatabase()
+
     def testCreateDeleteExists(self):
         """
         _testCreateDeleteExists_
@@ -92,7 +92,7 @@ class FilesetTest(unittest.TestCase):
         """
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        
+
         testFileset = Fileset(name = "TestFileset")
 
         assert testFileset.exists() == False, \
@@ -108,7 +108,7 @@ class FilesetTest(unittest.TestCase):
         assert testFileset.exists() == False, \
                "ERROR: Fileset exists after transaction was rolled back."
 
-        return    
+        return
 
     def testDeleteTransaction(self):
         """
@@ -155,7 +155,7 @@ class FilesetTest(unittest.TestCase):
         testFilesetA.create()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.load()        
+        testFilesetB.load()
         testFilesetC = Fileset(id = testFilesetA.id)
         testFilesetC.load()
 
@@ -163,7 +163,7 @@ class FilesetTest(unittest.TestCase):
                "ERROR: Fileset id is not an int."
 
         assert type(testFilesetC.id) == int, \
-               "ERROR: Fileset id is not an int."        
+               "ERROR: Fileset id is not an int."
 
         assert testFilesetB.id == testFilesetA.id, \
                "ERROR: Load from name didn't load id"
@@ -213,7 +213,7 @@ class FilesetTest(unittest.TestCase):
         testFilesetA.commit()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.loadData()        
+        testFilesetB.loadData()
         testFilesetC = Fileset(id = testFilesetA.id)
         testFilesetC.loadData()
 
@@ -240,12 +240,12 @@ class FilesetTest(unittest.TestCase):
 
         assert len(goldenFiles) == 0, \
                "ERROR: Fileset is missing files"
-        
+
         testFilesetA.delete()
         testFileA.delete()
         testFileB.delete()
-        testFileC.delete()        
-        
+        testFileC.delete()
+
     def testGetFiles(self):
         """
         _testGetFiles_
@@ -268,7 +268,7 @@ class FilesetTest(unittest.TestCase):
 
         testFilesetA = Fileset(name = "TestFileset")
         testFilesetA.create()
-        
+
         testFilesetA.addFile(testFileA)
         testFilesetA.addFile(testFileB)
         testFilesetA.addFile(testFileC)
@@ -316,7 +316,7 @@ class FilesetTest(unittest.TestCase):
             goldenIDs.remove(filesetID)
 
         assert len(goldenIDs) == 0, \
-               "ERROR: Not all ids in fileset"        
+               "ERROR: Not all ids in fileset"
 
     def testFileCreate(self):
         """
@@ -329,15 +329,15 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
@@ -358,7 +358,7 @@ class FilesetTest(unittest.TestCase):
         testFilesetA.commit()
 
         testFilesetB = Fileset(name = testFilesetA.name)
-        testFilesetB.loadData()        
+        testFilesetB.loadData()
         testFilesetC = Fileset(id = testFilesetA.id)
         testFilesetC.loadData()
 
@@ -384,7 +384,7 @@ class FilesetTest(unittest.TestCase):
             goldenFiles.remove(filesetFile["lfn"])
 
         assert len(goldenFiles) == 0, \
-               "ERROR: Fileset is missing files"        
+               "ERROR: Fileset is missing files"
 
         goldenFiles = [testFileA, testFileB, testFileC]
         for filesetFile in testFilesetC.files:
@@ -468,8 +468,8 @@ class FilesetTest(unittest.TestCase):
                "ERROR: Fileset B has too many files"
 
         assert len(testFilesetC.files) == 0, \
-               "ERROR: Fileset C has too many files"        
-        
+               "ERROR: Fileset C has too many files"
+
         testFilesetA.delete()
         testFileA.delete()
         testFileB.delete()
@@ -486,7 +486,7 @@ class FilesetTest(unittest.TestCase):
         testFilesetA.create()
         testFilesetB = Fileset(name = "TestFileset2", is_open = True)
         testFilesetB.create()
-        
+
         testFilesetC = Fileset(name = testFilesetA.name)
         testFilesetC.load()
         testFilesetD = Fileset(name = testFilesetB.name)
@@ -510,20 +510,20 @@ class FilesetTest(unittest.TestCase):
                "ERROR: FilesetE should be open."
 
         assert testFilesetF.open == False, \
-               "ERROR: FilesetF should be closed."        
+               "ERROR: FilesetF should be closed."
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         openFilesetDAO = daoFactory(classname = "Fileset.ListOpen")
-        openFilesetNames = openFilesetDAO.execute()        
+        openFilesetNames = openFilesetDAO.execute()
 
         assert len(openFilesetNames) == 1, \
                "ERROR: Too many open filesets."
 
         assert "TestFileset1" in openFilesetNames, \
                "ERROR: Wrong fileset listed as open."
-               
+
         return
 
     def testFilesetClosing(self):
@@ -534,7 +534,7 @@ class FilesetTest(unittest.TestCase):
         fileset is closable if:
           - All of the subscriptions that feed it has completed processing all
             files in their input fileset
-          _ All of the jobs for feeder subscriptions have completed  
+          _ All of the jobs for feeder subscriptions have completed
           - The fileset that feeds the subscription is closed
           - The workflow for the subscription is fully injected.
         """
@@ -554,14 +554,14 @@ class FilesetTest(unittest.TestCase):
         testMergedOutputFileset3 = Fileset(name = "TestMergedOutputFileset3")
         testMergedOutputFileset3.create()
         testMergedOutputFileset4 = Fileset(name = "TestMergedOutputFileset4")
-        testMergedOutputFileset4.create()        
-        
+        testMergedOutputFileset4.create()
+
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
         testFilesetOpen.create()
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetOpen.addFile(testFileA)
         testFilesetOpen.addFile(testFileB)
         testFilesetOpen.commit()
@@ -571,7 +571,7 @@ class FilesetTest(unittest.TestCase):
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed.addFile(testFileC)
         testFilesetClosed.addFile(testFileD)
         testFilesetClosed.commit()
@@ -602,7 +602,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription2.completeFiles([testFileA, testFileB])
         testSubscription3 = Subscription(fileset = testFilesetClosed,
                                          workflow = testWorkflow3)
-        testSubscription3.create()        
+        testSubscription3.create()
 
         testJobGroup = JobGroup(subscription = testSubscription1)
         testJobGroup.create()
@@ -666,13 +666,13 @@ class FilesetTest(unittest.TestCase):
         testMergedOutputFileset1.create()
         testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
         testMergedOutputFileset2.create()
-        
+
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = True)
         testFilesetOpen.create()
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetOpen.addFile(testFileA)
         testFilesetOpen.addFile(testFileB)
         testFilesetOpen.commit()
@@ -682,7 +682,7 @@ class FilesetTest(unittest.TestCase):
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed1.addFile(testFileC)
         testFilesetClosed1.addFile(testFileD)
         testFilesetClosed1.commit()
@@ -692,7 +692,7 @@ class FilesetTest(unittest.TestCase):
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed2.addFile(testFileE)
         testFilesetClosed2.addFile(testFileF)
         testFilesetClosed2.commit()
@@ -702,10 +702,10 @@ class FilesetTest(unittest.TestCase):
         testFileG = File(lfn = "/this/is/a/lfnG", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileH = File(lfn = "/this/is/a/lfnH", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed3.addFile(testFileG)
         testFilesetClosed3.addFile(testFileH)
-        testFilesetClosed3.commit()        
+        testFilesetClosed3.commit()
 
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
@@ -738,7 +738,7 @@ class FilesetTest(unittest.TestCase):
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
-        injected.execute(names = ["wf001", "wf002"], injected = True)        
+        injected.execute(names = ["wf001", "wf002"], injected = True)
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -774,13 +774,13 @@ class FilesetTest(unittest.TestCase):
         testMergedOutputFileset1.create()
         testMergedOutputFileset2 = Fileset(name = "TestMergedOutputFileset2")
         testMergedOutputFileset2.create()
-        
+
         testFilesetOpen = Fileset(name = "TestFilesetOpen", is_open = False)
         testFilesetOpen.create()
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetOpen.addFile(testFileA)
         testFilesetOpen.addFile(testFileB)
         testFilesetOpen.commit()
@@ -790,7 +790,7 @@ class FilesetTest(unittest.TestCase):
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed1.addFile(testFileC)
         testFilesetClosed1.addFile(testFileD)
         testFilesetClosed1.commit()
@@ -800,7 +800,7 @@ class FilesetTest(unittest.TestCase):
         testFileE = File(lfn = "/this/is/a/lfnE", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileF = File(lfn = "/this/is/a/lfnF", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed2.addFile(testFileE)
         testFilesetClosed2.addFile(testFileF)
         testFilesetClosed2.commit()
@@ -810,10 +810,10 @@ class FilesetTest(unittest.TestCase):
         testFileG = File(lfn = "/this/is/a/lfnG", size = 1024,
                          events = 20, checksums = {'cksum': 3})
         testFileH = File(lfn = "/this/is/a/lfnH", size = 1024,
-                         events = 20, checksums = {'cksum': 3})        
+                         events = 20, checksums = {'cksum': 3})
         testFilesetClosed3.addFile(testFileG)
         testFilesetClosed3.addFile(testFileH)
-        testFilesetClosed3.commit()        
+        testFilesetClosed3.commit()
 
         testWorkflow1 = Workflow(spec = "spec1.xml", owner = "Steve",
                                  name = "wf001", task = "sometask")
@@ -837,7 +837,7 @@ class FilesetTest(unittest.TestCase):
         testJobGroup.create()
         testJob = Job(name = "TestJob1")
         testJob.create(testJobGroup)
-        
+
         testSubscription3 = Subscription(fileset = testFilesetClosed2,
                                          workflow = testWorkflow2)
         testSubscription3.create()
@@ -851,7 +851,7 @@ class FilesetTest(unittest.TestCase):
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
-        injected.execute(names = ["wf001", "wf002"], injected = True)        
+        injected.execute(names = ["wf001", "wf002"], injected = True)
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -894,7 +894,7 @@ class FilesetTest(unittest.TestCase):
         testOutputFileset1.markOpen(False)
         testOutputFileset2.markOpen(True)
         testOutputFileset3.markOpen(True)
-        
+
         testInputFileset = Fileset(name = "TestInputFileset")
         testInputFileset.create()
         testInputFileset.markOpen(False)
@@ -928,7 +928,7 @@ class FilesetTest(unittest.TestCase):
         daoFactory = DAOFactory(package="WMCore.WMBS", logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         injected = daoFactory(classname = "Workflow.MarkInjectedWorkflows")
-        injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)        
+        injected.execute(names = ["wf001", "wf002", "wf003"], injected = True)
         closableFilesetDAO = daoFactory(classname = "Fileset.ListClosable")
         closableFilesets = closableFilesetDAO.execute()
 
@@ -938,7 +938,7 @@ class FilesetTest(unittest.TestCase):
         assert closableFilesets[0] == testOutputFileset2.id, \
                "Error: Wrong fileset is marked as closable."
 
-        return            
+        return
 
     def testFilesetClosing5(self):
         """
@@ -1003,7 +1003,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         inputFileset.addFile(testFileA)
@@ -1036,7 +1036,7 @@ class FilesetTest(unittest.TestCase):
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testOutputFileset1.addFile(testFileB)
@@ -1063,7 +1063,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription2.completeFiles([testFileB])
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
         testOutputFileset2.addFile(testFileC)
@@ -1090,7 +1090,7 @@ class FilesetTest(unittest.TestCase):
         testSubscription3.completeFiles([testFileC])
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
         testFileD.create()
         testOutputFileset3.addFile(testFileD)
@@ -1116,25 +1116,25 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
-        testFileD.create()        
+        testFileD.create()
 
         testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
                                  name = "wf001", task = "sometask")
@@ -1143,7 +1143,7 @@ class FilesetTest(unittest.TestCase):
         testFilesetA = Fileset(name = "TestFilesetA")
         testFilesetA.create()
         testFilesetB = Fileset(name = "TestFilesetB")
-        testFilesetB.create()        
+        testFilesetB.create()
 
         testSubscriptionA = Subscription(fileset = testFilesetA,
                                          workflow = testWorkflowA)
@@ -1187,7 +1187,7 @@ class FilesetTest(unittest.TestCase):
             goldenFiles.remove(filesetFile["lfn"])
 
         assert len(goldenFiles) == 0, \
-               "ERROR: Fileset is missing files"        
+               "ERROR: Fileset is missing files"
 
         goldenFiles = [testFileB, testFileC, testFileD]
         for filesetFile in testFilesetB.files:
@@ -1205,7 +1205,7 @@ class FilesetTest(unittest.TestCase):
             goldenFiles.remove(filesetFile["lfn"])
 
         assert len(goldenFiles) == 0, \
-               "ERROR: Fileset is missing files"        
+               "ERROR: Fileset is missing files"
 
         return
 
@@ -1218,25 +1218,25 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
         testFileA.create()
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
         testFileB.create()
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
         testFileC.create()
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))                         
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
-        testFileD.create()        
+        testFileD.create()
 
         testWorkflowA = Workflow(spec = "spec1.xml", owner = "Hassen",
                                  name = "wf001", task = "sometask")
@@ -1245,14 +1245,14 @@ class FilesetTest(unittest.TestCase):
         testFilesetA = Fileset(name = "TestFilesetA")
         testFilesetA.create()
         testFilesetB = Fileset(name = "TestFilesetB")
-        testFilesetB.create()        
+        testFilesetB.create()
 
         testSubscriptionA = Subscription(fileset = testFilesetA,
                                          workflow = testWorkflowA)
         testSubscriptionA.create()
         testSubscriptionB = Subscription(fileset = testFilesetB,
                                          workflow = testWorkflowA)
-        testSubscriptionB.create()        
+        testSubscriptionB.create()
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
@@ -1289,7 +1289,7 @@ class FilesetTest(unittest.TestCase):
             goldenFiles.remove(filesetFile["lfn"])
 
         assert len(goldenFiles) == 0, \
-               "ERROR: Fileset is missing files"        
+               "ERROR: Fileset is missing files"
 
         goldenFiles = [testFileB, testFileC, testFileD]
         for filesetFile in testFilesetB.files:
@@ -1319,22 +1319,22 @@ class FilesetTest(unittest.TestCase):
         """
         testFileA = File(lfn = "/this/is/a/lfnA", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileA.addRun(Run( 1, *[45]))
 
         testFileB = File(lfn = "/this/is/a/lfnB", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileB.addRun(Run( 1, *[45]))
 
         testFileC = File(lfn = "/this/is/a/lfnC", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileC.addRun(Run( 1, *[45]))
 
         testFileD = File(lfn = "/this/is/a/lfnD", size = 1024,
                          events = 20, checksums = {'cksum': 3},
-                         locations = set(["goodse.cern.ch"]))
+                         locations = set(["T2_CH_CERN"]))
         testFileD.addRun(Run( 1, *[45]))
 
 
@@ -1410,7 +1410,7 @@ class FilesetTest(unittest.TestCase):
         """
         _testSetLastUpdate_
 
-        Test that setting the lastUpdate of a fileset works when changing it 
+        Test that setting the lastUpdate of a fileset works when changing it
         with the setLastUpdate() method.
         """
         testFilesetA = Fileset(name = "TestFileset1")
@@ -1460,6 +1460,6 @@ class FilesetTest(unittest.TestCase):
                "ERROR: the fileset  should be TestFileset1."
 
         return
-                
+
 if __name__ == "__main__":
-        unittest.main()
+    unittest.main()

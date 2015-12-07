@@ -11,7 +11,7 @@ Clear out the ResourceControl schema.
 import threading
 from WMCore.Database.DBCreator import DBCreator
 
-class Destroy(DBCreator):    
+class Destroy(DBCreator):
     def __init__(self, logger = None, dbi = None):
         """
         _init_
@@ -24,7 +24,7 @@ class Destroy(DBCreator):
             logger = myThread.logger
         if dbi == None:
             dbi = myThread.dbi
-            
+
         DBCreator.__init__(self, logger, dbi)
 
         self.create = {}

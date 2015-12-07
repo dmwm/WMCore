@@ -7,20 +7,15 @@ File based splitting test.
 
 
 import unittest
-import os
 import threading
-import logging
-import time
 
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID
 from WMQuality.TestInit import TestInit
@@ -45,34 +40,34 @@ class FileBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
-        
+        locationAction.execute(siteName = "T1_US_FNAL", pnn = "T1_US_FNAL_Disk")
+        locationAction.execute(siteName = "T2_CH_CERN", pnn = "T2_CH_CERN")
+
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
-        parentFile = File('/parent/lfn/', size = 1000, events = 100, 
-                          locations = set(["somese.cern.ch"])) 
-        parentFile.create() 
+        parentFile = File('/parent/lfn/', size = 1000, events = 100,
+                          locations = set(["T1_US_FNAL_Disk"]))
+        parentFile.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.addRun(Run(i, *[45]))
             newFile.create()
-            newFile.addParent(lfn = parentFile['lfn']) 
+            newFile.addParent(lfn = parentFile['lfn'])
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T1_US_FNAL_Disk"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -82,12 +77,12 @@ class FileBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["otherse.cern.ch", "somese.cern.ch"]))
+                           locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
@@ -111,8 +106,12 @@ class FileBasedTest(unittest.TestCase):
                                                      split_algo = "FileBased",
                                                      type = "Processing")
         self.multipleSiteSubscription.create()
+
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
         return
-    
+
     def tearDown(self):
         """
         _tearDown_
@@ -125,18 +124,18 @@ class FileBasedTest(unittest.TestCase):
     def createLargeFileBlock(self):
         """
         _createLargeFileBlock_
-        
+
         Creates a large group of files for testing
         """
         testFileset = Fileset(name = "TestFilesetX")
         testFileset.create()
         for i in range(5000):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
             testFileset.addFile(newFile)
         testFileset.commit()
-            
+
         testWorkflow = Workflow(spec = "spec.xml", owner = "mnorman",
                                 name = "wf003", task="Test" )
         testWorkflow.create()
@@ -160,13 +159,17 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 1)
+        jobGroups = jobFactory(files_per_job = 1,
+                               performance = self.performanceParams)
 
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
+        self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+        self.assertEqual(job["estimatedJobTime"], 12 * 100)
 
         return
 
@@ -180,17 +183,19 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.singleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 10)
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
         job = jobGroups[0].jobs.pop()
         self.assertEqual(job.getFiles(type = "lfn"), ["/some/file/name"])
+        self.assertEqual(job["estimatedMemoryUsage"], 2300)
+        self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+        self.assertEqual(job["estimatedJobTime"], 12 * 100)
 
         return
-        
-
 
     def test2FileSplit(self):
         """
@@ -202,8 +207,9 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 2)
+
+        jobGroups = jobFactory(files_per_job = 2,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 5)
@@ -213,8 +219,12 @@ class FileBasedTest(unittest.TestCase):
             self.assertEqual(len(job.getFiles()), 2)
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
+            self.assertEqual(job["estimatedMemoryUsage"], 2300)
+            self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 2)
+            self.assertEqual(job["estimatedJobTime"], 12 * 100 * 2)
+
         self.assertEqual(len(fileList), 10)
-        
+
         return
 
     def test3FileSplit(self):
@@ -227,8 +237,9 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-        
-        jobGroups = jobFactory(files_per_job = 3)
+
+        jobGroups = jobFactory(files_per_job = 3,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 4)
@@ -238,8 +249,18 @@ class FileBasedTest(unittest.TestCase):
             assert len(job.getFiles()) in [3, 1], "ERROR: Job contains incorrect number of files"
             for file in job.getFiles(type = "lfn"):
                 fileList.append(file)
+            if len(job.getFiles()) == 3:
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+                self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 3)
+                self.assertEqual(job["estimatedJobTime"], 12 * 100 * 3)
+            elif len(job.getFiles()) == 1:
+                self.assertEqual(job["estimatedMemoryUsage"], 2300)
+                self.assertEqual(job["estimatedDiskUsage"], 400 * 100)
+                self.assertEqual(job["estimatedJobTime"], 12 * 100)
+            else:
+                self.fail("Unexpected splitting reached")
         self.assertEqual(len(fileList), 10)
-        
+
         return
 
 
@@ -249,31 +270,157 @@ class FileBasedTest(unittest.TestCase):
 
         _testLocationSplit_
 
-        This should test whether or not the FileBased algorithm understands that files at seperate sites
-        cannot be in the same jobGroup (this is the current standard).
-        
-        """
-        myThread = threading.currentThread()
+        This should test whether or not the FileBased algorithm understands that files at
+        seperate sites cannot be in the same jobGroup (this is the current standard).
 
+        """
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleSiteSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10)
+        jobGroups = jobFactory(files_per_job = 10,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 1)
-
-        fileList = []
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["possiblePSN"], set(["T2_CH_CERN", "T1_US_FNAL"]))
         self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
 
-        
         return
-    
+
+    def testSiteWhitelist(self):
+        """
+        _testSiteWhitelist_
+
+        Same as testLocationSplit, but with a siteWhitelist for T1_US_FNAL.
+        (only allow jobs to run at T1_US_FNAL)
+
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               siteWhitelist = ["T1_US_FNAL"],
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
+        self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
+
+        return
+
+    def testSiteBlacklist(self):
+        """
+        _testSiteBlacklist_
+
+        Same as testLocationSplit, but with a siteBlacklist for T2_CH_CERN.
+        (do not allow jobs to run at T2_CH_CERN)
+
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               siteBlacklist = ["T2_CH_CERN"],
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
+        self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["possiblePSN"], set(["T1_US_FNAL"]))
+
+        return
+
+    def testSiteWhiteBlacklist(self):
+        """
+        _testSiteBlacklist_
+
+        Same as testLocationSplit, but with a siteWhitelist for T2_CH_CERN and
+        T1_US_FNAL and a siteBlacklist for T1_US_FNAL.
+
+        SiteBlacklist should take preference over siteWhitelist, jobs should
+        only be allowed to run at T2_CH_CERN.
+
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               siteWhitelist = ["T2_CH_CERN", "T1_US_FNAL"],
+                               siteBlacklist = ["T1_US_FNAL"],
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 2)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[0].jobs[0]["possiblePSN"], set(["T2_CH_CERN"]))
+        self.assertEqual(len(jobGroups[1].jobs[0].getFiles()), 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedDiskUsage"], 100 * 400 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["estimatedJobTime"], 100 * 12 * 5)
+        self.assertEqual(jobGroups[1].jobs[0]["possiblePSN"], set([]))
+
+        return
+
+    def testTrustSiteLists(self):
+        """
+        _testTrustSiteLists_
+
+        Test trustSitelists splitting parameter to ignore job input file
+        location and use siteWhitelist and siteBlacklist instead.
+
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleSiteSubscription)
+
+        jobGroups = jobFactory(files_per_job = 10,
+                               siteWhitelist = ["T2_AA_AAA", "T2_BB_BBB", "T2_CC_CCC", "T2_DD_DDD"],
+                               siteBlacklist = ["T2_BB_BBB", "T2_DD_DDD", "T2_EE_EEE"],
+                               trustSitelists = True,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 1)
+        self.assertEqual(len(jobGroups[0].jobs[0].getFiles()), 10)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedMemoryUsage"], 2300)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedDiskUsage"], 100 * 400 * 10)
+        self.assertEqual(jobGroups[0].jobs[0]["estimatedJobTime"], 100 * 12 * 10)
+        self.assertEqual(jobGroups[0].jobs[0]["possiblePSN"], set(["T2_AA_AAA", "T2_CC_CCC"]))
+
+        return
+
     def testLimit(self):
         """
         _testLimit_
-        
+
         Test what happens when you limit the number of files.
         This should run each separate file in a separate loop,
         creating one jobGroups with one job with one file
@@ -282,10 +429,11 @@ class FileBasedTest(unittest.TestCase):
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
-                              
-        
+
+
         jobGroups = jobFactory(files_per_job = 10, limit_file_loading = True,
-                               file_load_limit = 1)
+                               file_load_limit = 1,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 1)
@@ -303,42 +451,44 @@ class FileBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.WMBS",
                               subscription = self.multipleFileSubscription)
 
-        jobGroups = jobFactory(files_per_job = 10, respect_run_boundaries = True)
+        jobGroups = jobFactory(files_per_job = 10, respect_run_boundaries = True,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
 
         return
 
-    def test_getParents(self): 
-        """ 
-        _getParents_ 
-        
-        Check that we can do the same as the TwoFileBased 
-        """ 
-        splitter = SplitterFactory() 
-        jobFactory = splitter(package = "WMCore.WMBS", 
-                              subscription = self.multipleFileSubscription) 
-        
-        jobGroups = jobFactory(files_per_job = 2, 
-                               include_parents  = True) 
-        
-        self.assertEqual(len(jobGroups), 1) 
-        self.assertEqual(len(jobGroups[0].jobs), 5) 
-        
-        fileList = [] 
-        for job in jobGroups[0].jobs: 
-            self.assertEqual(len(job.getFiles()), 2) 
-            for file in job.getFiles(type = "lfn"): 
-                fileList.append(file) 
-        self.assertEqual(len(fileList), 10) 
-        
-        for j in jobGroups[0].jobs: 
-            for f in j['input_files']: 
-                self.assertEqual(len(f['parents']), 1) 
-                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/') 
-                
-        return 
+    def test_getParents(self):
+        """
+        _getParents_
+
+        Check that we can do the same as the TwoFileBased
+        """
+        splitter = SplitterFactory()
+        jobFactory = splitter(package = "WMCore.WMBS",
+                              subscription = self.multipleFileSubscription)
+
+        jobGroups = jobFactory(files_per_job = 2,
+                               include_parents  = True,
+                               performance = self.performanceParams)
+
+        self.assertEqual(len(jobGroups), 1)
+        self.assertEqual(len(jobGroups[0].jobs), 5)
+
+        fileList = []
+        for job in jobGroups[0].jobs:
+            self.assertEqual(len(job.getFiles()), 2)
+            for file in job.getFiles(type = "lfn"):
+                fileList.append(file)
+        self.assertEqual(len(fileList), 10)
+
+        for j in jobGroups[0].jobs:
+            for f in j['input_files']:
+                self.assertEqual(len(f['parents']), 1)
+                self.assertEqual(list(f['parents'])[0]['lfn'], '/parent/lfn/')
+
+        return
 
 
 
@@ -352,18 +502,14 @@ class FileBasedTest(unittest.TestCase):
 
             func = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 500)
 
-            
-
-            startTime = time.time()
             goFlag    = True
             while goFlag:
                 try:
-                    res = func.next()
+                    res = next(func)
                     self.jobGroups.extend(res)
                 except StopIteration:
                     goFlag = False
-                    
-            stopTime  = time.time()
+
             return jobGroups
 
         splitter = SplitterFactory()
@@ -377,7 +523,7 @@ class FileBasedTest(unittest.TestCase):
 
         for x in range(7):
             try:
-                res = a.next()
+                res = next(a)
                 jobGroups.extend(res)
             except StopIteration:
                 continue
@@ -388,13 +534,9 @@ class FileBasedTest(unittest.TestCase):
         for group in jobGroups:
             self.assertTrue(len(group.jobs) in [1, 2])
             for job in group.jobs:
+                self.assertTrue(job["possiblePSN"] in [set(["T1_US_FNAL"]),
+                                                       set(['T2_CH_CERN', 'T1_US_FNAL'])])
                 self.assertTrue(len(job['input_files']) in (1,2))
-                for file in job['input_files']:
-                    self.assertTrue(file['locations'] in [set(['somese.cern.ch']),
-                                                              set(['otherse.cern.ch',
-                                                                   'somese.cern.ch'])])
-
-
 
         self.jobGroups = []
 
@@ -409,7 +551,7 @@ class FileBasedTest(unittest.TestCase):
         #cProfile.runctx("runCode(self, jobFactory)", globals(), locals(), "coroutine.stats")
 
         jobGroups = self.jobGroups
-        
+
         self.assertEqual(len(jobGroups), 10)
         for group in jobGroups:
             self.assertEqual(len(group.jobs), 500)
@@ -422,7 +564,8 @@ class FileBasedTest(unittest.TestCase):
     def crazyAssFunction(self, jobFactory, file_load_limit = 1):
         groups = ['test']
         while groups != []:
-            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit)
+            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit,
+                                performance = self.performanceParams)
             yield groups
 
 if __name__ == '__main__':

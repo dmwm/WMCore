@@ -1,0 +1,238 @@
+<header class="group">
+    <nav class="navbar navbar-left">
+        <h2>Assign interface</h2>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-yellow bold" id="btn-manage" onclick="activateManage()">Settings</button></li>
+        <li><button class="btn btn-small btn-active" id="btn-requests" onclick="activateRequests()">Requests</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+
+<script>
+var requests = $requests;
+</script>
+
+<div id="requests">
+
+$filter_sort_table
+
+<div class="group">
+    <nav class="navbar navbar-left">
+        <input type="checkbox" name="request-all" id="request-all" onclick="CheckAll(this)"/>
+        Select all requests
+    </nav>
+    <nav class="navbar navbar-right">
+        <button class="btn btn-smaller btn-green" onclick="javascript:confirmAssign()">Assign</button>
+        <button class="btn btn-smaller btn-red" onclick="javascript:ProcessRequests('rejected')">Reject</button>
+    </nav>
+</div>
+
+<hr/>
+
+<div id="container"></div>
+</div> <!-- end of requests section -->
+
+<div id="manage" class="hide">
+<h4>Assign settings</h4>
+
+<form id="assign-settings" name="assign-settings">
+<h5>Site lists</h5>
+<ul class="blocks-3">
+    <li>Whitelist<br/>
+        <select name="SiteWhitelist" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $site_white_list
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Blacklist<br/>
+        <select name="SiteBlacklist" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site in $site_black_list
+        <option value="$site" selected="selected">$site</option>
+        #else
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+</ul>
+
+<hr/>
+
+<h5>PhEDEx subscription</h5>
+<ul class="blocks-3">
+    <li>Custodial sites<br/>
+        <select name="CustodialSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site.startswith("T1")
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Non-Custodial sites<br/>
+        <select name="NonCustodialSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        #if $site.startswith("T2")
+        <option value="$site">$site</option>
+        #end if
+        #end for
+        </select>
+    </li>
+    <li>Auto-Approve subscription sites<br/>
+        <select name="AutoApproveSubscriptionSites" class="width-50" multiple="multiple" size="10">
+        #for site in $sites
+        <option value="$site">$site</option>
+        #end for
+        </select>
+    </li>
+</ul>
+
+</form>
+
+<hr/>
+
+<div id="misc-options"> <!-- Misc Options -->
+<div class="group">
+    <nav class="navbar navbar-left">
+        <h5>Misc Options</h5>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-misc-table" onclick="activateMiscTable()">Table</button></li>
+        <li><button class="btn btn-small" id="btn-misc-json" onclick="activateMiscJSON()">JSON</button></li>
+        </ul>
+    </nav>
+</div>
+<form id="assign-misc-settings" name="assign-misc-settings">
+<div id="misc-table">
+$misc_table
+</div>
+<div id="misc-json" class="hide">
+<textarea class="editor height-200" name="jsondict" id="jsondict">
+$misc_json
+</textarea>
+</div>
+</form>
+</div> <!-- Misc Options -->
+
+</div> <!-- end of manage section -->
+
+
+<script>
+function activateMiscTable() {
+    id = document.getElementById('btn-misc-json');
+    id.className="btn btn-small";
+    HideTag('misc-json');
+    // show active button
+    var id = document.getElementById('btn-misc-table');
+    id.className="btn btn-small btn-active";
+    ShowTag('misc-table');
+}
+function activateMiscJSON() {
+    id = document.getElementById('btn-misc-table');
+    id.className="btn btn-small";
+    HideTag('misc-table');
+    // show active button
+    var id = document.getElementById('btn-misc-json');
+    id.className="btn btn-small btn-active";
+    ShowTag('misc-json');
+}
+function activateRequests() {
+    id = document.getElementById('btn-manage');
+    id.className="btn btn-small btn-yellow bold";
+    HideTag('manage');
+    // show active button
+    var id = document.getElementById('btn-requests');
+    id.className="btn btn-small btn-active";
+    ShowTag('requests');
+}
+function activateManage() {
+    id = document.getElementById('btn-requests');
+    id.className="btn btn-small";
+    HideTag('requests');
+    // show active button
+    var id = document.getElementById('btn-manage');
+    id.className="btn btn-small btn-active";
+    ShowTag('manage');
+}
+function confirmAssign() {
+    var doc = document.getElementById('confirmation');
+    var msg = '<h3>Please note</h3>';
+    msg += 'Chosen requests require individual settings. If you already set them please click <em>Assign</em> button below, otherwise click <em>Cancel</em> button and go to <em>Settings</em> section where you can adjust your request settings';
+    var html = '<div>'+msg+'</div>';
+    html += '<div>';
+    html += '<button class="btn btn-small right" onclick="javascript:cleanConfirmation()">Cancel</button>';
+    html += '<button class="btn btn-small btn-green bold right" onclick="javascript:ProcessRequests(\'assigned\')">Assign</button>';
+    html += '</div>';
+    doc.innerHTML=html;
+    doc.className='width-50 tools-alert tools-message-yellow confirmation shadow';
+}
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// assign interface changes assignment-approved requests into assigned or rejected
+function ProcessRequests(new_status) {
+    var items = document.getElementsByClassName('request-id');
+    var ids=[];
+    for (var i = 0; i < items.length; i++ ) {
+        if(items[i].checked==true) {
+            ids.push(items[i].name);
+            items[i].disabled='disabled';
+        }
+    }
+    if (ids.length>0) {
+        // capture form id="assign-settings"
+        var parameters = \$('#assign-settings').serializeObject();
+        // capture form id="assign-misc-settings"
+        var misc_args = \$('#assign-misc-settings').serializeObject();
+        // merge misc_args with parameters
+        for (var attr in misc_args) { parameters[attr] = misc_args[attr]; }
+        parameters.ids = ids;
+        parameters.new_status = new_status;
+        ajaxRequest('$base/data/request/multi_update', parameters);
+    }
+}
+var _order=1; // global variable to keep track of asc/desc order on web UI
+function BuildList(tag, data) {
+    if(_order%2) {
+        data.reverse();
+    }
+    _order += 1;
+    var container = document.getElementById('container');
+    container.innerHTML="";
+    var listContainer = document.createElement('div');
+    container.appendChild(listContainer);
+    var listElement = document.createElement("ul");
+    listContainer.appendChild(listElement);
+    data.forEach(function(item) {
+        var html = '<div>';
+        var rid = 'request-'+item.RequestName;
+        html += '<input type="checkbox" name="'+rid+'" id="'+rid+'" class="request-id" /> '
+        html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
+        html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
+        html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
+        html += '<b>User:</b> '+item.Requestor+'&nbsp;';
+        html += '<b>Group:</b> '+item.Group;
+        html += '</div><hr/>'
+        var listItem = document.createElement("li");
+        listItem.innerHTML = html;
+        listElement.appendChild(listItem);
+    });
+    // change CSS
+    var items = document.getElementsByClassName('menu-item');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='menu-item';
+    }
+    tag.className='menu-item underline';
+}
+// Put data into container
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
+</script>

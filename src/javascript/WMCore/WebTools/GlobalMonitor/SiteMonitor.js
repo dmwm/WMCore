@@ -28,7 +28,7 @@ WMCore.GlobalMonitor.SiteMonitor.statusTable = function(divID){
                  {key: "success", label: "Success"},
                  {key: "failure", label: "Failure"},
                  {key: "cooloff", label: "Cool Off"},
-                 {key: "job_slots", label:"Job Slots"}]
+                 {key: "pending_slots", label:"Job Slots"}]
         };
 
     var dataUrl = "/reqmgr/monitorSvc/sitemonitor";

@@ -6,18 +6,13 @@ WMCore
 * **Version**: |version|
 * **Last modified**: |today|
 
-Contents:
----------
-
 .. toctree::
    :maxdepth: 2
 
    introduction.rst
    changelog.rst
+   modules.rst
    references.rst
-
-Indices and tables
-------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

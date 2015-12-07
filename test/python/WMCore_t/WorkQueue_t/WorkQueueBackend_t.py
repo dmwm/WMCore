@@ -11,12 +11,13 @@ from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
 
-from WMCore.WMSpec.StdSpecs.ReReco import rerecoWorkload as rerecoWMSpec, \
-                                          getTestArguments as getRerecoArgs
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
-rerecoArgs = getRerecoArgs()
+rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 def rerecoWorkload(workloadName, arguments):
-    wmspec = rerecoWMSpec(workloadName, arguments)
+    factory = ReRecoWorkloadFactory()
+    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
     return wmspec
 
 class WorkQueueBackendTest(unittest.TestCase):
@@ -26,11 +27,13 @@ class WorkQueueBackendTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setupCouch('wq_backend_test_inbox', 'WorkQueue')
         self.testInit.setupCouch('wq_backend_test', 'WorkQueue')
+        self.testInit.setupCouch('wq_backend_test_parent', 'WorkQueue')
         self.couch_db = self.testInit.couch.couchServer.connectDatabase('wq_backend_test')
         self.backend = WorkQueueBackend(db_url = self.testInit.couchUrl,
                                         db_name = 'wq_backend_test',
-                                        inbox_name = 'wq_backend_test_inbox')
-
+                                        inbox_name = 'wq_backend_test_inbox',
+                                        parentQueue = '%s/%s' % (self.testInit.couchUrl, 'wq_backend_test_parent'))
+        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         self.processingSpec = rerecoWorkload('testProcessing', rerecoArgs)
 
 
@@ -55,22 +58,29 @@ class WorkQueueBackendTest(unittest.TestCase):
                                     WMSpec = self.processingSpec,
                                     Status = 'Available',
                                     Jobs = 10, Priority = 1)
+        element3 = WorkQueueElement(RequestName = 'backend_test_3',
+                                    WMSpec = self.processingSpec,
+                                    Status = 'Available',
+                                    Jobs = 10, Priority = 1)
         lowprielement = WorkQueueElement(RequestName = 'backend_test_low',
                                          WMSpec = self.processingSpec,
                                          Status = 'Available',
                                          Jobs = 10, Priority = 0.1)
         self.backend.insertElements([element])
-        self.backend.availableWork({'place' : 1000})
+        self.backend.availableWork({'place' : 1000}, {})
         # timestamp in elements have second coarseness, 2nd element must
         # have a higher timestamp to force it after the 1st
         time.sleep(1)
         self.backend.insertElements([lowprielement, element2, highprielement])
-        self.backend.availableWork({'place' : 1000})
-        work = self.backend.availableWork({'place' : 1000})
+        self.backend.availableWork({'place' : 1000}, {})
+        time.sleep(1)
+        self.backend.insertElements([element3])
+        work = self.backend.availableWork({'place' : 1000}, {})
         # order should be high to low, with the standard elements in the order
         # they were queueud
         self.assertEqual([x['RequestName'] for x in work[0]],
-                         ['backend_test_high', 'backend_test', 'backend_test_2', 'backend_test_low'])
+                         ['backend_test_high', 'backend_test', 'backend_test_2', 
+                          'backend_test_3','backend_test_low'])
 
 
     def testDuplicateInsertion(self):

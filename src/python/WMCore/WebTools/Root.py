@@ -12,6 +12,7 @@ dynamically and can be turned on/off via configuration file.
 # CherryPy
 import cherrypy
 from cherrypy._cplogging import LogManager
+
 # configuration and arguments
 #FIXME
 from WMCore.Agent.Daemon.Create import createDaemon
@@ -30,6 +31,8 @@ from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WebTools.Welcome import Welcome
 from WMCore.Agent.Harness import Harness
 from WMCore.WebTools.FrontEndAuth import FrontEndAuth, NullAuth
+
+lastTest = ""
 
 def mytime():
     """
@@ -85,7 +88,7 @@ class WTLogger(LogManager):
              'H': self.host,
              'h': remote.name or remote.ip,
              'r': request.request_line,
-             's': response.status.split(" ", 1)[0],
+             's': response.status,
              'b': outheaders.get('Content-Length', '') or "-",
              'T': (time.time() - request.start_time)*1e6,
              'AS': inheaders.get("CMS-Auth-Status", "-"),
@@ -99,12 +102,13 @@ class Root(Harness):
     """
     Create the appropriate cherrypy root object
     """
-    def __init__(self, config, webApp = None):
+    def __init__(self, config, webApp = None, testName = ""):
         """
         Initialise the object, pull out the necessary pieces of the configuration
         """
         self.homepage = None
         self.mode = 'component'
+        self.testName = testName
         if webApp == None:
             Harness.__init__(self, config, compName = "Webtools")
             self.appconfig = config.section_(self.config.Webtools.application)
@@ -124,6 +128,14 @@ class Root(Harness):
 
         return
 
+    def getLastTest(self):
+        global lastTest
+        return lastTest
+
+    def setLastTest(self):
+        global lastTest
+        lastTest = self.testName
+
     def _validateConfig(self):
         """
         Check that the configuration has the required sections
@@ -133,7 +145,7 @@ class Root(Harness):
         for key in must_have_keys:
             msg  = "Application configuration '%s' does not contain '%s' key"\
                     % (self.app, key)
-            assert config_dict.has_key(key), msg
+            assert key in config_dict, msg
 
     def _configureCherryPy(self):
         """
@@ -211,7 +223,6 @@ class Root(Harness):
         cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
         cherrypy.config["server.socket_port"] = configDict.get("port", default_port)
         cherrypy.config["server.socket_host"] = configDict.get("host", "0.0.0.0")
-
         #A little hacky way to pass the expire second to config
         self.appconfig.default_expires = cherrypy.config["tools.expires.secs"]
 
@@ -286,8 +297,12 @@ class Root(Harness):
                 view_config.section_('database')
                 view_config.database = db_cfg.section_(instance)
 
+            if hasattr(view, 'security') and hasattr(view.security, 'instances'):
+                security_cfg = view.security.section_('instances')
+                view_config.section_('security')
+                view_config.security = security_cfg.section_(instance)
 
-        if view_config.dictionary_().has_key('database'):
+        if 'database' in view_config.dictionary_():
             if not type(view_config.database) == str:
                 if len(view_config.database.listSections_()) == 0:
                     if len(self.coreDatabase.listSections_()) > 0:
@@ -364,6 +379,7 @@ class Root(Harness):
         self._configureCherryPy()
         self._loadPages()
         self._makeIndex()
+        cherrypy.server.httpserver = None
         cherrypy.engine.start()
         if blocking:
             cherrypy.engine.block()
@@ -375,7 +391,6 @@ class Root(Harness):
         Called by the WMAgent harness code.  This will never return.
         """
         self.start()
-        return
 
     def stop(self):
         """
@@ -383,6 +398,11 @@ class Root(Harness):
         """
         cherrypy.engine.exit()
         cherrypy.engine.stop()
+
+        # Ensure the next server that's started gets fresh objects
+        for name, server in getattr(cherrypy, 'servers', {}).items():
+            server.unsubscribe()
+            del cherrypy.servers[name]
 
 if __name__ == "__main__":
     parser = OptionParser()

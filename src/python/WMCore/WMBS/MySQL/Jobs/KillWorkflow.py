@@ -15,7 +15,7 @@ class KillWorkflow(DBFormatter):
     subscriptions and return their state and id.
     """
     sql = """SELECT wmbs_job.id, wmbs_job_state.name AS state,
-               wmbs_job.retry_count AS retry_count
+               wmbs_job.retry_count AS retry_count, wmbs_job.name AS name
                     FROM wmbs_workflow
                INNER JOIN wmbs_subscription ON
                  wmbs_workflow.id = wmbs_subscription.workflow AND

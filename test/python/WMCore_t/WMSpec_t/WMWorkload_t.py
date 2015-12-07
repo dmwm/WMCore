@@ -10,6 +10,8 @@ import unittest
 
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper, WMWorkloadException
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
 
 class WMWorkloadTest(unittest.TestCase):
     def setUp(self):
@@ -29,6 +31,114 @@ class WMWorkloadTest(unittest.TestCase):
             os.remove(self.persistFile)
         return
 
+    def makeTestWorkload(self):
+        """
+        _makeTestWorkload_
+
+        Make a semi-generic workload which can cover the needs of
+        a few tests
+
+        Returns the workload and all the cmssw helpers
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setTaskType("Processing")
+        procTaskCMSSW = procTask.makeStep("cmsRun1")
+        procTaskCMSSW.setStepType("CMSSW")
+        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
+        procTaskCMSSW2 = procTaskCMSSW.addStep("cmsRun2")
+        procTaskCMSSW2.setStepType("CMSSW")
+        procTaskCMSSW2Helper = procTaskCMSSW2.getTypeHelper()
+        procTask.applyTemplates()
+        procTaskCMSSW2Helper.keepOutput(False)
+
+        primaryDataset = "bogusPrimary"
+        procTaskCMSSWHelper.addOutputModule("OutputA",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DQM",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+        procTaskCMSSW2Helper.addOutputModule("OutputC",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERC",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+        procTaskCMSSWHelper.addOutputModule("OutputB",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERB",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None)
+        procTaskCMSSWHelper.addOutputModule("OutputD",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERD",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None,
+                                            transient = True)
+        procTaskCMSSWHelper.addOutputModule("OutputE",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERE",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = None,
+                                            transient = False)
+
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
+        mergeTaskCMSSW.setStepType("CMSSW")
+        mergeTaskCMSSWHelper = mergeTaskCMSSW.getTypeHelper()
+        mergeTask.applyTemplates()
+
+        mergeTaskCMSSWHelper.addOutputModule("Merged",
+                                             primaryDataset = "bogusPrimary",
+                                             processedDataset = "bogusProcessed",
+                                             dataTier = "DQM",
+                                             lfnBase = "bogusMerged",
+                                             mergedLFNBase = "bogusMerged",
+                                             filterName = None)
+
+        skimTask = mergeTask.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTaskCMSSW = skimTask.makeStep("cmsRun1")
+        skimTaskCMSSW.setStepType("CMSSW")
+        skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
+        skimTask.applyTemplates()
+
+
+
+        skimTaskCMSSWHelper.addOutputModule("SkimA",
+                                            primaryDataset = primaryDataset,
+                                            processedDataset = "bogusProcessed",
+                                            dataTier = "DATATIERC",
+                                            lfnBase = "bogusUnmerged",
+                                            mergedLFNBase = "bogusMerged",
+                                            filterName = "bogusFilter")
+
+        harvestTask = mergeTask.addTask("HarvestTask")
+        harvestTask.setTaskType("Harvesting")
+        harvestTaskCMSSW = harvestTask.makeStep("cmsRun1")
+        harvestTaskCMSSW.setStepType("CMSSW")
+        harvestTaskCMSSWHelper = harvestTaskCMSSW.getTypeHelper()
+        harvestTask.applyTemplates()
+
+        harvestTaskCMSSWHelper.setDataProcessingConfig("pp", "dqmHarvesting",
+                                                       globalTag = "Bogus",
+                                                       datasetName = "/bogusPrimary/bogusProcessed/DQM",
+                                                       runNumber = 0)
+        return (testWorkload, procTaskCMSSWHelper,
+                mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
+                harvestTaskCMSSWHelper)
+
     def testInstantiation(self):
         """
         _testInstantiation_
@@ -36,8 +146,8 @@ class WMWorkloadTest(unittest.TestCase):
         Verify that the WMWorkload class and the WMWorkloadHelper class can
         be instantiated.
         """
-        workload = WMWorkload("workload1")
-        helper = WMWorkloadHelper(WMWorkload("workload2"))
+        WMWorkload("workload1")
+        WMWorkloadHelper(WMWorkload("workload2"))
         return
 
     def testB(self):
@@ -55,9 +165,9 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.listAllTaskNodes(), ["task1", "task2"])
 
         # using factory method to create new task when added
-        task3 = workload.newTask("task3")
+        workload.newTask("task3")
 
-        task4 = workload.newTask("task4")
+        workload.newTask("task4")
 
         workload.newTask("task5")
         workload.removeTask("task5")
@@ -109,8 +219,6 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(workload.data.owner.group, "Hoodoo")
         self.assertEqual(workload.data.owner.dn, 'DEFAULT')
 
-        result = workload.getOwner()
-
         ownerProps = {'capital': 'Kinshasa',
                       'adversary': 'Katanga',
                       'removedby': 'Kabila'}
@@ -132,18 +240,41 @@ class WMWorkloadTest(unittest.TestCase):
 
         workload = WMWorkloadHelper(WMWorkload("workload1"))
         workload.setValidStatus(validStatus = name)
-        workload.setProcessingVersion(processingVersion = name)
-        workload.setAcquisitionEra(acquisitionEra = name)
-        workload.setCustodialSite(siteName = name)
+        workload.setProcessingVersion(processingVersions = name)
+        workload.setAcquisitionEra(acquisitionEras = name)
 
         self.assertEqual(workload.getValidStatus(), name)
-        self.assertEqual(workload.getProcessingVersion(), name)
-        self.assertEqual(workload.getAcquisitionEra(), name)
-        self.assertEqual(workload.getCustodialSite(), name)
+        self.assertEqual(workload.getProcessingVersion(), 0)
+        self.assertEqual(workload.getAcquisitionEra(), None)
 
         return
 
-        
+    def testF_Overrides(self):
+        """
+        _testF_Overrides_
+
+        Check the values attached to the workload general overrides
+        """
+        name = "ASmartString"
+
+        workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        workload.setPhEDExInjectionOverride(name)
+
+        self.assertEqual(workload.getPhEDExInjectionOverride(), name)
+        self.assertEqual(workload.getWorkloadOverrides().injectionSite, name)
+
+        return
+
+    def testDbsUrl(self):
+        """
+        _testDbsUrl_
+
+        Check whether the DbsUrl can be retrieved from the workload.
+        """
+        testWorkload = TestSpecs.oneTaskTwoStep()
+        url = testWorkload.getDbsUrl()
+        self.assertEqual(url, "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
+        return
 
     def testWhiteBlacklists(self):
         """
@@ -188,7 +319,7 @@ class WMWorkloadTest(unittest.TestCase):
         testWorkload.setRunWhitelist([4])
         testWorkload.setRunBlacklist([5, 6])
 
-        for task in [procTestTask, mergeTestTask, weirdTestTask]:
+        for task in [procTestTask]:
             self.assertEqual(len(task.siteWhitelist()), 2,
                              "Error: Wrong number of sites in white list.")
             self.assertEqual(len(task.siteBlacklist()), 1,
@@ -200,6 +331,12 @@ class WMWorkloadTest(unittest.TestCase):
                             "Error: Site missing from white list.")
             self.assertTrue("T1_DE_KIT" in task.siteBlacklist(),
                             "Error: Site missing from black list.")
+
+        for task in [mergeTestTask, weirdTestTask]:
+            self.assertEqual(len(task.siteWhitelist()), 0,
+                             "Error: Wrong number of sites in white list.")
+            self.assertEqual(len(task.siteBlacklist()), 0,
+                             "Error: Wrong number of sites in black list.")
 
         for task in [procTestTask, weirdTestTask]:
             self.assertEqual(len(task.inputBlockWhitelist()), 1,
@@ -258,7 +395,7 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskStageOutHelper.setMinMergeSize(1, 1)
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
         procTaskCMSSWHelper.addOutputModule("output", dataTier = "RECO")
-        procTaskCMSSWHelper.addOutputModule("outputDQM", dataTier = "DQM")        
+        procTaskCMSSWHelper.addOutputModule("outputDQM", dataTier = "DQM")
 
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setInputReference(procTaskCMSSW, outputModule = "output")
@@ -274,8 +411,7 @@ class WMWorkloadTest(unittest.TestCase):
         mergeDQMTask.setInputReference(procTaskCMSSW, outputModule = "outputDQM")
         mergeDQMTask.setTaskType("Merge")
         mergeDQMTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 4,
-                                           max_merge_events = 4, min_merge_size = 4,
-                                           merge_across_runs = False)
+                                           max_merge_events = 4, min_merge_size = 4)
         mergeDQMTaskCMSSW = mergeDQMTask.makeStep("cmsRun1")
         mergeDQMTaskCMSSW.setStepType("CMSSW")
         mergeDQMTaskStageOut = mergeDQMTaskCMSSW.addStep("StageOut1")
@@ -294,8 +430,8 @@ class WMWorkloadTest(unittest.TestCase):
         skimTaskStageOutHelper.setMinMergeSize(3, 3)
         testWorkload.setMergeParameters(minSize = 10, maxSize = 100, maxEvents = 1000)
 
-        procSplitParams = procTask.jobSplittingParameters()
-        self.assertEqual(len(procSplitParams.keys()), 4,
+        procSplitParams = procTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(procSplitParams.keys()), 5,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
@@ -306,22 +442,22 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(procSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
-        skimSplitParams = skimTask.jobSplittingParameters()
-        self.assertEqual(len(skimSplitParams.keys()), 5,
+        skimSplitParams = skimTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(skimSplitParams.keys()), 6,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for skim task.")
         self.assertEqual(skimSplitParams["files_per_job"], 1,
                          "Error: Wrong number of files per job.")
         self.assertEqual(skimSplitParams["include_parents"], True,
-                         "Error: Include parents is wrong.")        
+                         "Error: Include parents is wrong.")
         self.assertEqual(skimSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(skimSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
-        mergeSplitParams = mergeTask.jobSplittingParameters()
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -336,21 +472,21 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
-        mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters()
+        mergeDQMSplitParams = mergeDQMTask.jobSplittingParameters(performance = False)
         self.assertEqual(len(mergeDQMSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeDQMSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
-        self.assertEqual(mergeDQMSplitParams["min_merge_size"], 4,
+        self.assertEqual(mergeDQMSplitParams["min_merge_size"], 10,
                          "Error: Wrong min merge size: %s" % mergeDQMSplitParams)
-        self.assertEqual(mergeDQMSplitParams["max_merge_size"], 4,
+        self.assertEqual(mergeDQMSplitParams["max_merge_size"], 100,
                          "Error: Wrong max merge size.")
-        self.assertEqual(mergeDQMSplitParams["max_merge_events"], 4,
+        self.assertEqual(mergeDQMSplitParams["max_merge_events"], 1000,
                          "Error: Wrong max merge events.")
         self.assertEqual(mergeDQMSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(mergeDQMSplitParams["siteBlacklist"], [],
-                         "Error: Site black list was updated.")        
+                         "Error: Site black list was updated.")
 
         self.assertEqual(procTaskStageOutHelper.minMergeSize(), 10,
                          "Error: Min merge size for proc task is wrong.")
@@ -371,82 +507,21 @@ class WMWorkloadTest(unittest.TestCase):
         """
         _testUpdatingLFNAndDataset_
 
-        Verify that after chaning the acquisition era, processing version and
-        merge/unmerged LFN bases that all the output datasets are named
-        correctly and that the metadata contained in each output module is
+        Verify that after changing the acquisition era, processing version,
+        processing string and merge/unmerged LFN bases that all the output
+        datasets are named correctly and that the metadata contained in each output module is
         correct.  Also verify that the listOutputDatasets() method works
         correctly.
         """
-        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
 
-        procTask = testWorkload.newTask("ProcessingTask")
-        procTask.setTaskType("Processing")
-        procTaskCMSSW = procTask.makeStep("cmsRun1")
-        procTaskCMSSW.setStepType("CMSSW")
-        procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
-        procTaskCMSSW2 = procTaskCMSSW.addStep("cmsRun2")
-        procTaskCMSSW2.setStepType("CMSSW")
-        procTaskCMSSW2Helper = procTaskCMSSW2.getTypeHelper()
-        procTask.applyTemplates()
-        procTaskCMSSW2Helper.keepOutput(False)
-
-        acquisitionEra = "TestAcqEra"
         primaryDataset = "bogusPrimary"
-        procEra        = "vTest"
+        acquisitionEra = "TestAcqEra"
+        procStr = "Test"
+        procVer = 2
 
-        procTaskCMSSWHelper.addOutputModule("OutputA",
-                                            primaryDataset = primaryDataset,
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERA",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)
-        procTaskCMSSW2Helper.addOutputModule("OutputC",
-                                            primaryDataset = primaryDataset,
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERC",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)        
-        procTaskCMSSWHelper.addOutputModule("OutputB",
-                                            primaryDataset = primaryDataset,
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERB",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)
-
-        mergeTask = procTask.addTask("MergeTask")
-        mergeTask.setTaskType("Merge")
-        mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
-        mergeTaskCMSSW.setStepType("CMSSW")
-        mergeTaskCMSSWHelper = mergeTaskCMSSW.getTypeHelper()
-        mergeTask.applyTemplates()
-
-        mergeTaskCMSSWHelper.addOutputModule("Merged",
-                                             primaryDataset = "bogusPrimary",
-                                             processedDataset = "bogusProcessed",
-                                             dataTier = "DATATIERA",
-                                             lfnBase = "bogusMerged",
-                                             mergedLFNBase = "bogusMerged",
-                                             filterName = None)
-
-        skimTask = mergeTask.addTask("SkimTask")
-        skimTask.setTaskType("Skim")
-        skimTaskCMSSW = skimTask.makeStep("cmsRun1")
-        skimTaskCMSSW.setStepType("CMSSW")
-        skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
-        skimTask.applyTemplates()
-
-
-
-        skimTaskCMSSWHelper.addOutputModule("SkimA",
-                                            primaryDataset = primaryDataset,
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DATATIERA",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = "bogusFilter")
+        (testWorkload, procTaskCMSSWHelper,
+         mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
+         harvestTaskCMSSWHelper) = self.makeTestWorkload()
 
         testWorkload.setAcquisitionEra(acquisitionEra)
 
@@ -462,20 +537,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "%s-None" % (acquisitionEra)
+                procDataset = "%s-v0" % (acquisitionEra)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "%s-%s-None" % (acquisitionEra, filterName)
+                procDataset = "%s-%s-v0" % (acquisitionEra, filterName)
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'None')
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'v0')
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'None')                
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'v0')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -488,7 +563,11 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
-        testWorkload.setProcessingVersion(procEra)
+        self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
+                         "/bogusPrimary/%s-v0/DQM" % acquisitionEra,
+                         "Error: Wrong pickled dataset name")
+
+        testWorkload.setProcessingVersion(procVer)
 
         for outputModule in outputModules:
             self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
@@ -498,20 +577,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEra-%s-vTest" % filterName
+                procDataset = "TestAcqEra-%s-v2" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "vTest")
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "v2")
             else:
-                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
-                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "vTest")
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "v2")
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -524,7 +603,47 @@ class WMWorkloadTest(unittest.TestCase):
                 self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
                                  "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
 
-        mergedLFNBase   = "/store/temp/merged"
+        testWorkload.setProcessingString(procStr)
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-Test-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEra-%s-Test-v2" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, "Test-v2")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, "Test-v2")
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        self.assertEqual(harvestTaskCMSSWHelper.getDatasetName(),
+                         "/bogusPrimary/TestAcqEra-Test-v2/DQM",
+                         "Error: Wrong pickled dataset name")
+
+        mergedLFNBase = "/store/temp/merged"
         unmergedLFNBase = "/store/temp/unmerged"
         testWorkload.setLFNBase(mergedLFNBase, unmergedLFNBase)
 
@@ -540,20 +659,20 @@ class WMWorkloadTest(unittest.TestCase):
             filterName = outputModule.filterName
 
             if filterName == None:
-                procDataset = "TestAcqEra-vTest"
+                procDataset = "TestAcqEra-Test-v2"
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
             else:
-                procDataset = "TestAcqEra-%s-vTest" % filterName
+                procDataset = "TestAcqEra-%s-Test-v2" % filterName
                 self.assertEqual(outputModule.processedDataset, procDataset,
                                  "Error: Processed dataset is incorrect.")
 
             if filterName != None:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'vTest')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEra, primaryDataset, dataTier, filterName, 'Test-v2')
             else:
-                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
-                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'vTest')
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEra, primaryDataset, dataTier, 'Test-v2')
 
             if outputModule._internal_name == "Merged":
                 self.assertEqual(outputModule.lfnBase, mergedLFN,
@@ -567,15 +686,297 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 3,
+        self.assertEqual(len(outputDatasets), 4,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERA" in outputDatasets,
+
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-vTest/DATATIERB" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
                         "Error: A dataset is missing")
-        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-vTest/DATATIERA" in outputDatasets,
+        self.assertTrue("/bogusPrimary/TestAcqEra-bogusFilter-Test-v2/DATATIERC" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERE" in outputDatasets,
                         "Error: A dataset is missing")
         return
+
+    def testUpdatingLFNAndDatasetMultipleVer(self):
+        """
+        _testUpdatingLFNAndDatasetMultipleVer_
+
+        Tests that we can pass dictionaries for the processing versions, processing strings
+        and acquisition eras in the workload so they are different for
+        different tasks.
+        """
+
+        primaryDataset = "bogusPrimary"
+
+        (testWorkload, procTaskCMSSWHelper,
+         mergeTaskCMSSWHelper, skimTaskCMSSWHelper,
+         _) = self.makeTestWorkload()
+
+        acquisitionEras = {"ProcessingTask" : "TestAcqEra",
+                           "SkimTask" : "TestAcqEraSkim"}
+
+        testWorkload.setAcquisitionEra(acquisitionEras)
+
+        outputModules = [procTaskCMSSWHelper.getOutputModule("OutputA"),
+                         procTaskCMSSWHelper.getOutputModule("OutputB"),
+                         mergeTaskCMSSWHelper.getOutputModule("Merged"),
+                         skimTaskCMSSWHelper.getOutputModule("SkimA")]
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "%s-v0" % (acquisitionEras["ProcessingTask"])
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "%s-%s-v0" % (acquisitionEras["SkimTask"], filterName)
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'v0')
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'v0')
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'v0')
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s." % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        procVers = {"ProcessingTask" : 2,
+                    "SkimTask" : 3}
+        testWorkload.setProcessingVersion(procVers)
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEraSkim-%s-v3" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "v3")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "v3")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "v2")
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        procStrings = {"ProcessingTask" : "Test",
+                       "SkimTask" : "SkimTest"}
+        testWorkload.setProcessingString(procStrings)
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-Test-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEraSkim-%s-SkimTest-v3" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/data/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "SkimTest-v3")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, "SkimTest-v3")
+            else:
+                mergedLFN = "/store/data/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "Test-v2")
+                unmergedLFN = "/store/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, "Test-v2")
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s." % outputModule.mergedLFNBase)
+
+        mergedLFNBase = "/store/temp/merged"
+        unmergedLFNBase = "/store/temp/unmerged"
+        testWorkload.setLFNBase(mergedLFNBase, unmergedLFNBase)
+
+        self.assertEqual(testWorkload.getLFNBases(), (mergedLFNBase,
+                                                      unmergedLFNBase),
+                         "Error: Wrong LFN bases.")
+
+        for outputModule in outputModules:
+            self.assertEqual(outputModule.primaryDataset, "bogusPrimary",
+                             "Error: Primary dataset was modified.")
+
+            dataTier = outputModule.dataTier
+            filterName = outputModule.filterName
+
+            if filterName == None:
+                procDataset = "TestAcqEra-Test-v2"
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+            else:
+                procDataset = "TestAcqEraSkim-%s-SkimTest-v3" % filterName
+                self.assertEqual(outputModule.processedDataset, procDataset,
+                                 "Error: Processed dataset is incorrect.")
+
+            if filterName != None:
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'SkimTest-v3')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s-%s" % (acquisitionEras["SkimTask"], primaryDataset, dataTier, filterName, 'SkimTest-v3')
+            else:
+                mergedLFN = "/store/temp/merged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'Test-v2')
+                unmergedLFN = "/store/temp/unmerged/%s/%s/%s/%s" % (acquisitionEras["ProcessingTask"], primaryDataset, dataTier, 'Test-v2')
+
+            if outputModule._internal_name == "Merged":
+                self.assertEqual(outputModule.lfnBase, mergedLFN,
+                                 "Error: Incorrect unmerged LFN.")
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN.")
+            else:
+                self.assertEqual(outputModule.lfnBase, unmergedLFN,
+                                 "Error: Incorrect unmerged LFN %s" % outputModule.lfnBase)
+                self.assertEqual(outputModule.mergedLFNBase, mergedLFN,
+                                 "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
+
+        outputDatasets = testWorkload.listOutputDatasets()
+        self.assertEqual(len(outputDatasets), 4,
+                         "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERB" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEraSkim-bogusFilter-SkimTest-v3/DATATIERC" in outputDatasets,
+                        "Error: A dataset is missing")
+        self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DATATIERE" in outputDatasets,
+                        "Error: A dataset is missing")
+
+        processingVersion = testWorkload.getProcessingVersion()
+        acquisitionEra = testWorkload.getAcquisitionEra()
+        processingString = testWorkload.getProcessingString()
+
+        self.assertEqual(processingVersion, 2,
+                         "Error: Wrong top level processing version")
+        self.assertEqual(acquisitionEra, "TestAcqEra",
+                         "Error: Wrong top level acquisition era")
+        self.assertEqual(processingString, "Test",
+                         "Error: Wront top level processing string")
+        return
+
+    def testSetSubscriptionInformation(self):
+        """
+        _testSetSubscriptionInformation_
+
+        Verify that we can set and retrieve subscription
+        information on the datasets
+        """
+        testWorkload = self.makeTestWorkload()[0]
+        testWorkload.setSubscriptionInformation(custodialSites = ["CMSSite_1"],
+                                                nonCustodialSites = ["CMSSite_2"])
+        subInformation = testWorkload.getSubscriptionInformation()
+
+        outputDatasets = testWorkload.listOutputDatasets()
+        for outputDataset in outputDatasets:
+            datasetSub = subInformation[outputDataset]
+            self.assertEquals(datasetSub["CustodialSites"], ["CMSSite_1"], "Wrong custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_2"], "Wrong non-custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
+            self.assertEquals(datasetSub["CustodialSubType"], "Replica", "Wrong custodial subscription type for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSubType"], "Replica", "Wrong custodial subscription type for %s" % outputDataset)
+
+        testWorkload.setSubscriptionInformation(custodialSites = ["CMSSite_1","CMSSite_2"], nonCustodialSites = ["CMSSite_3"],
+                                                autoApproveSites = ["CMSSite_2"], custodialSubType = "Move",
+                                                nonCustodialSubType = "Move", priority = "Normal")
+        subInformation = testWorkload.getSubscriptionInformation()
+        for outputDataset in outputDatasets:
+            datasetSub = subInformation[outputDataset]
+            self.assertEquals(set(datasetSub["CustodialSites"]), set(["CMSSite_1","CMSSite_2"]), "Wrong custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_3"], "Wrong non-custodial sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["AutoApproveSites"], ["CMSSite_2"], "Wrong auto-approve sites for %s" % outputDataset)
+            self.assertEquals(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
+            self.assertEquals(datasetSub["CustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+            self.assertEquals(datasetSub["NonCustodialSubType"], "Move", "Wrong custodial subscription type for %s" % outputDataset)
+        return
+
+    def testValidatePhEDExSubscription(self):
+        """
+        _testValidatePhEDExSubscription_
+
+        Verify that we cannot auto-approve subscriptions to MSS endpoints
+        """
+        from WMCore.WMSpec.WMWorkloadTools import validatePhEDExSubscription
+        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN','T2_CH_CERN','T1_US_FNAL_Disk']}
+        self.assertEqual(validatePhEDExSubscription(args), None)
+
+        # test an invalid case
+        args = {'AutoApproveSubscriptionSites': ['T1_CH_CERN','T2_CH_CERN','T1_IT_CNAF_MSS','T1_US_FNAL_Disk']}
+        raises = False
+        try:
+            validatePhEDExSubscription(args)
+        except WMSpecFactoryException as ex:
+            raises = True
+            pass
+        self.assertTrue(raises, "Auto-approval to 'T1_IT_CNAF_MSS' is not allowed.")
+
+    def testValidateSiteLists(self):
+        """
+        _testValidateSiteLists_
+
+        Verify we cannot set a site to the white and blacklist
+        """
+        from WMCore.WMSpec.WMWorkloadTools import validateSiteLists
+        args = {'SiteWhitelist': ['T1_CH_CERN'], 'SiteBlacklist': ['T2_CH_CERN']}
+        self.assertEqual(validateSiteLists(args), None)
+        
+        args = {'SiteWhitelist': 'T1_US_FNAL', 'SiteBlacklist': 'T2_CH_CERN'}
+        self.assertEqual(validateSiteLists(args), None)
+
+        # test an invalid case
+        args = {'SiteWhitelist': ['T1_CH_CERN','T1_US_FNAL','T2_CH_CERN','T1_UK_RAL'], 'SiteBlacklist': ['T2_CH_CERN']}
+        raises = False
+        try:
+            validateSiteLists(args)
+        except WMSpecFactoryException as ex:
+            raises = True
+            pass
+        self.assertTrue(raises, "'T2_CH_CERN' cannot be in both site white and black lists")
 
     def testUpdatingSplitParameters(self):
         """
@@ -612,7 +1013,8 @@ class WMWorkloadTest(unittest.TestCase):
                                                {"files_per_job": 2, "include_parents": True})
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask/MergeTask/SkimTask", "RunBased",
                                                {"max_files": 21,
-                                                "some_other_param": "value"})
+                                                "some_other_param": "value",
+                                                "include_parents" : False})
 
         self.assertEqual(testWorkload.startPolicy(), "Block",
                          "Error: Wrong start policy: %s" % testWorkload.startPolicy())
@@ -620,16 +1022,19 @@ class WMWorkloadTest(unittest.TestCase):
                          "Errror: Wrong slice type.")
         self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 2,
                          "Errror: Wrong slice size.")
-
-        procSplitParams = procTask.jobSplittingParameters()
-        self.assertEqual(len(procSplitParams.keys()), 5,
+        self.assertFalse("SubSliceType" in testWorkload.startPolicyParameters(),
+                         "Error: Shouldn't have sub-slice type.")
+        self.assertFalse("SubSliceSize" in testWorkload.startPolicyParameters(),
+                         "Error: Shouldn't have sub-slice size.")
+        procSplitParams = procTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(procSplitParams.keys()), 6,
                          "Error: Wrong number of params for proc task.")
         self.assertEqual(procSplitParams["algorithm"], "FileBased",
                          "Error: Wrong job splitting algo for proc task.")
         self.assertEqual(procSplitParams["files_per_job"], 2,
                          "Error: Wrong number of files per job.")
         self.assertEqual(procSplitParams["include_parents"], True,
-                         "Error: Include parents is wrong.")        
+                         "Error: Include parents is wrong.")
         self.assertEqual(procSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(procSplitParams["siteBlacklist"], [],
@@ -639,8 +1044,8 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(stepHelper.minMergeSize(), 2,
                          "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
 
-        skimSplitParams = skimTask.jobSplittingParameters()
-        self.assertEqual(len(skimSplitParams.keys()), 5,
+        skimSplitParams = skimTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(skimSplitParams.keys()), 7,
                          "Error: Wrong number of params for skim task.")
         self.assertEqual(skimSplitParams["algorithm"], "RunBased",
                          "Error: Wrong job splitting algo for skim task.")
@@ -648,13 +1053,15 @@ class WMWorkloadTest(unittest.TestCase):
                          "Error: Wrong number of files per job.")
         self.assertEqual(skimSplitParams["some_other_param"], "value",
                          "Error: Wrong other param.")
+        self.assertEqual(skimSplitParams["include_parents"], False,
+                         "Error: Wrong include_parents.")
         self.assertEqual(skimSplitParams["siteWhitelist"], [],
                          "Error: Site white list was updated.")
         self.assertEqual(skimSplitParams["siteBlacklist"], [],
                          "Error: Site black list was updated.")
 
-        mergeSplitParams = mergeTask.jobSplittingParameters()
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -683,8 +1090,8 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(stepHelper.minMergeSize(), -1,
                          "Error: Wrong min merge size.")
 
-        mergeSplitParams = mergeTask.jobSplittingParameters()
-        self.assertEqual(len(mergeSplitParams.keys()), 6,
+        mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
                          "Error: Wrong number of params for merge task.")
         self.assertEqual(mergeSplitParams["algorithm"], "WMBSMergeBySize",
                          "Error: Wrong job splitting algo for merge task.")
@@ -701,10 +1108,102 @@ class WMWorkloadTest(unittest.TestCase):
 
         testWorkload.setJobSplittingParameters("/TestWorkload/ProcessingTask", "FileBased",
                                                {"files_per_job": 4})
+        return
 
-        stepHelper = procTask.getStepHelper("StageOut1")
-        self.assertEqual(stepHelper.minMergeSize(), 2,
+    def testUpdatingSubSplitParameters(self):
+        """
+        _testUpdatingSubSplitParameters_
+
+        Verify that the method to update the workqueue splitting parameters
+        work with sub split parameters.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setWorkQueueSplitPolicy("MonteCarlo", "EventBased",
+                                             {"events_per_job": 500,
+                                              "events_per_lumi": 100})
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo",
+                         "Error: Wrong start policy: %s" %
+                         testWorkload.startPolicy())
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"],
+                         "NumberOfEvents", "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 500,
+                         "Error: Wrong slice size.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceType"],
+                         "NumberOfEventsPerLumi", "Error Wrong sub-slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
+                         100, "Error: Wrong sub-slice size.")
+
+        prodTask = testWorkload.newTask("ProductionTask")
+        prodTask.setSplittingAlgorithm("EventBased",
+                                       events_per_job = 500,
+                                       events_per_lumi = 100)
+        prodTask.setTaskType("Production")
+        prodTaskCmssw = prodTask.makeStep("cmsRun1")
+        prodTaskCmssw.setStepType("CMSSW")
+        prodTaskStageOut = prodTaskCmssw.addStep("StageOut1")
+        prodTaskStageOut.setStepType("StageOut")
+        prodTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
+        prodTask.applyTemplates()
+
+        mergeTask = prodTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+
+        testWorkload.setJobSplittingParameters("/TestWorkload/ProductionTask",
+                                               "EventBased",
+                                               {"events_per_job": 150,
+                                                "events_per_lumi": 15})
+
+        self.assertEqual(testWorkload.startPolicy(), "MonteCarlo",
+                         "Error: Wrong start policy: %s" %
+                         testWorkload.startPolicy())
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceType"],
+                         "NumberOfEvents", "Errror: Wrong slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SliceSize"], 150,
+                         "Error: Wrong slice size.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceType"],
+                         "NumberOfEventsPerLumi", "Error Wrong sub-slice type.")
+        self.assertEqual(testWorkload.startPolicyParameters()["SubSliceSize"],
+                         15, "Error: Wrong sub-slice size.")
+        prodSplitParams = prodTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(prodSplitParams.keys()), 6,
+                         "Error: Wrong number of params for proc task.")
+        self.assertEqual(prodSplitParams["algorithm"], "EventBased",
+                         "Error: Wrong job splitting algo for proc task.")
+        self.assertEqual(prodSplitParams["events_per_job"], 150,
+                         "Error: Wrong number of files per job.")
+        self.assertEqual(prodSplitParams["events_per_lumi"], 15,
+                         "Error: Wrong number of files per job.")
+        self.assertEqual(prodSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(prodSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")
+        stepHelper = prodTask.getStepHelper("cmsRun1")
+        self.assertEqual(getattr(stepHelper.data.application.configuration,
+                                 "eventsPerLumi", None), 15,
+                                 "Error: Wrong number of events per lumi")
+
+        stepHelper = prodTask.getStepHelper("StageOut1")
+        self.assertEqual(stepHelper.minMergeSize(), -1,
+                         "Error: Wrong min merge size: %s" % stepHelper.minMergeSize())
+
+        mergeSplitParams = mergeTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(mergeSplitParams.keys()), 7,
+                         "Error: Wrong number of params for merge task.")
+        self.assertEqual(mergeSplitParams["algorithm"], "ParentlessMergeBySize",
+                         "Error: Wrong job splitting algo for merge task.")
+        self.assertEqual(mergeSplitParams["min_merge_size"], 2,
                          "Error: Wrong min merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_size"], 2,
+                         "Error: Wrong max merge size.")
+        self.assertEqual(mergeSplitParams["max_merge_events"], 2,
+                         "Error: Wrong max merge events.")
+        self.assertEqual(mergeSplitParams["siteWhitelist"], [],
+                         "Error: Site white list was updated.")
+        self.assertEqual(mergeSplitParams["siteBlacklist"], [],
+                         "Error: Site black list was updated.")
+
         return
 
     def testListJobSplittingParametersByTask(self):
@@ -735,7 +1234,7 @@ class WMWorkloadTest(unittest.TestCase):
                                                {"max_files": 21,
                                                 "some_other_param": "value"})
 
-        results = testWorkload.listJobSplittingParametersByTask()
+        results = testWorkload.listJobSplittingParametersByTask(performance = False)
 
         self.assertEqual(len(results.keys()), 3, \
                "Error: Wrong number of tasks.")
@@ -745,41 +1244,20 @@ class WMWorkloadTest(unittest.TestCase):
                         "Error: Task is missing.")
         self.assertTrue("/TestWorkload/ProcessingTask/MergeTask/SkimTask" in results.keys(),
                         "Error: Task is missing.")
-
         self.assertEqual(results["/TestWorkload/ProcessingTask"], {"files_per_job": 2,
                                                                    "algorithm": "FileBased",
+                                                                   'trustSitelists': False,
                                                                    "type": "Processing"},
-                         "Error: Wrong splitting parameters: %s")
+                         "Error: Wrong splitting parameters: %s" % results["/TestWorkload/ProcessingTask"])
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask/SkimTask"],
-                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", "type": "Skim"},
+                         {"max_files": 21, "algorithm": "RunBased", "some_other_param": "value", 
+                          'trustSitelists': False, "type": "Skim"},
                          "Error: Wrong splitting parameters.")
         self.assertEqual(results["/TestWorkload/ProcessingTask/MergeTask"],
                          {"algorithm": "ParentlessMergeBySize", "max_merge_size": 2,
-                          "max_merge_events": 2, "min_merge_size": 2, "type": "Merge"},
+                          "max_merge_events": 2, "min_merge_size": 2, 'trustSitelists': False, "type": "Merge"},
                          "Error: Wrong splitting parameters.")
 
-        return
-
-    def testUpdatingTimeouts(self):
-        """
-        _testUpdatingTimeouts_
-
-        Verify that task timeouts are set correctly.
-        """
-        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-
-        procTask = testWorkload.newTask("ProcessingTask")
-        procTask.setTaskType("Processing")
-        mergeTask = procTask.addTask("MergeTask")
-        mergeTask.setTaskType("Merge")
-
-        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask", 60)
-        testWorkload.setTaskTimeOut("/TestWorkload/ProcessingTask/MergeTask", 30)
-
-        self.assertEqual(testWorkload.listTimeOutsByTask(),
-                         {"/TestWorkload/ProcessingTask": 60,
-                          "/TestWorkload/ProcessingTask/MergeTask": 30},
-                         "Error: Timeouts not set correctly.")
         return
 
     def testDashboardActivity(self):
@@ -793,7 +1271,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(testWorkload.getDashboardActivity(), "Activity!",
                          "Error: Wrong dashboard activity.")
         return
-        
+
 
     def testTruncate(self):
         """
@@ -859,31 +1337,25 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeTask.jobSplittingParameters()["initial_lfn_counter"],
                          20000000, "Error: Initial LFN counter is incorrect.")
 
-        self.assertEqual(len(testWorkload.getTopLevelTask()), 2,
-                         "Error: There should be two top level tasks.")
-        goldenTasks = [mergeTask.getPathName(), cleanupTask.getPathName()]
-        for topLevelTask in testWorkload.getTopLevelTask():
-            self.assertTrue(topLevelTask.getPathName() in goldenTasks,
-                            "Error: Extra top level task.")
-            goldenTasks.remove(topLevelTask.getPathName())
+        self.assertEqual(len(testWorkload.getTopLevelTask()), 1,
+                         "Error: There should be one top level task.")
+        topLevelTask = testWorkload.getTopLevelTask()[0]
+        self.assertEqual(topLevelTask.getPathName(), mergeTask.getPathName(),
+                        "Error: Extra top level task.")
 
         self.assertEqual(testWorkload.name(), "TestWorkloadResubmit",
                          "Error: The workload name is wrong.")
 
-        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 3,
-                         "Error: There should only be three tasks")
-        self.assertEqual(len(testWorkload.listAllTaskNames()), 3,
-                         "Error: There should only be three tasks")
+        self.assertEqual(len(testWorkload.listAllTaskPathNames()), 2,
+                         "Error: There should only be two tasks")
+        self.assertEqual(len(testWorkload.listAllTaskNames()), 2,
+                         "Error: There should only be two tasks")
         self.assertTrue("/TestWorkloadResubmit/MergeTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Merge task is missing.")
-        self.assertTrue("/TestWorkloadResubmit/CleanupTask" in testWorkload.listAllTaskPathNames(),
-                        "Error: Cleanup task is missing.")
         self.assertTrue("/TestWorkloadResubmit/MergeTask/SkimTask" in testWorkload.listAllTaskPathNames(),
                         "Error: Skim task is missing.")
         self.assertTrue("MergeTask" in testWorkload.listAllTaskNames(),
                         "Error: Merge task is missing.")
-        self.assertTrue("CleanupTask" in testWorkload.listAllTaskNames(),
-                        "Error: Cleanup task is missing.")
         self.assertTrue("SkimTask" in testWorkload.listAllTaskNames(),
                         "Error: Skim task is missing.")
         self.assertEqual("ResubmitBlock", testWorkload.startPolicy(),
@@ -891,7 +1363,92 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertEqual(mergeTask.getInputACDC(),
                          {"database": "somedatabase", "fileset": "/TestWorkload/ProcessingTask/MergeTask",
                           "collection": "TestWorkload", "server": "somecouchurl"})
+        return
 
+    def testIgnoreOutputModules(self):
+        """
+        _testIgnoreOutputModules_
+
+        Checks that we can reduce a workload based on ignore certain
+        output modules and also the affected steps are marked correctly
+        to ignore such modules
+        """
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        testWorkload.setOwnerDetails("sfoulkes", "DMWM")
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.addOutputModule("badOutput",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+
+        procTaskCmsswHelper.addOutputModule("goodOutput",
+                                            primaryDataset = "primary",
+                                            processedDataset = "processed",
+                                            dataTier = "tier",
+                                            filterName = "filter",
+                                            lfnBase = "/store/data",
+                                            mergedLFNBase = "/store/unmerged")
+
+        procTaskStageOut = procTaskCmssw.addStep("StageOut1")
+        procTaskStageOut.setStepType("StageOut")
+        procTaskStageOut.getTypeHelper().setMinMergeSize(2, 2)
+        procTask.applyTemplates()
+
+        mergeTask = procTask.addTask("MergeTask")
+        mergeTask.setTaskType("Merge")
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+        mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
+        mergeTaskCmssw.setStepType("CMSSW")
+        mergeTask.applyTemplates()
+        mergeTask.setInputReference(procTask, outputModule = "badOutput")
+
+        mergeTask2 = procTask.addTask("MergeTask2")
+        mergeTask2.setTaskType("Merge")
+        mergeTask2.setSplittingAlgorithm("WMBSMergeBySize", max_merge_size = 2,
+                                        max_merge_events = 2, min_merge_size = 2)
+        mergeTask2Cmssw = mergeTask2.makeStep("cmsRun1")
+        mergeTask2Cmssw.setStepType("CMSSW")
+        mergeTask2.applyTemplates()
+        mergeTask2.setInputReference(procTask, outputModule = "goodOutput")
+
+        cleanupTask = procTask.addTask("CleanupTask")
+        cleanupTask.setTaskType("Cleanup")
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTaskCmssw = cleanupTask.makeStep("cmsRun1")
+        cleanupTaskCmssw.setStepType("CMSSW")
+        cleanupTask.applyTemplates()
+        cleanupTask.setInputReference(procTask, outputModule = "badOutput")
+
+        skimTask = mergeTask2.addTask("SkimTask")
+        skimTask.setTaskType("Skim")
+        skimTaskCmssw = skimTask.makeStep("cmsRun1")
+        skimTaskCmssw.setStepType("CMSSW")
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        skimTask.applyTemplates()
+
+        testWorkload.ignoreOutputModules(["badOutput"])
+
+        self.assertFalse(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask"),
+                         "Error: Merge task is available")
+        self.assertFalse(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/CleanupTask"),
+                         "Error: Cleanup task is available")
+        self.assertTrue(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask2"),
+                         "Error: Second merge task is not available")
+        self.assertTrue(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask2/SkimTask"),
+                         "Error: Skim task is not available")
+
+        self.assertEquals(procTaskCmssw.getIgnoredOutputModules(), ["badOutput"])
         return
 
     def testSetCMSSWParams(self):
@@ -976,23 +1533,23 @@ class WMWorkloadTest(unittest.TestCase):
     def testGenerateSummaryInfo(self):
         """
         _testGenerateSummaryInfo_
-        
+
         Test that we can generate the summary info for a workload
-        
+
         Checks listInputDatasets by proxy
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-    
+
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setTaskType("Merge")
-    
+
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
         procTask.applyTemplates()
-        
+
         summary = testWorkload.generateWorkloadSummary()
 
         # All that should be in here should be tasks.
@@ -1011,7 +1568,7 @@ class WMWorkloadTest(unittest.TestCase):
                                  black_blacklist = ["BlockC"],
                                  run_whitelist = [11, 12],
                                  run_blacklist = [13])
-        
+
         procTaskCMSSWHelper.addOutputModule("OutputA",
                                             primaryDataset = "bogusPrimary",
                                             processedDataset = "bogusProcessed",
@@ -1039,17 +1596,20 @@ class WMWorkloadTest(unittest.TestCase):
         """
 
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-    
+
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
         mergeTask = procTask.addTask("MergeTask")
         mergeTask.setTaskType("Merge")
-    
-        
-        testWorkload.setupPerformanceMonitoring(maxRSS = 101, maxVSize = 102)
+
+        testWorkload.setupPerformanceMonitoring(maxRSS = 101, maxVSize = 102,
+                                                softTimeout = 100, gracePeriod = 1)
+
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxRSS, 101)
         self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.maxVSize, 102)
-        self.assertFalse(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.softTimeout, 100)
+        self.assertEqual(testWorkload.data.tasks.ProcessingTask.watchdog.PerformanceMonitor.hardTimeout, 101)
+        self.assertTrue(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
         return
 
     def test_parseSiteWildcards(self):
@@ -1064,8 +1624,6 @@ class WMWorkloadTest(unittest.TestCase):
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
 
-        wildcardKeys = {'T1*': 'T1_*', 'T2*': 'T2_*',
-                        'T3*': 'T3_*', 'US*': '_US_'}
         siteList = ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL',
                     'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT']
         wildcardSites = {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
@@ -1122,7 +1680,7 @@ class WMWorkloadTest(unittest.TestCase):
             testWorkload.setSiteWildcardsLists(siteBlacklist = ['T3*'],
                                                siteWhitelist = [],
                                                wildcardDict = wildcardSites)
-        except WMWorkloadException, ex:
+        except WMWorkloadException as ex:
             raises = True
             self.assertTrue("Invalid wildcard site T3* in site blacklist!" in str(ex))
             pass
@@ -1192,7 +1750,88 @@ class WMWorkloadTest(unittest.TestCase):
                          ['SomeURL/SomeDBName/DocIDThatIsReallyLong/configFile',
                           'SomeURL/SomeDBName/DocIDThatIsReallyLong2/configFile'])
         return
-                         
+
+    def testPileupDatasetList(self):
+        """
+        _testPileupDatasetList_
+
+        Test that we can list all the pile up datasets in a workload including those not
+        in the top level task.
+        """
+        dataPileupConfig = {"data" : ["/some/minbias/data"]}
+        mcPileupConfig = {"data" : ["/some/minbias/data"],
+                          "mc" : ["/some/minbias/mc"]}
+
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        procTask = testWorkload.newTask("ProcessingTask")
+        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setTaskType("Processing")
+        procTaskCmssw = procTask.makeStep("cmsRun1")
+        procTaskCmssw.setStepType("CMSSW")
+        procTask.applyTemplates()
+
+        procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
+        procTaskCmsswHelper.setupPileup(dataPileupConfig, 'dbslocation')
+
+        procTask2 = procTask.addTask("ProcessingTask2")
+        procTask2.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask2.setTaskType("Processing")
+        procTask2Cmssw = procTask2.makeStep("cmsRun2")
+        procTask2Cmssw.setStepType("CMSSW")
+        procTask2.applyTemplates()
+
+        procTask3 = procTask2.addTask("ProcessingTask3")
+        procTask3.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask3.setTaskType("Processing")
+        procTask3Cmssw = procTask3.makeStep("cmsRun2")
+        procTask3Cmssw.setStepType("CMSSW")
+        procTask3.applyTemplates()
+
+        procTask3CmsswHelper = procTask3Cmssw.getTypeHelper()
+        procTask3CmsswHelper.setupPileup(mcPileupConfig, 'dbslocation')
+        self.assertTrue('dbslocation' in testWorkload.listPileupDatasets())
+        self.assertEqual(len(testWorkload.listPileupDatasets()), 1)
+        self.assertEqual(testWorkload.listPileupDatasets()['dbslocation'], set(["/some/minbias/data",
+                                                                                "/some/minbias/mc"]))
+
+    def testBlockCloseSettings(self):
+        """
+        _testBlockCloseSettings_
+
+        Check the setters and getters for the block closing
+        parameters
+        """
+
+        testWorkload = self.makeTestWorkload()[0]
+        testWorkload.setBlockCloseSettings(1,2,3,4)
+        self.assertEqual(testWorkload.getBlockCloseMaxWaitTime(), 1)
+        self.assertEqual(testWorkload.getBlockCloseMaxFiles(), 2)
+        self.assertEqual(testWorkload.getBlockCloseMaxEvents(), 3)
+        self.assertEqual(testWorkload.getBlockCloseMaxSize(), 4)
+        return
+
+    def testListOutputProducingTasks(self):
+        testWorkload = self.makeTestWorkload()[0]
+        taskList = testWorkload.listOutputProducingTasks()
+        expectedTasks = ['/TestWorkload/ProcessingTask', '/TestWorkload/ProcessingTask/MergeTask',
+                         '/TestWorkload/ProcessingTask/MergeTask/SkimTask']
+        self.assertEqual(sorted(taskList), sorted(expectedTasks))
+        return
+
+    def testAllowOpportunistic(self):
+        """
+        _testAllowOpportunistic_
+
+        Verify that the allowOpportunistic flag can be read and set.
+        """
+        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
+        self.assertFalse(testWorkload.getAllowOpportunistic(), "Should be None, I did not set you yet.")
+        testWorkload.setAllowOpportunistic(True)
+        self.assertTrue(testWorkload.getAllowOpportunistic(), "Bad job!! You should be True")
+        testWorkload.setAllowOpportunistic(False)
+        self.assertFalse(testWorkload.getAllowOpportunistic(), "Bad job!! You should be False")
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

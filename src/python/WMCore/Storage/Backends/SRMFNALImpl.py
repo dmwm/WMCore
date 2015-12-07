@@ -19,9 +19,9 @@ class SRMImpl(StageOutImpl):
     _SRMImpl_
 
     Implement interface for srmcp command
-    
+
     """
-    
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -31,6 +31,8 @@ class SRMImpl(StageOutImpl):
         """
         if pfn.startswith('/'):
             return "file:///%s" % pfn
+        elif os.path.isfile(pfn):
+            return "file:///%s" % os.path.abspath(pfn)
         else:
             return pfn
 
@@ -66,7 +68,7 @@ class SRMImpl(StageOutImpl):
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -report=$REPORT_FILE -retry_num=0 "
-        
+
         if options != None:
             result += " %s " % options
         result += " %s " % sourcePFN
@@ -86,7 +88,7 @@ class SRMImpl(StageOutImpl):
             remotePFN, localPFN = sourcePFN, targetPFN.replace("file://", "", 1)
         else:
             remotePFN, localPFN = targetPFN, sourcePFN.replace("file://", "", 1)
-            
+
         targetPnfsPath = self.createPnfsPath(remotePFN)
 #        for filePath in (sourcePFN, targetPFN):
 #            if filePath.startswith("srm://"):
@@ -108,9 +110,9 @@ class SRMImpl(StageOutImpl):
                %s
                exit 60311
             fi
-        
+
             """ % self.createRemoveFileCommand(targetPnfsPath)
-        
+
         result += "FILE_SIZE=`stat -c %s"
         result += " %s `\n" % localPFN
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
@@ -128,18 +130,18 @@ class SRMImpl(StageOutImpl):
               echo "Cleaning up failed file:"
               /bin/rm -f %s
               exit 60311
-           fi 
+           fi
         fi
         echo "Cleaning up failed file:"
-        /bin/rm -f %s 
+        /bin/rm -f %s
         exit 60311
 
         """ % ( targetPnfsPath, targetPnfsPath, targetPnfsPath)
         result += metadataCheck
-        
+
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

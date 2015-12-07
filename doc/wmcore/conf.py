@@ -17,12 +17,15 @@ today_fmt = '%B %d, %Y'
 #exclude_trees = []
 #default_role = None
 add_function_parentheses = True
-add_module_names = True
+add_module_names = False
 show_authors = True
 pygments_style = 'sphinx'
 #modindex_common_prefix = []
 
 autoclass_content = 'both'
+autodoc_member_order = 'bysource'
+autodoc_default_flags = ['members', 'undoc-members', 'private-members',
+                         'special-members', 'show-inheritance']
 
 html_theme = 'nature'
 #html_theme_options = {}
@@ -42,7 +45,7 @@ html_last_updated_fmt = '%b %d, %Y'
 html_show_sourcelink = False
 #html_use_opensearch = ''
 #html_file_suffix = ''
-htmlhelp_basename = 'mondoc'
+htmlhelp_basename = 'wmcdoc'
 
 latex_paper_size = 'a4'
 #latex_font_size = '10pt'

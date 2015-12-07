@@ -13,4 +13,3 @@ from WMCore.Agent.Database.MySQL.UpdateWorker import UpdateWorker \
 
 class UpdateWorker(UpdateWorkerMySQL):
     pass
-

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+
 """
 _MakeRequest_
 
@@ -7,15 +7,12 @@ API for creating a new request in the database
 """
 
 
-
-
-
-import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 
 
 
-def createRequest(hnUser, groupName, requestName, requestType, workflowName, prep_id):
+def createRequest(hnUser, groupName, requestName, requestType, workflowName,
+                  prep_id, requestPriority):
     """
     _createRequest_
 
@@ -37,7 +34,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
     userId = getUserId.execute(hnUser)
     if userId == None:
         msg = "User: %s not registered with Request Manager" % hnUser
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     getGroups = factory(classname = "Requestor.GetAssociationNames")
     groups = getGroups.execute(userId)
@@ -49,7 +46,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
         else:
             msg = "User %s is not a member of group %s\n" % (hnUser, groupName)
             msg += "User is associated to groups: %s" % groups.keys()
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     associationId = groups[groupName]
 
     #  //
@@ -61,7 +58,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
     if requestType not in typeMap.keys():
         msg = "Unknown Request Type: %s\n" % requestType
         msg += "Known Types are %s" % typeMap.keys()
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     #  //
     # // does the request name already exist?
@@ -70,7 +67,7 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
     if requestId != None:
         msg = "Request name already exists: %s\n" % requestName
         msg += "Cannot create new request with same name"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     newRequest = factory(classname = "Request.New")
     try:
@@ -80,12 +77,12 @@ def createRequest(hnUser, groupName, requestName, requestType, workflowName, pre
             request_status = statusMap['new'],
             association_id = groups[groupName],
             workflow = workflowName,
-            prep_id = prep_id
-            )
-    except Exception, ex:
+            prep_id = prep_id,
+            requestPriority = requestPriority)
+    except Exception as ex:
         msg = "Unable to create request named %s\n" % requestName
         msg += str(ex)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     return reqId
 
 
@@ -104,7 +101,7 @@ def associateInputDataset(requestName, datasetName, datasetType = "source"):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate dataset to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     addDataset = factory(classname = "Datasets.NewInput")
     addDataset.execute(reqId, datasetName, datasetType)
@@ -125,7 +122,7 @@ def associateOutputDataset(requestName, datasetName):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate dataset to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     addDataset = factory(classname = "Datasets.NewOutput")
     addDataset.execute(reqId, datasetName)
@@ -140,7 +137,7 @@ def associateSoftware(requestName, softwareName):
     Software must be registered in the DB
 
     """
-
+    
     factory = DBConnect.getConnection()
     requestId = factory(classname = "Request.ID")
 
@@ -148,35 +145,36 @@ def associateSoftware(requestName, softwareName):
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot associate software to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     softwareId = factory(classname = "Software.ID")
     swId = softwareId.execute(softwareName)
     if swId == None or swId == []:
         msg = "Unknown Software name: %s\n" % softwareName
         msg += "Cannot associate software to request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
     softwareAssoc = factory(classname = "Software.Association")
 
     try:
         softwareAssoc.execute(reqId, swId[0])
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to associate software to request\n"
         msg += "request: %s software: %s " % (requestName, softwareName)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     return
 
 
 
-def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOfEvent = None):
+def updateRequestSize(requestName, reqEventsSize,
+                      reqFilesSize, reqSizeOfEvent):
     """
     _updateRequestSize_
 
     Update the size of the request in events to be generated/read
-    and optionally  the number of files to be read for processing
+    and the number of files to be read for processing
     requests
 
     """
@@ -187,12 +185,8 @@ def updateRequestSize(requestName, reqEventsSize, reqFilesSize = None, reqSizeOf
     if reqId == None:
         msg = "Unknown Request: %s\n" % requestName
         msg += "Cannot update size of request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
     updateSize = factory(classname = "Request.Size")
     updateSize.execute(reqId, reqEventsSize, reqFilesSize, reqSizeOfEvent)
-
-    return
-
-

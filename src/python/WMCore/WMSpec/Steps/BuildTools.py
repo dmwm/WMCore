@@ -85,7 +85,7 @@ class Directory:
         Return reference to new Directory instance
 
         """
-        if self.children.has_key(name):
+        if name in self.children:
             return self.children[name]
 
         self.children[name] = Directory(name)
@@ -108,10 +108,10 @@ class Directory:
         if target == None:
             target = os.path.basename(source)
 
-        if self.files.has_key(target):
+        if target in self.files:
             msg = "File %s already exists in directory %s" % (
                 self.name, target)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         newFile = File(self, target, source)
         self.files[target] = newFile
@@ -198,6 +198,3 @@ def makeDirectory(step):
     processDir(dirs, topDir)
 
     return topDir
-
-
-

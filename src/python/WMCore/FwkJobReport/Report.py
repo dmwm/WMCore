@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0142
+#pylint: disable=W0142
 # W0142: Dave likes himself some **
 """
 _Report_
@@ -14,7 +14,6 @@ import sys
 import traceback
 import time
 import math
-import types
 
 from WMCore.Configuration import ConfigSection
 
@@ -23,6 +22,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.FileInfo import FileInfo
 from WMCore.WMException           import WMException
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 class FwkJobReportException(WMException):
@@ -33,17 +33,13 @@ class FwkJobReportException(WMException):
     """
     pass
 
-def checkFileForCompletion(file):
+def checkFileForCompletion(filee):
     """
     _checkFileForCompletion_
 
     Takes a DataStucts/File object (or derivative) and checks to see that the
     file is ready for transfer.
     """
-    return True
-    if file['lfn'] == "" or file['size'] == 0 or file['events'] == 0:
-        return False
-
     return True
 
 def addBranchNamesToFile(fileSection, branchNames):
@@ -82,9 +78,7 @@ def addRunInfoToFile(fileSection, runInfo):
 
     Note that the run number will have to be cast to a string.
     """
-    runSection = fileSection.section_("runs")
-
-    if not type(runInfo) == Run:
+    if not isinstance(runInfo, Run):
         for singleRun in runInfo:
             setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
     else:
@@ -147,9 +141,10 @@ class Report:
         from WMCore.FwkJobReport.XMLParser import xmlToJobReport
         try:
             xmlToJobReport(self, xmlfile)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error reading XML job report file, possibly corrupt XML File:\n"
             msg += "Details: %s" % str(ex)
+
             crashMessage = "\nStacktrace:\n"
 
             stackTrace = traceback.format_tb(sys.exc_info()[2], None)
@@ -202,7 +197,7 @@ class Report:
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
             for key in jsonPerformance[reportSection].keys():
                 val = jsonPerformance[reportSection][key]
-                if type(val) == types.FloatType:
+                if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
                         jsonPerformance[reportSection][key] = None
 
@@ -217,6 +212,8 @@ class Report:
         jsonReport = {}
         jsonReport["task"] = self.getTaskName()
         jsonReport["steps"] = {}
+        jsonReport["skippedFiles"] = self.getAllSkippedFiles()
+        jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -259,12 +256,47 @@ class Report:
 
             jsonStep["cleanup"] = {}
             jsonStep["parameters"] = {}
-            jsonStep["site"] = {}
+            jsonStep["site"] = self.getSiteName()
             jsonStep["analysis"] = {}
             jsonStep["logs"] = {}
             jsonReport["steps"][stepName] = jsonStep
 
         return jsonReport
+
+    def getSiteName(self):
+        """
+        _getSiteName_
+
+        Returns the site name attribute (no step specific)
+        """
+        return getattr(self.data, 'siteName', {})
+
+    def getExitCodes(self):
+        """
+        _getExitCodes_
+
+        Return a list of all non-zero exit codes in the report
+        """
+        returnCodes = set()
+        for stepName in self.listSteps():
+            returnCodes.update(self.getStepExitCodes(stepName = stepName))
+        return returnCodes
+
+    def getStepExitCodes(self, stepName):
+        """
+        _getStepExitCodes_
+
+        Returns a list of all non-zero exit codes in the step
+        """
+        returnCodes = set()
+        reportStep = self.retrieveStep(stepName)
+        errorCount = getattr(reportStep.errors, "errorCount", 0)
+        for i in range(errorCount):
+            reportError = getattr(reportStep.errors, "error%i" % i)
+            if getattr(reportError, 'exitCode', None):
+                returnCodes.add(int(reportError.exitCode))
+
+        return returnCodes
 
     def getExitCode(self):
         """
@@ -315,7 +347,7 @@ class Report:
         handle.close()
         return
 
-    def unpersist(self, filename):
+    def unpersist(self, filename, reportname = None):
         """
         _unpersist_
 
@@ -324,6 +356,11 @@ class Report:
         handle = open(filename, 'r')
         self.data = cPickle.load(handle)
         handle.close()
+
+        # old self.report (if it existed) became unattached
+        if reportname:
+            self.report = getattr(self.data, reportname)
+
         return
 
     def addOutputModule(self, moduleName):
@@ -382,25 +419,27 @@ class Report:
         keyList = file.keys()
 
         fileRef.section_("runs")
-        if file.has_key("runs"):
+        if "runs" in file:
             for run in file["runs"]:
                 addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
-        if file.has_key("parents"):
+        if "parents" in file:
             setattr(fileRef, 'parents', list(file['parents']))
             keyList.remove('parents')
 
-        if file.has_key("locations"):
+        if "locations" in file:
             fileRef.location = list(file["locations"])
             keyList.remove('locations')
-        elif file.has_key("SEName"):
-            fileRef.location = [file["SEName"]]
+#        elif "SEName" in file:
+#            fileRef.location = [file["SEName"]]
+        elif "PNN" in file:
+            fileRef.location = [file["PNN"]]
 
-        if file.has_key("LFN"):
+        if "LFN" in file:
             fileRef.lfn = file["LFN"]
             keyList.remove("LFN")
-        if file.has_key("PFN"):
+        if "PFN" in file:
             fileRef.lfn = file["PFN"]
             keyList.remove("PFN")
 
@@ -446,21 +485,19 @@ class Report:
         keyList = attrs.keys()
 
         fileRef.section_("runs")
-        if attrs.has_key("runs"):
+        if "runs" in attrs:
             for run in attrs["runs"]:
                 addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
-        if attrs.has_key("parents"):
+        if "parents" in attrs:
             keyList.remove('parents')
-        if attrs.has_key("locations"):
+        if "locations" in attrs:
             keyList.remove('locations')
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:
             setattr(fileRef, entry, attrs[entry])
-
-
 
         return fileRef
 
@@ -541,6 +578,21 @@ class Report:
         self.report.skipped.files.fileCount += 1
         return
 
+    def addFallbackFile(self, lfn, pfn):
+        """
+        _addFallbackFile_
+
+        Report a fallback attempt for input file
+        """
+        count = self.report.fallback.files.fileCount
+        entry = "file%s" % count
+        self.report.fallback.files.section_(entry)
+        fallbackSect = getattr(self.report.fallback.files, entry)
+        fallbackSect.PhysicalFileName = pfn
+        fallbackSect.LogicalFileName = lfn
+        self.report.fallback.files.fileCount += 1
+        return
+
     def addSkippedEvent(self, run, event):
         """
         _addSkippedEvent_
@@ -582,6 +634,7 @@ class Report:
         self.report.section_("analysis")
         self.report.section_("errors")
         self.report.section_("skipped")
+        self.report.section_("fallback")
         self.report.section_("parameters")
         self.report.section_("logs")
         self.report.section_("cleanup")
@@ -590,7 +643,9 @@ class Report:
         self.report.cleanup.section_("unremoved")
         self.report.skipped.section_("events")
         self.report.skipped.section_("files")
+        self.report.fallback.section_("files")
         self.report.skipped.files.fileCount = 0
+        self.report.fallback.files.fileCount = 0
         self.report.analysis.files.fileCount = 0
         self.report.cleanup.removed.fileCount = 0
 
@@ -692,11 +747,11 @@ class Report:
         newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
         newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
         newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
+        newFile["prep_id"]        = getattr(fileRef, 'prep_id', None)
         newFile['configURL']      = getattr(fileRef, 'configURL', None)
         newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
-        newFile['custodialSite']  = getattr(fileRef, 'custodialSite', None)
         newFile["outputModule"]   = outputModule
-
+        newFile["fileRef"] = fileRef
 
         return newFile
 
@@ -708,26 +763,18 @@ class Report:
         """
 
         stepReport = self.retrieveStep(step = step)
-
         if not stepReport:
-            logging.error("Asked to retrieve files from non-existant step %s" % step)
+            logging.debug("Asked to retrieve files from non-existant step %s" % step)
             return []
 
+        # steps with no outputModules can be ok (even for CMSSW steps)
         listOfModules = getattr(stepReport, 'outputModules', None)
-
         if not listOfModules:
-            logging.error("Asked to retrieve files from step %s with no outputModules" % step)
-            logging.debug("StepReport: %s" % stepReport)
             return []
 
         listOfFiles = []
-
         for module in listOfModules:
-            tmpList = self.getFilesFromOutputModule(step = step, outputModule = module)
-            if not tmpList:
-                continue
-            listOfFiles.extend(tmpList)
-
+            listOfFiles.extend( self.getFilesFromOutputModule(step = step, outputModule = module) )
 
         return listOfFiles
 
@@ -741,9 +788,7 @@ class Report:
         listOfFiles = []
 
         for step in self.data.steps:
-            tmp = self.getAllFilesFromStep(step = step)
-            if tmp:
-                listOfFiles.extend(tmp)
+            listOfFiles.extend( self.getAllFilesFromStep(step = step) )
 
         return listOfFiles
 
@@ -820,24 +865,100 @@ class Report:
         Grab all the files in a particular output module
         """
 
-        listOfFiles = []
-
         outputMod = self.getOutputModule(step = step, outputModule = outputModule)
 
         if not outputMod:
-            return None
+            return []
 
+        listOfFiles = []
         for n in range(outputMod.files.fileCount):
             file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
-            if not file:
+            if file:
+                listOfFiles.append(file)
+            else:
                 msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
-                return None
-
-            #Now, append to the list of files
-            listOfFiles.append(file)
+                return []
 
         return listOfFiles
+
+    def getAllSkippedFiles(self):
+        """
+        _getAllSkippedFiles_
+
+        Get a list of LFNs for all the input files
+        listed as skipped on the report.
+        """
+        listOfFiles = []
+        for step in self.data.steps:
+            tmp = self.getSkippedFilesFromStep(stepName = step)
+            if tmp:
+                listOfFiles.extend(tmp)
+
+        return listOfFiles
+
+    def getAllFallbackFiles(self):
+        """
+        _getAllFallbackFiles_
+
+        Get a list of LFNs for all the input files
+        listed as fallback attempt on the report
+        """
+        listOfFiles = []
+        for step in self.data.steps:
+            tmp = self.getFallbackFilesFromStep(stepName = step)
+            if tmp:
+                listOfFiles.extend(tmp)
+
+        return listOfFiles
+
+    def getSkippedFilesFromStep(self, stepName):
+        """
+        _getSkippedFilesFromStep_
+
+        Get a list of LFNs skipped in the given step
+        """
+        skippedFiles = []
+
+        step = self.retrieveStep(stepName)
+
+        filesSection = step.skipped.files
+        fileCount = getattr(filesSection, "fileCount", 0)
+
+        for fileNum in range(fileCount):
+            fileSection = getattr(filesSection, "file%d" % fileNum)
+            lfn = getattr(fileSection, "LogicalFileName", None)
+            if lfn is not None:
+                skippedFiles.append(lfn)
+            else:
+                logging.error("Found no LFN in file %s" % str(fileSection))
+
+        return skippedFiles
+
+    def getFallbackFilesFromStep(self, stepName):
+        """
+        _getFallbackFilesFromStep_
+
+        Get a list of LFNs which triggered a fallback in the given step
+        """
+        fallbackFiles = []
+
+        step = self.retrieveStep(stepName)
+        try:
+            filesSection = step.fallback.files
+        except AttributeError:
+            return fallbackFiles
+        fileCount = getattr(filesSection, "fileCount", 0)
+
+        for fileNum in range(fileCount):
+            fileSection = getattr(filesSection, "file%d" % fileNum)
+            lfn = getattr(fileSection, "LogicalFileName", None)
+            if lfn is not None:
+                fallbackFiles.append(lfn)
+            else:
+                logging.error("Found no LFN in file %s" % str(fileSection))
+
+        return fallbackFiles
 
     def getStepErrors(self, stepName):
         """
@@ -912,11 +1033,21 @@ class Report:
             return []
 
         analysisFiles = stepReport.analysis.files
-        result = []
-        for fileNum in range(analysisFiles.fileCount):
-            result.append(getattr(analysisFiles, "file%s" % fileNum))
 
-        return result
+        results = []
+        for fileNum in range(analysisFiles.fileCount):
+            results.append(getattr(analysisFiles, "file%s" % fileNum))
+
+        # filter out duplicates
+        duplicateCheck = []
+        filteredResults = []
+        for result in results:
+            inputtag = getattr(result, 'inputtag', None)
+            if (result.fileName, inputtag) not in duplicateCheck:
+                duplicateCheck.append((result.fileName, inputtag))
+                filteredResults.append(result)
+
+        return filteredResults
 
 
     def getAllFileRefsFromStep(self, step):
@@ -973,6 +1104,28 @@ class Report:
 
         return
 
+    def deleteOutputModuleForStep(self, stepName, moduleName):
+        """
+        _deleteOutputModuleForStep_
+
+        Delete any reference to the given output module in the step report
+        that includes deleting any output file it produced
+        """
+        stepReport = self.retrieveStep(step = stepName)
+
+        if not stepReport:
+            return
+
+        listOfModules = getattr(stepReport, 'outputModules', [])
+
+        if moduleName not in listOfModules:
+            return
+
+        delattr(stepReport.output, moduleName)
+        listOfModules.remove(moduleName)
+
+        return
+
     def setStepStartTime(self, stepName):
         """
         _setStepStatus_
@@ -1024,9 +1177,12 @@ class Report:
 
         for stepName in steps:
             timeStamps = self.getTimes(stepName = stepName)
-            if startTime > timeStamps['startTime']:
+            if timeStamps['startTime'] is None or timeStamps['stopTime'] is None:
+                # Unusable times
+                continue
+            if startTime is None or startTime > timeStamps['startTime']:
                 startTime = timeStamps['startTime']
-            if stopTime < timeStamps['stopTime']:
+            if stopTime is None or stopTime < timeStamps['stopTime']:
                 stopTime = timeStamps['stopTime']
 
         return {'startTime': startTime, 'stopTime': stopTime}
@@ -1083,7 +1239,7 @@ class Report:
 
         return fileRefs
 
-    def setAcquisitionProcessing(self, acquisitionEra, processingVer):
+    def setAcquisitionProcessing(self, acquisitionEra, processingVer, processingStr = None):
         """
         _setAcquisitionProcessing_
 
@@ -1097,6 +1253,7 @@ class Report:
         for f in fileRefs:
             f.acquisitionEra = acquisitionEra
             f.processingVer  = processingVer
+            f.processingStr  = processingStr
 
         return
 
@@ -1132,6 +1289,22 @@ class Report:
 
         return
 
+    def setPrepID(self, prep_id):
+        """
+        _setGlobalTag_
+
+        Set the global Tag from the spec on the WN
+        ONLY run this after all the files have been attached
+        """
+
+        fileRefs = self.getAllFileRefs()
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.prep_id = prep_id
+
+        return
+
     def setConfigURL(self, configURL):
         """
         _setConfigURL_
@@ -1160,20 +1333,6 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.inputPath = inputPath
-        return
-
-    def setCustodialSite(self, custodialSite):
-        """
-        _setCustodialSite_
-
-        Set a custodial site for every file (eventually for every dataset)
-        """
-
-        fileRefs = self.getAllFileRefs()
-
-        # Should now have all the fileRefs
-        for f in fileRefs:
-            f.custodialSite = custodialSite
         return
 
     def setStepRSS(self, stepName, min, max, average):
@@ -1237,6 +1396,18 @@ class Report:
 
         return
 
+    def setStepCounter(self, stepName, counter):
+        """
+        _setStepCounter_
+
+        Assign a number to the step
+        """
+
+        reportStep = self.retrieveStep(stepName)
+        reportStep.counter = counter
+
+        return
+
     def checkForAdlerChecksum(self, stepName):
         """
         _checkForAdlerChecksum_
@@ -1246,7 +1417,6 @@ class Report:
           have an adler32 checksum.  If they don't it creates an error with
           code 60451 for the step, failing it.
         """
-
         error = None
         files = self.getAllFilesFromStep(step = stepName)
         for f in files:
@@ -1256,10 +1426,52 @@ class Report:
                 error = f.get('lfn', None)
 
         if error:
-            msg = "No Adler32 checksum available in file %s" % error
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60451], error)
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
             self.setStepStatus(stepName = stepName, status = 60451)
 
+        return
+
+    def checkForRunLumiInformation(self, stepName):
+        """
+        _checkForRunLumiInformation_
+
+        Some steps require that all output files have run lumi information.
+        This will go through all output files in a step and make sure
+        they have run/lumi informaiton. If they don't it creates an error
+        with code 60452 for the step, failing it.
+
+        """
+        error = None
+        files = self.getAllFilesFromStep(step = stepName)
+        for f in files:
+            if not f.get('runs', None):
+                error = f.get('lfn', None)
+            else:
+                for run in f['runs']:
+                    lumis = run.lumis
+                    if not lumis:
+                        error = f.get('lfn', None)
+                        break
+        if error:
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60452], error)
+            self.addError(stepName, 60452, "NoRunLumiInformation", msg)
+            self.setStepStatus(stepName = stepName, status = 60452)
+        return
+
+    def checkForOutputFiles(self, stepName):
+        """
+        _checkForOutputFiles_
+
+        Verify that there is at least an output file, either from
+        analysis or from an output module.
+        """
+        files = self.getAllFilesFromStep(step = stepName)
+        analysisFiles = self.getAnalysisFilesFromStep(step = stepName)
+        if len(files) == 0 and len(analysisFiles) == 0:
+            msg = WM_JOB_ERROR_CODES[60450]
+            self.addError(stepName, 60450, "NoOutput", msg)
+            self.setStepStatus(stepName = stepName, status = 60450)
         return
 
     def stripInputFiles(self):
@@ -1267,7 +1479,7 @@ class Report:
         _stripInputFiles_
 
         If we need to compact the FWJR the easiest way is just to
-        trim the number of input files.  
+        trim the number of input files.
         """
 
         for stepName in self.data.steps:
@@ -1279,28 +1491,3 @@ class Report:
                     delattr(source.files, "file%d" % fileNum)
                 source.files.fileCount = 0
         return
-
-
-def addFiles(file1, file2):
-    """
-    _addFiles_
-
-    Combine two files. Used for multicore report building
-
-    #ToDo: parents & locations.
-    """
-    file1['events'] += file2['events']
-    f1runs = {}
-    [ f1runs.__setitem__(x.run, x) for x in file1['runs']]
-    for r in file2['runs']:
-        if r.run not in f1runs.keys():
-            file1['runs'].add(r)
-        else:
-            thisRun = f1runs[r.run]
-            if r != thisRun:
-                for l in r.lumis:
-                    if l not in thisRun.lumis:
-                        thisRun.lumis.append(l)
-    return
-
-

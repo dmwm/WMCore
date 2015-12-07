@@ -90,7 +90,7 @@ from httplib2 import HttpLib2Error
 
 from urlparse import urlparse
 
-from WMCore.Services.Requests import Requests
+from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
 from WMCore.Wrappers import JsonWrapper as json
 
@@ -125,7 +125,7 @@ class Service(dict):
         self.setdefault("method", None)
 
         #Set a timeout for the socket
-        self.setdefault("timeout", 30)
+        self.setdefault("timeout", 300)
 
         # then update with the incoming dict
         self.update(cfg_dict)
@@ -134,14 +134,16 @@ class Service(dict):
 
         # Get the request class, to instantiate later
         # either passed as param to __init__, determine via scheme or default
-        if type(self.get('requests')) == types.TypeType:
+        if type(self.get('requests')) == type:
             requests = self['requests']
+        elif (self.get('accept_type') == "application/json" and self.get('content_type') == "application/json"):
+            requests = JSONRequests
         else:
             requests = Requests
         # Instantiate a Request
         try:
             self["requests"] = requests(cfg_dict['endpoint'], cfg_dict)
-        except WMException, ex:
+        except WMException as ex:
             msg = str(ex)
             self["logger"].exception(msg)
             raise
@@ -195,7 +197,7 @@ class Service(dict):
         return cachefile
 
     def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True,
-                     encoder = True, decoder = True, verb = 'GET', contentType = None):
+                     encoder = True, decoder = True, verb = 'GET', contentType = None, incoming_headers={}):
         """
         See if the cache has expired. If it has make a new request to the
         service for the input data. Return the cachefile as an open file object.
@@ -207,7 +209,7 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         if cache_expired(cachefile):
-            self.getData(cachefile, url, inputdata, {}, encoder, decoder, verb, contentType)
+            self.getData(cachefile, url, inputdata, incoming_headers, encoder, decoder, verb, contentType)
 
         # cachefile may be filename or file object
         if openfile and not isfile(cachefile):
@@ -216,7 +218,8 @@ class Service(dict):
             return cachefile
 
     def forceRefresh(self, cachefile, url='', inputdata = {}, openfile=True,
-                     encoder = True, decoder = True, verb = 'GET', contentType = None):
+                     encoder = True, decoder = True, verb = 'GET',
+                     contentType = None, incoming_headers={}):
         """
         Make a new request to the service for the input data, regardless of the
         cache state. Return the cachefile as an open file object.
@@ -227,8 +230,9 @@ class Service(dict):
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         self['logger'].debug("Forcing cache refresh of %s" % cachefile)
-        self.getData(cachefile, url, inputdata, {'cache-control':'no-cache'},
-                     encoder, decoder, verb, contentType, force_refresh = True)
+        incoming_headers.update({'cache-control':'no-cache'})
+        self.getData(cachefile, url, inputdata, incoming_headers,
+                     encoder, decoder, verb, contentType, force_refresh = True, )
         if openfile and not isfile(cachefile):
             return open(cachefile, 'r')
         else:
@@ -288,11 +292,14 @@ class Service(dict):
                     cachefile.seek (0, 0) # return to beginning of file
                 else:
                     f = open(cachefile, 'w')
-                    f.write(str(data))
+                    if isinstance(data, dict) or isinstance(data, list):
+                        f.write(json.dumps(data))
+                    else:
+                        f.write(str(data))
                     f.close()
 
 
-        except (IOError, HttpLib2Error, HTTPException), he:
+        except (IOError, HttpLib2Error, HTTPException) as he:
             #
             # Overly complicated exception handling. This is due to a request
             # from *Ops that it is very clear that data is is being returned
@@ -304,6 +311,8 @@ class Service(dict):
                 if hasattr(he, 'status') and hasattr(he, 'reason'):
                     msg += ' is unavailable - it returned %s because %s\n' % (he.status,
                                                                               he.reason)
+                    if hasattr(he, 'result'):
+                        msg += ' with result: %s\n' % he.result
                 else:
                     msg += ' raised a %s when accessed' % he.__repr__()
                 self['logger'].warning(msg)
@@ -351,4 +360,4 @@ class Service(dict):
         elif self['method'].upper() in self.supportVerbList:
             return self['method'].upper()
         else:
-            raise TypeError, 'verb parameter needs to be set'
+            raise TypeError('verb parameter needs to be set')

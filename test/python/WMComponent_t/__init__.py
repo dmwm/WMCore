@@ -7,6 +7,3 @@ Tests for the wmcore components.
 
 """
 __all__ = []
-
-
-

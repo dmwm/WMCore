@@ -21,7 +21,7 @@ class LoadByStatus(DBFormatter):
                wu.group_name AS usergroup, wu.role_name AS userrole
                FROM bl_runjob rj
                INNER JOIN bl_status st ON rj.sched_status = st.id
-               INNER JOIN wmbs_users wu ON wu.id = rj.user_id
+               LEFT OUTER JOIN wmbs_users wu ON wu.id = rj.user_id
                WHERE rj.status = :complete AND st.name = :status
     """
 

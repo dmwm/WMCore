@@ -7,17 +7,15 @@ Unit tests for the MonteCarloFromGEN workflow.
 
 import unittest
 import os
-import threading
 
+from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
+from WMCore.WMSpec.StdSpecs.MonteCarloFromGEN import MonteCarloFromGENWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-from WMCore.WMSpec.StdSpecs.MonteCarloFromGEN import getTestArguments, monteCarloFromGENWorkload
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer, Document
 
 class MonteCarloFromGENTest(unittest.TestCase):
     def setUp(self):
@@ -31,10 +29,11 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("mclhe_t", "ConfigCache")
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)        
+                                useDefault = False)
 
         couchServer = CouchServer(os.environ["COUCHURL"])
-        self.configDatabase = couchServer.connectDatabase("mclhe_t")        
+        self.configDatabase = couchServer.connectDatabase("mclhe_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def tearDown(self):
@@ -44,6 +43,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         Clear out the database.
         """
         self.testInit.clearDatabase()
+        self.testInit.tearDownCouch()
+        self.testInit.delWorkDir()
         return
 
     def injectConfig(self):
@@ -59,7 +60,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         newConfig["md5hash"] = "eb1c38cf50e14cf9fc31278a5c8e580f"
         newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
-        newConfig["pset_tweak_details"] ={"process": {"outputModules_": ["outputRECORECO", "outputALCARECOALCARECO"],
+        newConfig["pset_tweak_details"] = {"process": {"outputModules_": ["outputRECORECO", "outputALCARECOALCARECO"],
                                                       "outputRECORECO": {"dataset": {"filterName": "FilterRECO",
                                                                                      "dataTier": "RECO"}},
                                                       "outputALCARECOALCARECO": {"dataset": {"filterName": "FilterALCARECO",
@@ -74,16 +75,26 @@ class MonteCarloFromGENTest(unittest.TestCase):
         Create a MonteCarloFromGEN workflow and verify it installs into WMBS
         correctly.
         """
-        arguments = getTestArguments()
-        arguments["ProcConfigCacheID"] = self.injectConfig()
+        arguments = MonteCarloFromGENWorkloadFactory.getTestArguments()
+        arguments["ConfigCacheID"] = self.injectConfig()
         arguments["CouchDBName"] = "mclhe_t"
-        testWorkload = monteCarloFromGENWorkload("TestWorkload", arguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("sfoulkes@fnal.gov", "DMWM")
-        
-        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock")
+        arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
+
+        factory = MonteCarloFromGENWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
+
+        outputDatasets = testWorkload.listOutputDatasets()
+        self.assertEqual(len(outputDatasets), 2)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterRECO-v1/RECO" in outputDatasets)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterALCARECO-v1/ALCARECO" in outputDatasets)
+
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
+        splitting = productionTask.jobSplittingParameters()
+        self.assertFalse(splitting["deterministicPileup"])
+
+        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
         procWorkflow = Workflow(name = "TestWorkload",
                                 task = "/TestWorkload/MonteCarloFromGEN")
@@ -91,7 +102,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
                          "Error: Wrong number of WF outputs.")
-        self.assertEqual(procWorkflow.wfType, 'lheproduction')
+        self.assertEqual(procWorkflow.wfType, 'production')
 
         goldenOutputMods = ["outputRECORECO", "outputALCARECOALCARECO"]
         for goldenOutputMod in goldenOutputMods:
@@ -143,7 +154,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
             self.assertEqual(logArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong.")            
+                             "Error: LogArchive output fileset is wrong.")
 
         topLevelFileset = Fileset(name = "TestWorkload-MonteCarloFromGEN-SomeBlock")
         topLevelFileset.loadData()
@@ -153,7 +164,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         self.assertEqual(procSubscription["type"], "Production",
                          "Error: Wrong subscription type: %s" % procSubscription["type"])
-        self.assertEqual(procSubscription["split_algo"], "LumiBased",
+        self.assertEqual(procSubscription["split_algo"], "EventAwareLumiBased",
                          "Error: Wrong split algo.")
 
         unmergedReco = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputRECORECO")
@@ -233,9 +244,38 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(logCollectSub["type"], "LogCollect",
                          "Error: Wrong subscription type.")
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algo.")                
+                         "Error: Wrong split algo.")
 
         return
+
+    def testMCFromGENWithPileup(self):
+        """
+        _testMonteCarloFromGEN_
+
+        Create a MonteCarloFromGEN workflow and verify it installs into WMBS
+        correctly.
+        """
+        arguments = MonteCarloFromGENWorkloadFactory.getTestArguments()
+        arguments["ConfigCacheID"] = self.injectConfig()
+        arguments["CouchDBName"] = "mclhe_t"
+        arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
+
+        # Add pileup inputs
+        arguments["MCPileup"] = "/some/cosmics/dataset1"
+        arguments["DataPileup"] = "/some/minbias/dataset1"
+        arguments["DeterministicPileup"] = True
+
+        factory = MonteCarloFromGENWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", arguments)
+
+        productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
+        cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
+        pileupData = cmsRunStep.getPileup()
+        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
+        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+
+        splitting = productionTask.jobSplittingParameters()
+        self.assertTrue(splitting["deterministicPileup"])
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,5 +1,5 @@
 #!/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142, E1103, C0121
+#pylint: disable=E1101, W6501, W0142, E1103, C0121
 #E1101 doesn't allow you to define config sections using .section_()
 #W6501: Allow us to use string formatting for logging messages
 #W0142: Use ** magic
@@ -33,14 +33,14 @@ from WMCore.WMException import WMException
 def createDirectories(dirList):
     """
     Create the directory if everything is sane
-    
+
     """
-    
-    
+
+
     #This is gonna be tricky
     cmdList = []
     cmdArgs = ['mkdir']
-    
+
     while len(dirList) > 500:
         cmdArgs.extend(dirList[:500])
         cmdList.append(cmdArgs)
@@ -49,7 +49,7 @@ def createDirectories(dirList):
     if len(dirList) > 0:
         cmdArgs.extend(dirList)
         cmdList.append(cmdArgs)
-            
+
     logging.info('Executing makedir commands')
     for command in cmdList:
         pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
@@ -59,7 +59,7 @@ def createDirectories(dirList):
             logging.error(msg)
             logging.debug("Executing command %s\n" % command)
             raise CreateWorkAreaException(msg)
-        
+
     return
 
 
@@ -67,14 +67,14 @@ def createDirectories(dirList):
 def makedirs(directory):
     """
     _makedirs_
-    
+
     Implementation of os.makedirs
     You can run subscriptions from the same workflow in separate instances
     of the JobCreatorWorker.  This exists to make sure that if they collide,
     a rare but observed possibility, they don't kill everything.
     """
-    
-    
+
+
     try:
         os.makedirs(directory)
     except:
@@ -90,8 +90,8 @@ def makedirs(directory):
             msg += str(traceback.format_exc())
             msg =  "This looks like an error but everything seems to be in place"
             logging.error(msg)
-            
-            
+
+
     return
 
 
@@ -99,9 +99,9 @@ def getMasterName(startDir, wmWorkload = None, workflow = None):
     """
     Gets a universal name for the jobGroup directory
     Return the uid as the name if none available (THIS SHOULD NEVER HAPPEN)
-    
+
     """
-    
+
     if wmWorkload != None:
         workload = wmWorkload.name()
     elif not os.path.exists(workflow.spec):
@@ -112,13 +112,13 @@ def getMasterName(startDir, wmWorkload = None, workflow = None):
     else:
         wmWorkload = WMWorkloadHelper(WMWorkload("workload"))
         wmWorkload.load(workflow.spec)
-        
+
         workload = wmWorkload.name()
 
     task = workflow.task
     if task.startswith("/" + workload + "/"):
         task = task[len(workload) + 2:]
-            
+
     return (os.path.join(startDir, workload),
             os.path.join(startDir, workload, task))
 
@@ -140,7 +140,7 @@ class CreateWorkAreaException(WMException):
 class CreateWorkArea:
     """
     Basic class for doing the JobMaker dirty work
-    
+
     """
 
 
@@ -194,7 +194,7 @@ class CreateWorkArea:
         self.conn        = conn
 
         self.jobGroup = jobGroup
-        
+
         #self.getNewJobGroup(jobGroup = jobGroup)
         self.createJobGroupArea()
         self.createWorkArea(cache = cache)
@@ -262,8 +262,8 @@ class CreateWorkArea:
         return
 
 
-    
-                
+
+
 
 
 
@@ -273,7 +273,7 @@ class CreateWorkArea:
         This should handle the master tasks of creating a working area
         It should take a valid jobGroup and call the
         functions that create the components
-        
+
         """
         myThread = threading.currentThread()
 
@@ -302,7 +302,7 @@ class CreateWorkArea:
                 #Create a new jobCollection
                 #Increment jobCreator if there's already something there
                 jobCounter += self.createJobCollection(jobCounter, taskDir)
-                
+
             jobCounter = jobCounter + 1
 
             name = self.getDirectoryName(jid)
@@ -317,11 +317,14 @@ class CreateWorkArea:
 
         createDirectories(nameList)
 
+        #change permissions. See #3623
+        for directory in nameList:
+            os.chmod(directory,  0o775)
 
         return
 
 
-    
+
 
     def createJobCollection(self, jobCounter, taskDir):
         """
@@ -354,12 +357,12 @@ class CreateWorkArea:
             msg += "File system could not determine type of object"
             logging.error(msg)
             raise CreateWorkAreaException(msg)
-        
 
 
-            
 
-        
+
+
+
 
     def getDirectoryName(self, jid):
         """
@@ -370,7 +373,3 @@ class CreateWorkArea:
         name = 'job_%i' % (jid)
 
         return os.path.join(self.collectionDir, name)
-
-
-
-

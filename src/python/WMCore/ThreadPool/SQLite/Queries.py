@@ -30,7 +30,7 @@ class Queries(MySQLQueries):
 
         #The usual SQLite magic has to happen here
         # - mnorman
-        
+
         sqlStr = """
 CREATE TABLE %s(
    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,11 +73,11 @@ INSERT INTO %s_enum VALUES('process')
         """
         if source in ["tp_threadpool", "tp_threadpool_buffer_in",
                       "tp_threadpool_buffer_out"]:
-            sqlStr1 = """INSERT INTO %s (event, component, payload, thread_pool_id) 
-                           SELECT event, component, payload, thread_pool_id FROM %s 
-                           WHERE component= :component AND thread_pool_id = :thread_pool_id 
+            sqlStr1 = """INSERT INTO %s (event, component, payload, thread_pool_id)
+                           SELECT event, component, payload, thread_pool_id FROM %s
+                           WHERE component= :component AND thread_pool_id = :thread_pool_id
                            ORDER BY id LIMIT %s""" % (target, source, limit)
-            sqlStr2 = """DELETE FROM %s 
+            sqlStr2 = """DELETE FROM %s
                          WHERE component= :component AND thread_pool_id = :thread_pool_id
                          AND id IN (SELECT id FROM %s ORDER BY id LIMIT %s)
                          """ % (source, source, limit)
@@ -89,12 +89,12 @@ INSERT INTO %s_enum VALUES('process')
                            SELECT event, payload FROM %s ORDER BY id LIMIT %s""" % (target, source, limit)
             sqlStr2 = """DELETE FROM %s WHERE id IN
                            (SELECT id FROM %s ORDER BY id LIMIT %s)""" % (source, source, limit)
-            
+
             self.execute(sqlStr1, {})
             self.execute(sqlStr2, {})
 
         return
-    
+
     def moveWorkFromBufferIn(self, source, target):
         """
         Moves work from buffer in to main queue or buffer out

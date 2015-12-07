@@ -32,7 +32,7 @@ class GetByRequest(DBFormatter):
           JOIN reqmgr_campaign_assoc
              ON reqmgr_campaign_assoc.campaign_id = reqmgr_campaign.campaign_id
                WHERE reqmgr_campaign_assoc.request_id=:request_id
-        """ 
+        """
         binds = {"request_id":requestId}
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
@@ -40,4 +40,3 @@ class GetByRequest(DBFormatter):
         if len(output) == 0:
             return None
         return output[0][0]
-

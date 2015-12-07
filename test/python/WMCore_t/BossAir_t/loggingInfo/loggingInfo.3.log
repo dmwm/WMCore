@@ -1,0 +1,398 @@
+
+===================== glite-job-logging-info Success =====================
+
+LOGGING INFORMATION:
+
+Printing info for the Job : https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw
+
+	---
+Event: RegJob
+- Arrived                    =    Fri Sep 16 11:24:44 2011 CEST
+- Host                       =    wms214.cern.ch
+- Jobtype                    =    SIMPLE
+- Level                      =    SYSTEM
+- Ns                         =    https://wms214.cern.ch:7443/glite_wms_wmproxy_server
+- Nsubjobs                   =    0
+- Parent                     =    https://wms214.cern.ch:9000/A4X-jvT-5eIrlM7NxEFPlA
+- Priority                   =    asynchronous
+- Seqcode                    =    UI=000000:NS=0000000001:WM=000000:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    NetworkServer
+- Src instance               =    https://wms214.cern.ch:7443/glite_wms_wmproxy_server
+- Timestamp                  =    Fri Sep 16 11:24:44 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni
+- Jdl            =
+
+       [
+        RetryCount = 0;
+        edg_jobid = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw";
+        Arguments = "mmascher_crab_ok_110916_103732-Sandbox.tar.bz2 412";
+        NodeName = "Job_412_1";
+        CertificateSubject = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni";
+        MyProxyServer = "myproxy.cern.ch";
+        JobType = "normal";
+        Executable = "submit.sh";
+        VirtualOrganisation = "cms";
+        InputSandbox = { "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/WorkQueueManager/cache/mmascher_crab_ok_110916_103732/batch_401-1/JobPackage.pkl","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/WorkQueueManager/cache/mmascher_crab_ok_110916_103732/mmascher_crab_ok_110916_103732-Sandbox.tar.bz2","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/apps/wmcore/etc/submit.sh","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/WMCore/HEAD/src/python/WMCore/WMRuntime/Unpacker.py" };
+        StdOutput = "412_1.stdout";
+        ShallowRetryCount =  -1;
+        InputSandboxDestFileName = { "JobPackage.pkl","mmascher_crab_ok_110916_103732-Sandbox.tar.bz2","submit.sh","Unpacker.py" };
+        VOMS_FQAN = "/cms/Role=NULL/Capability=NULL";
+        OutputSandboxPath = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/output";
+        requirements = ( ( Member("VO-cms-CMSSW_4_2_5",other.GlueHostApplicationSoftwareRunTimeEnvironment) && Member("VO-cms-slc5_amd64_gcc434",other.GlueHostApplicationSoftwareRunTimeEnvironment) && ( other.GlueHostNetworkAdapterOutboundIP ) && other.GlueCEStateStatus == "Production" && other.GlueCEPolicyMaxCPUTime >= 130 && ( Member("storm-se-01.ba.infn.it",other.GlueCESEBindGroupSEUniqueID) ) ) && ( other.GlueCEStateStatus == "Production" ) ) &&  !RegExp(".*sdj$",other.GlueCEUniqueID);
+        rank =  -other.GlueCEStateEstimatedResponseTime;
+        Type = "job";
+        OutputSandboxBaseDestURI = "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412";
+        OutputSandboxDestURI = { "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/Report.1.pkl","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/.BrokerInfo","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/412_1.stdout","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/412_1.stderr" };
+        StdError = "412_1.stderr";
+        DefaultRank =  -other.GlueCEStateEstimatedResponseTime;
+        WMPInputSandboxBaseURI = "gsiftp://wms214.cern.ch:2811/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw";
+        X509UserProxy = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/user.proxy";
+        InputSandboxPath = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/input";
+        OutputSandbox = { "Report.1.pkl",".BrokerInfo","412_1.stdout","412_1.stderr" }
+       ]
+	---
+Event: EnQueued
+- Arrived                    =    Fri Sep 16 11:24:53 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/workload_manager/jobdir
+- Result                     =    OK
+- Seqcode                    =    UI=000000:NS=0000000003:WM=000003:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    NetworkServer
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:24:53 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =
+
+       [
+        RetryCount = 0;
+        edg_jobid = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw";
+        lrms_type = "lcgpbs";
+        Arguments = "mmascher_crab_ok_110916_103732-Sandbox.tar.bz2 412";
+        NodeName = "Job_412_1";
+        CertificateSubject = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni";
+        MyProxyServer = "myproxy.cern.ch";
+        ce_id = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs-cms";
+        QueueName = "cms";
+        JobType = "normal";
+        Executable = "submit.sh";
+        VirtualOrganisation = "cms";
+        InputSandbox = { "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/WorkQueueManager/cache/mmascher_crab_ok_110916_103732/batch_401-1/JobPackage.pkl","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/WorkQueueManager/cache/mmascher_crab_ok_110916_103732/mmascher_crab_ok_110916_103732-Sandbox.tar.bz2","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/apps/wmcore/etc/submit.sh","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/WMCore/HEAD/src/python/WMCore/WMRuntime/Unpacker.py","gsiftp://wms214.cern.ch:2811/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/input/.BrokerInfo" };
+        StdOutput = "412_1.stdout";
+        ShallowRetryCount =  -1;
+        InputSandboxDestFileName = { "JobPackage.pkl","mmascher_crab_ok_110916_103732-Sandbox.tar.bz2","submit.sh","Unpacker.py" };
+        VOMS_FQAN = "/cms/Role=NULL/Capability=NULL";
+        OutputSandboxPath = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/output";
+        requirements = ( ( Member("VO-cms-CMSSW_4_2_5",other.GlueHostApplicationSoftwareRunTimeEnvironment) && Member("VO-cms-slc5_amd64_gcc434",other.GlueHostApplicationSoftwareRunTimeEnvironment) && ( other.GlueHostNetworkAdapterOutboundIP ) && other.GlueCEStateStatus == "Production" && other.GlueCEPolicyMaxCPUTime >= 130 && ( Member("storm-se-01.ba.infn.it",other.GlueCESEBindGroupSEUniqueID) ) ) && ( other.GlueCEStateStatus == "Production" ) ) &&  !RegExp(".*sdj$",other.GlueCEUniqueID);
+        rank =  -other.GlueCEStateEstimatedResponseTime;
+        Type = "job";
+        OutputSandboxBaseDestURI = "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412";
+        OutputSandboxDestURI = { "gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/Report.1.pkl","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/.BrokerInfo","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/412_1.stdout","gsiftp://crabas.lnl.infn.it/home/riahi/CRAB/v01/install/wmagent/JobCreator/JobCache/mmascher_crab_ok_110916_103732/Analysis/JobCollection_1_0/job_412/412_1.stderr" };
+        StdError = "412_1.stderr";
+        DefaultRank =  -other.GlueCEStateEstimatedResponseTime;
+        WMPInputSandboxBaseURI = "gsiftp://wms214.cern.ch:2811/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw";
+        X509UserProxy = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/user.proxy";
+        GlobusResourceContactString = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs";
+        InputSandboxPath = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/input";
+        OutputSandbox = { "Report.1.pkl",".BrokerInfo","412_1.stdout","412_1.stderr" }
+       ]
+	---
+Event: Match
+- Arrived                    =    Fri Sep 16 11:24:53 2011 CEST
+- Dest id                    =    grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs-cms
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000003:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    WorkloadManager
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:24:53 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: EnQueued
+- Arrived                    =    Fri Sep 16 11:24:53 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/jobcontrol/jobdir
+- Result                     =    START
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000004:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    WorkloadManager
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:24:53 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: EnQueued
+- Arrived                    =    Fri Sep 16 11:24:53 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/jobcontrol/jobdir
+- Result                     =    OK
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    WorkloadManager
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:24:53 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =
+
+       [
+        Arguments =
+         [
+          JobAd =
+           [
+            UserSubjectName = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni";
+            LB_sequence_code = "UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000";
+            stream_output = false;
+            edg_jobid = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw";
+            Notification = "never";
+            ce_id = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs-cms";
+            Transfer_Executable = true;
+            Output = "/var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardOutput";
+            Copy_to_Spool = false;
+            Executable = "/var/glite/jobcontrol/submit/pK/JobWrapper.https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw.sh";
+            Error_ = "/var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardError";
+            stream_error = false;
+            GlobusRSL = "(queue=cms)(jobtype=single)(environment=(EDG_WL_JOBID 'https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw'))";
+            Type = "job";
+            Universe = "grid";
+            Log = "/var/glite/logmonitor/CondorG.log/CondorG.log";
+            grid_type = "globus";
+            X509UserProxy = "/var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/user.proxy";
+            GlobusScheduler = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs"
+           ]
+         ];
+        Command = "Submit";
+        Source = 2;
+        Protocol = "1.0.0"
+       ]
+	---
+Event: DeQueued
+- Arrived                    =    Fri Sep 16 11:24:58 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Local jobid                =    unavailable
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/jobcontrol/jobdir
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000001:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    JobController
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:24:58 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: Transfer
+- Arrived                    =    Fri Sep 16 11:24:58 2011 CEST
+- Dest host                  =    localhost
+- Dest instance              =    /var/glite/logmonitor/CondorG.log/CondorG.1316161693.log
+- Dest jobid                 =    unavailable
+- Destination                =    LogMonitor
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    unavailable
+- Result                     =    START
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000002:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    JobController
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:24:58 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =   unavailable
+	---
+Event: Transfer
+- Arrived                    =    Fri Sep 16 11:24:58 2011 CEST
+- Dest host                  =    localhost
+- Dest instance              =    /var/glite/logmonitor/CondorG.log/CondorG.1316161693.log
+- Dest jobid                 =    3402305
+- Destination                =    LogMonitor
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    unavailable
+- Result                     =    OK
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    JobController
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:24:58 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =   stream_error = False
++edg_jobid = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw"
+Arguments = 'UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000'
+GlobusScheduler = grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs
+Transfer_Executable = True
++ce_id = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs-cms"
+Output = /var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardOutput
+Submit_Event_Notes = (https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw) (UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000) (0)
+Copy_to_Spool = False
+Executable = /var/glite/jobcontrol/submit/pK/JobWrapper.https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw.sh
+X509UserProxy = /var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/user.proxy
+error = /var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardError
++LB_sequence_code = "UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000"
+Notification = never
+stream_output = False
+GlobusRSL = (queue=cms)(jobtype=single)(environment=(EDG_WL_JOBID 'https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw'))
++Type = "job"
+Universe = grid
++UserSubjectName = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni"
+Log = /var/glite/logmonitor/CondorG.log/CondorG.1316161693.log
+grid_type = globus
++CondorSubmitFile = "/var/glite/jobcontrol/submit/pK/Condor.https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw.submit"
+Queue 1
+	---
+Event: Accepted
+- Arrived                    =    Fri Sep 16 11:25:02 2011 CEST
+- From                       =    JobController
+- From host                  =    localhost
+- From instance              =    unavailable
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Local jobid                =    3402305
+- Priority                   =    asynchronous
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000001:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:25:02 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: Transfer
+- Arrived                    =    Fri Sep 16 11:25:04 2011 CEST
+- Dest host                  =    unavailable
+- Dest instance              =    /var/glite/logmonitor/CondorG.log/CondorG.1316161693.log
+- Dest jobid                 =    unavailable
+- Destination                =    LRMS
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    7 authentication with the remote server failed
+- Result                     =    FAIL
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000003:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:25:04 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =   stream_error = False
++edg_jobid = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw"
+Arguments = 'UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000'
+GlobusScheduler = grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs
+Transfer_Executable = True
++ce_id = "grid-ce-01.ba.infn.it:2119/jobmanager-lcgpbs-cms"
+Output = /var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardOutput
+Submit_Event_Notes = (https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw) (UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000) (0)
+Copy_to_Spool = False
+Executable = /var/glite/jobcontrol/submit/pK/JobWrapper.https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw.sh
+X509UserProxy = /var/glite/SandboxDir/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/user.proxy
+error = /var/glite/jobcontrol/condorio/pK/https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw/StandardError
++LB_sequence_code = "UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000000:LRMS=000000:APP=000000:LBS=000000"
+Notification = never
+stream_output = False
+GlobusRSL = (queue=cms)(jobtype=single)(environment=(EDG_WL_JOBID 'https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw'))
++Type = "job"
+Universe = grid
++UserSubjectName = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni"
+Log = /var/glite/logmonitor/CondorG.log/CondorG.1316161693.log
+grid_type = globus
++CondorSubmitFile = "/var/glite/jobcontrol/submit/pK/Condor.https_3a_2f_2fwms214.cern.ch_3a9000_2fpKXlehvTWS8-CuLKLTpiGw.submit"
+Queue 1
+	---
+Event: Done
+- Arrived                    =    Fri Sep 16 11:25:48 2011 CEST
+- Exit code                  =    1
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    Job got an error while in the CondorG queue.
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000005:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Status code                =    FAILED
+- Timestamp                  =    Fri Sep 16 11:25:31 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: Resubmission
+- Arrived                    =    Fri Sep 16 11:25:48 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    unavailable
+- Result                     =    WILLRESUB
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000006:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Tag                        =    unavailable
+- Timestamp                  =    Fri Sep 16 11:25:31 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: EnQueued
+- Arrived                    =    Fri Sep 16 11:25:48 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/workload_manager/jobdir
+- Reason                     =    unavailable
+- Result                     =    START
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000007:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:25:31 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =
+
+       [
+        arguments =
+         [
+          lb_sequence_code = "UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000004:LRMS=000000:APP=000000:LBS=000000";
+          id = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw"
+         ];
+        command = "jobresubmit";
+        version = "1.0.0"
+       ]
+	---
+Event: EnQueued
+- Arrived                    =    Fri Sep 16 11:25:48 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/workload_manager/jobdir
+- Reason                     =    unavailable
+- Result                     =    OK
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000008:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    LogMonitor
+- Src instance               =    unique
+- Timestamp                  =    Fri Sep 16 11:25:31 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+- Job            =
+
+       [
+        arguments =
+         [
+          lb_sequence_code = "UI=000000:NS=0000000004:WM=000005:BH=0000000000:JSS=000003:LM=000004:LRMS=000000:APP=000000:LBS=000000";
+          id = "https://wms214.cern.ch:9000/pKXlehvTWS8-CuLKLTpiGw"
+         ];
+        command = "jobresubmit";
+        version = "1.0.0"
+       ]
+	---
+Event: DeQueued
+- Arrived                    =    Fri Sep 16 11:25:51 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Queue                      =    /var/glite/workload_manager/jobdir
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000006:BH=0000000000:JSS=000003:LM=000004:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    WorkloadManager
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:25:34 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+	---
+Event: Abort
+- Arrived                    =    Fri Sep 16 11:25:51 2011 CEST
+- Host                       =    wms214.cern.ch
+- Level                      =    SYSTEM
+- Priority                   =    asynchronous
+- Reason                     =    hit job retry count (0)
+- Seqcode                    =    UI=000000:NS=0000000004:WM=000007:BH=0000000000:JSS=000003:LM=000004:LRMS=000000:APP=000000:LBS=000000
+- Source                     =    WorkloadManager
+- Src instance               =    19525
+- Timestamp                  =    Fri Sep 16 11:25:34 2011 CEST
+- User                       =    /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni/CN=proxy/CN=proxy/CN=proxy/CN=proxy/CN=proxy
+==========================================================================

@@ -19,7 +19,7 @@ class ListClosable(DBFormatter):
                     wmbs_workflow_output.workflow_id = wmbs_parent_subscription.workflow
                   INNER JOIN wmbs_workflow ON
                     wmbs_parent_subscription.workflow = wmbs_workflow.id AND
-                    wmbs_workflow.injected = 1
+                    ( wmbs_workflow.injected = 1 OR wmbs_workflow.alt_fs_close = 1 )
                   LEFT OUTER JOIN (SELECT subscription, COUNT(DISTINCT fileid) AS total_files
                               FROM wmbs_sub_files_acquired GROUP BY subscription) files_acquired ON
                     wmbs_parent_subscription.id = files_acquired.subscription
@@ -34,7 +34,7 @@ class ListClosable(DBFormatter):
                                 wmbs_job.state = wmbs_job_state.id
                               WHERE wmbs_job_state.name != 'cleanout'
                               GROUP BY subscription) running_jobs ON
-                    wmbs_parent_subscription.id = running_jobs.subscription          
+                    wmbs_parent_subscription.id = running_jobs.subscription
                   INNER JOIN wmbs_fileset wmbs_parent_fileset ON
                     wmbs_parent_subscription.fileset = wmbs_parent_fileset.id
                 WHERE wmbs_fileset.open = 1 GROUP BY wmbs_fileset.id) closeable_filesets
@@ -57,7 +57,7 @@ class ListClosable(DBFormatter):
             filesetIDs.append(int(result[0]))
 
         return filesetIDs
-        
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

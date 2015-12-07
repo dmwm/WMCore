@@ -16,7 +16,7 @@ from WMCore.WMInit import WMInit, getWMBASE
 class WMInit_t(unittest.TestCase):
 
     def testA(self):
-        
+
         try:
             getWMBASE()
         except:
@@ -73,9 +73,9 @@ class WMInit_t(unittest.TestCase):
             init.clearDatabase()
             raise
 
-        init.clearDatabase()        
+        init.clearDatabase()
 
-        return        
-    
+        return
+
 if __name__ == '__main__':
     unittest.main()

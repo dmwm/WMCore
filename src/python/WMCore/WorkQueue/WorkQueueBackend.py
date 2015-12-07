@@ -9,7 +9,8 @@ import random
 import time
 import urllib
 
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document, CouchMonitor
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.Wrappers import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -35,13 +36,17 @@ class WorkQueueBackend(object):
     Represents persistent storage for WorkQueue
     """
     def __init__(self, db_url, db_name = 'workqueue',
-                 inbox_name = 'workqueue_inbox', parentQueue = None,
+                 inbox_name = None, parentQueue = None,
                  queueUrl = None, logger = None):
         if logger:
             self.logger = logger
         else:
             import logging
             self.logger = logging
+        
+        if inbox_name == None:
+            inbox_name = "%s_inbox" % db_name
+            
         self.server = CouchServer(db_url)
         self.parentCouchUrlWithAuth = parentQueue
         if parentQueue:
@@ -54,34 +59,35 @@ class WorkQueueBackend(object):
         self.queueUrl = sanitizeURL(queueUrl or (db_url + '/' + db_name))['url']
 
     def forceQueueSync(self):
-        """Force a blocking replication
-            - for use mainly in tests"""
+        """Force a blocking replication - used only in tests"""
         self.pullFromParent(continuous = False)
         self.sendToParent(continuous = False)
 
-    def pullFromParent(self, continuous = True):
-        """Replicate from parent couch - blocking"""
+    def pullFromParent(self, continuous = True, cancel = False):
+        """Replicate from parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
                 self.server.replicate(source = self.parentCouchUrl,
                                       destination = "%s/%s" % (self.hostWithAuth, self.inbox.name),
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
-                                      continuous = continuous)
-        except Exception, ex:
+                                      continuous = continuous,
+                                      cancel = cancel)
+        except Exception as ex:
             self.logger.warning('Replication from %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
-    def sendToParent(self, continuous = True):
-        """Replicate to parent couch - blocking"""
+    def sendToParent(self, continuous = True, cancel = False):
+        """Replicate to parent couch - blocking: used only int test"""
         try:
             if self.parentCouchUrl and self.queueUrl:
-                self.server.replicate(source = "%s/%s" % (self.db['host'], self.inbox.name),
+                self.server.replicate(source = "%s" % self.inbox.name,
                                       destination = self.parentCouchUrlWithAuth,
                                       filter = 'WorkQueue/queueFilter',
                                       query_params = {'childUrl' : self.queueUrl, 'parentUrl' : self.parentCouchUrl},
-                                      continuous = continuous)
-        except Exception, ex:
-                self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
+                                      continuous = continuous,
+                                      cancel = cancel)
+        except Exception as ex:
+            self.logger.warning('Replication to %s failed: %s' % (self.parentCouchUrl, str(ex)))
 
 
     def getElementsForSplitting(self):
@@ -97,7 +103,7 @@ class WorkQueueBackend(object):
             ele['WMSpec'] = specs[ele['RequestName']]
         del specs
         return elements
- 
+
 
     def insertWMSpec(self, wmspec):
         """
@@ -120,7 +126,7 @@ class WorkQueueBackend(object):
     def insertElements(self, units, parent = None):
         """
         Insert element to database
-        
+
         @param parent is the parent WorkQueueObject these element's belong to.
                                             i.e. a workflow which has been split
         """
@@ -149,11 +155,14 @@ class WorkQueueBackend(object):
 
     def createWork(self, spec, **kwargs):
         """Return the Inbox element for this spec.
-        
+
         This does not persist it to the database.
         """
         kwargs.update({'WMSpec' : spec,
                        'RequestName' : spec.name(),
+                       'StartPolicy' : spec.startPolicyParameters(),
+                       'EndPolicy' : spec.endPolicyParameters(),
+                       'OpenForNewData' : True
                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams = kwargs)
         unit.id = spec.name()
@@ -165,7 +174,7 @@ class WorkQueueBackend(object):
 
         status, elementIDs & filters are 'AND'ed together to filter elements.
         returnIdOnly causes the element not to be loaded and only the id returned
-        db is used to specify which database to return from 
+        db is used to specify which database to return from
         loadSpec causes the workflow for each spec to be loaded.
         WorkflowName may be used in the place of RequestName
         """
@@ -177,7 +186,7 @@ class WorkQueueBackend(object):
 
         if elementIDs:
             if elementFilters or status or returnIdOnly:
-                raise ValueError, "Can't specify extra filters (or return id's) when using element id's with getElements()"
+                raise ValueError("Can't specify extra filters (or return id's) when using element id's with getElements()")
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
             options = {'include_docs' : True, 'filter' : elementFilters, 'idOnly' : returnIdOnly, 'reduce' : False}
@@ -255,7 +264,11 @@ class WorkQueueBackend(object):
         if not elementIds:
             return
         uri = "/" + self.db.name + "/_design/WorkQueue/_update/in-place/"
-        data = {"updates" : json.dumps(updatedParams)}
+        optionsArg = {}
+        if "options" in updatedParams:
+            optionsArg.update(updatedParams.pop("options"))
+        data = {"updates" : json.dumps(updatedParams),
+                "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
             self.db.makeRequest(uri = thisuri, type = 'PUT')
@@ -265,7 +278,11 @@ class WorkQueueBackend(object):
     def updateInboxElements(self, *elementIds, **updatedParams):
         """Update given inbox element's (identified by id) with new parameters"""
         uri = "/" + self.inbox.name + "/_design/WorkQueue/_update/in-place/"
-        data = {"updates" : json.dumps(updatedParams)}
+        optionsArg = {}
+        if "options" in updatedParams:
+            optionsArg.update(updatedParams.pop("options"))
+        data = {"updates" : json.dumps(updatedParams),
+                "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
             self.inbox.makeRequest(uri = thisuri, type = 'PUT')
@@ -291,47 +308,91 @@ class WorkQueueBackend(object):
         for wf in specs:
             try:
                 if not self.db.loadView('WorkQueue', 'elementsByWorkflow',
-                                        {'key' : wf, 'limit' : 0, 'reduce' : False})['total_rows']:
+                                        {'key' : wf, 'limit' : 1, 'reduce' : False})['rows']:
                     self.db.delete_doc(wf)
             except CouchNotFoundError:
                 pass
 
 
-    def availableWork(self, conditions, teams = None, wfs = None):
-        """Get work which is available to be run"""
+    def availableWork(self, thresholds, siteJobCounts, teams = None, wfs = None):
+        """
+        Get work which is available to be run
+
+        Assume thresholds is a dictionary; keys are the site name, values are
+        the maximum number of running jobs at that site.
+
+        Assumes site_job_counts is a dictionary-of-dictionaries; keys are the site
+        name and task priorities.  The value is the number of jobs running at that
+        priority.
+        """
+        self.logger.info("Getting available work from %s/%s" % 
+                         (sanitizeURL(self.server.url)['url'], self.db.name))
         elements = []
-        for site in conditions.keys():
-            if not conditions[site] > 0:
-                del conditions[site]
-        if not conditions:
-            return elements, conditions
+
+        # We used to pre-filter sites, looking to see if there are idle job slots
+        # We don't do this anymore, as we may over-allocate
+        # jobs to sites if the new jobs have a higher priority.
+
+        # If there are no sites, punt early.
+        if not thresholds:
+            self.logger.error("No thresholds is set: Please check")
+            return elements, thresholds, siteJobCounts
 
         options = {}
         options['include_docs'] = True
         options['descending'] = True
-        options['resources'] = conditions
+        options['resources'] = thresholds
         if teams:
             options['teams'] = teams
+            self.logger.info("setting teams %s" % teams)
         if wfs:
-            options['wfs'] = wfs
-        result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
-        result = json.loads(result)
+            result = []
+            for i in xrange(0, len(wfs), 20):
+                options['wfs'] = wfs[i:i+20]
+                data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
+                result.extend(json.loads(data))
+            # sort final list
+            result.sort(key = lambda x: x['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']['Priority'])
+        else:
+            result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
+            result = json.loads(result)
+            if len(result) == 0:
+                self.logger.info("""No available work in WQ or didn't pass workqueue restriction 
+                                    - check Pileup, site white list, etc""")
+            self.logger.debug("Available Work:\n %s \n for resources\n %s" % (result, thresholds))
+        # Iterate through the results; apply whitelist / blacklist / data
+        # locality restrictions.  Only assign jobs if they are high enough
+        # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
-            elements.append(element)
+            prio = element['Priority']
 
-            # Remove 1st random site that can run work
-            names = conditions.keys()
-            random.shuffle(names)
-            for site in names:
+            possibleSite = None
+            sites = thresholds.keys()
+            random.shuffle(sites)
+            for site in sites:
                 if element.passesSiteRestriction(site):
-                    slots_left = conditions[site] - element['Jobs']
-                    if slots_left > 0:
-                        conditions[site] = slots_left
-                    else:
-                        conditions.pop(site, None)
-                    break
-        return elements, conditions
+                    # Count the number of jobs currently running of greater priority
+                    prio = element['Priority']
+                    curJobCount = sum(map(lambda x : x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    self.logger.debug("Job Count: %s, site: %s threshods: %s" % (curJobCount, site, thresholds[site]))
+                    if curJobCount < thresholds[site]:
+                        possibleSite = site
+                        break
+
+            if possibleSite:
+                self.logger.debug("Possible site exists %s" % str(possibleSite))
+                elements.append(element)
+                if site not in siteJobCounts:
+                    siteJobCounts[site] = {}
+                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
+            else:
+                self.logger.info("No possible site for %s" % element)
+        # sort elements to get them in priority first and timestamp order
+        elements.sort(key=lambda element: element['CreationTime'])
+        elements.sort(key = lambda x: x['Priority'], reverse = True)
+        
+        return elements, thresholds, siteJobCounts
 
     def getActiveData(self):
         """Get data items we have work in the queue for"""
@@ -342,6 +403,12 @@ class WorkQueueBackend(object):
     def getActiveParentData(self):
         """Get data items we have work in the queue for with parent"""
         data = self.db.loadView('WorkQueue', 'activeParentData', {'reduce' : True, 'group' : True})
+        return [{'dbs_url' : x['key'][0],
+                 'name' : x['key'][1]} for x in data.get('rows', [])]
+
+    def getActivePileupData(self):
+        """Get data items we have work in the queue for with pileup"""
+        data = self.db.loadView('WorkQueue', 'activePileupData', {'reduce' : True, 'group' : True})
         return [{'dbs_url' : x['key'][0],
                  'name' : x['key'][1]} for x in data.get('rows', [])]
 
@@ -359,6 +426,13 @@ class WorkQueueBackend(object):
                                                    x['doc'])
                 for x in elements.get('rows', [])]
 
+    def getElementsForPileupData(self, data):
+        """Get active elements for this data """
+        elements = self.db.loadView('WorkQueue', 'elementsByPileupData', {'key' : data, 'include_docs' : True})
+        return [CouchWorkQueueElement.fromDocument(self.db,
+                                                   x['doc'])
+                for x in elements.get('rows', [])]
+
     def isAvailable(self):
         """Is the server available, i.e. up and not compacting"""
         try:
@@ -366,16 +440,18 @@ class WorkQueueBackend(object):
             if compacting:
                 self.logger.info("CouchDB compacting - try again later.")
                 return False
-        except Exception, ex:
+        except Exception as ex:
             self.logger.error("CouchDB unavailable: %s" % str(ex))
             return False
         return True
 
-    def getWorkflows(self, includeInbox = False):
+    def getWorkflows(self, includeInbox = False, includeSpecs = False):
         """Returns workflows known to workqueue"""
         result = set([x['key'] for x in self.db.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
         if includeInbox:
             result = result | set([x['key'] for x in self.inbox.loadView('WorkQueue', 'elementsByWorkflow', {'group' : True})['rows']])
+        if includeSpecs:
+            result = result | set([x['key'] for x in self.db.loadView('WorkQueue', 'specsByWorkflow')['rows']])
         return list(result)
 
     def queueLength(self):
@@ -402,7 +478,7 @@ class WorkQueueBackend(object):
                     fixed_elements = fixElementConflicts(*conflicting_elements)
                     if self.saveElements(fixed_elements[0]):
                         self.saveElements(*fixed_elements[1:]) # delete others (if merged value update accepted)
-                except Exception, ex:
+                except Exception as ex:
                     self.logger.error("Error resolving conflict for %s: %s" % (element_id, str(ex)))
 
     def recordTaskActivity(self, taskname, comment = ''):
@@ -417,7 +493,7 @@ class WorkQueueBackend(object):
         record['tasks'][taskname]['comment'] = comment
         try:
             self.db.commitOne(record)
-        except StandardError, ex:
+        except Exception as ex:
             self.logger.error("Unable to update task %s freshness: %s" % (taskname, str(ex)))
 
     def getWMBSInjectStatus(self, request = None):
@@ -431,8 +507,60 @@ class WorkQueueBackend(object):
                                 options)
         if request:
             if data['rows']:
-                return data['rows'][0]['value']
+                injectionStatus = data['rows'][0]['value']
+                inboxElement = self.getInboxElements(elementIDs = [data['rows'][0]['key']])
+                return injectionStatus and not inboxElement[0].get('OpenForNewData', False)
             else:
-                raise ValueError("%s not exist in the queue" % request)
+                raise WorkQueueNoMatchingElements("%s not found" % request)
         else:
-            return [{x['key']: x['value']} for x in data.get('rows', [])]
+            injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
+            inboxElements = self.getInboxElements(elementIDs = injectionStatus.keys())
+            finalInjectionStatus = []
+            for element in inboxElements:
+                if not element.get('OpenForNewData', False) and injectionStatus[element._id]:
+                    finalInjectionStatus.append({element._id : True})
+                else:
+                    finalInjectionStatus.append({element._id : False})
+
+            return finalInjectionStatus
+        
+    def getWorkflowNames(self, inboxFlag = False):
+        """Get workflow names from workqueue db"""
+        if inboxFlag:
+            db = self.inbox
+        else:
+            db = self.db
+        data = db.loadView('WorkQueue', 'elementsByWorkflow', 
+                           {'stale': "update_after", 'reduce' : True, 'group' : True})
+        return [x['key'] for x in data.get('rows', [])]
+    
+    def deleteWQElementsByWorkflow(self, workflowNames):
+        """
+        delete workqueue elements belongs to given workflow names 
+        it doen't check the status of workflow so need to be careful to use this.
+        Pass only workflows which has the end status
+        """
+        deleted = 0
+        dbs = [self.db, self.inbox]
+        if type(workflowNames) != list:
+            workflowNames = [workflowNames]
+        
+        if len(workflowNames) == 0:
+            return deleted
+        
+        options = {} 
+        options["stale"] = "update_after"
+        options["reduce"] = False
+        
+        for couchdb in dbs:
+            result = couchdb.loadView("WorkQueue", "elementsByWorkflow", options, workflowNames)
+            ids = []
+            for entry in result["rows"]:
+                ids.append(entry["id"])
+            if ids:
+                couchdb.bulkDeleteByIDs(ids)
+                deleted += len(ids)
+        # delete the workflow with spec from workqueue db
+        for wf in workflowNames:
+            self.db.delete_doc(wf)
+        return deleted

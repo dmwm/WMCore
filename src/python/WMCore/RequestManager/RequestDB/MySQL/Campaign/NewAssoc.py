@@ -19,7 +19,7 @@ class NewAssoc(DBFormatter):
     Create a new association from a request to a production campaign
 
     """
-    def execute(self, requestId, campaignId, 
+    def execute(self, requestId, campaignId,
                 conn = None, trans = False):
         """
         _execute_
@@ -34,4 +34,3 @@ class NewAssoc(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                                       conn = conn, transaction = trans)
         return
-

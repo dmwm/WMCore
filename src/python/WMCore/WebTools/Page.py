@@ -236,7 +236,7 @@ def exposejson (func):
             return jsondata
         except:
             raise
-	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -257,7 +257,7 @@ def exposejsonthunker (func):
             return jsondata
         except:
             raise
-	    #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
+            #Exception("Fail to jsontify obj '%s' type '%s'" % (data, type(data)))
 #        return data
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -286,7 +286,7 @@ def exposedasjson (func):
             return jsondata
         except:
             raise
-	    #Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
+            #Exception("Failed to json-ify obj '%s' type '%s'" % (data, type(data)))
 
     wrapper.__doc__ = func.__doc__
     wrapper.__name__ = func.__name__
@@ -327,14 +327,14 @@ def runDas(self, func, data, expires):
     results    = func(self, data)
     call_time  = time.time() - start_time
     res_expire = make_timestamp(expires)
-    if  type(results) is types.ListType:
+    if  type(results) is list:
         if len(results) > 0:
             row = results[0]
         else:
             row = None
     else:
         row = results
-    if  type(row) is types.StringType:
+    if  type(row) is str:
         row = '"%s"' % row
     try:
         factory = WMFactory('webtools_factory')

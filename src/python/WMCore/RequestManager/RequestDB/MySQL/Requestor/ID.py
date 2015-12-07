@@ -39,8 +39,3 @@ class ID(DBFormatter):
         if len(output) == 0:
             return None
         return output[0][0]
-
-
-
-
-

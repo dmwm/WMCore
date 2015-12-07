@@ -43,10 +43,10 @@ class CleanUpFailure(Exception):
             msg += "  %s: %s\n" % (key, val)
 
         print msg
-        
+
 class SkippedFileFilter:
     def __init__(self, skippedFiles):
-        self.skipped = [ i['Lfn'] for i in skippedFiles ] 
+        self.skipped = [ i['Lfn'] for i in skippedFiles ]
 
     def __call__(self, filedata):
         return filedata['LFN'] not in self.skipped
@@ -61,7 +61,7 @@ class CleanUpManager:
     def __init__(self, cleanUpTaskState, inputTaskState = None ):
         self.state = cleanUpTaskState
         self.inputState = inputTaskState
-        self.jobFail = False 
+        self.jobFail = False
         #  //
         # // load templates
         #//
@@ -74,7 +74,7 @@ class CleanUpManager:
             self.cleanUpFileList()
 
         self.setupCleanup()
-        
+
 
     def cleanUpInput(self):
         """
@@ -82,20 +82,20 @@ class CleanUpManager:
 
         This cleanup node is for cleaning after an input job
         Eg post merge cleanup
-        
+
         """
         msg = "Cleaning up input files for job: "
         msg += self.inputState.taskAttrs['Name']
         print msg
         self.inputState.loadJobReport()
         inputReport = self.inputState.getJobReport()
-        
+
         inputFileDetails = filter(
             SkippedFileFilter(inputReport.skippedFiles),
             inputReport.inputFiles)
 
-        
-        self.inputFiles = [ i['LFN'] for i in inputFileDetails ] 
+
+        self.inputFiles = [ i['LFN'] for i in inputFileDetails ]
 
 
     def cleanUpFileList(self):
@@ -108,16 +108,16 @@ class CleanUpManager:
         lfnList = self.config.get("RemoveLFN", [])
 
         if len(lfnList) == 0:
-          
-          # //
-          # // Retriving list of lfn's from Jobspec
-          # //	  
-          self.state.loadJobSpecNode()                   
-          lfnList = self.state.jobSpecNode.configuration.split() 
-          
+
+            # //
+            # // Retriving list of lfn's from Jobspec
+            # //
+            self.state.loadJobSpecNode()
+            lfnList = self.state.jobSpecNode.configuration.split()
+
         msg = "Cleaning up list of files:\n"
 
-                  
+
         if len(lfnList) == 0:
             msg += "No Files Found in Configuration!!!"
 
@@ -128,9 +128,9 @@ class CleanUpManager:
 
         self.inputFiles = lfnList
         return
-        
-        
-        
+
+
+
 
     def setupCleanup(self):
         """
@@ -139,35 +139,35 @@ class CleanUpManager:
         Setup for cleanup operation: Read in siteconf and TFC
 
         """
-        
+
         self.success = []
         self.failed = []
-        
+
         #  //
         # // Try an get the TFC for the site
         #//
         self.tfc = None
         siteCfg = self.state.getSiteConfig()
-        self.seName =  siteCfg.localStageOutSEName() 
-            
+        self.pnn =  siteCfg.localStageOutPNN()
+
         if siteCfg == None:
             msg = "No Site Config Available:\n"
             msg += "Unable to perform CleanUp operation"
-            raise RuntimeError, msg
-        
+            raise RuntimeError(msg)
+
         try:
             self.tfc = siteCfg.trivialFileCatalog()
             msg = "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
             print msg
-        except StandardError, ex:
+        except Exception as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Clean Up will not be attempted\n"
             msg += str(ex)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
-        
-        
+
+
         #  //
         # // Lookup StageOut Impl name that will be used to generate
         #//  cleanup
@@ -176,12 +176,12 @@ class CleanUpManager:
             msg = "Unable to retrieve local stage out command\n"
             msg += "From site config file.\n"
             msg += "Unable to perform CleanUp operation"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         msg = "Stage Out Implementation to be used for cleanup is:"
         msg += "%s" % self.implName
         print msg
-        
-        
+
+
 
     def __call__(self):
         """
@@ -191,44 +191,44 @@ class CleanUpManager:
 
         """
         for deleteFile in self.inputFiles:
-           
+
             try:
                 print "Deleting File: %s" % deleteFile
                 self.invokeCleanUp(deleteFile)
                 self.success.append(deleteFile)
-            except CleanUpFailure, ex:
-                
-                   self.failed.append(deleteFile)
+            except CleanUpFailure as ex:
 
-                   if not (ex.details.has_key('TFC')):
+                self.failed.append(deleteFile)
 
-                      self.jobFail = True
-               
+                if not ('TFC' in ex.details):
+
+                    self.jobFail = True
 
 
-                
+
+
 
         status = 0
         msg = "The following LFNs have been cleaned up successfully:\n"
         for lfn in self.success:
             msg += "  %s\n" % lfn
-        
+
         if self.jobFail is True:
-            
+
             status = 60312
 
         msg = "Exit Status for this task is: %s\n" % status
         print msg
-        
-	# //
-	# // Writing framework Jobreport for cleanup jobs
-	# //
-	
+
+        # //
+        # // Writing framework Jobreport for cleanup jobs
+        # //
+
         self.processCleanUpJobReport(status)
-	
+
         return status
 
-        
+
     def invokeCleanUp(self, lfn):
         """
         _invokeCleanUp_
@@ -241,16 +241,16 @@ class CleanUpManager:
         # // Load Impl
         #//
         try:
-            
+
             implInstance = retrieveStageOutImpl(self.implName)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error retrieving Stage Out Impl for name: "
             msg += "%s\n" % self.implName
             msg += str(ex)
-            raise CleanUpFailure(lfn, 
+            raise CleanUpFailure(lfn,
                                  ImplName = self.implName,
                                  Message = msg)
-        
+
         #  //
         # // Match LFN
         #//
@@ -262,19 +262,19 @@ class CleanUpManager:
                                  ImplName = self.implName,
                                  Message = msg,
                                  TFCProtocol = self.tfc.preferredProtocol)
-        
+
         #  //
         # //  Invoke StageOut Impl removeFile method
         #//
         try:
-                      
+
             implInstance.removeFile(pfn)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error performing Cleanup command for impl "
             msg += "%s\n" % self.implName
             msg += "On PFN: %s\n" % pfn
             msg += str(ex)
-               
+
             # //
             # // Will uncomment it after invalidating deleted lfn from mergesensordb
             # //
@@ -284,7 +284,7 @@ class CleanUpManager:
                                  PFN = pfn,
                                  Message = msg,
                                  TFCProtocol = self.tfc.preferredProtocol)
-        
+
 
 
 
@@ -302,31 +302,31 @@ class CleanUpManager:
         """
 
 
-       
-        
-        
+
+
+
         #  //
         # //  Generate a report
         #  //
         report = FwkJobReport()
         report.name = "cleanUp"
-	report.status = "Failed" 
-	
-	if statusCode == 0 :
-          report.status = "Success"
-          for lfnRemovedFile in self.success:
-            report.addRemovedFile(lfnRemovedFile, self.seName)    
-        
-        
+        report.status = "Failed"
+
+        if statusCode == 0 :
+            report.status = "Success"
+            for lfnRemovedFile in self.success:
+                report.addRemovedFile(lfnRemovedFile, self.pnn)
+
+
         for lfnUnremovedFile in self.failed:
-             report.addUnremovedFile(lfnUnremovedFile, self.seName)
-             	
- 
+            report.addUnremovedFile(lfnUnremovedFile, self.pnn)
+
+
         report.exitCode = statusCode
         report.jobSpecId = self.state.jobSpecNode.jobName
         report.jobType = self.state.jobSpecNode.jobType
         report.workflowSpecId = self.state.jobSpecNode.workflow
-        
+
         report.write("./FrameworkJobReport.xml")
 
         #  //
@@ -335,9 +335,9 @@ class CleanUpManager:
         toplevelReport = os.path.join(os.environ['PRODAGENT_JOB_DIR'],"FrameworkJobReport.xml")
         newReport = os.path.join(os.getcwd(), "FrameworkJobReport.xml")
         mergeReports(toplevelReport, newReport)
-    
-    
-        
+
+
+
 
 
 def cleanUp():
@@ -347,18 +347,18 @@ def cleanUp():
     Main program
 
     """
-       
+
     state = TaskState(os.getcwd())
     state.loadRunResDB()
-        
+
     try:
-        
+
         config = state._RunResDB.toDictionary()[state.taskAttrs['Name']]
-         
-    except StandardError, ex:
+
+    except Exception as ex:
         msg = "Unable to load details from task directory:\n"
         msg += "Error reading RunResDB XML file:\n"
-        msg += "%s\n" % state.runresdb 
+        msg += "%s\n" % state.runresdb
         msg += "and extracting details for task in: %s\n" % os.getcwd()
         print msg
         exitCode = 60312
@@ -374,12 +374,12 @@ def cleanUp():
     cleanUpFor = cleanUpParam.get('CleanUpFor',None)
     inputState = None
     if cleanUpFor != None:
-      inputTask = config['CleanUpParameters']['CleanUpFor'][0]
-      inputState = getTaskState(inputTask)        
-    
+        inputTask = config['CleanUpParameters']['CleanUpFor'][0]
+        inputState = getTaskState(inputTask)
+
     manager = CleanUpManager(state, inputState)
     exitCode = manager()
-     
+
 
     return exitCode
 
@@ -395,10 +395,9 @@ def cleanUp():
 if __name__ == '__main__':
     print "RuntimeCleanUp invoked..."
     exitCode = cleanUp()
-    
+
     f = open("exit.status", 'w')
     f.write(str(exitCode))
     f.close()
-   
+
     sys.exit(exitCode)
-     

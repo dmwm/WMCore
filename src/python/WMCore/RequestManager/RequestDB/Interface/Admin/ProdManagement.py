@@ -88,7 +88,7 @@ def associateProdMgr(requestName, prodMgrUrl):
     if requestId == None:
         msg = "Unknown Request Name: %s \n" % requestName
         msg += "Unable to associate ProdMgr for request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
 
     addPM = factory(classname = "Progress.ProdMgr")
@@ -113,7 +113,7 @@ def getProdMgr(requestName):
     if requestId == None:
         msg = "Unknown Request Name: %s \n" % requestName
         msg += "Unable to associate ProdMgr for request"
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     getPM = factory(classname = "Progress.GetProdMgr")
     return getPM.execute(requestId)
@@ -132,6 +132,3 @@ def associateProdAgent(requestName, prodAgentUrl):
 
     """
     pass
-
-
-

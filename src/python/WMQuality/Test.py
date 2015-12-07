@@ -35,8 +35,8 @@ class Test:
         self.logFile = logFile
         # files used for testing.
         self.testFile = {}
-        self.cvsLog = None 
-        self.moduleCut = None 
+        self.cvsLog = None
+        self.moduleCut = None
 
 
     def run(self):
@@ -53,10 +53,10 @@ class Test:
                 testResult = unittest.TestResult()
                 self.testResult = testSuite.run(testResult)
                 self.summarizeTest()
-            except Exception, ex:
+            except Exception as ex:
                 customReport = {}
                 customReport['developer'] = test[1]
-                customReport['class'] = test[0].__class__.__name__ 
+                customReport['class'] = test[0].__class__.__name__
                 msg = """
 Test framework error! Did you use the proper test classes? """
                 customReport['msg'] = msg + ' '+str(ex)
@@ -76,7 +76,7 @@ Test framework error! Did you use the proper test classes? """
         test.
         """
         self.cvsLog = cvsLog
-        # pathCut cuts the path from 
+        # pathCut cuts the path from
         # e.g. cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
         # to src/python/WMCore
 
@@ -114,7 +114,7 @@ Test framework error! Did you use the proper test classes? """
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
-                            if not self.testFile.has_key(moduleName) and \
+                            if moduleName not in self.testFile and \
                                 index > pathCut + self.moduleCut and\
                                 index == (len(parts)-1):
                                 self.testFile[moduleName] = {}
@@ -126,16 +126,16 @@ Test framework error! Did you use the proper test classes? """
             if nl.find('date:') == 0 and state == 'authors':
                 author = nl.split(' ')[6].split(';')[0]
                 # if this is the first author, check if the file has not been removed.
-                if firstAuthor: 
+                if firstAuthor:
                     firstAuthor = False
-                    modState = nl.split(' ')[9].split(';')[0] 
+                    modState = nl.split(' ')[9].split(';')[0]
                     # if removed, remove it hear too.
                     if modState == 'dead' :
                         del self.testFile[curFile]
                         state = 'file'
                 if state != 'file':
                     # start voting:
-                    if not self.testFile[curFile].has_key(author):
+                    if author not in self.testFile[curFile]:
                         self.testFile[curFile][author] = 0
                     self.testFile[curFile][author] += 1
                     # we voted
@@ -207,7 +207,7 @@ from WMQuality.Test import Test
                     if not errorLine:
                         break
                     errorMsg += errorLine
-                if not losers.has_key(winner):
+                if winner not in losers:
                     losers[winner] = []
                     losersCum[winner] = 0
                 losers[winner].append( [testFile, importStmt, errorMsg] )
@@ -268,9 +268,9 @@ test.summaryText()
             for failed in losers[winner]:
                 failures.writelines('File: '+failed[0]+'\n\n')
                 failures.writelines('Failed import: '+failed[1]+'\n\n')
-                failures.writelines('Error message: \n'+failed[2]+'\n\n')              
- 
- 
+                failures.writelines('Error message: \n'+failed[2]+'\n\n')
+
+
     def summaryText(self):
         """
         Summary for the tests result.
@@ -280,26 +280,26 @@ test.summaryText()
         failures.writelines('Following tests where run\n\n')
         for test in self.tests:
             failures.writelines(test[0].__class__.__name__+'-->'+test[1]+'\n')
-        failures.writelines('\n\n') 
-        failures.writelines('Failed tests (level 3):\n\n')    
+        failures.writelines('\n\n')
+        failures.writelines('Failed tests (level 3):\n\n')
         for author in self.failures.keys():
             failures.writelines(author+ \
                 ':'+str(len(self.failures[author]))+' failures\n')
         for author in self.errors.keys():
             failures.writelines(author+ \
                 ':'+str(len(self.errors[author]))+' errors\n')
-        failures.writelines('Failures (level 3):\n\n')    
+        failures.writelines('Failures (level 3):\n\n')
         for author in self.failures.keys():
             failures.writelines('Author: '+author+'\n\n')
             for failure in self.failures[author]:
                 failures.writelines('Test: '+failure[0]+'\n\n')
-                failures.writelines('Failure: '+failure[1]+'\n\n') 
+                failures.writelines('Failure: '+failure[1]+'\n\n')
 
         for author in self.errors.keys():
             failures.writelines('Author: '+author+'\n\n')
             for failure in self.errors[author]:
                 failures.writelines('Test: '+failure[0]+'\n\n')
-                failures.writelines('Error: '+failure[1]+'\n\n') 
+                failures.writelines('Error: '+failure[1]+'\n\n')
         failures.close()
 
     def summarizeTest(self, customReport = {}):
@@ -310,25 +310,23 @@ test.summaryText()
         """
         if customReport != {}:
             self.totalFailures += 1
-            if not self.failures.has_key(customReport['developer']):
+            if customReport['developer'] not in self.failures:
                 self.failures[customReport['developer']] = []
             self.failures[customReport['developer']].append(\
                 [customReport['class'], customReport['msg']])
-        else: 
+        else:
             for i in self.testResult.failures:
                 obj, msg = i
                 self.totalFailures += 1
-                if not self.failures.has_key(obj.developer):
+                if obj.developer not in self.failures:
                     self.failures[obj.developer] = []
                 self.failures[obj.developer].append([obj.__class__.__name__, \
                     msg])
-    
+
             for i in self.testResult.errors:
                 obj, msg = i
                 self.totalErrors += 1
-                if not self.errors.has_key(obj.developer):
+                if obj.developer not in self.errors:
                     self.errors[obj.developer] = []
                 self.errors[obj.developer].append([obj.__class__.__name__, \
                     msg])
- 
-

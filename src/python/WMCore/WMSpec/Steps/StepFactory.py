@@ -205,10 +205,9 @@ def getDiagnostic(stepType):
     """
     try:
         return _DiagnosticFactory.loadObject(stepType)
-    except WMException, wmEx:
+    except WMException as wmEx:
         return _DiagnosticFactory.loadObject("Generic")
 #    except Exception, ex:
 #        msg = "Error creating object %s in DiagnosticFactory:\n" % stepType
 #        msg += str(ex)
 #        raise StepFactoryException(msg)
-

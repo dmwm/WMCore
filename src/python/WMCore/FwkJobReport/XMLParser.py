@@ -2,7 +2,7 @@
 """
 _XMLParser_
 
-Read the raw XML output from the cmsRun executable. 
+Read the raw XML output from the cmsRun executable.
 """
 
 
@@ -55,6 +55,8 @@ def reportDispatcher(targets):
                 targets['FrameworkError'].send( (report, subnode) )
             elif subnode.name == "SkippedFile":
                 targets['SkippedFile'].send( (report, subnode) )
+            elif subnode.name == "FallbackAttempt":
+                targets['FallbackAttempt'].send( (report, subnode) )
             elif subnode.name == "SkippedEvent":
                 targets['SkippedEvent'].send( (report, subnode) )
             else:
@@ -96,7 +98,7 @@ def fileHandler(targets):
                                    events = int(fileAttrs["TotalEvents"]),
                                    branch_hash = fileAttrs["BranchHash"])
 
-        [fileRef]                
+        [fileRef]
 
 @coroutine
 def inputFileHandler(targets):
@@ -170,7 +172,7 @@ def errorHandler():
         if len(report.listSteps()) == 0:
             report.addError("unknownStep", excepcode, exceptype, node.text)
         else:
-            report.addError(report.listSteps()[0], excepcode, exceptype, node.text)            
+            report.addError(report.listSteps()[0], excepcode, exceptype, node.text)
 
 @coroutine
 def skippedFileHandler():
@@ -180,6 +182,13 @@ def skippedFileHandler():
         pfn = node.attrs.get("Pfn", None)
         report.addSkippedFile(lfn, pfn)
 
+@coroutine
+def fallbackAttemptHandler():
+    while True:
+        report, node = (yield)
+        lfn = node.attrs.get("Lfn", None)
+        pfn = node.attrs.get("Pfn", None)
+        report.addFallbackFile(lfn, pfn)
 
 @coroutine
 def skippedEventHandler():
@@ -205,7 +214,7 @@ def runHandler():
       <Run ID="122024">
         <LumiSection ID="1"/>
         <LumiSection ID="2"/>
-      </Run>    
+      </Run>
       </Runs>
 
     Create a WMCore.DataStructs.Run object for each run and call the
@@ -218,10 +227,10 @@ def runHandler():
             if subnode.name == "Run":
                 runId = subnode.attrs.get("ID", None)
                 if runId == None: continue
-                
+
                 lumis = [ int(lumi.attrs['ID'])
                           for lumi in subnode.children
-                          if lumi.attrs.has_key("ID")]
+                          if "ID" in lumi.attrs]
 
                 runInfo = Run(runNumber = runId)
                 runInfo.lumis.extend(lumis)
@@ -237,13 +246,13 @@ def branchHandler():
       <Branches>
         <Branch>Branch Name 1</Branch>
         <Branch>Branch Name 2</Branch>
-      </Branches>  
+      </Branches>
 
     Create a list containing all the branch names as use the
     addBranchNamesToFile method to add them to the fileSection.
 
     Nulled out, we dont need these anyways...
-    
+
     """
     while True:
         fileSection, node = (yield)
@@ -262,7 +271,7 @@ def inputAssocHandler():
       <Input>
         <LFN>/path/to/some/lfn.root</LFN>
         <PFN>/some/pfn/info/path/to/some/lfn.root</PFN>
-      </Input>  
+      </Input>
 
     Extract the LFN and call the addInputToFile() function to associate input to
     output in the FWJR.
@@ -320,11 +329,11 @@ def perfSummaryHandler():
         if not hasattr(report, summary):
             report.section_(summary)
         summRep = getattr(report, summary)
-        
+
         for subnode in node.children:
             setattr(summRep, subnode.attrs['Name'],
                     subnode.attrs['Value'])
-                    
+
 
 @coroutine
 def perfCPUHandler():
@@ -360,9 +369,9 @@ def perfMemHandler():
                     setattr(report, prop.attrs['Name'], prop.attrs['Value'])
 
 def checkRegEx(regexp, candidate):
-        if re.compile(regexp).match(candidate) == None:
-            return False
-        return True
+    if re.compile(regexp).match(candidate) == None:
+        return False
+    return True
 
 
 @coroutine
@@ -380,7 +389,7 @@ def perfStoreHandler():
                       'Timing-([a-z]{4})-read(v?)-numOperations',
                       'Timing-([a-z]{4})-write(v?)-numOperations',
                       'Timing-([a-z]{4})-read(v?)-maxMsecs',
-                      'Timing-tstoragefile-readActual-numOperations', 
+                      'Timing-tstoragefile-readActual-numOperations',
                       'Timing-tstoragefile-read-numOperations',
                       'Timing-tstoragefile-readViaCache-numSuccessfulOperations',
                       'Timing-tstoragefile-read-numOperations',
@@ -415,7 +424,7 @@ def perfStoreHandler():
                     # This is the reader
                     writeMethod = key.split('-')[1]
                     break
-                
+
         # Then assemble the information
         # Calculate the values
         logging.debug("ReadMethod: %s" % readMethod)
@@ -438,7 +447,7 @@ def perfStoreHandler():
             writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) * 1000
             writeTotMB  = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
                           + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
-            
+
             if readMSecs > 0:
                 readMBSec = readTotalMB/readMSecs
             else:
@@ -447,7 +456,7 @@ def perfStoreHandler():
                 readAveragekB = 1024* readTotalMB/totalReads
             else:
                 readAveragekB = 0
-            
+
 
             # Attach them to the report
             setattr(report, 'readTotalMB', readTotalMB)
@@ -465,11 +474,11 @@ def perfStoreHandler():
             logging.error("Either you aren't reading and writing data, or you aren't reporting it.")
             logging.error("Not adding any storage performance info to report.")
 
-        
-        
 
-        
-            
+
+
+
+
 
 
 
@@ -507,6 +516,7 @@ def xmlToJobReport(reportInstance, xmlFile):
         "AnalysisFile" : analysisFileHandler(fileDispatchers),
         "FrameworkError" : errorHandler(),
         "SkippedFile" : skippedFileHandler(),
+        "FallbackAttempt" : fallbackAttemptHandler(),
         "SkippedEvent" : skippedEventHandler(),
         }
 
@@ -520,33 +530,3 @@ def xmlToJobReport(reportInstance, xmlFile):
 
     return
 childrenMatching = lambda node, nname: [x for x in node.children if x.name == nname]
-
-
-def multiXmlToJobReport(reportInstance, multiReportFile, directory = None):
-    """
-    _multiXmlToJobReport_
-
-    Util for reading a top level job report from a multi threaded CMSSW job report
-
-    the multi report file is expected to contain a list of entries like:
-
-    <ChildProcessFiles>
-      <ChildProcessFile>FrameworkJobReport_0.xml</ChildProcessFile>
-      <ChildProcessFile>FrameworkJobReport_1.xml</ChildProcessFile>
-      <ChildProcessFile>FrameworkJobReport_2.xml</ChildProcessFile>
-    </ChildProcessFiles>
-
-    """
-    # read XML, build node structure
-    jobRepNode = xmlFileToNode(multiReportFile)
-    for repNode in childrenMatching(jobRepNode, "FrameworkJobReport"):
-        for childProcFiles in childrenMatching(repNode, "ChildProcessFiles"):
-            for childRep in childrenMatching(childProcFiles, "ChildProcessFile"):
-                fileName =  childRep.text
-                if directory != None:
-                    fileName = "%s/%s" % (directory, fileName)
-                if os.path.exists(fileName):
-                    xmlToJobReport(reportInstance, fileName)
-                else: 
-                    print "File %s not found" % fileName
-

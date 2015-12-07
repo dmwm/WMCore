@@ -1,0 +1,113 @@
+#from WMCore.ReqMgr.Web.utils import gen_color
+#from WMCore.ReqMgr.Tools.cms import next_status
+
+<h2>Approve interface</h2>
+<hr/>
+
+<script>
+var requests = $requests;
+</script>
+
+<div id="requests">
+
+$filter_sort_table
+
+<div class="group">
+    <nav class="navbar navbar-left">
+    </nav>
+    <nav class="navbar navbar-right">
+        <button class="btn btn-small btn-outline btn-green" onclick="javascript:ApproveAllRequests()">Approve All</button>
+        <button class="btn btn-small btn-outline btn-red" onclick="javascript:RejectAllRequests()">Reject All</button>
+    </nav>
+</div>
+<hr/>
+
+<div id="container"></div>
+</div> <!-- end of requests section -->
+
+<script>
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// approve interface changes new requests into assignment-approved or rejected
+function RejectRequest(bid, rid) {
+    bid.className="btn btn-small btn-disabled";
+    bid.innerHTML="DONE";
+    parameters = {'ids': [rid], 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
+}
+function RejectAllRequests() {
+    var items = document.getElementsByName('reject-request');
+    var ids = [];
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='btn btn-small btn-disabled';
+        items[i].innerHTML='DONE';
+        ids.push(items[i].id);
+    }
+    parameters = {'ids': ids, 'new_status': 'rejected'},
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+function ApproveRequest(bid, rid) {
+    bid.className="btn btn-small btn-disabled";
+    bid.innerHTML="DONE";
+    parameters = {'ids': [rid], 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
+    var tag = 'div-'+rid;
+    document.getElementById(tag).className = 'tools-alert tools-alert-black';
+}
+function ApproveAllRequests() {
+    var items = document.getElementsByName('approve-request');
+    var ids = [];
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='btn btn-small btn-disabled';
+        items[i].innerHTML='DONE';
+        ids.push(items[i].id);
+    }
+    parameters = {'ids': ids, 'new_status': 'assignment-approved'};
+    ajaxRequest('$base/data/request/multi_update', parameters);
+}
+var _order=1; // global variable to keep track of asc/desc order on web UI
+function BuildList(tag, data) {
+    if(_order%2) {
+        data.reverse();
+    }
+    _order += 1;
+    var container = document.getElementById('container');
+    container.innerHTML="";
+    var listContainer = document.createElement('div');
+    container.appendChild(listContainer);
+    var listElement = document.createElement("ul");
+    listContainer.appendChild(listElement);
+    data.forEach(function(item) {
+        var rid = 'request-'+item.RequestName;
+        var html = '<div id="div-'+rid+'">';
+        html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
+        html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
+        html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
+        html += '<b>User:</b> '+item.Requestor+'&nbsp;';
+        html += '<b>Group:</b> '+item.Group;
+        html += '<div class="lift">'
+        html += '<nav class="navbar navbar-left">';
+        html += '<span></span>'
+        html += '</nav>';
+        html += '<nav class="navbar navbar-right">'
+        html += '<button name="approve-request" id="'+rid+'" class="btn btn-small btn-green" onclick="javascript:ApproveRequest(this, \''+rid+'\')">Approve</button>';
+        html += '<button name="reject-request" id="'+rid+'" class="btn btn-small btn-red" onclick="javascript:RejectRequest(this, \''+rid+'\')">Reject</button>';
+        html += '</nav>'
+        html += '</div>';
+        html += '<hr/></div>'
+        var listItem = document.createElement("li");
+        listItem.innerHTML = html;
+        listElement.appendChild(listItem);
+    });
+    // change CSS
+    var items = document.getElementsByClassName('menu-item');
+    for (var i = 0; i < items.length; i++ ) {
+        items[i].className='menu-item';
+    }
+    tag.className='menu-item underline';
+}
+// Put data into container
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
+</script>

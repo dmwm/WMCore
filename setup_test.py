@@ -6,15 +6,20 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin, walk
 from ConfigParser import ConfigParser, NoOptionError
 import os, sys, os.path
+import atexit, signal
 import unittest
 import time
 import pickle
+import threading
+import hashlib
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
 can_lint = False
 can_coverage = False
 can_nose = False
+
+sys.setrecursionlimit(10000) # Eliminates recursion exceptions with nose
 
 try:
     from pylint.lint import Run
@@ -28,7 +33,7 @@ try:
     can_coverage = True
 except:
     pass
-
+can_coverage = False
 try:
     import nose
     from nose.plugins import Plugin, PluginTester
@@ -86,6 +91,24 @@ if can_nose:
                     result.append( prefix + "."+ subdir[:-3])
         return result
 
+    def trapExit( code ):
+        """
+        Cherrypy likes to call os._exit() which causes the interpreter to 
+        bomb without a chance of catching it. This sucks. This function
+        will replace os._exit() and throw an exception instead
+        """
+        if hasattr( threading.local(), "isMain" ) and threading.local().isMain:
+            # The main thread should raise an exception
+            sys.stderr.write("*******EXIT WAS TRAPPED**********\n")
+            raise RuntimeError("os._exit() was called in the main thread")
+        elif "DONT_TRAP_EXIT" in os.environ:
+            # We trust this component to run real exits
+            os.DMWM_REAL_EXIT(code)
+        else:
+            # os._exit on child threads should just blow away the thread
+            raise SystemExit("os._exit() was called in a child thread. " +\
+                              "Protecting the interpreter and trapping it")
+
     class DetailedOutputter(Plugin):
         name = "detailed"
         def __init__(self):
@@ -136,7 +159,16 @@ if can_nose:
                           "Number of ways to split up the test suite"),
                          ('testCurrentSlice=',
                           None,
-                          "Which slice to run (zero-based index)")
+                          "Which slice to run (zero-based index)"),
+                         ('testingRoot=',
+                         None,
+                         "Primarily used by buildbot. Gives the path to the root of the test tree (i.e. the directory with WMCore_t)"),
+                         ('testMinimumIndex=',
+                         None,
+                         "The minimum ID to be executed (advanced use)"),
+                         ('testMaximumIndex=',
+                         None,
+                         "The maximum ID to be executed (advanced use)")
                          ]
 
         def initialize_options(self):
@@ -145,14 +177,24 @@ if can_nose:
             self.workerNodeTestsOnly = False
             self.testCertainPath = False
             self.quickTestMode = False
+            self.testingRoot = "test/python"
             self.testTotalSlices = 1
             self.testCurrentSlice = 0
+            self.testMinimumIndex = 0
+            self.testMaximumIndex = 9999999
             pass
 
         def finalize_options(self):
             pass
 
-        def callNose( self, args ):
+        def callNose( self, args, paths ):
+            # let people specify more than one path
+            pathList = paths.split(':')
+
+            # sometimes this doesn't get removed
+            if os.path.exists('.noseids'):
+                os.unlink('.noseids')
+
             # run once to get splits
             collectOnlyArgs = args[:]
             collectOnlyArgs.extend([ '-q', '--collect-only', '--with-id' ])
@@ -164,13 +206,31 @@ if can_nose:
             idhandle = open( ".noseids", "r" )
             testIds = pickle.load(idhandle)['ids']
             idhandle.close()
+            
+            if os.path.exists("nosetests.xml"):
+                os.unlink("nosetests.xml")
 
+            print "path lists is %s" % pathList
+            # divide it up
             totalCases = len(testIds)
             myIds      = []
-            for id in sorted( testIds.keys() ):
-                if ( id % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
-                    myIds.append( str(id) )
+            for id in testIds.keys():
+                if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
+                    # generate a stable ID for sorting
+                    if len(testIds[id]) == 3:
+                        testName = "%s%s" % (testIds[id][1], testIds[id][2])
+                        testHash = hashlib.md5( testName ).hexdigest()
+                        hashSnip = testHash[:7]
+                        hashInt  = int( hashSnip, 16 )
+                    else:
+                        hashInt = id
 
+                    if ( hashInt % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
+                        for path in pathList:
+                            if path in testIds[id][0]:
+                                myIds.append( str(id) )
+                                break
+            myIds = sorted( myIds )
             print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
             if not myIds:
                 return True
@@ -180,6 +240,12 @@ if can_nose:
             return nose.run( argv=args )
 
         def run(self):
+
+            # trap os._exit
+            os.DMWM_REAL_EXIT = os._exit
+            os._exit = trapExit
+            threading.local().isMain = True
+
             testPath = 'test/python'
             if self.testCertainPath:
                 print "Using the tests below: %s" % self.testCertainPath
@@ -200,13 +266,13 @@ if can_nose:
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
                 time.sleep(4)
             if self.workerNodeTestsOnly:
-                args = [__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest']
+                args = [__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a','workerNodeTest',self.testingRoot]
                 args.extend( quickTestArg )
-                retval = self.callNose(args)
+                retval = self.callNose(args, paths = testPath)
             elif not self.buildBotMode:
-                args = [__file__,'--with-xunit', testPath, '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest']
+                args = [__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)', '-a', '!workerNodeTest',self.testingRoot]
                 args.extend( quickTestArg )
-                retval = self.callNose(args)
+                retval = self.callNose(args, paths = testPath)
             else:
                 print "### We are in buildbot mode ###"
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
@@ -217,19 +283,59 @@ if can_nose:
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
                 if not quickTestArg:
-                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
-                                             '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                                             '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
-                                             '--cover-package=' + moduleList, '--cover-inclusive'])
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
+                                             '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
+#                                             '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
+#                                             '--cover-package=' + moduleList, '--cover-inclusive',
+                                             testPath],
+                                             paths = testPath)
                 else:
-                    retval = self.callNose([__file__,'--with-xunit', testPath,'-m', '(_t.py$)|(_t$)|(^test)','-a',
-                         '!workerNodeTest,!integration,!performance,!__integration__,!__performance__',
-                         '--stop'])
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
+                         '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
+                         '--stop', testPath],
+                         paths = testPath)
+                    
+            threadCount = len(threading.enumerate())
+            # Set the signal handler and a 20-second alarm
+            def signal_handler( foo, bar ):
+                sys.stderr.write("Timeout reached trying to shut down. Force killing...\n")
+                sys.stderr.flush()
+                if retval:
+                    os.DMWM_REAL_EXIT( 0 )
+                else:
+                    os.DMWM_REAL_EXIT( 1 )
+            signal.signal(signal.SIGALRM, signal_handler )
+            signal.alarm(20)
+            marker = open("nose-marker.txt", "w")
+            marker.write("Ready to be slayed\n")
+            marker.flush()
+            marker.close()
 
+            if threadCount > 1:
+                import cherrypy
+                sys.stderr.write("There are %s threads running. Cherrypy may be acting up.\n" % len(threading.enumerate()))
+                sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
+                atexit.register(cherrypy.engine.stop)
+                cherrypy.engine.exit()
+                sys.stderr.write("Asked cherrypy politely to commit suicide\n")
+                sys.stderr.write("Now there are %s threads running\n" % len(threading.enumerate()))
+                sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
+                
+            threadCount = len(threading.enumerate())
+            print "Testing complete, there are now %s threads" % len(threading.enumerate())
+                                    
+            # try to exit
             if retval:
                 sys.exit( 0 )
             else:
                 sys.exit( 1 )
+                
+            # if we got here, then sys.exit got cancelled by the alarm...
+            sys.stderr.write("Failed to exit after 30 secs...something hung\n")
+            sys.stderr.write("Forcing process to die")
+            os.DMWM_REAL_EXIT()
+
+            
 else:
     class TestCommand(Command):
         user_options = [ ]
@@ -519,7 +625,7 @@ class ReportCommand(Command):
                refactor += stats['refactor']
                convention += stats['convention']
                statement += stats['statement']
-       except Exception,e:
+       except Exception as e:
            # and restore the stdout/stderr
            sys.stderr = sys.__stderr__
            sys.stdout = sys.__stderr__

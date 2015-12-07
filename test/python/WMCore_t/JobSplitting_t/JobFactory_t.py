@@ -23,7 +23,7 @@ class JobFactoryTest(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
+
     def testMetaData(self):
         """
         _testMetaData_
@@ -53,31 +53,29 @@ class JobFactoryTest(unittest.TestCase):
                 self.assertEqual(job["task"], "TestTask", "Error: Task is wrong.")
                 self.assertEqual(job["workflow"], "TestWorkflow", "Error: Workflow is wrong.")
                 self.assertEqual(job["owner"], "Steve", "Error: Owner is wrong.")
-                self.assertEqual(job["siteWhitelist"], ["site1"], "Error: Site white list is wrong.")
-                self.assertEqual(job["siteBlacklist"], ["site2"], "Error: Site black list is wrong.")
         return
 
     def testProductionRunNumber(self):
         """
         _testProductionRunNumber_
-        
+
         Verify that jobs created by production subscritpions have the correct
         run number is their job mask.  Also verify that non-production
         subscriptions don't have modified run numbers.
         """
         testWorkflow = Workflow(spec = "spec.pkl", owner = "Steve",
                                 name = "TestWorkflow", task = "TestTask")
-    
+
         testFileset = Fileset(name = "TestFileset")
         testFile = File(lfn = "someLFN")
         testFileset.addFile(testFile)
         testFileset.commit()
-        
+
         testSubscription = Subscription(fileset = testFileset,
                                         workflow = testWorkflow,
                                         split_algo = "FileBased",
                                         type = "Production")
-    
+
         myJobFactory = JobFactory(subscription = testSubscription)
         testJobGroups =  myJobFactory()
 
@@ -92,16 +90,16 @@ class JobFactoryTest(unittest.TestCase):
                                         workflow = testWorkflow,
                                         split_algo = "FileBased",
                                         type = "Processing")
-    
+
         myJobFactory = JobFactory(subscription = testSubscription)
         testJobGroups =  myJobFactory()
-        
+
         for testJobGroup in testJobGroups:
             for job in testJobGroup.jobs:
                 self.assertEqual(job["mask"]["FirstRun"], None, "Error: First run is wrong.")
                 self.assertEqual(job["mask"]["LastRun"], None, "Error: Last run is wrong.")
 
         return
-            
+
 if __name__ == '__main__':
     unittest.main()

@@ -17,14 +17,14 @@ class WMStepTest(unittest.TestCase):
 
         try:
             wmStep = WMStep("step1")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate WMStep:\n"
             msg += str(ex)
             self.fail(msg)
 
         try:
             wmStep2 = makeWMStep("step2")
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate WMStep via makeWMStep:\n"
             msg += str(ex)
             self.fail(msg)

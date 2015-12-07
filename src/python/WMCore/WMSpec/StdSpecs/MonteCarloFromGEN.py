@@ -5,82 +5,72 @@ _MonteCarloFromGEN_
 Workflow for processing MonteCarlo GEN files.
 """
 
-import os
+from WMCore.Lexicon import primdataset, dataset
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
 
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
-def getTestArguments():
-    """
-    _getTestArguments_
-
-    This should be where the default REQUIRED arguments go
-    This serves as documentation for what is currently required 
-    by the standard MonteCarloFromGEN workload in importable format.
-
-    NOTE: These are test values.  If used in real workflows they
-    will cause everything to crash/die/break, and we will be forced
-    to hunt you down and kill you.
-    """
-    arguments = {
-        "AcquisitionEra": "WMAgentCommissioning10",
-        "Requestor": "sfoulkes@fnal.gov",
-        "InputDataset": "/MinimumBias/Commissioning10-v4/RAW",
-        "CMSSWVersion": "CMSSW_3_5_8",
-        "ScramArch": "slc5_ia32_gcc434",
-        "ProcessingVersion": "v2scf",
-        "SkimInput": "output",
-        "GlobalTag": "GR10_P_v4::All",
-        
-        "CouchURL": os.environ.get("COUCHURL", None),
-        "CouchDBName": "scf_wmagent_configcache",
-        
-        "ProcConfigCacheID": "03da10e20c7b98c79f9d6a5c8900f83b",
-        }
-
-    return arguments
-
-class MonteCarloFromGENWorkloadFactory(StdBase):
+class MonteCarloFromGENWorkloadFactory(DataProcessing):
     """
     _MonteCarloFromGENWorkloadFactory_
 
     Stamp out MonteCarloFromGEN workflows.
     """
-    def __init__(self):
-        StdBase.__init__(self)
-        return
 
     def buildWorkload(self):
         """
         _buildWorkload_
 
-        Build the workload given all of the input parameters.  At the very least
-        this will create a processing task and merge tasks for all the outputs
-        of the processing task.
-
-        Not that there will be LogCollect tasks created for each processing
-        task and Cleanup tasks created for each merge task.
+        Build a workflow for a MonteCarloFromGEN request.
+        This represents the following tree:
+        - Processing task
+          - Merge task
+            - LogCollect task
+          - Cleanup task
+          - LogCollect task
         """
-        (self.inputPrimaryDataset, self.inputProcessedDataset,
+        (inputPrimaryDataset, self.inputProcessedDataset,
          self.inputDataTier) = self.inputDataset[1:].split("/")
 
+        if self.inputPrimaryDataset is None:
+            self.inputPrimaryDataset = inputPrimaryDataset
+
         workload = self.createWorkload()
-        workload.setDashboardActivity("lheproduction")
-        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs)
+        workload.setDashboardActivity("production")
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
+        workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
+                                         self.procJobSplitArgs,
+                                         OpenRunningTimeout=self.openRunningTimeout)
         procTask = workload.newTask("MonteCarloFromGEN")
 
-        outputMods = self.setupProcessingTask(procTask, "Processing", self.inputDataset,
-                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
-                                              configDoc = self.procConfigCacheID, splitAlgo = self.procJobSplitAlgo,
-                                              splitArgs = self.procJobSplitArgs, stepType = "CMSSW",
-                                              primarySubType = "Production")
+        outputMods = self.setupProcessingTask(procTask, "Processing",
+                                              self.inputDataset,
+                                              couchURL=self.couchURL,
+                                              couchDBName=self.couchDBName,
+                                              configCacheUrl=self.configCacheUrl,
+                                              configDoc=self.configCacheID,
+                                              splitAlgo=self.procJobSplitAlgo,
+                                              splitArgs=self.procJobSplitArgs,
+                                              stepType="CMSSW",
+                                              primarySubType="Production")
         self.addLogCollectTask(procTask)
 
-        procMergeTasks = {}
+        # pile up support
+        if self.pileupConfig:
+            self.setupPileup(procTask, self.pileupConfig)
+
         for outputModuleName in outputMods.keys():
-            outputModuleInfo = outputMods[outputModuleName]
-            mergeTask = self.addMergeTask(procTask, self.procJobSplitAlgo,
-                                          outputModuleName)
-            procMergeTasks[outputModuleName] = mergeTask
+            self.addMergeTask(procTask, self.procJobSplitAlgo,
+                              outputModuleName)
+
+        # setting the parameters which need to be set for all the tasks
+        # sets acquisitionEra, processingVersion, processingString
+        workload.setTaskPropertiesFromWorkload()
+
+        # set the LFN bases (normally done by request manager)
+        # also pass runNumber (workload evaluates it)
+        workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
+                            runNumber=self.runNumber)
 
         return workload
 
@@ -90,59 +80,52 @@ class MonteCarloFromGENWorkloadFactory(StdBase):
 
         Create a MonteCarloFromGEN workload with the given parameters.
         """
-        StdBase.__call__(self, workloadName, arguments)
+        DataProcessing.__call__(self, workloadName, arguments)
 
-        # Required parameters that must be specified by the Requestor.
-        self.inputDataset = arguments["InputDataset"]
-        self.frameworkVersion = arguments["CMSSWVersion"]
-        self.globalTag = arguments["GlobalTag"]
+        # Transform the pileup as required by the CMSSW step
+        self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
+        # Adjust the pileup splitting
+        self.procJobSplitArgs.setdefault("deterministicPileup", self.deterministicPileup)
 
-        # The CouchURL and name of the ConfigCache database must be passed in
-        # by the ReqMgr or whatever is creating this workflow.
-        self.couchURL = arguments["CouchURL"]
-        self.couchDBName = arguments["CouchDBName"]
-
-        # Optional arguments that default to something reasonable.
-        self.dbsUrl = arguments.get("DbsUrl", "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet")
-        self.blockBlacklist = arguments.get("BlockBlacklist", [])
-        self.blockWhitelist = arguments.get("BlockWhitelist", [])
-        self.runBlacklist = arguments.get("RunBlacklist", [])
-        self.runWhitelist = arguments.get("RunWhitelist", [])
-        self.emulation = arguments.get("Emulation", False)
-
-        self.procConfigCacheID = arguments.get("ProcConfigCacheID")
-
-        # These are mostly place holders because the job splitting algo and
-        # parameters will be updated after the workflow has been created.
-        self.procJobSplitAlgo  = arguments.get("StdJobSplitAlgo", "LumiBased")
-        self.procJobSplitArgs  = arguments.get("StdJobSplitArgs", {"lumis_per_job": 1})
         return self.buildWorkload()
 
     def validateSchema(self, schema):
         """
         _validateSchema_
-        
-        Check for required fields, and some skim facts
+
+        Standard StdBase schema validation, plus verification
+        of the ConfigCacheID
         """
-        arguments = getTestArguments()
-        requiredFields = ["CMSSWVersion", "ProcConfigCacheID",
-                          "GlobalTag", "InputDataset", "CouchURL",
-                          "CouchDBName", "ScramArch"]
-        self.requireValidateFields(fields = requiredFields, schema = schema,
-                                   validate = False)
-        outMod = self.validateConfigCacheExists(configID = schema["ProcConfigCacheID"],
-                                                couchURL = schema["CouchURL"],
-                                                couchDBName = schema["CouchDBName"],
-                                                getOutputModules = True)
+        DataProcessing.validateSchema(self, schema)
+        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
+        self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
+                                       couchURL=couchUrl,
+                                       couchDBName=schema["CouchDBName"])
         return
 
-
-def monteCarloFromGENWorkload(workloadName, arguments):
-    """
-    _monteCarloFromGENWorkload_
-
-    Instantiate the MonteCarloFromGENWorkflowFactory and have it generate a workload for
-    the given parameters.
-    """
-    myMonteCarloFromGENFactory = MonteCarloFromGENWorkloadFactory()
-    return myMonteCarloFromGENFactory(workloadName, arguments)
+    @staticmethod
+    def getWorkloadArguments():
+        baseArgs = DataProcessing.getWorkloadArguments()
+        specArgs = {"RequestType": {"default": "MonteCarloFromGEN", "optional": True,
+                                    "attr": "requestType"},
+                    "PrimaryDataset": {"default": None, "type": str,
+                                       "optional": True, "validate": primdataset,
+                                       "attr": "inputPrimaryDataset", "null": False},
+                    "ConfigCacheUrl": {"default": None, "type": str,
+                                       "optional": True, "validate": None,
+                                       "attr": "configCacheUrl", "null": False},
+                    "ConfigCacheID": {"default": None, "type": str,
+                                      "optional": False, "validate": None,
+                                      "attr": "configCacheID", "null": False},
+                    "MCPileup": {"default": None, "type": str,
+                                 "optional": True, "validate": dataset,
+                                 "attr": "mcPileup", "null": False},
+                    "DataPileup": {"default": None, "type": str,
+                                   "optional": True, "validate": dataset,
+                                   "attr": "dataPileup", "null": False},
+                    "DeterministicPileup": {"default": False, "type": strToBool,
+                                            "optional": True, "validate": None,
+                                            "attr": "deterministicPileup", "null": False}}
+        baseArgs.update(specArgs)
+        DataProcessing.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs

@@ -34,7 +34,7 @@ class GetCompletedFilesByRun(DBFormatter):
                 formattedResult["file"] = int(formattedResult["fileid"])
 
         return formattedResults
-    
+
     def execute(self, subscription, run, conn = None,
                 transaction = False):
         binds = {"subscription": subscription, "run": run}

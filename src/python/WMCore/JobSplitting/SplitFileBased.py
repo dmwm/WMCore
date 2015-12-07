@@ -74,9 +74,9 @@ def sortedFilesFromMergeUnits(mergeUnits):
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([file["se_name"]])
+            newFile["locations"] = set([file["pnn"]])
             newFile.addRun(Run(file["file_run"], file["file_lumi"]))
-            sortedFiles.append(newFile)            
+            sortedFiles.append(newFile)
 
     return sortedFiles
 
@@ -106,9 +106,9 @@ class SplitFileBased(JobFactory):
             for key in mergeableFile.keys():
                 newMergeFile[key] = mergeableFile[key]
 
-            if not mergeUnits.has_key(newMergeFile["file_run"]):
+            if newMergeFile["file_run"] not in mergeUnits:
                 mergeUnits[newMergeFile["file_run"]] = []
-                
+
             for mergeUnit in mergeUnits[newMergeFile["file_run"]]:
                 if mergeUnit["file_parent"] == mergeableFile["file_parent"]:
                     mergeUnit["files"].append(newMergeFile)
@@ -120,7 +120,7 @@ class SplitFileBased(JobFactory):
                             mergeableFile["file_lumi"] < mergeUnit["lumi"]):
                         newMergeUnit["run"] = newMergeFile["file_run"]
                         newMergeUnit["lumi"] = newMergeFile["file_lumi"]
-                            
+
                     break
             else:
                 newMergeUnit = {}
@@ -145,13 +145,13 @@ class SplitFileBased(JobFactory):
         """
         for mergeUnit in mergeUnits:
             self.newGroup()
-            self.newJob(name = makeUUID())            
+            self.newJob(name = makeUUID())
             sortedFiles = sortedFilesFromMergeUnits([mergeUnit])
 
             for file in sortedFiles:
                 file.load()
                 self.currentJob.addFile(file)
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -163,7 +163,7 @@ class SplitFileBased(JobFactory):
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         mergeDAO = daoFactory(classname = "Subscriptions.GetFilesForMerge")
         mergeableFiles = mergeDAO.execute(self.subscription["id"])
 

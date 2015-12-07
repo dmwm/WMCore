@@ -18,7 +18,7 @@ class HadoopImpl(StageOutImpl):
     _HadoopImpl_
 
     Implement interface for Hadoop
-    
+
     """
 
     run = staticmethod(runCommand)
@@ -56,7 +56,7 @@ class HadoopImpl(StageOutImpl):
         result += " %s " % targetPFN
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

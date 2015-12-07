@@ -9,19 +9,16 @@ back down and verify that everything is complete.
 
 import threading
 import time
-import os
 import unittest
 import logging
 
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
-from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.UUID import makeUUID
 
-from WMCore.Agent.Configuration import Configuration
-from WMCore.WMFactory import WMFactory
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMQuality.TestInit import TestInit
@@ -34,7 +31,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
     Unit tests for the PhEDExInjector.  Create some database inside DBSBuffer
     and then have the PhEDExInjector upload the data to PhEDEx.  Pull the data
-    back down and verify that everything is complete.    
+    back down and verify that everything is complete.
     """
 
     def setUp(self):
@@ -45,10 +42,10 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         """
         self.phedexURL = "https://cmsweb.cern.ch/phedex/datasvc/json/test"
         self.dbsURL = "http://vocms09.cern.ch:8880/cms_dbs_int_local_yy_writer/servlet/DBSServlet"
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
 
         self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer"],
                                 useDefault = False)
@@ -77,8 +74,8 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         Delete the database.
         """
         self.testInit.clearDatabase()
-        
-    def stuffDatabase(self, custodialSite = "srm-cms.cern.ch"):
+
+    def stuffDatabase(self):
         """
         _stuffDatabase_
 
@@ -89,6 +86,15 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         We'll inject files with the location set as an SE name as well as a
         PhEDEx node name as well.
         """
+        myThread = threading.currentThread()
+
+        buffer3Factory = DAOFactory(package = "WMComponent.DBS3Buffer",
+                                   logger = myThread.logger,
+                                   dbinterface = myThread.dbi)
+        insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
+        insertWorkflow.execute("BogusRequest", "BogusTask",
+                               0, 0, 0, 0)
+
         checksums = {"adler32": "1234", "cksum": "5678"}
         testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
                                   checksums = checksums,
@@ -97,7 +103,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileA.setDatasetPath(self.testDatasetA)
-        testFileA.setCustodialSite(custodialSite = custodialSite)
         testFileA.addRun(Run(2, *[45]))
         testFileA.create()
 
@@ -108,7 +113,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileB.setDatasetPath(self.testDatasetA)
-        testFileB.setCustodialSite(custodialSite = custodialSite)
         testFileB.addRun(Run(2, *[45]))
         testFileB.create()
 
@@ -119,10 +123,9 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileC.setDatasetPath(self.testDatasetA)
-        testFileC.setCustodialSite(custodialSite = custodialSite)
         testFileC.addRun(Run(2, *[45]))
-        testFileC.create()        
-                                        
+        testFileC.create()
+
         self.testFilesA.append(testFileA)
         self.testFilesA.append(testFileB)
         self.testFilesA.append(testFileC)
@@ -134,7 +137,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileD.setDatasetPath(self.testDatasetB)
-        testFileD.setCustodialSite(custodialSite = custodialSite)
         testFileD.addRun(Run(2, *[45]))
         testFileD.create()
 
@@ -145,23 +147,37 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                appFam = "RECO", psetHash = "GIBBERISH",
                                configContent = "MOREGIBBERISH")
         testFileE.setDatasetPath(self.testDatasetB)
-        testFileE.setCustodialSite(custodialSite = custodialSite)
         testFileE.addRun(Run(2, *[45]))
-        testFileE.create()        
+        testFileE.create()
 
         self.testFilesB.append(testFileD)
         self.testFilesB.append(testFileE)
 
-        myThread = threading.currentThread()
-        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+        uploadFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
-        createBlock = uploadFactory(classname = "SetBlockStatus")
+        datasetAction = uploadFactory(classname = "NewDataset")
+        createAction = uploadFactory(classname = "CreateBlocks")
+
+        datasetAction.execute(datasetPath = self.testDatasetA)
+        datasetAction.execute(datasetPath = self.testDatasetB)
 
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
-        createBlock.execute(block = self.blockAName, locations = ["srm-cms.cern.ch"], open_status = 1)
-        createBlock.execute(block = self.blockBName, locations = ["srm-cms.cern.ch"], open_status = 1)
+
+        newBlockA = DBSBufferBlock(name = self.blockAName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
+        newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
+        newBlockA.status = 'Closed'
+
+        newBlockB = DBSBufferBlock(name = self.blockBName,
+                                   location = "srm-cms.cern.ch",
+                                   datasetpath = None)
+        newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
+        newBlockB.status = 'Closed'
+
+        createAction.execute(blocks = [newBlockA, newBlockB])
 
         bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
                                    logger = myThread.logger,
@@ -179,7 +195,15 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         fileStatus.execute(testFileB["lfn"], "LOCAL")
         fileStatus.execute(testFileC["lfn"], "LOCAL")
         fileStatus.execute(testFileD["lfn"], "LOCAL")
-        fileStatus.execute(testFileE["lfn"], "LOCAL")        
+        fileStatus.execute(testFileE["lfn"], "LOCAL")
+
+        associateWorkflow = buffer3Factory(classname = "DBSBufferFiles.AssociateWorkflowToFile")
+        associateWorkflow.execute(testFileA["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileB["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileC["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileD["lfn"], "BogusRequest", "BogusTask")
+        associateWorkflow.execute(testFileE["lfn"], "BogusRequest", "BogusTask")
+
         return
 
     def createConfig(self):
@@ -215,11 +239,11 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         while attempts < 15:
             result = self.phedex.getReplicaInfoForFiles(block = blockName)
 
-            if result.has_key("phedex"):
-                if result["phedex"].has_key("block"):
+            if "phedex" in result:
+                if "block" in result["phedex"]:
                     if len(result["phedex"]["block"]) != 0:
                         return result["phedex"]["block"][0]
-            
+
             attempts += 1
             time.sleep(20)
 
@@ -233,7 +257,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         Stuff the database and have the poller upload files to PhEDEx.  Retrieve
         replica information for the uploaded blocks and verify that all files
-        have been injected.  Also verify that files have been subscribed to MSS.
+        have been injected.
         """
         return
         self.stuffDatabase()
@@ -266,7 +290,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
             goldenLFNs.remove(replicaFile["name"])
 
         assert len(goldenLFNs) == 0, \
-               "Error: Files missing from PhEDEx replica: %s" % goldenLFNs        
+               "Error: Files missing from PhEDEx replica: %s" % goldenLFNs
 
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
@@ -284,19 +308,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         replicaInfo = self.retrieveReplicaInfoForBlock(self.blockBName)
         assert replicaInfo["is_open"] == "y", \
                "Error: block should be open."
-
-        subscriber = PhEDExInjectorSubscriber(self.createConfig())
-        subscriber.setup(parameters = None)
-        subscriber.algorithm(parameters = None)        
-
-        subAResult = self.phedex.subscriptions(dataset = self.testDatasetA)
-        self.assertEqual(len(subAResult["phedex"]["dataset"]), 1,
-                         "Error: Subscription was not made.")
-        datasetASub = subAResult["phedex"]["dataset"][0]
-        self.assertTrue(datasetASub["files"] == "3" and datasetASub["name"] == self.testDatasetA,
-                        "Error: Metadata is incorrect for sub.")
-        self.assertEqual(datasetASub["subscription"][0]["node"], "T1_CH_CERN_MSS",
-                         "Error: Node is wrong.")
         return
 
 
@@ -308,12 +319,10 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         First make sure we properly handle having no custodialSite
         """
 
-        self.stuffDatabase(custodialSite = None)
-
-        poller = PhEDExInjectorPoller(self.createConfig())
+        self.stuffDatabase()
 
         myThread = threading.currentThread()
-        daofactory    = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
+        daofactory = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
         getUninjected = daofactory(classname = "GetUninjectedFiles")
@@ -322,27 +331,6 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
         self.assertEqual(uninjectedFiles.keys(), ['srm-cms.cern.ch'])
 
         return
-
-    def test_CustodialSiteB(self):
-        """
-        _CustodialSiteB_
-
-        Test and make sure that we can handle a real custodial site
-        """
-
-        self.stuffDatabase(custodialSite = 'se.fnal.gov')
-
-        poller = PhEDExInjectorPoller(self.createConfig())
-
-        myThread        = threading.currentThread()
-        daofactory      = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        getUninjected   = daofactory(classname = "GetUninjectedFiles")
-        uninjectedFiles = getUninjected.execute()
-        self.assertEqual(uninjectedFiles.keys(), ['se.fnal.gov'])
-        return
-        
 
 if __name__ == '__main__':
     unittest.main()

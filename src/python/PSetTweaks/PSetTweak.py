@@ -12,11 +12,12 @@ import pickle
 import StringIO
 import imp
 import sys
+from functools import reduce
 
 #py2.6 compatibility
 try:
     import json
-except ImportError, ex:
+except ImportError as ex:
     import simplejson as json
 
 
@@ -203,7 +204,7 @@ class PSetTweak:
         if not paramName.startswith("process"):
             msg = "Invalid Parameter Name: %s\n" % paramName
             msg += "Parameter must start with process"
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return recursiveGetattr(self, paramName)
 
 
@@ -344,7 +345,7 @@ class PSetTweak:
         """
         if format not in ("python", "json", "pickle"):
             msg = "Unsupported Format: %s" % format
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         if format == "python":
             handle = open(filename, 'w')
@@ -380,7 +381,7 @@ class PSetTweak:
 
         if format not in ("python", "json", "pickle"):
             msg = "Unsupported Format: %s" % format
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         if format == "pickle":
             handle = open(filename, 'r')
@@ -425,4 +426,3 @@ def makeTweakFromJSON(jsonDictionary):
     for param, value in jsoniser.parameters.items():
         tweak.addParameter(param , value)
     return tweak
-

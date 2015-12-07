@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ReqMgr Prototype</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+    <script src="$base/js/?f=utils.js&amp;f=ajax_utils.js&amp;f=md5.js"></script>
+    <link rel="stylesheet" href="$base/css/?f=kube.min.css&amp;f=main.css" />
+</head>
+<body class="kubepage">
+
+    <header class="group header">
+        <nav class="navbar navbar-left">
+            <ul>
+            <li><img src="$base/images/cms_logo.jpg" alt="" style="width:30px" ></li>
+            <li><a href="$base/" class="main-menu-item">ReqMgr</a></li>
+            </ul>
+        </nav>
+        <nav class="navbar navbar-right">
+            <strong>User: $user</strong>
+        </nav>
+    </header>
+    <br/>
+
+<div class="main-font">
+    $content
+</div>
+<div id="confirmation"></div>
+
+</body>
+</html>

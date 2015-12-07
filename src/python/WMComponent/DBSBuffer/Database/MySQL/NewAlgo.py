@@ -33,4 +33,4 @@ class NewAlgo(DBFormatter):
             self.dbi.processData(self.sql, binds, conn = conn,
                                  transaction = transaction)
 
-        return 
+        return

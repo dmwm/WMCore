@@ -45,18 +45,18 @@ class MySQLInterface(DBInterface):
 
         Transform as set of bind variables from a list of dictionaries to a list
         of tuples:
-        
+
         b = [ {'bind1':'value1a', 'bind2': 'value2a'},
         {'bind1':'value1b', 'bind2': 'value2b'} ]
-        
+
         Will be transformed into:
-        
-        b = [ ('value1a', 'value2a'), ('value1b', 'value2b')] 
-        
-        Don't need to substitute in the binds as executemany does that 
-        internally. But the sql will also need to be reformatted, such that 
+
+        b = [ ('value1a', 'value2a'), ('value1b', 'value2b')]
+
+        Don't need to substitute in the binds as executemany does that
+        internally. But the sql will also need to be reformatted, such that
         :bind_name becomes %s.
-        
+
         See: http://www.devshed.com/c/a/Python/MySQL-Connectivity-With-Python/5/
         """
         if origBindsList == None:
@@ -76,7 +76,7 @@ class MySQLInterface(DBInterface):
         bindVarNames = origBind.keys()
         bindVarNames.sort(stringLengthCompare)
 
-        bindPositions = {}        
+        bindPositions = {}
         for bindName in bindVarNames:
             searchPosition = 0
 
@@ -86,7 +86,7 @@ class MySQLInterface(DBInterface):
                 if bindPosition == -1:
                     break
 
-                if not bindPositions.has_key(bindPosition):
+                if bindPosition not in bindPositions:
                     bindPositions[bindPosition] = 0
                     bindVarPositionList.append((bindName, bindPosition))
                 searchPosition = bindPosition + 1
@@ -125,14 +125,14 @@ class MySQLInterface(DBInterface):
         """
         s, b = self.substitute(s, b)
         return DBInterface.executebinds(self, s, b, connection, returnCursor)
-    
+
     def executemanybinds(self, s = None, b = None, connection = None,
                          returnCursor = False):
         """
         _executemanybinds_
 
         Execute a SQL statement that has multiple sets of bind variables.
-        Transform the bind variables into the format that MySQL expects.        
+        Transform the bind variables into the format that MySQL expects.
         """
         newsql, binds = self.substitute(s, b)
 

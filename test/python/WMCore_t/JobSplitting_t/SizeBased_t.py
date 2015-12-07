@@ -92,7 +92,7 @@ class SizeBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
 
         return
 
@@ -100,7 +100,7 @@ class SizeBasedTest(unittest.TestCase):
     def testFiles1000(self):
         """
         _testMultipleFiles_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -121,7 +121,7 @@ class SizeBasedTest(unittest.TestCase):
     def testFiles2000(self):
         """
         _testMultipleFiles_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -142,7 +142,7 @@ class SizeBasedTest(unittest.TestCase):
     def testFiles2500(self):
         """
         _testMultipleFiles_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -164,7 +164,7 @@ class SizeBasedTest(unittest.TestCase):
     def testFiles500(self):
         """
         _testMultipleFiles_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """

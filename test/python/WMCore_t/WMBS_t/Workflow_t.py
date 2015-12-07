@@ -6,14 +6,13 @@ Unit tests for the WMBS Workflow class.
 """
 
 import unittest
-import os
 import threading
 
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Fileset import Fileset
 from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
 
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
 
 class WorkflowTest(unittest.TestCase):
@@ -144,7 +143,8 @@ class WorkflowTest(unittest.TestCase):
           Workflow.LoadFromSpecOwner
         """
         testWorkflowA = Workflow(spec = "spec.xml", owner = "Simon",
-                                 name = "wf001", task='Test', wfType="ReReco")
+                                 name = "wf001", task='Test', wfType="ReReco",
+                                 priority = 1000)
         testWorkflowA.create()
 
         testWorkflowB = Workflow(name = "wf001", task='Test')
@@ -155,7 +155,8 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.spec == testWorkflowB.spec) and
                         (testWorkflowA.task == testWorkflowB.task) and
                         (testWorkflowA.wfType == testWorkflowB.wfType) and
-                        (testWorkflowA.owner == testWorkflowB.owner),
+                        (testWorkflowA.owner == testWorkflowB.owner) and
+                        (testWorkflowA.priority == testWorkflowB.priority),
                         "ERROR: Workflow.LoadFromName Failed")
 
         testWorkflowC = Workflow(id = testWorkflowA.id)
@@ -166,7 +167,8 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.spec == testWorkflowC.spec) and
                         (testWorkflowA.task == testWorkflowC.task) and
                         (testWorkflowA.wfType == testWorkflowC.wfType) and
-                        (testWorkflowA.owner == testWorkflowC.owner),
+                        (testWorkflowA.owner == testWorkflowC.owner) and
+                        (testWorkflowA.priority == testWorkflowB.priority),
                         "ERROR: Workflow.LoadFromID Failed")
 
         testWorkflowD = Workflow(spec = "spec.xml", owner = "Simon", task='Test')
@@ -177,9 +179,9 @@ class WorkflowTest(unittest.TestCase):
                         (testWorkflowA.spec == testWorkflowD.spec) and
                         (testWorkflowA.task == testWorkflowD.task) and
                         (testWorkflowA.wfType == testWorkflowD.wfType) and
-                        (testWorkflowA.owner == testWorkflowD.owner),
+                        (testWorkflowA.owner == testWorkflowD.owner) and
+                        (testWorkflowA.priority == testWorkflowB.priority),
                         "ERROR: Workflow.LoadFromSpecOwner Failed")
-
         testWorkflowA.delete()
         return
 
@@ -454,6 +456,85 @@ class WorkflowTest(unittest.TestCase):
         self.assertEqual(len(result), 6)
         return
 
+    def testGetFinishedWorkflows(self):
+        """
+        _testGetFinishedWorkflows_
+
+        Test that we get only those workflows which are finished, that is, workflows where
+        all its subscriptions are finished and all other workflows with the same
+        spec are finished too
+
+        """
+
+        owner = "no-one"
+
+        #Create a bunch of worklows with "different" specs and tasks
+        workflows = []
+        for i in range(0, 100):
+            scaledIndex = i % 10
+            testWorkflow = Workflow(spec = "sp00%i" % scaledIndex,
+                                    owner = owner,
+                                    name = "wf00%i" % scaledIndex,
+                                    task = "task%i" % i)
+            testWorkflow.create()
+            workflows.append(testWorkflow)
+
+        #Everyone will use this fileset
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        #Create subscriptions!
+        subscriptions = []
+        for workflow in workflows:
+            subscription = Subscription(fileset = testFileset,
+                                        workflow = workflow)
+            subscription.create()
+            subscriptions.append(subscription)
+
+        #Check that all workflows are NOT finished
+        myThread = threading.currentThread()
+        daoFactory = DAOFactory(package = "WMCore.WMBS", logger = myThread.logger,
+                                dbinterface = myThread.dbi)
+
+        getFinishedDAO = daoFactory(classname = "Workflow.GetFinishedWorkflows")
+        result = getFinishedDAO.execute()
+        self.assertEquals(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
+
+        #Mark the first 50 subscriptions as finished
+        for idx, sub in enumerate(subscriptions):
+            if idx > 49:
+                break
+            sub.markFinished()
+
+        #No workflow is finished, none of them has all the subscriptions completed
+        result = getFinishedDAO.execute()
+        self.assertEquals(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
+
+        #Now finish all workflows in wf{000-5}
+        for idx, sub in enumerate(subscriptions):
+            if idx < 50 or idx % 10 > 5:
+                continue
+            sub.markFinished()
+
+        #Check the workflows
+        result = getFinishedDAO.execute()
+        self.assertEquals(len(result), 6, "A workflow is incorrectly flagged as finished: %s" % str(result))
+
+        #Check the overall structure of the workflows
+        for wf in result:
+            #Sanity checks on the results
+            # These are very specific checks and depends heavily on the names of task, spec and workflow
+            self.assertEquals(wf[2:], result[wf]['spec'][2:],
+                            "A workflow has the wrong spec-name combination: %s" % str(wf))
+            self.assertTrue(int(wf[2:]) < 6,
+                            "A workflow is incorrectly flagged as finished: %s" % str(wf))
+            self.assertEquals(len(result[wf]['workflows']), 10,
+                              "A workflow has more tasks than it should: %s" % str(result[wf]))
+            for task in result[wf]['workflows']:
+                self.assertEquals(len(result[wf]['workflows'][task]), 1,
+                                  "A workflow has more subscriptions than it should: %s" % str(result[wf]))
+
+        return
 
 
 if __name__ == "__main__":

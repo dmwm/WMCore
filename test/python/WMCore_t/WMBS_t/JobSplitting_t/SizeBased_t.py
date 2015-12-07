@@ -27,7 +27,7 @@ class SizeBasedTest(unittest.TestCase):
 
     Test size based job splitting.
     """
-    
+
     def setUp(self):
         """
         _setUp_
@@ -40,21 +40,21 @@ class SizeBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
-        locationAction.execute(siteName = "site2", seName = "otherse.cern.ch")
-        
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
+        locationAction.execute(siteName = "site2", pnn = "T1_US_FNAL_Disk")
+
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100,
-                           locations = set(["somese.cern.ch"]))
+                           locations = set(["T2_CH_CERN"]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
         self.multipleFileFileset.commit()
@@ -62,7 +62,7 @@ class SizeBasedTest(unittest.TestCase):
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
         newFile = File("/some/file/name", size = 1000, events = 100,
-                       locations = set(["somese.cern.ch"]))
+                       locations = set(["T2_CH_CERN"]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
         self.singleFileFileset.commit()
@@ -72,12 +72,12 @@ class SizeBasedTest(unittest.TestCase):
         self.multipleSiteFileset.create()
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation("somese.cern.ch")
+            newFile.setLocation("T2_CH_CERN")
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         for i in range(5):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.setLocation(["somese.cern.ch","otherse.cern.ch"])
+            newFile.setLocation(["T2_CH_CERN","T1_US_FNAL_Disk"])
             newFile.create()
             self.multipleSiteFileset.addFile(newFile)
         self.multipleSiteFileset.commit()
@@ -109,7 +109,7 @@ class SizeBasedTest(unittest.TestCase):
         Clear out WMBS.
         """
         self.testInit.clearDatabase()
-        return    
+        return
 
     def testExactEvents(self):
         """
@@ -134,7 +134,7 @@ class SizeBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
 
         return
 
@@ -142,7 +142,7 @@ class SizeBasedTest(unittest.TestCase):
     def testMultipleFiles(self):
         """
         _testMultipleFiles_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -163,7 +163,7 @@ class SizeBasedTest(unittest.TestCase):
     def testMultipleFiles2000(self):
         """
         _testMultipleFiles2000_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -184,7 +184,7 @@ class SizeBasedTest(unittest.TestCase):
     def testMultipleFiles2500(self):
         """
         _testMultipleFiles2500_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """
@@ -207,7 +207,7 @@ class SizeBasedTest(unittest.TestCase):
     def testMultipleFiles500(self):
         """
         _testMultipleFiles500_
-        
+
         Tests the mechanism for splitting up multiple files into jobs with
         a variety of different arguments.
         """

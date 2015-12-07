@@ -49,31 +49,31 @@ class CursorLeakTest(unittest.TestCase):
 
         locationAction = daofactory(classname = "Locations.New")
         locationAction.execute(siteName = "se1.cern.ch")
-        locationAction.execute(siteName = "se1.fnal.gov")        
-        
+        locationAction.execute(siteName = "se1.fnal.gov")
+
         return
-          
-    def tearDown(self):        
+
+    def tearDown(self):
         """
         _tearDown_
-        
+
         Drop all the WMBS tables.
         """
         self.testInit.clearDatabase()
-            
+
     def testCursor(self):
         """
         _testCursor_
-        
+
         test the cursor closing is really affected
-        
+
         create 100 files with 5 parents and  loop 100 times.
         If the cursors are exhausted will crash.?
-        
-        TODO: improve for more effective testing. 
+
+        TODO: improve for more effective testing.
 
         """
-        
+
         raise nose.SkipTest
         fileList = []
         parentFile = None
@@ -82,24 +82,24 @@ class CursorLeakTest(unittest.TestCase):
                             checksums = {"cksum": "1"})
             testFile.addRun(Run(1, *[i]))
             testFile.create()
-            
+
             for j in range(5):
                 parentFile = File(lfn = "/this/is/a/lfnP%s" % j, size = 1024,
                                   events = 10, checksums = {"cksum": "1"})
                 parentFile.addRun(Run(1, *[j]))
                 parentFile.create()
                 testFile.addParent(parentFile['lfn'])
-    
+
             fileList.append(testFile)
-            
+
         for i in range(100):
             for file in fileList:
                 file.loadData()
                 file.getAncestors(level = 2)
                 file.getAncestors(level = 2, type = "lfn")
-        
+
         return
-    
+
     def testLotsOfAncestors(self):
         """
         _testLotsOfAncestors_
@@ -122,11 +122,11 @@ class CursorLeakTest(unittest.TestCase):
                 testGParent = File(lfn = makeUUID(), size = 1024, events = 10,
                                    checksums = {"cksum": "1"}, locations = "se1.fnal.gov")
                 testGParent.create()
-                testParent.addParent(testGParent["lfn"])                
+                testParent.addParent(testGParent["lfn"])
 
         assert len(testFileA.getAncestors(level = 2, type = "lfn")) == 1500, \
                "ERROR: Incorrect grand parents returned"
-        
+
         return
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

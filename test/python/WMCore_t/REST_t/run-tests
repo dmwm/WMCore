@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+
+from cherrypy.test.test import CommandLineParser
+import os, sys, glob
+
+dir = os.path.abspath(__file__).rsplit("/", 1)[0]
+tests = [x.rsplit("/", 1)[-1].split(".")[0]
+         for x in glob.glob(dir + "/*_t.py")]
+print "DIR", dir, "TESTS:", tests
+
+clp = CommandLineParser(tests)
+success = clp.run()
+if clp.interactive:
+  print
+  raw_input("hit enter")
+sys.exit(success)

@@ -27,7 +27,7 @@ workload.setEndPolicy('SingleShot')
 production = workload.newTask("Production")
 #WARNING: this is arbitrary task type (wmbs schema only supprot "Processing", "Merge", "Harvest") - maybe add "MCProduction"
 production.setTaskType("Merge")
-production.addProduction(totalevents = 1000)
+production.addProduction(totalEvents = 1000)
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")
@@ -54,13 +54,13 @@ prodCmsswHelper.data.application.configuration.configCacheUrl = "http://whatever
 
 prodCmsswHelper.addOutputModule("writeOutput1", primaryDataset = "Primary",
                                 processedDataset = "Processed1-unmerged",
-                                dataTier = "TIER1")
+                                dataTier = "TIERONE")
 prodCmsswHelper.addOutputModule("writeOutput2", primaryDataset = "Primary",
                                 processedDataset = "Processed2-unmerged",
-                                dataTier = "TIER2")
+                                dataTier = "TIERTWO")
 prodCmsswHelper.addOutputModule("writeOutput3", primaryDataset = "Primary",
                                 processedDataset = "Processed3-unmerged",
-                                dataTier = "TIER3")
+                                dataTier = "TIERTHREE")
 #print prodCmsswHelper.data
 
 

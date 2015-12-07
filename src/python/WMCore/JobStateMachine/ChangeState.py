@@ -8,13 +8,55 @@ Propagate a job from one state to another.
 import time
 import logging
 import traceback
+import re
 
 from WMCore.Database.CMSCouch import CouchServer
-from WMCore.Database.CMSCouch import CouchConflictError
+from WMCore.Database.CMSCouch import CouchNotFoundError, CouchError
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.JobStateMachine.Transitions import Transitions
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.Lexicon import sanitizeURL
+from WMCore.JobStateMachine.SummaryDB import updateSummaryDB
+
+CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
+
+def discardConflictingDocument(couchDbInstance, data, result):
+    """
+    _discardConflictingDocument_
+
+    This should be passed to the queue and commit calls of CMSCouch
+    in order to tell it what to do with conflicting documents.
+    In this case we trash the old one and replace with what we were
+    trying to commit, this is available in the data argument.
+    And the result tells us the id of the conflicting document
+    """
+
+    conflictingId = result["id"]
+
+    try:
+        if not couchDbInstance.documentExists(conflictingId):
+            # It doesn't exist, this is odd
+            # Don't try again
+            return result
+
+        # Get the revision to override
+        originalDocRev = couchDbInstance.document(conflictingId)["_rev"]
+
+        # Look for the data to be commited
+        retval = result
+        for doc in data["docs"]:
+            if doc["_id"] == conflictingId:
+                doc["_rev"] = originalDocRev
+                retval = couchDbInstance.commitOne(doc)
+                break
+
+        return retval
+    except CouchError as ex:
+        logging.error("Couldn't resolve conflict when updating document with id %s" % result["id"])
+        logging.error("Error: %s" % str(ex))
+        return result
+
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -29,26 +71,70 @@ class ChangeState(WMObject, WMConnectionBase):
         else:
             self.dbname = couchDbName
 
+        self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
+        self._connectDatabases()
+
         try:
-            self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
-            self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname)
-            self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname)
-        except Exception, ex:
-            logging.error("Error connecting to couch: %s" % str(ex))
-            self.jobsdatabase = None
-            self.fwjrdatabase = None            
+            self.dashboardReporter = DashboardReporter(config)
+        except Exception as ex:
+            logging.error("Error setting up the \
+-                          dashboard reporter: %s" % str(ex))
+            raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
         self.setCouchDAO = self.daofactory("Jobs.SetCouchID")
         self.incrementRetryDAO = self.daofactory("Jobs.IncrementRetry")
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
+        self.jobTypeDAO = self.daofactory("Jobs.GetType")
+        self.updateLocationDAO = self.daofactory("Jobs.UpdateLocation")
 
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
         return
 
-    def propagate(self, jobs, newstate, oldstate):
+    def _connectDatabases(self):
+        """
+        Try connecting to the couchdbs
+        """
+        if not hasattr(self, 'jobsdatabase') or self.jobsdatabase is None:
+            try:
+                self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
+            except Exception as ex:
+                logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
+                self.jobsdatabase = None
+                return False
+
+        if not hasattr(self, 'fwjrdatabase') or self.fwjrdatabase is None:
+            try:
+                self.fwjrdatabase = self.couchdb.connectDatabase("%s/fwjrs" % self.dbname, size = 250)
+            except Exception as ex:
+                logging.error("Error connecting to couch db '%s/fwjrs': %s" % (self.dbname, str(ex)))
+                self.fwjrdatabase = None
+                return False
+
+        if not hasattr(self, 'jsumdatabase') or self.jsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'jobSummaryDBName')
+            try:
+                self.jsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
+            except Exception as ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+        
+        if not hasattr(self, 'statsumdatabase') or self.statsumdatabase is None:
+            dbname = getattr(self.config.JobStateMachine, 'summaryStatsDBName')
+            try:
+                self.statsumdatabase = self.couchdb.connectDatabase(dbname, size = 250 )
+            except Exception as ex:
+                logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
+                self.jsumdatabase = None
+                return False
+
+        return True
+    
+    def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
+        Report the information to the Dashboard.
         Take a list of job objects (dicts) and the desired state change.
         Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
@@ -61,17 +147,29 @@ class ChangeState(WMObject, WMConnectionBase):
 
         # 1. Is the state transition allowed?
         self.check(newstate, oldstate)
-        # 2. Document the state transition
-        try:
-            self.recordInCouch(jobs, newstate, oldstate)
-        except Exception, ex:
-            logging.error("Error updating job in couch: %s" % str(ex))
-            logging.error(traceback.format_exc())
-            
+
+        # 2. Load workflow/task information into the jobs
+        self.loadExtraJobInformation(jobs)
+        
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
+
+        # 4. Document the state transition in couch
+        try:
+            self.recordInCouch(jobs, newstate, oldstate, updatesummary)
+        except Exception as ex:
+            logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error(traceback.format_exc())
+
+        # 5. Report the job transition to the dashboard
+        try:
+            self.reportToDashboard(jobs, newstate, oldstate)
+        except Exception as ex:
+            logging.error("Error reporting to the dashboard: %s" % str(ex))
+            logging.error(traceback.format_exc())
+
         return
-    
+
     def check(self, newstate, oldstate):
         """
         check that the transition is allowed. return a tuple of the transition
@@ -79,13 +177,13 @@ class ChangeState(WMObject, WMConnectionBase):
         """
         newstate = newstate.lower()
         oldstate = oldstate.lower()
-        
+
         # Check for wrong transitions
         transitions = Transitions()
         assert newstate in transitions[oldstate], \
                "Illegal state transition requested: %s -> %s" % (oldstate, newstate)
 
-    def recordInCouch(self, jobs, newstate, oldstate):
+    def recordInCouch(self, jobs, newstate, oldstate, updatesummary = False):
         """
         _recordInCouch_
 
@@ -93,43 +191,19 @@ class ChangeState(WMObject, WMConnectionBase):
         in couch it will be saved as a seperate document.  If the job has a FWJR
         attached that will be saved as a seperate document.
         """
-        if not self.jobsdatabase or not self.fwjrdatabase:
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
             return
-        
-        jobMap = {}
-        jobIDsToCheck = []
-        jobTasksToCheck = []
-        for job in jobs:
-            jobMap[job["id"]] = job
-            if job["couch_record"] == None:
-                jobIDsToCheck.append(job["id"])
-            if job.get("task", None) == None or job.get("workflow", None) == None:
-                jobTasksToCheck.append(job["id"])
-
-        if len(jobIDsToCheck) > 0:
-            couchIDs = self.getCouchDAO.execute(jobID = jobIDsToCheck,
-                                                conn = self.getDBConn(),
-                                                transaction = self.existingTransaction())
-            for couchID in couchIDs:
-                jobMap[couchID["jobid"]]["couch_record"] = couchID["couch_record"]
-        if len(jobTasksToCheck) > 0:
-            jobTasks = self.workflowTaskDAO.execute(jobIDs = jobTasksToCheck,
-                                                    conn = self.getDBConn(),
-                                                    transaction = self.existingTransaction())
-            for jobTask in jobTasks:
-                jobMap[jobTask["id"]]["task"] = jobTask["task"]
-                jobMap[jobTask["id"]]["workflow"] = jobTask["name"]  
 
         timestamp = int(time.time())
         couchRecordsToUpdate = []
-        
-        for jobID in jobMap.keys():
-            job = jobMap[jobID]
+
+        for job in jobs:
             couchDocID = job.get("couch_record", None)
 
             if newstate == "new":
                 oldstate = "none"
-                
+
             if job.get("site_cms_name", None):
                 if newstate == "executing":
                     jobLocation = job["site_cms_name"]
@@ -137,7 +211,7 @@ class ChangeState(WMObject, WMConnectionBase):
                     jobLocation = "Agent"
             else:
                 jobLocation = "Agent"
-                
+
             if couchDocID == None:
                 jobDocument = {}
                 jobDocument["_id"] = str(job["id"])
@@ -150,7 +224,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["inputfiles"] = []
                 for inputFile in job["input_files"]:
                     docInputFile = inputFile.json()
-                    
+
                     docInputFile["parents"] = []
                     for parent in inputFile["parents"]:
                         docInputFile["parents"].append({"lfn": parent["lfn"]})
@@ -161,7 +235,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                                "newstate": newstate,
                                                "location": jobLocation,
                                                "timestamp": timestamp}}
-                
+
                 jobDocument["jobgroup"] = job["jobgroup"]
                 jobDocument["mask"] = {"FirstEvent": job["mask"]["FirstEvent"],
                                        "LastEvent": job["mask"]["LastEvent"],
@@ -175,7 +249,7 @@ class ChangeState(WMObject, WMConnectionBase):
                     jobDocument['mask']['runAndLumis'] = {}
                     for key in job['mask']['runAndLumis'].keys():
                         jobDocument['mask']['runAndLumis'][str(key)] = job['mask']['runAndLumis'][key]
-                        
+
                 jobDocument["name"] = job["name"]
                 jobDocument["type"] = "job"
                 jobDocument["user"] = job.get("user", None)
@@ -184,8 +258,8 @@ class ChangeState(WMObject, WMConnectionBase):
                 jobDocument["jobType"] = job.get("jobType", "Unknown")
 
                 couchRecordsToUpdate.append({"jobid": job["id"],
-                                             "couchid": jobDocument["_id"]})                
-                self.jobsdatabase.queue(jobDocument)
+                                             "couchid": jobDocument["_id"]})
+                self.jobsdatabase.queue(jobDocument, callback = discardConflictingDocument)
             else:
                 # We send a PUT request to the stateTransition update handler.
                 # Couch expects the parameters to be passed as arguments to in
@@ -200,7 +274,30 @@ class ChangeState(WMObject, WMConnectionBase):
                                                                                     timestamp)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
 
+            # updating the status of the summary doc only when it is explicitely requested
+            # doc is already in couch
+            if updatesummary:
+                jobSummaryId = job["name"]
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStatsAgent/_update/jobSummaryState/" + jobSummaryId
+                # map retrydone state to jobfailed state for monitoring
+                if newstate == "retrydone":
+                    monitorState = "jobfailed"
+                else:
+                    monitorState = newstate
+                updateUri += "?newstate=%s&timestamp=%s" % (monitorState, timestamp)
+                self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                logging.debug("Updated job summary status for job %s" % jobSummaryId)
+                
+                updateUri = "/" + self.jsumdatabase.name + "/_design/WMStatsAgent/_update/jobStateTransition/" + jobSummaryId
+                updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
+                                                                                    monitorState,
+                                                                                    job["location"],
+                                                                                    timestamp)
+                self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
+                logging.debug("Updated job summary state history for job %s" % jobSummaryId)
+
             if job.get("fwjr", None):
+
                 # If there are too many input files, strip them out
                 # of the FWJR, as they should already
                 # be in the database
@@ -211,21 +308,106 @@ class ChangeState(WMObject, WMConnectionBase):
                 except:
                     logging.error("Error while trying to strip input files from FWJR.  Ignoring.")
                     pass
+
+                # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "retrycount": job["retry_count"],
                                 "fwjr": job["fwjr"].__to_json__(None),
                                 "type": "fwjr"}
-                self.fwjrdatabase.queue(fwjrDocument, timestamp = True)
+                self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
+                updateSummaryDB(self.statsumdatabase, job)
+
+                #TODO: can add config switch to swich on and off
+                # if self.config.JobSateMachine.propagateSuccessJobs or (job["retry_count"] > 0) or (newstate != 'success'):
+                if (job["retry_count"] > 0) or (newstate != 'success'):
+                    jobSummaryId = job["name"]
+                    # building a summary of fwjr
+                    logging.debug("Pushing job summary for job %s" % jobSummaryId)
+                    errmsgs = {}
+                    inputs = []
+                    if "steps" in fwjrDocument["fwjr"]:
+                        for step in fwjrDocument["fwjr"]["steps"]:
+                            if "errors" in fwjrDocument["fwjr"]["steps"][step]:
+                                errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
+                            if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
+                                inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
+    
+                    outputs = []
+                    outputDataset = None
+                    for singlestep in job["fwjr"].listSteps():
+                        for singlefile in job["fwjr"].getAllFilesFromStep(step=singlestep):
+                            if singlefile:
+                                outputs.append({'type': 'output' if CMSSTEP.match(singlestep) else singlefile.get('module_label', None),
+                                                'lfn': singlefile.get('lfn', None),
+                                                'location': list(singlefile.get('locations', set([]))) if len(singlefile.get('locations', set([]))) > 1
+                                                                                                       else singlefile['locations'].pop(),
+                                                'checksums': singlefile.get('checksums', {}),
+                                                'size': singlefile.get('size', None) })
+                                #it should have one output dataset for all the files
+                                outputDataset = singlefile.get('dataset', None) if not outputDataset else outputDataset
+                    inputFiles = []
+                    for inputFileStruct in job["fwjr"].getAllInputFiles():
+                        # check if inputFileSummary needs to be extended
+                        inputFileSummary = {}
+                        inputFileSummary["lfn"] = inputFileStruct["lfn"]
+                        inputFileSummary["input_type"] = inputFileStruct["input_type"]
+                        inputFiles.append(inputFileSummary)
+                    
+                    # Don't record intermediate jobfailed status in the jobsummary
+                    # change to jobcooloff which will be overwritten by error handler anyway
+                    if (job["retry_count"] > 0) and (newstate == 'jobfailed'):
+                        summarystate = 'jobcooloff'
+                    else:
+                        summarystate = newstate
+                           
+                    jobSummary = {"_id": jobSummaryId,
+                                  "wmbsid": job["id"],
+                                  "type": "jobsummary",
+                                  "retrycount": job["retry_count"],
+                                  "workflow": job["workflow"],
+                                  "task": job["task"],
+                                  "jobtype": job["jobType"],
+                                  "state": summarystate,
+                                  "site": job.get("location", None),
+                                  "cms_location": job["fwjr"].getSiteName(),
+                                  "exitcode": job["fwjr"].getExitCode(),
+                                  "errors": errmsgs,
+                                  "lumis": inputs,
+                                  "outputdataset": outputDataset,
+                                  "inputfiles": inputFiles,
+                                  "acdc_url": "%s/%s" % (sanitizeURL(self.config.ACDC.couchurl)['url'], self.config.ACDC.database),
+                                  "agent_name": self.config.Agent.hostName,
+                                  "output": outputs }
+                    if couchDocID is not None:
+                        try:
+                            currentJobDoc = self.jsumdatabase.document(id = jobSummaryId)
+                            jobSummary['_rev'] = currentJobDoc['_rev']
+                            jobSummary['state_history'] = currentJobDoc.get('state_history', [])
+                            # record final status transition
+                            if newstate == 'success':
+                                finalStateDict = {'oldstate': oldstate,
+                                                  'newstate': newstate,
+                                                  'location': job["location"],
+                                                  'timestamp': timestamp}
+                                jobSummary['state_history'].append(finalStateDict)
+                                
+                            noEmptyList = ["inputfiles", "lumis"]
+                            for prop in noEmptyList:
+                                jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
+                        except CouchNotFoundError:
+                            pass
+                    self.jsumdatabase.queue(jobSummary, timestamp = True)
 
         if len(couchRecordsToUpdate) > 0:
             self.setCouchDAO.execute(bulkList = couchRecordsToUpdate,
                                      conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
-            
-        self.jobsdatabase.commit()
-        self.fwjrdatabase.commit()        
+
+        self.jobsdatabase.commit(callback = discardConflictingDocument)
+        self.fwjrdatabase.commit(callback = discardConflictingDocument)
+        self.jsumdatabase.commit()
         return
 
     def persist(self, jobs, newstate, oldstate):
@@ -234,87 +416,151 @@ class ChangeState(WMObject, WMConnectionBase):
 
         Update the job state in the database.
         """
-        if oldstate == "submitcooloff" or oldstate == "jobcooloff" or oldstate == "createcooloff" :
-            self.incrementRetryDAO.execute(jobs,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+        
         if newstate == "killed":
             self.incrementRetryDAO.execute(jobs, increment = 99999,
+                                           conn = self.getDBConn(),
+                                           transaction = self.existingTransaction())
+        elif oldstate == "submitcooloff" or oldstate == "jobcooloff" or oldstate == "createcooloff" :
+            self.incrementRetryDAO.execute(jobs,
                                            conn = self.getDBConn(),
                                            transaction = self.existingTransaction())
         for job in jobs:
             job['state'] = newstate
             job['oldstate'] = oldstate
-            
+
         dao = self.daofactory(classname = "Jobs.ChangeState")
         dao.execute(jobs, conn = self.getDBConn(),
                     transaction = self.existingTransaction())
 
-    def listTransitionsForDashboard(self):
+    def reportToDashboard(self, jobs, newstate, oldstate):
         """
-        _listTransitionsForDashboard_
+        _reportToDashboard_
 
-        List information about jobs that have made transitions that need to be
-        broadcast to bashboard.  This will return a list of dictionaries with
-        the following keys:
-          - name
-          - retryCount
-          - requestName
-          - newState
-          - oldState
-          - user
-          - group
-          - taskType
-          - jobType
-          - performance
+        Report job information to the dashboard, completes the job dictionaries
+        with any additional information needed
         """
-        updateBase = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/dashboardReporting/"
-        viewResults = self.jobsdatabase.loadView("JobDump", "jobsToReport")
 
-        jobsToReport = []
-        for viewResult in viewResults["rows"]:
-            jobReport = {"performance": {},
-                         "exitCode": 0}
-            jobReport.update(viewResult["value"])
-
-            # Executing jobs don't require FWJR data, since they shouldn't
-            # have any yet
-            if jobReport.get('newState', None) == 'executing':
-                jobsToReport.append(jobReport)
-            # Jobs that have failed directly do so due to timeout.  Their FWJRs
-            # cannot be trusted in the first place
-            elif jobReport.get('newState', None) == 'jobfailed':
-                jobReport['exitCode'] = 99900
-                jobsToReport.append(jobReport)
+        #If the new state is created it possible came from 3 locations:
+        #JobCreator in that case it comes with all the needed info
+        #ErrorHandler comes with the standard information of a WMBSJob
+        #RetryManager comes with the standard information of a WMBSJob
+        #Unpause script comes with the standard information of a WMBSJob
+        #For those last 3 cases we need to fill the gaps
+        if newstate == 'created':
+            incrementRetry = True if 'cooloff' in oldstate else False
+            self.completeCreatedJobsInformation(jobs, incrementRetry)
+            self.dashboardReporter.handleCreated(jobs)
+        #If the new state is executing that was done only by the JobSubmitter,
+        #it sends jobs with select information, nevertheless is enough
+        elif newstate == 'executing':
+            statusMessage = 'Job was successfuly submitted'
+            self.dashboardReporter.handleJobStatusChange(jobs, 'submitted',
+                                                         statusMessage)
+        #If the new state is success, then the JobAccountant sent the jobs.
+        #Jobs come with all the standard information of a WMBSJob plus FWJR
+        elif newstate == 'success':
+            statusMessage = 'Job has completed successfully'
+            self.dashboardReporter.handleJobStatusChange(jobs, 'succeeded',
+                                                         statusMessage)
+        elif newstate == 'jobfailed':
+            #If it failed after being in complete state, then  the JobAccountant
+            #sent the jobs, these come with all the standard information of a WMBSJob
+            #plus FWJR
+            if oldstate == 'complete':
+                statusMessage = 'Job failed at the site'
+            #If it failed while executing then it timed out in BossAir
+            #The JobTracker should sent the jobs with the required information
+            elif oldstate == 'executing':
+                statusMessage = 'Job timed out in the agent'
+            self.dashboardReporter.handleJobStatusChange(jobs, 'failed',
+                                                        statusMessage)
+        #In this case either a paused job was killed or the workqueue is killing
+        #a workflow, in both cases a WMBSJob with all the info should come
+        elif newstate == 'killed':
+            if oldstate == 'jobpaused':
+                statusMessage = 'A paused job was killed, maybe it is beyond repair'
             else:
-                # Otherwise we actually have to load something out of the DB
-                fwjrResults = self.fwjrdatabase.loadView("FWJRDump", "jobsToReport",
-                                                         options = {"startkey": [jobReport["id"], jobReport["retryCount"], 0],
-                                                                    "endkey": [jobReport["id"], jobReport["retryCount"], {}]})
+                statusMessage = 'The whole workflow is being killed'
+            self.dashboardReporter.handleJobStatusChange(jobs, 'killed',
+                                                         statusMessage)
 
-                errorTime = None
-                exitCode = 0
-                for row in fwjrResults["rows"]:
-                    jobReport["performance"][row["value"][0]] = row["value"][2]
-                    
-                    errors = row["value"][3]
-                    if len(errors) > 0:
-                        if errorTime == None or row["value"][1] < errorTime:
-                            erorrTime = row["value"][1]
-                            exitCode = errors[0]["exitCode"]
+    def loadExtraJobInformation(self, jobs):
+        #This is needed for both couch and dashboard
+        jobIDsToCheck = []
+        jobTasksToCheck = []
+        #This is for mapping ids to the position in the list
+        jobMap = {}
+        for idx, job in enumerate(jobs):
+            if job["couch_record"] == None:
+                jobIDsToCheck.append(job["id"])
+            if job.get("task", None) == None or job.get("workflow", None) == None \
+                or job.get("taskType", None) == None or job.get("jobType", None) == None:
+                jobTasksToCheck.append(job["id"])
+            jobMap[job["id"]] = idx
 
-                jobReport["exitCode"] = exitCode
-                del jobReport["index"]
-                del jobReport["id"]
-                jobsToReport.append(jobReport)
+        if len(jobIDsToCheck) > 0:
+            couchIDs = self.getCouchDAO.execute(jobID = jobIDsToCheck,
+                                                conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
+            for couchID in couchIDs:
+                idx = jobMap[couchID["jobid"]]
+                jobs[idx]["couch_record"] = couchID["couch_record"]
+        if len(jobTasksToCheck) > 0:
+            jobTasks = self.workflowTaskDAO.execute(jobIDs = jobTasksToCheck,
+                                                    conn = self.getDBConn(),
+                                                    transaction = self.existingTransaction())
+            for jobTask in jobTasks:
+                idx = jobMap[jobTask["id"]]
+                jobs[idx]["task"] = jobTask["task"]
+                jobs[idx]["workflow"] = jobTask["name"]
+                jobs[idx]["taskType"] = jobTask["type"]
+                jobs[idx]["jobType"]  = jobTask["subtype"]
 
-            updateUri = updateBase + str(viewResult["value"]["id"])
-            updateUri += "?index=%s" % (viewResult["value"]["index"])
-            try:
+    def completeCreatedJobsInformation(self, jobs, incrementRetry = False):
+        for job in jobs:
+            #It there's no jobID in the mask then it's not loaded
+            if "jobID" not in job["mask"]:
+                #Make sure the daofactory was not stripped
+                if getattr(job["mask"], "daofactory", None):
+                    job["mask"].load(jobID = job["id"])
+            #If the mask is event based, then we have info to report
+            if job["mask"]["LastEvent"] != None and \
+               job["mask"]["FirstEvent"] != None and job["mask"]['inclusivemask']:
+                job["nEventsToProc"] = int(job["mask"]["LastEvent"] -
+                                            job["mask"]["FirstEvent"])
+            #Increment retry when commanded
+            if incrementRetry:
+                job["retry_count"] += 1
+
+    def recordLocationChange(self, jobs):
+        """
+        _recordLocationChange_
+
+        Record a location change in couch and WMBS,
+        this expects a list of dictionaries with
+        jobid and location keys which represent
+        the job id in WMBS and new location respectively.
+        """
+        if not self._connectDatabases():
+            logging.error('Databases not connected properly')
+            return
+
+        # First update safely in WMBS
+        self.updateLocationDAO.execute(jobs, conn = self.getDBConn(),
+                                       transaction = self.existingTransaction())
+        # Now try couch, this can fail and we don't require it to succeed
+        try:
+            jobIDs = [x['jobid'] for x in jobs]
+            couchIDs = self.getCouchDAO.execute(jobIDs, conn = self.getDBConn(),
+                                                transaction = self.existingTransaction())
+            locationCache = dict((x['jobid'], x['location']) for x in jobs)
+            for entry in couchIDs:
+                couchRecord = entry['couch_record']
+                location = locationCache[entry['jobid']]
+                updateUri = "/" + self.jobsdatabase.name + "/_design/JobDump/_update/locationTransition/" + couchRecord
+                updateUri += "?location=%s" % (location)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
-            except CouchConflictError, ex:
-                # The document has been updated under our feet, ignore the error and we'll
-                # update it on the next polling cycle.
-                pass
-            
-        return jobsToReport
+        except Exception as ex:
+            logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error(traceback.format_exc())

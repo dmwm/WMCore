@@ -13,10 +13,11 @@ import imp
 import socket
 import traceback
 import os
+from urlparse import urlparse
 
 from WMCore.Configuration import saveConfigurationFile
 from WMCore.Configuration import Configuration
-from WMCore.Lexicon import sanitizeURL
+from WMCore.Lexicon import sanitizeURL, splitCouchServiceURL
 
 help_message = '''
 The help message goes here.
@@ -30,9 +31,9 @@ class Usage(Exception):
 def importConfigTemplate(filename):
     """
     _importConfigTemplate_
-    
+
     Given filename, load it and grab the configuration object from it
-    
+
     """
     mod = imp.load_module("wmcore_config_input", open(filename, 'r'), filename, (".py", "r", imp.PY_SOURCE)   )
     config = getattr(mod, 'config', None)
@@ -44,31 +45,29 @@ def importConfigTemplate(filename):
 def saveConfiguration(configObject, outputPath):
     """
     _saveConfiguration_
-    
+
     Save the configuration to the output path provided
-    
+
     """
     saveConfigurationFile(configObject, outputPath)
     os.chmod(outputPath, 0600)
 
-    
+
 def modifyConfiguration(config, **args):
     """
     _modifyConfiguration_
-    
+
     Given the dictionary of key: value, look up the entry matching the key in the configuration
     and set it to that value in the config
-    
+
     """
     mapping = {
         "coredb_url" : [("CoreDatabase","connectUrl") ],
         "mysql_url" : [("CoreDatabase","connectUrl") ],
-        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl"),
-                       
-                       ],
+        "couch_url" : [("JobStateMachine", "couchurl"), ("ACDC", "couchurl"), ("WorkQueueManager", "couchurl")],
         "working_dir" : [("General", "workDir")],
     }
-    
+
     for k,v in args.items():
         parameters = mapping.get(k, [])
         for p in parameters:
@@ -81,14 +80,17 @@ def modifyConfiguration(config, **args):
 
         if component == "JobCreator":
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
-    
+
+        if component == "JobAccountant":
+            compCfg.specDir = "%s/%s/SpecCache" % (args['working_dir'], component)
+
     localhost = socket.gethostname()
     for webapp in config.listWebapps_():
         compCfg = getattr(config, webapp)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], webapp)
         # Webtool REST service host location
         compCfg.Webtools.host = localhost
-    
+
     # hostname locations
     config.Agent.hostName = localhost
 
@@ -99,40 +101,103 @@ def modifyConfiguration(config, **args):
         if hasattr(config,"AlertGenerator"):
             # configuration for MySQL server CPU monitor: mysqlCPUPoller (percentage values)
             config.AlertGenerator.section_("mysqlCPUPoller")
-            config.AlertGenerator.mysqlCPUPoller.soft = 40 # [percent]
-            config.AlertGenerator.mysqlCPUPoller.critical = 60 # [percent]
-            config.AlertGenerator.mysqlCPUPoller.pollInterval = 10 # [second]
+            config.AlertGenerator.mysqlCPUPoller.soft = 200 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.critical = 250 # [percent]
+            config.AlertGenerator.mysqlCPUPoller.pollInterval = 60 # [second]
             # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlCPUPoller.period = 30 # [second]
+            config.AlertGenerator.mysqlCPUPoller.period = 300 # [second]
             # configuration for MySQL memory monitor: mysqlMemPoller (percentage values)
             config.AlertGenerator.section_("mysqlMemPoller")
-            config.AlertGenerator.mysqlMemPoller.soft = 40 # [percent]
-            config.AlertGenerator.mysqlMemPoller.critical = 60 # [percent]
-            config.AlertGenerator.mysqlMemPoller.pollInterval = 10 # [second]
+            config.AlertGenerator.mysqlMemPoller.soft = 20 # [percent]
+            config.AlertGenerator.mysqlMemPoller.critical = 25 # [percent]
+            config.AlertGenerator.mysqlMemPoller.pollInterval = 60 # [second]
             # period during which measurements are collected before evaluating for possible alert triggering
-            config.AlertGenerator.mysqlMemPoller.period = 30 # [second]
+            config.AlertGenerator.mysqlMemPoller.period = 300 # [second]
             # configuration for MySQL database size: mysqlDbSizePoller (gigabytes values)
             config.AlertGenerator.section_("mysqlDbSizePoller")
-            config.AlertGenerator.mysqlDbSizePoller.soft = 1 # GB
-            config.AlertGenerator.mysqlDbSizePoller.critical = 2 # GB
-            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 10 # [second]
+            config.AlertGenerator.mysqlDbSizePoller.soft = 20 # GB
+            config.AlertGenerator.mysqlDbSizePoller.critical = 25 # GB
+            config.AlertGenerator.mysqlDbSizePoller.pollInterval = 600 # [second]
 
+    if hasattr(config, "General"):
+        config.General.central_logdb_url = args["central_logdb_url"]
+            
     if hasattr(config,"WorkloadSummary"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
-        config.WorkloadSummary.couchurl = args["couch_url"]
+        config.WorkloadSummary.couchurl = splited[0]
         config.WorkloadSummary.database = splited[1]
-        
+
     if hasattr(config,"TaskArchiver"):
         splited = args["workload_summary_url"].strip().rstrip('/').rsplit('/', 1)
         config.TaskArchiver.workloadSummaryCouchURL = splited[0]
         config.TaskArchiver.workloadSummaryCouchDBName = splited[1]
+        config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
+        config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+        config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        config.TaskArchiver.centralWMStatsURL = args["wmstats_url"]
+        config.TaskArchiver.dqmUrl = args["dqm_url"]
+        # t0 agent doesn't have reqmgr_url
+        if "reqmgr_url" in args:
+            config.TaskArchiver.ReqMgrServiceURL = args["reqmgr_url"]
+        if "reqmgr2_url" in args:
+            config.TaskArchiver.ReqMgr2ServiceURL = args["reqmgr2_url"]
+
+    if hasattr(config, "ACDC"):
+        # t0 agent may not have acdc_url
+        if "acdc_url" in args:
+            config.ACDC.couchurl, config.ACDC.database = splitCouchServiceURL(args["acdc_url"])
+
+    if hasattr(config, "JobUpdater"):
+        # t0 agent doesn't have reqmgr_url
+        if "reqmgr2_url" in args:
+            config.JobUpdater.reqMgr2Url = args["reqmgr2_url"]
+
+    if hasattr(config, "DBS3Upload"):
+        config.DBS3Upload.dbsUrl = args["dbs3_url"]
+
+    if hasattr(config, "PhEDExInjector"):
+        config.PhEDExInjector.phedexurl = args["phedex_url"]
 
     if hasattr(config,"AsyncTransfer"):
         config.CoreDatabase.connectUrl = '%s/asynctransfer_agent' % args["couch_url"]
         config.AsyncTransfer.couch_instance = args["couch_url"]
         config.AsyncTransfer.data_source = args["couch_url"]
         config.AsyncTransfer.serverDN = args["host_dn"]
-        config.AsyncTransfer.couch_statinstance = args["couch_url"]
+        config.AsyncTransfer.couch_user_monitoring_instance = args["couch_url"]
+        config.AsyncTransfer.opsProxy = args["ops_proxy"]
+        config.AsyncTransfer.config_couch_instance = args["couch_url"]
+        config.AsyncTransfer.cache_area = args["ufc_service_url"]
+
+    if hasattr(config,"Analytics"):
+        config.Analytics.couch_user_monitoring_instance = args["couch_url"]
+        config.Analytics.amq_auth_file = args["amq_auth_file"]
+        config.Analytics.couch_instance = args["couch_url"]
+        config.Analytics.config_couch_instance = args["couch_url"]
+
+    if hasattr(config,"FilesCleaner"):
+        config.FilesCleaner.couch_instance = args["couch_url"]
+        config.FilesCleaner.config_couch_instance = args["couch_url"]
+        config.FilesCleaner.opsProxy = args["ops_proxy"]
+
+    if hasattr(config,"Statistics"):
+        config.Statistics.couch_statinstance = args["couch_url"]
+        config.Statistics.couch_instance = args["couch_url"]
+        config.Statistics.config_couch_instance = args["couch_url"]
+
+    if hasattr(config,"DBSPublisher"):
+        config.DBSPublisher.couch_instance = args["couch_url"]
+        config.DBSPublisher.serverDN = args["host_dn"]
+        config.DBSPublisher.cache_area = args["ufc_service_url"]
+        config.DBSPublisher.opsProxy = args["ops_proxy"]
+        config.DBSPublisher.config_couch_instance = args["couch_url"]
+
+    if hasattr(config,"RetryManager"):
+        # only needed for CRAB instance
+        if "couch_url" in args:
+            config.RetryManager.couch_instance = args["couch_url"]
+        # only needed for CRAB instance
+        if "ops_proxy" in args:
+            config.RetryManager.opsProxy = args["ops_proxy"]
 
     if hasattr(config,"CRABInterface"):
         config.CRABInterface.Webtools.host = args["cs_hostname"]
@@ -148,7 +213,7 @@ def modifyConfiguration(config, **args):
         config.CRABInterface.clientMapping = args["client_mapping"]
 
     if hasattr(config,"UserFileCache"):
-        config.UserFileCache.Webtools.host = args["ufc_hostname"]  
+        config.UserFileCache.Webtools.host = args["ufc_hostname"]
         config.UserFileCache.Webtools.port = int(args["ufc_port"])
         config.UserFileCache.views.active.userfilecache.serviceURL = args["ufc_service_url"]
         config.UserFileCache.userCacheDir = args["ufc_cachedir"]
@@ -157,7 +222,6 @@ def modifyConfiguration(config, **args):
         config.reqmgr.Webtools.host = args["reqmgr_hostname"]
         config.reqmgr.Webtools.port = int(args["reqmgr_port"])
         config.reqmgr.couchUrl = args["couch_url"]
-        config.reqmgr.configDBName = "wmagent_configcache"
         config.reqmgr.views.active.create.requestor = "cmsdataops"
         config.reqmgr.admin = "gutsche@fnal.gov"
         config.reqmgr.views.active.reqMgr.model.couchUrl = args["couch_url"]
@@ -168,13 +232,13 @@ def modifyConfiguration(config, **args):
                                                            localhost, config.reqmgr.Webtools.port)
         config.reqmgr.views.active.monitorSvc.workloadSummaryCouchURL = sanitizeURL(args["workload_summary_url"])['url']
 
-    # hating having to add this when WMAgentConfig.py has everything set up ... 
+    # hating having to add this when WMAgentConfig.py has everything set up ...
     if  hasattr(config, "AlertProcessor"):
         if hasattr(config.AlertProcessor.critical.sinks, "couch"):
             config.AlertProcessor.critical.sinks.couch.url = args["couch_url"]
         if hasattr(config.AlertProcessor.soft.sinks, "couch"):
             config.AlertProcessor.soft.sinks.couch.url = args["couch_url"]
-        # the AlertsCollector database has be created beforehand (and couchapp pushed), this
+        # the AlertCollector database has be created beforehand (and couchapp pushed), this
         # location will change in the future , as described on the ticket 1640
         if hasattr(config.AlertProcessor.critical.sinks, "rest"):
             config.AlertProcessor.critical.sinks.rest.uri = args["couch_url"] + "/" + "alertscollector"
@@ -183,7 +247,11 @@ def modifyConfiguration(config, **args):
         if hasattr(config.AlertProcessor.critical.sinks, "file"):
             config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkCritical.json")
         if hasattr(config.AlertProcessor.soft.sinks, "file"):
-            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")            
+            config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(args['working_dir'], "AlertsFileSinkSoft.json")
+        if hasattr(config.AlertProcessor.critical.sinks, "email"):
+            config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
+        if hasattr(config.AlertProcessor.soft.sinks, "email"):
+            config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
     if  hasattr(config, "AlertGenerator"):
         if hasattr(config.AlertGenerator, "couchDbSizePoller"):
             config.AlertGenerator.couchDbSizePoller.couchURL = args["couch_url"]
@@ -193,22 +261,50 @@ def modifyConfiguration(config, **args):
             config.AlertGenerator.couchMemPoller.couchURL = args["couch_url"]
         if hasattr(config.AlertGenerator, "couchErrorsPoller"):
             config.AlertGenerator.couchErrorsPoller.couchURL = args["couch_url"]
-                        
-    # custom global workqueue
+            
+    # custom test global workqueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'GlobalQueue':
+        urlObj = urlparse(config.WorkQueueManager.couchurl)
+        if urlObj.port:
+            couchPort = ":%s" % urlObj.port
+        else:
+            couchPort = ""
+        config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
+                                                    config.Agent.hostName, couchPort)
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
-        config.WorkQueueManager.reqMgrConfig['endpoint'] = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
+        reqMgrSvc = "http://%s:%s/reqmgr/reqMgr/" % (args["reqmgr_hostname"], args["reqmgr_port"])
+        config.WorkQueueManager.reqMgrConfig['endpoint'] = reqMgrSvc
+        config.WorkQueueManager.queueParams['WMStatsCouchUrl'] = "%s/%s" % (config.WorkQueueManager.couchurl.rstrip(), config.WorkQueueManager.wmstatDBName)
+        config.WorkQueueManager.queueParams['ReqMgrServiceURL'] = args["reqmgr2_url"]
+        config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
+        config.WorkQueueManager.reqMgrConfig['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.reqMgrConfig['log_reporter'] = "TEST_global_queue"
+        config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.queueParams['log_reporter'] = "TEST_global_queue"
 
     # Custom Local WorkQueue
     if hasattr(config, "WorkQueueManager") and getattr(config.WorkQueueManager, "level", None) == 'LocalQueue':
+        # set QueueURL param - this need to be unique between local WQs
+        urlObj = urlparse(config.WorkQueueManager.couchurl)
+        if urlObj.port:
+            couchPort = ":%s" % urlObj.port
+        else:
+            couchPort = ""
+        config.WorkQueueManager.queueParams["QueueURL"] = "%s://%s%s" % (urlObj.scheme, 
+                                                    config.Agent.hostName, couchPort)
+        
         if args.get("global_workqueue_url", None):
             config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = args["global_workqueue_url"]
 
         if args.get('workqueue_db_name'):
             config.WorkQueueManager.dbname = args['workqueue_db_name']
             config.WorkQueueManager.inboxDatabase = config.WorkQueueManager.dbname + '_inbox'
+        
+        config.WorkQueueManager.queueParams['RequestDBURL'] = args["requestcouch_url"]
+        config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
+        config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
 
     # custom wmbs service
     if hasattr(config, "WMBSService"):
@@ -216,31 +312,46 @@ def modifyConfiguration(config, **args):
             config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
         config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
         config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
-    
-    return config
 
+    # custom AnalyticsDataCollector
+    if hasattr(config, "AnalyticsDataCollector"):
+        config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
+        config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+        config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+        config.AnalyticsDataCollector.centralWMStatsURL = args["wmstats_url"]
+        config.AnalyticsDataCollector.centralRequestDBURL = args["requestcouch_url"]
+        config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
+        
+    # custom AgentStatusWatcher
+    if hasattr(config, "AgentStatusWatcher"):
+        config.AgentStatusWatcher.centralWMStatsURL = args["wmstats_url"]
+        config.AgentStatusWatcher.dashboard = args["dashboard_url"]
+
+    return config
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    
+
     inputFile = None
     outputFile = None
     parameters = {}
 
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "h", 
+            opts, args = getopt.getopt(argv[1:], "h",
             ["help", "input=", "output=", "mysql_socket=", "mysql_url=", "couch_url=",
              "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
-             "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",  
-             "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=", 
+             "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
+             "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
              "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
-             "workload_summary_url=", "coredb_url="])
+             "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=", "reqmgr_url=", "reqmgr2_url=",
+             "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=", "dashboard_url=",
+             "requestcouch_url=", "central_logdb_url="])
 
         except getopt.error, msg:
             raise Usage(msg)
-    
+
         # option processing
         for option, value in opts:
             if option in ("-h", "--help"):
@@ -252,14 +363,17 @@ def main(argv=None):
             if option in ('--mysql_socket', '--mysql_url', '--coredb_url', '--couch_url',
                           '--working_dir', '--reqmgr_hostname', '--reqmgr_port',
                           '--global_workqueue_url', '--workqueue_db_name',
-                          '--cs_hostname', '--cs_port', '--host_dn', '--couch_url', 
+                          '--cs_hostname', '--cs_port', '--host_dn', '--couch_url',
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
-                          '--client_mapping', '--wmbs_service_port', '--workload_summary_url'):
+                          '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
+                          '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
+                          '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
+                          '--requestcouch_url', '--central_logdb_url'):
 
                 parameters[option[2:]] = value
-    
-    
+
+
     except Usage, err:
         print >> sys.stderr, sys.argv[0].split("/")[-1] + ": " + str(err.msg)
         print >> sys.stderr, "\t for help use --help"
@@ -285,9 +399,9 @@ def main(argv=None):
         msg = "Error saving output configuration file:\n %s\n" % outputFile
         msg += str(ex)
         print >> sys.stderr, msg
-        return 5 
+        return 5
 
 if __name__ == "__main__":
     sys.exit(main())
-    
-  
+
+

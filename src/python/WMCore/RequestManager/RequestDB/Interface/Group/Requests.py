@@ -27,13 +27,9 @@ def listRequests(groupName):
     groupId = getGroupId.execute(groupName)
     if groupId == None:
         msg = "Group: %s not registered with Request Manager" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     listReqs = factory(classname = "Group.ListRequests")
 
     result = listReqs.execute(groupId)
     return result
-
-
-
-

@@ -12,10 +12,10 @@ import os.path
 from WMCore.Storage.FileManager import StageInMgr,StageOutMgr,DeleteMgr,FileManager
 import WMCore.Storage.StageOutError
 class FileManagerTest(unittest.TestCase):
-    
+
     def setUp(self):
         self.testDir = None
-        
+
     def tearDown(self):
         if (self.testDir != None):
             try:
@@ -23,9 +23,9 @@ class FileManagerTest(unittest.TestCase):
             except:
                 # meh, if it fails, I guess something weird happened
                 pass
-    
+
     def testStageFile(self):
-        pass       
+        pass
     #def stageFile(self, fileToStage, stageOut = True):
     def testDelete(self):
         pass
@@ -36,7 +36,7 @@ class FileManagerTest(unittest.TestCase):
     def testInitialiseOverride(self):
     # def initialiseOverride(self):
         pass
-   
+
 
     def testGetTransferDetails(self):
         pass
@@ -45,15 +45,15 @@ class FileManagerTest(unittest.TestCase):
         pass
     def testStageOut(self):
         pass
-    
-    #def stageIn(self,fileToStage):    
+
+    #def stageIn(self,fileToStage):
     #def stageOut(self,fileToStage):
 
     def test_doTransfer(self):
-        pass   
+        pass
     #def _doTransfer(self, currentMethod, methodCounter, lfn, pfn, stageOut):
-    
-    
+
+
 
     def testCleanSuccessfulStageOuts(self):
         pass
@@ -66,25 +66,29 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': 'file:///etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
                                 'command'    : 'test-win',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'phedex-node' : 'test-win',
+                                'se-name'  : 'test-win',
                                 'lfn-prefix':''})
         wrapper(fileForTransfer)
-        
+
         pass
     def testStageOutMgrWrapperFail(self):
         fileForTransfer = {'LFN': 'failtest', \
                            'PFN': 'failtest', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr( numberOfRetries= 1,
                                retryPauseTime=0, **{
                                 'command'    : 'test-fail',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'phedex-node' : 'test-win',
+                                'se-name'  : 'test-win',
                                 'lfn-prefix':''})
         self.assertRaises(WMCore.Storage.StageOutError.StageOutError, wrapper.__call__, fileForTransfer)
 
@@ -93,11 +97,29 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': '/etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageOutMgr(  **{
                                 'command'    : 'cp',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+        self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
+
+    def testStageOutMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        fileForTransfer = {'LFN': '/etc/hosts', \
+                           'PFN': '/etc/hosts', \
+                           'SEName' : None, \
+                           'PNN' : None, \
+                           'StageOutCommand': None}
+        wrapper = StageOutMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
         self.assertTrue( os.path.exists(os.path.join(self.testDir, '/etc/hosts')))
@@ -106,43 +128,93 @@ class FileManagerTest(unittest.TestCase):
         fileForTransfer = {'LFN': '/etc/hosts', \
                            'PFN': '/etc/hosts', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
         wrapper = StageInMgr(  **{
                                 'command'    : 'test-win',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix':''})
         wrapper(fileForTransfer)
-        
+
         pass
     def testStageInMgrWrapperFail(self):
         fileForTransfer = {'LFN': 'failtest', \
                            'PFN': 'failtest', \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
-        wrapper = StageOutMgr( numberOfRetries= 1,
+        wrapper = StageInMgr( numberOfRetries= 1,
                                retryPauseTime=0, **{
                                 'command'    : 'test-fail',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix':''})
         self.assertRaises(WMCore.Storage.StageOutError.StageOutError, wrapper.__call__, fileForTransfer)
 
     def testStageInMgrWrapperRealCopy(self):
+
         self.testDir = tempfile.mkdtemp()
-        fileForTransfer = {'LFN': '/etc/hosts', \
-                           'PFN': '/etc/hosts', \
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
                            'SEName' : None, \
+                           'PNN' : None, \
                            'StageOutCommand': None}
-        wrapper = StageOutMgr(  **{
+
+        wrapper = StageInMgr(  **{
                                 'command'    : 'cp',
-                                'option'    : '', 
-                                'se-name'  : 'test-win', 
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
+                                'lfn-prefix': self.testDir})
+        wrapper(fileForTransfer)
+
+    def testStageInMgrWrapperRealCopyFallback(self):
+        self.testDir = tempfile.mkdtemp()
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
+                           'SEName' : None, \
+                           'PNN' : None, \
+                           'StageOutCommand': None}
+
+        wrapper = StageInMgr(  **{
+                                'command'    : 'testFallbackToOldBackend',
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         wrapper(fileForTransfer)
 
     def testDeleteMgrWrapper(self):
-        pass
+        self.testDir = tempfile.mkdtemp()
+        shutil.copy('/etc/hosts', self.testDir + '/INPUT')
+        fileForTransfer = {'LFN': '/INPUT', \
+                           'PFN': '%s/etc/hosts' % self.testDir, \
+                           'SEName' : None, \
+                           'PNN' : None, \
+                           'StageOutCommand': None}
+
+        wrapper = StageInMgr(  **{
+                                'command'    : 'cp',
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
+                                'lfn-prefix': self.testDir})
+        retval = wrapper(fileForTransfer)
+        print "got the retval %s" % retval
+        newPfn = retval['PFN']
+        wrapper = DeleteMgr(**{
+                                'command'    : 'cp',
+                                'option'    : '',
+                                'se-name'  : 'test-win',
+                                'phedex-node'  : 'test-win',
+                                'lfn-prefix': self.testDir})
+        wrapper(retval)
+
 if __name__ == "__main__":
     import nose
     logging.basicConfig(level=logging.DEBUG)

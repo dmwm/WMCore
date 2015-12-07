@@ -1,20 +1,17 @@
 import os
 import unittest
-import tempfile
-import shutil
-
+import logging
 from nose.plugins.attrib import attr
 
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.Services.Requests import JSONRequests
-from WMCore.Services.RequestManager.RequestManager import RequestManager \
-     as RequestManagerDS
+from WMCore.Services.RequestManager.RequestManager import RequestManager as RequestManagerDS
 
-#decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.WMSpec.StdSpecs.ReReco import getTestArguments
 
-from WMCore_t.RequestManager_t.ReqMgr_t import getRequestSchema, RequestManagerConfig
+from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
+from WMCore_t.RequestManager_t import utils
+
 
     
 class RequestManagerTest(RESTBaseUnitTest):
@@ -26,6 +23,7 @@ class RequestManagerTest(RESTBaseUnitTest):
     This checks whether DS call makes without error and return the results.
     This test only test service call returns without error.
     The correctness of each function is tested in test/python/RequestManager_t/RequestMgr_t.py
+    
     """
     def initialize(self):
         self.couchDBName = "reqmgr_t_0"
@@ -36,34 +34,65 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
         self.config.setupCouchDatabase(dbName = self.couchDBName)
-        self.config.setPort(8888)
+        self.config.setPort(8899)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        return
+                
         
     def setUp(self):
-        """
-        setUP global values
-        """
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache")
+        self.testInit.setupCouch("%s" % self.couchDBName, "GroupUser", "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName, "WMStats")
+        # logging stuff from TestInit is broken, setting myself
+        l = logging.getLogger()
+        l.setLevel(logging.DEBUG)
         self.params = {}
         self.params['endpoint'] = self.config.getServerUrl()
         self.reqService = RequestManagerDS(self.params)
         self.jsonSender = JSONRequests(self.config.getServerUrl())
-        self.requestSchema = getRequestSchema()
-        self.jsonSender.put('group/PeopleLikeMe')
-        self.jsonSender.put('user/me?email=me@my.com')
-        self.jsonSender.put('group/PeopleLikeMe/me')
-        self.jsonSender.put('version/CMSSW_3_5_8')
-        r = self.jsonSender.put('request/' + self.requestSchema['RequestName'], 
-                                self.requestSchema)
-        self.requestName = r[0]['RequestName']
-    
+
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema = utils.getAndSetupSchema(self,
+                                         userName = userName,
+                                         groupName = groupName,
+                                         teamName = teamName)
+        schema['ConfigCacheID'] = self.createConfig()
+        schema['CouchDBName'] = self.couchDBName
+        try:
+            r = self.jsonSender.put('request/' + schema['RequestName'], schema)
+            self.requestName = r[0]['RequestName']
+        except Exception as ex:
+            print "Exception during set up, reason: %s" % ex
+            raise ex
+
     def tearDown(self):
         self.config.deleteWorkloadCache()
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
+
+    def createConfig(self, bad = False):
+        """
+        _createConfig_
+
+        Create a config of some sort that we can load out of ConfigCache
+        """
+        PSetTweak = {'process': {'outputModules_': ['ThisIsAName'],
+                                 'ThisIsAName': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        BadTweak  = {'process': {'outputModules_': ['ThisIsAName1', 'ThisIsAName2'],
+                                 'ThisIsAName1': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}},
+                                 'ThisIsAName2': {'dataset': {'dataTier': 'RECO',
+                                                             'filterName': 'Filter'}}}}
+        configCache = ConfigCache(os.environ["COUCHURL"], couchDBName = self.couchDBName)
+        configCache.createUserGroup(groupname = "testGroup", username = 'testOps')
+        if bad:
+            configCache.setPSetTweaks(PSetTweak = BadTweak)
+        else:
+            configCache.setPSetTweaks(PSetTweak = PSetTweak)
+        configCache.save()
+        return configCache.getCouchID()
 
     @attr("integration")
     def testA_RequestManagerService(self):
@@ -94,14 +123,9 @@ class RequestManagerTest(RESTBaseUnitTest):
         self.reqService.reportRequestProgress(requestName,
                         percent_complete = 100, percent_success = 90)
         
-        self.reqService.reportRequestStatus(requestName, "running")
-        return
+        self.reqService.reportRequestStatus(requestName, "running-open")
 
         
         
 if __name__ == '__main__':
-
     unittest.main()
-
-   
-    

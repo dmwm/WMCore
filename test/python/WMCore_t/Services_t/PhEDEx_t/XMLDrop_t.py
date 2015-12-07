@@ -28,7 +28,7 @@ class XMLDropTest(unittest.TestCase):
 
         Do nothing
         """
-        self.dbsURL = "https://cmsdbsprod.cern.ch:8443/cms_dbs_prod_global_writer/servlet/DBSServlet"
+        self.dbsURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter"
 
         return
 
@@ -55,7 +55,7 @@ class XMLDropTest(unittest.TestCase):
         datasetSpec = spec.getDataset(datasetPath)
         fileBlock   = datasetSpec.getFileblock(fileBlockName)
         fileBlock.addFile("lfn", {'adler32': '201', 'cksum': '101'}, '100')
-        
+
         output = spec.save()
         self.assertTrue(re.search('<data version="2">', output) > 0)
         self.assertTrue(re.search('<dbs dls="dbs" name="%s">' % self.dbsURL, output) > 0)
@@ -64,11 +64,10 @@ class XMLDropTest(unittest.TestCase):
         self.assertTrue(re.search('<file bytes="100" checksum="adler32:201,cksum:101" name="lfn"/>', output) > 0)
         self.assertTrue(re.search('</block>', output) > 0)
         self.assertTrue(re.search('</dataset>', output) > 0)
-                        
-        
-        
+
+
+
         return
 
 if __name__ == '__main__':
     unittest.main()
-        

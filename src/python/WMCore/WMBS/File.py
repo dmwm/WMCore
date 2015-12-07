@@ -36,7 +36,7 @@ class File(WMBSBase, WMFile):
                 self['newlocations'].add(locations)
             else:
                 self.setdefault("newlocations", locations)
-        
+
         # overwrite the default value set from the WMFile
         self["first_event"] =  first_event
         self["last_event"] = last_event
@@ -60,7 +60,7 @@ class File(WMBSBase, WMFile):
                 self["id"] = result
 
         return result
-        
+
     def getInfo(self):
         """
         Return the files attributes as a tuple
@@ -77,11 +77,11 @@ class File(WMBSBase, WMFile):
 
     def getRuns(self):
         """
-        Get a list of run lumi objects (List of set() of type 
+        Get a list of run lumi objects (List of set() of type
         WMCore.DataStructs.Run)
         """
         return list(self['runs'])
-                                    
+
     def getParentLFNs(self):
         """
         Get a flat list of parent LFNs
@@ -96,11 +96,11 @@ class File(WMBSBase, WMFile):
             parents = temp
         result.sort()   # ensure SecondaryInputFiles are in order
         return [x['lfn'] for x in result]
-    
+
     def getAncestors(self, level = 2, type = "id"):
         """
         Get ancestorLFNs. it will access directly DAO.
-        level indicates the level of ancestors. default value is 2 
+        level indicates the level of ancestors. default value is 2
         (grand parents). level should be bigger than >= 1
         """
         existingTransaction = self.beginTransaction()
@@ -115,12 +115,12 @@ class File(WMBSBase, WMFile):
                 return parentIDs
             else:
                 return _getAncestorIDs(parentIDs, level - 1)
-        
+
         if self["id"] < 0:
             self.load()
 
         idList = _getAncestorIDs(self["id"], level)
-        
+
         if type == "id":
             results = idList
         elif type == "lfn":
@@ -135,14 +135,14 @@ class File(WMBSBase, WMFile):
                 anceFile = File(id=fileID)
                 anceFile.load()
                 results.append(anceFile)
-                
+
         self.commitTransaction(existingTransaction)
         return results
-    
+
     def getDescendants(self, level=2, type="id"):
         """
         Get descendants. it will access directly DAO.
-        level indicates the level of ancestors. default value is 2 
+        level indicates the level of ancestors. default value is 2
         (grand parents). level should be bigger than >= 1
         """
         existingTransaction = self.beginTransaction()
@@ -157,12 +157,12 @@ class File(WMBSBase, WMFile):
                 return childIDs
             else:
                 return _getDescendantIDs(childIDs, level - 1)
-        
+
         if self["id"] < 0:
             self.load()
 
         idList = _getDescendantIDs(self["id"], level)
-        
+
         if type == "id":
             results = idList
         elif type == "lfn":
@@ -177,10 +177,10 @@ class File(WMBSBase, WMFile):
                 descFile = File(id=fileID)
                 descFile.load()
                 results.append(descFile)
-        
+
         self.commitTransaction(existingTransaction)
         return results
-    
+
     def load(self):
         """
         _load_
@@ -214,9 +214,9 @@ class File(WMBSBase, WMFile):
 
         if self["id"] < 0 or self["lfn"] == "":
             self.load()
-            
+
         action = self.daofactory(classname = "Files.GetRunLumiFile")
-        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
+        runs = action.execute(self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
         [self.addRun(run = Run(r, *runs[r])) for r in runs.keys()]
@@ -226,7 +226,7 @@ class File(WMBSBase, WMFile):
                                            transaction = self.existingTransaction())
         self["newlocations"].clear()
         self["parents"] = set()
-        
+
         if parentage > 0:
             action = self.daofactory(classname = "Files.GetParents")
             parentLFNs = action.execute(self["lfn"],  conn = self.getDBConn(),
@@ -254,7 +254,7 @@ class File(WMBSBase, WMFile):
             self.commitTransaction(existingTransaction)
             self.load()
             # assume if the file already exist, parentage is already set.
-            # or not exist yet 
+            # or not exist yet
             return
 
         addAction = self.daofactory(classname = "Files.Add")
@@ -270,9 +270,9 @@ class File(WMBSBase, WMFile):
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                    conn = self.getDBConn(),
                                    transaction = self.existingTransaction())
-        self.load()        
+        self.load()
         self.updateLocations()
-        # call it here to make sure self["id"] exist 
+        # call it here to make sure self["id"] exist
         if self["parents"]:
             for parent in self['parents']:
                 parent.create()
@@ -280,14 +280,14 @@ class File(WMBSBase, WMFile):
                 action.execute(child = self["id"], parent = parent["id"],
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-        
+
         self.commitTransaction(existingTransaction)
         if self['checksums']:
             #Add a checksum
             for entry in self['checksums'].keys():
                 self.setCksum(cksum = self['checksums'][entry], cktype = entry)
         return
-    
+
     def delete(self):
         """
         Remove a file from WMBS
@@ -296,7 +296,7 @@ class File(WMBSBase, WMFile):
         action.execute(file =self["lfn"], conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         return
-        
+
     def addChild(self, lfn):
         """
         set an existing file (lfn) as a child of this file
@@ -307,18 +307,18 @@ class File(WMBSBase, WMFile):
         child.load()
 
         if not self['id'] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % self['lfn']
+            raise Exception("Parent file doesn't have an id %s" % self['lfn'])
         if not child['id'] > 0:
-            raise Exception, "Child file doesn't have an id %s" % child['lfn']
+            raise Exception("Child file doesn't have an id %s" % child['lfn'])
 
         heritageAction = self.daofactory(classname = "Files.Heritage")
-        heritageAction.execute(child = child["id"], parent = self["id"], 
+        heritageAction.execute(child = child["id"], parent = self["id"],
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
         return
-        
+
     def addParent(self, lfn):
         """
         set an existing file (lfn) as a parent of this file
@@ -330,11 +330,11 @@ class File(WMBSBase, WMFile):
         self["parents"].add(parent)
 
         if not self["id"] > 0:
-            raise Exception, "Child file doesn't have an id %s" % self["lfn"]
+            raise Exception("Child file doesn't have an id %s" % self["lfn"])
         if not parent["id"] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % \
-                        parent["lfn"]
-        
+            raise Exception("Parent file doesn't have an id %s" % \
+                        parent["lfn"])
+
         action = self.daofactory(classname = "Files.Heritage")
         action.execute(child = self["id"], parent = parent["id"],
                        conn = self.getDBConn(),
@@ -342,7 +342,7 @@ class File(WMBSBase, WMFile):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def addRunSet(self, runSet):
         """
         add the set of runs.  This should be called after a file is created,
@@ -357,9 +357,9 @@ class File(WMBSBase, WMFile):
         lumiAction.execute(file = self["lfn"], runs = runSet,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-        
+
         action = self.daofactory(classname = "Files.GetRunLumiFile")
-        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
+        runs = action.execute(self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
         self["runs"].clear()
@@ -367,11 +367,11 @@ class File(WMBSBase, WMFile):
 
         self.commitTransaction(existingTransaction)
         return
-    
+
     def updateLocations(self):
         """
         _updateLocations_
-        
+
         Write any new locations to the database.  After any new locations are
         written to the database all locations will be reloaded from the
         database.
@@ -388,7 +388,7 @@ class File(WMBSBase, WMFile):
                               conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
-        # Update locations from the DB    
+        # Update locations from the DB
         getAction = self.daofactory(classname = "Files.GetLocation")
         self["locations"] = getAction.execute(self["lfn"], conn = self.getDBConn(),
                                               transaction = self.existingTransaction())
@@ -396,8 +396,8 @@ class File(WMBSBase, WMFile):
 
         self.commitTransaction(existingTransaction)
         return
-        
-    def setLocation(self, se, immediateSave = True):
+
+    def setLocation(self, pnn, immediateSave = True):
         """
         Sets the location of a file. If immediateSave is True, commit change to
         the DB immediately, otherwise queue for addition when save() is called.
@@ -405,12 +405,12 @@ class File(WMBSBase, WMFile):
         locations could be added - confusing when file requires locations on its
         first creation (breaks transaction model in Fileset commits etc)
         """
-        if isinstance(se, str):
-            self['newlocations'].add(se)
-            self['locations'].add(se)
+        if isinstance(pnn, str):
+            self['newlocations'].add(pnn)
+            self['locations'].add(pnn)
         else:
-            self['newlocations'].update(se)
-            self['locations'].update(se)
+            self['newlocations'].update(pnn)
+            self['locations'].update(pnn)
 
         if immediateSave:
             self.updateLocations()
@@ -420,7 +420,7 @@ class File(WMBSBase, WMFile):
     def setCksum(self, cksum, cktype):
         """
         _setCKType_
-        
+
         Set the Checksum Type
         """
 
@@ -444,7 +444,7 @@ class File(WMBSBase, WMFile):
     def loadChecksum(self):
         """
         _loadChecksum_
-        
+
         Grab checksums.  If plural, put a list of dictionaries of type
         {'cktype', 'cksum'} in both self['cktype'] and self['cksum']
         """
@@ -465,23 +465,23 @@ class File(WMBSBase, WMFile):
         This function will create a WMBS File given a DataStructs file
         """
         self.update(file)
-        #Clear the parents since update 
+        #Clear the parents since update
         # will update the parents with set of lfns,
         # parents should be set of wmbs files in WMBS File class
         self["parents"] = set()
 
         if type(file["locations"]) == set:
             s = file["locations"].copy()
-            seName = s.pop()
+            pnn = s.pop()
         elif type(file["locations"]) == list:
-            seName = file["locations"][0]
+            pnn = file["locations"][0]
         else:
-            seName = file["locations"]
+            pnn = file["locations"]
 
-        self.setLocation(se = seName, immediateSave = False)
+        self.setLocation(pnn = pnn, immediateSave = False)
 
         self.create()
-        
+
         for parent in file['parents']:
             self.addParent(parent)
 
@@ -507,7 +507,7 @@ class File(WMBSBase, WMFile):
             file.addRun(run)
 
         for location in self['locations']:
-            file.setLocation(se = location)
+            file.setLocation(pnn = location)
 
         return file
 
@@ -532,6 +532,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
     setFileAddChecksum      = daofactory(classname = "Files.AddChecksumByLFN")
     addFileAction           = daofactory(classname = "Files.Add")
     addToFileset            = daofactory(classname = "Files.AddDupsToFileset")
+    updateFileAction        = daofactory(classname = "Files.Update")
 
     # build up list of binds for all files then run in single transaction
     parentageBinds = []
@@ -542,6 +543,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
     fileLFNs       = []
     lfnsToCreate   = []
     lfnList        = []
+    fileUpdate     = []
 
     for wmbsFile in files:
         lfn           = wmbsFile['lfn']
@@ -562,13 +564,19 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
             msg = "File created in WMBS without locations!\n"
             msg += "File lfn: %s\n" % (lfn)
             logging.error(msg)
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
         for loc in wmbsFile['newlocations']:
             fileLocations.append({'lfn': lfn, 'location': loc})
 
         if wmbsFile.exists():
-            # skip creation; locations will be set to current values
+            # update events, size, first_event, merged
+            fileUpdate.append([lfn,
+                               wmbsFile['size'],
+                               wmbsFile['events'],
+                               None,
+                               wmbsFile["first_event"],
+                               wmbsFile['merged']])
             continue
 
         if lfn in lfnsToCreate:
@@ -596,6 +604,11 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
         setFileAddChecksum.execute(bulkList = fileCksumBinds,
                                    conn = conn,
                                    transaction = transaction)
+
+    if len(fileUpdate) > 0:
+        updateFileAction.execute(files = fileUpdate,
+                                 conn = conn,
+                                 transaction = transaction)
 
     if len(fileLocations) > 0:
         setFileLocation.execute(lfns = lfnList, locations = fileLocations,

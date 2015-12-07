@@ -6,7 +6,7 @@ CouchFileset.py
 Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
-
+import time
 
 from WMCore.ACDC.Fileset import Fileset
 from WMCore.Database.CouchUtils import connectToCouch, requireOwner, requireCollection, requireFilesetName
@@ -23,7 +23,7 @@ from WMCore.DataStructs.Run import Run
 def makeRun(targets):
     """
     _makeRun_
-    
+
     create a DataStruct Run instance form the Couch JSON dict
     """
     while True:
@@ -31,25 +31,25 @@ def makeRun(targets):
         for run in runs:
             newRun = Run(run[u'Run'], *run[u'Lumis'])
             fileRef.addRun(newRun)
-      
+
 @coroutine
 def filePipeline(targets):
     """
     _conversionPipeline_
-    
+
     """
     while True:
         inputDict = (yield)
         newFile = File(
-            lfn = str(inputDict[u'lfn']), 
+            lfn = str(inputDict[u'lfn']),
             size = int(inputDict[u'size']),
             events = int(inputDict[u'events'])
         )
         targets['run'].send(  (newFile, inputDict[u'runs'])  )
         targets['fileset'].addFile(newFile)
- 
 
-    
+
+
 class CouchFileset(Fileset):
     def __init__(self, **options):
         Fileset.__init__(self, **options)
@@ -58,32 +58,32 @@ class CouchFileset(Fileset):
         self['name']      = options.get('name')
         self.server       = None
         self.couchdb      = None
-  
+
     @connectToCouch
     def drop(self):
         """
         _drop_
 
         Remove this fileset
-        
+
         This is racy. someone can add to the fileset before we get done
         deleting it. Actually, they can delete after we get done deleting
         it too. Oh well.
         """
         for d in self.filelistDocuments():
             self.couchdb.delete_doc(d)
-        
+
     @connectToCouch
     @requireFilesetName
     def filelistDocuments(self):
         """
         _filelistDocuments_
-        
+
         Get a list of document ids corresponding to filelists in this fileset
         """
         params = {"startkey": [self.owner.group.name, self.owner.name,
                                self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name, 
+                  "endkey": [self.owner.group.name, self.owner.name,
                              self.collectionName, self["name"]],
                   "reduce": False}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
@@ -91,17 +91,30 @@ class CouchFileset(Fileset):
 
         docs = [row["id"] for row in result["rows"]]
         return docs
-        
+
     @connectToCouch
     @requireFilesetName
     def add(self, files, mask = None):
         """
         _add_
-        
+
         Add files to this fileset
+
+        Note: if job was lumi based splitted, then we do not have
+        reliable events information. If job was event based splitted,
+        then we do not have reliable lumi information.
         """
         filteredFiles = []
         if mask:
+            for f in files:
+                # There is no LastEvent for last job of a file
+                if mask['LastEvent'] and mask['FirstEvent']:
+                    f['events'] = mask['LastEvent'] - mask['FirstEvent']
+                    f['first_event'] = mask['FirstEvent']
+                elif mask['FirstEvent']:
+                    f['events'] -= mask['FirstEvent']
+                    f['first_event'] = mask['FirstEvent']
+
             maskLumis = mask.getRunAndLumis()
             if maskLumis != {}:
                 # Then we actually have to do something
@@ -111,38 +124,53 @@ class CouchFileset(Fileset):
                         f['runs'] = newRuns
                         filteredFiles.append(f)
             else:
+                # Likely real data with EventBased splitting
                 filteredFiles = files
         else:
             filteredFiles = files
-                            
+
         jsonFiles = {}
         [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in filteredFiles]
         filelist = self.makeFilelist(jsonFiles)
         return filelist
-    
+
     @connectToCouch
     @requireOwner
     @requireFilesetName
     def makeFilelist(self, files = {}):
         """
         _makeFilelist_
-        
-        Create a new filelist document containing the id 
+
+        Create a new filelist document containing the id
         """
         input = {"collection_name": self.collectionName,
                  "collection_type": self.collectionType,
                  "fileset_name": self["name"],
-                 "files": files}
-                    
+                 "files": files,
+                 "timestamp": time.time()}
+
         document = CMSCouch.Document(None, input)
         self.owner.ownThis(document)
 
         commitInfo = self.couchdb.commitOne(document)
         document['_id'] = commitInfo[0]['id']
-        document['_rev'] = commitInfo[0]['rev']
+        if 'rev' in commitInfo[0]:
+            document['_rev'] = commitInfo[0]['rev']
+        else:
+            if commitInfo[0]['reason'].find('{exit_status,0}') != -1:
+                #TODO: in this case actually insert succeeded but return error
+                # due to the bug
+                # https://issues.apache.org/jira/browse/COUCHDB-893
+                # if rev is needed to proceed need to get by 
+                # self.couchdb.documentExist(document['_id'])
+                # but that function need to be changed to return _rev
+                document['_rev'] = "NeedToGet"
+            else:
+                msg = "Unable to insert document: check acdc server doc id: %s" % document['_id']
+                raise RuntimeError(msg)
         return document
-    
-    @connectToCouch          
+
+    @connectToCouch
     def listFiles(self):
         """
         _listFiles_
@@ -155,19 +183,19 @@ class CouchFileset(Fileset):
             except CMSCouch.CouchNotFoundError as ex:
                 msg = "Unable to retrieve Couch Document for fileset"
                 msg += str(msg)
-                raise RuntimeError, msg
-            
+                raise RuntimeError(msg)
+
             files = doc["files"]
             for d in files.values():
                 yield d
 
-    @connectToCouch      
+    @connectToCouch
     def fileset(self):
         """
         _fileset_
-    
+
         Make a WMCore.DataStruct.Fileset instance containing the files in this fileset
-    
+
         """
         result = DataStructsFileset(self['name'])
         pipeline = filePipeline({'fileset' : result, 'run' : makeRun({}) })
@@ -186,15 +214,15 @@ class CouchFileset(Fileset):
         """
         params = {"startkey": [self.owner.group.name, self.owner.name,
                                self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name, 
+                  "endkey": [self.owner.group.name, self.owner.name,
                              self.collectionName, self["name"]],
                   "include_docs": True, "reduce": False}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
                                        params)
-
         self.files = {}
         for row in result["rows"]:
             self.files.update(row["doc"]["files"])
+            self["files"] = self.files
         return
 
     def fileCount(self):
@@ -205,9 +233,9 @@ class CouchFileset(Fileset):
         """
         params = {"startkey": [self.owner.group.name, self.owner.name,
                                self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name, 
+                  "endkey": [self.owner.group.name, self.owner.name,
                              self.collectionName, self["name"]],
                   "reduce": True, "group_level": 4}
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_count",
-                                       params)        
+                                       params)
         return result["rows"][0]["value"]

@@ -6,11 +6,8 @@ _JobFactory_
 
 import logging
 import threading
-import gc
 
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.DataStructs.Fileset  import Fileset
-from WMCore.DataStructs.File     import File
 from WMCore.Services.UUID        import makeUUID
 from WMCore.WMBS.File            import File as WMBSFile
 from WMCore.DAOFactory           import DAOFactory
@@ -27,11 +24,11 @@ class JobFactory(WMObject):
     def __init__(self,
                  package='WMCore.DataStructs',
                  subscription=None,
-                 generators=[],
+                 generators=None,
                  limit = 0):
         self.package = package
         self.subscription  = subscription
-        self.generators    = generators
+        self.generators    = generators if generators else []
         self.jobInstance   = None
         self.groupInstance = None
         self.jobGroups     = []
@@ -46,18 +43,24 @@ class JobFactory(WMObject):
         self.daoFactory    = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
 
-        if package == 'WMCore.WMBS':
-            myThread = threading.currentThread() 
-            self.daoFactory = DAOFactory(package = "WMCore.WMBS", 
-                                         logger = myThread.logger, 
-                                         dbinterface = myThread.dbi) 
-            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo") 
+        if package == "WMCore.WMBS":
+
+            myThread = threading.currentThread()
+
+            self.daoFactory = DAOFactory(package = "WMCore.WMBS",
+                                         logger = myThread.logger,
+                                         dbinterface = myThread.dbi)
+            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo")
+
+            self.pnn_to_psn = self.daoFactory(classname = "Locations.GetPNNtoPSNMapping").execute()
+
+        return
 
     def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
         """
         __call__
 
-        
+
         """
 
         #Need to reset the internal data for multiple calls to the factory
@@ -65,8 +68,9 @@ class JobFactory(WMObject):
         self.currentGroup = None
         self.currentJob = None
 
-        self.siteBlacklist = kwargs.get("siteBlacklist", [])
         self.siteWhitelist = kwargs.get("siteWhitelist", [])
+        self.siteBlacklist = kwargs.get("siteBlacklist", [])
+        self.trustSitelists = kwargs.get("trustSitelists", False)
 
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
@@ -85,10 +89,9 @@ class JobFactory(WMObject):
         map(lambda x: x.start(), self.generators)
 
 
-        self.limit        = int(kwargs.get("file_load_limit", self.limit))
+        self.limit = int(kwargs.get("file_load_limit", self.limit))
         self.algorithm(*args, **kwargs)
         self.commit()
-        #gc.collect()
 
         map(lambda x: x.finish(), self.generators)
         return self.jobGroups
@@ -101,19 +104,20 @@ class JobFactory(WMObject):
         subscription and splits them into jobs and inserts them into job groups.
         The algorithm must return a list of job groups.
         """
-        self.newGroup(args, kwargs)
+        self.newGroup()
         self.newJob(name='myJob')
+        return
 
-    def newGroup(self, *args, **kwargs):
+    def newGroup(self):
         """
         Return and new JobGroup
         """
         self.appendJobGroup()
         self.currentGroup = self.groupInstance(subscription=self.subscription)
         map(lambda x: x.startGroup(self.currentGroup), self.generators)
+        return
 
-
-    def newJob(self, name=None, files=None):
+    def newJob(self, name=None, files=None, failedJob=False, failedReason=None):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
@@ -123,18 +127,21 @@ class JobFactory(WMObject):
         self.currentJob["jobType"] = self.subscription["type"]
         self.currentJob["taskType"] = self.subscription.workflowType()
         self.currentJob["owner"] = self.subscription.owner()
-        self.currentJob["siteBlacklist"] = self.siteBlacklist
-        self.currentJob["siteWhitelist"] = self.siteWhitelist
 
         # All production jobs must be run 1
         if self.subscription["type"] == "Production":
             self.currentJob["mask"].setMaxAndSkipRuns(0, 1)
-                        
+
+        # Some jobs are not meant to be submitted, ever
+        if failedJob:
+            self.currentJob["failedOnCreation"] = True
+            self.currentJob["failedReason"] = failedReason
+
         self.nJobs += 1
         for gen in self.generators:
             gen(self.currentJob)
         self.currentGroup.add(self.currentJob)
-
+        return
 
     def appendJobGroup(self):
         """
@@ -150,7 +157,6 @@ class JobFactory(WMObject):
 
         return
 
-
     def commit(self):
         """
         Bulk commit the JobGroups all at once
@@ -160,29 +166,57 @@ class JobFactory(WMObject):
         if len(self.jobGroups) == 0:
             return
 
-        logging.debug("About to commit %i jobGroups" % (len(self.jobGroups)))
-        logging.debug("About to commit %i jobs" % (len(self.jobGroups[0].newjobs)))
+        logging.debug("About to commit %i jobGroups", len(self.jobGroups))
+        logging.debug("About to commit %i jobs", len(self.jobGroups[0].newjobs))
 
         if self.package == 'WMCore.WMBS':
+
+            for jobGroup in self.jobGroups:
+
+                for job in jobGroup.newjobs:
+
+                    if self.trustSitelists:
+                        locSet = set(self.siteWhitelist) - set(self.siteBlacklist)
+                    else:
+                        locSet = set([])
+                        for pnn in job['input_files'][0]['locations']:
+                            locSet.update(self.pnn_to_psn.get(pnn, []))
+
+                        if len(self.siteWhitelist) > 0:
+                            locSet = locSet & set(self.siteWhitelist)
+                        if len(self.siteBlacklist) > 0:
+                            locSet = locSet - set(self.siteBlacklist)
+
+                    job['possiblePSN'] = locSet
+
+                # now after the jobs are created, remove input file locations
+                # they are no longer needed and just take up space
+                for job in jobGroup.newjobs:
+                    for fileInfo in job['input_files']:
+                        fileInfo['locations'] = set([])
+
             self.subscription.bulkCommit(jobGroups = self.jobGroups)
+
         else:
-            # Then we have a DataStructs job, and we have to do everything
-            # by hand.
+
+            # we have a DataStructs job and have to do everything by hand
             for jobGroup in self.jobGroups:
                 jobGroup.commit()
                 for job in jobGroup.jobs:
                     job.save()
             self.subscription.save()
 
-        #gc.collect()
         return
 
     def sortByLocation(self):
         """
         _sortByLocation_
 
-        Sorts the files in the job by location and passes back a dictionary of files, with each key corresponding
-        to a set of locations
+        Retrieve available files and return them sorted by loacation.
+        The keys in the dict correspond to a set of locations.
+
+        If TrustSiteLists is set ignore the file locations and treat all files
+        as being present in the same place (use key "AAA" location).
         """
 
         fileDict = {}
@@ -190,25 +224,27 @@ class JobFactory(WMObject):
         if self.grabByProxy:
             logging.debug("About to load files by proxy")
             fileset = self.loadFiles(size = self.limit)
-            logging.debug("Loaded %i files" % (len(fileset)))
+            logging.debug("Loaded %i files", len(fileset))
         else:
-            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
             logging.debug("About to load files by DAO")
+            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
 
-        for file in fileset:
-            locSet = frozenset(file['locations'])
+        for fileInfo in fileset:
 
-            if len(locSet) == 0:
-                msg = 'File %s has no locations!' %(file['lfn'])
-                logging.error(msg)
-
-            if locSet in fileDict.keys():
-                fileDict[locSet].append(file)
+            if self.trustSitelists:
+                locSet = frozenset(set(['AAA']))
             else:
-                fileDict[locSet] = [file]
+                locSet = frozenset(fileInfo['locations'])
+
+                if len(locSet) == 0:
+                    logging.error("File %s has no locations!", fileInfo['lfn'])
+
+            if locSet in fileDict:
+                fileDict[locSet].append(fileInfo)
+            else:
+                fileDict[locSet] = [fileInfo]
 
         return fileDict
-
 
     def getJobName(self, length = None):
         """
@@ -225,8 +261,6 @@ class JobFactory(WMObject):
 
         return name
 
-
-
     def open(self):
         """
         _open_
@@ -239,12 +273,6 @@ class JobFactory(WMObject):
 
         myThread = threading.currentThread()
 
-        # Handle all DAO stuff
-        from WMCore.DAOFactory  import DAOFactory
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-
         subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesNoLocations")
         results   = subAction.execute(subscription = self.subscription['id'],
                                       returnCursor = True,
@@ -253,10 +281,11 @@ class JobFactory(WMObject):
 
         for proxy in results:
             self.proxies.append(proxy)
-            logging.debug("Received %i proxies" % (len(self.proxies)))
+            logging.debug("Received %i proxies", len(self.proxies))
 
         # Activate everything so that we grab files by proxy
         self.grabByProxy  = True
+
         return
 
     def close(self):
@@ -282,15 +311,15 @@ class JobFactory(WMObject):
             # This is what happens when you ran out of files last time
             logging.info("No additional files found; Ending.")
             return set()
-        
+
 
         resultProxy = self.proxies[0]
         rawResults  = []
-        if type(resultProxy.keys) == list:
+        if isinstance(resultProxy.keys, list):
             keys  = resultProxy.keys
         else:
             keys  = resultProxy.keys()
-            if type(keys) == set:
+            if isinstance(keys, set):
                 # If it's a set, handle it
                 keys = list(keys)
         files       = set()
@@ -309,7 +338,7 @@ class JobFactory(WMObject):
             # Nothing to do
             return set()
 
-        fileList = self.formatDict(results = rawResults, keys = keys)        
+        fileList = self.formatDict(results = rawResults, keys = keys)
         fileIDs = list(set([x['fileid'] for x in fileList]))
 
         myThread = threading.currentThread()
@@ -332,7 +361,7 @@ class JobFactory(WMObject):
             files.add(fl)
 
         return files
-            
+
     def formatDict(self, results, keys):
         """
         _formatDict_
@@ -341,8 +370,6 @@ class JobFactory(WMObject):
         method turns everything into strings.  Also, fixup the results of the
         Oracle query by renaming 'fileid' to file.
         """
-
-        myThread = threading.currentThread()
 
         formattedResults = []
         for entry in results:
@@ -355,38 +382,55 @@ class JobFactory(WMObject):
         return formattedResults
 
 
-    def findParent(self, lfn): 
-        """ 
-        _findParent_ 
-        
-        Find the parents for a file based on its lfn 
-        """ 
-        
-        parentsInfo = self.getParentInfoAction.execute([lfn]) 
-        newParents  = set() 
-        for parentInfo in parentsInfo: 
-            
-            # This will catch straight to merge files that do not have redneck 
-            # parents.  We will mark the straight to merge file from the job 
-            # as a child of the merged parent. 
-            if int(parentInfo["merged"]) == 1: 
-                newParents.add(parentInfo["lfn"]) 
-                
-            elif parentInfo['gpmerged'] == None: 
-                continue 
-            
-            # Handle the files that result from merge jobs that aren't redneck 
-            # children.  We have to setup parentage and then check on whether or 
-            # not this file has any redneck children and update their parentage 
-            # information. 
-            elif int(parentInfo["gpmerged"]) == 1: 
-                newParents.add(parentInfo["gplfn"]) 
- 		 
-            # If that didn't work, we've reached the great-grandparents 
-            # And we have to work via recursion 
-            else: 
-                parentSet = self.findParent(lfn = parentInfo['gplfn']) 
-                for parent in parentSet: 
-                    newParents.add(parent) 
-                    
-        return newParents 
+    def findParent(self, lfn):
+        """
+        _findParent_
+
+        Find the parents for a file based on its lfn
+        """
+
+        parentsInfo = self.getParentInfoAction.execute([lfn])
+        newParents  = set()
+        for parentInfo in parentsInfo:
+
+            # This will catch straight to merge files that do not have redneck
+            # parents.  We will mark the straight to merge file from the job
+            # as a child of the merged parent.
+            if int(parentInfo["merged"]) == 1:
+                newParents.add(parentInfo["lfn"])
+
+            elif parentInfo['gpmerged'] == None:
+                continue
+
+            # Handle the files that result from merge jobs that aren't redneck
+            # children.  We have to setup parentage and then check on whether or
+            # not this file has any redneck children and update their parentage
+            # information.
+            elif int(parentInfo["gpmerged"]) == 1:
+                newParents.add(parentInfo["gplfn"])
+
+            # If that didn't work, we've reached the great-grandparents
+            # And we have to work via recursion
+            else:
+                parentSet = self.findParent(lfn = parentInfo['gplfn'])
+                for parent in parentSet:
+                    newParents.add(parent)
+
+        return newParents
+
+    def getPerformanceParameters(self, defaultParams):
+        """
+        _getPerformanceParameters_
+
+        This generic JobFactory function allows all splitters to easily
+        retrieve the parameters to specify the resource requirements for
+        the created jobs.
+        # TODO: Check couchDB for performance on the current task
+                and if not available it falls back to the default params.
+        It returns a tuple with the following values:
+        timePerEvent, sizePerEvent, memoryRequirement
+        """
+        timePerEvent = defaultParams.get('timePerEvent', None) or 0
+        sizePerEvent = defaultParams.get('sizePerEvent', None) or 0
+        memory = defaultParams.get('memoryRequirement', None) or 0
+        return timePerEvent, sizePerEvent, memory

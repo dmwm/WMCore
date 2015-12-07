@@ -13,11 +13,12 @@ def cherrypySetup(config = None):
     def chSetup(f):
         @wraps(f)
         def wrapper(self):
-            self.rt = Root(config)
+            self.rt = Root(config, testName = f.__name__)
             self.rt.start(blocking=False)
             self.urlbase = config.getServerUrl()
             f(self)
             self.rt.stop()
+            self.rt.setLastTest()
         return wrapper
 
     return chSetup
@@ -109,4 +110,3 @@ class DefaultConfig(Configuration):
 
     def getModelConfig(self):
         return self.UnitTests.views.active.rest
-

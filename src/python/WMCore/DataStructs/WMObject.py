@@ -22,7 +22,7 @@ class WMObject(object):
         """
         Simple method to ensure thelist is a list
         """
-        if isinstance(thelist, (set, set)):
+        if isinstance(thelist, set):
             thelist = list(thelist)
         elif not isinstance(thelist, list):
             thelist = [thelist]

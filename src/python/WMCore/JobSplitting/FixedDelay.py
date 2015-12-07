@@ -3,7 +3,7 @@
 _FixedDelay_
 
 If the current time is beyond trigger_time, add
-any unacquired jobs to 
+any unacquired jobs to
 """
 
 
@@ -15,7 +15,7 @@ import time
 
 class FixedDelay(JobFactory):
     """
-    if the current time is past trigger_time, 
+    if the current time is past trigger_time,
     pull all the available files into a
     new job
     """
@@ -37,10 +37,10 @@ class FixedDelay(JobFactory):
             if (len(availFiles) == 0):
                 # no files to acquire
                 return []
-                
+
             baseName = makeUUID()
             self.newGroup()
             self.newJob(name = '%s-endofrun' % (baseName,))
-            
-            for f in availFiles:                    
+
+            for f in availFiles:
                 self.currentJob.addFile(f)

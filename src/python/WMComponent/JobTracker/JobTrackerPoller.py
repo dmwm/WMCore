@@ -18,6 +18,8 @@ from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMFactory         import WMFactory
 from WMCore.WMException       import WMException
 
+from WMCore.FwkJobReport.Report      import Report
+
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
 from WMCore.BossAir.BossAirAPI          import BossAirAPI
@@ -32,12 +34,12 @@ class JobTrackerException(WMException):
 class JobTrackerPoller(BaseWorkerThread):
     """
     _JobTrackerPoller_
-    
+
     Polls the BossAir database for complete jobs
     Handles completed jobs
     """
 
-    
+
     def __init__(self, config):
         """
         Initialise class members
@@ -48,7 +50,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
 
-        
+
         self.changeState   = ChangeState(self.config)
         self.bossAir       = BossAirAPI(config = config)
         self.daoFactory    = DAOFactory(package = "WMCore.WMBS",
@@ -60,7 +62,7 @@ class JobTrackerPoller(BaseWorkerThread):
         # initialize the alert framework (if available)
         self.initAlerts(compName = "JobTracker")
 
-    
+
     def setup(self, parameters = None):
         """
         Load DB objects required for queries
@@ -82,23 +84,23 @@ class JobTrackerPoller(BaseWorkerThread):
         return
 
 
-    
+
 
     def algorithm(self, parameters = None):
         """
-	Performs the archiveJobs method, looking for each type of failure
-	And deal with it as desired.
+        Performs the archiveJobs method, looking for each type of failure
+        And deal with it as desired.
         """
         logging.info("Running Tracker algorithm")
         myThread = threading.currentThread()
         try:
             self.trackJobs()
-        except WMException, ex:
+        except WMException as ex:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollback()
             self.sendAlert(6, msg = str(ex))
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unknown exception in JobTracker!\n"
             msg += str(ex)
             if getattr(myThread, 'transaction', None):
@@ -119,7 +121,7 @@ class JobTrackerPoller(BaseWorkerThread):
 
         passedJobs = []
         failedJobs = []
-        
+
 
         # Get all jobs WMBS thinks are running
         jobList = self.jobListAction.execute(state = "Executing")
@@ -177,10 +179,21 @@ class JobTrackerPoller(BaseWorkerThread):
             jrPath = os.path.join(job.getCache(),
                                   'Report.%i.pkl' % (job['retry_count']))
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
-            #job.setFWJRPath(os.path.join(job.getCache(),
-            #                             'Report.%i.pkl' % (job['retry_count'])))
+            #Make sure the job object goes packed with fwjr_path so it
+            #can be persisted in couch
 
-        
+            fwjr = Report()
+            try:
+                fwjr.load(jrPath)
+            except Exception:
+                #Something went wrong reading the pickle
+                logging.error("The pickle in %s could not be loaded, generating a new one" % jrPath)
+                fwjr = Report()
+                msg = "The job failed due to a timeout, unfortunately the original job report was lost"
+                fwjr.addError("NoJobReport", 99303, "NoJobReport", msg)
+                fwjr.save(jrPath)
+            job["fwjr"] = fwjr
+
         # Set all paths at once
         myThread.transaction.begin()
         setFWJRAction.execute(binds = jrBinds)
@@ -195,7 +208,7 @@ class JobTrackerPoller(BaseWorkerThread):
     def passJobs(self, passedJobs):
         """
         _passJobs_
-        
+
         Pass jobs and move their stuff?
         """
 
@@ -222,7 +235,3 @@ class JobTrackerPoller(BaseWorkerThread):
         logging.debug("Propagating jobs in jobTracker")
         logging.info("Passed %i jobs" % len(passedJobs))
         return
-                
-
-
-        

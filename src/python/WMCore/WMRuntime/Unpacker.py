@@ -85,16 +85,16 @@ def createWorkArea(sandbox):
     tfile = tarfile.open(sandbox, "r")
     tfile.extractall(jobDir)
     tfile.close()
-    
+
     # need to pull out the startup file from the zipball
     zfile = zipfile.ZipFile( os.path.join( jobDir, 'WMCore.zip' ), 'r' )
     startupScript = zfile.read( 'WMCore/WMRuntime/Startup.py' )
     fd = os.open( os.path.join( jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY )
     os.write(fd, startupScript)
     os.close(fd)
-    
+
     zfile.close()
-    
+
     print "export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir)
     return jobDir
 
@@ -124,14 +124,14 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
     Run everything in the unpacker
 
     """
-    
+
 
 
     try:
         jobArea = createWorkArea(sandbox)
         installPackage(jobArea, package, jobIndex)
         #sys.exit(0)
-    except Exception, ex:
+    except Exception as ex:
         msg = "Unable to create job area for bootstrap\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
-    except getopt.GetoptError, ex:
+    except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)
         print msg
@@ -181,8 +181,6 @@ if __name__ == '__main__':
         makeErrorReport(jobname, 1, msg)
         print msg
         sys.exit(1)
-    
+
     runUnpacker(sandbox = sandbox, package = package,
                 jobIndex = jobIndex, jobname = jobname)
-
-

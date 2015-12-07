@@ -37,4 +37,3 @@ class New(DBFormatter):
                                        conn = conn, transaction = transaction )
         id = self.format(result)
         return int(id[0][0])
-

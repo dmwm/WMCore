@@ -9,4 +9,3 @@ from WMCore.WMBS.MySQL.Files.DeleteCheck import DeleteCheck as MySQLDeleteCheck
 
 class DeleteCheck(MySQLDeleteCheck):
     pass
-

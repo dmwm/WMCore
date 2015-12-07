@@ -31,15 +31,15 @@ class GetCache(DBFormatter):
         else:
             return results[0].fetchall()[0].values()[0]
 
-        
+
     def execute(self, ID, conn = None, transaction = False):
         """
         _execute_
 
         Execute the SQL for the given job ID and then format and return
         the result.
-        """        
+        """
         result = self.dbi.processData(self.sql, {"jobid": ID}, conn = conn,
                                       transaction = transaction)
-        
+
         return self.format(result)

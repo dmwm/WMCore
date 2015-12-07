@@ -42,24 +42,30 @@ class ParentlessMergeBySize(JobFactory):
         run boundaries is configurable.
         """
         fileGroups = {}
+        foundFiles = []
 
         for mergeableFile in mergeableFiles:
-            if not fileGroups.has_key(mergeableFile["se_name"]):
+            if mergeableFile["file_lfn"] not in foundFiles:
+                foundFiles.append(mergeableFile["file_lfn"])
+            else:
+                continue
+
+            if mergeableFile["pnn"] not in fileGroups:
                 if self.mergeAcrossRuns:
-                    fileGroups[mergeableFile["se_name"]] = []
+                    fileGroups[mergeableFile["pnn"]] = []
                 else:
-                    fileGroups[mergeableFile["se_name"]] = {}
+                    fileGroups[mergeableFile["pnn"]] = {}
 
             if self.mergeAcrossRuns:
-                fileGroups[mergeableFile["se_name"]].append(mergeableFile)
+                fileGroups[mergeableFile["pnn"]].append(mergeableFile)
             else:
-                if not fileGroups[mergeableFile["se_name"]].has_key(mergeableFile["file_run"]):
-                    fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]] = []
-                fileGroups[mergeableFile["se_name"]][mergeableFile["file_run"]].append(mergeableFile)
+                if mergeableFile["file_run"] not in fileGroups[mergeableFile["pnn"]]:
+                    fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]] = []
+                fileGroups[mergeableFile["pnn"]][mergeableFile["file_run"]].append(mergeableFile)
 
         return fileGroups
 
-    def createMergeJob(self, mergeableFiles):
+    def createMergeJob(self, mergeFiles):
         """
         _createMergeJob_
 
@@ -68,22 +74,42 @@ class ParentlessMergeBySize(JobFactory):
         """
         if self.currentGroup == None:
             self.newGroup()
-            
-        self.newJob(name = self.getJobName())
-        mergeableFiles.sort(fileCompare)
 
-        for file in mergeableFiles:
-            newFile = File(id = file["file_id"], lfn = file["file_lfn"],
-                           events = file["file_events"])
+        self.newJob(name = self.getJobName())
+        mergeFiles.sort(fileCompare)
+
+        jobSize = 0
+        largestFile = 0
+        for mergeFile in mergeFiles:
+
+            jobSize += mergeFile["file_size"]
+            largestFile = max(largestFile, mergeFile["file_size"])
+
+            newFile = File(id = mergeFile["file_id"],
+                           lfn = mergeFile["file_lfn"],
+                           events = mergeFile["file_events"])
 
             # The WMBS data structure puts locations that are passed in through
             # the constructor in the "newlocations" attribute.  We want these to
             # be in the "locations" attribute so that they get picked up by the
             # job submitter.
-            newFile["locations"] = set([file["se_name"]])
-            newFile.addRun(Run(file["file_run"], file["file_lumi"]))                                                                                    
+            newFile["locations"] = set([mergeFile["pnn"]])
+            newFile.addRun(Run(mergeFile["file_run"], mergeFile["file_lumi"]))
             self.currentJob.addFile(newFile)
-    
+
+        # job time based on
+        #   - 5 min initialization
+        #   - 5MB/s merge speed
+        #   - checksum calculation at 5MB/s (twice)
+        #   - stageout at 5MB/s
+        # job disk based on
+        #  - input for largest file on local disk
+        #  - output on local disk (factor 1)
+        jobTime = 300 + (jobSize*4)/5000000
+        self.currentJob.addResourceEstimates(jobTime = jobTime, disk = (jobSize+largestFile)/1024)
+
+        return
+
     def defineMergeJobs(self, mergeableFiles):
         """
         _defineMergeJobs_
@@ -113,20 +139,20 @@ class ParentlessMergeBySize(JobFactory):
                     mergeJobFiles = []
                 else:
                     continue
-                    
+
             mergeJobFiles.append(mergeableFile)
             mergeJobFileSize += mergeableFile["file_size"]
             mergeJobEvents += mergeableFile["file_events"]
             if mergeableFile['insert_time'] < earliestInsert:
                 earliestInsert = mergeableFile['insert_time']
-                        
+
         if mergeJobFileSize > self.minMergeSize or self.forceMerge == True or \
                time.time() - earliestInsert > self.maxWaitTime:
             if len(mergeJobFiles) > 0:
                 self.createMergeJob(mergeJobFiles)
-                                
+
         return
-    
+
     def algorithm(self, *args, **kwargs):
         """
         _algorithm_
@@ -140,7 +166,7 @@ class ParentlessMergeBySize(JobFactory):
         """
         # This doesn't use a proxy
         self.grabByProxy = False
-        
+
         self.maxMergeSize    = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize    = int(kwargs.get("min_merge_size", 1048576))
         self.maxMergeEvents  = int(kwargs.get("max_merge_events", 50000))
@@ -166,7 +192,7 @@ class ParentlessMergeBySize(JobFactory):
             injected  = getAction.execute(name = self.subscription["workflow"].name,
                                           conn = myThread.transaction.conn,
                                           transaction = True)
-            
+
             if not injected:
                 self.forceMerge = False
 
@@ -185,5 +211,3 @@ class ParentlessMergeBySize(JobFactory):
                     self.defineMergeJobs(groupedFiles[seName][runNumber])
 
         return
-
-

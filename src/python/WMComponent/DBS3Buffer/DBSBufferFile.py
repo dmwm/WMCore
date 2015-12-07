@@ -4,31 +4,25 @@ _DBSBufferFile_
 
 A simple object representing a file in DBSBuffer.
 """
-
-
-
-
-import time
-import threading
-import logging
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 
 from WMCore.DataStructs.File import File as WMFile
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Database.Transaction import Transaction
-
 from WMCore.DataStructs.Run import Run
+from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.WMBSBase import WMBSBase
+
 
 class DBSBufferFile(WMBSBase, WMFile):
     def __init__(self, lfn = None, id = -1, size = None,
                  events = None, checksums = {}, parents = None, locations = None,
-                 status = "NOTUPLOADED"):
+                 status = "NOTUPLOADED", workflowId = None, prep_id = None):
         WMBSBase.__init__(self)
-        WMFile.__init__(self, lfn = lfn, size = size, events = events, 
+        WMFile.__init__(self, lfn = lfn, size = size, events = events,
                         checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
         self.setdefault("id", id)
-        
+        self.setdefault("workflowId", workflowId)
+
         # Parameters for the algorithm
         self.setdefault("appName", None)
         self.setdefault("appVer", None)
@@ -41,8 +35,8 @@ class DBSBufferFile(WMBSBase, WMFile):
         self.setdefault("validStatus", None)
         self.setdefault("globalTag", None)
         self.setdefault("datasetParent", None)
-        self.setdefault("custodialSite", None)
-        
+        self.setdefault("prep_id", None)
+
         if locations == None:
             self.setdefault("newlocations", set())
         else:
@@ -68,7 +62,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         action = self.daoFactory(classname = "DBSBufferFiles.Exists")
         return action.execute(lfn = self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
-        
+
     def getStatus(self):
         """
         _getStatus_
@@ -76,7 +70,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         Retrieve the status of the file.  This can be one of the following:
           UPLOADED
           NOTUPLOADED
-	"""
+        """
         return self["status"]
 
     def getLocations(self):
@@ -84,7 +78,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         _getLocations_
 
         Retrieve a list of locations where this file is stored.
-	"""
+        """
         return list(self["locations"])
 
     def getRuns(self):
@@ -93,9 +87,9 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         Retrieve a list of WMCore.DataStructs.Run objects that represent which
         run/lumi sections this file contains.
-	"""
+        """
         return list(self["runs"])
-                                    
+
     def load(self, parentage = 0):
         """
         _load_
@@ -128,11 +122,11 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         action = self.daoFactory(classname = "DBSBufferFiles.GetLocation")
         self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
-                                           transaction = self.existingTransaction()) 
+                                           transaction = self.existingTransaction())
 
         self["newlocations"].clear()
         self["parents"].clear()
-        
+
         if parentage > 0:
             action = self.daoFactory(classname = "DBSBufferFiles.GetParents")
             lfns = action.execute(self["lfn"], conn = self.getDBConn(),
@@ -152,8 +146,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         Insert the dataset and algorithm for this file into the DBS Buffer.
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
-        newDatasetAction = self.daoFactory(classname = "NewDataset")
-        assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")      
+        assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")
 
         existingTransaction = self.beginTransaction()
 
@@ -163,25 +156,28 @@ class DBSBufferFile(WMBSBase, WMFile):
                               conn = self.getDBConn(),
                               transaction = True)
 
-        newDatasetAction.execute(datasetPath    = self["datasetPath"],
-                                 processingVer  = self['processingVer'],
-                                 acquisitionEra = self['acquisitionEra'],
-                                 validStatus    = self['validStatus'],
-                                 globalTag      = self.get('globalTag', None),
-                                 parent         = self['datasetParent'],
-                                 custodialSite  = self['custodialSite'],
-                                 conn = self.getDBConn(),
-                                 transaction = True)
+        dbsbufferDataset = DBSBufferDataset(self["datasetPath"],
+                                            processingVer = self['processingVer'],
+                                            acquisitionEra = self['acquisitionEra'],
+                                            validStatus = self['validStatus'],
+                                            globalTag = self.get('globalTag', None),
+                                            parent = self['datasetParent'],
+                                            prep_id = self['prep_id'])
+
+        if dbsbufferDataset.exists():
+            dbsbufferDataset.updateDataset()
+        else:
+            dbsbufferDataset.create()
 
         assocID = assocAction.execute(appName = self["appName"], appVer = self["appVer"],
                                       appFam = self["appFam"], psetHash = self["psetHash"],
                                       datasetPath = self["datasetPath"],
                                       conn = self.getDBConn(),
                                       transaction = True)
-        
-        self.commitTransaction(existingTransaction)        
+
+        self.commitTransaction(existingTransaction)
         return assocID
-    
+
     def create(self):
         """
         _create_
@@ -200,10 +196,11 @@ class DBSBufferFile(WMBSBase, WMFile):
         addAction.execute(files = self["lfn"], size = self["size"],
                           events = self["events"],
                           datasetAlgo = assocID, status = self["status"],
+                          workflowID = self["workflowId"],
                           conn = self.getDBConn(),
                           transaction = self.existingTransaction())
 
-        if len(self["runs"]) > 0:        
+        if len(self["runs"]) > 0:
             lumiAction = self.daoFactory(classname="DBSBufferFiles.AddRunLumi")
             lumiAction.execute(file = self["lfn"], runs = self["runs"],
                                conn = self.getDBConn(),
@@ -217,31 +214,31 @@ class DBSBufferFile(WMBSBase, WMFile):
             self.setCksum(cksum = self["checksums"][checksumType],
                           cktype = checksumType)
         return
-    
+
     def delete(self):
         """
         _delete_
-        
+
         Remove a file from the DSBuffer database.
         """
         action = self.daoFactory(classname = "DBSBufferFiles.Delete")
         action.execute(file = self["lfn"], conn = self.getDBConn(),
                        transaction = self.existingTransaction())
         return
-        
+
     def addChildren(self, lfns):
         """
         _addChildren_
-        
+
         Set one or more lfns as the child of this file.
         """
         if type(lfns) != list:
             lfns = [lfns]
-            
+
         existingTransaction = self.beginTransaction()
 
         if not self["id"] > 0:
-            raise Exception, "Parent file doesn't have an id %s" % self["lfn"]
+            raise Exception("Parent file doesn't have an id %s" % self["lfn"])
 
         action = self.daoFactory(classname = "DBSBufferFiles.HeritageLFNChild")
         action.execute(childLFNs = lfns, parentID = self["id"],
@@ -250,7 +247,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         self.commitTransaction(existingTransaction)
         return
-        
+
     def addParents(self, parentLFNs):
         """
         _addParents_
@@ -261,7 +258,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         """
         newAlgoAction = self.daoFactory(classname = "NewAlgo")
         newDatasetAction = self.daoFactory(classname = "NewDataset")
-        assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")      
+        assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")
         existsAction = self.daoFactory(classname = "DBSBufferFiles.Exists")
 
         uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
@@ -270,7 +267,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         setDatasetAlgoAction = uploadFactory(classname = "SetDatasetAlgo")
 
         existingTransaction = self.beginTransaction()
-        
+
         toBeCreated = []
         for parentLFN in parentLFNs:
             self["parents"].add(DBSBufferFile(lfn = parentLFN))
@@ -310,13 +307,13 @@ class DBSBufferFile(WMBSBase, WMFile):
         action.execute(parentLFNs = parentLFNs, childLFN = self["lfn"],
                        conn = self.getDBConn(),
                        transaction = self.existingTransaction())
-        self.commitTransaction(existingTransaction)        
+        self.commitTransaction(existingTransaction)
         return
-    
+
     def updateLocations(self):
         """
         _updateLocations_
-        
+
         Write any new locations to the database.  After any new locations are
         written to the database all locations will be reloaded from the
         database.
@@ -346,20 +343,20 @@ class DBSBufferFile(WMBSBase, WMFile):
         self["newlocations"].clear()
         self.commitTransaction(existingTransaction)
         return
-        
-    def setLocation(self, se, immediateSave = True):
+
+    def setLocation(self, pnn, immediateSave = True):
         """
         _setLocation_
-        
+
         Sets the location of a file. If immediateSave is True, commit change to
         the DB immediately, otherwise queue for addition when save() is called.
         """
-        if isinstance(se, str):
-            self["newlocations"].add(se)
-            self["locations"].add(se)
+        if isinstance(pnn, str):
+            self["newlocations"].add(pnn)
+            self["locations"].add(pnn)
         else:
-            self["newlocations"].update(se)
-            self["locations"].update(se)
+            self["newlocations"].update(pnn)
+            self["locations"].update(pnn)
 
         if immediateSave:
             self.updateLocations()
@@ -422,13 +419,13 @@ class DBSBufferFile(WMBSBase, WMFile):
     def setGlobalTag(self, globalTag):
         """
         _setGlobalTag_
-        
+
         Set the global Tag
         """
 
         self['globalTag'] = globalTag
         return
-    
+
     def getGlobalTag(self):
         """
         _getGlobalTag_
@@ -438,6 +435,14 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         return self['globalTag']
 
+    def setPrepID(self, prep_id):
+        
+        self['prep_id'] = prep_id
+        return
+
+    def getPrepID(self):
+        
+        return self['prep_id']
 
     def setDatasetParent(self, datasetParent):
         """
@@ -458,21 +463,6 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         return self['datasetParent']
 
-    def setCustodialSite(self, custodialSite):
-        """
-        _setCustodialSite_
-
-        """
-        self['custodialSite'] = custodialSite
-        return
-
-    def getCustodialSite(self):
-        """
-        _getCustodialSite_
-
-        """
-        return self['custodialSite']
-    
     def getParentLFNs(self):
         """
         Get a flat list of parent LFNs
@@ -502,9 +492,9 @@ class DBSBufferFile(WMBSBase, WMFile):
         lumiAction.execute(file = self["lfn"], runs = runSet,
                            conn = self.getDBConn(),
                            transaction = self.existingTransaction())
-        
+
         action = self.daoFactory(classname = "DBSBufferFiles.GetRunLumiFile")
-        runs = action.execute(self["lfn"], conn = self.getDBConn(), 
+        runs = action.execute(self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
         self["runs"].clear()
@@ -520,9 +510,9 @@ class DBSBufferFile(WMBSBase, WMFile):
         Associate this file with a block in DBS/PhEDEx.
         """
         existingTransaction = self.beginTransaction()
-        
+
         blockAction = self.daoFactory(classname = "DBSBufferFiles.SetBlock")
-        blockAction.execute(self["lfn"], blockName, conn = self.getDBConn(), 
+        blockAction.execute(self["lfn"], blockName, conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
@@ -531,7 +521,7 @@ class DBSBufferFile(WMBSBase, WMFile):
     def setCksum(self, cksum, cktype):
         """
         _setCKSum_
-        
+
         Set the Checksum
         """
         if self['id'] < 0:

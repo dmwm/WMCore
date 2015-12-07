@@ -34,6 +34,9 @@ class LumiBasedTest(unittest.TestCase):
         """
 
         self.testWorkflow = Workflow()
+        self.performanceParams = {'timePerEvent' : 12,
+                                  'memoryRequirement' : 2300,
+                                  'sizePerEvent' : 400}
 
         return
 
@@ -49,7 +52,7 @@ class LumiBasedTest(unittest.TestCase):
     def createSubscription(self, nFiles, lumisPerFile, twoSites = False):
         """
         _createSubscription_
-        
+
         Create a subscription for testing
         """
 
@@ -71,7 +74,7 @@ class LumiBasedTest(unittest.TestCase):
                                events = 100)
                 lumis = []
                 for lumi in range(lumisPerFile):
-                    lumis.append((i * 100) + lumi)
+                    lumis.append(5 + 10 * (i * 100) + lumi) #lumis should be different
                 newFile.addRun(Run(i, *lumis))
                 newFile.setLocation('malpaquet')
                 testFileset.addFile(newFile)
@@ -98,7 +101,8 @@ class LumiBasedTest(unittest.TestCase):
 
 
         jobGroups = jobFactory(lumis_per_job = 3,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -111,7 +115,8 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -123,7 +128,8 @@ class LumiBasedTest(unittest.TestCase):
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = wholeLumiFiles)
         jobGroups = jobFactory(lumis_per_job = 2,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         # 10 because we split on run boundaries
         self.assertEqual(len(jobGroups[0].jobs), 10)
@@ -134,22 +140,23 @@ class LumiBasedTest(unittest.TestCase):
 
 
         mask0 = jobList[0]['mask'].getRunAndLumis()
-        self.assertEqual(mask0, {0L: [[0L, 1L]]})
+        self.assertEqual(mask0, {0: [[0, 1]]})
         mask1 = jobList[1]['mask'].getRunAndLumis()
-        self.assertEqual(mask1, {0L: [[2L, 2L]]})
+        self.assertEqual(mask1, {0: [[2, 2]]})
         mask2 = jobList[2]['mask'].getRunAndLumis()
-        self.assertEqual(mask2, {1L: [[100L, 101L]]})
+        self.assertEqual(mask2, {1: [[100, 101]]})
         mask3 = jobList[3]['mask'].getRunAndLumis()
-        self.assertEqual(mask3, {1L: [[102L, 102L]]})
+        self.assertEqual(mask3, {1: [[102, 102]]})
 
-        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0L: [[0L, 1L]]})
+        self.assertEqual(jobList[0]['mask'].getRunAndLumis(), {0: [[0, 1]]})
 
         # Do it with multiple sites
         twoSiteSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 2, twoSites = True)
         jobFactory = splitter(package = "WMCore.DataStructs",
                               subscription = twoSiteSubscription)
         jobGroups = jobFactory(lumis_per_job = 1,
-                               halt_job_on_file_boundaries = True)
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 2)
         self.assertEqual(len(jobGroups[0].jobs), 10)
         for job in jobGroups[0].jobs:
@@ -171,7 +178,8 @@ class LumiBasedTest(unittest.TestCase):
 
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = False,
-                               splitOnRun = False)
+                               splitOnRun = False,
+                               performance = self.performanceParams)
 
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
@@ -179,12 +187,12 @@ class LumiBasedTest(unittest.TestCase):
 
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
 
 
         # And it should still be the same when you load it out of the database
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]], 1L: [[100L, 100L]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -192,17 +200,107 @@ class LumiBasedTest(unittest.TestCase):
                               subscription = testSubscription)
         jobGroups = jobFactory(lumis_per_job = 3,
                                halt_job_on_file_boundaries = True,
-                               splitOnRun = True)
+                               splitOnRun = True,
+                               performance = self.performanceParams)
         self.assertEqual(len(jobGroups), 1)
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 10)
-        
+
         # In this case it should slice things up so that each job only has one run
         # in it.
-        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0L: [[0L, 2L]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0L: [[3L, 4L]]})
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]]})
         return
 
+
+    def testC_LumiCorrections(self):
+        """
+        _LumiCorrections_
+
+        Test the splitting algorithm can handle lumis which
+        cross multiple files.
+        """
+        splitter = SplitterFactory()
+        testSubscription = self.createSubscription(nFiles = 2, lumisPerFile = 2, twoSites = False)
+        files = testSubscription.getFileset().getFiles()
+        self.assertEqual(len(files), 2)
+        for runObj in files[0]['runs']:
+            if runObj.run != 0:
+                continue
+            runObj.lumis.append(42)
+        for runObj in files[1]['runs']:
+            if runObj.run != 1:
+                continue
+            runObj.run = 0
+            runObj.lumis.append(42)
+        files[1]['locations'] = set(['blenheim'])
+
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+
+        jobGroups = jobFactory(lumis_per_job = 3,
+                               halt_job_on_file_boundaries = False,
+                               splitOnRun = False,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True
+                              )
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 2)
+
+        self.assertEqual(len(jobs[0]['input_files']), 2)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 1], [42, 42]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[100, 101]]})
+
+        #Test that we are not removing all the lumis from the jobs anymore
+        removedLumi = self.createSubscription(nFiles = 4, lumisPerFile = 1)
+        #Setting the lumi of job 0 to value 100, as the one of job one
+        runObj = next(iter(removedLumi.getFileset().getFiles()[0]['runs']))
+        runObj.run = 1
+        runObj[0] = 100
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = removedLumi)
+        jobGroups = jobFactory(lumis_per_job = 1,
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True)
+        # we need to end up with 3 jobs and one job with two input files
+        jobs = jobGroups[0].jobs
+
+        self.assertEqual(len(jobs), 3)
+        self.assertEqual(len(jobs[0]['input_files']), 2)
+        self.assertEqual(len(jobs[1]['input_files']), 1)
+        self.assertEqual(len(jobs[2]['input_files']), 1)
+        self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {1: [[100, 100]]})
+        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {2: [[200, 200]]})
+        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {3: [[300, 300]]})
+
+
+        #Check that if the last two jobs have the same duplicated lumi you do not get an error
+        testSubscription = self.createSubscription(nFiles = 2, lumisPerFile = 2,
+                                           twoSites = False)
+        files = testSubscription.getFileset().getFiles()
+        # Now modifying and adding the same duplicated lumis in the Nth and Nth-1 jobs
+        for runObj in files[0]['runs']:
+            if runObj.run != 0:
+                continue
+            runObj.lumis.append(42)
+        for runObj in files[1]['runs']:
+            runObj.run = 0
+            runObj.lumis = [42]
+        files[1]['locations'] = set(['blenheim'])
+        jobFactory = splitter(package = "WMCore.DataStructs",
+                              subscription = testSubscription)
+        jobGroups = jobFactory(events_per_job = 50,
+                               halt_job_on_file_boundaries = True,
+                               performance = self.performanceParams,
+                               applyLumiCorrection = True)
+
+        self.assertEqual(len(jobGroups), 1)
+        jobs = jobGroups[0].jobs
+        self.assertEqual(len(jobs), 3)
 
 if __name__ == '__main__':
     unittest.main()

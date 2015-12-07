@@ -51,10 +51,5 @@ class Sandbox:
         if filename not in self.listFiles():
             msg = "Cannot find file %s in %s" % (filename, self.directory)
             #raise or return None here??
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         return os.path.join(self.directory, filename)
-
-
-
-
-

@@ -6,6 +6,7 @@ CouchService.py
 Created by Dave Evans on 2010-04-20.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from time import time
 
 from WMCore.ACDC.Service import Service
 from WMCore.ACDC.CouchCollection import CouchCollection
@@ -16,7 +17,7 @@ import WMCore.Database.CouchUtils as CouchUtils
 import WMCore.Database.CMSCouch as CMSCouch
 
 class CouchService(Service):
-    
+
     def __init__(self, **options):
         Service.__init__(self, **options)
         self.url = options.get('url', None)
@@ -28,13 +29,13 @@ class CouchService(Service):
     def listCollections(self, owner):
         """
         _listCollections_
-        
+
         List the collections belonging to an owner.
         """
         params = {"startkey": [owner.group.name, owner.name],
                   "endkey": [owner.group.name, owner.name, {}],
                   "reduce": True, "group_level": 3}
-        
+
         result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
                                        params)
 
@@ -44,40 +45,40 @@ class CouchService(Service):
             coll.setOwner(owner)
             coll.populate()
             yield coll
-            
+
     @CouchUtils.connectToCouch
     def listOwners(self):
         """
         _listOwners_
-        
+
         List the owners in the DB
-        
+
         """
-        result = self.couchdb.loadView("GroupUser", 'name_map', {}, [])
+        result = self.couchdb.loadView("GroupUser", 'name_map', {'stale': "update_after"}, [])
         users = []
         for row in result[u'rows']:
             group = row[u'key'][0]
             user = row[u'key'][1]
             users.append(makeUser(group, user, self.url, self.database))
         return users
-        
+
     def newOwner(self, group, user):
         """
         _newOwner_
-        
+
         Add a new owner
         """
         userInstance = makeUser(group, user, self.url, self.database)
         userInstance.create()
         return userInstance
-        
+
     @CouchUtils.connectToCouch
     def removeOwner(self, owner):
         """
         _removeOwner_
-        
+
         Remove an owner and all the associated collections and filesets
-        
+
         """
         result = self.couchdb.loadView("GroupUser", 'owner_group_user',
              {'startkey' :[owner.group.name, owner.name],
@@ -103,3 +104,42 @@ class CouchService(Service):
 
         for fileset in collectionInstance["filesets"]:
             yield fileset
+
+    @CouchUtils.connectToCouch
+    def removeFilesetsByCollectionName(self, collectionName):
+        """
+        _removeFilesetsByCollectionName_
+
+        Remove all the collections matching certain collection
+        name.
+        """
+        result = self.couchdb.loadView("ACDC", "byCollectionName", keys = [collectionName])
+        for entry in result["rows"]:
+            self.couchdb.queueDelete(entry["value"])
+        return self.couchdb.commit()
+
+    @CouchUtils.connectToCouch
+    def removeOldFilesets(self, expirationDays):
+        """
+        _removeOldFilesets_
+
+        Remove filesets older than certain date defined
+        in expirationDays (in days).
+        """
+        cutoutPoint = time() - (expirationDays * 3600 * 24)
+        result = self.couchdb.loadView("ACDC", "byTimestamp", {"endkey" : cutoutPoint})
+        count = 0
+        for entry in result["rows"]:
+            self.couchdb.queueDelete(entry["value"])
+            count += 1
+        self.couchdb.commit()
+        return count
+    
+    @CouchUtils.connectToCouch
+    def listCollectionNames(self):
+        options = {'reduce': True, 'group_level': 1, 'stale': "update_after"}
+        result = self.couchdb.loadView("ACDC", "byCollectionName", options)
+        collectionNames = []
+        for row in result["rows"]:
+            collectionNames.append(row["key"])
+        return collectionNames

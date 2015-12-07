@@ -13,4 +13,3 @@ class LoadRunning(MySQLLoadRunning):
     _LoadRunning_
 
     """
-

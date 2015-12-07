@@ -28,7 +28,7 @@ def pnfsPfn(pfn):
 
     pfnSplit = pfn.split("WAX/11/store/", 1)[1]
     filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-    
+
     # handle lustre location
     if pfn.find('/store/unmerged/') == -1:
         return filePath
@@ -79,13 +79,13 @@ class DCCPFNALImpl(StageOutImpl):
             command += "  mkdir -p %s\n" % directory
             command += "fi\n"
             self.executeCommand(command)
-        else: 
+        else:
             targetdir= os.path.dirname(targetPFN)
             checkdircmd="/bin/ls %s > /dev/null " % targetdir
-            print "Check dir existence : %s" %checkdircmd 
+            print "Check dir existence : %s" %checkdircmd
             try:
                 (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd
                 msg += "Exception: %s\n" % str(ex)
@@ -97,7 +97,7 @@ class DCCPFNALImpl(StageOutImpl):
                 print "=> creating the dir : %s" %mkdircmd
                 try:
                     self.executeCommand(mkdircmd)
-                except Exception, ex:
+                except Exception as ex:
                     msg = "Warning: Exception while invoking command:\n"
                     msg += "%s\n" % mkdircmd
                     msg += "Exception: %s\n" % str(ex)
@@ -125,7 +125,7 @@ class DCCPFNALImpl(StageOutImpl):
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
             print "Created Target PFN with dCache Door: ", pfn
-        else: 
+        else:
             pfnSplit = pfn.split("/store/unmerged/", 1)[1]
             pfn = "/lustre/unmerged/%s" % pfnSplit
 
@@ -144,7 +144,7 @@ class DCCPFNALImpl(StageOutImpl):
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
-        
+
         if targetPFN.find('/lustre/unmerged') == -1:
             optionsStr = ""
             if options != None:
@@ -283,7 +283,7 @@ fi
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
             command = "rm -fv %s" %filePath
             self.executeCommand(command)
-        else: 
+        else:
             pfnSplit = pfnToRemove.split("/store/unmerged/", 1)[1]
             pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
             command = "/bin/rm %s" % pfnToRemove

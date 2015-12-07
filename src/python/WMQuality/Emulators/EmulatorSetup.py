@@ -11,7 +11,7 @@ def deleteConfig(configFile):
         os.remove(configFile)
     else:
         pass
-                   
+
 def setupWMAgentConfig():
     fd,configFile = tempfile.mkstemp(".py", "TESTAGENTConfig",)
     os.environ["WMAGENT_CONFIG"] = configFile
@@ -27,7 +27,9 @@ def _wmAgentConfig(configFile):
     # set the real couchDB information here
     config.JobStateMachine.couchurl = os.getenv("COUCHURL")
     config.JobStateMachine.couchDBName = os.getenv("COUCHDB")
-
+    config.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
+    config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
+    
     config.section_("Agent")
     # User specific parameter
     config.Agent.hostName = "cmssrv52.fnal.gov"
@@ -44,5 +46,5 @@ def _wmAgentConfig(configFile):
     config.section_("BossAir")
     config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
     config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
-    
+
     saveConfigurationFile(config, configFile)

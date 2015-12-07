@@ -49,7 +49,7 @@ class DataCollectionService(CouchService):
         return coll
 
     @CouchUtils.connectToCouch
-    def failedJobs(self, failedJobs):
+    def failedJobs(self, failedJobs, useMask = True):
         """
         _failedJobs_
 
@@ -62,7 +62,7 @@ class DataCollectionService(CouchService):
             try:
                 taskName = job['task']
                 workflow = job['workflow']
-            except KeyError, ex:
+            except KeyError as ex:
                 msg =  "Missing required, non-standard key %s in job in ACDC.DataCollectionService" % (str(ex))
                 logging.error(msg)
                 raise ACDCDCSException(msg)
@@ -76,9 +76,41 @@ class DataCollectionService(CouchService):
             fileset = CouchFileset(database = self.database, url = self.url,
                                     name = taskName)
             coll.addFileset(fileset)
-            fileset.add(files = job['input_files'], mask = job['mask'])
+            if useMask:
+                fileset.add(files = job['input_files'], mask = job['mask'])
+            else:
+                fileset.add(files = job['input_files'])
 
         return
+    
+    def _sortLocationInPlace(self, fileInfo):
+        fileInfo["locations"].sort()
+        return fileInfo["locations"]
+    
+    @CouchUtils.connectToCouch
+    def _getFilesetInfo(self, collectionName, filesetName, user, group,
+                        chunkOffset = None, chunkSize = None):
+        """
+        """
+        option = {"include_docs": True, "reduce": False}
+        keys = [[group, user, collectionName, filesetName]]
+        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs", option, keys)
+        
+        filesInfo = []
+        for row in results["rows"]:
+            files = row["doc"].get("files", False)
+            if files:
+                filesInfo.extend(files.values())
+
+        # second lfn sort
+        filesInfo.sort(key = lambda x: x["lfn"])
+        #primary location sort (python preserve sort result) 
+        filesInfo.sort(key = lambda x: "".join(self._sortLocationInPlace(x)))
+        
+        if chunkOffset != None and chunkSize != None:
+            return filesInfo[chunkOffset: chunkOffset + chunkSize]
+        else:
+            return filesInfo
 
     @CouchUtils.connectToCouch
     def chunkFileset(self, collectionName, filesetName, chunkSize = 100,
@@ -92,11 +124,7 @@ class DataCollectionService(CouchService):
         chunk.
         """
         chunks = []
-        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_metadata",
-                                        {"startkey": [group, user,
-                                                      collectionName, filesetName],
-                                         "endkey": [group, user,
-                                                    collectionName, filesetName, {}]}, [])
+        results = self._getFilesetInfo(collectionName, filesetName, user, group)
 
         totalFiles = 0
         currentLocation = None
@@ -104,28 +132,64 @@ class DataCollectionService(CouchService):
         numLumisInBlock = 0
         numEventsInBlock = 0
 
-        for row in results["rows"]:
+        for value in results:
             if currentLocation == None:
-                currentLocation = row["key"][4]
-            if numFilesInBlock == chunkSize or currentLocation != row["key"][4]:
+                currentLocation = value["locations"]
+            if numFilesInBlock == chunkSize or currentLocation != value["locations"]:
                 chunks.append({"offset": totalFiles, "files": numFilesInBlock,
                                "events": numEventsInBlock, "lumis": numLumisInBlock,
                                "locations": currentLocation})
                 totalFiles += numFilesInBlock
-                currentLocation = row["key"][4]
+                currentLocation = value["locations"]
                 numFilesInBlock = 0
                 numLumisInBlock = 0
                 numEventsInBlock = 0
 
             numFilesInBlock += 1
-            numLumisInBlock += row["value"]["lumis"]
-            numEventsInBlock += row["value"]["events"]
+            lumis = 0
+            for runLumi in value["runs"]:
+                lumis += len(runLumi["lumis"])
+            numLumisInBlock += lumis
+            numEventsInBlock += value["events"]
 
         if numFilesInBlock > 0:
             chunks.append({"offset": totalFiles, "files": numFilesInBlock,
                            "events": numEventsInBlock, "lumis": numLumisInBlock,
                            "locations": currentLocation})
         return chunks
+
+    @CouchUtils.connectToCouch
+    def singleChunkFileset(self, collectionName, filesetName,
+                           user = "cmsdataops", group = "cmsdataops"):
+        """
+        _singleChunkFileset_
+
+        Put all of the fileset in a given collection/task into a single chunk.  This
+        will return a dictionary that contains the offset into the
+        fileset and a summary of files/events/lumis that are in the fileset
+        chunk.
+        """
+        
+        files = self._getFilesetInfo(collectionName, filesetName, user, group)
+
+        locations = set()
+        numFilesInBlock = 0
+        numLumisInBlock = 0
+        numEventsInBlock = 0
+
+        for fileInfo in files:
+            locations |= set(fileInfo["locations"])
+
+            numFilesInBlock += 1
+            lumis = 0
+            for runLumi in fileInfo["runs"]:
+                lumis += len(runLumi["lumis"])
+            numLumisInBlock += lumis
+            numEventsInBlock += fileInfo["events"]
+
+        return {"offset": 0, "files": numFilesInBlock,
+                "events": numEventsInBlock, "lumis": numLumisInBlock,
+                "locations": locations}
 
     @CouchUtils.connectToCouch
     def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize,
@@ -135,13 +199,9 @@ class DataCollectionService(CouchService):
 
         Retrieve metadata for a particular chunk.
         """
-        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_metadata",
-                                        {"startkey": [group, user,
-                                                      collectionName, filesetName],
-                                         "endkey": [group, user,
-                                                    collectionName, filesetName, {}],
-                                         "skip": chunkOffset,
-                                         "limit": chunkSize}, [])
+        
+        files = self._getFilesetInfo(collectionName, filesetName, 
+                                       user, group, chunkOffset, chunkSize)
 
         totalFiles = 0
         currentLocation = None
@@ -149,13 +209,16 @@ class DataCollectionService(CouchService):
         numLumisInBlock = 0
         numEventsInBlock = 0
 
-        for row in results["rows"]:
+        for fileInfo in files:
             if currentLocation == None:
-                currentLocation = row["key"][4]
+                currentLocation = fileInfo["locations"]
 
             numFilesInBlock += 1
-            numLumisInBlock += row["value"]["lumis"]
-            numEventsInBlock += row["value"]["events"]
+            lumis = 0
+            for runLumi in fileInfo["runs"]:
+                lumis += len(runLumi["lumis"])
+            numLumisInBlock += lumis
+            numEventsInBlock += fileInfo["events"]
 
         return {"offset": totalFiles, "files": numFilesInBlock,
                 "events": numEventsInBlock, "lumis": numLumisInBlock,
@@ -170,21 +233,15 @@ class DataCollectionService(CouchService):
         Retrieve a chunk of files from the given collection and task.
         """
         chunkFiles = []
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_files",
-                                       {"startkey": [group, user,
-                                                     collectionName, filesetName],
-                                        "endkey": [group, user,
-                                                   collectionName, filesetName, {}],
-                                        "limit": chunkSize,
-                                        "skip": chunkOffset,
-                                        }, [])
+        files = self._getFilesetInfo(collectionName, filesetName, 
+                                       user, group, chunkOffset, chunkSize)
 
-        for row in result["rows"]:
-            resultRow = row['value']
-            newFile = File(lfn = resultRow["lfn"], size = resultRow["size"],
-                           events = resultRow["events"], parents = set(resultRow["parents"]),
-                           locations = set(resultRow["locations"]), merged = resultRow["merged"])
-            for run in resultRow["runs"]:
+
+        for fileInfo in files:
+            newFile = File(lfn = fileInfo["lfn"], size = fileInfo["size"],
+                           events = fileInfo["events"], parents = set(fileInfo["parents"]),
+                           locations = set(fileInfo["locations"]), merged = fileInfo["merged"])
+            for run in fileInfo["runs"]:
                 newRun = Run(run["run_number"])
                 newRun.extend(run["lumis"])
                 newFile.addRun(newRun)
@@ -192,6 +249,31 @@ class DataCollectionService(CouchService):
             chunkFiles.append(newFile)
 
         return chunkFiles
+
+    @CouchUtils.connectToCouch
+    def getProductionACDCInfo(self, collectionID, taskName, user = "cmsdataops",
+                        group = "cmsdataops"):
+        """
+        _getFileInfo_
+
+        Query ACDC for all of the files in the given collection and task.
+        Return an entry for each file with lumis and event info.
+        Format is:
+        [{'lfn' : 'someLfn',
+          'runs' : { run0 : [lumi0,lumi1], },
+          'events' :}]
+        """
+
+        files = self._getFilesetInfo(collectionID, taskName, user, group)
+
+        acdcInfo = []
+        for value in files:
+            fileInfo = {"lfn" : value["lfn"],
+                        "first_event" : value["first_event"],
+                        "lumis" : value["runs"][0]["lumis"],
+                        "events" : value["events"]}
+            acdcInfo.append(fileInfo)
+        return acdcInfo
 
     @CouchUtils.connectToCouch
     def getLumiWhitelist(self, collectionID, taskName, user = "cmsdataops",
@@ -207,18 +289,16 @@ class DataCollectionService(CouchService):
 
         Note that the run numbers are strings.
         """
-        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_files",
-                                        {"startkey": [group, user,
-                                                      collectionID, taskName],
-                                         "endkey": [group, user,
-                                                    collectionID, taskName, {}]}, [])
+        
+        files = self._getFilesetInfo(collectionID, taskName, user, group)
+
 
         allRuns = {}
         whiteList = {}
 
-        for result in results["rows"]:
-            for run in result["value"]["runs"]:
-                if not allRuns.has_key(run["run_number"]):
+        for fileInfo in files:
+            for run in fileInfo["runs"]:
+                if run["run_number"] not in allRuns:
                     allRuns[run["run_number"]] = []
                 allRuns[run["run_number"]].extend(run["lumis"])
 

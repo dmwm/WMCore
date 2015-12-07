@@ -16,7 +16,7 @@ function(head, req) {
     try {
         var resources = JSON.parse(req.query.resources);
     } catch (ex) {
-        send('"Error parsing resources"');
+        send('"Error parsing resources" ' +  req.query.resources);
         return;
     }
   
@@ -25,7 +25,7 @@ function(head, req) {
         try {
             teams = JSON.parse(req.query.teams);
         } catch (ex) {
-            send('"Error parsing teams"');
+            send('"Error parsing teams" ' + req.query.teams);
             return;
         }
     }
@@ -34,7 +34,7 @@ function(head, req) {
         try {
             wfs = JSON.parse(req.query.wfs);
         } catch (ex) {
-            send('"Error parsing wfs"');
+            send('"Error parsing wfs" ' + req.query.wfs);
             return;
         }
     }
@@ -43,20 +43,40 @@ function(head, req) {
     // loop over elements, applying site restrictions
     var first = true;
     while (row = getRow()) {
+
+        if (resources.length == 0) {
+            break;
+        }
+        
+        //in case document is already deleted	
+        if (!row.doc) {
+        	continue;
+        };
+		
+        var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
+
+        // check work is for a team in the request
+        if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
+            continue;
+        }
+
+        // skip if we only want work from certain wf's which don't include this one.
+        if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
+            continue;
+        }
+
+        // Don't check anything if useSiteListAsLocation/trusSiteLists is enabled
+        if (ele['NoLocationUpdate']) {
+            // subtract element jobs from site resources
+            if (first !== true) {
+                send(",");
+            }
+            send(toJSON(row["doc"])); // need whole document, id etc...
+            first = false; // from now on prepend "," to output
+            continue; // we have work, move to the next element
+        }
+
         for (var site in resources) {
-            var ele = row["doc"]["WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement"];
-
-            // TODO: probably move this to a standalone function
-
-            // check work is for a team in the request
-            if (teams.length && ele["TeamName"] && teams.indexOf(ele["TeamName"]) === -1) {
-		continue;
-            }
-
-            // skip if we only want work from certain wf's which don't include this one.
-            if (wfs.length && wfs.indexOf(ele["RequestName"]) == -1) {
-                break;
-            }
 
             // skip if in blacklist
             if (ele["SiteBlacklist"].indexOf(site) != -1) {
@@ -81,6 +101,20 @@ function(head, req) {
                 continue;
             }
 
+            // Check the pile up data, all pileup datasets must be at the site to be valid
+            noPileupSite = false;
+            if(ele["PileupData"]){
+                for(dataset in ele["PileupData"]){
+                    if(ele["PileupData"][dataset].indexOf(site) === -1){
+                        noPileupSite = true;
+                        break;
+                    }
+                }
+            }
+            if(noPileupSite){
+                continue;
+            }
+
             // input data restrictions
             var hasData = true;
             for (var data in ele['Inputs']) {
@@ -99,17 +133,8 @@ function(head, req) {
                 send(",");
             }
             send(toJSON(row["doc"])); // need whole document, id etc...
-            var jobs = ele['Jobs'];
-            var slots = resources[site];
-            if (slots - jobs > 0) {
-                resources[site] = slots - jobs;
-            } else {
-                delete resources[site];
-            }
-
             first = false; // from now on prepend "," to output
             break; // we have work, move to next element (break out of site loop)
-
         } // end resources
     } // end rows
 

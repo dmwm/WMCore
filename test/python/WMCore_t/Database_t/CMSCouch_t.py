@@ -284,6 +284,25 @@ class CMSCouchTest(unittest.TestCase):
         self.assertEqual(answer[0]['id'], '2')
         self.assertEqual(answer[1]['id'], '2')
 
+        # callbacks can do stuff when conflicts arise
+        # this particular one just overwrites the document
+        def callback(db, data, result):
+            for doc in data['docs']:
+                if doc['_id'] == result['id']:
+                    doc['_rev'] = db.document(doc['_id'])['_rev']
+                    retval = db.commitOne(doc)
+            return retval[0]
+
+        self.db.queue(Document(id = "2", inputDict = {'foo':5, 'bar':6}))
+        answer = self.db.commit(callback = callback)
+        self.assertEqual(1, len(answer))
+        self.assertEqual(answer[0].get('error'), None)
+        updatedDoc = self.db.document('2')
+        self.assertEqual(updatedDoc['foo'], 5)
+        self.assertEqual(updatedDoc['bar'], 6)
+
+        return
+
     def testUpdateHandler(self):
         """
         Test that update function support works
@@ -336,13 +355,13 @@ class CMSCouchTest(unittest.TestCase):
         self.db.queue(Document(id = "1", inputDict = {'foo':123, 'bar':456}))
         self.db.queue(Document(id = "2", inputDict = {'foo':123, 'bar':456}))
         self.db.queue(Document(id = "3", inputDict = {'foo':123, 'bar':456}))
-        
+
         self.db.commit()
         self.assertEquals(3, len(self.db.allDocs()['rows']))
-        self.assertEquals(2, len(self.db.allDocs({'startkey': "2"})['rows'])) 
+        self.assertEquals(2, len(self.db.allDocs({'startkey': "2"})['rows']))
         self.assertEquals(2, len(self.db.allDocs(keys = ["1", "3"])['rows']))
         self.assertEquals(1, len(self.db.allDocs({'limit':1}, ["1", "3"])['rows']))
-        self.assertEquals(True, self.db.allDocs(keys = ["1", "4"])['rows'][1].has_key('error'))
+        self.assertEquals(True, 'error' in self.db.allDocs(keys = ["1", "4"])['rows'][1])
 
 if __name__ == "__main__":
     if len(sys.argv) >1 :

@@ -4,7 +4,7 @@ _Code_
 
 
 Component that can parse a cvs log
-and generate a file for checking the 
+and generate a file for checking the
 code style.
 """
 
@@ -20,10 +20,10 @@ import sys
 class Code:
     """
     _Code_
-    
-    
+
+
     Component that can parse a cvs log
-    and generate a file for checking the 
+    and generate a file for checking the
     code style.
     """
 
@@ -45,7 +45,7 @@ class Code:
 
     def run(self):
         """
-        Runs the test script over the specified packages and records 
+        Runs the test script over the specified packages and records
         anomalies.
         """
 
@@ -59,7 +59,7 @@ class Code:
             sys.exit(0)
 
         for packageDir in self.packages.keys():
-            localPath = os.path.join(self.baseDir, packageDir) 
+            localPath = os.path.join(self.baseDir, packageDir)
             # execute the quality script which produces a codeQuality.txt file
             command = self.script+' '+localPath
             result = commands.getstatusoutput(command)
@@ -70,25 +70,25 @@ class Code:
             repNl = reportFile.readline()
             while repNl:
                 if repNl.find('Your code has been rated at') == 0:
-                    relRating = repNl.split(' ')[6]     
+                    relRating = repNl.split(' ')[6]
                     absRating = float(relRating.split('/')[0])
                     if absRating < self.threshold:
                         fileRating = (str(absRating), packageDir)
                         authors = self.packages[packageDir]
-                        if not self.lowQuality.has_key(authors):
+                        if authors not in self.lowQuality:
                             self.lowQuality[self.packages[packageDir]] = []
                             # add the low rating
                         self.lowQuality[authors].append(fileRating)
                         break
-                repNl = reportFile.readline() 
-            reportFile.close() 
+                repNl = reportFile.readline()
+            reportFile.close()
 
     def parseCVS(self, cvsLog, pathCut, moduleCut, maxVotes):
         """
         Parses a cvs log to information to generate a style quality
         test.
         """
-        # pathCuts the path from e.g. 
+        # pathCuts the path from e.g.
         # cvmsserver/repositories/CMSSW/WMCore/src/python/WMCore)
         # to src/python/WMCore
 
@@ -126,7 +126,7 @@ class Code:
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
-                            if not self.module.has_key(moduleName) and \
+                            if moduleName not in self.module and \
                                 index > pathCut + moduleCut:
                                 self.module[moduleName] = {}
                                 vote2.append(moduleName)
@@ -138,7 +138,7 @@ class Code:
                 author = nl.split(' ')[6].split(';')[0]
                 # start voting:
                 for moduleName in vote2:
-                    if not self.module[moduleName].has_key(author):
+                    if author not in self.module[moduleName]:
                         self.module[moduleName][author] = 0
                     self.module[moduleName][author] += 1
                 # we voted
@@ -157,7 +157,7 @@ class Code:
         If submodules of a module are the responsbility of one developer
         we aggregrate them in our style check.
         """
-  
+
         for moduleName in self.module.keys():
             # find the one with the most votes per module:
             votes = 0
@@ -167,18 +167,18 @@ class Code:
                     votes = self.module[moduleName][voter]
                     winner = voter
             self.module[moduleName] = winner
-       
+
         # quick and dirty algorithm O(n^2). Can be done in O(n*lg(n))
-        moduleLength = {} 
-        # find module lengths first 
+        moduleLength = {}
+        # find module lengths first
         for moduleName in self.module.keys():
             parts = moduleName.split('/')
-            if not moduleLength.has_key(len(parts)):
+            if len(parts) not in moduleLength:
                 moduleLength[len(parts)] = []
             moduleLength[len(parts)].append(moduleName)
         lengths = moduleLength.keys()
         lengths.sort(reverse = True)
-    
+
         for length in lengths:
             # FIXME: needs to be configurable.
             if length > 2:
@@ -188,7 +188,7 @@ class Code:
                     # group all parts of same length.
                     if len(parts) == length:
                         parent = moduleName.rsplit('/',1)[0]
-                        if not parents.has_key(parent):
+                        if parent not in parents:
                             parents[parent] = []
                         parents[parent].append([moduleName, self.module[moduleName]])
                 # check if all the children have the same developer as parent. If so remove the children.
@@ -200,8 +200,8 @@ class Code:
                             same = False
                     if same:
                         for moduleName, developer in parents[parent]:
-                            del self.module[moduleName]  
-         
+                            del self.module[moduleName]
+
 
     def generate(self, fileName):
         """
@@ -244,7 +244,7 @@ code.summaryText()
         styleFile.writelines(tail)
         styleFile.close()
 
-    
+
     def summaryText(self):
         """
         Prints a summary of the run
@@ -257,13 +257,11 @@ code.summaryText()
                 print('---------------------')
                 # do some sorting for readability
                 files = []
-                file2rating = {}  
+                file2rating = {}
                 for fileRating in self.lowQuality[author]:
                     files.append(fileRating[1])
                     file2rating[fileRating[1]] = fileRating[0]
                 files.sort()
                 for fileRating in files:
-                    print(file2rating[fileRating]+' :: '+fileRating)    
+                    print(file2rating[fileRating]+' :: '+fileRating)
                 print('\n\n')
-           
-

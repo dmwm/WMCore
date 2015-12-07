@@ -14,7 +14,7 @@ class UpdateAlgo(DBFormatter):
     sql = """UPDATE dbsbuffer_algo SET in_dbs = :in_dbs
              WHERE app_name = :app_name AND app_ver = :app_ver AND
                    app_fam = :app_fam AND pset_hash = :pset_hash"""
-    
+
     sqlID = """UPDATE dbsbuffer_algo SET in_dbs = :in_dbs
                WHERE id = :algoID"""
 
@@ -22,7 +22,7 @@ class UpdateAlgo(DBFormatter):
                 appFam = None, psetHash = None, conn = None,
                 transaction = False):
         binds = {"in_dbs": inDBS}
-        
+
         if algoID == None:
             binds["app_name"] = appName
             binds["app_ver"] = appVer
@@ -33,6 +33,6 @@ class UpdateAlgo(DBFormatter):
         else:
             binds["algoID"] = algoID
             self.dbi.processData(self.sqlID, binds, conn = conn,
-                                 transaction = transaction)            
+                                 transaction = transaction)
 
-        return 
+        return

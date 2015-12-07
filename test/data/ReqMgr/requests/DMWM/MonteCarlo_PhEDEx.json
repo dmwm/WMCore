@@ -1,0 +1,68 @@
+{ 
+"createRequest":
+{         
+    "Comments": "MC from scratch with 5l per job. Normal non-custodial Move to Disk (auto-approved) and custodial Replica to MSS FNAL",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_7_1_20_patch2",
+    "GlobalTag": "MCRUN2_71_V1::All",
+    "RequestPriority": 300000,
+    "FilterEfficiency": 1.0,
+    "ScramArch": "slc6_amd64_gcc481",
+    "RequestType": "MonteCarlo",
+    "RequestNumEvents": 10000,
+    "ConfigCacheID": "d40c8b483f276a75ce73bc1107156b7f",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "PrimaryDataset": "TTJets_13TeV-amcatnloFXFX-pythia8",
+    "PrepID": "TEST-RunIIWinter15wmLHE-00100",
+    "Group": "DATAOPS",
+    "TimePerEvent": 28.7602,
+    "SplittingAlgo": "EventBased",
+    "LheInputFiles": "False",
+    "EventsPerJob": 500,
+    "EventsPerLumi": 100,
+    "Memory": 1000,
+    "SizePerEvent": 3,
+    "FirstEvent": 1,
+    "FirstLumi": 1
+}, 
+"changeSplitting":
+{
+    "Production" :
+    {
+        "SplittingAlgo" : "EventBased",
+        "events_per_job" : 500,
+        "include_parents" : "False"
+    }
+},
+"assignRequest":
+{
+    "SiteWhitelist": [],
+    "Team": "Team-OVERRIDE-ME",
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "ProcessingVersion": 1,
+    "MaxRSS": 1500000,
+    "MaxVSize": 20294967,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "CustodialSites": ["T1_US_FNAL_MSS"],
+    "NonCustodialSites": ["T1_US_FNAL_Disk"],
+    "AutoApproveSubscriptionSites": ["T1_US_FNAL_Disk"],
+    "SubscriptionPriority": "Normal",
+    "CustodialSubType" : "Replica",
+    "NonCustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 36000,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 20000000,
+    "BlockCloseMaxSize" : 5000000000000
+}
+}

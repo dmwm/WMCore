@@ -20,7 +20,6 @@ from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import allSoftwareVersion
 from WMCore.WMInit import WMInit
 from WMCore.Configuration import loadConfigurationFile
 import logging
-from sqlalchemy.exceptions import IntegrityError
 
 valid = 'g:u:v:t:c:'
 

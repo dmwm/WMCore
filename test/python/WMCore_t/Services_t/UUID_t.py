@@ -56,6 +56,6 @@ class UUIDTest(unittest.TestCase):
             makeUUID()
         print "We can make %i UUIDs in %f seconds" %(nUIDs, time.clock() - startTime)
 
-        
+
 if __name__ == '__main__':
     unittest.main()

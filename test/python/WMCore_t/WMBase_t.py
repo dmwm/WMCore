@@ -18,10 +18,10 @@ class WMBaseTest(unittest.TestCase):
 
 
     def testA(self):
-        
+
         try:
             getWMBASE()
-        except Exception, ex:
+        except Exception as ex:
             self.fail("Failed to call getWMBASE")
 
         return
@@ -49,9 +49,9 @@ class WMBaseTest(unittest.TestCase):
         os.environ['WMCORE_TEST_ROOT'] = '/tmp'
         base = getTestBase(importFlag = False)
         self.assertEqual(base, '/tmp')
-        
+
         return
 
-    
+
 if __name__ == '__main__':
     unittest.main()

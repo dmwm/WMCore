@@ -15,9 +15,9 @@ class WorkQueueElement(dict):
     def __init__(self, **kwargs):
         dict.__init__(self)
 
-        if kwargs.has_key('Status') and kwargs['Status'] not in STATES:
+        if 'Status' in kwargs and kwargs['Status'] not in STATES:
             msg = 'Invalid Status: %s' % kwargs['Status']
-            raise ValueError, msg
+            raise ValueError(msg)
 
         self.update(kwargs)
 
@@ -27,10 +27,16 @@ class WorkQueueElement(dict):
         # XXX workflow or data run over, the id function must be updated
 
         self.setdefault('Inputs', {})
+        self.setdefault('ProcessedInputs', [])
+        self.setdefault('RejectedInputs', [])
+        # Some workflows require additional datasets for PileUp
+        # Track their locations
+        self.setdefault('PileupData', {})
         #both ParentData and ParentFlag is needed in case there Dataset split,
         # even though ParentFlag is True it will have empty ParentData
-        self.setdefault('ParentData', [])
+        self.setdefault('ParentData', {})
         self.setdefault('ParentFlag', False)
+        # 0 jobs are valid where we need to accept all blocks (only dqm etc subscriptions will run)
         self.setdefault('Jobs', None)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])
@@ -48,16 +54,27 @@ class WorkQueueElement(dict):
         self.setdefault('RequestName', None)
         self.setdefault('TaskName', None)
         self.setdefault('TeamName', None)
+        self.setdefault('StartPolicy', {})
         self.setdefault('EndPolicy', {})
         self.setdefault('ACDC', {})
         self.setdefault('ChildQueueUrl', None)
         self.setdefault('ParentQueueUrl', None)
         self.setdefault('WMBSUrl', None)
+        self.setdefault('NumberOfLumis', 0)
+        self.setdefault('NumberOfEvents', 0)
+        self.setdefault('NumberOfFiles', 0)
         # Number of files added to WMBS including parent files for this element. used only for monitoring purpose
         self.setdefault('NumOfFilesAdded', 0)
         # Mask used to constrain MC run/lumi ranges
         self.setdefault('Mask', None)
-
+        # is new data being added to the inputs i.e. open block with new files or dataset with new closed blocks?
+        self.setdefault('OpenForNewData', False)
+        # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
+        self.setdefault('TimestampFoundNewData', 0)
+        # Should we check the location of the inputs, or trust the initial values?
+        self.setdefault('NoLocationUpdate', False)
+        # set the creation time for wq element, need for sorting
+        self.setdefault('CreationTime', 0)
         # set to true when updated from a WorkQueueElementResult
         self.modified = False
 
@@ -135,7 +152,7 @@ class WorkQueueElement(dict):
 
     def inEndState(self):
         """Have we finished processing"""
-        return self.isComplete() or self.isFailed() or self.isCanceled()
+        return (self.isComplete() or self.isFailed() or self.isCanceled())
 
     def isComplete(self):
         return self['Status'] == 'Done'
@@ -165,7 +182,7 @@ class WorkQueueElement(dict):
                    'PercentComplete' : 'percent_complete',
                    'PercentSuccess' : 'percent_success'}
         for ourkey, wmbskey in mapping.items():
-            if wmbsStatus.has_key(wmbskey) and self[ourkey] != wmbsStatus[wmbskey]:
+            if wmbskey in wmbsStatus and self[ourkey] != wmbsStatus[wmbskey]:
                 self['Modified'] = True
                 self[ourkey] = wmbsStatus[wmbskey]
 
@@ -196,8 +213,21 @@ class WorkQueueElement(dict):
     def passesSiteRestriction(self, site):
         """Takes account of white & black list, and input data to work out
         if site can run the work"""
+        # Don't check anything if useSiteListAsLocation/trusSiteLists is enabled
+        if self['NoLocationUpdate']:
+            return True
         # data restrictions - all data must be present at site
         for locations in self['Inputs'].values():
+            if site not in locations:
+                return False
+        # Parent data as well
+        if self['ParentFlag']:
+            for locations in self['ParentData'].values():
+                if site not in locations:
+                    return False
+
+        # Pileup data must be checked
+        for locations in self['PileupData'].values():
             if site not in locations:
                 return False
 
@@ -207,3 +237,4 @@ class WorkQueueElement(dict):
         if site in self['SiteBlacklist']:
             return False
         return True
+

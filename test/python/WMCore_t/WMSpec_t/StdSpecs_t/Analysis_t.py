@@ -8,7 +8,7 @@ Unit tests for the analysis workflow.
 import unittest
 import os
 
-from WMCore.WMSpec.StdSpecs.Analysis import getTestArguments, AnalysisWorkloadFactory
+from WMCore.WMSpec.StdSpecs.Analysis import AnalysisWorkloadFactory
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -35,6 +35,7 @@ class AnalysisTest(unittest.TestCase):
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("analysis_t")
+        self.testDir = self.testInit.generateWorkDir()
         return
 
     def injectAnalysisConfig(self):
@@ -70,6 +71,7 @@ class AnalysisTest(unittest.TestCase):
         """
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
+        self.testInit.delWorkDir()
         return
 
 
@@ -77,20 +79,18 @@ class AnalysisTest(unittest.TestCase):
         """
         _testAnalysis_
         """
-        defaultArguments = getTestArguments()
+        defaultArguments = AnalysisWorkloadFactory.getTestArguments()
         defaultArguments["CouchUrl"] = os.environ["COUCHURL"]
         defaultArguments["CouchDBName"] = "analysis_t"
         defaultArguments["AnalysisConfigCacheDoc"] = self.injectAnalysisConfig()
-        defaultArguments["ProcessingVersion"] = 'v1'
+        defaultArguments["ProcessingVersion"] = 1
 
         analysisProcessingFactory = AnalysisWorkloadFactory()
-        testWorkload = analysisProcessingFactory("TestWorkload", defaultArguments)
-        testWorkload.setSpecUrl("somespec")
-        testWorkload.setOwnerDetails("marco.mascheroni@cern.ch", "DMWM")
+        testWorkload = analysisProcessingFactory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock")
+        testWMBSHelper = WMBSHelper(testWorkload, "Analysis", "SomeBlock", cachepath = self.testDir)
         testWMBSHelper.createTopLevelFileset()
-        testWMBSHelper.createSubscription(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
+        testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
         procWorkflow = Workflow(name = "TestWorkload",
                               task = "/TestWorkload/Analysis")
         procWorkflow.load()

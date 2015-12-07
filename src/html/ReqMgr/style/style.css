@@ -1,0 +1,249 @@
+body
+{
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	background-image:url('/reqmgr2/static/?html/ReqMgr/img/gradientfromtop.gif');
+	background-repeat:repeat-x;	
+}
+
+
+div.maincontentdiv 
+{
+	display: block;
+	position: absolute;
+	top: 110px;
+	margin-left: 220px;
+	padding-bottom: 30px;
+    z-index: 1;
+}
+
+
+div.requestDetails
+{
+	background-color: #CDCDC1;
+}
+
+
+table.requestDetails
+{
+	padding-left: 30px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-right: 10px;
+}
+
+
+tr.requestDetails
+{
+	vertical-align: top;
+}
+
+
+td.requestDetailsBold
+{
+	font-weight: bold;
+	font-size: 80%;
+}
+
+
+td.requestDetails
+{
+	font-size: 80%;
+}
+
+
+div.loadmorebottom
+{
+	background-color: #E3E3E3;
+	text-align: center;
+	width: 15%;
+	position:absolute;
+	left:400px;
+}
+
+
+div.loadmorebottomloading
+{
+	background-image:url('/reqmgr2/static/?html/ReqMgr/img/loading-small.gif');
+	background-repeat:no-repeat;
+	background-position:center; 
+}
+
+
+#loadingshadowdivid 
+{ 
+    position:absolute;
+    width:100%;
+    height:0px;
+    z-index:1;
+    top:0px;
+    left:0px;
+    display:block;
+    background:transparent url('/reqmgr2/static/?html/ReqMgr/img/shadow.gif') repeat;
+}
+
+
+div.loadingsigncentered
+{
+    position: fixed;
+    top: 45%;
+    left: 45%;
+}
+
+
+#loadingshadowdivid.displayed 
+{ 
+    display:block;
+    position:fixed;
+    width:100%;
+    height:100%;
+    z-index:1 
+}
+
+#loadingshadowdivid.hidden
+{
+    display: none;
+    width: 100%;
+    height: 0px;
+    z-index: -1; 
+}
+
+
+td, th 
+{	
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+
+tr.boldtext
+{
+	font-weight: bold;
+}
+
+
+tr.boldtextandbackground
+{
+	font-weight: bold;
+	background-color: #DDDDDD;
+}
+
+
+tr.even
+{
+	background-color: #FAFAFA;
+}
+
+
+tr.odd
+{
+	background-color: #E3E3E3;
+}
+
+
+tr.onHover
+{
+	background-color: #A8A8A8;
+}
+
+
+.requestscontent
+{
+	border-radius: 8px;
+	-webkit-border-radius: 8px;
+	-moz-border-radius: 8px;
+	box-shadow:rgba(51,74,89,0.4) 0px 0px 8px;
+	-webkit-box-shadow:rgba(51,74,89,0.4) 0px 0px 0px;
+	-moz-box-shadow:rgba(51,74,89,0.4) 0px 0px 8px;	
+}
+
+
+.requestsviewtable
+{
+	text-align: center;
+	font-size: 90%;
+	margin: 2px;
+    border-spacing: 0;
+	padding: 5px;
+}
+
+
+a, a:visited
+{
+	color: #000000;
+	border-bottom: 1px dotted #000000;
+	text-decoration: none;
+}
+
+
+a:hover, a:visited:hover 
+{
+	color: #CC3300;
+	border-bottom: 1px dotted #000000;
+	text-decoration: none;
+}
+
+
+.template
+{
+	width: 1100px;
+	text-align: left;
+}
+
+
+#sitetitle 
+{
+	font-size: 150%;
+	color: #333333;
+	font-weight: bold; 
+    letter-spacing: 1px;
+    margin-left: 220px;
+    text-align: left;
+    position: absolute;
+    display: block;
+    top: 30px;
+    height: 30px;
+}
+
+
+#pagetitle 
+{
+	font-size: 130%;
+	font-weight: bold;
+	font-style: normal;
+	color: #333333; 
+	padding-bottom: 20px;
+}
+
+
+#navigation
+{
+	text-align: right;
+	position: absolute;
+	display: block;
+	top: 190px;
+	width: 130px;
+	height: 350px;
+	padding: 0px 5px 10px 5px;
+	margin-left: 10px;
+}
+
+
+#navigation p
+{
+	padding-bottom: 0px;
+}
+
+
+#navigation a, #navigation a:visited 
+{
+	color: #000000;
+	font-weight: normal;
+	font-size: 100%;
+	text-decoration: none;
+}
+
+
+#navigation a:hover, #navigation a:visited:hover 
+{
+	color: #CC3300;
+	border-bottom: 1px dotted #000000;
+}

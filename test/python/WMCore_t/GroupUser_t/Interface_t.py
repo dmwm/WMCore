@@ -29,50 +29,50 @@ class Interface_t(unittest.TestCase):
         self.owner2 = makeUser("DMWM", "drsm79", self.testInit.couchUrl, self.testInit.couchDbName)
         self.owner2.connect()
         self.owner2.create()
-        
+
         #self.url = os.getenv("COUCHURL", "http://127.0.0.1:5984")
         #self.database = "awesome_acdc"
-        
+
     def tearDown(self):
         self.testInit.tearDownCouch()
-    
+
     def testA(self):
         """ make some documents and own them"""
         guInt = Interface(self.testInit.couchUrl, self.testInit.couchDbName)
-        
-        
-        #create a couple of docs 
+
+
+        #create a couple of docs
         couch = Database(self.testInit.couchDbName, self.testInit.couchUrl)
         for x in range(10):
             doc = Document("document%s" % x, {"Test Data": [1,2,3,4] })
             couch.queue(doc)
         couch.commit()
-        
+
         self.assertEqual(len(guInt.documentsOwned(self.owner1.group.name, self.owner1.name)), 0)
         self.assertEqual(len(guInt.documentsOwned(self.owner2.group.name, self.owner2.name)), 0)
-    
+
         guInt.callUpdate("ownthis","document1", group = self.owner1.group.name, user = self.owner1.name)
-        
+
         self.failUnless("document1" in guInt.documentsOwned(self.owner1.group.name, self.owner1.name))
         self.assertEqual(len(guInt.documentsOwned(self.owner1.group.name, self.owner1.name)), 1)
         self.assertEqual(len(guInt.documentsOwned(self.owner2.group.name, self.owner2.name)), 0)
 
         guInt.callUpdate("ownthis","document2", group = self.owner2.group.name, user = self.owner2.name)
-        
+
         self.failUnless("document2" in guInt.documentsOwned(self.owner2.group.name, self.owner2.name))
         self.assertEqual(len(guInt.documentsOwned(self.owner1.group.name, self.owner1.name)), 1)
         self.assertEqual(len(guInt.documentsOwned(self.owner2.group.name, self.owner2.name)), 1)
-        
-        
+
+
         guInt.callUpdate("newgroup", "group-DataOps", group = "DataOps")
-        
+
         self.failUnless(couch.documentExists("group-DataOps") )
-        
+
         guInt.callUpdate("newuser", "user-damason", group = "DataOps", user = "damason")
-        
+
         self.failUnless(couch.documentExists("user-damason") )
 
-        
-    
+
+
 if __name__ == '__main__':
     unittest.main()

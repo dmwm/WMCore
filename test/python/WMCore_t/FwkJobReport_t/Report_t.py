@@ -7,16 +7,14 @@ Unit tests for the Report class.
 
 import unittest
 import os
-import xml.dom.minidom
 import time
 
-import WMCore.WMBase
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
+from WMCore.Algorithms import BasicAlgos
+from WMCore.Configuration import ConfigSection
 from WMCore.Database.CMSCouch import CouchServer
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-
 from WMCore.FwkJobReport.Report import Report
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.WMBase import getTestBase
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class ReportTest(unittest.TestCase):
     """
@@ -35,10 +33,21 @@ class ReportTest(unittest.TestCase):
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
-        self.xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        self.xmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
-        self.badxmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        self.badxmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
+        self.skippedFilesxmlPath = os.path.join(getTestBase(),
+                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
+        self.skippedAllFilesxmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
+        self.fallbackXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
+        self.twoFileFallbackXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWTwoFileRemote.xml")
+        self.pileupXmlPath = os.path.join(getTestBase(),
+                                                   "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
+
         self.testDir = self.testInit.generateWorkDir()
         return
 
@@ -88,7 +97,7 @@ class ReportTest(unittest.TestCase):
                "Error: Catalog on input file is wrong."
         assert inputFiles[0]["guid"] == "142F3F42-C5D6-DE11-945D-000423D94494", \
                "Error: GUID of input file is wrong."
-        
+
         return
 
     def verifyRecoOutput(self, report):
@@ -185,7 +194,7 @@ class ReportTest(unittest.TestCase):
         assert outputFiles[0]["branch_hash"] == "cf37adeb60b427f4ccd0e21b5771146b", \
                "Error: Branch has on output file is wrong."
 
-        return    
+        return
 
     def testXMLParsing(self):
         """
@@ -216,7 +225,7 @@ class ReportTest(unittest.TestCase):
         self.assertRaises(FwkJobReportException, myReport.parse, self.badxmlPath)
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, 'BadFWJRXML')
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].exitCode, 50115)
-        return    
+        return
 
     def testErrorReporting(self):
         """
@@ -242,7 +251,7 @@ an exception occurred during current event processing
 cms::Exception caught in EventProcessor and rethrown
 ---- EventProcessorFailure END"""
 
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWFailReport.xml")
 
         myReport = Report("cmsRun1")
@@ -264,7 +273,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         # Test getStepErrors
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, "CMSException")
-        
+
         return
 
     def testMultipleInputs(self):
@@ -273,8 +282,8 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that parsing XML reports with multiple inputs works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
-                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")        
+        xmlPath = os.path.join(getTestBase(),
+                               "WMCore_t/FwkJobReport_t/CMSSWMultipleInput.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
@@ -331,7 +340,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         Verify that turning the FWJR into a JSON object works correctly.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
@@ -345,7 +354,7 @@ cms::Exception caught in EventProcessor and rethrown
                "Error: Wrong number of steps in report."
         assert "cmsRun1" in jsonReport["steps"].keys(), \
                "Error: Step missing from json report."
-        
+
         cmsRunStep = jsonReport["steps"]["cmsRun1"]
 
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
@@ -353,7 +362,7 @@ cms::Exception caught in EventProcessor and rethrown
         for jsonReportSection in jsonReportSections:
             assert jsonReportSection in cmsRunStep.keys(), \
                 "Error: missing section: %s" % jsonReportSection
-                
+
         return
 
     def testTimeSetting(self):
@@ -373,7 +382,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertTrue(repTime["startTime"] - localTime < timeDiff)
         self.assertTrue(repTime["stopTime"] - localTime < timeDiff)
 
-        
+
         myReport = Report("cmsRun1")
         myReport.addStep("cmsRun2")
         myReport.addStep("cmsRun3")
@@ -437,17 +446,17 @@ cms::Exception caught in EventProcessor and rethrown
     def testPerformanceSummary(self):
         """
         _testPerformanceSummary_
-        
+
         Test whether or not we can pull performance information
         out of a Timing/SimpleMemoryCheck jobReport
         """
-        
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
-        
+
         # Do a brief check of the three sections
         perf = myReport.data.cmsRun1.performance
 
@@ -456,7 +465,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(perf.storage.writeTotalMB, 5.22226)
         self.assertEqual(perf.storage.writeTotalSecs, 60317.4)
         self.assertEqual(perf.storage.readPercentageOps, 0.98585512216030857)
-        
+
         return
 
     def testPerformanceJSON(self):
@@ -466,19 +475,19 @@ cms::Exception caught in EventProcessor and rethrown
         Verify that the performance section of the report is correctly converted
         to JSON.
         """
-        xmlPath = os.path.join(WMCore.WMBase.getTestBase(),
+        xmlPath = os.path.join(getTestBase(),
                                "WMCore_t/FwkJobReport_t/PerformanceReport.xml")
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
         perfSection = myReport.__to_json__(thunker = None)["steps"]["cmsRun1"]["performance"]
 
-        self.assertTrue(perfSection.has_key("storage"),
+        self.assertTrue("storage" in perfSection,
                         "Error: Storage section is missing.")
-        self.assertTrue(perfSection.has_key("memory"),
+        self.assertTrue("memory" in perfSection,
                         "Error: Memory section is missing.")
-        self.assertTrue(perfSection.has_key("cpu"),
+        self.assertTrue("cpu" in perfSection,
                         "Error: CPU section is missing.")
 
         self.assertEqual(perfSection["cpu"]["AvgEventCPU"], "0.626105",
@@ -517,52 +526,50 @@ cms::Exception caught in EventProcessor and rethrown
     def testProperties(self):
         """
         _testProperties_
-        
+
         Test data fields for the properties information for DBS
         """
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
-        
+
         name = "ThisIsASillyString"
-        
+
         myReport.setValidStatus(name)
         myReport.setGlobalTag(name)
         myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
         myReport.setInputDataset(inputPath = '/lame/path')
-        myReport.setCustodialSite(custodialSite = 'testCustody')
-        
+
         for f in myReport.getAllFilesFromStep("cmsRun1"):
             self.assertEqual(f['globalTag'], name)
             self.assertEqual(f['validStatus'], name)
             self.assertEqual(f['processingVer'], name)
             self.assertEqual(f['acquisitionEra'], 'NULL')
             self.assertEqual(f['inputPath'], '/lame/path')
-            self.assertEqual(f['custodialSite'], 'testCustody')
-            
+
         return
-    
+
     def testOutputFiles(self):
         """
         _testOutputFiles_
-        
+
         Test some basic manipulation of output files
         """
-        
+
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
-        
+
         files = myReport.getAllFilesFromStep(step = "cmsRun1")
-        
+
         f1 = files[0]
         f2 = files[1]
-        
+
         self.assertEqual(f1['outputModule'], 'outputRECORECO')
         self.assertEqual(f1['pfn'], 'outputRECORECO.root')
-        
+
         self.assertEqual(f2['outputModule'], 'outputALCARECORECO')
         self.assertEqual(f2['pfn'], 'outputALCARECORECO.root')
-        
+
         for f in files:
             self.assertEqual(f['events'], 2)
             self.assertEqual(f['configURL'], None)
@@ -612,6 +619,34 @@ cms::Exception caught in EventProcessor and rethrown
 
         return
 
+    def testCheckLumiInformation(self):
+        """
+        _testCheckLumiInformation_
+
+        Test the function that checks if all files
+        have run lumi information
+        """
+
+        myReport = Report("cmsRun1")
+        myReport.parse(self.xmlPath)
+
+        myReport.checkForRunLumiInformation(stepName = "cmsRun1")
+
+        self.assertNotEqual(myReport.getExitCode(), 60452)
+
+        # Remove the lumi information on purpose
+        myReport2 = Report("cmsRun1")
+        myReport2.parse(self.xmlPath)
+        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        for fRef in fRefs:
+            fRef.runs = ConfigSection()
+        myReport2.checkForRunLumiInformation(stepName = "cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(myReport2.getExitCode(), 60452)
+
+        return
+
+
     def testTaskSuccessful(self):
         """
         _testTaskSuccessful_
@@ -628,30 +663,6 @@ cms::Exception caught in EventProcessor and rethrown
         # Second, if we ignore cmsRun, the task
         # should succeed
         self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
-        return
-                         
-    def testMultiCoreReport(self):
-        """
-        _testMultiCoreReport_
-
-        Verify that multicore reports can be json encoded and uploaded to couch.
-        """
-        couchdb = CouchServer(os.environ["COUCHURL"])
-        fwjrdatabase = couchdb.connectDatabase("report_t/fwjrs")
-        
-        self.mcPath = os.path.join(WMCore.WMBase.getTestBase(),
-                                   "WMCore_t/FwkJobReport_t/MulticoreReport.pkl")        
-        myReport = Report()
-        myReport.unpersist(self.mcPath)
-
-        fwjrDocument = {"_id": "303-0",
-                        "jobid": 303,
-                        "retrycount": 0,
-                        "fwjr": myReport.__to_json__(None),
-                        "type": "fwjr"}
-
-        fwjrdatabase.queue(fwjrDocument, timestamp = True)
-        fwjrdatabase.commit()
         return
 
     def testStripReport(self):
@@ -670,7 +681,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path1)
         info = BasicAlgos.getFileInfo(filename = path1)
-        self.assertEqual(info['Size'], 6821)
+        self.assertEqual(info['Size'], 7101)
 
         inputFiles = myReport.getAllInputFiles()
         self.assertEqual(len(inputFiles), 1)
@@ -679,7 +690,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path2)
         info = BasicAlgos.getFileInfo(filename = path2)
-        self.assertEqual(info['Size'], 5933)
+        self.assertEqual(info['Size'], 6210)
 
         return
 
@@ -704,8 +715,168 @@ cms::Exception caught in EventProcessor and rethrown
 
         self.assertEqual(report.listSteps(), ['cmsRun1'])
         self.assertEqual(report.data.cmsRun1.testVar, 'test01')
-        
+
         return
-    
+
+    def testDeleteOutputModule(self):
+        """
+        _testDeleteOutputModule_
+
+        If asked delete an output module, if it doesn't
+        exist then do nothing
+        """
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.xmlPath)
+
+        self.assertTrue(originalReport.getOutputModule("cmsRun1", "outputALCARECORECO"),
+                        "Error: Report XML doesn't have the module for the test, invalid test")
+
+        originalOutputModules = len(originalReport.retrieveStep("cmsRun1").outputModules)
+        originalReport.deleteOutputModuleForStep("cmsRun1", "outputALCARECORECO")
+        self.assertFalse(originalReport.getOutputModule("cmsRun1", "outputALCARECORECO"),
+                        "Error: The output module persists after deletion")
+        self.assertEqual(len(originalReport.retrieveStep("cmsRun1").outputModules), originalOutputModules - 1,
+                         "Error: The number of output modules is incorrect after deletion")
+
+    def testSkippedFiles(self):
+        """
+        _testSkippedFiles_
+
+        Test that skipped files are translated from FWJR into report
+        """
+        # Check a report where some files were skipped but not all
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.skippedFilesxmlPath)
+        self.assertEqual(originalReport.getAllSkippedFiles(),
+                         ['/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root'])
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        self.assertEqual(goodReport.getAllSkippedFiles(), [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        self.assertEqual(sorted(badReport.getAllSkippedFiles()),
+                         ['/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A611-E211-A851-0019B9F581C9.root',
+                          '/store/data/Run2012D/Cosmics/RAW/v1/000/206/379/1ED243E7-A622-E211-A851-0019B9F581C.root'])
+
+        return
+
+    def testSkippedFilesJSON(self):
+        """
+        _testSkippedFilesJSON_
+
+        Test that skipped files are translated properly into JSON
+        """
+        # Check a report where some files were skipped but not all
+        originalReport = Report("cmsRun1")
+        originalReport.parse(self.skippedFilesxmlPath)
+        originalJSON = originalReport.__to_json__(None)
+        self.assertEqual(len(originalJSON['skippedFiles']), 1)
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        goodJSON = goodReport.__to_json__(None)
+        self.assertEqual(goodJSON['skippedFiles'], [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        badJSON = badReport.__to_json__(None)
+        self.assertEqual(len(badJSON['skippedFiles']), 2)
+
+        return
+
+    def testFallbackFiles(self):
+        """
+        _testFallbackFiles_
+
+        Test that fallback files end up in the report
+        """
+
+        # For negative control, check a good report with no fallback files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        self.assertEqual(goodReport.getAllFallbackFiles(), [])
+
+        # Check a report where the file was a fallback
+        badReport = Report("cmsRun1")
+        badReport.parse(self.fallbackXmlPath)
+        self.assertEqual(sorted(badReport.getAllFallbackFiles()),
+                         ['/store/data/Run2012D/SingleElectron/AOD/PromptReco-v1/000/207/279/D43A5B72-1831-E211-895D-001D09F24763.root'])
+
+        twoReport = Report("cmsRun1")
+        twoReport.parse(self.twoFileFallbackXmlPath)
+        self.assertEqual(len(twoReport.getAllFallbackFiles()), 2)
+
+        return
+
+    def testPileupFiles(self):
+        """
+        _testPileupFiles_
+
+        Test that alll the pileup files end up in the report
+        """
+
+        report = Report("cmsRun1")
+        report.parse(self.pileupXmlPath)
+        self.assertEqual(len(report.getAllInputFiles()), 14)
+
+        primaryCount = 0
+        secondaryCount = 0
+        mixingCount = 0
+
+        for fileEntry in report.getAllInputFiles():
+            if fileEntry['input_type'] == 'mixingFiles':
+                mixingCount += 1
+            elif fileEntry['input_type'] == 'primaryFiles':
+                primaryCount += 1
+            elif fileEntry['input_type'] == 'secondaryFiles':
+                secondaryCount += 1
+
+        self.assertEqual(primaryCount, 1)
+        self.assertEqual(secondaryCount, 0)
+        self.assertEqual(mixingCount, 13)
+        self.assertEqual(len(report.getAllFallbackFiles()), 1)
+
+        return
+
+    def testFallbackFilesJSON(self):
+        """
+        _testFallbackFilesJSON_
+
+        Test that fallback attempt files are translated properly into JSON
+        """
+
+        # For negative control, check a good report with no skipped files
+        goodReport = Report("cmsRun1")
+        goodReport.parse(self.xmlPath)
+        goodJSON = goodReport.__to_json__(None)
+        self.assertEqual(goodJSON['fallbackFiles'], [])
+
+        # Check a report where all files were skipped
+        badReport = Report("cmsRun1")
+        badReport.parse(self.fallbackXmlPath)
+        badJSON = badReport.__to_json__(None)
+        self.assertEqual(len(badJSON['fallbackFiles']), 1)
+
+        return
+
+    def testOutputCheck(self):
+        """
+        _testOutputCheck_
+
+        Check that we can identify bad reports with no output files
+        """
+        badReport = Report("cmsRun1")
+        badReport.parse(self.skippedAllFilesxmlPath)
+        badReport.checkForOutputFiles("cmsRun1")
+        self.assertFalse(badReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertEqual(badReport.getExitCode(), 60450)
+        return
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-    Mocked Phedex interface
+_PhEDEx_
+
+PhEDEx Emulator
 """
 
 
@@ -9,9 +11,13 @@
 # need to clean this up at some point
 
 #//     - ignore some params in dbs spec - silence pylint warnings
-# pylint: disable-msg=W0613,R0201
+# pylint: disable=W0613,R0201
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator import DataBlockGenerator
+
+from xml.dom.minidom import parseString
+
+
 
 filesInDataset = GlobalParams.numOfFilesPerBlock() * GlobalParams.numOfBlocksPerDataset()
 filesInBlock = GlobalParams.numOfFilesPerBlock()
@@ -23,7 +29,10 @@ class PhEDEx(dict):
         # add the end point to prevent the existence check fails.
         self['endpoint'] = "phedex_emulator"
         self.dataBlocks = DataBlockGenerator()
-        
+        self.subRequests = {}
+        self.deletionRequests = {}
+        self.deletionRequestId = 0
+
     def injectBlocks(self, node, xmlData, verbose = 0, strict = 1):
 
         """
@@ -31,16 +40,77 @@ class PhEDEx(dict):
         """
 
         return None
-    
+
     def getNodeSE(self, value):
         return 'dummy.se.from.emulator'
 
     def subscribe(self, subscription, xmlData):
         """
-        do nothing don't subscribe.
+        Store the subscription information in the object,
+        tests can retrieve it and verify it
         """
+        for node in subscription.nodes:
+            args = {}
 
-        return None
+            args['node'] = node
+
+            document = parseString(xmlData)
+            datasets = document.getElementsByTagName("dataset")
+            for dataset in datasets:
+                datasetName = dataset.getAttribute("name")
+
+                if datasetName not in self.subRequests:
+                    self.subRequests[datasetName] = []
+
+                args['data'] = xmlData
+                args['level'] = subscription.level
+                args['priority'] = subscription.priority
+                args['move'] = subscription.move
+                args['static'] = subscription.static
+                args['custodial'] = subscription.custodial
+                args['group'] = subscription.group
+                args['request_only'] = subscription.request_only
+                args['suspended'] = 'n'
+                self.subRequests[datasetName].append(args)
+
+        return
+
+    def delete(self, deletion, xmlData):
+        """
+        Store the deletion request in main memory
+        """
+        self.deletionRequestId += 1
+        for datasetPath in deletion.datasetPaths:
+            if datasetPath not in self.deletionRequests:
+                self.deletionRequests[datasetPath] = []
+            args = {}
+            args['comments'] = deletion.comments
+            args['level'] = deletion.level
+            args['rm_subscriptions'] = deletion.subscriptions
+            args['approved'] = False
+            args['requestId'] = self.deletionRequestId
+            for node in deletion.nodes:
+                args['node'] = node
+                self.deletionRequests[datasetPath].append(args)
+        return {'phedex' : {'request_created' : [{'id' : self.deletionRequestId}]}}
+
+    def updateRequest(self, requestId, decision, nodes):
+        """
+        _updateRequest_
+
+        Update a request approving/disapproving it.
+        Currently only works on deletion requests.
+        """
+        if type(nodes) == str:
+            nodes = [nodes]
+        for dataset in self.deletionRequests:
+            for request in self.deletionRequests[dataset]:
+                if request['node'] in nodes and \
+                    request['requestId'] == requestId:
+                    if decision == 'approve':
+                        request['approved'] = True
+                    else:
+                        request['approved'] = False
 
     def getReplicaInfoForFiles(self, **args):
         """
@@ -77,9 +147,6 @@ class PhEDEx(dict):
         """
         _getNodeMap_
 
-        TODO: Need to be implemented correctly,
-        Currently not used
-
         Retrieve information about nodes known to this PhEDEx instance.  Each
         node entry will have the following keys:
           name       - PhEDEx node name
@@ -87,15 +154,71 @@ class PhEDEx(dict):
           kind       - Node type, e.g. 'Disk' or 'MSS'
           technology - Node technology, e.g. 'Castor'
           id         - Node id
+
+        Return some MSS, Buffer and Disk nodes
         """
 
-        return None
+        nodeMappings = {"phedex" : {"node" : []}}
+
+        nodeMappings["phedex"]["node"].append({"name" : "T1_US_FNAL_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "cmssrm.fnal.gov",
+                                               "technology" : "dCache",
+                                               "id" : 1})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_US_FNAL_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "cmssrm.fnal.gov",
+                                               "technology" : "dCache",
+                                               "id" : 2})
+        nodeMappings["phedex"]["node"].append({"name" : "T0_CH_CERN_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "srm-cms.cern.ch",
+                                               "technology" : "Castor",
+                                               "id" : 3})
+        nodeMappings["phedex"]["node"].append({"name" : "T0_CH_CERN_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "srm-cms.cern.ch",
+                                               "technology" : "Castor",
+                                               "id" : 4})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_MSS",
+                                               "kind" : "MSS",
+                                               "se"   : "srm-cms.gridpp.rl.ac.uk",
+                                               "technology" : "Castor",
+                                               "id" : 5})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Buffer",
+                                               "kind" : "Buffer",
+                                               "se"   : "srm-cms.gridpp.rl.ac.uk",
+                                               "technology" : "Castor",
+                                               "id" : 6})
+        nodeMappings["phedex"]["node"].append({"name" : "T1_UK_RAL_Disk",
+                                               "kind" : "Disk",
+                                               "se"   : "srm-cms-disk.gridpp.rl.ac.uk",
+                                               "technology" : "Disk",
+                                               "id" : 7})
+        nodeMappings["phedex"]["node"].append({"name" : "T2_CH_CERN",
+                                               "kind" : "Disk",
+                                               "se"   : "srm-eoscms.cern.ch",
+                                               "technology" : "Disk",
+                                               "id" : 8})
+        nodeMappings["phedex"]["node"].append({"name" : "T3_CO_Uniandes",
+                                               "kind" : "Disk",
+                                               "se"   : "moboro.uniandes.edu.co",
+                                               "technology" : "DPM",
+                                               "id" : 9})
+        return nodeMappings
 
     def getReplicaInfoForBlocks(self, **args):
         """
         Where are blocks located
         """
         data = {"phedex":{"request_timestamp":1254762796.13538, "block" : []}}
+        if 'dataset' in args:
+            args['block'] = []
+            if type(args['dataset']) != type([]):
+                args['dataset'] = [args['dataset']]
+            for dataset in args['dataset']:
+                args['block'].extend(self.dataBlocks._blockGenerator(dataset))
+            args['block'] = [x['Name'] for x in args['block']]
         for block in args['block']:
             blocks = data['phedex']['block']
             files = self.dataBlocks.getFiles(block)
@@ -109,7 +232,7 @@ class PhEDEx(dict):
         Where is data subscribed - for now just replicate blockreplicas
         """
         def _blockInfoGenerator(blockList):
-            
+
             for block in blockList:
                 if type(block) == dict:
                     block = block['Name']
@@ -123,8 +246,7 @@ class PhEDEx(dict):
                             datasetSelected = dataItem
                             find = True
                             break
-
-                if not datasetList or find:
+                if not(datasetList and find):
                     data['phedex']['dataset'].append({'name' : dataset, 'files' : filesInDataset,
                                                       'block' : []})
 
@@ -141,11 +263,16 @@ class PhEDEx(dict):
 #                                 'time_created': '1232989000', 'priority': 'low',
 #                                 'time_update': None, 'node_id': '781',
 #                                 'suspended': 'n', 'group': None})
+                if dataset in self.subRequests:
+                    subs.extend(self.subRequests[dataset])
                 datasetSelected['subscription'] = subs
+                for sub in subs:
+                    if sub['level'] == 'block':
+                        subs.remove(sub)
 
                 blocks = datasetSelected['block']
                 locations= self.dataBlocks.getLocation(block)
-                        
+
                 blocks.append({"bytes":"10438786614",
                                "files":filesInBlock,
                                "is_open":"n",
@@ -157,16 +284,15 @@ class PhEDEx(dict):
                                                         #   "time_update":"1228905272", "group":None, "level":"block",
                                                         #   "node_id":"641", "custodial":"n", "suspended":"n"}]
                                                     })
-        
+
         data = {'phedex' : {"request_timestamp" : 1254850198.15418,
                             'dataset' : []}}
         # different structure depending on whether we ask for dataset or blocks
 
-        if args.has_key('dataset') and args['dataset']:
-            for dataset in args['dataset']:
-                blockList = self.dataBlocks.getBlocks(dataset)
-                _blockInfoGenerator(blockList)
-        elif args.has_key('block') and args['block']:
+        if 'dataset' in args and args['dataset']:
+            blockList = self.dataBlocks.getBlocks(args['dataset'])
+            _blockInfoGenerator(blockList)
+        elif 'block' in args and args['block']:
             _blockInfoGenerator(args['block'])
 
         return data
@@ -182,8 +308,6 @@ class PhEDEx(dict):
           o Input is a block and subscription is a dataset
           o Input is a block and subscription is a block
           o Input is a dataset and subscription is a dataset
-
-        Not supported:
           o Input is a dataset but only block subscriptions exist
         """
         from collections import defaultdict
@@ -199,14 +323,14 @@ class PhEDEx(dict):
             # First query for a dataset level subscription (most common)
             # this returns block level subscriptions also.
             # Rely on httplib2 caching to not resend on every block in dataset
-            kwargs['dataset'], kwargs['block'] = [item.split('#')[0]], []
+            kwargs['dataset'] = item.split('#')[0]
             response = self.subscriptions(**kwargs)['phedex']
 
             # iterate over response as can't jump to specific datasets
             for dset in response['dataset']:
                 if dset['name'] != item.split('#')[0]:
-                        continue
-                if dset.has_key('subscription'):
+                    continue
+                if 'subscription' in dset:
                     # dataset level subscription
                     nodes = [x['node'] for x in dset['subscription']
                              if x['suspended'] == 'n']
@@ -214,16 +338,42 @@ class PhEDEx(dict):
 
                 #if we have a block we must check for block level subscription also
                 # combine with original query when can give both dataset and block
-                if item.find('#') > -1 and dset.has_key('block'):
+                if 'block' in dset:
                     for block in dset['block']:
+                        nodes = [x['node'] for x in block['subscription']
+                                 if x['suspended'] == 'n']
                         if block['name'] == item:
-                            nodes = [x['node'] for x in block['subscription']
-                                     if x['suspended'] == 'n']
                             result[item].update(nodes)
                             break
+                        elif dset['name'] == item:
+                            result[item].update(nodes)
+                            break
+
         return result
+
+    def getRequestList(self, **kwargs):
+        """
+        _getRequestList_
+
+        Emulated request list, for now it does nothing
+        """
+        goldenResponse = {"phedex":{"request":[], "request_timestamp":1368636296.94707,
+                                    "request_version":"2.3.15-comp", "request_call":"requestlist",
+                                    "call_time":0.34183, "request_date":"2013-05-15 16:44:56 UTC"}}
+        return goldenResponse
+
+    def getTransferRequests(self, **kwargs):
+        """
+        _getTransferRequests_
+
+        Emulated request details, for now it does nothing
+        """
+        goldenResponse = {"phedex":{"request":[], "request_timestamp":1368636365.73521,
+                                    "request_version":"2.3.15-comp", "request_call":"transferrequests",
+                                    "call_time":0.03909, "request_date":"2013-05-15 16:46:05 UTC"}}
+        return goldenResponse
 
 
     def emulator(self):
         return "PhEDEx emulator ...."
-# pylint: enable-msg=W0613,R0201
+# pylint: enable=W0613,R0201

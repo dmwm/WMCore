@@ -19,9 +19,9 @@ class HadoopImpl(StageOutImplV2):
     _HadoopImpl_
 
     Implement interface for Hadoop
-    
+
     """
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -35,10 +35,10 @@ class HadoopImpl(StageOutImplV2):
                         [fromPfn, toPfn],
                         options)
         self.runCommandFailOnNonZero(ourCommand)
-      
+
         return toPfn
 
-    
+
     def doDelete(self, pfn, seName, command, options, protocol  ):
         """
             deletes a file, raises on error
@@ -47,8 +47,3 @@ class HadoopImpl(StageOutImplV2):
             error and skip retrying with this plugin
         """
         runCommand(["hadoop", "fs", "-rm" ,pfn])
-
-
-    
-
-

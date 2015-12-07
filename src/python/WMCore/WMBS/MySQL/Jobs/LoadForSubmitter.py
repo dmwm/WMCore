@@ -17,9 +17,9 @@ class LoadForSubmitter(DBFormatter):
 
     Custom load function for the JobSubmitter
     """
-    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
-                    wmbs_job_state.name AS state, state_time, retry_count, 
-                    couch_record,  cache_dir, wmbs_location.site_name AS location, 
+    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
+                    wmbs_job_state.name AS state, state_time, retry_count,
+                    couch_record,  cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path
              FROM wmbs_job
                LEFT OUTER JOIN wmbs_location ON
@@ -39,7 +39,7 @@ class LoadForSubmitter(DBFormatter):
         Cast the id, jobgroup and last_update columns to integers because
         formatDict() turns everything into strings.
         """
-        
+
         formattedResult = DBFormatter.formatDict(self, result)
 
         for entry in formattedResult:
@@ -54,7 +54,7 @@ class LoadForSubmitter(DBFormatter):
             return formattedResult[0]
         else:
             return formattedResult
-    
+
     def execute(self, type, conn = None, transaction = False):
         """
         _execute_
@@ -64,7 +64,7 @@ class LoadForSubmitter(DBFormatter):
         """
 
         binds = {"type": type}
-            
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         return self.formatDict(result)

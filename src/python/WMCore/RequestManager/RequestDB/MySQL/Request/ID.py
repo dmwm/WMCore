@@ -26,11 +26,10 @@ class ID(DBFormatter):
 
         """
         self.sql = "SELECT request_id from reqmgr_request WHERE "
-        self.sql += "request_name=:request_name" 
+        self.sql += "request_name=:request_name"
         binds = {"request_name": requestName}
         reqID = self.dbi.processData(self.sql, binds, conn = conn, transaction = trans)
         result = self.formatOne(reqID)
         if result == []:
             return None
         return result[0]
-

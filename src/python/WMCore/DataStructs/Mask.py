@@ -12,6 +12,8 @@ job in two ways:
 
 import logging
 
+from WMCore.DataStructs.Run import Run
+
 class Mask(dict):
     """
     _Mask_
@@ -39,8 +41,11 @@ class Mask(dict):
         Set FirstEvent & LastEvent fields as max & skip events
 
         """
+
         self['FirstEvent'] = skipEvents
-        self['LastEvent']  = skipEvents + maxEvents
+        if maxEvents is not None:
+            self['LastEvent']  = skipEvents + maxEvents
+
         return
 
     def setMaxAndSkipLumis(self, maxLumis, skipLumi):
@@ -90,7 +95,7 @@ class Mask(dict):
 
         """
 
-        if not self.has_key('First%s' %(type)):
+        if 'First%s' %(type) not in self:
             return None
         if (self['First%s'%(type)] == None) or (self['Last%s'%(type)] == None):
             return None
@@ -133,6 +138,10 @@ class Mask(dict):
         TODO: The name of this function is a little misleading. If you pass a list of lumis
               it ignores the content of the list and adds a range based on the max/min in
               the list. Missing lumis in the list are ignored.
+
+        NOTE: If the new run/lumi range overlaps with the pre-existing lumi ranges in the
+              mask, no attempt is made to merge these together.  This can result in a mask
+              with duplicate lumis.
         """
 
         if not type(lumis) == list:
@@ -190,24 +199,31 @@ class Mask(dict):
             # ALWAYS TRUE
             return runs
 
-        lumisToRemove = {}
+        runDict = {}
         for r in runs:
-            lumisToRemove = []
-            for l in r.lumis:
-                if not self.runLumiInMask(run = r.run, lumi = l):
-                    if not l in lumisToRemove:
-                        lumisToRemove.append(l)
+            if r.run in runDict:
+                runDict[r.run].lumis.extend(r.lumis)
+            else:
+                runDict[r.run] = r
 
-            for l in lumisToRemove:
-                r.lumis.remove(l)
+        maskRuns = set(self["runAndLumis"].keys())
+        passedRuns = set([r.run for r in runs])
+        filteredRuns = maskRuns.intersection(passedRuns)
 
         newRuns = set()
+        for runNumber in filteredRuns:
+            maskLumis = set()
+            for pair in self["runAndLumis"][runNumber]:
+                if pair[0] == pair[1]:
+                    maskLumis.add(pair[0])
+                else:
+                    maskLumis = maskLumis.union(range(pair[0], pair[1] + 1, 1))
 
-        for r in runs:
-            if len(r.lumis) >0:
-                newRuns.add(r)
+            filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
+            if len(filteredLumis) > 0:
+                newRuns.add(Run(runNumber, *list(filteredLumis)))
+
         return newRuns
-
 
 
 class InclusiveMask(Mask):
@@ -231,5 +247,3 @@ class ExclusiveMask(Mask):
     def __init__(self):
         Mask.__init__(self)
         self['inclusive'] = False
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101, W6501, W0142
+#pylint: disable=E1101, W6501, W0142
 # E1101:  Doesn't recognize section_() as defining objects
 # W6501:  String formatting in log output
 # W0142:  Dave likes himself some ** magic
@@ -78,17 +78,20 @@ class StageOut(Executor):
 
         # switch between old stageOut behavior and new, fancy stage out behavior
         useNewStageOutCode = False
-        if overrides.has_key('newStageOut') and overrides.get('newStageOut'):
+        if getattr(self.step, 'newStageout', False) or \
+            ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
 
 
         stageOutCall = {}
-        if overrides.has_key("command") and overrides.has_key("option") \
-               and overrides.has_key("se-name") and overrides.has_key("lfn-prefix"):
+        if "command" in overrides and "option" in overrides \
+               and "se-name" in overrides and "phedex-node" in overrides \
+               and"lfn-prefix" in overrides:
             logging.critical('using override in StageOut')
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
             stageOutCall['se-name']    = overrides.get('se-name')
+            stageOutCall['phedex-node']= overrides.get('phedex-node')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
         # naw man, this is real
@@ -125,8 +128,8 @@ class StageOut(Executor):
                               % (step, stepLocation))
                 continue
             # First, get everything from a file and 'unpersist' it
-            stepReport = Report(step)
-            stepReport.unpersist(reportLocation)
+            stepReport = Report()
+            stepReport.unpersist(reportLocation, step)
             taskID = getattr(stepReport.data, 'id', None)
 
             # Don't stage out files from bad steps.
@@ -151,16 +154,17 @@ class StageOut(Executor):
                 if hasattr(self.step.output, 'minMergeSize') \
                        and hasattr(file, 'size') \
                        and not getattr(file, 'merged', False):
+
                     # We need both of those to continue, and we don't
                     # direct-to-merge
                     if getattr(self.step.output, 'doNotDirectMerge', False):
                         # Then we've been told explicitly not to do direct-to-merge
                         continue
-                    if file.size > self.step.output.minMergeSize:
+                    if file.size >= self.step.output.minMergeSize:
                         # Then this goes direct to merge
                         try:
                             file = self.handleLFNForMerge(mergefile = file, step = step)
-                        except Exception, ex:
+                        except Exception as ex:
                             logging.error("Encountered error while handling LFN for merge due to size.\n")
                             logging.error(str(ex))
                             logging.debug(file)
@@ -173,11 +177,11 @@ class StageOut(Executor):
                              and not getattr(file, 'merged', False):
                         # Then direct-to-merge due to events if
                         # the file is large enough:
-                        if file.events > self.step.output.maxMergeEvents:
+                        if file.events >= self.step.output.maxMergeEvents:
                             # straight to merge
                             try:
                                 file = self.handleLFNForMerge(mergefile = file, step = step)
-                            except Exception, ex:
+                            except Exception as ex:
                                 logging.error("Encountered error while handling LFN for merge due to events.\n")
                                 logging.error(str(ex))
                                 logging.debug(file)
@@ -198,7 +202,9 @@ class StageOut(Executor):
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(file, 'pfn'),
                                    'SEName' : None,
-                                   'StageOutCommand': None}
+                                   'PNN' : None,
+                                   'StageOutCommand': None,
+                                   'Checksums' : getattr(file, 'checksums', None)}
                 signal.signal(signal.SIGALRM, alarmHandler)
                 signal.alarm(waitTime)
                 try:
@@ -206,7 +212,8 @@ class StageOut(Executor):
                     #Afterwards, the file should have updated info.
                     filesTransferred.append(fileForTransfer)
                     file.StageOutCommand = fileForTransfer['StageOutCommand']
-                    file.location        = fileForTransfer['SEName']
+#                    file.location        = fileForTransfer['SEName']
+                    file.location        = fileForTransfer['PNN']
                     file.OutputPFN       = fileForTransfer['PFN']
                 except Alarm:
                     msg = "Indefinite hang during stageOut of logArchive"
@@ -215,7 +222,7 @@ class StageOut(Executor):
                     stepReport.addError(self.stepName, 60403,
                                         "StageOutTimeout", msg)
                     stepReport.persist("Report.pkl")
-                except Exception, ex:
+                except Exception as ex:
                     manager.cleanSuccessfulStageOuts()
                     stepReport.addError(self.stepName, 60307,
                                         "StageOutFailure", str(ex))
@@ -345,6 +352,3 @@ class StageOut(Executor):
 
         # Return the file
         return mergefile
-
-
-

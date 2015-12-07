@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0103,R0913,W0102
+#pylint: disable=C0103,R0913,W0102
 """
 _Requests_
 
@@ -42,78 +42,9 @@ def check_server_url(srvurl):
     """Check given url for correctness"""
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
-        msg  = "You must include"
-        msg += "http(s):// in your servers address, %s doesn't" % srvurl
+        msg  = "You must include "
+        msg += "http(s):// in your server's address, %s doesn't" % srvurl
         raise ValueError(msg)
-
-def uploadFile(fileName, url, fieldName = 'file1', params = [], verb = 'POST', ckey = None, cert = None, capath = None):
-    """
-    Upload a file with curl streaming it directly from disk
-    """
-    import pycurl
-    c = pycurl.Curl()
-    if verb == 'POST':
-        c.setopt(c.POST, 1)
-    elif verb == 'PUT':
-        c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
-    else:
-        raise HTTPException("Verb %s not sopported for upload." % verb)
-    c.setopt(c.URL, url)
-    fullParams = [(fieldName, (c.FORM_FILE, fileName))]
-    fullParams.extend(params)
-    c.setopt(c.HTTPPOST, fullParams)
-    bbuf = StringIO.StringIO()
-    hbuf = StringIO.StringIO()
-    c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
-    c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
-    if  capath:
-        c.setopt(pycurl.CAPATH, capath)
-        c.setopt(pycurl.SSL_VERIFYPEER, True)
-    else:
-        c.setopt(pycurl.SSL_VERIFYPEER, False)
-    if  ckey:
-        c.setopt(pycurl.SSLKEY, ckey)
-    if  cert:
-        c.setopt(pycurl.SSLCERT, cert)
-    c.perform()
-    hres = hbuf.getvalue()
-    bres = bbuf.getvalue()
-    rh = ResponseHeader(hres)
-    c.close()
-    if  rh.status < 200 or rh.status >= 300:
-        exc = HTTPException(bres)
-        setattr(exc, 'req_data', fullParams)
-        setattr(exc, 'url', url)
-        setattr(exc, 'result', bres)
-        setattr(exc, 'status', rh.status)
-        setattr(exc, 'reason', rh.reason)
-        setattr(exc, 'headers', rh.header)
-        raise exc
-
-    return bres
-
-def downloadFile(fileName, url):
-    """
-    Download a file with curl streaming it directly to disk
-    """
-    import pycurl
-    from WMCore.Services.pycurl_manager import ResponseHeader
-
-    hbuf = StringIO.StringIO()
-
-    with open(fileName, "wb") as fp:
-        curl = pycurl.Curl()
-        curl.setopt(pycurl.URL, url)
-        curl.setopt(pycurl.WRITEDATA, fp)
-        curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
-        curl.setopt(pycurl.FOLLOWLOCATION, 1)
-        curl.perform()
-        curl.close()
-
-        header = ResponseHeader(hbuf.getvalue())
-        if header.status < 200 or header.status >= 300:
-            raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
-    return fileName, header
 
 
 class Requests(dict):
@@ -130,6 +61,7 @@ class Requests(dict):
             idict = {}
         dict.__init__(self, idict)
         self.pycurl = idict.get('pycurl', None)
+        self.capath = idict.get('capath', None)
         if self.pycurl:
             self.reqmgr = RequestHandler()
 
@@ -160,7 +92,7 @@ class Requests(dict):
                         idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
-        self.setdefault("timeout", 30)
+        self.setdefault("timeout", 300)
         self.setdefault("logger", logging)
 
         check_server_url(self['host'])
@@ -265,6 +197,8 @@ class Requests(dict):
             headers[key] = self.additionalHeaders[key]
 
         #And now overwrite any headers that have been passed into the call:
+        #WARNING: doesn't work with deplate so only accept gzip 
+        incoming_headers["accept-encoding"] = "gzip,identity"
         headers.update(incoming_headers)
 
         # httpib2 requires absolute url
@@ -327,8 +261,8 @@ class Requests(dict):
             except AttributeError:
                 # socket/httplib really screwed up - nuclear option
                 self['conn'].connections = {}
-                raise socket.error, 'Error contacting: %s' \
-                        % self.getDomainName()
+                raise socket.error('Error contacting: %s' \
+                        % self.getDomainName())
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)
@@ -429,7 +363,7 @@ class Requests(dict):
             # if not proceed as not all https connections require them
             try:
                 key, cert = self.getKeyCert()
-            except Exception, ex:
+            except Exception as ex:
                 msg = 'No certificate or key found, authentication may fail'
                 self['logger'].info(msg)
                 self['logger'].debug(str(ex))
@@ -464,24 +398,24 @@ class Requests(dict):
         key = None
         # Zeroth case is if the class has over ridden the key/cert and has it
         # stored in self
-        if self.has_key('cert') and self.has_key('key' ) \
+        if 'cert' in self and 'key' in self \
              and self['cert'] and self['key']:
             key = self['key']
             cert = self['cert']
 
         # Now we're trying to guess what the right cert/key combo is...
         # First preference to HOST Certificate, This is how it set in Tier0
-        elif os.environ.has_key('X509_HOST_CERT'):
+        elif 'X509_HOST_CERT' in os.environ:
             cert = os.environ['X509_HOST_CERT']
             key = os.environ['X509_HOST_KEY']
         # Second preference to User Proxy, very common
-        elif (os.environ.has_key('X509_USER_PROXY')) and \
+        elif ('X509_USER_PROXY' in os.environ) and \
                 (os.path.exists( os.environ['X509_USER_PROXY'])):
             cert = os.environ['X509_USER_PROXY']
             key = cert
 
         # Third preference to User Cert/Proxy combinition
-        elif os.environ.has_key('X509_USER_CERT'):
+        elif 'X509_USER_CERT' in os.environ:
             cert = os.environ['X509_USER_CERT']
             key = os.environ['X509_USER_KEY']
 
@@ -518,11 +452,95 @@ class Requests(dict):
         you need to set either the X509_CERT_DIR variable or the cacert key of the request.
         """
         cacert = None
-        if self.has_key('cacert'):
-            cacert = self['cacert']
-        elif os.environ.has_key("X509_CERT_DIR"):
+        if 'capath' in self:
+            cacert = self['capath']
+        elif "X509_CERT_DIR" in os.environ:
             cacert = os.environ["X509_CERT_DIR"]
         return cacert
+
+    def uploadFile(self, fileName, url, fieldName = 'file1', params = [], verb = 'POST'):
+        """
+        Upload a file with curl streaming it directly from disk
+        """
+        ckey, cert = self.getKeyCert()
+        capath = self.getCAPath()
+        import pycurl
+        c = pycurl.Curl()
+        if verb == 'POST':
+            c.setopt(c.POST, 1)
+        elif verb == 'PUT':
+            c.setopt(pycurl.CUSTOMREQUEST, 'PUT')
+        else:
+            raise HTTPException("Verb %s not sopported for upload." % verb)
+        c.setopt(c.URL, url)
+        fullParams = [(fieldName, (c.FORM_FILE, fileName))]
+        fullParams.extend(params)
+        c.setopt(c.HTTPPOST, fullParams)
+        bbuf = StringIO.StringIO()
+        hbuf = StringIO.StringIO()
+        c.setopt(pycurl.WRITEFUNCTION, bbuf.write)
+        c.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+        if  capath:
+            c.setopt(pycurl.CAPATH, capath)
+            c.setopt(pycurl.SSL_VERIFYPEER, True)
+        else:
+            c.setopt(pycurl.SSL_VERIFYPEER, False)
+        if  ckey:
+            c.setopt(pycurl.SSLKEY, ckey)
+        if  cert:
+            c.setopt(pycurl.SSLCERT, cert)
+        c.perform()
+        hres = hbuf.getvalue()
+        bres = bbuf.getvalue()
+        rh = ResponseHeader(hres)
+        c.close()
+        if  rh.status < 200 or rh.status >= 300:
+            exc = HTTPException(bres)
+            setattr(exc, 'req_data', fullParams)
+            setattr(exc, 'url', url)
+            setattr(exc, 'result', bres)
+            setattr(exc, 'status', rh.status)
+            setattr(exc, 'reason', rh.reason)
+            setattr(exc, 'headers', rh.header)
+            raise exc
+
+        return bres
+
+    def downloadFile(self, fileName, url):
+        """
+        Download a file with curl streaming it directly to disk
+        """
+        ckey, cert = self.getKeyCert()
+        capath = self.getCAPath()
+        import pycurl
+        from WMCore.Services.pycurl_manager import ResponseHeader
+
+        hbuf = StringIO.StringIO()
+
+        with open(fileName, "wb") as fp:
+            curl = pycurl.Curl()
+            curl.setopt(pycurl.URL, url)
+            curl.setopt(pycurl.WRITEDATA, fp)
+            curl.setopt(pycurl.HEADERFUNCTION, hbuf.write)
+            if  capath:
+                curl.setopt(pycurl.CAPATH, capath)
+                curl.setopt(pycurl.SSL_VERIFYPEER, True)
+            else:
+                curl.setopt(pycurl.SSL_VERIFYPEER, False)
+            if  ckey:
+                curl.setopt(pycurl.SSLKEY, ckey)
+            if  cert:
+                curl.setopt(pycurl.SSLCERT, cert)
+            curl.setopt(pycurl.FOLLOWLOCATION, 1)
+            curl.perform()
+            curl.close()
+
+            header = ResponseHeader(hbuf.getvalue())
+            if header.status < 200 or header.status >= 300:
+                raise RuntimeError('Reading %s failed with code %s' % (url, header.status))
+        return fileName, header
+
+
 
 class JSONRequests(Requests):
     """
@@ -563,4 +581,5 @@ class TempDirectory():
         self.dir = idir
 
     def __del__(self):
-        shutil.rmtree(self.dir, ignore_errors = True)
+        if shutil:
+            shutil.rmtree(self.dir, ignore_errors = True)

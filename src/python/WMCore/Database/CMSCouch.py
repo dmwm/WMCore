@@ -16,10 +16,12 @@ import urllib
 import re
 import hashlib
 import base64
+import logging
 from httplib import HTTPException
 from datetime import timedelta, datetime
 
 from WMCore.Services.Requests import JSONRequests
+from WMCore.Lexicon import replaceToSantizeURL
 
 def check_name(dbname):
     match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
@@ -50,7 +52,12 @@ class Document(dict):
         """
         Mark the document as deleted
         """
-        self['_deleted'] = True
+        # https://issues.apache.org/jira/browse/COUCHDB-1141
+        deletedDict = { '_id' : self['_id'], '_rev' : self['_rev'], '_deleted' : True }
+        self.update(deletedDict)
+        for key in self.keys():
+            if key not in deletedDict:
+                del self[key]
 
     def __to_json__(self, thunker):
         """
@@ -76,6 +83,7 @@ class CouchDBRequests(JSONRequests):
         """
         JSONRequests.__init__(self, url, {"cachepath" : None, "pycurl" : usePYCurl, "key" : ckey, "cert" : cert, "capath" : capath})
         self.accept_type = "application/json"
+        self["timeout"] = 600
 
     def move(self, uri=None, data=None):
         """
@@ -103,7 +111,7 @@ class CouchDBRequests(JSONRequests):
             result, status, reason, cached = JSONRequests.makeRequest(
                                         self, uri, data, type, incoming_headers,
                                         encode, decode,contentType)
-        except HTTPException, e:
+        except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
 
@@ -147,8 +155,7 @@ class Database(CouchDBRequests):
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database',
-                  url = 'http://localhost:5984', size = 1000):
+    def __init__(self, dbname = 'database', url = 'http://localhost:5984', size = 1000, ckey = None, cert = None):
         """
         A set of queries against a CouchDB database
         """
@@ -156,7 +163,7 @@ class Database(CouchDBRequests):
 
         self.name = urllib.quote_plus(dbname)
 
-        CouchDBRequests.__init__(self, url)
+        CouchDBRequests.__init__(self, url = url, ckey = ckey, cert = cert)
         self._reset_queue()
 
         self._queue_size = size
@@ -184,19 +191,21 @@ class Database(CouchDBRequests):
                     doc[label] = int(time.time())
         return data
 
-    def queue(self, doc, timestamp = False, viewlist=[]):
+    def queue(self, doc, timestamp = False, viewlist=[], callback = None):
         """
         Queue up a doc for bulk insert. If timestamp = True add a timestamp
         field if one doesn't exist. Use this over commit(timestamp=True) if you
         want to timestamp when a document was added to the queue instead of when
         it was committed
+        If a callback is specified then pass it to the commit function if a
+        commit is triggered
         """
         if timestamp:
             self.timestamp(doc, timestamp)
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print 'queue larger than %s records, committing' % self._queue_size
-            self.commit(viewlist=viewlist)
+            self.commit(viewlist=viewlist, callback = callback)
         self._queue.append(doc)
 
     def queueDelete(self, doc, viewlist=[]):
@@ -204,7 +213,8 @@ class Database(CouchDBRequests):
         Queue up a document for deletion
         """
         assert isinstance(doc, type({})), "document not a dictionary"
-        doc['_deleted'] = True
+        # https://issues.apache.org/jira/browse/COUCHDB-1141
+        doc = { '_id' : doc['_id'], '_rev' : doc['_rev'], '_deleted' : True }
         self.queue(doc)
 
     def commitOne(self, doc, returndocs=False, timestamp = False, viewlist=[]):
@@ -225,7 +235,7 @@ class Database(CouchDBRequests):
         return retval
 
     def commit(self, doc=None, returndocs = False, timestamp = False,
-               viewlist=[], **data):
+               viewlist=[], callback = None, **data):
         """
         Add doc and/or the contents of self._queue to the database. If
         returndocs is true, return document objects representing what has been
@@ -233,6 +243,12 @@ class Database(CouchDBRequests):
         timestamp - this will be the timestamp of when the commit was called, it
         will not override an existing timestamp field.  If timestamp is a string
         that string will be used as the label for the timestamp.
+
+        The callback function will be called with the documents that trigger a
+        conflict when doing the bulk post of the documents in the queue,
+        callback functions must accept the database object, the data posted and a row in the
+        result from the bulk commit. The callback updates the retval with
+        its internal retval
 
         key, value pairs can be used to pass extra parameters to the bulk doc api
         See http://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
@@ -259,6 +275,11 @@ class Database(CouchDBRequests):
         for v in viewlist:
             design, view = v.split('/')
             self.loadView(design, view, {'limit': 0})
+        if callback:
+            for idx, result in enumerate(retval):
+                if result.get('error', None) == 'conflict':
+                    retval[idx] = callback(self, data, result)
+
         return retval
 
     def document(self, id, rev = None):
@@ -273,7 +294,33 @@ class Database(CouchDBRequests):
             uri += '?' + urllib.urlencode({'rev' : rev})
         return Document(id = id, inputDict = self.get(uri))
 
-    def updateDocument(self, doc_id, design, update_func, fields={}):
+    def getPrevisousRevision(self, doc_id, numberBefore = 1):
+        """
+        :param: doc_id, couch document id
+        :param: numberBefore: previous revision, 1 means one previous revision, 2 means 2 doucments eariler.
+                       special case 0 means the first revision.
+        
+        :return: previous revision document specified by numberBefore
+          
+        """
+        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.quote_plus(doc_id))
+        revisionRecord = self.get(uri)
+        rev = revisionRecord[0]['ok']['_revisions']
+        
+        if numberBefore == 0:
+            revNum = 1
+            revID = rev['start'] - 1
+        else:
+            revNum = rev['start'] - numberBefore
+            revID = rev['ids'][numberBefore]
+        preRev = "%s-%s" % (revNum, revID)
+        
+        if doc_id != revisionRecord[0]['ok']['_id']:
+            raise CouchError("revision record doesn match", revisionRecord[0]['ok']['_id'], doc_id)
+        
+        return self.document(doc_id, preRev)
+    
+    def updateDocument(self, doc_id, design, update_func, fields={}, useBody=False):
         """
         Call the update function update_func defined in the design document
         design for the document doc_id with a query string built from fields.
@@ -282,11 +329,29 @@ class Database(CouchDBRequests):
         """
         # Clean up /'s in the name etc.
         doc_id = urllib.quote_plus(doc_id)
+        
+        if not useBody:
+            updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
+                (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+    
+            return self.put(uri = updateUri, decode=False)
+        else:
+            updateUri = '/%s/_design/%s/_update/%s/%s' % \
+                (self.name, design, update_func, doc_id)
+            return self.put(uri=updateUri, data=fields, decode=False)
+    
+    def putDocument(self, doc_id, fields):
+        """
+        Call the update function update_func defined in the design document
+        design for the document doc_id with a query string built from fields.
 
-        updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
-            (self.name, design, update_func, doc_id, urllib.urlencode(fields))
-
-        return self.put(uri = updateUri, decode=False)
+        http://wiki.apache.org/couchdb/Document_Update_Handlers
+        """
+        # Clean up /'s in the name etc.
+        doc_id = urllib.quote_plus(doc_id)
+        
+        updateUri = '/%s/%s' % (self.name, doc_id)
+        return self.put(uri=updateUri, data=fields, decode=False)
 
     def documentExists(self, id, rev = None):
         """
@@ -307,42 +372,42 @@ class Database(CouchDBRequests):
         """
         doc = self.document(id, rev)
         doc.delete()
-        self.commitOne(doc)
+        return self.commitOne(doc)
 
     def compact(self, views=[], blocking=False, blocking_poll=5, callback=False):
-       """
-       Compact the database: http://wiki.apache.org/couchdb/Compaction
+        """
+        Compact the database: http://wiki.apache.org/couchdb/Compaction
 
-       If given, views should be a list of design document name (minus the
-       _design/ - e.g. myviews not _design/myviews). For each view in the list
-       view compaction will be triggered. Also, if the views list is provided
-       _view_cleanup is called to remove old view output.
+        If given, views should be a list of design document name (minus the
+        _design/ - e.g. myviews not _design/myviews). For each view in the list
+        view compaction will be triggered. Also, if the views list is provided
+        _view_cleanup is called to remove old view output.
 
-       If True blocking will cause this call to wait until the compaction is
-       completed, polling for status with frequency blocking_poll and calling
-       the function specified by callback on each iteration.
+        If True blocking will cause this call to wait until the compaction is
+        completed, polling for status with frequency blocking_poll and calling
+        the function specified by callback on each iteration.
 
-       The callback function can be used for logging and could also be used to
-       timeout the compaction based on status (e.g. don't time out if compaction
-       is less than X% complete. The callback function takes the Database (self)
-       as an argument. If the callback function raises an exception the block is
-       removed and the compact call returns.
-       """
-       response = self.post('/%s/_compact' % self.name)
-       if len(views) > 0:
-         for view in views:
-           response[view] = self.post('/%s/_compact/%s' % (self.name, view))
-           response['view_cleanup' ] = self.post('/%s/_view_cleanup' % (self.name))
+        The callback function can be used for logging and could also be used to
+        timeout the compaction based on status (e.g. don't time out if compaction
+        is less than X% complete. The callback function takes the Database (self)
+        as an argument. If the callback function raises an exception the block is
+        removed and the compact call returns.
+        """
+        response = self.post('/%s/_compact' % self.name)
+        if len(views) > 0:
+            for view in views:
+                response[view] = self.post('/%s/_compact/%s' % (self.name, view))
+                response['view_cleanup' ] = self.post('/%s/_view_cleanup' % (self.name))
 
-       if blocking:
-         while self.info()['compact_running']:
-           if callback:
-             try:
-               callback(self)
-             except Exception, e:
-               return response
-           time.sleep(blocking_poll)
-       return response
+        if blocking:
+            while self.info()['compact_running']:
+                if callback:
+                    try:
+                        callback(self)
+                    except Exception:
+                        return response
+                time.sleep(blocking_poll)
+        return response
 
     def changes(self, since=-1):
         """
@@ -355,6 +420,20 @@ class Database(CouchDBRequests):
         self.last_seq = data['last_seq']
         return data
 
+    def changesWithFilter(self, filter, limit=1000, since=-1):
+        """
+        Get the changes since sequence number. Store the last sequence value to
+        self.last_seq. If the since is negative use self.last_seq.
+        """
+        if since < 0:
+            since = self.last_seq
+        data = self.get('/%s/_changes?limit=%s&since=%s&filter=%s' % (self.name, limit, since, filter))
+        self.last_seq = data['last_seq']
+        return data
+    
+    def purge(self, data):
+        return self.post('/%s/_purge' % self.name, data)
+        
     def loadView(self, design, view, options = {}, keys = []):
         """
         Load a view by getting, for example:
@@ -402,9 +481,8 @@ class Database(CouchDBRequests):
             retval = self.get('/%s/_design/%s/_view/%s' % \
                             (self.name, design, view), encodedOptions)
         if ('error' in retval):
-            raise RuntimeError ,\
-                    "Error in CouchDB: viewError '%s' reason '%s'" %\
-                        (retval['error'], retval['reason'])
+            raise RuntimeError("Error in CouchDB: viewError '%s' reason '%s'" %\
+                        (retval['error'], retval['reason']))
         else:
             return retval
 
@@ -507,10 +585,28 @@ class Database(CouchDBRequests):
         # right?
         # TODO: MAKE BETTER ERROR HANDLING
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
-            raise RuntimeError, "File not found, deleted"
+            raise RuntimeError("File not found, deleted")
         if (id == "nonexistantid"):
             print attachment
         return attachment
+    
+    def bulkDeleteByIDs(self, ids):
+        """
+        delete bulk documents
+        """
+        # do the safty check other wise it will delete whole db.
+        if type(ids) != list:
+            raise
+        if len(ids) == 0:
+            return None
+        
+        docs = self.allDocs(keys=ids)['rows']
+        for j in docs:
+            doc = {}
+            doc["_id"]  = j['id']
+            doc["_rev"] = j['value']['rev']
+            self.queueDelete(doc)
+        return self.commit()
 
 class RotatingDatabase(Database):
     """
@@ -710,7 +806,7 @@ class RotatingDatabase(Database):
         """
         return [doc['value'] for doc in self._find_dbs_in_state('archived')]
 
-    def non_rotating_commit():
+    def non_rotating_commit(self):
         # might need this after all....
         pass
 
@@ -754,19 +850,21 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl='http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dburl = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
         """
         Set up a connection to the CouchDB server
         """
         check_server_url(dburl)
-        CouchDBRequests.__init__(self, dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
+        CouchDBRequests.__init__(self, url = dburl, usePYCurl = usePYCurl, ckey = ckey, cert = cert, capath = capath)
         self.url = dburl
+        self.ckey = ckey
+        self.cert = cert
 
     def listDatabases(self):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
-    def createDatabase(self, dbname):
+    def createDatabase(self, dbname, size = 1000):
         """
         A database must be named with all lowercase characters (a-z),
         digits (0-9), or any of the _$()+-/ characters and must end with a slash
@@ -777,7 +875,7 @@ class CouchServer(CouchDBRequests):
         self.put("/%s" % urllib.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
-        return Database(dbname, self.url)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
@@ -793,7 +891,7 @@ class CouchServer(CouchDBRequests):
         check_name(dbname)
         if create and dbname not in self.listDatabases():
             return self.createDatabase(dbname)
-        return Database(dbname, self.url, size)
+        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
 
     def replicate(self, source, destination, continuous = False,
                   create_target = False, cancel = False, doc_ids=False,
@@ -818,12 +916,16 @@ class CouchServer(CouchDBRequests):
         though, would need to decompose the URL and rebuild it.
         """
         if source not in self.listDatabases():
-          check_server_url(source)
+            check_server_url(source)
         if destination not in self.listDatabases():
-          if create_target and not destination.startswith("http"):
-            check_name(destination)
-          else:
-            check_server_url(destination)
+            if create_target and not destination.startswith("http"):
+                check_name(destination)
+            else:
+                check_server_url(destination)
+        if not destination.startswith("http"):
+            destination = '%s/%s' % (self.url, destination)
+        if not source.startswith("http"):
+            source = '%s/%s' % (self.url, source)
         data={"source":source,"target":destination}
         #There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous
@@ -834,7 +936,7 @@ class CouchServer(CouchDBRequests):
             data["filter"] = filter
             if query_params:
                 data["query_params"] = query_params
-        self.post('/_replicate', data)
+        self.post('/_replicator', data)
 
     def status(self):
         """
@@ -914,3 +1016,127 @@ class CouchForbidden(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchForbidden"
+
+
+class CouchMonitor(object):
+    
+    def __init__(self, couchURL):
+        if isinstance(couchURL, CouchServer):
+            self.couchServer = couchURL
+        else:
+            self.couchServer = CouchServer(couchURL)
+            
+        self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
+        # this is set {source: {taget: update_sequence}}
+        self.previousUpdateSequence  = {}
+    
+    def deleteReplicatorDocs(self, source = None, target = None, repDocs = None):
+        if repDocs == None:
+            repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
+        
+        filteredDocs = self._filterReplicationDocs(repDocs, source, target)
+        if len(filteredDocs) == 0:
+            return 
+        for doc in filteredDocs:
+            self.replicatorDB.queueDelete(doc)
+        return self.replicatorDB.commit()
+    
+    def _filterReplicationDocs(self, repDocs, source, target):
+        filteredDocs = []
+        for j in repDocs:
+            if not j['id'].startswith('_'):
+                if (source == None and target == None) or \
+                   (j['doc']['source'] == source and j['doc']['target'] == target):
+                    doc = {}
+                    doc["_id"]  = j['id']
+                    doc["_rev"] = j['value']['rev']
+                    if "_replication_state" in j["doc"]:
+                        doc["_replication_state"] = j["doc"]["_replication_state"]
+                    else:
+                        logging.error("""replication failed from %s to %s 
+                                         couch server manually need to be restarted""" % (
+                                         replaceToSantizeURL(source), 
+                                         replaceToSantizeURL(target)))
+                    filteredDocs.append(doc)
+        return filteredDocs
+    
+    def getPreviousUpdateSequence(self, source, target):
+        targetDict = self.previousUpdateSequence.setdefault(source, {})
+        return targetDict.setdefault(target, 0)
+    
+    def setPreviousUpdateSequence(self, source, target, updateSeq):
+        self.previousUpdateSequence[source][target] = updateSeq
+        
+    def recoverReplicationErrors(self, source, target, filter = False, 
+                                 query_params = False,
+                                 checkUpdateSeq = True,
+                                 continuous = True):
+        
+        couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
+
+        if (couchInfo['status'] == 'error'):
+            logging.info("Deleting the replicator documents from %s..." % source)
+            self.deleteReplicatorDocs(source, target)
+            logging.info("Setting the replication from %s ..." % source)
+            self.couchServer.replicate(source, target, filter = filter, 
+                                           query_params = query_params,
+                                           continuous = continuous)
+            
+            couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
+        #if (couchInfo['status'] != 'down'):
+        #    restart couch server
+        return couchInfo
+
+    
+    def checkCouchServerStatus(self, source, target, checkUpdateSeq):
+        try:
+            if checkUpdateSeq:
+                dbInfo =  self.couchServer.get("/%s" % source)
+            else:
+                dbInfo = None
+            activeTasks = self.couchServer.get("/_active_tasks")
+            replicationFlag = False
+            passwdStrippedURL = target.split("@")[-1]
+            
+            for activeStatus in activeTasks:
+                if activeStatus["type"].lower() == "replication":
+                    if passwdStrippedURL in activeStatus.get("target", ""):
+                        replicationFlag = self.checkReplicationStatus(activeStatus, 
+                                                    dbInfo, source, target, checkUpdateSeq)
+                        break
+            
+            if replicationFlag:
+                return {'status': 'ok'}
+            else:
+                return {'status':'error', 'error_message': "replication stopped"}
+        except Exception as ex:
+            import traceback
+            msg = traceback.format_exc() 
+            logging.error(msg)
+            return {'status':'down', 'error_message': str(ex)}
+        
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
+                                      checkUpdateSeq):
+        """
+        adhog way to check the replication
+        """
+        
+        logging.info("checking the replication status")
+        #if activeStatus["started_on"]:
+        #   logging.info("Starting status: ok")
+        #    return True
+        previousUpdateNum = self.getPreviousUpdateSequence(source, target)
+        
+        if activeStatus["updated_on"]:
+            updateNum = int(activeStatus["source_seq"])
+            self.setPreviousUpdateSequence(source, target, updateNum)
+            if not checkUpdateSeq:
+                logging.warning("Need to check replication from %s to %s" % (
+                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
+                return True
+            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
+                logging.info("update upto date: ok")
+                return True
+            else:
+                return False
+        return False

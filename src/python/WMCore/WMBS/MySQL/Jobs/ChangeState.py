@@ -14,8 +14,8 @@ class ChangeState(DBFormatter):
     sql = """UPDATE wmbs_job
             SET state = (select id from wmbs_job_state where name = :state),
                 couch_record = :couch_record,
-                state_time = :time 
-            WHERE wmbs_job.id = :job      
+                state_time = :time
+            WHERE wmbs_job.id = :job
             """
 
     def getBinds(self, jobs = []):

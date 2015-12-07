@@ -13,7 +13,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class ListOpen(DBFormatter):
     sql = "SELECT name FROM wmbs_fileset WHERE open = 1"
-    
+
     def format(self, results):
         """
         _format_
@@ -28,7 +28,7 @@ class ListOpen(DBFormatter):
             openFilesetNames.append(str(result[0]))
 
         return openFilesetNames
-        
+
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, conn = conn,
                                       transaction = transaction)

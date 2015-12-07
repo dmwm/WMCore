@@ -7,19 +7,16 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
+import json
 import unittest
 import logging
-import urllib
-import urllib2
 
-from cherrypy import HTTPError
+from nose.plugins.attrib import attr
+
 from WMCore.WebTools.RESTFormatter import RESTFormatter
-from WMCore_t.WebTools_t.DummyRESTModel import DummyRESTModel
-
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTClientAPI import methodTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.Wrappers import JsonWrapper
 
 class RESTFormatTest(RESTBaseUnitTest):
 
@@ -46,23 +43,28 @@ class RESTFormatTest(RESTBaseUnitTest):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
 
-        for type in rf.supporttypes.keys():
+        for textType in rf.supporttypes.keys():
             # test accepted type should return 200 error
-            methodTest('GET', url, accept=type, output={'code':200})
+            methodTest('GET', url, accept=textType, output={'code':200})
 
+    # This test is flipping back and forth in Jenkins. Perhaps due to port 8888 not being available.
+    # Disabling for now
+    @attr("integration")
     def testEncodedInput(self):
-        type = 'text/plain'
+        textType = 'text/plain'
 
         url = self.urlbase + 'list3?a=a%&b=b'
-        methodTest('GET', url, accept=type,
-                         output={'code':200, 'data':"{'a': 'a%', 'b': 'b'}"})
+        data = json.dumps({'a': 'a%', 'b': 'b'})
+        methodTest('GET', url, accept=textType,
+                         output={'code':200, 'data':data})
 
         request_input={'a':'%', 'b':'b'}
 
         #methodTest encoded input with urlencode
         url = self.urlbase +'list3'
-        methodTest('GET', url, accept=type, request_input=request_input,
-                 output={'code':200, 'data':"{'a': '%', 'b': 'b'}"})
+        data = json.dumps({'a': '%', 'b': 'b'})
+        methodTest('GET', url, accept=textType, request_input=request_input,
+                 output={'code':200, 'data':data})
 
     def testReturnFormat(self):
         return_type = 'application/json'
@@ -85,7 +87,17 @@ class RESTFormatTest(RESTBaseUnitTest):
         expected_data = """{"exception": 400, "message": "Invalid input: Arguments added where none allowed", "type": "HTTPError"}"""
         methodTest('GET', url, accept=return_type, output={'code':400, 'data':expected_data})
 
+    def testGenerator(self):
+        rf = RESTFormatter(config=self.config.Webtools)
+        url = self.urlbase +'gen'
+        # gen method from DummyRESTModel will return this generator
+        gen = ({'idx':i} for i in range(10))
+        # the WMCore should convert it into list regardless of accept type
+        data = rf.json(gen)
+        methodTest('GET', url, accept='application/json',
+                         output={'code':200, 'data':data})
+        methodTest('GET', url, accept='*/*',
+                         output={'code':200, 'data':data})
 
 if __name__ == "__main__":
     unittest.main()
-

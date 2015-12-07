@@ -1,0 +1,72 @@
+<h2>Batch page</h2>
+<hr/>
+
+<form id="batch-form" name="batch-form" method="post" class="forms">
+#if $name
+<fieldset disabled>
+<legend>Read-only batch form</legend>
+#else
+<fieldset>
+<legend>New batch form</legend>
+#end if
+<label>
+    Batch name
+    #if $name
+    <input type="text" name="name" value="$name" class="input-green input-small width-40" />
+    #else
+    <input type="text" name="name" placeholder="Batch name" class="input-gray input-small width-40" />
+    #end if
+</label>
+<label>
+    Creator
+    #if  $creator
+    <input type="text" name="creator" value="$creator" class="input-green input-small width-40" />
+    #else
+    <input type="text" name="creator" placeholder="Creator name" class="input-gray input-small width-40" />
+    #end if
+</label>
+
+<label>
+Batch description
+<textarea class="editor height-200" name="description" id="description">
+$description
+</textarea>
+</label>
+
+<label>
+Batch workflows
+<textarea class="editor height-200" name="description" id="description">
+#for workflow in $workflows
+$workflow
+#end for
+</textarea>
+</label>
+
+<hr />
+<h4>Batch attributes</h4>
+$attributes
+
+</fieldset>
+</form>
+
+#if not $name
+<p class="units-row">
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:CreateBatch('batch-form');">Create</button>
+</p>
+#end if
+</div>
+
+<hr/>
+
+<script>
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// create interface either create single request or multiple requests
+function CreateBatch(formtag) {
+    var parameters = {};
+    if (formtag=='batch-form') {
+        parameters = \$('#batch-form').serializeObject();
+    }
+    ajaxRequest('$base/data/request', parameters);
+}
+</script>

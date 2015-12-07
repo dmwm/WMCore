@@ -3,50 +3,99 @@
 WorkQueue splitting by block
 
 """
-__all__ = []
-
-
+from __future__ import division
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.DataStructs.Mask import Mask
 from copy import copy
-from math import ceil
+from math import ceil, floor
+
+__all__ = []
+
 
 class MonteCarlo(StartPolicyInterface):
     """Split elements into blocks"""
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
-        self.args.setdefault('SliceType', 'NumberOfEvents')
-        self.args.setdefault('SliceSize', 1000)         # events per job
-        self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
 
 
     def split(self):
         """Apply policy to spec"""
         # if not specified take standard defaults
+        self.args.setdefault('SliceType', 'NumberOfEvents')
+        self.args.setdefault('SliceSize', 1000)         # events per job
+        self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
+        self.args.setdefault('SubSliceSize', self.args['SliceSize']) # events per lumi
+        self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
+
         if not self.mask:
-            self.mask = Mask(FirstRun = 1, FirstLumi = 1, FirstEvent = 1,
+            self.mask = Mask(FirstRun = 1,
+                             FirstLumi = self.initialTask.getFirstLumi(),
+                             FirstEvent = self.initialTask.getFirstEvent(),
                              LastRun = 1,
-                             LastEvent = self.initialTask.totalEvents())
+                             LastEvent = self.initialTask.getFirstEvent() +
+                                             self.initialTask.totalEvents() - 1)
         mask = Mask(**self.mask)
+
+        #First let's initialize some parameters
         stepSize = int(self.args['SliceSize']) * int(self.args['MaxJobsPerElement'])
-        total = mask['LastEvent']
-        assert(total > mask['FirstEvent'])
-        while mask['FirstEvent'] < total:
+        total = mask['LastEvent'] - mask['FirstEvent'] + 1
+        lastAllowedEvent = mask['LastEvent']
+        eventsAccounted = 0
+
+        while eventsAccounted < total:
             current = mask['FirstEvent'] + stepSize - 1 # inclusive range
-            if current > total:
-                current = total
+            if current > lastAllowedEvent:
+                current = lastAllowedEvent
             mask['LastEvent'] = current
-            jobs = ceil((mask['LastEvent'] - mask['FirstEvent']) /
-                        float(self.args['SliceSize']))
-            mask['LastLumi'] = mask['FirstLumi'] + int(jobs) - 1 # inclusive range
+
+            #Calculate the job splitting without actually doing it
+            # number of lumis is calculated by events number and SubSliceSize which is events per lumi
+            # So if there no exact division between events per job and events per lumi
+            # it takes the ceiling of the value.
+            # Therefore total lumis can't be calculated from total events / SubSliceSize
+            # It has to be caluated by adding the lumis_per_job * number of jobs
+            nEvents = mask['LastEvent'] - mask['FirstEvent'] + 1
+            lumis_per_job = ceil(self.args['SliceSize'] / self.args['SubSliceSize'])
+            nLumis = floor(nEvents / self.args['SliceSize']) * lumis_per_job
+            remainingLumis = ceil(nEvents % self.args['SliceSize'] / self.args['SubSliceSize'])
+            nLumis += remainingLumis
+            jobs = ceil(nEvents/self.args['SliceSize'])
+
+            mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,
+                                 NumberOfLumis = nLumis,
+                                 NumberOfEvents = nEvents,
                                  Jobs = jobs,
                                  Mask = copy(mask))
-            mask['FirstEvent'] = mask['LastEvent'] + 1
-            mask['FirstLumi'] = mask['LastLumi'] + 1
 
+            if mask['LastEvent'] > (2**32 - 1):
+                #This is getting tricky, to ensure consecutive
+                #events numbers we must calculate where the jobSplitter
+                #will restart the firstEvent to 1 for the last time
+                #in the newly created unit
+                internalEvents = mask['FirstEvent']
+                accumulatedEvents = internalEvents
+                breakPoint = internalEvents
+
+                while accumulatedEvents < mask['LastEvent']:
+                    if (internalEvents + self.args['SliceSize'] - 1) > (2**32 - 1):
+                        internalEvents = 1
+                        breakPoint = accumulatedEvents
+                    else:
+                        internalEvents += self.args['SliceSize']
+                        accumulatedEvents += self.args['SliceSize']
+
+                leftoverEvents = mask['LastEvent'] - breakPoint + 1
+                mask['FirstEvent'] = leftoverEvents + 1
+
+            else:
+                mask['FirstEvent'] = mask['LastEvent'] + 1
+
+            mask['FirstLumi'] = mask['LastLumi'] + 1
+            eventsAccounted += stepSize
+            lastAllowedEvent = (total - eventsAccounted) + mask['FirstEvent'] - 1
 
 
     def validate(self):

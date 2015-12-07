@@ -7,8 +7,12 @@ State Change API methods
 
 """
 import logging
-import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from cherrypy import HTTPError
+
+from WMCore.Wrappers.JsonWrapper import JSONEncoder
+import WMCore.RequestManager.RequestDB.Connection as DBConnect
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Database.CMSCouch import Database
 
 # TODO: Merge with getRequest.requestID
 def getRequestID(factory, requestName):
@@ -27,7 +31,7 @@ def changeRequestIDStatus(requestId, newState, priority = None):
 
     - *requestId* : id of the request to be modified
     - *newState*    : name of the new status for the request
-    - *priority* : optional integer priority 
+    - *priority* : optional integer priority
 
     """
     factory = DBConnect.getConnection()
@@ -36,7 +40,7 @@ def changeRequestIDStatus(requestId, newState, priority = None):
     if statusId == None:
         msg = "Attempted to change request %s to unknown status value %s" % (
             requestId, newState)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     stateChanger = factory(classname = "Request.SetStatus")
     stateChanger.execute(requestId, statusId)
@@ -45,17 +49,15 @@ def changeRequestIDStatus(requestId, newState, priority = None):
         priorityChange = factory(classname = "Request.Priority")
         priorityChange.execute(requestId, priority)
 
-    return
 
 def changeRequestPriority(requestName, priority):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     priorityChange = factory(classname = "Request.Priority")
     priorityChange.execute(reqId, priority)
-    return
 
 
-def changeRequestStatus(requestName, newState, priority = None):
+def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     """
     _changeRequestStatus_
 
@@ -65,15 +67,39 @@ def changeRequestStatus(requestName, newState, priority = None):
     - *requestName* : name of the request to be modified
     - *newState*    : name of the new status for the request
     - *priority* : optional integer priority
+    
+    Apparently when changing request state (on assignment page),
+    it's possible to change priority at one go. Hence the argument is here.
 
     """
+    # MySQL/Oracle
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     changeRequestIDStatus(reqId, newState, priority)
-    return
+    
+    # CouchDB
+    # have to first get information where the request Couch document is,
+    # extracting the information from reqmgr_request.workflow table field
+    reqData = factory(classname = "Request.Get").execute(reqId)
+    # this would be something like this:
+    # http://localhost:5984/reqmgr_workload_cache/maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
+    wfUrl = reqData['workflow']
+    # cut off /maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
+    couchUrl = wfUrl.replace('/' + requestName + "/spec", '')
+    couchDbName = couchUrl[couchUrl.rfind('/') + 1:]
+    # cut off database name from the URL 
+    url = couchUrl.replace('/' + couchDbName, '')
+    couchDb = Database(couchDbName, url)
+    fields = {"RequestStatus": newState}
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody=True) 
 
+    #TODO: should we make this mendatory?
+    if wmstatUrl:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.updateRequestStatus(requestName, newState)
+    
 
-def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None):
+def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
     """
     _assignRequest_
 
@@ -84,37 +110,31 @@ def assignRequest(requestName, teamName, priorityModifier = 0, prodMgr = None):
     - Changes the status to assigned
     - Creates an association to the team provided
     - Optionally associates the request to a prod mgr instance
-    - Optionally sets the priority modifier for the team (allows same request to be
-      shared between two teams with different priorities
-
 
     """
+
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
-    statusMap = factory(classname = "ReqStatus.Map").execute()
-    statusId = statusMap['assigned']
 
     teamId = factory(classname = "Team.ID").execute(teamName)
     if teamId == None:
         msg = "Team named %s not known in database" % teamName
         msg += "Failed to assign request %s to team %s" % (requestName, teamName)
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
-
+    if wmstatUrl:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.updateTeam(requestName, teamName)
 
     assigner = factory(classname = "Assignment.New")
-    assigner.execute(reqId, teamId, priorityModifier)
+    assigner.execute(reqId, teamId)
 
-    stateChanger = factory(classname = "Request.SetStatus")
-    stateChanger.execute(reqId, statusId)
-
-
+    changeRequestStatus(requestName, 'assigned', priority = None, wmstatUrl = wmstatUrl)
 
     if prodMgr != None:
         addPM = factory(classname = "Progress.ProdMgr")
         addPM.execute(reqId, prodMgr)
 
-    return
 
 def deleteAssignment(requestName):
     """
@@ -141,7 +161,6 @@ def updateRequest(requestName, paramDict):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     factory(classname = "Progress.Update").execute(reqId, **paramDict)
-    return
 
 
 def getProgress(requestName):
@@ -160,6 +179,5 @@ def putMessage(requestName, message):
     factory = DBConnect.getConnection()
     reqId = getRequestID(factory, requestName)
     #return factory(classname = "Progress.Message").execute(reqId, message)
+    message = message[:999]
     factory(classname = "Progress.Message").execute(reqId, message)
-    return
-

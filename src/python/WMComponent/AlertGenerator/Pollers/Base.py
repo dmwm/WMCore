@@ -4,16 +4,16 @@ within the Alert messaging framework.
 
 """
 
+import sys
 import time
 import logging
 import threading
+import traceback
 
 import psutil
-
 from WMCore.Alerts import API as alertAPI
 from WMCore.Alerts.Alert import Alert
 from WMCore.Alerts.ZMQ.Sender import Sender
-
 
 
 class ProcessDetail(object):
@@ -21,41 +21,56 @@ class ProcessDetail(object):
     Class holds details about a particular process, e.g.
     corresponding psutil.Process instance, list of process's children
     also as psutil.Process instances, etc.
-    
+
     """
+
     def __init__(self, pid, name):
         self.pid = int(pid)
         self.name = name
         self.proc = psutil.Process(self.pid)
-        # the list of processes is created during start-up, it may be desirable
-        # to refresh this list of subprocesses in the course of component process
-        # checking if more processes are spawned values are during component's life-time
-        self.children = self.proc.get_children()
+        try:
+            self.children = self.proc.children()  # psutil 3.1.1
+        except AttributeError:
+            self.children = self.proc.get_children()  # psutil 0.6.1
+        self.allProcs = [self.proc] + self.children
+
+    def refresh(self):
+        """
+        Some child processes may have been spawned or finished.
+        Update the list of child processes.
+
+        """
+        try:
+            self.children = self.proc.children()  # psutil 3.1.1
+        except AttributeError:
+            self.children = self.proc.get_children()  # psutil 0.6.1
         self.allProcs = [self.proc] + self.children
 
 
     def getDetails(self):
+        childrenPIDs = [c.pid for c in self.children]
         return dict(pid = self.pid, component = self.name,
-                    numChildrenProcesses = len(self.children))
-        
-        
+                    numChildrenProcesses = len(self.children),
+                    children = childrenPIDs)
+
+
 
 class Measurements(list):
     """
-    Information on measurements which are collected over a period of time. 
-    
+    Information on measurements which are collected over a period of time.
+
     """
     def __init__(self, numOfMeasurements):
         """
         Instance of polling measurements.
         numOfMeasurements - how many polling measurements shall be collected
             over a period of time before evaluation of the collected values.
-            
+
         """
         list.__init__(self)
         self._numOfMeasurements = numOfMeasurements
-        
-        
+
+
     def clear(self):
         self[:] = []
 
@@ -68,7 +83,7 @@ class BasePoller(threading.Thread):
     Starting from Thread entry point method run(), methods run
     in different thread contexts. The only shared variable shall
     be _stopFlag.
-    
+
     """
     def __init__(self, config, generator):
         threading.Thread.__init__(self)
@@ -87,10 +102,10 @@ class BasePoller(threading.Thread):
         # possible mismatch would make a bit of chaos)
         self.levels = [self.generator.config.AlertProcessor.critical.level,
                        self.generator.config.AlertProcessor.soft.level]
-        
+
         # critical, soft threshold values
         self.thresholds = [self.config.critical, self.config.soft]
-        
+
         # pre-generated alert values, but before sending always new instance is created
         # these values are used to update the newly created instance
         dictAlert = dict(Type = "WMAgent",
@@ -101,83 +116,133 @@ class BasePoller(threading.Thread):
         # flag controlling run of the Thread
         self._stopFlag = False
         # thread own sleep time
-        self._threadSleepTime = 0.5 # seconds
-        
+        self._threadSleepTime = 0.2 # seconds
+
+
+    def _handleFailedPolling(self, ex):
+        """
+        Handle (log and send alert) if polling failed.
+
+        """
+        trace = traceback.format_exception(*sys.exc_info())
+        traceString = '\n '.join(trace)
+        errMsg = ("Polling failed in %s, reason: %s" % (self.__class__.__name__, ex))
+        logging.error("%s\n%s" % (errMsg, traceString))
+        a = Alert(**self.preAlert)
+        a.setTimestamp()
+        a["Source"] = self.__class__.__name__
+        a["Details"] = dict(msg = errMsg)
+        a["Level"] = 10
+        logging.info("Sending an alert (%s): %s" % (self.__class__.__name__, a))
+        self.sender(a)
+
 
     def run(self):
         """
         This method is called from the AlertGenerator component instance and is
-        entry point for a thread. 
-        
+        entry point for a thread.
+
         """
-        # when running with multiprocessing, this was necessary, stick to it
-        # with threading as well - may create some thread-safety issues in ZMQ ...
+        logging.info("Thread %s started - run method." % self.__class__.__name__)
+        # when running with multiprocessing, it was necessary to create the
+        # sender instance in the same context. Stick to it with threading
+        # as well - may create some thread-safety issues in ZMQ ...
         self.sender = Sender(self.generator.config.Alert.address,
-                             self.__class__.__name__,
-                             self.generator.config.Alert.controlAddr)
+                             self.generator.config.Alert.controlAddr,
+                             self.__class__.__name__)
         self.sender.register()
+        logging.info("Thread %s alert sender created: alert addr: %s "
+                     "control addr: %s" %
+                     (self.__class__.__name__,
+                      self.generator.config.Alert.address,
+                      self.generator.config.Alert.controlAddr))
         counter = self.config.pollInterval
         # want to periodically check whether the thread should finish,
         # would be impossible to terminate a sleeping thread
         while not self._stopFlag:
             if counter == self.config.pollInterval:
                 # it would feel that check() takes long time but there is
-                # specified a delay in case of psutil percentage calls                
-                self.check()
+                # specified a delay in case of psutil percentage calls
+                try:
+                    logging.debug("Poller %s check ..." % self.__class__.__name__)
+                    self.check()
+                except Exception as ex:
+                    self._handleFailedPolling(ex)
             counter -= self._threadSleepTime
             if counter <= 0:
                 counter = self.config.pollInterval
             if self._stopFlag:
                 break
             time.sleep(self._threadSleepTime)
-                    
-            
-    def terminate(self):
+        logging.info("Thread %s - work loop terminated, finished." % self.__class__.__name__)
+
+
+    def stop(self):
         """
-        Methods added when Pollers were reimplemented to run as
-        multi-threaded rather than multiprocessing.
-        This would be a slightly blocking call - wait for the thread to finish.
-        
+        Method sets the stopFlag so that run() while loop terminates
+        at its next iteration.
+
         """
         self._stopFlag = True
+
+
+    def terminate(self):
+        """
+        Methods added when Pollers were re-implemented to run as
+        multi-threaded rather than multiprocessing.
+        This would be a slightly blocking call - wait for the thread to finish.
+
+        """
+        self._stopFlag = True # keep it here as well in case on terminate method is called
+        logging.info("Thread %s terminate ..." % self.__class__.__name__)
         self.join(self._threadSleepTime + 0.1)
         if self.is_alive():
-            logging.error("Thread %s refuses to finish, continuing." % self.__class__.__name__)
+            logging.error("Thread %s refuses to finish, continuing." %
+                          self.__class__.__name__)
         else:
-            logging.debug("Thread %s finished." % self.__class__.__name__)
-            
+            logging.info("Thread %s finished." % self.__class__.__name__)
+
         # deregister with the receiver
-        # (was true for multiprocessing implemention:
-        # has to create a new sender instance and unregister the name. 
+        # (was true for multiprocessing implementation:
+        # has to create a new sender instance and unregister the name.
         # self.sender instance was created in different thread in run())
-        sender = Sender(self.generator.config.Alert.address,
-                        self.__class__.__name__,
-                        self.generator.config.Alert.controlAddr)
-        sender.unregister()
-        # if messages weren't consumed, this should get rid of them
-        del sender
+
+        # TODO revise registering/deregistering business for production ...
+        # remove unregistering (it seems to take long and wmcoreD which
+        # give only limited time for a component to shutdown, and if entire
+        # agent is being shutdown, there is no AlertProcessor to deregister with
+        # anyway
+        # logging.info("Thread %s sending unregister message ..." % self.__class__.__name__)
+        # sender = Sender(self.generator.config.Alert.address,
+        #                 self.generator.config.Alert.controlAddr,
+        #                 self.__class__.__name__)
+        # sender.unregister()
+        # # if messages weren't consumed, this should get rid of them
+        # del sender
+
         del self.sender
-        
-         
-        
+        logging.info("Thread %s terminate finished." % self.__class__.__name__)
+
+
+
 class PeriodPoller(BasePoller):
     """
     Collects samples over a configurable period of time.
     Collected samples are evaluated once in the period and compared
     with soft, resp. critical thresholds.
-    
+
     """
-    
+
     # interval for psutil cpu percent usage sampling calls: from psutil doc:
     # it's recommended for accuracy that this function be called with at
     # least 0.1 seconds between calls.
-    PSUTIL_INTERVAL = 0.2    
-    
-    
+    PSUTIL_INTERVAL = 0.2
+
+
     def __init__(self, config, generator):
         BasePoller.__init__(self, config, generator)
-                        
-    
+
+
     def check(self, pd, measurements):
         """
         Method is used commonly for system properties (e.g. overall CPU) as well
@@ -185,10 +250,10 @@ class PeriodPoller(BasePoller):
         pd - (processDetail) - information about monitored process, may be None if
             this method is called from system monitoring pollers (e.g. CPU usage).
         measurements - Measurements class instance.
-        
+
         """
         v = self.sample(pd)
-        measurements.append(v)        
+        measurements.append(v)
         avgPerc = None
         if len(measurements) >= measurements._numOfMeasurements:
             # evaluate: calculate average value and react
@@ -199,16 +264,16 @@ class PeriodPoller(BasePoller):
             if pd:
                 details.update(pd.getDetails())
             measurements.clear()
-            
-            for threshold, level in zip(self.thresholds, self.levels): 
+
+            for threshold, level in zip(self.thresholds, self.levels):
                 if avgPerc >= threshold:
                     a = Alert(**self.preAlert)
+                    a.setTimestamp()
                     a["Source"] = self.__class__.__name__
-                    a["Timestamp"] = time.time()
                     details["threshold"] = "%s%%" % threshold
-                    a["Details"] = details                    
+                    a["Details"] = details
                     a["Level"] = level
-                    logging.debug(a)
+                    logging.debug("Sending an alert (%s): %s" % (self.__class__.__name__, a))
                     self.sender(a)
                     break # send only one alert, critical threshold tested first
         if avgPerc != None:

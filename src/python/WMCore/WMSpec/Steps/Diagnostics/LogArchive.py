@@ -31,7 +31,7 @@ class LAExceptionHandler(DiagnosticHandler):
             msg += str(args.get('ex'))
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
-        
+
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  getattr(executor.step.output, "jobReport", ""))
 
@@ -40,11 +40,11 @@ class LAExceptionHandler(DiagnosticHandler):
             msg = "No Job Report Found: %s" % jobRepXml
             executor.report.addError(50115, "MissingJobReport", msg)
             return
-        
+
         # job report XML exists, load the exception information from it
         executor.report.parse(jobRepXml)
-        
-        
+
+
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
         if errSection == None:
@@ -71,5 +71,5 @@ class LogArchive(Diagnostic):
         # Setup a default handler
         catchAll            = LAExceptionHandler()
         self.defaultHandler = catchAll
-        
-        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if not self.handlers.has_key(x) ]
+
+        [ self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers ]

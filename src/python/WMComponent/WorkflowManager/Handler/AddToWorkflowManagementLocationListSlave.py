@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=C0301
+#pylint: disable=C0301
 """
 Slave used for AddWorkflowToManagementLocationList handler
 """
@@ -24,10 +24,10 @@ class AddToWorkflowManagementLocationListSlave(DefaultSlave):
                                                                     str(args)
         logging.debug(msg)
         myThread = threading.currentThread()
-        
+
         # Validate arguments
-        if args.has_key("FilesetMatch") and args.has_key("WorkflowId") \
-        and args.has_key("Locations") and args.has_key("Valid"):
+        if "FilesetMatch" in args and "WorkflowId" in args \
+        and "Locations" in args and "Valid" in args:
             locations = args['Locations'].split(",")
             try:
                 myThread.transaction.begin()

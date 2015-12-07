@@ -30,14 +30,14 @@ class testBasicAlgos(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testDir = self.testInit.generateWorkDir()
-        
+
         return
 
 
     def tearDown(self):
         """
         Do nothing
-        
+
         """
         self.testInit.delWorkDir()
 
@@ -75,25 +75,6 @@ class testBasicAlgos(unittest.TestCase):
 
         return
 
-    def test_MD5(self):
-        """
-        _MD5_
-
-        Check if we can create an MD5 checksum
-        """
-
-        silly = "This is a rather ridiculous string"
-        filename = os.path.join(self.testDir, 'md5test.test')
-
-        f = open(filename, 'w')
-        f.write(silly)
-        f.close()
-
-        self.assertEqual(BasicAlgos.getMD5(filename = filename),
-                         hashlib.md5(silly).hexdigest())
-
-        os.remove(filename)
-        return
 
     def test_fileInfo(self):
         """
@@ -107,7 +88,7 @@ class testBasicAlgos(unittest.TestCase):
         f = open(filename, 'w')
         f.write(silly)
         f.close()
-        
+
         info = BasicAlgos.getFileInfo(filename = filename)
         self.assertEqual(info['Name'], filename)
         self.assertEqual(info['Size'], 34)
@@ -115,8 +96,4 @@ class testBasicAlgos(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
-
-
-
-        
+    unittest.main()

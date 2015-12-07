@@ -13,35 +13,74 @@ import urlparse
 
 from WMCore.WMException import WMException
 
+#restriction enforced by DBS. for different types blocks.
+#It could have a strict restriction
+# i.e production should end with v[number]
+PRIMARY_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 99}
+PROCESSED_DS = {'re': '[a-zA-Z0-9\.\-_]+', 'maxLength': 199}
+TIER = {'re': '[A-Z\-_]+', 'maxLength': 99}
+BLOCK_STR = {'re': '#[a-zA-Z0-9\.\-_]+', 'maxLength': 100}
+
 lfnParts = {
-    'era'           : '([a-zA-Z0-9\-_]+)',
-    'primDS'        : '([a-zA-Z0-9\-_]+)',
-    'tier'          : '([A-Z\-_]+)',
-    'version'       : '([a-zA-Z0-9\-_]+)',
-    'secondary'     : '([a-zA-Z0-9\-_]+)',
-    'counter'       : '([0-9]+)',
-    'root'          : '([a-zA-Z0-9\-_]+).root',
-    'hnName'        : '([a-zA-Z0-9\.]+)',
-    'subdir'        : '([a-zA-Z0-9\-_]+)',
-    'file'          : '([a-zA-Z0-9\-\._]+)',
-    'workflow'      : '([a-zA-Z0-9\-_]+)',
-    'physics_group' : '([a-zA-Z\-_]+)',
+    'era': '([a-zA-Z0-9\-_]+)',
+    'primDS': '(%(re)s)' % PRIMARY_DS,
+    'tier': '(%(re)s)' % TIER,
+    'version': '([a-zA-Z0-9\-_]+)',
+    'secondary': '([a-zA-Z0-9\-_]+)',
+    'counter': '([0-9]+)',
+    'root': '([a-zA-Z0-9\-_]+).root',
+    'hnName': '([a-zA-Z0-9\.]+)',
+    'subdir': '([a-zA-Z0-9\-_]+)',
+    'file': '([a-zA-Z0-9\-\._]+)',
+    'workflow': '([a-zA-Z0-9\-_]+)',
+    'physics_group': '([a-zA-Z0-9\-_]+)'
 }
+
+userProcDSParts = {
+    'groupuser': '([a-zA-Z0-9\.\-_])+',
+    'publishdataname': '([a-zA-Z0-9\-_])+',
+    'psethash': '([a-f0-9]){32}'
+}
+
+STORE_RESULTS_LFN = '/store/results/%(physics_group)s/%(era)s/%(primDS)s/%(tier)s/%(secondary)s' % lfnParts
+
+def DBSUser(candidate):
+    """
+    create_by and last_modified_by in DBS are in several formats. The major ones are:
+    1. DN that was mostly used in DBS2: example /DC=org/DC=doegrids/OU=People/CN=Lothar A.T. Bauerdick 301799;
+    2. CERN HN account name that used in DBS3/CMSWEB if the HN is assocated with DN: example giffels ;
+    3. username with host name: example cmsprod@vocms39.cern.ch;
+    """
+    if candidate =='' or not candidate :
+        return candidate
+    r1 = r'^/[a-zA-Z][a-zA-Z0-9/\=\s()\']*\=[a-zA-Z0-9/\=\.\-_/#:\s\']*$'
+    r2 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_\']*$'
+    r3 = r'^[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*@[a-zA-Z0-9/][a-zA-Z0-9/\.\-_]*$'
+
+    try:
+        return check(r1, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(r2, candidate)
+    except AssertionError:
+        return check(r3, candidate)
+
 
 def searchblock(candidate):
     """
     A block name with a * wildcard one or more times in it.
     """
-    #regexp = r"^/(\*|[a-zA-Z][a-zA-Z0-9_\*]{0,100})/(\*|[a-zA-Z0-9_\.\-\*]{1,100})/(\*|[A-Z\-]{3,20})#(\*|[a-zA-Z0-9\.\-_\*]{1,100})$"
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
+    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,99})(#(\*|[a-zA-Z0-9\.\-_\*]){0,100}){0,1}){0,1}$"
     return check(regexp, candidate)
 
+SEARCHDATASET_RE = r'^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*\-]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,199})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$'
 def searchdataset(candidate):
     """
     A dataset name with a * wildcard one or more times in it. Only the first '/' is mandatory to use.
     """
-    regexp = r"^/(\*|[a-zA-Z\*][a-zA-Z0-9_\*]{0,100})(/(\*|[a-zA-Z0-9_\.\-\*]{1,100})){0,1}(/(\*|[A-Z\-\*]{1,50})){0,1}$"
-    return check(regexp, candidate)
+    return check(SEARCHDATASET_RE, candidate)
 
 def searchstr(candidate):
     """
@@ -51,7 +90,7 @@ def searchstr(candidate):
     letters, numbers, periods, dashes, underscores
 
     """
-    if candidate =='' :
+    if candidate == '':
         return candidate
     return check(r'^[a-zA-Z0-9/%*][a-zA-Z0-9/\.\-_%*/#]*$', candidate)
 
@@ -93,18 +132,44 @@ def countrycode(candidate):
     #TODO: do properly with a look up table
     return check("^[A-Z]{2}$", candidate)
 
+def _blockStructCheck(candidate):
+    """
+    Basic block structure check
+    /primary/process/tier#uuid
+    """
+    assert candidate.count('/') == 3, "need to have / between the 3 parts which construct block name"
+    parts = candidate.split('/')
+    assert parts[3].count('#') == 1, "need to have # in the last parts of block"
+    #should be empty string for the first part
+    check(r"", parts[0])
+    return parts
+
 def block(candidate):
     """assert if not a valid block name"""
-    return check(r"^(/[a-zA-Z0-9\.\-_]{1,100}){3}#[a-zA-Z0-9\.\-_]{1,100}$", candidate)
+
+    parts = _blockStructCheck(candidate)
+
+    primDSCheck = check(r"%s" % PRIMARY_DS['re'], parts[1], PRIMARY_DS['maxLength'])
+    procDSCheck = check(r"%s" % PROCESSED_DS['re'], parts[2], PROCESSED_DS['maxLength'])
+    lastParts = parts[3].split("#")
+    tierCheck = check(r"%s" % TIER['re'], lastParts[0], TIER['maxLength'])
+    blockCheck = check(r"%s" % BLOCK_STR['re'], "#%s" % lastParts[1], BLOCK_STR['maxLength'])
+    return (primDSCheck and procDSCheck and tierCheck and blockCheck)
 
 def identifier(candidate):
     """ letters, numbers, whitespace, periods, dashes, underscores """
     return check(r'[a-zA-Z0-9\s\.\-_]{1,100}$', candidate)
 
+def globalTag(candidate):
+    """ Identifier plus colons """
+    return check(r'[a-zA-Z0-9\s\.\-_:]{1,100}$', candidate)
+
+DATASET_RE = r'^/[a-zA-Z0-9\-_]{1,99}/[a-zA-Z0-9\.\-_]{1,199}/[A-Z\-]{1,50}$'
 def dataset(candidate):
     """ A slash followed by an identifier,x3 """
-    return check(r'(/[a-zA-Z0-9\.\-_]{1,700}){3}$', candidate)
+    return check(DATASET_RE, candidate)
 
+PROCDATASET_RE = r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+){0,2}-v[0-9]*$'
 def procdataset(candidate):
     """
     Check for processed dataset name.
@@ -112,10 +177,36 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*(\-[a-zA-Z0-9_]+)?-v[0-9]*$', candidate)
+
+    commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
+    prodCheck = check(PROCDATASET_RE, candidate)
+    return (commonCheck and prodCheck)
+
+def publishdatasetname(candidate):
+    if candidate == '' or not candidate:
+        return candidate
+    return check(r'%(publishdataname)s$' % userProcDSParts, candidate, 100)
+
+USERPROCDATASET_RE = r'%(groupuser)s-%(publishdataname)s-%(psethash)s$' % userProcDSParts
+def userprocdataset(candidate):
+    """
+    Check for processed dataset name of users.
+    letters, numbers, dashes, underscores.
+    """
+    if candidate == '' or not candidate:
+        return candidate
+
+    commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
+    anlaysisCheck = check(USERPROCDATASET_RE, candidate)
+    return (commonCheck and anlaysisCheck)
 
 def procversion(candidate):
-     return check(r'^[0-9]*$', candidate)
+    """ Integers """
+    return check(r'^[0-9]+$', candidate)
+
+def procstring(candidate):
+    """ Identifier """
+    return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
 
 def acqname(candidate):
     """
@@ -133,7 +224,8 @@ def primdataset(candidate):
     """
     if candidate =='' or not candidate :
         return candidate
-    return check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate)
+    return (check(r"%s" % PRIMARY_DS['re'], candidate, PRIMARY_DS['maxLength']) and
+            check(r'^[a-zA-Z][a-zA-Z0-9\-_]*$', candidate))
 
 
 def hnName(candidate):
@@ -154,15 +246,27 @@ def lfn(candidate):
     NOTE:Because of the way we do lustre, we have to have two separate checks for this:
     /store/data
     /store/data/lustre
+
+    Add for LHE files: /data/lhe/...
     """
-    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)/([0-9]+)/([a-zA-Z0-9\-_]+).root'
-    regexp3 = '/store/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}/([0-9]+)/([a-zA-Z0-9\-_]+).root'
+    regexp3 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    regexp4 = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/(%(subdir)s/)+%(root)s' % lfnParts
 
-    #tier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
-    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(root)s' % lfnParts
+    oldStyleTier0LFN = '/store/data/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s/%(root)s' % lfnParts
+    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s(/%(counter)s)?/%(root)s' % lfnParts
 
-    storeResultsLFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
+    storeMcLFN = '/store/mc/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)(/([a-zA-Z0-9\-_]+))*/([a-zA-Z0-9\-_]+).root'
+
+    storeResults2LFN = '/store/results/%(physics_group)s/%(primDS)s/%(secondary)s/%(primDS)s/%(tier)s/%(secondary)s/%(counter)s/%(root)s' % lfnParts
+
+    storeResultRootPart = '%(counter)s/%(root)s' % lfnParts
+    storeResultsLFN = "%s/%s" % (STORE_RESULTS_LFN, storeResultRootPart)
+
+    lheLFN1 = '/store/lhe/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}'
+    #This is for future lhe LFN structure. Need to be tested.
+    lheLFN2= '/store/lhe/%(primDS)s/%(secondary)s/([0-9]+)/([a-zA-Z0-9\-_]+).lhe(.xz){0,1}' % lfnParts
 
     try:
         return check(regexp1, candidate)
@@ -180,7 +284,37 @@ def lfn(candidate):
         pass
 
     try:
+        return check(regexp4, candidate)
+    except AssertionError:
+        pass
+
+    try:
         return check(tier0LFN, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(oldStyleTier0LFN, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(storeMcLFN, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(lheLFN1, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(lheLFN2, candidate)
+    except AssertionError:
+        pass
+
+    try:
+        return check(storeResults2LFN, candidate)
     except AssertionError:
         return check(storeResultsLFN, candidate)
 
@@ -190,10 +324,10 @@ def lfnBase(candidate):
     i.e., for use in spec generation and parsing
     """
     regexp1 = '/([a-z]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
-    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)'
-    regexp3 = '/(store)/(temp/)*(user|group)/%(hnName)s/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
+    regexp2 = '/([a-z]+)/([a-z0-9]+)/([a-z0-9]+)/([a-zA-Z0-9\-_]+)/([a-zA-Z0-9\-_]+)/([A-Z\-_]+)/([a-zA-Z0-9\-_]+)((/[0-9]+){3}){0,1}'
+    regexp3 = '/(store)/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(primDS)s/%(secondary)s/%(version)s' % lfnParts
 
-    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s' % lfnParts
+    tier0LFN = '/store/(backfill/[0-9]/){0,1}(t0temp/|unmerged/){0,1}(data|express|hidata)/%(era)s/%(primDS)s/%(tier)s/%(version)s/%(counter)s/%(counter)s/%(counter)s' % lfnParts
 
     try:
         return check(regexp1, candidate)
@@ -208,20 +342,25 @@ def lfnBase(candidate):
     try:
         return check(regexp3, candidate)
     except AssertionError:
+        pass
+
+    try:
         return check(tier0LFN, candidate)
+    except AssertionError:
+        return check(STORE_RESULTS_LFN, candidate)
 
 def userLfn(candidate):
     """
     Check LFNs in /store/{temp}/user that are not EDM data
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s/%(file)s' % lfnParts
     return check(regexp, candidate)
 
 def userLfnBase(candidate):
     """
     As above but for the base part of the file
     """
-    regexp = '/store/(temp/)*(user|group)/%(hnName)s/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
+    regexp = '/store/(temp/)*(user|group)/(%(hnName)s|%(physics_group)s)/%(subdir)s/%(workflow)s/%(subdir)s' % lfnParts
     return check(regexp, candidate)
 
 def cmsswversion(candidate):
@@ -231,9 +370,28 @@ def couchurl(candidate):
     return check('https?://(([a-zA-Z0-9:@\.\-_]){0,100})([a-z0-9\.]+)(:\d+|/couchdb)', candidate)
 
 def requestName(candidate):
-    return check(r'[a-zA-Z0-9\.\-_]{1,100}$', candidate)
+    return check(r'[a-zA-Z0-9\.\-_]{1,150}$', candidate)
 
-def check(regexp, candidate):
+def validateUrl(candidate):
+    """
+    Basic input validation for http(s) urls
+    """
+    #regex taken from django https://github.com/django/django/blob/master/django/core/validators.py#L47
+    #Copyright (c) Django Software Foundation and individual contributors
+    protocol = r"^https?://"  # http:// or https://
+    domain = r'?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,6}\.?'
+    localhost = r'localhost'
+    ipv4 = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
+    ipv6 = r'\[?[a-fA-F0-9]*:[a-fA-F0-9:]+\]?'
+    port = r'(?::\d+)?'  # optional port
+    path = r'(?:/?|[/?]\S+)$'
+    regex_url = r'%s(%s|%s|%s|%s)%s%s' % (protocol, domain, localhost, ipv4, ipv6, port, path)
+    return check(regex_url, candidate)
+
+def check(regexp, candidate, maxLength = None):
+    if maxLength != None:
+        assert len(candidate) <= maxLength, \
+            "%s is longer then max length (%s) allowed" % (candidate, maxLength)
     assert re.compile(regexp).match(candidate) != None , \
               "'%s' does not match regular expression %s" % (candidate, regexp)
     return True
@@ -401,3 +559,26 @@ def splitCouchServiceURL(serviceURL):
 
     splitedURL = serviceURL.rstrip('/').rsplit('/', 1)
     return splitedURL[0], splitedURL[1]
+
+def primaryDatasetType(candidate):
+    pDatasetTypes = ["mc", "data", "cosmic", "test"]
+    if candidate in pDatasetTypes:
+        return True
+    # to sync with the check() exception when it doesn't match
+    raise AssertionError("Invalid primary dataset type : %s should be 'mc' or 'data' or 'test'" % candidate)
+
+def slicedIterator(sourceList, sliceSize):
+    """
+    :param: sourceList: list which need to be sliced
+    :type: list
+    :param: sliceSize: size of the slice
+    :type: int
+    :return: iterator of the sliced list
+    """
+    start = 0
+    end = 0
+
+    while len(sourceList) > end:
+        end = start + sliceSize
+        yield sourceList[start: end]
+        start = end

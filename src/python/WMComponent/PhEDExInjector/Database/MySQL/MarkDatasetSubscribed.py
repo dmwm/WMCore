@@ -2,17 +2,24 @@
 """
 _MarkDatasetSubscribed_
 
+MySQL implementation of PhEDExInjector.Database.MarkDatasetSubscribed
 """
-
-
-
 
 from WMCore.Database.DBFormatter import DBFormatter
 
 class MarkDatasetSubscribed(DBFormatter):
-    sql = "UPDATE dbsbuffer_dataset SET subscribed = 1 WHERE path = :path"
+    """
+    _MarkDatasetSubscribed_
 
-    def execute(self, datasetPath, conn = None, transaction = False):
-        self.dbi.processData(self.sql, binds = {"path": datasetPath},
+    Marks the given dataset subscription as subscribed in the database
+    """
+
+    sql = "UPDATE dbsbuffer_dataset_subscription SET subscribed = 1 WHERE id = :id"
+
+    def execute(self, subIds, conn = None, transaction = False):
+        binds = []
+        for subId in subIds:
+            binds.append({"id" : subId})
+        self.dbi.processData(self.sql, binds,
                              conn = conn, transaction = transaction)
         return

@@ -42,10 +42,10 @@ def createPrimaryDataset(datasetInfo, apiRef = None):
     DBS
 
     """
-    if datasetInfo.has_key('PrimaryDatasetType'):
-      PrimaryDatasetType = datasetInfo['PrimaryDatasetType']
+    if 'PrimaryDatasetType' in datasetInfo:
+        PrimaryDatasetType = datasetInfo['PrimaryDatasetType']
     else:
-      PrimaryDatasetType = 'mc'
+        PrimaryDatasetType = 'mc'
 
     logging.debug("Inserting PrimaryDataset %s with Type %s"%(datasetInfo["PrimaryDataset"],PrimaryDatasetType))
     primary = DbsPrimaryDataset(Name = datasetInfo["PrimaryDataset"], Type=PrimaryDatasetType)
@@ -263,13 +263,13 @@ def createDBSFiles(fjrFileInfo, jobType = None, apiRef = None):
     nEvents = int(fjrFileInfo['TotalEvents'])
 
     if len(fjrFileInfo.dataset)<=0:
-       logging.error("No dataset info found in FWJobReport!")
-       return results
+        logging.error("No dataset info found in FWJobReport!")
+        return results
 
     #  //
     # // Set FileType
     #//
-    if fjrFileInfo.has_key('FileType'):
+    if 'FileType' in fjrFileInfo:
         fileType = fjrFileInfo['FileType']
     else:
         fileType = 'EDM'
@@ -389,7 +389,7 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
 
     """
     logging.warning("getDBSFileBlocks(): dset, se: %s, %s" % (procDataset, seName))
-    
+
     allBlocks = dbsApiRef.listBlocks(procDataset, block_name = "*",
                                      storage_element_name = "*")
 
@@ -449,5 +449,3 @@ def getDBSFileBlock(dbsApiRef, procDataset, seName):
 
     logging.warning("Open FileBlock located at SE: %s to use is FileBlock: %s "%(seName,blockRef['Name']))
     return blockRef
-
-

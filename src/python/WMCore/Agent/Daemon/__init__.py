@@ -2,14 +2,7 @@
 """
 __init__
 
-Module containing methods for daemonizing 
+Module containing methods for daemonizing
 applications.
 
 """
-
-
-
-
-
-
-

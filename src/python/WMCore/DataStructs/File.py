@@ -17,7 +17,7 @@ class File(WMObject, dict):
     _File_
     Data object that contains details for a single file
     """
-    def __init__(self, lfn = "", size = 0, events = 0, checksums = {}, 
+    def __init__(self, lfn = "", size = 0, events = 0, checksums = {},
                  parents = None, locations = None, merged = False):
         dict.__init__(self)
         self.setdefault("lfn", lfn)
@@ -37,7 +37,7 @@ class File(WMObject, dict):
         if parents == None:
             self.setdefault("parents", set())
         else:
-            self.setdefault("parents", parents)            
+            self.setdefault("parents", parents)
 
     def addRun(self, run):
         """
@@ -53,16 +53,16 @@ class File(WMObject, dict):
 
         if not isinstance(run, Run):
             msg = "addRun argument must be of type WMCore.DataStructs.Run"
-            raise RuntimeError, msg
-        
-        addFlag = False  
+            raise RuntimeError(msg)
+
+        addFlag = False
         for runMember in self['runs']:
             if runMember.run ==  run.run:
-                # this rely on Run object overwrite __add__ to update self 
+                # this rely on Run object overwrite __add__ to update self
                 runMember + run
                 addFlag = True
-        
-        if not addFlag:        
+
+        if not addFlag:
             self['runs'].add(run)
         return
 
@@ -81,8 +81,8 @@ class File(WMObject, dict):
         """
         pass
 
-    def setLocation(self, se):
-        self['locations'] = self['locations'] | set(self.makelist(se))
+    def setLocation(self, pnn):
+        self['locations'] = self['locations'] | set(self.makelist(pnn))
 
     def __cmp__(self, rhs):
         """
@@ -90,7 +90,7 @@ class File(WMObject, dict):
         """
         #if self['run'] == rhs['run']:
         #    return cmp(self['lumi'], rhs['lumi'])
-	
+
         return self.__eq__(rhs)
 
     def __eq__(self, rhs):
@@ -144,7 +144,7 @@ class File(WMObject, dict):
             runDict = {"run_number": run.run,
                        "lumis": run.lumis}
             fileDict["runs"].append(runDict)
-                                                
+
         return fileDict
 
     def __to_json__(self, thunker = None):

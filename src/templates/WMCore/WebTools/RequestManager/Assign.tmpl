@@ -76,6 +76,42 @@ Site Blacklist:
    #for $site in $sites:
        <option>$site</option>
    #end for
+</select></br>
+<input type="checkbox" name="useSiteListAsLocation" value="True"/>Use site whitelist/blacklist for data location (allows use of xrootd capabilities)<br/>
+<h4> PhEDEx Subscriptions </h4>
+Custodial Sites:
+<select name="CustodialSites" multiple size=10>
+   #for $node in $phedexNodes:
+     <option>$node</option>
+   #end for
+</select> &nbsp&nbsp&nbsp&nbsp
+Non-Custodial Sites:
+<select name="NonCustodialSites" multiple size=10>
+   #for $node in $phedexNodes:
+     <option>$node</option>
+   #end for
+</select> &nbsp&nbsp&nbsp&nbsp
+Auto-Approve Sites:
+<select name="AutoApproveSubscriptionSites" multiple size=10>
+   #for $node in $phedexNodes:
+     <option>$node</option>
+   #end for
+</select><br/><br/>
+Subscription Priority:
+<select name="SubscriptionPriority">
+<option selected>Low</option>
+<option>Normal</option>
+<option>High</option>
+</select>
+Custodial Subscription Type:
+<select name="CustodialSubType">
+<option selected>Replica</option>
+<option>Move</option>
+</select>
+Noncustodial Subscription Type:
+<select name="NonCustodialSubType">
+<option selected>Replica</option>
+<option>Move</option>
 </select>
 <h4>LFN Bases</h4>
 #def optionsMenu($allOptions, $default)
@@ -101,13 +137,24 @@ $optionsMenu($unmergedLFNBases, $reqUnmergedBase)
 Min Merge Size <input type="text" name="MinMergeSize" value=2147483648 size=10/>
 Max Merge Size <input type="text" name="MaxMergeSize" value=4294967296 size=10/>
 Max Merge Events <input type="text" name="MaxMergeEvents" value=50000 size=10/><br/>
-Memory limits: RSS <input type="text" name="maxRSS" value=4294967296 size=10/>
-VSS <input type="text" name="maxVSize" value=4294967296 size=10/><br/>
-
+Memory limits: RSS (KiBytes) <input type="text" name="MaxRSS" value=2411724 size=10/>
+VSS (KiBytes)<input type="text" name="MaxVSize" value=20411724 size=10/><br/>
+Wallclock limits: Timeout (Seconds) <input type="text" name="SoftTimeout" value=129600 size=10/>
+GracePeriod (Seconds)<input type="text" name="GracePeriod" value=300 size=10/><br/>
+Block Closing Settings: Block timeout (Seconds) <input type="text" name="BlockCloseMaxWaitTime" value=$blockCloseMaxWaitTime size=10/>
+Max number of files <input type="text" name="BlockCloseMaxFiles" value=$blockCloseMaxFiles size=10/><br/>
+<!-- Indentation -->
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp
+&nbsp&nbsp&nbsp
+<!-- Indentation -->
+Max number of events <input type="text" name="BlockCloseMaxEvents" value=$blockCloseMaxEvents size=10/>
+Max block size (Bytes) <input type="text" name="BlockCloseMaxSize" value=$blockCloseMaxSize size=10/><br/>
 Acquisition Era: <input type="text" name="AcquisitionEra" size=20 value="$acqEra" /><br/>
-ProcessingVersion  <input type="text" name="ProcessingVersion"  size=20 value="$procVer" /><br/>
+Processing Version:  <input type="text" name="ProcessingVersion"  size=10 value="$procVer" /><br/>
+Processing String: <input type="text" name="ProcessingString" size=20 value="$procString" /><br/>
 Dashboard Activity: 
-<select name="dashboard">
+<select name="Dashboard">
 #set $dashboards = ["reprocessing", "production", "relval", "integration", "test", "analysis"]
 $optionsMenu($dashboards, $dashboardActivity)  
 </select>

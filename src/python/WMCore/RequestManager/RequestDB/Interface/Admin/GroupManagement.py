@@ -39,16 +39,16 @@ def addUserToGroup(userName, groupName):
     if groupId == None:
         msg = "Failed to add user %s to group %s\n" % (userName, groupName)
         msg += "Group: %s is not registered in Request Manager" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     if userId == None:
         msg = "Failed to add user %s to group %s\n" % (userName, groupName)
         msg += "User: %s is not registered in Request Manager" % userName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     try:
         newAssoc = factory(classname = "Requestor.NewAssociation")
         newAssoc.execute(userId, groupId)
-    except SQLAlchemyIntegrityError, ex:
+    except SQLAlchemyIntegrityError as ex:
         if "Duplicate entry" in str(ex) or "unique constraint" in  str(ex):
             raise cherrypy.HTTPError(400, "User/Group Already Linked in DB")
         raise
@@ -70,11 +70,11 @@ def removeUserFromGroup(userName, groupName):
     if groupId == None:
         msg = "Failed to remove user %s from %s\n" % (userName, groupName)
         msg += "Group: %s is not registered in Request Manager" % groupName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
     if userId == None:
         msg = "Failed to remove user %s from %s\n" % (userName, groupName)
         msg += "User: %s is not registered in Request Manager" % userName
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     deleteAssoc = factory(classname = "Requestor.DeleteAssociation")
     deleteAssoc.execute(userId, groupId)
@@ -93,18 +93,3 @@ def deleteGroup(groupName):
     groupRemover = factory(classname = "Group.Delete")
     result = groupRemover.execute(groupName)
     return result
-
-def getPriority(groupName):
-    """ Set the group priority to the amount given """
-    factory = DBConnect.getConnection()
-    groupPriority = factory(classname = "Group.GetPriority")
-    result = groupPriority.execute(groupName)
-    return result
-
-def setPriority(groupName, priority):
-    """ Set the group priority to the amount given """
-    factory = DBConnect.getConnection()
-    groupPriority = factory(classname = "Group.SetPriority")
-    result = groupPriority.execute(groupName, priority)
-    return result
-

@@ -16,12 +16,12 @@ def reqMgrConfig(
     reqMgrHost = "http://%s:%d" % (socket.gethostname().lower(), 8240),
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
-    sitedb = 'https://cmsweb.cern.ch/sitedb/json/index/CEtoCMSName?name',
-    dbs3 = 'http://vocms09.cern.ch:8989/dbs',
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
     workloadSummaryCouchDB = "workloadsummary",
+    wmstatCouchDB = "wmstats",
+    acdcCouchDB = "acdcserver",
     connectURL = None,
     startup = "Root.py",
     addMonitor = True):
@@ -35,6 +35,7 @@ def reqMgrConfig(
     globalOverviewHtml = os.path.join(installation, 'data/html')
 
     if startup == "Root.py":
+        # CMS web mode of ReqMgr running
         config.component_("Webtools")
         config.Webtools.host = '0.0.0.0'
         config.Webtools.port = port
@@ -50,12 +51,18 @@ def reqMgrConfig(
         config.reqmgr.section_('database')
         config.reqmgr.database.connectUrl = connectUrl
     else:
+        # localhost, via wmcoreD ReqMgr running
+        # startup = "wmcoreD"
         config.webapp_("reqmgr")
         config.reqmgr.Webtools.host = '0.0.0.0'
         config.reqmgr.Webtools.port = port
         config.reqmgr.Webtools.environment = 'devel'
         config.reqmgr.database.connectUrl = connectURL
-        
+        # workload summary update
+        config.section_("WorkloadSummary")
+        config.WorkloadSummary.couchurl = connectURL
+        config.WorkloadSummary.database = "workloadsummary"                
+
     config.reqmgr.componentDir = componentDir
     config.reqmgr.templates = reqMgrTemplates
     config.reqmgr.html = reqMgrHtml
@@ -66,9 +73,10 @@ def reqMgrConfig(
     config.reqmgr.couchUrl = couchurl
     config.reqmgr.configDBName = configCouchDB
     config.reqmgr.workloadDBName = workloadCouchDB
+    config.reqmgr.wmstatDBName = wmstatCouchDB
+    config.reqmgr.acdcDBName = acdcCouchDB
     config.reqmgr.security_roles = ['Admin', 'Developer', 'Data Manager', 'developer', 'admin', 'data-manager']
     config.reqmgr.yuiroot = yuiroot
-    config.reqmgr.dbs3=dbs3
 
     views = config.reqmgr.section_('views')
     active = views.section_('active')
@@ -82,11 +90,6 @@ def reqMgrConfig(
     active.approve.object = 'WMCore.HTTPFrontEnd.RequestManager.Approve'
     active.section_('assign')
     active.assign.object = 'WMCore.HTTPFrontEnd.RequestManager.Assign'
-    active.assign.sitedb = sitedb
-    # this value controls whether an assigned request will be put into
-    # ops-hold state and injected into OpsClipboard
-    active.assign.opshold = True
-    active.assign.clipboardDB = 'ops_clipboard'
     active.section_('closeout')
     active.closeout.object = 'WMCore.HTTPFrontEnd.RequestManager.CloseOut'
     active.section_('announce')
@@ -94,7 +97,7 @@ def reqMgrConfig(
 
     active.section_('reqMgr')
     active.reqMgr.section_('model')
-    active.reqMgr.section_('formatter') 
+    active.reqMgr.section_('formatter')
     active.reqMgr.object = 'WMCore.WebTools.RESTApi'
     active.reqMgr.model.object = 'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel'
     active.reqMgr.default_expires = 0 # no caching
@@ -113,7 +116,7 @@ def reqMgrConfig(
     active.section_('create')
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
     active.create.requestor = user
-    active.create.cmsswDefaultVersion = 'CMSSW_5_0_0'
+    active.create.cmsswDefaultVersion = 'CMSSW_5_2_5'
 
     if addMonitor:
         active.section_('GlobalMonitor')
@@ -122,7 +125,7 @@ def reqMgrConfig(
         active.GlobalMonitor.javascript = globalOverviewJavascript
         active.GlobalMonitor.html = globalOverviewHtml
         active.GlobalMonitor.serviceLevel = 'RequestManager'
-    
+
         active.section_('monitorSvc')
         active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
         active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
@@ -134,8 +137,5 @@ def reqMgrConfig(
         active.monitorSvc.default_expires = 0 # no caching
         active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
         active.monitorSvc.template = os.path.join(installation, 'data/templates/WMCore/WebTools')
-    
-    active.section_('yuiserver')
-    active.yuiserver.object = 'WMCore.WebTools.YUIServer'
-    active.yuiserver.yuidir = os.getenv("YUI_ROOT")
+
     return config

@@ -14,9 +14,9 @@ class Pickleable(WMObject):
     def save(self):
         """
         Pickle the object
-        """ 
+        """
         pass
-    
+
     def load(self):
         """
         Load the object from a pickle file

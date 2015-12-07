@@ -23,7 +23,7 @@ from WMCore.WMExceptions import WMEXCEPTION
 
 class Transaction(WMObject):
     dbi = None
-   
+
     def __init__(self, dbinterface = None):
         """
         Get the connection from the DBInterface and open a new transaction on it
@@ -42,7 +42,7 @@ class Transaction(WMObject):
             self.transaction = self.conn.begin()
 
         return
-   
+
     def processData(self, sql, binds={}):
         """
         Propagates the request to the proper dbcore backend,
@@ -63,7 +63,7 @@ class Transaction(WMObject):
             self.conn.close()
         self.conn = None
         self.transaction = None
-       
+
     def rollback(self):
         """
         To be called if there is an exception and you want to roll back the

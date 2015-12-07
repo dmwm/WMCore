@@ -20,10 +20,10 @@ class AddLocation(MySQLAddLocation):
     existsSQL = """SELECT se_name, id FROM dbsbuffer_location
                          WHERE se_name = :location"""
 
-    sql = """INSERT INTO dbsbuffer_location (se_name) 
+    sql = """INSERT INTO dbsbuffer_location (se_name)
                SELECT :location AS se_name FROM DUAL WHERE NOT EXISTS
                 (SELECT se_name FROM dbsbuffer_location WHERE se_name = :location)"""
-    
+
     def execute(self, siteName, conn = None, transaction = False):
         """
         _execute_
@@ -41,7 +41,7 @@ class AddLocation(MySQLAddLocation):
         """
         mySites = copy.deepcopy(siteName)
         nameMap = {}
-        
+
         if type(mySites) == str:
             mySites = [mySites]
 
@@ -51,9 +51,9 @@ class AddLocation(MySQLAddLocation):
         binds = []
         for location in mySites:
             binds.append({"location": location})
-            
+
         results = self.dbi.processData(self.existsSQL, binds,
-                                       conn = myTransaction.conn, 
+                                       conn = myTransaction.conn,
                                        transaction = True)
         results = self.format(results)
         for result in results:
@@ -66,15 +66,15 @@ class AddLocation(MySQLAddLocation):
 
         if len(binds) > 0:
             try:
-                self.dbi.processData(self.sql, binds, conn = myTransaction.conn, 
+                self.dbi.processData(self.sql, binds, conn = myTransaction.conn,
                                      transaction = True)
-            except Exception, ex:
+            except Exception as ex:
                 if "orig" in dir(ex) and type(ex.orig) != tuple:
                     if str(ex.orig).find("ORA-00001: unique constraint") != -1 and \
                        str(ex.orig).find("DBSBUFFER_LOCATION_UNIQUE") != -1:
                         return
                 raise ex
-            
+
             results = self.dbi.processData(self.existsSQL, binds,
                                            conn = myTransaction.conn,
                                            transaction = True)
@@ -82,6 +82,6 @@ class AddLocation(MySQLAddLocation):
             results = self.format(results)
             for result in results:
                 nameMap[result[0]] = int(result[1])
-                
+
         myTransaction.commit()
         return nameMap

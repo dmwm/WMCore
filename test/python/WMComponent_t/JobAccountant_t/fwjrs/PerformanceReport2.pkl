@@ -847,7 +847,7 @@ aS'processingVer'
 p268
 atRp269
 sg261
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p270
 sg49
 (lp271
@@ -913,7 +913,7 @@ g22
 sg29
 g230
 sbsg267
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/RECO/v1-2/0000/8E9099C6-F07B-E011-875A-002618943974.root'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/RECO/v1-2/0000/8E9099C6-F07B-E011-875A-002618943974.root'
 p286
 sg265
 Nsg268
@@ -1144,7 +1144,7 @@ g22
 sg29
 g312
 sbsg267
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/DQM/v1-2/0000/D621BBC6-F07B-E011-875A-002618943974.root'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/DQM/v1-2/0000/D621BBC6-F07B-E011-875A-002618943974.root'
 p339
 sg265
 Nsg268
@@ -1366,7 +1366,7 @@ g22
 sg29
 g362
 sbsg267
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/AOD/v1-2/0000/409AB0C6-F07B-E011-875A-002618943974.root'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/AOD/v1-2/0000/409AB0C6-F07B-E011-875A-002618943974.root'
 p389
 sg265
 Nsg268
@@ -1590,7 +1590,7 @@ g22
 sg29
 g412
 sbsg267
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/ALCARECO/EcalCalElectron-v1-2/0000/36AAC8C6-F07B-E011-875A-002618943974.root'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/MorePenguins/DoubleElectron/ALCARECO/EcalCalElectron-v1-2/0000/36AAC8C6-F07B-E011-875A-002618943974.root'
 p439
 sg265
 Nsg268
@@ -1686,7 +1686,7 @@ sg29
 g11
 sbsbsS'seName'
 p462
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p463
 sS'siteName'
 p464
@@ -2112,12 +2112,12 @@ g22
 g582
 atRp599
 sg592
-S'cmssrm.fnal.gov'
+S'T1_US_FNAL_Disk'
 p600
 sg501
 g577
 sg590
-S'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/unmerged/logs/prod/2011/5/11/cmsdataops_SCF_076_ReReco_2_110511_115102/DataProcessing/0000/0/b2d5113c-7bef-11e0-a321-00163e010042-0-0-logArchive.tar.gz'
+S'srm://T1_US_FNAL_Disk:8443/srm/managerv2?SFN=/11/store/unmerged/logs/prod/2011/5/11/cmsdataops_SCF_076_ReReco_2_110511_115102/DataProcessing/0000/0/b2d5113c-7bef-11e0-a321-00163e010042-0-0-logArchive.tar.gz'
 p601
 sg558
 I0

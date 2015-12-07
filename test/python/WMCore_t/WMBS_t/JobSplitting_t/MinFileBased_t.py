@@ -44,7 +44,7 @@ class FileBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
@@ -54,10 +54,10 @@ class FileBasedTest(unittest.TestCase):
         locationAction = daofactory(classname = "Locations.New")
         for site in range(self.nSites):
             locationAction.execute(siteName = "site%i" % site,
-                                   seName = "site%i.cern.ch" % site)
-        
+                                   pnn = "T2_CH_CERN_%i" % site)
+
         return
-    
+
     def tearDown(self):
         """
         _tearDown_
@@ -72,7 +72,7 @@ class FileBasedTest(unittest.TestCase):
     def createTestSubscription(self, nFiles, nSites = 1, closeFileset = False):
         """
         _createTestSubscription_
-        
+
         Create a set of test subscriptions for testing purposes.
         """
 
@@ -91,7 +91,7 @@ class FileBasedTest(unittest.TestCase):
         for s in range(nSites):
             for i in range(nFiles):
                 newFile = File(makeUUID(), size = 1024, events = 100,
-                               locations = set(["site%i.cern.ch" % s]))
+                               locations = set(["T2_CH_CERN_%i" % s]))
                 newFile.create()
                 testFileset.addFile(newFile)
         testFileset.commit()
@@ -105,7 +105,7 @@ class FileBasedTest(unittest.TestCase):
         # Close the fileset
         if closeFileset:
             testFileset.markOpen(isOpen = False)
-            
+
         return testSubscription
 
     def testA_ExactFiles(self):
@@ -132,7 +132,7 @@ class FileBasedTest(unittest.TestCase):
     def testB_LessFilesOpen(self):
         """
         _LessFilesOpen_
-        
+
         Test with less files then required.
         If the fileset is open, this should produce no jobs.
         """
@@ -150,7 +150,7 @@ class FileBasedTest(unittest.TestCase):
     def testC_LessFilesClosed(self):
         """
         _LessFilesClosed_
-        
+
         Test with less files then required.
         If the fileset is closed, this should produce one job.
         """

@@ -1,0 +1,81 @@
+[
+  {
+    "from": "This file contains basic rewrite rules that most probably do not cover all possible use cases.",
+    "to": "You may need to add some rewrite rules for your couchapp to work."
+  },
+
+  {
+    "from": ":db/_design/:dname",
+    "to": ""
+  },
+
+  {
+    "from": ":db/_design/:dname/*",
+    "to": "*"
+  },
+
+  {
+    "from": "vendor/*",
+    "to": "vendor/*"
+  },
+
+  {
+    "from": "index.html",
+    "to": "index.html"
+  },
+
+  {
+    "from": "",
+    "to": "_show/redirect"
+  },
+
+  {
+    "from": "_all_docs",
+    "to": "../../_all_docs"
+  },
+
+  {
+    "from": "css/*",
+    "to": "css/*"
+  },
+
+  {
+    "from": "images/*",
+    "to": "images/*"
+  },
+
+  {
+    "from": "js/*",
+    "to": "js/*"
+  },
+
+  {
+    "from": "lib/*",
+    "to": "lib/*"
+  },
+
+  {
+    "from": "_view/*",
+    "to": "_view/*"
+  },
+
+  {
+    "from": "_list/*",
+    "to": "_list/*"
+  },
+
+  {
+    "from": "_show/*",
+    "to": "_show/*"
+  },
+
+  {
+    "from": "_update/*",
+    "to": "_update/*"
+  },
+
+  {
+    "from": ":id",
+    "to": "../../:id"
+  }
+]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-JobTracker test 
+JobTracker test
 """
 
 
@@ -23,6 +23,7 @@ from nose.plugins.attrib import attr
 
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory    import DAOFactory
 from WMCore.Services.UUID import makeUUID
 
@@ -56,7 +57,7 @@ def createJDL(id, directory, jobCE):
     jdl.append("universe = globus\n")
     jdl.append("should_transfer_executable = TRUE\n")
     jdl.append("notification = NEVER\n")
-    jdl.append("Executable = %s/submit.sh\n" % (directory)) 
+    jdl.append("Executable = %s/submit.sh\n" % (directory))
     jdl.append("Output = condor.$(Cluster).$(Process).out\n")
     jdl.append("Error = condor.$(Cluster).$(Process).err\n")
     jdl.append("Log = condor.$(Cluster).$(Process).log\n")
@@ -96,7 +97,7 @@ def createSubmitScript(directory):
              stat.S_IXGRP | stat.S_IXOTH | stat.S_IXUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWUSR | stat.S_IWGRP)
 
     return
-    
+
 
 def getCondorRunningJobs(user):
     """
@@ -121,7 +122,7 @@ def getCondorRunningJobs(user):
 
 class JobTrackerTest(unittest.TestCase):
     """
-    TestCase for TestJobTracker module 
+    TestCase for TestJobTracker module
     """
 
     _maxMessage = 10
@@ -132,7 +133,7 @@ class JobTrackerTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-        
+
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -150,13 +151,13 @@ class JobTrackerTest(unittest.TestCase):
 
         #Create sites in resourceControl
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'malpaquet', seName = 'se.malpaquet',
+        resourceControl.insertSite(siteName = 'malpaquet', pnn = 'se.malpaquet',
                                    ceName = 'malpaquet', plugin = "CondorPlugin")
         resourceControl.insertThreshold(siteName = 'malpaquet', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
         locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute(siteName = "malpaquet", seName = "malpaquet",
+        locationAction.execute(siteName = "malpaquet", pnn = "malpaquet",
                                ceName = "malpaquet", plugin = "CondorPlugin")
 
         # Create user
@@ -167,6 +168,7 @@ class JobTrackerTest(unittest.TestCase):
         self.user = getpass.getuser()
 
         self.testDir = self.testInit.generateWorkDir()
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
 
     def tearDown(self):
         """
@@ -175,8 +177,9 @@ class JobTrackerTest(unittest.TestCase):
         self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl"])
         self.testInit.delWorkDir()
         self.testInit.tearDownCouch()
+        EmulatorSetup.deleteConfig(self.configFile)
         return
-        
+
 
     def getConfig(self):
         """
@@ -184,8 +187,9 @@ class JobTrackerTest(unittest.TestCase):
 
         Build a basic JobTracker config
         """
-                       
-        config = Configuration()
+
+        config = self.testInit.getConfiguration()
+        self.testInit.generateWorkDir(config)
 
         config.section_("Agent")
         config.Agent.agentName  = 'testAgent'
@@ -236,9 +240,9 @@ class JobTrackerTest(unittest.TestCase):
         config.component_('JobStateMachine')
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL', 'cmssrv52.fnal.gov:5984')
         config.JobStateMachine.couchDBName     = "jobtracker_t"
-        
+
         return config
-    
+
 
 
 
@@ -253,10 +257,10 @@ class JobTrackerTest(unittest.TestCase):
         testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
                                 name = "wf001", task="Test")
         testWorkflow.create()
-        
+
         testWMBSFileset = Fileset(name = "TestFileset")
         testWMBSFileset.create()
-        
+
         testSubscription = Subscription(fileset = testWMBSFileset,
                                         workflow = testWorkflow,
                                         type = "Processing",
@@ -293,13 +297,13 @@ class JobTrackerTest(unittest.TestCase):
 
         return testJobGroup
 
-        
+
 
     @attr('integration')
     def testA_CondorTest(self):
         """
         _CondorTest_
-        
+
         Because I don't want this test to be submitter dependent:
         Create a dummy condor job.
         Submit a dummy condor job.
@@ -537,20 +541,23 @@ class JobTrackerTest(unittest.TestCase):
         nRunning = getCondorRunningJobs(self.user)
         self.assertEqual(nRunning, 0)
 
-
         print ("Process took %f seconds to process %i classAds" %((stopTime - startTime),
                                                                   nJobs/2))
-
-
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
         p.print_stats()
 
-        return
 
-        
+    def testAlerts(self):
+        """
+        Tests only alerts triggered from JobTrackerPoller.
+
+        """
+        config = self.getConfig()
+        jobTracker = JobTrackerPoller(config)
+        jobTracker.sendAlert(6, msg = "test message")
+
 
 
 if __name__ == '__main__':
     unittest.main()
-

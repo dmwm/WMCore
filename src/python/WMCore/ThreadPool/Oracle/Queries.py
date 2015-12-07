@@ -18,9 +18,9 @@ from WMCore.ThreadPool.MySQL.Queries import Queries as MySQLQueries
 class Queries(MySQLQueries):
     """
     _Queries_
-    
+
     This module implements the Oracle backend for the persistent threadpool.
-    
+
     """
 
 
@@ -28,7 +28,7 @@ class Queries(MySQLQueries):
         """
         Select work that is not yet being processed.
         """
-        # this query takes place in a locked section so 
+        # this query takes place in a locked section so
         # we do not have to worry about multiple slaves
         # getting the same work.
         result = ''
@@ -36,12 +36,12 @@ class Queries(MySQLQueries):
             'tp_threadpool_buffer_out']:
             sqlStr = """
 SELECT min(id) FROM %s WHERE component = :component AND
-thread_pool_id = :thread_pool_id AND state='queued' 
+thread_pool_id = :thread_pool_id AND state='queued'
         """ % (pooltable)
             result = self.execute(sqlStr, args)
         else:
             sqlStr = """
-SELECT min(id) FROM %s WHERE state='queued' 
+SELECT min(id) FROM %s WHERE state='queued'
         """ % (pooltable)
             result = self.execute(sqlStr, {})
 
@@ -64,13 +64,13 @@ AND thread_pool_id = :thread_pool_id
             self.execute(sqlStr, args)
         else:
             sqlStr = """
-UPDATE %s SET state="queued" 
+UPDATE %s SET state="queued"
         """ % (pooltable)
             self.execute(sqlStr, {})
 
         return
 
-    
+
     def moveWorkFromBufferIn(self, source, target):
         """
         Moves work from buffer in to main queue or buffer out
@@ -102,7 +102,7 @@ INSERT INTO %s(event,payload) SELECT event,payload FROM %s
 
     def moveWorkToBufferOut(self, args, source, target, limit):
         """
-        Moves work from buffer in or main queue to the buffer out 
+        Moves work from buffer in or main queue to the buffer out
         table.
         """
 
@@ -113,13 +113,13 @@ INSERT INTO %s(event,payload) SELECT event,payload FROM %s
             # we need a for update in the select to prevent (harmless) deadlock
             # situations with innodb
             sqlStr1 = """
-INSERT INTO %s (event, component, payload, thread_pool_id) 
-  SELECT event, component, payload, thread_pool_id FROM 
-   (SELECT event, component, payload, thread_pool_id, ROWNUM rn FROM %s 
+INSERT INTO %s (event, component, payload, thread_pool_id)
+  SELECT event, component, payload, thread_pool_id FROM
+   (SELECT event, component, payload, thread_pool_id, ROWNUM rn FROM %s
    WHERE component=:component AND thread_pool_id=:thread_pool_id)
   WHERE rn < %s
    """ % (target, source, limit)
-            sqlStr2 = """ 
+            sqlStr2 = """
 DELETE FROM %s WHERE id IN
 (SELECT id FROM
 (SELECT id, ROWNUM rn FROM %s
@@ -139,7 +139,7 @@ INSERT INTO %s(event,payload) VALUES
  WHERE rn < %s
  )
             """ % (target, source, limit)
-            sqlStr2 = """ 
+            sqlStr2 = """
 DELETE FROM %s WHERE id IN
  (SELECT id FROM
   (

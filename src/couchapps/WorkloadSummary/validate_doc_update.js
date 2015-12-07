@@ -4,19 +4,19 @@ function(newDoc, oldDoc, userCtx) {
 
     var validation = require("lib/validate").init(newDoc, oldDoc, userCtx);
 
-    // if the oldDoc is exists and try to update, something is wrong
-    if(oldDoc) {
-        throw {forbidden: "Summary is already exist"};
-    }
+    // Gets whether the user is a global admin
+    // name=null means requests coming from the local replicator, so we must allow
+    // (the cms couch auth does not allow name=null, so it affects only internal requests)
+    var isGlobalAdm = (userCtx.name === null)
+
     // Admins can do anything
-    if (validation.isAdmin()) {
+    if (validation.isAdmin() || isGlobalAdm) {
         return true;
     }
 
     // Either Developer or DataOps Operator/Manager required
     if (validation.hasGroupRole("dataops", "developer") ||
-        validation.hasGroupRole("dataops", "production-operator") ||
-        validation.hasGroupRole("dataops", "production-manager")) {
+        validation.hasGroupRole("dataops", "production-operator")) {
         return true;
     }
 

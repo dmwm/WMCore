@@ -6,6 +6,3 @@ SiteDB interface package
 
 """
 __all__ = []
-
-
-

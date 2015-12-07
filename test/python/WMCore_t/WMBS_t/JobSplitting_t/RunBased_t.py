@@ -33,7 +33,7 @@ class EventBasedTest(unittest.TestCase):
     Test event based job splitting.
     """
 
-    
+
     def setUp(self):
         """
         _setUp_
@@ -47,19 +47,19 @@ class EventBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
 
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "site1", seName = "somese.cern.ch")
-        
+        locationAction.execute(siteName = "site1", pnn = "T2_CH_CERN")
+
         self.multipleFileFileset = Fileset(name = "TestFileset1")
         self.multipleFileFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(i, *[45+i]))
             newFile.create()
             self.multipleFileFileset.addFile(newFile)
@@ -67,7 +67,7 @@ class EventBasedTest(unittest.TestCase):
 
         self.singleFileFileset = Fileset(name = "TestFileset2")
         self.singleFileFileset.create()
-        newFile = File("/some/file/name", size = 1000, events = 100, locations = "somese.cern.ch")
+        newFile = File("/some/file/name", size = 1000, events = 100, locations = "T2_CH_CERN")
         newFile.addRun(Run(1, *[45]))
         newFile.create()
         self.singleFileFileset.addFile(newFile)
@@ -77,7 +77,7 @@ class EventBasedTest(unittest.TestCase):
         self.multipleFileRunset = Fileset(name = "TestFileset3")
         self.multipleFileRunset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(i/3, *[45]))
             newFile.create()
             self.multipleFileRunset.addFile(newFile)
@@ -86,7 +86,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunFileset = Fileset(name = "TestFileset4")
         self.singleRunFileset.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(1, *[45]))
             newFile.create()
             self.singleRunFileset.addFile(newFile)
@@ -95,7 +95,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunMultipleLumi = Fileset(name = "TestFileset5")
         self.singleRunMultipleLumi.create()
         for i in range(10):
-            newFile = File(makeUUID(), size = 1000, events = 100, locations = "somese.cern.ch")
+            newFile = File(makeUUID(), size = 1000, events = 100, locations = "T2_CH_CERN")
             newFile.addRun(Run(1, *[45+i]))
             newFile.create()
             self.singleRunMultipleLumi.addFile(newFile)
@@ -131,7 +131,7 @@ class EventBasedTest(unittest.TestCase):
         self.singleRunSubscription.create()
         self.singleRunMultipleLumiSubscription.create()
 
-        
+
         return
 
     def tearDown(self):
@@ -166,7 +166,7 @@ class EventBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
 
@@ -180,9 +180,9 @@ class EventBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
-        
+
         assert len(jobGroups) == 1, \
                "ERROR: JobFactory didn't return one JobGroup."
 
@@ -193,7 +193,7 @@ class EventBasedTest(unittest.TestCase):
 
         assert job.getFiles(type = "lfn") == ["/some/file/name"], \
                "ERROR: Job contains unknown files."
-        
+
         return
 
     def testMultipleRuns(self):
@@ -207,18 +207,18 @@ class EventBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleFileSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 1)
-        
+
         assert len(jobGroups) == 10, \
                "ERROR: JobFactory didn't return one JobGroup per run."
-        
+
         assert len(jobGroups[0].jobs) == 1, \
                "ERROR: JobFactory didn't put each run in a file."
 
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 1)
 
-        
+
         return
 
     def testMultipleRunsCombine(self):
@@ -232,11 +232,11 @@ class EventBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.multipleRunSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 2)
 
 
-        
+
         assert len(jobGroups) == 4, \
                "ERROR: JobFactory didn't return one JobGroup per run."
 
@@ -247,7 +247,7 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[1].jobs.pop().getFiles(type = "lfn")), 1)
         self.assertEqual(len(jobGroups[1].jobs.pop().getFiles(type = "lfn")), 2)
 
-        
+
         return
 
     def testSingleRunsCombineUneven(self):
@@ -263,15 +263,15 @@ class EventBasedTest(unittest.TestCase):
 
         splitter = SplitterFactory()
         jobFactory = splitter(package = "WMCore.WMBS", subscription = self.singleRunSubscription)
-        
+
         jobGroups = jobFactory(files_per_job = 8)
-        
+
         self.assertEqual(len(jobGroups),         1)
         self.assertEqual(len(jobGroups[0].jobs), 2)
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 2)
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 8)
 
-        
+
         return
 
 
@@ -297,7 +297,7 @@ class EventBasedTest(unittest.TestCase):
         self.assertEqual(len(jobGroups[0].jobs.pop().getFiles(type = "lfn")), 8)
 
         return
-    
+
     def testSingleRunsMultipleLumiCombineUneven(self):
         """
         _testSingleRunsMultipeLumiCombineUneven_

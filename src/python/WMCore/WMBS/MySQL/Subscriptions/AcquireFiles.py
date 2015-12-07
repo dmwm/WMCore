@@ -23,9 +23,9 @@ class AcquireFiles(DBFormatter):
                 binds.append({"subscription": subscription, "fileid": fileid})
         else:
             binds = {"subscription": subscription, "fileid": file}
-            
+
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
         self.dbi.processData(self.availDel, binds, conn = conn,
-                             transaction = transaction)        
+                             transaction = transaction)
         return

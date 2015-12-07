@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W0613, W6501
 """
 The JobCreator Poller for the JSM
 """
@@ -7,45 +6,36 @@ __all__ = []
 
 
 import os
-import copy
-import time
-import Queue
 import os.path
 import cPickle
 import logging
 import traceback
 import threading
-import multiprocessing
-#import time
-#import cProfile, pstats
-
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.WMException                     import WMException
-from WMCore.ProcessPool.ProcessPool         import ProcessPool
 
 from WMCore.JobSplitting.Generators.GeneratorManager import GeneratorManager
-
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 from WMComponent.JobCreator.CreateWorkArea  import CreateWorkArea
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
 from WMCore.WMBS.Subscription               import Subscription
 from WMCore.WMBS.Workflow                   import Workflow
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-from WMCore.Database.CMSCouch               import CouchServer
+from WMCore.FwkJobReport.Report             import Report
 
 
-def retrieveWMSpec(workflow):
+def retrieveWMSpec(workflow = None, wmWorkloadURL = None):
     """
     _retrieveWMSpec_
 
     Given a subscription, this function loads the WMSpec associated with that workload
     """
-    #workflow = subscription['workflow']
-    wmWorkloadURL = workflow.spec
+    if not wmWorkloadURL and workflow:
+        wmWorkloadURL = workflow.spec
 
-    if not os.path.isfile(wmWorkloadURL):
+    if not wmWorkloadURL or not os.path.isfile(wmWorkloadURL):
         logging.error("WMWorkloadURL %s is empty" % (wmWorkloadURL))
         return None
 
@@ -99,40 +89,71 @@ def runSplitter(jobFactory, splitParams):
             break
 
 
+def capResourceEstimates(jobGroups, nCores, constraints):
+    """
+    _capResourceEstimates_
+
+    Checks the current job resource estimates and cap
+    them based on the limits defined in the agent
+    config file (also take into account nCores).
+    """
+    for jobGroup in jobGroups:
+        for j in jobGroup.jobs:
+            if not j['estimatedJobTime'] or j['estimatedJobTime'] < constraints['MinWallTimeSecs']:
+                j['estimatedJobTime'] = constraints['MinWallTimeSecs']
+            if not j['estimatedDiskUsage'] or j['estimatedDiskUsage'] < constraints['MinRequestDiskKB']:
+                j['estimatedDiskUsage'] = constraints['MinRequestDiskKB']
+
+            if nCores == 1:
+                j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
+                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
+            else:
+                # we assume job efficiency as nCores * 0.8 for multicore
+                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
+                                            constraints['MaxWallTimeSecs'])
+                j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
+                                              constraints['MaxRequestDiskKB'] * nCores)
+    return
+
 
 def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
-            wmTaskPrio = None, owner = None, ownerDN = None,
-            ownerGroup = '', ownerRole = '',
-            scramArch = None, swVersion = None ):
-        """
-        _saveJob_
+            owner = None, ownerDN = None, ownerGroup = '', ownerRole = '',
+            scramArch = None, swVersion = None, agentNumber = 0, numberOfCores = 1,
+            inputDataset = None, inputDatasetLocations = None, allowOpportunistic=False):
+    """
+    _saveJob_
 
-        Actually do the mechanics of saving the job to a pickle file
-        """
-        if wmTask:
+    Actually do the mechanics of saving the job to a pickle file
+    """
+    if wmTask:
             # If we managed to load the task,
             # so the url should be valid
-            job['spec']     = workflow.spec
-            job['task']     = wmTask
-            if job.get('sandbox', None) == None:
-                job['sandbox'] = sandbox
+        job['spec']     = workflow.spec
+        job['task']     = wmTask
+        if job.get('sandbox', None) == None:
+            job['sandbox'] = sandbox
 
-        job['counter']   = jobNumber
-        cacheDir         = job.getCache()
-        job['cache_dir'] = cacheDir
-        job['priority']  = wmTaskPrio
-        job['owner']     = owner
-        job['ownerDN']   = ownerDN
-        job['ownerGroup']   = ownerGroup
-        job['ownerRole']   = ownerRole
-        job['scramArch'] = scramArch
-        job['swVersion'] = swVersion
-        output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-        cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
-        output.close()
+    job['counter']   = jobNumber
+    job['agentNumber'] = agentNumber
+    cacheDir         = job.getCache()
+    job['cache_dir'] = cacheDir
+    job['owner']     = owner
+    job['ownerDN']   = ownerDN
+    job['ownerGroup']   = ownerGroup
+    job['ownerRole']   = ownerRole
+    job['scramArch'] = scramArch
+    job['swVersion'] = swVersion
+    job['numberOfCores'] = numberOfCores
+    job['inputDataset'] = inputDataset
+    job['inputDatasetLocations'] = inputDatasetLocations
+    job['allowOpportunistic'] = allowOpportunistic
+
+    output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
+    cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+    output.close()
 
 
-        return
+    return
 
 
 def creatorProcess(work, jobCacheDir):
@@ -155,18 +176,22 @@ def creatorProcess(work, jobCacheDir):
         ownerRole    = work.get('ownerRole','')
         scramArch    = work.get('scramArch', None)
         swVersion    = work.get('swVersion', None)
+        agentNumber  = work.get('agentNumber', 0)
+        numberOfCores = work.get('numberOfCores', 1)
+        inputDataset = work.get('inputDataset', None)
+        inputDatasetLocations = work.get('inputDatasetLocations', None)
+        allowOpportunistic = work.get('allowOpportunistic', False)
 
         if ownerDN == None:
             ownerDN = owner
 
         jobNumber    = work.get('jobNumber', 0)
-        wmTaskPrio   = work.get('wmTaskPrio', None)
-    except KeyError, ex:
+    except KeyError as ex:
         msg =  "Could not find critical key-value in work input.\n"
         msg += str(ex)
         logging.error(msg)
         raise JobCreatorException(msg)
-    except Exception, ex:
+    except Exception as ex:
         msg =  "Exception in opening work package.\n"
         msg += str(ex)
         msg += str(traceback.format_exc())
@@ -186,16 +211,20 @@ def creatorProcess(work, jobCacheDir):
             saveJob(job = job, workflow = workflow,
                     wmTask = wmTaskName,
                     jobNumber = jobNumber,
-                    wmTaskPrio = wmTaskPrio,
                     sandbox = sandbox,
                     owner = owner,
                     ownerDN = ownerDN,
                     ownerGroup = ownerGroup,
                     ownerRole = ownerRole,
                     scramArch = scramArch,
-                    swVersion = swVersion )
+                    swVersion = swVersion,
+                    agentNumber = agentNumber,
+                    numberOfCores = numberOfCores,
+                    inputDataset = inputDataset,
+                    inputDatasetLocations = inputDatasetLocations,
+                    allowOpportunistic = allowOpportunistic)
 
-    except Exception, ex:
+    except Exception as ex:
         # Register as failure; move on
         msg =  "Exception in processing wmbsJobGroup %i\n" % wmbsJobGroup.id
         msg += str(ex)
@@ -338,25 +367,28 @@ class JobCreatorPoller(BaseWorkerThread):
         self.setBulkCache     = self.daoFactory(classname = "Jobs.SetCache")
         self.countJobs        = self.daoFactory(classname = "Jobs.GetNumberOfJobsPerWorkflow")
         self.subscriptionList = self.daoFactory(classname = "Subscriptions.ListIncomplete")
+        self.setFWJRPath      = self.daoFactory(classname = "Jobs.SetFWJRPath")
 
         #information
         self.config = config
 
         #Variables
-        self.defaultJobType     = config.JobCreator.defaultJobType
-        self.limit              = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.defaultJobType = config.JobCreator.defaultJobType
+        self.limit          = getattr(config.JobCreator, 'fileLoadLimit', 500)
+        self.agentNumber    = int(getattr(config.Agent, 'agentNumber', 0))
+        self.glideinLimits  = getattr(config.JobCreator, 'GlideInRestriction', None)
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
         self.initAlerts(compName = "JobCreator")
 
         try:
-            self.jobCacheDir        = getattr(config.JobCreator, 'jobCacheDir',
-                                              os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
+            self.jobCacheDir = getattr(config.JobCreator, 'jobCacheDir',
+                                       os.path.join(config.JobCreator.componentDir, 'jobCacheDir'))
             self.check()
         except WMException:
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Unhandled exception while setting up jobCacheDir!\n"
             msg += str(ex)
             logging.error(msg)
@@ -365,36 +397,6 @@ class JobCreatorPoller(BaseWorkerThread):
 
 
         self.changeState = ChangeState(self.config)
-
-        # Initiate autoIncrement for MySQL
-        # This is because MySQL stores the autoIncrement in memory and it has
-        # to be resynchronized with couch after a server restart
-        if getattr(myThread, 'dialect', 'None').lower() == 'mysql':
-            incrementDAO     = self.daoFactory(classname = "Jobs.AutoIncrementCheck")
-            couchdb          = CouchServer(config.JobStateMachine.couchurl)
-            jobsdatabase     = couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)
-            try:
-                jobID = jobsdatabase.loadView("JobDump",
-                                              "highestJobID",
-                                              options = {'reduce': False,
-                                                         'limit': 1,
-                                                         'descending': True}
-                                              )['rows'][0]['id']
-                jobID = int(jobID)
-            except IndexError:
-                # In this case, there are no jobs in couch
-                jobID = 0
-            except ValueError:
-                # This is a weird error - there's a document in the couch server
-                # without a job ID as id
-                jobID = 0
-                logging.error("Encountered a document in the JobDump database with an invalid ID!")
-                logging.error("ID: %s" % jobID)
-                pass
-
-            # Now increment the MySQL AutoIncrement
-            logging.info("About to handle MySQL AutoIncrement with jobID %i" % jobID)
-            incrementDAO.execute(input = jobID)
 
         return
 
@@ -427,14 +429,19 @@ class JobCreatorPoller(BaseWorkerThread):
                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
             raise
-        except Exception, ex:
+        except Exception as ex:
             #self.close()
             myThread = threading.currentThread()
             if getattr(myThread, 'transaction', False) \
                    and getattr(myThread.transaction, 'transaction', False):
                 myThread.transaction.rollback()
-            msg = "Failed to execute JobCreator \n%s\n" % (ex)
-            raise JobCreatorException(msg)
+            # Handle temporary connection problems (Temporary)
+            if "(InterfaceError) not connected" in str(ex):
+                logging.error('There was a connection problem during the JobCreator algorithm, I will try again next cycle')
+            else:
+                msg = "Failed to execute JobCreator \n%s\n\n%s" % (ex,traceback.format_exc())
+                logging.error(msg)
+                raise JobCreatorException(msg)
 
     def terminate(self, params):
         """
@@ -492,6 +499,9 @@ class JobCreatorPoller(BaseWorkerThread):
 
             logging.debug("Have loaded subscription %i with workflow %i\n" % (subscriptionID, workflow.id))
 
+            # retrieve information from the workload to propagate down to the job configuration
+            allowOpport =  wmWorkload.getAllowOpportunistic()
+
             # Set task object
             wmTask = wmWorkload.getTaskByPath(workflow.task)
 
@@ -503,7 +513,7 @@ class JobCreatorPoller(BaseWorkerThread):
                     seederList = manager.getGeneratorList()
                 else:
                     seederList = []
-            except Exception, ex:
+            except Exception as ex:
                 msg =  "Had failure loading generators for subscription %i\n" % (subscriptionID)
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Passing over this error.  It will reoccur next interation!\n"
@@ -547,7 +557,7 @@ class JobCreatorPoller(BaseWorkerThread):
                 # First we need the jobs.
                 myThread.transaction.begin()
                 try:
-                    wmbsJobGroups = jobSplittingFunction.next()
+                    wmbsJobGroups = next(jobSplittingFunction)
                     logging.info("Retrieved %i jobGroups from jobSplitter" % (len(wmbsJobGroups)))
                 except StopIteration:
                     # If you receive a stopIteration, we're done
@@ -568,19 +578,33 @@ class JobCreatorPoller(BaseWorkerThread):
                 processDict = {'workflow': workflow,
                                'wmWorkload': wmWorkload, 'wmTaskName': wmTask.getPathName(),
                                'jobNumber': jobNumber, 'sandbox': wmTask.data.input.sandbox,
-                               'wmTaskPrio': wmTask.getTaskPriority(),
                                'owner': wmWorkload.getOwner().get('name', None),
                                'ownerDN': wmWorkload.getOwner().get('dn', None),
                                'ownerGroup': wmWorkload.getOwner().get('vogroup', ''),
-                               'ownerRole': wmWorkload.getOwner().get('vorole', '')}
+                               'ownerRole': wmWorkload.getOwner().get('vorole', ''),
+                               'numberOfCores': 1,
+                               'inputDataset': wmTask.getInputDatasetPath()}
+                try:
+                    maxCores = 1
+                    stepNames = wmTask.listAllStepNames()
+                    for stepName in stepNames:
+                        sh = wmTask.getStep(stepName)
+                        maxCores = max(maxCores, sh.getNumberOfCores())
+                    processDict.update({'numberOfCores' : maxCores})
+                except AttributeError:
+                    logging.info("Failed to read multicore settings from task %s" % wmTask.getPathName())
 
                 tempSubscription = Subscription(id = wmbsSubscription['id'])
+
+                # if we have glideinWMS constraints, then adapt all jobs
+                if self.glideinLimits:
+                    capResourceEstimates(wmbsJobGroups, processDict['numberOfCores'], self.glideinLimits) 
 
                 nameDictList = []
                 for wmbsJobGroup in wmbsJobGroups:
                     # For each jobGroup, put a dictionary
                     # together and run it with creatorProcess
-                    jobsInGroup               = len(wmbsJobGroup.jobs)
+                    jobsInGroup = len(wmbsJobGroup.jobs)
                     wmbsJobGroup.subscription = tempSubscription
                     tempDict = {}
                     tempDict.update(processDict)
@@ -588,6 +612,9 @@ class JobCreatorPoller(BaseWorkerThread):
                     tempDict['swVersion'] = wmTask.getSwVersion()
                     tempDict['scramArch'] = wmTask.getScramArch()
                     tempDict['jobNumber'] = jobNumber
+                    tempDict['agentNumber'] = self.agentNumber
+                    tempDict['inputDatasetLocations'] = wmbsJobGroup.getLocationsForJobs()
+                    tempDict['allowOpportunistic'] = allowOpport
 
                     jobGroup = creatorProcess(work = tempDict,
                                               jobCacheDir = self.jobCacheDir)
@@ -607,7 +634,7 @@ class JobCreatorPoller(BaseWorkerThread):
                                                   transaction = True)
                 except WMException:
                     raise
-                except Exception, ex:
+                except Exception as ex:
                     msg =  "Unknown exception while setting the bulk cache:\n"
                     msg += str(ex)
                     logging.error(msg)
@@ -693,10 +720,14 @@ class JobCreatorPoller(BaseWorkerThread):
         """
         try:
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
+
+            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
+            self.generateCreateFailedReports(createFailedJobs)
+            self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:
             raise
-        except Exception, ex:
-            msg =  "Unhandled exception while calling changeState.\n"
+        except Exception as ex:
+            msg = "Unhandled exception while calling changeState.\n"
             msg += str(ex)
             logging.error(msg)
             self.sendAlert(6, msg = msg)
@@ -704,4 +735,33 @@ class JobCreatorPoller(BaseWorkerThread):
 
         logging.info("JobCreator has finished creating jobGroup %i.\n" \
                      % (wmbsJobGroup.id))
+        return
+
+    def generateCreateFailedReports(self, createFailedJobs):
+        """
+        _generateCreateFailedReports_
+
+        Create and store FWJR for the  jobs that failed on creation
+        leaving meaningful information about what happened with them
+        """
+        if not createFailedJobs:
+            return
+
+        fjrsToSave = []
+        for failedJob in createFailedJobs:
+            report = Report()
+            defaultMsg = "There is a condition which assures that this job will fail if it's submitted"
+            report.addError("CreationFailure", 99305, "CreationFailure", failedJob.get("failedReason", defaultMsg))
+            jobCache = failedJob.getCache()
+            try:
+                fjrPath = os.path.join(jobCache, "Report.0.pkl")
+                report.save(fjrPath)
+                fjrsToSave.append({"jobid": failedJob["id"], "fwjrpath": fjrPath})
+                failedJob["fwjr"] = report
+            except Exception:
+                logging.error("Something went wrong while saving the report for  job %s" % failedJob["id"])
+
+        myThread = threading.currentThread()
+        self.setFWJRPath.execute(binds = fjrsToSave, conn = myThread.transaction.conn, transaction = True)
+
         return

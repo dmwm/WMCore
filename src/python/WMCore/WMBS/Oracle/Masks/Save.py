@@ -33,7 +33,7 @@ class Save(SaveMasksMySQL):
             binds = []
             for m in mask:
                 inclusiveMask = 'T'
-                if str(m['inclusivemask']) == False:
+                if m['inclusivemask'] == False:
                     inclusiveMask = 'F'
                 binds.append({"jobid": m['jobID'], 'firstevent': m['FirstEvent'], 'lastevent': m['LastEvent'],
                               'firstrun': m['FirstRun'], 'lastrun': m['LastRun'], 'firstlumi': m['FirstLumi'],
@@ -41,7 +41,7 @@ class Save(SaveMasksMySQL):
         else:
             # Simple one-part mask
             inclusiveMask = 'T'
-            if str(mask['inclusivemask']) == False:
+            if mask['inclusivemask'] == False:
                 inclusiveMask = 'F'
             binds = {"jobid": jobid, 'firstevent': mask['FirstEvent'], 'lastevent': mask['LastEvent'],
                      'firstrun': mask['FirstRun'], 'lastrun': mask['LastRun'], 'firstlumi': mask['FirstLumi'],
@@ -54,11 +54,9 @@ class Save(SaveMasksMySQL):
                     fail = False
             if fail:
                 return
-            
+
         # Actually run the code
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 
         return
-    
-    

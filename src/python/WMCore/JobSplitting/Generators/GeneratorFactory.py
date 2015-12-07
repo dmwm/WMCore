@@ -32,20 +32,20 @@ class GeneratorFactory(WMFactory):
     def getGenerator(self, generatorName, **options):
         """
         _getGenerator_
-        
+
         factory method to return a step template instance based on the
         name of the step
-        
+
         """
         args = {}
         args.update(options)
         try:
             return self.factory.loadObject(generatorName,
                                            args)
-        except WMException, wmEx:
+        except WMException as wmEx:
             msg = "GeneratorFactory Unable to load Object: %s" % generatorName
             raise GeneratorFactoryException(msg)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error creating object %s in GeneratorFactory:\n" % generatorName
             msg += str(ex)
             raise GeneratorFactoryException(msg)
@@ -54,10 +54,10 @@ class GeneratorFactory(WMFactory):
     def makeGenerators(self, wmTaskHelper):
         """
         _makeGenerators_
-        
+
         Util function to build the set of generators defined
         by the task provided
-        
+
         """
         result = []
         for generator in wmTaskHelper.listGenerators():
@@ -67,5 +67,3 @@ class GeneratorFactory(WMFactory):
                                             )
             result.append(genInstance)
         return result
-
-

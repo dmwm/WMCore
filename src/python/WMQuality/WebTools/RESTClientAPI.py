@@ -68,14 +68,15 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
 
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
     for key, value in output.items():
-        assert keyMap[key] == value, \
-            'Got a return %s != %s (got %s) (data %s)' % (key, value, keyMap[key], data)
+        msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
+                % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
+        assert keyMap[key] == value, msg
 
     expires = response.getheader('Expires')
     if expireTime != 0:
         timeStamp = make_rfc_timestamp(expireTime)
         assert expires == timeStamp,\
-                 'Expires header incorrect (%s) != (%s)' % (expires % timeStamp)
+                 'Expires header incorrect (%s) != (%s)' % (expires, timeStamp)
 
     return data, expires
 

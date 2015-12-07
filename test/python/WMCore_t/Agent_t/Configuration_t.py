@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101,C0103,R0902
+#pylint: disable=E1101,C0103,R0902
 
 import unittest
 import os
@@ -33,7 +33,7 @@ class ConfigurationTest(unittest.TestCase):
         """ctor"""
         try:
             config = Configuration()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Failed to instantiate Configuration\n"
             msg += str(ex)
             self.fail(msg)
@@ -72,15 +72,15 @@ class ConfigurationTest(unittest.TestCase):
         # dictionary format:
         try:
             section1Dict = config.Section1.dictionary_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error converting section to dictionary:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
-        self.failUnless( section1Dict.has_key("Parameter1"))
-        self.failUnless( section1Dict.has_key("Parameter2"))
-        self.failUnless( section1Dict.has_key("Parameter3"))
-        self.failUnless( section1Dict.has_key("Parameter4"))
+        self.failUnless( "Parameter1" in section1Dict)
+        self.failUnless( "Parameter2" in section1Dict)
+        self.failUnless( "Parameter3" in section1Dict)
+        self.failUnless( "Parameter4" in section1Dict)
 
         self.assertEqual(section1Dict['Parameter1'],
                          config.Section1.Parameter1)
@@ -118,11 +118,6 @@ class ConfigurationTest(unittest.TestCase):
         self.assertRaises(
             RuntimeError, setattr,
             config.Section2, "BadList", badList)
-
-        badDict = { "dict" : {}, "list": [], "tuple" : () }
-        self.assertRaises(
-            RuntimeError, setattr,
-            config.Section2, "BadDict", badDict)
 
 
     def testC(self):
@@ -165,26 +160,26 @@ class ConfigurationTest(unittest.TestCase):
 
         try:
             config.Section1.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.Section1.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling ConfigSection.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
         try:
             config.documentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.documentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)
         try:
             config.commentedString_()
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error calling Configuration.commentedString_:\n"
             msg += "%s\n" % str(ex)
             self.fail(msg)

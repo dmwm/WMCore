@@ -57,10 +57,6 @@ from WMCore.Services.UUID       import makeUUID
 from WMCore.FwkJobReport.Report import Report
 
 
-# DBS
-from DBSAPI.dbsApi import DbsApi
-
-
 def getListOfTasks(workload):
     """
     _getListOfTasks_
@@ -71,8 +67,8 @@ def getListOfTasks(workload):
     listOfTasks = []
 
     for primeTask in workload.taskIterator():
-            for task in primeTask.taskIterator():
-                listOfTasks.append(task)
+        for task in primeTask.taskIterator():
+            listOfTasks.append(task)
 
     return listOfTasks
 
@@ -93,7 +89,7 @@ def miniStartup(dir = os.getcwd()):
     monitor = Bootstrap.setupMonitoring(logPath = "Report.0.pkl")
 
     Bootstrap.setupLogging(dir)
-    
+
 
     task.build(dir)
     task.execute(job)
@@ -150,7 +146,7 @@ class RuntimeTest(unittest.TestCase):
     def tearDown(self):
         """
         _tearDown_
-        
+
         Remove any references you put directly into the modules
         """
 
@@ -158,10 +154,10 @@ class RuntimeTest(unittest.TestCase):
 
         # Clean up imports
         if 'WMSandbox' in sys.modules.keys():
-                del sys.modules['WMSandbox']
+            del sys.modules['WMSandbox']
         if 'WMSandbox.JobIndex' in sys.modules.keys():
-                del sys.modules['WMSandbox.JobIndex']
-        
+            del sys.modules['WMSandbox.JobIndex']
+
 
         return
 
@@ -228,7 +224,7 @@ class RuntimeTest(unittest.TestCase):
             taskName = task.name()
             taskDir = os.path.join(self.unpackDir, taskName)
             if not os.path.exists(taskDir):
-                # Well then we have to make it
+            # Well then we have to make it
                 os.makedirs(taskDir)
             os.chdir(taskDir)
             # Now that we're here, run the unpacker
@@ -258,7 +254,7 @@ class RuntimeTest(unittest.TestCase):
         listOfSubs  = []
 
         rerecoTask  = None
-        
+
         for primeTask in workload.taskIterator():
             # There should only be one prime task, and it should be the rerecoTask
             rerecoTask = primeTask
@@ -271,7 +267,7 @@ class RuntimeTest(unittest.TestCase):
                                            fileset = fileset)
             #listOfSubs.append(sub)
 
-        
+
 
         return
 
@@ -285,14 +281,14 @@ class RuntimeTest(unittest.TestCase):
         """
         type = task.taskType()
         work = task.makeWorkflow()
-        
+
         sub = Subscription(fileset = fileset,
                            workflow = work,
                            split_algo = "FileBased",
                            type = type)
 
         package = self.createWMBSJobs(subscription = sub,
-                                      task = task)        
+                                      task = task)
 
         packName = os.path.join(self.testDir, 'packages',
                                 '%sJobPackage.pkl' %(task.name()))
@@ -329,7 +325,7 @@ class RuntimeTest(unittest.TestCase):
         return package
 
 
-    
+
 
     def getFileset(self):
         """
@@ -376,12 +372,12 @@ class RuntimeTest(unittest.TestCase):
             print "About to run jobs"
             print taskDir
             miniStartup(dir = taskDir)
-            
+
 
             # When exiting, go back to where you started
             os.chdir(self.initialDir)
             sys.path.remove(taskDir)
-            
+
         return
 
 
@@ -391,7 +387,7 @@ class RuntimeTest(unittest.TestCase):
     def testA_CreateWorkload(self):
         """
         _CreateWorkload_
-        
+
         Create a workload
         Unpack the workload
         Check for consistency
@@ -456,7 +452,7 @@ class RuntimeTest(unittest.TestCase):
 
         # And we're done.
         # Assume if we got this far everything is good
-        
+
 
         # At the end, copy the directory
         #if os.path.exists('tmpDir'):
@@ -469,7 +465,7 @@ class RuntimeTest(unittest.TestCase):
     def testB_EmulatorTest(self):
         """
         _EmulatorTest_
-        
+
         This is where things get scary.  We need to not only unpack the job,
         but also ascertain whether it can run locally in emulator mode.
 
@@ -528,4 +524,3 @@ class RuntimeTest(unittest.TestCase):
 if __name__ == "__main__":
 
     unittest.main()
-

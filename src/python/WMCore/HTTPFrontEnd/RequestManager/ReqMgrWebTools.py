@@ -1,32 +1,40 @@
-""" Functions external to the web interface classes"""
+"""
+Functions external to the web interface classes.
+
+"""
+
 import urllib
 import time
 import logging
 import re
-import WMCore.Wrappers.JsonWrapper as JsonWrapper
-import cherrypy
+import cgi
 from os import path
-from xml.dom.minidom import parse as parseDOM
-from xml.parsers.expat import ExpatError
+import cherrypy
+import traceback
 from cherrypy import HTTPError
 from cherrypy.lib.static import serve_file
-from httplib import HTTPException
+
+from xml.dom.minidom import parse as parseDOM
+from xml.parsers.expat import ExpatError
+
 import WMCore.Lexicon
-import cgi
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus             as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState      as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest       as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement     as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests     as ListRequests
+from WMCore.ACDC.CouchService import CouchService
+from WMCore.Database.CMSCouch import Database
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.Services.WorkQueue.WorkQueue as WorkQueue
 import WMCore.RequestManager.RequestMaker.CheckIn as CheckIn
 from WMCore.RequestManager.RequestMaker.Registry import buildWorkloadForRequest
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.StdSpecs.StdBase import WMSpecFactoryException
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.RequestManager.DataStructs.RequestSchema import RequestSchema
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
+TAG_COLLECTOR_URL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
 
 def addSiteWildcards(wildcardKeys, sites, wildcardSites):
     """
@@ -53,69 +61,6 @@ def addSiteWildcards(wildcardKeys, sites, wildcardSites):
         if found:
             sites.append(k)
 
-    return
-
-
-def parseRunList(l):
-    """ Changes a string into a list of integers """
-    result = None
-    if isinstance(l, list):
-       result = l
-    elif isinstance(l, basestring):
-        toks = l.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        result = [int(tok) for tok in toks]
-    elif isinstance(l, int):
-        result = [l]
-    else:
-        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
-
-    # If we're here, we have a list of runs
-    for r in result:
-        try:
-            tmp = int(r)
-        except ValueError:
-            raise cherrypy.HTTPError(400, "Given runList without integer run numbers")
-        if not tmp == r:
-            raise cherrypy.HTTPError(400, "Given runList without valid integer run numbers")
-
-    return result
-    #raise RuntimeError, "Bad Run list of type " + type(l).__name__
-
-def parseBlockList(l):
-    """ Changes a string into a list of strings """
-    result = None
-    if isinstance(l, list):
-       result = l
-    elif isinstance(l, basestring):
-        toks = l.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        # only one set of quotes
-        result = [str(tok.strip(' \'"')) for tok in toks]
-    else:
-        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
-
-    # If we've gotten here we've got a list of blocks
-    # Hopefully they pass validation
-    for block in result:
-        try:
-            WMCore.Lexicon.block(candidate = block)
-        except AssertionError, ex:
-            raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
-
-    return result
-
-def parseSite(kw, name):
-    """ puts site whitelist & blacklists into nice format"""
-    value = kw.get(name, [])
-    if value == None:
-        value = []
-    if not isinstance(value, list):
-        value = [value]
-    return value
-
 def allScramArchsAndVersions():
     """
     _allScramArchs_
@@ -124,9 +69,9 @@ def allScramArchsAndVersions():
     """
     result = {}
     try:
-        f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+        f = urllib.urlopen(TAG_COLLECTOR_URL)
         domDoc   = parseDOM(f)
-    except ExpatError, ex:
+    except ExpatError as ex:
         logging.error("Could not connect to tag collector!")
         logging.error("Not changing anything!")
         return {}
@@ -147,7 +92,6 @@ def allScramArchsAndVersions():
                 if str(attr.name) == 'label':
                     releaseList.append(str(attr.value))
         result[str(arch)] = releaseList
-
     return result
 
 def updateScramArchsAndCMSSWVersions():
@@ -168,12 +112,11 @@ def updateScramArchsAndCMSSWVersions():
     for scramArch in allArchsAndVersions.keys():
         SoftwareAdmin.updateSoftware(scramArch = scramArch,
                                      softwareNames = allArchsAndVersions[scramArch])
-    return
 
 def allSoftwareVersions():
     """ Downloads a list of all software versions from the tag collector """
     result = []
-    f = urllib.urlopen("https://cmstags.cern.ch/tc/ReleasesXML/?anytype=1")
+    f = urllib.urlopen(TAG_COLLECTOR_URL)
     for line in f:
         for tok in line.split():
             if tok.startswith("label="):
@@ -195,11 +138,14 @@ def loadWorkload(request):
     except Exception:
         raise cherrypy.HTTPError(404, "Cannot find workload "+removePasswordFromUrl(url))
     return helper
- 
-def saveWorkload(helper, workload):
+
+def saveWorkload(helper, workload, wmstatUrl = None):
     """ Saves the changes to this workload """
     if workload.startswith('http'):
         helper.saveCouchUrl(workload)
+        if wmstatUrl:
+            wmstatSvc = WMStatsWriter(wmstatUrl)
+            wmstatSvc.updateFromWMSpec(helper)
     else:
         helper.save(workload)
 
@@ -212,17 +158,31 @@ def removePasswordFromUrl(url):
         result = url[:slashslashat+2] + url[atat+1:]
     return result
 
-def changePriority(requestName, priority):
-    """ Changes the priority that's stored in the workload """
-    # fill in all details
-    request = GetRequest.getRequestByName(requestName)
-    groupPriority = request.get('ReqMgrGroupBasePriority', 0)
-    userPriority  = request.get('ReqMgrRequestorBasePriority', 0)
-    ChangeState.changeRequestPriority(requestName, priority)
+
+def changePriority(requestName, priority, wmstatUrl = None):
+    """
+    Changes the priority that's stored in the workload.
+    Takes the current priority stored in the workload and adds
+    to it the input priority value. 
+    
+    """
+    request = requestDetails(requestName)
+    # change in Oracle
+    newPrior = int(priority)
+    ChangeState.changeRequestPriority(requestName, newPrior)
+    # change in workload (spec)
     helper = loadWorkload(request)
-    totalPriority = int(priority) + int(userPriority) + int(groupPriority)
-    helper.data.request.priority = totalPriority
-    saveWorkload(helper, request['RequestWorkflow'])
+    helper.data.request.priority = newPrior
+    saveWorkload(helper, request['RequestWorkflow'], wmstatUrl)
+    # change priority in CouchDB
+    couchDb = Database(request["CouchWorkloadDBName"], request["CouchURL"])
+    fields = {"RequestPriority": newPrior}
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody = True)
+    # push the change to the WorkQueue
+    gqURL = "%s/workqueue" % request["CouchURL"]
+    workqueue = WorkQueue.WorkQueue(gqURL)
+    workqueue.updatePriority(requestName, priority)
+    return
 
 def abortRequest(requestName):
     """ Changes the state of the request to "aborted", and asks the work queue
@@ -231,9 +191,10 @@ def abortRequest(requestName):
     if response == [] or response[0] == None or response[0] == "":
         msg =  "Cannot find ProdMgr for request %s\n " % requestName
         msg += "Request may not be known to WorkQueue.  If aborted immediately after assignment, ignore this."
-        raise cherrypy.HTTPError(400, msg)
-    workqueue = WorkQueue.WorkQueue(response[0])
-    workqueue.cancelWorkflow(requestName)
+        logging.warning(msg)
+    else:
+        workqueue = WorkQueue.WorkQueue(response[0])
+        workqueue.cancelWorkflow(requestName)
     return
 
 def insecure():
@@ -246,13 +207,13 @@ def ownsRequest(request):
     return cherrypy.request.user['login'] == request['Requestor']
 
 def security_roles():
-    return ['Developer', 'Admin',  'Data Manager', 'developer', 'admin', 'data-manager']
+    return ['developer', 'admin', 'data-manager', 'production-operator']
 
 def security_groups():
     """
     A list of groups which have security access
     """
-    return ['ReqMgr', 'reqmgr']
+    return ['reqmgr', "dataops"]
 
 def privileged():
     """ whether this user has roles that overlap with security_roles """
@@ -270,40 +231,47 @@ def privileged():
     if len(groups) < 1:
         return False
 
-    
+
     #FIXME doesn't check role in this specific site
     secure_roles = [role for role in cherrypy.request.user['roles'].keys() if role in security_roles()]
-    # and maybe we're running without securitya, in which case dn = 'None'
+    # and maybe we're running without security, in which case dn = 'None'
     return secure_roles != []
 
-def changeStatus(requestName, status):
+def changeStatus(requestName, status, wmstatUrl, acdcUrl):
     """ Changes the status for this request """
     request = GetRequest.getRequestByName(requestName)
     if not status in RequestStatus.StatusList:
-        raise RuntimeError, "Bad status code " + status
-    if not request.has_key('RequestStatus'):
-        raise RuntimeError, "Cannot find status for request " + requestName
+        raise RuntimeError("Bad status code " + status)
+    if 'RequestStatus' not in request:
+        raise RuntimeError("Cannot find status for request " + requestName)
     oldStatus = request['RequestStatus']
     if not status in RequestStatus.NextStatus[oldStatus]:
-        raise RuntimeError, "Cannot change status from %s to %s.  Allowed values are %s" % (
-           oldStatus, status,  RequestStatus.NextStatus[oldStatus])
-    ChangeState.changeRequestStatus(requestName, status)
+        raise RuntimeError("Cannot change status from %s to %s.  Allowed values are %s" % (
+           oldStatus, status,  RequestStatus.NextStatus[oldStatus]))
 
-    if status == 'aborted':
+    if status == 'aborted' or status == 'force-complete':
         # delete from the workqueue
         if not privileged() and not ownsRequest(request):
-            raise cherrypy.HTTPError(403, "You are not allowed to abort this request")
+            raise cherrypy.HTTPError(403, "You are not allowed to %s this request" % status)
         elif not privileged():
             raise cherrypy.HTTPError(403, "You are not allowed to change the state for this request")
         # delete from the workqueue if it's been assigned to one
-        if oldStatus in ["acquired", "running"]:
+        if status in RequestStatus.NextStatus[oldStatus]:
             abortRequest(requestName)
         else:
             raise cherrypy.HTTPError(400, "You cannot abort a request in state %s" % oldStatus)
 
-    #FIXME needs logic about who is allowed to do which transition
-    ChangeState.changeRequestStatus(requestName, status)
-    return
+#     ACDC database is cleaned by separate thread        
+#     if status == 'announced':
+#         # cleanup acdc database, if possible
+#         if acdcUrl:
+#             url, database = WMCore.Lexicon.splitCouchServiceURL(acdcUrl)
+#             acdcService = CouchService(url = url, database = database)
+#             acdcService.removeFilesetsByCollectionName(requestName)
+
+    # finally, perform the transition, have to do it in both Oracle and CouchDB
+    # and in WMStats
+    ChangeState.changeRequestStatus(requestName, status, wmstatUrl=wmstatUrl)
 
 def prepareForTable(request):
     """ Add some fields to make it easier to display a request """
@@ -320,7 +288,7 @@ def prepareForTable(request):
     return request
 
 def requestsWithStatus(status):
-    requestIds = theseIds = ListRequests.listRequestsByStatus(status).values()
+    requestIds = ListRequests.listRequestsByStatus(status).values()
     requests = []
     for requestId in requestIds:
         request = GetRequest.getRequest(requestId)
@@ -339,20 +307,10 @@ def requestsWhichCouldLeadTo(newStatus):
 
 def priorityMenu(request):
     """ Returns HTML for a box to set priority """
-    return '(%iu, %ig) %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
-            request['ReqMgrRequestorBasePriority'], request['ReqMgrGroupBasePriority'],
-            request['ReqMgrRequestBasePriority'],
+    return ' %i &nbsp<input type="text" size=2 name="%s:priority" />' % (
+            request['RequestPriority'],
             request['RequestName'])
-
-def sites(siteDbUrl):
-    """ download a list of all the sites from siteDB """
-    data = JsonWrapper.loads(urllib.urlopen(siteDbUrl).read().replace("'", '"'))
-    # kill duplicates, then put in alphabetical order
-    siteset = set([d['name'] for d in data.values()])
-    # warning: alliteration
-    sitelist = list(siteset)
-    sitelist.sort()
-    return sitelist
+    
 
 def quote(data):
     """
@@ -374,128 +332,137 @@ def unidecode(data):
     else:
         return data
 
-def validate(schema):
-    schema.validate()
-    for field in ['RequestName', 'Requestor', 'RequestString',
-        'Campaign', 'Scenario', 'ProcConfigCacheID', 'inputMode',
-        'CouchDBName', 'Group']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.identifier(value)
-    for field in ['CouchURL']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.couchurl(schema[field])
-            schema[field] = removePasswordFromUrl(value)
-    for field in ['InputDatasets', 'OutputDatasets']:
-        for dataset in schema.get(field, []):
-            if dataset and dataset != '':
-                WMCore.Lexicon.dataset(dataset)
-    for field in ['InputDataset', 'OutputDataset']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.dataset(schema[field])
-    for field in ['SoftwareVersion']:
-        value = schema.get(field, '')
-        if value and value != '':
-            WMCore.Lexicon.cmsswversion(schema[field])
-        
-def makeRequest(kwargs, couchUrl, couchDB):
-    logging.info(kwargs)
-    """ Handles the submission of requests """
-    # make sure no extra spaces snuck in
-    for k, v in kwargs.iteritems():
-        if isinstance(v, str):
-            kwargs[k] = v.strip()
-    # Create a new schema
-    schema = RequestSchema()
-    schema.update(kwargs)
+def getNewRequestSchema(reqInputArgs):
+    """
+    Create a new schema
+    
+    """
+    reqSchema = RequestSchema()
+    reqSchema.update(reqInputArgs)
     
     currentTime = time.strftime('%y%m%d_%H%M%S',
                              time.localtime(time.time()))
     secondFraction = int(10000 * (time.time()%1.0))
-    requestString = schema.get('RequestString', "")
+    requestString = reqSchema.get('RequestString', "")
     if requestString != "":
-        schema['RequestName'] = "%s_%s_%s_%s" % (
-        schema['Requestor'], requestString, currentTime, secondFraction)
+        reqSchema['RequestName'] = "%s_%s_%s_%s" % (
+        reqSchema['Requestor'], requestString, currentTime, secondFraction)
     else:
-        schema['RequestName'] = "%s_%s_%s" % (schema['Requestor'], currentTime, secondFraction)
-    schema["Campaign"] = kwargs.get("Campaign", "")
-    if 'Scenario' in kwargs and 'ProcConfigCacheID' in kwargs:
-        # Use input mode to delete the unused one
-        inputMode = kwargs['inputMode']
-        inputValues = {'scenario':'Scenario',
-                       'couchDB':'ProdConfigCacheID'}
-        for n, v in inputValues.iteritems():
-            if n != inputMode:
-                schema[v] = ""
+        reqSchema['RequestName'] = "%s_%s_%s" % (reqSchema['Requestor'], currentTime, secondFraction)
+    return reqSchema
 
-    if kwargs.has_key("InputDataset"):
-        schema["InputDatasets"] = [kwargs["InputDataset"]]
-    if kwargs.has_key("FilterEfficiency"):
-        kwargs["FilterEfficiency"] = float(kwargs["FilterEfficiency"])
-    skimNumber = 1
-    # a list of dictionaries
-    schema["SkimConfigs"] = []
-    while kwargs.has_key("SkimName%s" % skimNumber):
-        d = {}
-        d["SkimName"] = kwargs["SkimName%s" % skimNumber]
-        d["SkimInput"] = kwargs["SkimInput%s" % skimNumber]
-        d["Scenario"] = kwargs["Scenario"]
 
-        if kwargs.get("Skim%sConfigCacheID" % skimNumber, None) != None:
-            d["ConfigCacheID"] = kwargs["Skim%sConfigCacheID" % skimNumber]
-
-        schema["SkimConfigs"].append(d)
-        skimNumber += 1
-
-    if kwargs.has_key("DataPileup") or kwargs.has_key("MCPileup"):
-        schema["PileupConfig"] = {}
-        if kwargs.has_key("DataPileup") and kwargs["DataPileup"] != "":
-            schema["PileupConfig"]["data"] = [kwargs["DataPileup"]]
-        if kwargs.has_key("MCPileup") and kwargs["MCPileup"] != "":
-            schema["PileupConfig"]["mc"] = [kwargs["MCPileup"]]
-
-    for runlist in ["RunWhitelist", "RunBlacklist"]:
-        if runlist in kwargs:
-            schema[runlist] = parseRunList(kwargs[runlist])
-    for blocklist in ["BlockWhitelist", "BlockBlacklist"]:
-        if blocklist in kwargs:
-            schema[blocklist] = parseBlockList(kwargs[blocklist])
-    validate(schema)
+def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clone=False):
+    """
+    If clone is True, the function is called on a cloned request in which
+    case no modification of the reqSchema shall happen and should be checked in
+    as is.
+    
+    """
     try:
-        request = buildWorkloadForRequest(typename = kwargs["RequestType"],
-                                          schema = schema)
-    except WMSpecFactoryException, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Workload Validation: %s" % msg)
+        request = buildWorkloadForRequest(typename = reqSchema["RequestType"], 
+                                          schema = reqSchema)
+    except WMSpecFactoryException as ex:
+        logging.error(traceback.format_exc())
+        raise HTTPError(400, "Error in Workload Validation: %s" % ex.message())
+    
     helper = WMWorkloadHelper(request['WorkloadSpec'])
-    helper.setCampaign(schema["Campaign"])
-    if "CustodialSite" in schema.keys():
-        helper.setCustodialSite(siteName = schema['CustodialSite'])
-    elif len(schema.get("SiteWhitelist", [])) == 1:
-        # If there is only one site in the site whitelist we should
-        # set it as the custodial site.
-        # Oli says so.
-        helper.setCustodialSite(siteName = schema['SiteWhitelist'][0])
-    if "RunWhitelist" in schema:
-        helper.setRunWhitelist(schema["RunWhitelist"])
+    
+    #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
+    # for Resubmission request, there already is previous Campaign set
+    # this call would override it with initial request arguments where
+    # it is not specified, so would become ''
+    if not helper.getCampaign():
+        helper.setCampaign(reqSchema["Campaign"])
+    
+    # update request as well for wmstats update
+    # there is a better way to do this (passing helper to request but make sure all the information is there) 
+    request["Campaign"] = helper.getCampaign()
+
+    # Add the output datasets if necessary
+    # for some bizarre reason OutpuDatasets is list of lists, when cloning
+    # [['/MinimumBias/WMAgentCommissioning10-v2/RECO'], ['/MinimumBias/WMAgentCommissioning10-v2/ALCARECO']]
+    # #3743
+    if not clone:
+        for ds in helper.listOutputDatasets():
+            if ds not in request['OutputDatasets']:
+                request['OutputDatasets'].append(ds)
+    #TODO: need to update output dataset by Task for task chain requests
     # can't save Request object directly, because it makes it hard to retrieve the _rev
     metadata = {}
-    metadata.update(request)
-    # Add the output datasets if necessary
-    for ds in helper.listOutputDatasets():
-        if not ds in request['OutputDatasets']:
-            request['OutputDatasets'].append(ds)
+    metadata.update(request)            
     # don't want to JSONify the whole workflow
     del metadata['WorkloadSpec']
     workloadUrl = helper.saveCouch(couchUrl, couchDB, metadata=metadata)
     request['RequestWorkflow'] = removePasswordFromUrl(workloadUrl)
     try:
-        CheckIn.checkIn(request, requestType = kwargs['RequestType'])
-    except CheckIn.RequestCheckInError, ex:
-        msg = ex._message
-        raise HTTPError(400, "Error in Request check-in: %s" % msg)
+        CheckIn.checkIn(request, reqSchema['RequestType'])
+    except CheckIn.RequestCheckInError as ex:
+        raise HTTPError(400, "Error in Request check-in: %s" % str(ex))
+        
+    # Inconsistent request parameters between Oracle and Couch (#4380, #4388)
+    # metadata above is what is saved into couch to represent a request document.
+    # Number of request arguments on a corresponding couch document
+    # is not set, has default null/None values, update those accordingly now.
+    # It's a mess to have two mutually inconsistent database backends.
+    # Not easy to handle this earlier since couch is stored first and
+    # some parameters are worked out later when storing into Oracle.
+    reqDetails = requestDetails(request["RequestName"])
+    # couchdb request parameters which are null at the injection time and remain so
+    paramsToUpdate = ["RequestStatus",
+                      "RequestSizeFiles",
+                      "AcquisitionEra",
+                      "RequestWorkflow",
+                      "RequestType",
+                      "RequestStatus",
+                      "RequestPriority",
+                      "Requestor",
+                      "Group",
+                      "SizePerEvent",
+                      "PrepID",
+                      "RequestNumEvents",
+                      ]
+    
+    couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
+    fields = {}
+    for key in paramsToUpdate:
+        fields[key] = reqDetails[key]
+    couchDb.updateDocument(request["RequestName"], "ReqMgr", "updaterequest", fields=fields, useBody=True) 
+        
+    try:
+        wmstatSvc = WMStatsWriter(wmstatUrl)
+        wmstatSvc.insertRequest(request)
+    except Exception as ex:
+        webApi.error("Could not update WMStats, reason: %s" % ex)
+        raise HTTPError(400, "Creating request failed, could not update WMStats.")
+
+    return request
+    
+        
+def makeRequest(webApi, reqInputArgs, couchUrl, couchDB, wmstatUrl):
+    """
+    Handles the submission of requests.
+    
+    """
+    # make sure no extra spaces snuck in
+    for k, v in reqInputArgs.iteritems():
+        if isinstance(v, str):
+            reqInputArgs[k] = v.strip()
+            
+    webApi.info("makeRequest(): reqInputArgs: '%s'" %  reqInputArgs)
+    reqSchema = getNewRequestSchema(reqInputArgs)
+
+    # Campaign is just for ReqMgr information but it is optional, so it defaults to empty
+    # Should it default to something else??
+    reqSchema["Campaign"] = reqInputArgs.get("Campaign", "")
+
+    if "InputDataset" in reqInputArgs:
+        reqSchema["InputDatasets"] = [reqInputArgs["InputDataset"]]
+
+    # Get the DN
+    reqSchema['RequestorDN'] = cherrypy.request.user.get('dn', 'unknown')
+
+    request = buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl)
     return request
 
 def requestDetails(requestName):
@@ -503,20 +470,27 @@ def requestDetails(requestName):
     WMCore.Lexicon.identifier(requestName)
     request = GetRequest.getRequestDetails(requestName)
     helper = loadWorkload(request)
-    schema = helper.data.request.schema.dictionary_()
+    schema = helper.data.request.schema.dictionary_whole_tree_()
     # take the stuff from the DB preferentially
     schema.update(request)
     task = helper.getTopLevelTask()[0]
+    
     schema['Site Whitelist']  = task.siteWhitelist()
     schema['Site Blacklist']  = task.siteBlacklist()
     schema['MergedLFNBase']   = str(helper.getMergedLFNBase())
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
-    schema['Campaign']        = str(helper.getCampaign())
+    schema['Campaign']        = str(helper.getCampaign()) 
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
-    schema['CustodialSite']   = str(helper.getCustodialSite())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
+
+    # Check in the CouchWorkloadDBName if not present
+    schema.setdefault("CouchWorkloadDBName", "reqmgr_workload_cache")
+
+    # https://github.com/dmwm/WMCore/issues/4588
+    schema["SubscriptionInformation"] = helper.getSubscriptionInformation()
     return schema
+
 
 def serveFile(contentType, prefix, *args):
     """Return a workflow from the cache"""
@@ -548,4 +522,75 @@ def associateCampaign(campaign, requestName, couchURL, couchDBName):
     helper = loadWorkload(request)
     helper.setCampaign(campaign = campaign)
     helper.saveCouch(couchUrl = couchURL, couchDBName = couchDBName)
-    return   
+
+def retrieveResubmissionChildren(requestName, couchUrl, couchDBName):
+    """
+    _retrieveResubmissionChildren_
+
+    Construct a list of request names which are the resubmission
+    offspring from a request. This is a recursive
+    call with a single requestName as input.
+    The result only includes the children and not the original request.
+    """
+    childrenRequestNames = []
+    reqmgrDb = Database(couchDBName, couchUrl)
+    result = reqmgrDb.loadView('ReqMgr', 'childresubmissionrequests', keys = [requestName])['rows']
+    for child in result:
+        childrenRequestNames.append(child['id'])
+        childrenRequestNames.extend(retrieveResubmissionChildren(child['id'], couchUrl, couchDBName))
+    return childrenRequestNames
+
+def updateRequestStats(requestName, stats, couchURL, couchDBName):
+    couchDB = Database(couchDBName, couchURL)
+    return couchDB.updateDocument(requestName, 'ReqMgr', 'totalstats',
+                                         fields=stats)
+
+#This was removed causing modification error in web interface
+def parseRunList(l):
+    """ Changes a string into a list of integers """
+    result = None
+    if isinstance(l, list):
+        result = l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        result = [int(tok) for tok in toks]
+    elif isinstance(l, int):
+        result = [l]
+    else:
+        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
+
+    # If we're here, we have a list of runs
+    for r in result:
+        try:
+            tmp = int(r)
+        except ValueError:
+            raise cherrypy.HTTPError(400, "Given runList without integer run numbers")
+        if not tmp == r:
+            raise cherrypy.HTTPError(400, "Given runList without valid integer run numbers")
+    return result
+    #raise RuntimeError, "Bad Run list of type " + type(l).__name__
+
+def parseBlockList(l):
+    """ Changes a string into a list of strings """
+    result = None
+    if isinstance(l, list):
+        result = l
+    elif isinstance(l, basestring):
+        toks = l.lstrip(' [').rstrip(' ]').split(',')
+        if toks == ['']:
+            return []
+        # only one set of quotes
+        result = [str(tok.strip(' \'"')) for tok in toks]
+    else:
+        raise cherrypy.HTTPError(400, "Bad Run list of type " + type(l).__name__)
+
+    # If we've gotten here we've got a list of blocks
+    # Hopefully they pass validation
+    for block in result:
+        try:
+            WMCore.Lexicon.block(candidate = block)
+        except AssertionError as ex:
+            raise cherrypy.HTTPError(400, "Block in blockList has invalid name")
+    return result

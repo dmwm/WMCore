@@ -99,6 +99,13 @@ class StageOutMgr:
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError( msg)
         msg += "Local Stage Out SE Name to be used is %s\n" % seName
+        pnn = self.siteCfg.localStageOut.get("phedex-node", None)
+        if pnn == None:
+            msg = "Unable to retrieve local stage out phedex-node\n"
+            msg += "From site config file.\n"
+            msg += "Unable to perform StageOut operation"
+            raise StageOutInitError( msg)
+        msg += "Local Stage Out PNN to be used is %s\n" % pnn
         catalog = self.siteCfg.localStageOut.get("catalog", None)
         if catalog == None:
             msg = "Unable to retrieve local stage out catalog\n"
@@ -111,7 +118,7 @@ class StageOutMgr:
             self.tfc = self.siteCfg.trivialFileCatalog()
             msg += "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-        except StandardError, ex:
+        except Exception as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
@@ -121,9 +128,11 @@ class StageOutMgr:
 
         msg += "There are %s fallback stage out definitions.\n" % len(self.fallbacks)
         for item in self.fallbacks:
-            msg += "Fallback to : %s using: %s \n" % (item['se-name'], item['command'])
+            msg += "\tFallback to : %s using: %s \n" % (item['se-name'], item['command'])
 
+        print "==== Stageout configuration start ===="
         print msg
+        print "==== Stageout configuration finish ===="
         return
 
 
@@ -139,18 +148,20 @@ class StageOutMgr:
             "command" : None,
             "option" : None,
             "se-name" : None,
+            "phedex-node" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
             overrideParams['se-name'] = overrideConf['se-name']
+            overrideParams['phedex-node'] = overrideConf['phedex-node']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
-        except StandardError, ex:
+        except Exception as ex:
             msg = "Unable to extract Override parameters from config:\n"
             msg += str(ex)
             raise StageOutInitError(msg)
-        if overrideConf.has_key('option'):
+        if 'option' in overrideConf:
             if len(overrideConf['option']) > 0:
                 overrideParams['option'] = overrideConf['option']
             else:
@@ -184,19 +195,20 @@ class StageOutMgr:
         if not self.override:
             print "===> Attempting Local Stage Out."
             try:
-                pfn = self.localStageOut(lfn, fileToStage['PFN'])
+                pfn = self.localStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
                 fileToStage['SEName'] = self.siteCfg.localStageOut['se-name']
+                fileToStage['PNN'] = self.siteCfg.localStageOut['phedex-node']
                 fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
                 print "===> Stage Out Successful: %s" % fileToStage
                 return fileToStage
-            except WMException, ex:
+            except WMException as ex:
                 lastException = ex
                 print "===> Local Stage Out Failure for file:"
                 print "======>  %s\n" % fileToStage['LFN']
-            except Exception, ex:
+            except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
                                                 error = str(ex))
                 print "===> Local Stage Out Failure for file:\n"
@@ -209,24 +221,25 @@ class StageOutMgr:
         for fallback in self.fallbacks:
             try:
                 pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
-                                            fallback)
+                                            fallback, fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
                 fileToStage['SEName'] = fallback['se-name']
+                fileToStage['PNN'] = fallback['phedex-node']
                 fileToStage['StageOutCommand'] = fallback['command']
                 print "attempting fallback"
                 self.completedFiles[fileToStage['LFN']] = fileToStage
-                if self.failed.has_key(lfn):
+                if lfn in self.failed:
                     del self.failed[lfn]
 
                 print "===> Stage Out Successful: %s" % fileToStage
-                return fileToStage                        
-            except Exception, ex:
+                return fileToStage
+            except Exception as ex:
                 lastException = ex
                 continue
 
         raise lastException
 
-    def fallbackStageOut(self, lfn, localPfn, fbParams):
+    def fallbackStageOut(self, lfn, localPfn, fbParams, checksums):
         """
         _fallbackStageOut_
 
@@ -244,7 +257,7 @@ class StageOutMgr:
 
         try:
             impl = retrieveStageOutImpl(fbParams['command'])
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for fallback stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: "
             msg += "%s\n" % fbParams['command']
@@ -255,8 +268,8 @@ class StageOutMgr:
         impl.retryPause = self.retryPauseTime
 
         try:
-            impl(fbParams['command'], localPfn, pfn, fbParams.get("option", None))
-        except Exception, ex:
+            impl(fbParams['command'], localPfn, pfn, fbParams.get("option", None), checksums)
+        except Exception as ex:
             msg = "Failure for fallback stage out:\n"
             msg += str(ex)
             raise StageOutFailure(msg, Command = fbParams['command'],
@@ -265,7 +278,7 @@ class StageOutMgr:
 
         return pfn
 
-    def localStageOut(self, lfn, localPfn):
+    def localStageOut(self, lfn, localPfn, checksums):
         """
         _localStageOut_
 
@@ -273,6 +286,7 @@ class StageOutMgr:
 
         """
         seName = self.siteCfg.localStageOut['se-name']
+        pnn = self.siteCfg.localStageOut['phedex-node']
         command = self.siteCfg.localStageOut['command']
         options = self.siteCfg.localStageOut.get('option', None)
         pfn = self.searchTFC(lfn)
@@ -284,7 +298,7 @@ class StageOutMgr:
 
         try:
             impl = retrieveStageOutImpl(command)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Unable to retrieve impl for local stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
@@ -294,14 +308,14 @@ class StageOutMgr:
         impl.retryPause = self.retryPauseTime
 
         try:
-            impl(protocol, localPfn, pfn, options)
-        except Exception, ex:
+            impl(protocol, localPfn, pfn, options, checksums)
+        except Exception as ex:
             msg = "Failure for local stage out:\n"
             msg += str(ex)
             try:
                 import traceback
                 msg += traceback.format_exc()
-            except AttributeError, ex:
+            except AttributeError as ex:
                 msg += "Traceback unavailable\n"
             raise StageOutFailure(msg, Command = command, Protocol = protocol,
                                   LFN = lfn, InputPFN = localPfn,
@@ -331,7 +345,7 @@ class StageOutMgr:
             delManager = DeleteMgr(**self.overrideConf)
             try:
                 delManager.deletePFN(pfn, lfn, command)
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 msg = "Failed to cleanup staged out file after error:"
                 msg += " %s\n%s" % (lfn, str(ex))
                 print msg
@@ -369,8 +383,3 @@ class StageOutMgr:
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
         print msg
         return pfn
-
-
-
-
-

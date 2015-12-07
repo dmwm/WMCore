@@ -19,44 +19,50 @@ class RunJob(dict):
     the necessary fields.
     """
 
-    def __init__(self, id = None, jobid = -1, gridid = None,
-                 bulkid = None, retry_count = 0, status = None,
-                 location = None, userdn = None, usergroup = '',
-                 userrole = '', plugin = None,
-                 cache_dir = None, status_time = None, packageDir = None,
-                 sandbox = None, priority = None, site_cms_name = None,
-                 taskType = None, possibleSites = [], sw_version = None,
-                 scram_arch = None, siteName = None ):
+    def __init__(self, jobid = -1):
         """
         Just make sure you init the dictionary fields.
 
-        If the field has no value, leave it as NONE so we can
+        If the field has no value, leave it as None so we can
         overwrite it later.
-
         """
 
-        self.setdefault('id', id)
+        self.setdefault('id', None)
         self.setdefault('jobid', jobid)
-        self.setdefault('gridid', gridid)
-        self.setdefault('bulkid', bulkid)
-        self.setdefault('retry_count', retry_count)
-        self.setdefault('status', status)
-        self.setdefault('location', location)
-        self.setdefault('site_cms_name', site_cms_name)
-        self.setdefault('userdn', userdn)
-        self.setdefault('usergroup', usergroup)
-        self.setdefault('userrole', userrole)
-        self.setdefault('plugin', plugin)
-        self.setdefault('cache_dir', cache_dir)
-        self.setdefault('status_time', status_time)
-        self.setdefault('packageDir', packageDir)
-        self.setdefault('sandbox', sandbox)
-        self.setdefault('priority', priority)
-        self.setdefault('taskType', taskType)
-        self.setdefault('possibleSites', possibleSites)
-        self.setdefault('swVersion', sw_version)
-        self.setdefault('scramArch', scram_arch)
-        self.setdefault('siteName', siteName)
+        self.setdefault('gridid', None)
+        self.setdefault('bulkid', None)
+        self.setdefault('retry_count', 0)
+        self.setdefault('status', None)
+        self.setdefault('location', None)
+        self.setdefault('site_cms_name', None)
+        self.setdefault('userdn', None)
+        self.setdefault('usergroup', '')
+        self.setdefault('userrole', '')
+        self.setdefault('plugin', None)
+        self.setdefault('cache_dir', None)
+        self.setdefault('status_time', None)
+        self.setdefault('packageDir', None)
+        self.setdefault('sandbox', None)
+        self.setdefault('priority', None)
+        self.setdefault('taskType', None)
+        self.setdefault('possibleSites', None)
+        self.setdefault('swVersion', None)
+        self.setdefault('scramArch', None)
+        self.setdefault('siteName', None)
+        self.setdefault('name', None)
+        self.setdefault('proxyPath', None)
+        self.setdefault('requestName', None)
+        self.setdefault('estimatedJobTime', None)
+        self.setdefault('estimatedDiskUsage', None)
+        self.setdefault('estimatedMemoryUsage', None)
+        self.setdefault('numberOfCores', 1)
+        self.setdefault('taskPriority', None)
+        self.setdefault('taskName', None)
+        self.setdefault('taskID', None)
+        self.setdefault('potentialSites', None)
+        self.setdefault('inputDataset', None)
+        self.setdefault('inputDatasetLocations', None)
+        self.setdefault('allowOpportunistic', False)
 
         return
 

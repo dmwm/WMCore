@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=W0142,R0903
+# pylint: disable=W0142,R0903
 """
 _StoreFail_
 
@@ -65,7 +65,7 @@ class StoreFailMgr:
                 result = self.mgr(**fileToStage)
                 fileToStage.update(result)
                 stagedOutFiles.append(newLfn)
-            except StageOutFailure, ex:
+            except StageOutFailure as ex:
                 msg = "Unable to stage out %s " % newLfn
                 msg += " due to Stage Out Failure:\n"
                 msg += str(ex)
@@ -73,11 +73,3 @@ class StoreFailMgr:
                 continue
 
         return stagedOutFiles
-
-
-
-
-
-
-
-

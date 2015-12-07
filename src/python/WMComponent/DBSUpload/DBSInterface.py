@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: Allow logging messages to have string formatting
 """
 _DBSInterface_
@@ -20,7 +20,7 @@ import collections
 from DBSAPI.dbsApi            import DbsApi
 from DBSAPI.dbsException      import DbsException
 
-
+from WMCore import Lexicon
 from WMComponent.DBSUpload.DBSErrors import DBSInterfaceError, formatEx
 
 # For creating algorithms
@@ -44,18 +44,21 @@ from DBSAPI.dbsLumiSection           import DbsLumiSection
 def createPrimaryDataset(primaryName, primaryDatasetType = 'mc', apiRef = None):
     """
     _createPrimaryDataset_
-    
-    
+
+
     """
     logging.debug("Inserting PrimaryDataset %s with Type %s" \
                   % (primaryName, primaryDatasetType))
+    
+    Lexicon.primaryDatasetType(primaryDatasetType)
+    
     primary = DbsPrimaryDataset(Name = primaryName,
                                 Type = primaryDatasetType)
-    
+
     if apiRef:
         try:
             apiRef.insertPrimaryDataset(primary)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createPrimaryDataset(%s)\n" % primaryName
             msg += formatEx(ex)
             logging.error(msg)
@@ -95,7 +98,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     if apiRef != None:
         try:
             apiRef.insertProcessedDataset(processedDataset)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createProcessedDataset(%s)\n" % processedName
             msg += formatEx(ex)
             logging.error(msg)
@@ -107,7 +110,7 @@ def createProcessedDataset(algorithm, apiRef, primary, processedName, dataTier,
     return processedDataset
 
 
-# pylint: disable-msg=C0103
+# pylint: disable=C0103
 def createAlgorithm(apiRef, appName, appVer, appFam,
                     PSetHash = None, PSetContent = None):
     """
@@ -142,14 +145,14 @@ def createAlgorithm(apiRef, appName, appVer, appFam,
     if apiRef:
         try:
             apiRef.insertAlgorithm(algorithmInstance)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createAlgorithm(%s)\n" % appVer
             msg += formatEx(ex)
             logging.error(msg)
             raise DBSInterfaceError(msg)
     return algorithmInstance
 
-# pylint: enable-msg=C0103
+# pylint: enable=C0103
 
 
 def createUncheckedBlock(apiRef, name, datasetPath, seName):
@@ -165,7 +168,7 @@ def createUncheckedBlock(apiRef, name, datasetPath, seName):
                                           block = name,
                                           storage_element_list = [seName])
 
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.createUncheckedBlock(%s)\n" % name
         msg += formatEx(ex)
         logging.error(msg)
@@ -214,12 +217,12 @@ def createFileBlock(apiRef, datasetPath, seName):
                 msg += newBlockName
                 raise DBSInterfaceError(msg)
             blockRef = blocks[0]
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.createFileBlock(%s)\n" % datasetPath
             msg += formatEx(ex)
             logging.error(msg)
             raise DBSInterfaceError(msg)
-        
+
 
     # Add a files field, because we need it
     blockRef['newFiles']      = []
@@ -249,7 +252,7 @@ def insertFiles(apiRef, datasetPath, files, block, maxFiles = 10):
     for fileList in listOfFileLists:
         try:
             apiRef.insertFiles(datasetPath, fileList, block)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSInterface.insertFiles(%s)\n" % datasetPath
             msg += "%s\n" % formatEx(ex)
             msg += str(traceback.format_exc())
@@ -263,14 +266,14 @@ def closeBlock(apiRef, block):
     """
     _closeBlock_
 
-    Close a block 
+    Close a block
     """
     logging.info("In closeBlock()")
 
     try:
         apiRef.closeBlock(block)
         logging.info("Back from closeBlock()")
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.closeBlock(%s)\n" % block
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -298,7 +301,7 @@ def listPrimaryDatasets(apiRef, match = "*"):
     """
     try:
         result = apiRef.listPrimaryDatasets(match)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listPrimaryDataset(%s)\n" % match
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -310,15 +313,15 @@ def listPrimaryDatasets(apiRef, match = "*"):
 def listProcessedDatasets(apiRef, primary, dataTier = "*"):
     """
     _listProcessedDatasets_
-    
+
     return a list of Processed datasets for the primary and optional
     data tier value
-    
+
     """
-    
+
     try:
         result = apiRef.listProcessedDatasets(primary, dataTier)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listProcessedDatasets(%s)\n" % primary
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -330,9 +333,9 @@ def listProcessedDatasets(apiRef, primary, dataTier = "*"):
 def listDatasetFiles(apiRef, datasetPath):
     """
     _listDatasetFiles_
-    
+
     Get list of files for dataset
-    
+
     """
     return [ x['LogicalFileName'] for x in apiRef.listFiles(datasetPath)]
 
@@ -348,7 +351,7 @@ def listAlgorithms(apiRef, patternVer="*", patternFam="*",
                                        patternFam = patternFam,
                                        patternExe = patternExe,
                                        patternPS  = patternPS)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listPrimaryDataset()\n"
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -367,7 +370,7 @@ def listBlocks(apiRef, datasetPath = None, blockName = "*", seName = "*"):
         blocks = apiRef.listBlocks(datasetPath,
                                    block_name = blockName,
                                    storage_element_name = seName)
-    except DbsException, ex:
+    except DbsException as ex:
         msg = "Error in DBSInterface.listBlocks(%s)\n" % datasetPath
         msg += "%s\n" % formatEx(ex)
         raise DBSInterfaceError(msg)
@@ -381,12 +384,12 @@ def listBlocks(apiRef, datasetPath = None, blockName = "*", seName = "*"):
 def createDBSFileFromBufferFile(bufferFile, procDataset):
     """
     Take a DBSBufferFile and turn it into a DBSFile object
-    
+
     """
-    
+
     lumiList = []
-    
-    
+
+
     for run in bufferFile.getRuns():
         for l in run:
             lumi = DbsLumiSection(LumiSectionNumber = long(l),
@@ -426,9 +429,9 @@ def createDBSFileFromBufferFile(bufferFile, procDataset):
 def insertDBSRunsFromRun(apiRef, dSRun):
     """
     Take a DataStructs run and create a DBSRun out of it
-    
+
     """
-    
+
     run = DbsRun(RunNumber = long(dSRun.run),
                  NumberOfEvents = 0,
                  NumberOfLumiSections = 0,
@@ -436,10 +439,10 @@ def insertDBSRunsFromRun(apiRef, dSRun):
                  StoreNumber = 0,
                  StartOfRun = 0,
                  EndOfRun = 0)
-    
+
     if apiRef:
         apiRef.insertRun(run)
-        
+
     return run
 
 
@@ -487,9 +490,6 @@ class DBSInterface:
         self.version           = self.config.DBSVersion
         self.globalDBSUrl      = None
         self.committedRuns     = collections.deque(maxlen = 1000)
-        self.maxBlockFiles     = self.config.DBSBlockMaxFiles
-        self.maxBlockTime      = self.config.DBSBlockMaxTime
-        self.maxBlockSize      = self.config.DBSBlockMaxSize
         self.maxFilesToCommit  = self.config.MaxFilesToCommit
         self.doGlobalMigration = getattr(self.config, 'doGlobalMigration', True)
 
@@ -506,7 +506,7 @@ class DBSInterface:
             self.dbs       = DbsApi(args)
             if self.globalDBSUrl:
                 self.globalDBS = DbsApi(globalArgs)
-        except DbsException, ex:
+        except DbsException as ex:
             msg = "Error in DBSWriterError with DbsApi\n"
             msg += "%s\n" % formatEx(ex)
             logging.error(msg)
@@ -532,14 +532,14 @@ class DBSInterface:
                                                procDataset = processed,
                                                blocks = blocks)
 
-        
+
         return affBlocks
 
 
     def createAndInsertBlocks(self, dataset, procDataset, blocks):
         """
         _createBlocks_
-        
+
         Create all the blocks we use, and insert the
         files into them.
         """
@@ -555,7 +555,7 @@ class DBSInterface:
                                  seName = block['location'])
 
             block['Path']               = dataset['Path']
-            block['StorageElementList'] = block['location']
+            block['PhEDExNodeList'] = block['location']
 
 
             # Now assemble the files
@@ -583,10 +583,10 @@ class DBSInterface:
 
         return affBlocks
 
-        
 
 
-        
+
+
 
     def insertDatasetAlgo(self, algo, dataset, override = False):
         """
@@ -596,7 +596,7 @@ class DBSInterface:
         The override re-inserts it if DBSBuffer thinks it's already there
         """
 
-        
+
 
         dbsRef = None
         if override or not algo['InDBS']:
@@ -620,11 +620,12 @@ class DBSInterface:
             # Then this whole thing is already in DBS
             dbsRef = None
 
-        primary = createPrimaryDataset(apiRef = dbsRef,
-                                       primaryName = dataset['PrimaryDataset'])
+        primary = createPrimaryDataset(primaryName = dataset['PrimaryDataset'], 
+                                       primaryDatasetType = self.config.primaryDatasetType,
+                                       apiRef = dbsRef)
 
         processed = createProcessedDataset(apiRef = dbsRef,
-                                           algorithm = dbsAlgo, 
+                                           algorithm = dbsAlgo,
                                            primary = primary,
                                            processedName = dataset['ProcessedDataset'],
                                            dataTier = dataset['DataTier'],
@@ -635,7 +636,7 @@ class DBSInterface:
 
         return processed
 
-        
+
 
 
 
@@ -702,10 +703,10 @@ class DBSInterface:
 
         if self.doGlobalMigration:
             self.migrateClosedBlocks(blocks = blocksToClose)
-        
+
         return blocksToClose
-                
-        
+
+
 
 
     def migrateClosedBlocks(self, blocks):
@@ -733,20 +734,20 @@ class DBSInterface:
             try:
                 # Migrate each block
                 logging.info("About to migrate block %s" % (block['Name']))
-                self.dbs.dbsMigrateBlock(srcURL = self.config.DBSUrl, 
+                self.dbs.dbsMigrateBlock(srcURL = self.config.DBSUrl,
                                          dstURL = self.globalDBSUrl,
                                          block_name = block['Name'],
                                          srcVersion = self.version,
                                          dstVersion = self.config.globalDBSVersion)
                 block['open'] = 'InGlobalDBS'
-            except DbsException, ex:
+            except DbsException as ex:
                 msg = "Error in DBSInterface.migrateClosedBlocks()\n"
                 msg += "%s\n" % formatEx(ex)
                 msg += str(traceback.format_exc())
                 raise DBSInterfaceError(msg)
 
         return blocks
-        
+
 
 
 
@@ -760,5 +761,3 @@ class DBSInterface:
             return self.globalDBS
 
         return self.dbs
-
-

@@ -7,5 +7,3 @@ Request DB API
 
 """
 __all__  = []
-
-

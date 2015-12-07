@@ -33,7 +33,7 @@ class JobArchiver(Harness):
         self.pollTime = 1
 
         self.config = config
-        
+
         print "JobArchiver.__init__"
 
     def preInitialization(self):

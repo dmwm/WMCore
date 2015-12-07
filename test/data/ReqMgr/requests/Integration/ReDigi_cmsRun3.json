@@ -1,0 +1,75 @@
+{ 
+"createRequest":
+{         
+    "Comments": "ReDigi with 3 steps, steps 1 and 2 in the same job. Two blocks whitelisted. 100 events per job",
+    "Campaign": "Campaign-OVERRIDE-ME",        
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "CMSSWVersion": "CMSSW_7_2_0_patch1",
+    "GlobalTag": "PHYS14_25_V3",
+    "RequestPriority": 123000,
+    "ScramArch": "slc6_amd64_gcc481",
+    "RequestType": "ReDigi",
+    "RunWhitelist": [],
+    "RunBlacklist": [],
+    "BlockWhitelist": ["/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4","/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4"],
+    "BlockBlacklist": [],
+    "PrimaryDataset": "BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "MCPileup": "/MinBias_TuneA2MB_13TeV-pythia8/Fall13-POSTLS162_V1-v1/GEN-SIM",
+    "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "StepOneConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a45fde6",
+    "KeepStepOneOutput" : "False",
+    "StepOneOutputModuleName": "RAWSIMoutput",
+    "StepTwoConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a466cef",
+    "KeepStepTwoOutput": "True",        
+    "StepTwoOutputModuleName": "AODSIMoutput",
+    "StepThreeConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a467ac3",
+    "PrepID": "ReDigi-cmsRun3",            
+    "Group": "DATAOPS",
+    "SplittingAlgo": "EventAwareLumiBased",
+    "EventsPerJob": 100,
+    "TimePerEvent": 26.5,
+    "Memory": 2050,
+    "SizePerEvent": 2600,
+    "OpenRunningTimeout" : 3600
+},
+"changeSplitting":
+{
+    "StepOneProc" :
+    {
+        "SplittingAlgo" : "LumiBased",
+        "lumis_per_job" : 8,
+        "halt_job_on_file_boundaries" : "True",
+        "include_parents" : "False"
+    }
+},
+"assignRequest":
+{
+    "SiteWhitelist": [],
+    "Team": "Team-OVERRIDE-ME",
+    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
+    "ProcessingString": "ProcessingString-OVERRIDE-ME",
+    "Dashboard": "Dashboard-OVERRIDE-ME",
+    "SiteBlacklist": [],
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxMergeEvents": 50000,
+    "ProcessingVersion": 1,
+    "MaxRSS": 2352000,
+    "MaxVSize": 20294967,
+    "SoftTimeout": 129600,
+    "GracePeriod": 300,
+    "CustodialSites": [],
+    "NonCustodialSites": [],
+    "AutoApproveSubscriptionSites": [],
+    "SubscriptionPriority": "Low",
+    "CustodialSubType" : "Move",
+    "BlockCloseMaxWaitTime" : 14400,
+    "BlockCloseMaxFiles" : 500,
+    "BlockCloseMaxEvents" : 200000000,
+    "BlockCloseMaxSize" : 5000000000000
+}
+}

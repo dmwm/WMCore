@@ -28,7 +28,7 @@ class ProdException(exceptions.Exception):
 
         #  //
         # // Init data dictionary with defaults
-        #// 
+        #//
         self.data = {}
         self.data.setdefault("ClassName", None)
         self.data.setdefault("ModuleName", None)
@@ -40,7 +40,7 @@ class ProdException(exceptions.Exception):
             self.data.setdefault("ErrorNr", 0)
         else:
             self.data.setdefault("ErrorNr", errorNo)
-        
+
         self.message = message
         self.data.update(data)
 
@@ -55,7 +55,7 @@ class ProdException(exceptions.Exception):
                 modName = excepModule.__name__
                 self['ModuleName'] = modName
 
-                
+
         #  //
         # // Find out where the exception came from
         #//
@@ -84,7 +84,7 @@ class ProdException(exceptions.Exception):
         make exception look like a dictionary
         """
         self.data[key] = value
-        
+
     def addInfo(self, **data):
         """
         _addInfo_
@@ -129,7 +129,7 @@ class ProdException(exceptions.Exception):
         return strg
 
 
-    
+
 
 
 def formatEx(excepInst):
@@ -144,7 +144,7 @@ def formatEx(excepInst):
                         )
     return msg
 
-    
+
 
 class DataMgmtError(ProdException):
     """
@@ -155,7 +155,7 @@ class DataMgmtError(ProdException):
     """
     def __init__(self, message, errorNo = 1000, **data):
         ProdException.__init__(self, message, errorNo, **data)
-        
+
 class DBSWriterError(DataMgmtError):
     """
     _DBSWriterError_
@@ -183,7 +183,7 @@ class DBSReaderError(DataMgmtError):
 class DBSInterfaceError(DataMgmtError):
     """
     _DBSInterfaceError_
-    
+
     Generic Exception for DBS Interface Error
 
     """

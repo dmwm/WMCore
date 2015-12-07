@@ -19,7 +19,7 @@ class SetLocationByLFN(DBFormatter):
                AND dl.se_name = :sename
     """
 
-    
+
     def execute(self, binds, conn = None, transaction = None):
         """
         Expect binds in the form {lfn, sename}

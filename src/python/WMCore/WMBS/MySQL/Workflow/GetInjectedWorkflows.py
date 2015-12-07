@@ -14,7 +14,7 @@ class GetInjectedWorkflows(DBFormatter):
     Gets workflows that have been fully injected into WMBS
     """
 
-    sql = """SELECT name AS name FROM wmbs_workflow WHERE injected = :injected"""
+    sql = """SELECT DISTINCT name FROM wmbs_workflow WHERE injected = :injected"""
 
 
     def execute(self, injected = False, conn = None, transaction = False):
@@ -39,5 +39,3 @@ class GetInjectedWorkflows(DBFormatter):
             finalResult.append(entry['name'])
 
         return finalResult
-
-            

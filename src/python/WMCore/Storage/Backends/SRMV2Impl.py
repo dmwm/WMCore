@@ -21,16 +21,15 @@ class SRMV2Impl(StageOutImpl):
     _SRMV2Impl_
 
     Implement interface for srmcp v2 command
-    
+
     """
-    
+
     run = staticmethod(runCommand)
-    
+
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
-        self.directoryErrorCodes = (1,)
-    
-    
+
+
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -40,29 +39,30 @@ class SRMV2Impl(StageOutImpl):
         """
         if pfn.startswith('/'):
             return "file:///%s" % pfn
+        elif os.path.isfile(pfn):
+            return "file:///%s" % os.path.abspath(pfn)
         else:
             return pfn
-        
+
 
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
-        
-        SRMV2 does not create directories, 
+
+        SRMV2 does not create directories,
             see http://sdm.lbl.gov/srm-wg/doc/SRM.v2.2.html#_Toc199734394
 
         """
         targetdir = os.path.dirname(targetPFN)
-        
         if self.stageIn:
             # stage in to local directory - should exist but you never know
             if not os.path.exists(targetdir):
                 os.makedirs(targetdir)
             return
-        
+
         mkdircommand = "srmmkdir -retry_num=%s " % self.numRetries
         checkdircmd="srmls -recursion_depth=0 -retry_num=%s " % self.numRetries
-        
+
         #  // Loop from top level checking existence stop when directory exists
         # // assume first 4 slashes are from srm://host:8443/srm/managerv2?SFN=
         dirs = ["/".join(targetdir.split("/")[0:6+i]) \
@@ -74,10 +74,10 @@ class SRMV2Impl(StageOutImpl):
                 exitCode, output = self.run(checkdircmd + dir)
                 levelToCreateFrom = count # create dirs from here (at least)
                 if exitCode: # did srmls fail to execute properly?
-                    raise RuntimeError, "Error checking directory existence, %s" % str(output)
+                    raise RuntimeError("Error checking directory existence, %s" % str(output))
                 if not output.count('SRM_FAILURE'): # any other codes?
                     break
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd + dir
                 msg += "Exception: %s\n" % str(ex)
@@ -92,15 +92,15 @@ class SRMV2Impl(StageOutImpl):
             try:
                 exitCode, output = self.run(mkdircommand + dir)
                 if exitCode:
-                    raise RuntimeError, "Error creating directory, %s" % str(output)
-            except Exception, ex:
+                    raise RuntimeError("Error creating directory, %s" % str(output))
+            except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % mkdircommand + dir
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print msg
                 pass
-                 
+
     def createRemoveFileCommand(self, pfn):
         """
         handle both srm and file pfn types
@@ -111,7 +111,7 @@ class SRMV2Impl(StageOutImpl):
             return "/bin/rm -f %s" % pfn.replace("file://", "", 1)
         else:
             return StageOutImpl.createRemoveFileCommand(self, pfn)
-        
+
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
         """
@@ -123,14 +123,14 @@ class SRMV2Impl(StageOutImpl):
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
         result += "srmcp -2 -report=$REPORT_FILE -retry_num=0"
-        
+
         if options != None:
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s" % targetPFN
         result += " 2>&1 | tee srm.output.$$ \n"
-        
-        
+
+
         if _CheckExitCodeOption:
             result += """
             EXIT_STATUS=`cat $REPORT_FILE | cut -f3 -d" "`
@@ -140,17 +140,17 @@ class SRMV2Impl(StageOutImpl):
             elif [[ $EXIT_STATUS != 0 ]]; then
                echo "Non-zero srmcp Exit status!!!"
                echo "Cleaning up failed file:"
-                %s 
+                %s
                exit 60311
             fi
-        
+
             """ % self.createRemoveFileCommand(targetPFN)
-        
+
         if self.stageIn:
             remotePFN, localPFN = sourcePFN, targetPFN.replace("file://", "", 1)
         else:
             remotePFN, localPFN = targetPFN, sourcePFN.replace("file://", "", 1)
-        
+
         #targetPFN =  remotePFN
         remotePath = None
         SFN = '?SFN='
@@ -165,7 +165,7 @@ class SRMV2Impl(StageOutImpl):
         if remotePath == None:
             remotePath = m.groups()[2]
         remoteHost = m.groups()[0]
-                   
+
 #        for filePath in (sourcePFN, targetPFN):
 #            if filePath.startswith("file://"):
 #                localPFN = filePath.replace("file://", "")
@@ -185,11 +185,11 @@ class SRMV2Impl(StageOutImpl):
 #                if targetPath == None:
 #                    targetPath = m.groups()[2]
 #                targetHost = m.groups()[0]
-        
+
         result += "FILE_SIZE=`stat -c %s"
         result += " %s `\n" % localPFN
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
-        
+
         metadataCheck = \
         """
         for ((a=1; a <= 10 ; a++))
@@ -202,23 +202,23 @@ class SRMV2Impl(StageOutImpl):
               else
                  echo "Error: Size Mismatch between local and SE"
                  echo "Cleaning up failed file:"
-                 %s 
+                 %s
                  exit 60311
-              fi 
+              fi
            else
               sleep 2
            fi
         done
         echo "Cleaning up failed file:"
-        %s 
+        %s
         exit 60311
 
         """ % (remotePFN, remotePath, remoteHost, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
         result += metadataCheck
-        
+
         return result
 
-    
+
     def removeFile(self, pfnToRemove):
         """
         _removeFile_

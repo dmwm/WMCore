@@ -43,7 +43,7 @@ class URLFetcherTest(unittest.TestCase):
 
         """
         self.testInit.delWorkDir()
-        self.testInit.tearDownCouch() 
+        self.testInit.tearDownCouch()
         return
 
     def getConfig(self):
@@ -73,7 +73,7 @@ class URLFetcherTest(unittest.TestCase):
         task = WMTask.makeWMTask("testTask")
         task.makeStep("step1")
         task.makeStep("step2")
-        
+
         for t in task.steps().nodeIterator():
             t = WMStep.WMStepHelper(t)
             os.mkdir(os.path.join(self.testDir, t.name()))

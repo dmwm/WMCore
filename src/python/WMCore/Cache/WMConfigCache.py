@@ -6,23 +6,16 @@ Being in itself a wrapped class around a config cache
 """
 
 
-import urllib
+import hashlib
 import logging
 import traceback
-
-
-try:
-    import hashlib
-except:
-    import md5 as hashlib
+import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.DataStructs.WMObject import WMObject
 
 from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchNotFoundError
-
-
 from WMCore.GroupUser.Group import Group
 from WMCore.GroupUser.User  import makeUser
 
@@ -36,8 +29,60 @@ class ConfigCacheException(WMException):
 
     """
 
+class Singleton(type):
+    """Implementation of Singleton class"""
+    _instances = {}
 
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = \
+                    super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
+class DocumentCache(object):
+    """DocumentCache holds config ids. Use this class as singleton"""
+    __metaclass__ = Singleton
+    def __init__(self, database, detail = True):
+        super(DocumentCache, self).__init__()
+        self.cache = {}
+        self.database = database
+        # flag to decide whether update detail or not when it is prefetched
+        self.detail = detail
+
+    def __getitem__(self, configID):
+        """
+        Internal get method to fetch document based on provided ID
+        """
+        if  configID not in self.cache:
+            self.prefetch([configID])
+        return self.cache[configID]
+
+    def cleanup(self, ids):
+        """
+        _cleanup_
+
+        Clean-up given ids from local cache
+        """
+        for rid in ids:
+            if  rid in self.cache:
+                del self.cache[rid]
+
+    def prefetch(self, keys):
+        """
+        _fetch_
+
+        Pre-fetch given list of documents from CouchDB
+        """
+        if self.detail:
+            options = {'include_docs':True}
+        else: 
+            options = {}
+        result = self.database.allDocs(options=options, keys=keys)
+        for row in result['rows']:
+            if self.detail:
+                self.cache[row['id']] = row['doc']
+            else:
+                self.cache[row['id']] = True
 
 class ConfigCache(WMObject):
     """
@@ -46,21 +91,25 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, 
+                 ckey = None, cert = None, capath = None, detail = True):
         self.dbname = couchDBName
         self.dburl  = dbURL
-
+        self.detail = detail
         try:
             self.couchdb = CouchServer(self.dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
             if self.dbname not in self.couchdb.listDatabases():
                 self.createDatabase()
 
             self.database = self.couchdb.connectDatabase(self.dbname)
-        except Exception, ex:
+        except Exception as ex:
             msg = "Error connecting to couch: %s\n" % str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise ConfigCacheException(message = msg)
+
+        # local cache
+        self.docs_cache = DocumentCache(self.database, self.detail)
 
         # UserGroup variables
         self.group = None
@@ -167,7 +216,7 @@ class ConfigCache(WMObject):
             commitResults = rawResults[-1]
             self.document["_rev"] = commitResults.get('rev')
             self.document["_id"]  = commitResults.get('id')
-        except KeyError, ex:
+        except KeyError as ex:
             msg  = "Document returned from couch without ID or Revision\n"
             msg += "Document probably bad\n"
             msg += str(ex)
@@ -212,6 +261,14 @@ class ConfigCache(WMObject):
         return
 
 
+    def loadDocument(self, configID):
+        """
+        _loadDocument_
+
+        Load a document from the document cache given its couchID
+        """
+        self.document = self.docs_cache[configID]
+
     def loadByID(self, configID):
         """
         _loadByID_
@@ -227,13 +284,13 @@ class ConfigCache(WMObject):
                 # Then we need to load the attachments
                 for key in self.document['_attachments'].keys():
                     self.loadAttachment(name = key)
-        except CouchNotFoundError, ex:
+        except CouchNotFoundError as ex:
             msg =  "Document with id %s not found in couch\n" % (configID)
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
             raise ConfigCacheException(message = msg)
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error loading document from couch\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -364,7 +421,7 @@ class ConfigCache(WMObject):
             raise ConfigCacheException("Could not find process field in PSet while getting output modules!")
         try:
             outputModuleNames = psetTweaks["process"]["outputModules_"]
-        except KeyError, ex:
+        except KeyError as ex:
             msg =  "Could not find outputModules_ in psetTweaks['process'] while getting output modules.\n"
             msg += str(ex)
             logging.error(msg)
@@ -377,7 +434,7 @@ class ConfigCache(WMObject):
             except KeyError:
                 msg = "Could not find outputModule %s in psetTweaks['process']" % outputModuleName
                 logging.error(msg)
-                raise ConfigCacheExcpetion(msg)
+                raise ConfigCacheException(msg)
             dataset = outModule.get("dataset", None)
             if dataset:
                 results[outputModuleName] = {"dataTier": outModule["dataset"]["dataTier"],
@@ -448,7 +505,7 @@ class ConfigCache(WMObject):
         try:
             self.database.queueDelete(self.document)
             self.database.commit()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Error in deleting document from couch"
             msg += str(ex)
             msg += str(traceback.format_exc())
@@ -496,3 +553,40 @@ class ConfigCache(WMObject):
         """
 
         return self.document.__str__()
+    
+    def validate(self, configID):
+        
+        try:
+            #TODO: need to change to DataCache
+            #self.loadDocument(configID = configID)
+            self.loadByID(configID = configID)
+        except Exception as ex:
+            raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
+        
+        if self.detail:
+            duplicateCheck = {}
+            try:
+                outputModuleInfo = self.getOutputModuleInfo()
+            except Exception as ex:
+                # Something's gone wrong with trying to open the configCache
+                msg = "Error in getting output modules from ConfigCache during workload validation.  Check ConfigCache formatting!"
+                raise ConfigCacheException("%s: %s" % (msg, str(ex)))
+            for outputModule in outputModuleInfo.values():
+                dataTier   = outputModule.get('dataTier', None)
+                filterName = outputModule.get('filterName', None)
+                if not dataTier:
+                    raise ConfigCacheException("No DataTier in output module.")
+    
+                # Add dataTier to duplicate dictionary
+                if not dataTier in duplicateCheck.keys():
+                    duplicateCheck[dataTier] = []
+                if filterName in duplicateCheck[dataTier]:
+                    # Then we've seen this combination before
+                    raise ConfigCacheException("Duplicate dataTier/filterName combination.")
+                else:
+                    duplicateCheck[dataTier].append(filterName)            
+            return outputModuleInfo
+        else:
+            return True
+    
+

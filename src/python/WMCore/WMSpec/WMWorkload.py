@@ -6,14 +6,13 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 
-import logging
-import os
-
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, strToBool, \
+                        loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
-from WMCore.Lexicon import lfnBase, sanitizeURL
+from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 
 parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
@@ -34,13 +33,13 @@ def getWorkloadFromTask(taskRef):
         msg = "Top Node is not a WM definition object:\n"
         msg += "Object has no objectType attribute"
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     objType = getattr(topNode, "objectType")
     if objType != "WMWorkload":
         msg = "Top level object is not a WMWorkload: %s" % objType
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
+        raise RuntimeError(msg)
 
     return WMWorkloadHelper(topNode)
 
@@ -90,6 +89,12 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data._internal_name = workloadName
         return
 
+    def requestType(self):
+        return self.data.requestType
+
+    def setRequestType(self, requestType):
+        self.data.requestType = requestType
+
     def getInitialJobCount(self):
         """
         _getInitialJobCount_
@@ -124,7 +129,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.dashboardActivity = dashboardActivity
         return
-    
+
     def getTopLevelTask(self):
         """
         _getTopLevelTask_
@@ -155,7 +160,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.owner.name = name
         self.data.owner.group = "undefined"
 
-        if not type(ownerProperties) == dict:
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
         for key in ownerProperties.keys():
@@ -172,7 +177,8 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.owner.name = name
         self.data.owner.group = group
-        if not type(ownerProperties) == dict:
+
+        if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
         for key in ownerProperties.keys():
             setattr(self.data.owner, key, ownerProperties[key])
@@ -190,6 +196,13 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.sandbox = sandboxPath
 
+    def setPriority(self, priority):
+        """
+        _setPriority_
+
+        Set the priority for the workload
+        """
+        self.data.request.priority = int(priority)
 
     def priority(self):
         """
@@ -281,19 +294,19 @@ class WMWorkloadHelper(PersistencyHelper):
             msg = "Workload name does not match:\n"
             msg += "requested name %s from workload %s " % (taskList[0],
                                                             self.name())
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         if len(taskList) < 2:
             # path should include workload and one task
             msg = "Task Path does not contain a top level task:\n"
             msg += taskPath
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
 
 
         topTask = self.getTask(taskList[1])
         if topTask == None:
             msg = "Task /%s/%s Not Found in Workload" % (taskList[0],
                                                          taskList[1])
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         for x in topTask.taskIterator():
             if x.getPathName() == taskPath:
                 return x
@@ -382,7 +395,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
             msg += "Known tasks: %s\n" % self.listAllTaskNodes()
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         self.data.tasks.tasklist.append(taskName)
         setattr(self.data.tasks, taskName, task)
         return
@@ -401,7 +414,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if taskName in self.listAllTaskNodes():
             msg = "Duplicate task name: %s\n" % taskName
             msg += "Known tasks: %s\n" % self.listAllTaskNodes()
-            raise RuntimeError, msg
+            raise RuntimeError(msg)
         task = WMTask(taskName)
         helper = WMTaskHelper(task)
         helper.setTopOfTree()
@@ -419,6 +432,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.__delattr__(taskName)
         self.data.tasks.tasklist.remove(taskName)
         return
+
 
     def setSiteWildcardsLists(self, siteWhitelist, siteBlacklist, wildcardDict):
         """
@@ -478,43 +492,35 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return siteList
 
-    def setSiteWhitelist(self, siteWhitelist, initialTask = None):
+    def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
 
-        Set the site white list for all tasks in the workload.
+        Set the site white list for the top level tasks in the workload.
         """
-        if type(siteWhitelist) != type([]):
+        if not isinstance(siteWhitelist, type([])):
             siteWhitelist = [siteWhitelist]
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
             task.setSiteWhitelist(siteWhitelist)
-            self.setSiteWhitelist(siteWhitelist, task)
 
         return
 
-    def setSiteBlacklist(self, siteBlacklist, initialTask = None):
+    def setSiteBlacklist(self, siteBlacklist):
         """
         _setSiteBlacklist_
 
-        Set the site black list for all tasks in the workload.
+        Set the site black list for the top level tasks in the workload.
         """
-        if type(siteBlacklist) != type([]):
+        if not isinstance(siteBlacklist, type([])):
             siteBlacklist = [siteBlacklist]
 
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
             task.setSiteBlacklist(siteBlacklist)
-            self.setSiteBlacklist(siteBlacklist, task)
 
         return
 
@@ -525,7 +531,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block white list for all tasks that have an input dataset
         defined.
         """
-        if type(blockWhitelist) != type([]):
+        if not isinstance(blockWhitelist, type([])):
             blockWhitelist = [blockWhitelist]
 
         if initialTask:
@@ -547,7 +553,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the block black list for all tasks that have an input dataset
         defined.
         """
-        if type(blockBlacklist) != type([]):
+        if not isinstance(blockBlacklist, type([])):
             blockBlacklist = [blockBlacklist]
 
         if initialTask:
@@ -568,7 +574,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run white list for all tasks that have an input dataset defined.
         """
-        if type(runWhitelist) != type([]):
+        if not isinstance(runWhitelist, type([])):
             runWhitelist = [runWhitelist]
 
         if initialTask:
@@ -590,7 +596,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the run black list for all tasks that have an input dataset defined.
         """
-        if type(runBlacklist) != type([]):
+        if not isinstance(runBlacklist, type([])):
             runBlacklist = [runBlacklist]
 
         if initialTask:
@@ -605,7 +611,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateLFNsAndDatasets(self, initialTask = None):
+    def updateLFNsAndDatasets(self, runNumber = None):
         """
         _updateLFNsAndDatasets_
 
@@ -613,80 +619,108 @@ class WMWorkloadHelper(PersistencyHelper):
         This needs to be called after updating the acquisition era, processing
         version or merged/unmerged lfn base.
         """
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
+        taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            taskType = task.taskType()
-            for stepName in task.listAllStepNames():
-                stepHelper = task.getStepHelper(stepName)
+            task.updateLFNsAndDatasets(runNumber = runNumber)
+        return
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
-                    for outputModuleName in stepHelper.listOutputModules():
-                        outputModule = stepHelper.getOutputModule(outputModuleName)
-                        filterName = getattr(outputModule, "filterName", None)
+    def updateDatasetName(self, mergeTask, datasetName):
+        """
+        _updateDatasetName_
 
-                        if filterName:
-                            processedDataset = "%s-%s-%s" % (self.data.properties.acquisitionEra,
-                                                             filterName,
-                                                             self.data.properties.processingVersion)
-                            processingString = "%s-%s" % (filterName,
-                                                          self.data.properties.processingVersion)
-                        else:
-                            processedDataset = "%s-%s" % (self.data.properties.acquisitionEra,
-                                                          self.data.properties.processingVersion)
-                            processingString = self.data.properties.processingVersion
+        Updates the dataset name argument of the mergeTask's harvesting
+        children tasks
+        """
+        for task in mergeTask.childTaskIterator():
+            if task.taskType() == "Harvesting":
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
 
-                        unmergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.unmergedLFNBase,
-                                                          self.data.properties.acquisitionEra,
-                                                          getattr(outputModule, "primaryDataset"),
-                                                          getattr(outputModule, "dataTier"),
-                                                          processingString)
-                        mergedLFN = "%s/%s/%s/%s/%s" % (self.data.properties.mergedLFNBase,
-                                                        self.data.properties.acquisitionEra,
-                                                        getattr(outputModule, "primaryDataset"),
-                                                        getattr(outputModule, "dataTier"),
-                                                        processingString)
-                        lfnBase(unmergedLFN)
-                        lfnBase(mergedLFN)
-                        setattr(outputModule, "processedDataset", processedDataset)
-
-                        # For merge tasks, we want all output to go to the merged LFN base.
-                        if taskType == "Merge":
-                            setattr(outputModule, "lfnBase", mergedLFN)
-                            setattr(outputModule, "mergedLFNBase", mergedLFN)
-                        else:
-                            setattr(outputModule, "lfnBase", unmergedLFN)
-                            setattr(outputModule, "mergedLFNBase", mergedLFN)
-
-            task.setTaskLogBaseLFN(self.data.properties.unmergedLFNBase)
-            self.updateLFNsAndDatasets(task)
+                    if stepHelper.stepType() == "CMSSW":
+                        cmsswHelper = stepHelper.getTypeHelper()
+                        cmsswHelper.setDatasetName(datasetName)
 
         return
 
-    def setAcquisitionEra(self, acquisitionEra):
+    def setAcquisitionEra(self, acquisitionEras):
         """
         _setAcquistionEra_
 
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
-        self.data.properties.acquisitionEra = acquisitionEra
+
+        for task in self.taskIterator():
+            task.setAcquisitionEra(acquisitionEras)
+
         self.updateLFNsAndDatasets()
+        #set acquistionEra for workload (need to refactor)
+        self.acquisitionEra = acquisitionEras
         return
 
-    def setProcessingVersion(self, processingVersion):
+    def setProcessingVersion(self, processingVersions):
         """
         _setProcessingVersion_
 
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        self.data.properties.processingVersion = processingVersion
+        taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setProcessingVersion(processingVersions)
+
         self.updateLFNsAndDatasets()
+        self.processingVersion = processingVersions
+        return
+
+    def setProcessingString(self, processingStrings):
+        """
+        _setProcessingString_
+
+        Change the processing string for all tasks in the spec and then update
+        all of the output LFNs and datasets to use the new processing version.
+        """
+        taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setProcessingString(processingStrings)
+
+        self.updateLFNsAndDatasets()
+        self.processingString = processingStrings
+        return
+
+    def setLumiList(self, lumiLists):
+        """
+        _setLumiList_
+
+        Change the lumi mask for all tasks in the spec
+        """
+
+        for task in self.taskIterator():
+            task.setLumiMask(lumiLists, override=False)
+
+        #set lumiList for workload (need to refactor)
+        self.lumiList = lumiLists
+        return
+
+    def setTaskProperties(self, requestArgs):
+        if not 'TaskChain' in requestArgs:
+            return
+
+        numTasks = requestArgs['TaskChain']
+        taskArgs = []
+        for i in range(numTasks):
+            taskArgs.append(requestArgs["Task%s" % (i+1)])
+
+        for prop in taskArgs:
+            taskName = prop['TaskName']
+            for task in self.getAllTasks():
+                if task.name() == taskName:
+                    del prop['TaskName']
+                    task.setProperties(prop)
+                    break
         return
 
     def getAcquisitionEra(self):
@@ -696,7 +730,25 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the acquisition era
         """
 
-        return getattr(self.data.properties, 'acquisitionEra', None)
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getAcquisitionEra()
+
+        return None
+
+    def getRequestType(self):
+        """
+        _getRequestType_
+
+        Get the Request type (ReReco, ReDigi, etc)
+        """
+        if not getattr(self.data, "request", None):
+            return None
+        if not getattr(self.data.request, "schema", None):
+            return None
+
+        return getattr(self.data.request.schema, "RequestType", None)
 
     def getProcessingVersion(self):
         """
@@ -705,7 +757,24 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the processingVersion
         """
 
-        return getattr(self.data.properties, 'processingVersion', None)
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getProcessingVersion()
+        return 0
+
+    def getProcessingString(self):
+        """
+        _getProcessingString_
+
+        Get the processingString
+        """
+
+        topTasks = self.getTopLevelTask()
+
+        if len(topTasks):
+            return topTasks[0].getProcessingString()
+        return None
 
     def setValidStatus(self, validStatus):
         """
@@ -727,6 +796,57 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.properties, 'validStatus', None)
 
+    def setAllowOpportunistic(self, allowOpport):
+        """
+        _setAllowOpportunistic_
+
+        Set a flag which enables the workflow to run in cloud resources.
+        """
+        self.data.properties.allowOpportunistic = allowOpport
+        return
+
+    def getAllowOpportunistic(self):
+        """
+        _getAllowOpportunistic_
+
+        Retrieve AllowOpportunitisc flag for the workflow
+        """
+        return getattr(self.data.properties, 'allowOpportunistic', None)
+
+    def setPrepID(self, prepID):
+        """
+        _setPrepID_
+
+        Set the prepID to for all the tasks below
+        """
+
+        taskIterator = self.taskIterator()
+        for task in taskIterator:
+            task.setPrepID(prepID)
+        self.data.properties.prepID = prepID
+        return
+
+    def getPrepID(self):
+        """
+        _getPrepID_
+
+        Get the prepID for the workflow
+        """
+        return getattr(self.data.properties, 'prepID', None)
+
+    def getDbsUrl(self):
+        """
+        _getDbsUrl_
+
+        Get the DbsUrl specified for the input dataset.
+        """
+        if not getattr(self.data.request, "schema", None):
+            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+        elif not getattr(self.data.request.schema, "DbsUrl", None):
+            return "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
+
+        return getattr(self.data.request.schema, "DbsUrl")
+
     def setCampaign(self, campaign):
         """
         _setCampaign_
@@ -746,25 +866,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'campaign', None)
 
-    def setCustodialSite(self, siteName):
-        """
-        _setCustodialSite_
-
-        Set the custody site for all datasets produced
-        by this workflow
-        """
-        self.data.properties.custodialSite = siteName
-        return
-
-    def getCustodialSite(self):
-        """
-        _getCustodialSite_
-
-        Get the custodial site for this workflow
-        """
-        return getattr(self.data.properties, 'custodialSite', None)
-
-    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, runNumber = None):
         """
         _setLFNBase_
 
@@ -773,7 +875,11 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.properties.mergedLFNBase = mergedLFNBase
         self.data.properties.unmergedLFNBase = unmergedLFNBase
-        self.updateLFNsAndDatasets()
+
+        # set all child tasks lfn base.
+        for task in self.taskIterator():
+            task.setLFNBase(mergedLFNBase, unmergedLFNBase)
+        self.updateLFNsAndDatasets(runNumber = runNumber)
         return
 
     def setMergeParameters(self, minSize, maxSize, maxEvents,
@@ -790,19 +896,12 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            foundDQMOutput = False
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "StageOut" and stepHelper.minMergeSize() != -1:
                     stepHelper.setMinMergeSize(minSize, maxEvents)
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
-                    for outputModuleName in stepHelper.listOutputModules():
-                        outputModule = stepHelper.getOutputModule(outputModuleName)
-                        if outputModule.dataTier == "DQM":
-                            foundDQMOutput = True
-                
-            if task.taskType() == "Merge" and foundDQMOutput == False:
+
+            if task.taskType() == "Merge":
                 task.setSplittingParameters(min_merge_size = minSize,
                                             max_merge_size = maxSize,
                                             max_merge_events = maxEvents)
@@ -811,25 +910,42 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs):
+    def setWorkQueueSplitPolicy(self, policyName, splitAlgo, splitArgs, **kwargs):
         """
         _setWorkQueueSplitPolicy_
 
         Set the WorkQueue split policy.
         policyName should be either 'DatasetBlock', 'Dataset', 'MonteCarlo' 'Block'
         different policy could be added in the workqueue plug in.
+        Additionally general parameters can be specified, these are not mapped and passed directly to the startPolicyArgs,
+        also record the splitting algorithm in case the WorkQUeue policy needs it.
         """
-        SplitAlgoToStartPolicy = {"FileBased": "NumberOfFiles",
-                                  "EventBased": "NumberOfEvents",
-                                  "LumiBased": "NumberOfLumis" }
+        SplitAlgoToStartPolicy = {"FileBased": ["NumberOfFiles"],
+                                  "EventBased": ["NumberOfEvents",
+                                                 "NumberOfEventsPerLumi"],
+                                  "LumiBased": ["NumberOfLumis"],
+                                  "EventAwareLumiBased" : ["NumberOfEvents"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
-                             "NumberOfLumis": "lumis_per_job"}
+                             "NumberOfLumis": "lumis_per_job",
+                             "NumberOfEventsPerLumi": "events_per_lumi"}
+        startPolicyArgs = {'SplittingAlgo' : splitAlgo}
+        startPolicyArgs.update(kwargs)
 
-        sliceType = SplitAlgoToStartPolicy.get(splitAlgo, "NumberOfFiles")
+        sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
+        sliceType = sliceTypes[0]
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
+        startPolicyArgs["SliceType"] = sliceType
+        startPolicyArgs["SliceSize"] = sliceSize
 
-        self.setStartPolicy(policyName, SliceType = sliceType, SliceSize = sliceSize)
+        if len(sliceTypes) > 1:
+            subSliceType = sliceTypes[1]
+            subSliceSize = splitArgs.get(SplitAlgoToArgMap[subSliceType],
+                                         sliceSize)
+            startPolicyArgs["SubSliceType"] = subSliceType
+            startPolicyArgs["SubSliceSize"] = subSliceSize
+
+        self.setStartPolicy(policyName, **startPolicyArgs)
         self.setEndPolicy("SingleShot")
         return
 
@@ -858,6 +974,11 @@ class WMWorkloadHelper(PersistencyHelper):
             if childTask.taskType() == "Merge":
                 if splitAlgo == "EventBased" and taskHelper.taskType() != "Production":
                     mergeAlgo = "WMBSMergeBySize"
+                    for stepName in childTask.listAllStepNames():
+                        stepHelper = childTask.getStepHelper(stepName)
+                        if stepHelper.stepType() == "CMSSW":
+                            stepCmsswHelper = stepHelper.getTypeHelper()
+                            stepCmsswHelper.setSkipBadFiles(False)
                 else:
                     mergeAlgo = "ParentlessMergeBySize"
 
@@ -871,50 +992,27 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set the splitting algorithm for the task.  If the split algo is
         # EventBased, we need to disable straight to merge.  If this isn't an
-        # EventBased algo we need to enable straight to merge.
+        # EventBased algo we need to enable straight to merge. If straight
+        # to merge is disabled then keep it that way.
         taskHelper.setSplittingAlgorithm(splitAlgo, **splitArgs)
         for stepName in taskHelper.listAllStepNames():
             stepHelper = taskHelper.getStepHelper(stepName)
             if stepHelper.stepType() == "StageOut":
-                if splitAlgo != "EventBased" and minMergeSize:
+                if splitAlgo != "EventBased" and stepHelper.minMergeSize() != -1 and minMergeSize:
                     stepHelper.setMinMergeSize(minMergeSize, maxMergeEvents)
                 else:
                     stepHelper.disableStraightToMerge()
+            if stepHelper.stepType() == "CMSSW" and splitAlgo == "WMBSMergeBySize" \
+                and stepHelper.getSkipBadFiles():
+                stepHelper.setSkipBadFiles(False)
+
+            if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
+                and taskHelper.taskType() == "Production":
+                stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
+                                                          None))
         return
 
-    def setTaskTimeOut(self, taskPath, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout value for the given tasks in the workload.
-        """
-        taskHelper = self.getTaskByPath(taskPath)
-        if taskHelper == None:
-            return
-
-        taskHelper.setTaskTimeOut(taskTimeOut)
-        return
-
-    def listTimeOutsByTask(self, initialTask = None):
-        """
-        _listTimeOutsByTask_
-
-        Create a dictionary that maps task names to timeouts.
-        """
-        output = {}
-
-        if initialTask:
-            taskIterator = initialTask.childTaskIterator()
-        else:
-            taskIterator = self.taskIterator()
-
-        for task in taskIterator:
-            output[task.getPathName()] = task.getTaskTimeOut()
-            output.update(self.listTimeOutsByTask(task))
-
-        return output
-
-    def listJobSplittingParametersByTask(self, initialTask = None):
+    def listJobSplittingParametersByTask(self, initialTask = None, performance = True):
         """
         _listJobSplittingParametersByTask_
 
@@ -929,29 +1027,29 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in taskIterator:
             taskName = task.getPathName()
-            taskParams = task.jobSplittingParameters()
+            taskParams = task.jobSplittingParameters(performance)
             del taskParams["siteWhitelist"]
             del taskParams["siteBlacklist"]
             output[taskName] = taskParams
             output[taskName]["type"] = task.taskType()
-            output.update(self.listJobSplittingParametersByTask(task))
+            output.update(self.listJobSplittingParametersByTask(task, performance))
 
         return output
 
     def listInputDatasets(self):
         """
         _listInputDatasets_
-    
+
         List all the input datasets in the workload
         """
         inputDatasets = []
-    
+
         taskIterator = self.taskIterator()
         for task in taskIterator:
             path = task.getInputDatasetPath()
             if path:
                 inputDatasets.append(path)
-                
+
         return inputDatasets
 
     def listOutputDatasets(self, initialTask = None):
@@ -974,10 +1072,12 @@ class WMWorkloadHelper(PersistencyHelper):
                 if not getattr(stepHelper.data.output, "keep", True):
                     continue
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     for outputModuleName in stepHelper.listOutputModules():
+                        # Only consider non-transient output
                         outputModule = stepHelper.getOutputModule(outputModuleName)
+                        if getattr(outputModule, "transient", False):
+                            continue
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
                                                        outputModule.processedDataset,
                                                        outputModule.dataTier)
@@ -990,6 +1090,291 @@ class WMWorkloadHelper(PersistencyHelper):
                     outputDatasets.append(anotherDataset)
 
         return outputDatasets
+
+    def listPileupDatasets(self, initialTask = None):
+        """
+        _listPileUpDataset_
+
+        Returns a dictionary with all the required pile-up datasets
+        in this workload and their associated dbs url as the key
+        """
+        pileupDatasets = {}
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    pileupSection = stepHelper.getPileup()
+                    if pileupSection is None: 
+                        continue
+                    dbsUrl = stepHelper.data.dbsUrl
+                    if dbsUrl not in pileupDatasets:
+                        pileupDatasets[dbsUrl] = set()
+                    for pileupType in pileupSection.listSections_():
+                        datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
+                        pileupDatasets[dbsUrl].update(datasets)
+
+            pileupDatasets.update(self.listPileupDatasets(task))
+
+        return pileupDatasets
+
+    def listOutputProducingTasks(self, initialTask = None):
+        """
+        _listOutputProducingTasks_
+
+        List the paths to any task capable of producing merged output
+        """
+        taskList = []
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                stepHelper = task.getStepHelper(stepName)
+                if not getattr(stepHelper.data.output, "keep", True):
+                    continue
+
+                if stepHelper.stepType() == "CMSSW":
+                    if stepHelper.listOutputModules():
+                        taskList.append(task.getPathName())
+                        break
+
+            taskList.extend(self.listOutputProducingTasks(task))
+
+        return taskList
+
+    def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
+                                            nonCustodialSites = None, autoApproveSites = None,
+                                            custodialSubType = "Replica", nonCustodialSubType = "Replica",
+                                            priority = "Low", primaryDataset = None, dataTier = None,
+                                            deleteFromSource = False):
+        """
+        _setSubscriptonInformationWildCards_
+
+        Set the given subscription information for all datasets
+        in the workload that match the given primary dataset (if any), site lists can have wildcards.
+        See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
+        """
+
+        if custodialSites and not isinstance(custodialSites, type([])):
+            custodialSites = [custodialSites]
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
+            nonCustodialSites = [nonCustodialSites]
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
+            autoApproveSites = [autoApproveSites]
+
+        newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
+        newNonCustodialList = self.removeWildcardsFromList(siteList = nonCustodialSites, wildcardDict = wildcardDict)
+        newAutoApproveList = self.removeWildcardsFromList(siteList = autoApproveSites, wildcardDict = wildcardDict)
+
+        for site in newCustodialList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in custodial site list!" % site
+                raise WMWorkloadException(msg)
+        for site in newNonCustodialList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in non custodial site list!" % site
+                raise WMWorkloadException(msg)
+        for site in newAutoApproveList:
+            if '*' in site:
+                msg = "Invalid wildcard site %s in auto approval site list!" % site
+                raise WMWorkloadException(msg)
+
+        self.setSubscriptionInformation(custodialSites = newCustodialList,
+                                        nonCustodialSites = newNonCustodialList,
+                                        autoApproveSites = newAutoApproveList,
+                                        custodialSubType = custodialSubType,
+                                        nonCustodialSubType = nonCustodialSubType,
+                                        priority = priority,
+                                        primaryDataset = primaryDataset,
+                                        dataTier = dataTier,
+                                        deleteFromSource = deleteFromSource)
+
+    def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
+                                   nonCustodialSites = None, autoApproveSites = None,
+                                   custodialSubType = "Replica", nonCustodialSubType = "Replica",
+                                   priority = "Low", primaryDataset = None, dataTier = None,
+                                   deleteFromSource = False):
+        """
+        _setSubscriptionInformation_
+
+        Set the given subscription information for all datasets
+        in the workload that match the given primaryDataset (if any)
+        """
+
+        if custodialSites and not isinstance(custodialSites, type([])):
+            custodialSites = [custodialSites]
+        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
+            nonCustodialSites = [nonCustodialSites]
+        if autoApproveSites and not isinstance(autoApproveSites, type([])):
+            autoApproveSites = [autoApproveSites]
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            task.setSubscriptionInformation(custodialSites, nonCustodialSites,
+                                            autoApproveSites, custodialSubType,
+                                            nonCustodialSubType, priority,
+                                            primaryDataset, dataTier,
+                                            deleteFromSource)
+            self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
+                                            autoApproveSites, custodialSubType,
+                                            nonCustodialSubType, priority,
+                                            primaryDataset, dataTier,
+                                            deleteFromSource)
+
+        return
+
+    def getSubscriptionInformation(self, initialTask = None):
+        """
+        _getSubscriptionInformation_
+
+        Get the subscription information for the whole workload, this is given by
+        dataset and aggregated according to the information from each individual task
+        See WMTask.WMTaskHelper.getSubscriptionInformation for the output structure
+        """
+        subInfo = {}
+
+        # Add site lists without duplicates
+        extendWithoutDups = lambda x, y: x + list(set(y) - set(x))
+        # Choose the lowest priority
+        solvePrioConflicts = lambda x, y: y if x == "High" or y == "Low" else x
+        # Choose replica over move
+        solveTypeConflicts = lambda x, y: y if x == "Move" else x
+
+
+
+
+
+
+
+        # Always choose a logical AND
+        solveDelConflicts = lambda x, y : x and y
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+            subInfo = initialTask.getSubscriptionInformation()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            taskSubInfo = self.getSubscriptionInformation(task)
+            for dataset in taskSubInfo:
+                if dataset in subInfo:
+                    subInfo[dataset]["CustodialSites"]    = extendWithoutDups(taskSubInfo[dataset]["CustodialSites"],
+                                                                              subInfo[dataset]["CustodialSites"])
+                    subInfo[dataset]["NonCustodialSites"] = extendWithoutDups(taskSubInfo[dataset]["NonCustodialSites"],
+                                                                              subInfo[dataset]["NonCustodialSites"])
+                    subInfo[dataset]["AutoApproveSites"]  = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
+                                                                              subInfo[dataset]["AutoApproveSites"])
+                    subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
+                                                                               subInfo[dataset]["Priority"])
+                    subInfo[dataset]["DeleteFromSource"] = solveDelConflicts(taskSubInfo[dataset]["DeleteFromSource"],
+                                                                               subInfo[dataset]["DeleteFromSource"])
+                    subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
+                                                                              subInfo[dataset]["CustodialSubType"])
+                    subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["NonCustodialSubType"],
+                                                                                 subInfo[dataset]["NonCustodialSubType"])
+                else:
+                    subInfo[dataset] = taskSubInfo[dataset]
+                subInfo[dataset]["CustodialSites"] = list(set(subInfo[dataset]["CustodialSites"]) - set(subInfo[dataset]["NonCustodialSites"]))
+
+        return subInfo
+
+    def getWorkloadOverrides(self):
+        """
+        _getWorkloadOverrides_
+
+        Get the overrides config section
+        of this workload, creates it if it doesn't exist
+        """
+        return self.data.section_('overrides')
+
+    def getPhEDExInjectionOverride(self):
+        """
+        _getPhEDExInjectionOverride_
+
+        Get the site to where the files from
+        this workload should be registered to (if any)
+        """
+        if hasattr(self.data, 'overrides'):
+            return getattr(self.data.overrides, 'injectionSite', None)
+        return None
+
+    def setPhEDExInjectionOverride(self, site):
+        """
+        _setPhEDExInjectionOverride_
+
+        Set a site where the files from this workload
+        should be registered to in PhEDEx
+        """
+        overrideSection = self.data.section_('overrides')
+        overrideSection.injectionSite = site
+        return
+
+    def setBlockCloseSettings(self, blockCloseMaxWaitTime,
+                              blockCloseMaxFiles, blockCloseMaxEvents,
+                              blockCloseMaxSize):
+        """
+        _setBlockCloseSettings_
+
+        Set the parameters that define when a block should be closed
+        for this workload, they should all be defined so it is a single call
+        """
+        self.data.properties.blockCloseMaxWaitTime = blockCloseMaxWaitTime
+        self.data.properties.blockCloseMaxFiles = blockCloseMaxFiles
+        self.data.properties.blockCloseMaxEvents = blockCloseMaxEvents
+        self.data.properties.blockCloseMaxSize = blockCloseMaxSize
+
+    def getBlockCloseMaxWaitTime(self):
+        """
+        _getBlockCloseMaxWaitTime_
+
+        Return the amount of time that a block should stay open
+        for this workload before closing it in DBS
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxWaitTime', 66400)
+
+    def getBlockCloseMaxSize(self):
+        """
+        _getBlockCloseMaxSize_
+
+        Return the maximum size that a block from this workload should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxSize', 5000000000000)
+
+    def getBlockCloseMaxEvents(self):
+        """
+        _blockCloseMaxEvents_
+
+        Return the maximum number of events that a block from this workload
+        should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxEvents', 25000000)
+
+    def getBlockCloseMaxFiles(self):
+        """
+        _getBlockCloseMaxFiles_
+
+        Return the maximum amount of files that a block from this workload
+        should have
+        """
+
+        return getattr(self.data.properties, 'blockCloseMaxFiles', 500)
 
     def getUnmergedLFNBase(self):
         """
@@ -1026,38 +1411,33 @@ class WMWorkloadHelper(PersistencyHelper):
         pass
 
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
-                 databaseName):
+                 databaseName, collectionName = None):
         """
         _truncate_
 
         Truncate a workflow so that it can be used for resubmission.  This will
         rename the workflow and set the task in the intitialTaskPath parameter
         to be the top level task.  This modifies the workflow in place.
+        The input collection name can be specified otherwise it will default to
+        the old workload name.
         """
+        if not collectionName:
+            collectionName = self.name()
+
         allTaskPaths = self.listAllTaskPathNames()
         newTopLevelTask = self.getTaskByPath(initialTaskPath)
-        newTopLevelTask.addInputACDC(serverUrl, databaseName, self.name(),
+        newTopLevelTask.addInputACDC(serverUrl, databaseName, collectionName,
                                      initialTaskPath)
         newTopLevelTask.setInputStep(None)
         workloadOwner = self.getOwner()
         self.setInitialJobCount(self.getInitialJobCount() + 10000000)
-        newTopLevelTask.setSplittingParameters(collectionName = self.name(),
+        newTopLevelTask.setSplittingParameters(collectionName = collectionName,
                                                filesetName = initialTaskPath,
                                                couchURL = serverUrl,
                                                couchDB = databaseName,
                                                owner = workloadOwner["name"],
                                                group = workloadOwner["group"],
                                                initial_lfn_counter = self.getInitialJobCount())
-
-        cleanupTask = None
-        parentTaskPath = "/".join(initialTaskPath.split("/")[:-1])
-        if not newTopLevelTask.isTopOfTree():
-            parentTask = self.getTaskByPath(parentTaskPath)
-            for childTask in parentTask.childTaskIterator():
-                if childTask.taskType() == "Cleanup" and \
-                       childTask.data.input.outputModule == newTopLevelTask.data.input.outputModule:
-                    cleanupTask = childTask
-                    break
 
         for taskPath in allTaskPaths:
             if not taskPath.startswith(initialTaskPath) or taskPath == initialTaskPath:
@@ -1070,9 +1450,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setName(newWorkloadName)
         self.addTask(newTopLevelTask)
         newTopLevelTask.setTopOfTree()
-        if cleanupTask:
-            self.addTask(cleanupTask)
-            cleanupTask.setTopOfTree()
 
         self.setWorkQueueSplitPolicy("ResubmitBlock",
                                      newTopLevelTask.jobSplittingAlgorithm(),
@@ -1089,15 +1466,59 @@ class WMWorkloadHelper(PersistencyHelper):
                 childTask.setPathName("%s/%s" % (parentPath, childTask.name()))
                 inputStep = childTask.getInputStep()
                 if inputStep != None:
-                    inputStep = inputStep.replace(parentTaskPath, "/" + newWorkloadName)
+                    inputStep = inputStep.replace(parentPath, "/" + newWorkloadName)
                     childTask.setInputStep(inputStep)
-                    
+
                 adjustPathsForTask(childTask, childTask.getPathName())
 
             return
 
         adjustPathsForTask(newTopLevelTask, "/%s/%s" % (newWorkloadName,
                                                         newTopLevelTask.name()))
+        return
+
+    def ignoreOutputModules(self, badModules, initialTask = None):
+        """
+        _ignoreOutputModules_
+
+        If there is a list of ignored output modules the following must be done:
+        - Trim the workload tree so that no task that depends on the merged output of the ignored modules
+          exists in the tree, also eliminate the merge task for such modules
+        - Add flags to make the runtime code ignore the files from this module so they are not
+          staged out
+        """
+
+        if not badModules:
+            return
+
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+
+        for task in taskIterator:
+            #Find the children tasks that have a bad output module as
+            #input, disown them. Can't delete them on the spot, save the names in a list
+            childTasksToDelete = []
+            for childTask in task.childTaskIterator():
+                taskInput = childTask.inputReference()
+                inputOutputModule = getattr(taskInput, "outputModule", None)
+                if inputOutputModule in badModules:
+                    childTasksToDelete.append(childTask.name())
+
+            #Now delete
+            for childTaskName in childTasksToDelete:
+                task.deleteChild(childTaskName)
+
+            if childTasksToDelete:
+                #Tell any CMSSW step to ignore the output modules
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+                    if stepHelper.stepType() == "CMSSW":
+                        stepHelper.setIgnoredOutputModules(badModules)
+            #Go deeper in the tree
+            self.ignoreOutputModules(badModules, task)
+
         return
 
     def setCMSSWParams(self, cmsswVersion = None, globalTag = None,
@@ -1117,15 +1538,14 @@ class WMWorkloadHelper(PersistencyHelper):
             for stepName in task.listAllStepNames():
                 stepHelper = task.getStepHelper(stepName)
 
-                if stepHelper.stepType() == "CMSSW" or \
-                       stepHelper.stepType() == "MulticoreCMSSW":
+                if stepHelper.stepType() == "CMSSW":
                     if cmsswVersion != None:
                         if scramArch != None:
                             stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
                                                   scramArch = scramArch)
                         else:
                             stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
-                        
+
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
 
@@ -1143,26 +1563,26 @@ class WMWorkloadHelper(PersistencyHelper):
 
         for task in self.taskIterator():
             for stepName in task.listAllStepNames():
-                
+
                 stepHelper = task.getStepHelper(stepName)
-                if stepHelper.stepType() != "CMSSW" and stepHelper.stepType() != "MulticoreCMSSW":
+                if stepHelper.stepType() != "CMSSW":
                     continue
                 version = stepHelper.getCMSSWVersion()
                 if not version in versions:
                     versions.append(version)
         return versions
-        
+
 
     def generateWorkloadSummary(self):
         """
         _generateWorkloadSummary_
-        
+
         Generates a dictionary with the following information:
         task paths
         ACDC
         input datasets
         output datasets
-        
+
         Intended for use in putting WMSpec info into couch
         """
         summary = {'tasks': [],
@@ -1171,28 +1591,28 @@ class WMWorkloadHelper(PersistencyHelper):
                    'output': [],
                    'owner' : {},
                    }
-    
-        summary['tasks']  = self.listAllTaskPathNames()
+
+        summary['tasks'] = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()
-        summary['input']  = self.listInputDatasets()
+        summary['input'] = self.listInputDatasets()
         summary['owner'] = self.data.owner.dictionary_()
         summary['performance'] = {}
         for t in summary['tasks']:
             summary['performance'][t] = {}
-        
+
         return summary
 
-    def setupPerformanceMonitoring(self, maxRSS, maxVSize):
+    def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
+                                         gracePeriod):
         """
         _setupPerformanceMonitoring_
-        
-        Attempt to automatically setup the performance monitoring
-        You should not use this and I make no guarantees for whether
-        it still works.
+
+        Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            if task.taskType() in ['Production', 'Processing']:
-                task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize)
+            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize,
+                                       softTimeout = softTimeout,
+                                       gracePeriod = gracePeriod)
 
         return
 
@@ -1208,9 +1628,171 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-        
+    def setLocationDataSourceFlag(self, flag = False):
+        """
+        _setLocationDataSourceFlag_
 
+        Set the flag in the top level tasks
+        indicating that site lists should be
+        used as location data
+        """
+        for task in self.getTopLevelTask():
+            task.setInputLocationFlag(flag)
+        return
+
+    def locationDataSourceFlag(self):
+        """
+        _locationDataSourceFlag_
+
+        Get the flag in the top level tasks
+        that indicates whether the site lists
+        should be trusted as the location for data
+        """
+        for task in self.getTopLevelTask():
+            return task.inputLocationFlag()
+        return False
+
+    def validateArgumentForAssignment(self, schema):
+        specClass = loadSpecClassByType(self.requestType())
+        argumentDefinition = specClass.getWorkloadArguments()
+        validateArgumentsUpdate(schema, argumentDefinition)
+        return
+
+    def _checkKeys(self, kwargs, keys):
+        """
+        check whether list of keys exist in the kwargs
+        if no keys exist return False
+        if all keys exist return True
+        if partial keys exsit raise Exception
+        """
+        if  isinstance(keys, basestring):
+            keys = [keys]
+        validKey = 0
+        for key in keys:
+            if  key in kwargs:
+                validKey += 1
+        if validKey == 0:
+            return False
+        elif validKey == len(keys):
+            return True
+        else:
+            #TODO raise proper exception
+            raise Exception("not all the key is specified %s" % keys)
+
+    def updateArguments(self, kwargs, wildcardSites = {}):
+        """
+        set up all the argument related to assigning request.
+        args are validated before update.
+        assignment is common for all different types spec.
+        """
+        siteParams = ["SiteWhitelist", "SiteBlacklist"]
+        lfnParams = ["MergedLFNBase", "UnmergedLFNBase"]
+        mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
+        performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
+        phedexParams = ["CustodialSites", "NonCustodialSites",
+                        "AutoApproveSubscriptionSites", "CustodialSubType",
+                        "NonCustodialSubType", "SubscriptionPriority"]
+        blockCloseParams = ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
+                            "BlockCloseMaxEvents", "BlockCloseMaxSize"]
+
+        assignParams = []
+        assignParams.extend(siteParams)
+        assignParams.extend(lfnParams)
+        assignParams.extend(mergeParams)
+        assignParams.extend(performanceParams)
+        assignParams.extend(phedexParams)
+        assignParams.extend(blockCloseParams)
+
+        specClass = loadSpecClassByType(self.requestType())
+        argumentDefinition = specClass.getWorkloadArguments()
+        setAssignArgumentsWithDefault(kwargs, argumentDefinition, assignParams)
+
+        if self._checkKeys(kwargs, siteParams):
+            self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"],
+                                       siteBlacklist = kwargs["SiteBlacklist"],
+                                       wildcardDict = wildcardSites)
+        #FIXME not validated
+        if self._checkKeys(kwargs, lfnParams):
+            self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
+
+        if self._checkKeys(kwargs, mergeParams):
+            self.setMergeParameters(int(kwargs["MinMergeSize"]),
+                                    int(kwargs["MaxMergeSize"]),
+                                    int(kwargs["MaxMergeEvents"]))
+
+        # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
+        # it should be processed once LFNBase are set
         
+        if self._checkKeys(kwargs, "ProcessingVersion"):
+            self.setProcessingVersion(kwargs["ProcessingVersion"])
+        if self._checkKeys(kwargs, "AcquisitionEra"):
+            self.setAcquisitionEra(kwargs["AcquisitionEra"])
+        if self._checkKeys(kwargs, "ProcessingString"):
+            self.setProcessingString(kwargs["ProcessingString"])
+
+        if self._checkKeys(kwargs, performanceParams):
+            self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),
+                                            int(kwargs["MaxVSize"]),
+                                            int(kwargs["SoftTimeout"]),
+                                            int(kwargs["GracePeriod"]))
+
+        # Check whether we should check location for the data
+        if self._checkKeys(kwargs, "useSiteListAsLocation"):
+            self.setLocationDataSourceFlag(flag = strToBool(kwargs["useSiteListAsLocation"]))
+        if self._checkKeys(kwargs, "allowOpportunistic"):
+            self.setAllowOpportunistic(allowOpport = strToBool(kwargs["allowOpportunistic"]))
+
+        # Set phedex subscription information
+        if self._checkKeys(kwargs, phedexParams):
+            self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
+                                        custodialSites = kwargs["CustodialSites"],
+                                        nonCustodialSites = kwargs["NonCustodialSites"],
+                                        autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
+                                        custodialSubType = kwargs["CustodialSubType"],
+                                        nonCustodialSubType = kwargs["NonCustodialSubType"],
+                                        priority = kwargs["SubscriptionPriority"])
+
+        # Block closing information
+        if self._checkKeys(kwargs, blockCloseParams):
+            self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
+                                       kwargs["BlockCloseMaxFiles"],
+                                       kwargs["BlockCloseMaxEvents"],
+                                       kwargs["BlockCloseMaxSize"])
+
+        if self._checkKeys(kwargs, "DashboardActivity"):
+            self.setDashboardActivity(kwargs["DashboardActivity"])
+            
+        # TODO: need to define proper task form maybe kwargs['Tasks']?
+        self.setTaskProperties(kwargs)
+
+
+        return kwargs
+
+
+    def loadSpecFromCouch(self, couchurl, requestName):
+        """
+        This depends on PersitencyHelper.py saveCouch (That method better be decomposed)
+        """
+        return self.load("%s/%s/spec" % (couchurl, requestName))
+
+
+    def setTaskPropertiesFromWorkload(self):
+        """
+        set task properties inherits from workload properties
+        This is need to be called at the end of the buildWorkload function
+        after all the tasks are added.
+        It sets acquisitionEra, processingVersion, processingString,
+        since those values are needed to be set for all the tasks in the workload
+        TODO: need to force to call this function after task is added instead of
+              rely on coder's won't forget to call this at the end of
+              self.buildWorkload()
+        """
+        self.setAcquisitionEra(self.acquisitionEra)
+        self.setProcessingVersion(self.processingVersion)
+        self.setProcessingString(self.processingString)
+        self.setLumiList(self.lumiList)
+        self.setPrepID(self.getPrepID())
+        return
 
 class WMWorkload(ConfigSection):
     """
@@ -1250,17 +1832,27 @@ class WMWorkload(ConfigSection):
         # // properties of the Workload and all tasks there-in
         #//
         self.section_("properties")
-        self.properties.acquisitionEra = None
-        self.properties.processingVersion = None
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
         self.properties.dashboardActivity = None
+        self.properties.blockCloseMaxWaitTime = 66400
+        self.properties.blockCloseMaxSize = 5000000000000
+        self.properties.blockCloseMaxFiles = 500
+        self.properties.blockCloseMaxEvents = 250000000
+        self.properties.prepID = None
+
+        # Overrides for this workload
+        self.section_("overrides")
 
         #  //
         # // tasks
         #//
         self.section_("tasks")
         self.tasks.tasklist = []
+
+        #  worklaod spec type
+        self.section_("request_type")
+        self.requestType = ""
 
         self.sandbox = None
         self.initialJobCount = 0

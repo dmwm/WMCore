@@ -33,8 +33,8 @@ class ProcessingAlgo(RetryAlgoBase):
 
         self.maxRetries = 3
 
-        self.maxRunTime = getattr(self.config.RetryManager, 'ProcessingAlgoMaxRuntime', 24 * 3600)
-        self.exitCodes  = getattr(self.config.RetryManager, 'ProcessingAlgoOneMoreErrorCodes', [])
+        self.maxRunTime = self.getAlgoParam('default', 'MaxRunTime', 24 * 3600)
+        self.exitCodes  = self.getAlgoParam('default', 'OneMoreErrorCodes', [])
 
         # Try to get the actual number of max retries, but don't mind
         # if this is a test implementation without the full config
@@ -46,13 +46,13 @@ class ProcessingAlgo(RetryAlgoBase):
 
         return
 
-    def isReady(self, job, jobType):
+    def isReady(self, job, cooloffType):
         """
         Actual function that does the work
 
         """
 
-        if jobType == 'create' or jobType == 'submit':
+        if cooloffType == 'create' or cooloffType == 'submit':
             # Can't really do anything with these: resubmit
             return True
 
@@ -97,4 +97,3 @@ class ProcessingAlgo(RetryAlgoBase):
             # Hope this gets passed back by reference
 
         return True
-

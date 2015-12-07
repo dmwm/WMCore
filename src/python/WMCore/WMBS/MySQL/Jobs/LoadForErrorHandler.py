@@ -15,11 +15,13 @@ class LoadForErrorHandler(DBFormatter):
     _LoadForErrorHandler_
 
     Retrieve meta data for a job given it's ID.  This includes the name,
-    job group and last update time.
+    job group and last update time. It also works for the AccountantWorker
+    to determine ACDC records for skipped files in successful jobs, this mode
+    is used when a file selection is provided.
     """
-    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name, 
-                    wmbs_job_state.name AS state, state_time, retry_count, 
-                    couch_record,  cache_dir, wmbs_location.site_name AS location, 
+    sql = """SELECT wmbs_job.id, jobgroup, wmbs_job.name AS name,
+                    wmbs_job_state.name AS state, state_time, retry_count,
+                    couch_record,  cache_dir, wmbs_location.site_name AS location,
                     outcome AS bool_outcome, fwjr_path AS fwjr_path, ww.name as workflow,
                     ww.task as task, ww.spec as spec, wmbs_users.owner as owner,
                     wmbs_users.grp as grp
@@ -37,11 +39,12 @@ class LoadForErrorHandler(DBFormatter):
 
     fileSQL = """SELECT wfd.id, wfd.lfn, wfd.filesize size, wfd.events, wfd.first_event,
                    wfd.merged, wja.job jobid,
-                   wl.se_name se_name
+                   wls.se_name pnn
                  FROM wmbs_file_details wfd
                  INNER JOIN wmbs_job_assoc wja ON wja.fileid = wfd.id
                  INNER JOIN wmbs_file_location wfl ON wfl.fileid = wfd.id
                  INNER JOIN wmbs_location wl ON wl.id = wfl.location
+                 INNER JOIN wmbs_location_senames wls ON wls.location = wfl.location
                  WHERE wja.job = :jobid"""
 
 
@@ -61,7 +64,7 @@ class LoadForErrorHandler(DBFormatter):
         Cast the id, jobgroup and last_update columns to integers because
         formatDict() turns everything into strings.
         """
-        
+
         formattedResult = DBFormatter.formatDict(self, result)
 
         for entry in formattedResult:
@@ -76,8 +79,9 @@ class LoadForErrorHandler(DBFormatter):
             entry['input_files'] = []
 
         return formattedResult
-    
-    def execute(self, jobID, conn = None, transaction = False):
+
+    def execute(self, jobID, fileSelection = None,
+                conn = None, transaction = False):
         """
         _execute_
 
@@ -92,7 +96,7 @@ class LoadForErrorHandler(DBFormatter):
             binds = jobID
         else:
             binds = {"jobid": jobID}
-            
+
         result = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
 
@@ -102,6 +106,8 @@ class LoadForErrorHandler(DBFormatter):
                                            transaction = transaction)
         fileList  = self.formatDict(filesResult)
         fileBinds = []
+        if fileSelection:
+            fileList = filter(lambda x : x['lfn'] in fileSelection[x['jobid']], fileList)
         for x in fileList:
             # Add new runs
             x['newRuns'] = []
@@ -123,17 +129,19 @@ class LoadForErrorHandler(DBFormatter):
                 if not l['fileid'] in lumiDict.keys():
                     lumiDict[l['fileid']] = []
                 lumiDict[l['fileid']].append(l)
-            
+
             for f in fileList:
                 fileRuns = {}
                 if f['id'] in lumiDict.keys():
                     for l in lumiDict[f['id']]:
                         run  = l['run']
                         lumi = l['lumi']
-                        if not fileRuns.has_key(run):
-                            fileRuns[run] = []
-                        if not lumi in fileRuns[run]:
+                        try:
                             fileRuns[run].append(lumi)
+                        except KeyError:
+                            fileRuns[run] = []
+                            fileRuns[run].append(lumi)
+
                 for r in fileRuns.keys():
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]
@@ -147,7 +155,7 @@ class LoadForErrorHandler(DBFormatter):
             if f['id'] not in filesForJobs[jobid].keys():
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
-                wmbsFile['locations'].add(f['se_name'])
+                wmbsFile['locations'].add(f['pnn'])
                 for r in wmbsFile['newRuns']:
                     wmbsFile.addRun(r)
                 for entry in parentList:
@@ -156,10 +164,7 @@ class LoadForErrorHandler(DBFormatter):
                 filesForJobs[jobid][f['id']] = wmbsFile
             else:
                 # If the file is there, just add the location
-                filesForJobs[jobid][f['id']]['locations'].add(f['se_name'])
-
-        
-
+                filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 
         for j in jobList:
             if j['id'] in filesForJobs.keys():

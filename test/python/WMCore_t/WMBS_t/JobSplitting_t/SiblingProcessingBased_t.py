@@ -6,7 +6,6 @@ Test SiblingProcessing job splitting.
 """
 
 import unittest
-import os
 import threading
 
 from WMCore.WMBS.File import File
@@ -35,15 +34,15 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testInit.setDatabaseConnection()
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
-        
+
         myThread = threading.currentThread()
         daofactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         locationAction = daofactory(classname = "Locations.New")
-        locationAction.execute("site1", seName = "somese.cern.ch")
-        locationAction.execute("site2", seName = "somese2.cern.ch")
+        locationAction.execute("T2_CH_CERN", pnn = "T2_CH_CERN")
+        locationAction.execute("T1_US_FNAL", pnn = "T1_US_FNAL_Disk")
 
         self.testFilesetA = Fileset(name = "FilesetA")
         self.testFilesetA.create()
@@ -51,29 +50,29 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         self.testFilesetB.create()
 
         self.testFileA = File("testFileA", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileA.create()
         self.testFileB = File("testFileB", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileB.create()
         self.testFileC = File("testFileC", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
-        self.testFileC.create()        
+                              locations = set(["T2_CH_CERN"]))
+        self.testFileC.create()
 
         self.testFilesetA.addFile(self.testFileA)
         self.testFilesetA.addFile(self.testFileB)
-        self.testFilesetA.addFile(self.testFileC)        
+        self.testFilesetA.addFile(self.testFileC)
         self.testFilesetA.commit()
 
         self.testFileD = File("testFileD", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileD.create()
         self.testFileE = File("testFileE", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
+                              locations = set(["T2_CH_CERN"]))
         self.testFileE.create()
         self.testFileF = File("testFileF", size = 1000, events = 100,
-                              locations = set(["somese.cern.ch"]))
-        self.testFileF.create()        
+                              locations = set(["T2_CH_CERN"]))
+        self.testFileF.create()
 
         self.testFilesetB.addFile(self.testFileD)
         self.testFilesetB.addFile(self.testFileE)
@@ -112,12 +111,12 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                               workflow = testWorkflowD,
                                               split_algo = "FileBased",
                                               type = "Processing")
-        self.testSubscriptionD.create()        
+        self.testSubscriptionD.create()
 
         deleteWorkflow = Workflow(spec = "specE.xml", owner = "Steve",
                                   name = "wfE", task = "Test")
         deleteWorkflow.create()
-        
+
         self.deleteSubscriptionA = Subscription(fileset = self.testFilesetA,
                                                 workflow = deleteWorkflow,
                                                 split_algo = "SiblingProcessingBased",
@@ -129,7 +128,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                                                 type = "Cleanup")
         self.deleteSubscriptionB.create()
         return
-    
+
     def tearDown(self):
         """
         _tearDown_
@@ -170,13 +169,13 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                "Error: Only one jobgroup should be returned."
         assert len(result[0].jobs) == 1, \
                "Error: There should only be one job in the jobgroup."
+        assert result[0].jobs[0]["possiblePSN"] == set(["T2_CH_CERN"]), \
+               "Error: possiblePSN is wrong."
         assert len(result[0].jobs[0]["input_files"]) == 1, \
                "Error: Job should only have one input file."
         assert result[0].jobs[0]["input_files"][0]["lfn"] == "testFileA", \
                "Error: Input file for job is wrong."
-        assert list(result[0].jobs[0]["input_files"][0]["locations"]) == ["somese.cern.ch"], \
-               "Error: File location is wrong."
-        
+
         result = deleteFactoryB(files_per_job = 1)
 
         assert len(result) == 0, \
@@ -214,7 +213,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         self.testSubscriptionB.completeFiles([self.testFileE, self.testFileF])
         self.testSubscriptionC.completeFiles([self.testFileE, self.testFileF])
-        self.testSubscriptionD.completeFiles([self.testFileE, self.testFileF])        
+        self.testSubscriptionD.completeFiles([self.testFileE, self.testFileF])
 
         result = deleteFactoryB(files_per_job = 10)
 
@@ -258,14 +257,14 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         that run over files at multiple sites.
         """
         testFile1 = File("testFile1", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
+                         locations = set(["T1_US_FNAL_Disk"]))
         testFile1.create()
         testFile2 = File("testFile2", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
+                         locations = set(["T1_US_FNAL_Disk"]))
         testFile2.create()
         testFile3 = File("testFile3", size = 1000, events = 100,
-                         locations = set(["somese2.cern.ch"]))
-        testFile3.create()        
+                         locations = set(["T1_US_FNAL_Disk"]))
+        testFile3.create()
 
         self.testFilesetA.addFile(testFile1)
         self.testFilesetA.addFile(testFile2)
@@ -275,7 +274,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
 
         self.testSubscriptionA.completeFiles([testFile1, testFile2, testFile3])
         self.testSubscriptionA.completeFiles([self.testFileA, self.testFileB, self.testFileC])
-        
+
         splitter = SplitterFactory()
         deleteFactoryA = splitter(package = "WMCore.WMBS",
                                   subscription = self.deleteSubscriptionA)
@@ -288,31 +287,29 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         goldenFilesA = ["testFileA", "testFileB", "testFileC"]
         goldenFilesB = ["testFile1", "testFile2", "testFile3"]
 
-        locations = {"testFileA": "somese.cern.ch", "testFileB": "somese.cern.ch",
-                     "testFileC": "somese.cern.ch", "testFile1": "somese2.cern.ch",
-                     "testFile2": "somese2.cern.ch", "testFile3": "somese2.cern.ch"}
-        
         for jobGroup in result:
             assert len(jobGroup.jobs) == 1, \
                    "Error: Wrong number of jobs in jobgroup."
             assert len(jobGroup.jobs[0]["input_files"]) == 3, \
                    "Error: Wrong number of input files in job."
 
-            jobSite = list(jobGroup.jobs[0]["input_files"][0]["locations"])[0]
+            jobSite = jobGroup.jobs[0]["possiblePSN"]
 
-            if jobSite == "somese.cern.ch":
+            assert (jobSite == set(["T2_CH_CERN"])
+                    or jobSite == set(["T1_US_FNAL"])), \
+                    "Error: Wrong site for job."
+
+            if jobSite == set(["T2_CH_CERN"]):
                 goldenFiles = goldenFilesA
             else:
                 goldenFiles = goldenFilesB
-                
+
             for jobFile in jobGroup.jobs[0]["input_files"]:
-                assert list(jobFile["locations"])[0] == locations[jobFile["lfn"]], \
-                       "Error: Wrong site for file."
                 goldenFiles.remove(jobFile["lfn"])
 
             assert len(goldenFiles) == 0,  \
                    "Error: Files are missing."
-        
+
         return
 
     def testLargeNumberOfFiles(self):
@@ -327,7 +324,7 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         testWorkflowA.create()
         testWorkflowB = Workflow(spec = "specB.xml", owner = "Steve",
                                  name = "wfB", task = "Test")
-        testWorkflowB.create()        
+        testWorkflowB.create()
 
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
@@ -335,11 +332,11 @@ class SiblingProcessingBasedTest(unittest.TestCase):
         allFiles = []
         for i in range(500):
             testFile = File(str(i), size = 1000, events = 100,
-                                  locations = set(["somese.cern.ch"]))
+                            locations = set(["T2_CH_CERN"]))
             testFile.create()
             allFiles.append(testFile)
             testFileset.addFile(testFile)
-        testFileset.commit()            
+        testFileset.commit()
 
         testSubscriptionA = Subscription(fileset = testFileset,
                                          workflow = testWorkflowA,
@@ -363,7 +360,50 @@ class SiblingProcessingBasedTest(unittest.TestCase):
                          "Error: Wrong number of job groups returned.")
         self.assertEqual(len(result[0].jobs), 10,
                          "Error: Wrong number of jobs returned.")
-                             
+
         return
+
+    def testFilesWithoutOtherSubscriptions(self):
+        """
+        _testFilesWithoutOtherSubscriptions_
+
+        Test the case where files only in the delete subscription
+        can happen if cleanup of the other subscriptions is fast
+
+        """
+        testWorkflowA = Workflow(spec = "specA.xml", owner = "Steve",
+                                 name = "wfA", task = "Test")
+        testWorkflowA.create()
+
+        testFileset = Fileset(name = "TestFileset")
+        testFileset.create()
+
+        allFiles = []
+        for i in range(500):
+            testFile = File(str(i), size = 1000, events = 100,
+                            locations = set(["T2_CH_CERN"]))
+            testFile.create()
+            allFiles.append(testFile)
+            testFileset.addFile(testFile)
+        testFileset.commit()
+
+        testSubscriptionA = Subscription(fileset = testFileset,
+                                         workflow = testWorkflowA,
+                                         split_algo = "SiblingProcessingBased",
+                                         type = "Processing")
+        testSubscriptionA.create()
+
+        splitter = SplitterFactory()
+        deleteFactoryA = splitter(package = "WMCore.WMBS",
+                                  subscription = testSubscriptionA)
+
+        result = deleteFactoryA(files_per_job = 50)
+        self.assertEqual(len(result), 1,
+                         "Error: Wrong number of job groups returned.")
+        self.assertEqual(len(result[0].jobs), 10,
+                         "Error: Wrong number of jobs returned.")
+
+        return
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ MySQL implementation of Workflow.CountWorkflowBySpec
 """
 
 from WMCore.Database.DBFormatter import DBFormatter
-    
+
 class CountWorkflowBySpec(DBFormatter):
     sql = """SELECT COUNT(*) AS workflows FROM wmbs_workflow WHERE spec = :spec"""
 

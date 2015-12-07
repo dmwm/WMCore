@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable-msg=E1101
+# pylint: disable=E1101
 """
 _WMStep_
 
@@ -44,9 +44,17 @@ class WMStepHelper(TreeHelper):
         """
         return self.data.stepType
 
-    def applicationSection(self):
-        """get application ConfigSection ref"""
-        return self.data.application
+    def getNumberOfCores(self):
+        """
+        _getNumberOfCores_
+
+        Return the number of cores for the step in question
+        """
+
+        try:
+            return int(self.data.application.multicore.numberOfCores)
+        except:
+            return 1
 
     def addStep(self, stepName):
         """
@@ -154,6 +162,44 @@ class WMStepHelper(TreeHelper):
                 return getattr(self.data.output.modules, moduleName)
 
         return None
+
+    def setIgnoredOutputModules(self, moduleList):
+        """
+        _setIgnoredOutputModules_
+
+        Set a list of output modules to be ignored,
+        only CMSSW steps will use this
+        """
+
+        self.data.output.ignoredModules = moduleList
+        return
+    
+    def setNewStageoutOverride(self, newValue):
+        """
+        A toggle for steps to use old or new stageout code
+        """
+        self.data.newStageout = newValue
+    
+    def getNewStageoutOverride(self):
+        """
+        A toggle for steps to use old or new stageout code
+        """
+        if hasattr(self.data, 'newStageout'):
+            return self.data.newStageout
+        else:
+            return False
+
+    def getIgnoredOutputModules(self):
+        """
+        _ignoreOutputModules_
+
+        Get a list of output modules to be ignored,
+        if the attribute is not set then return an empty list
+        """
+
+        if hasattr(self.data.output, 'ignoredModules'):
+            return self.data.output.ignoredModules
+        return []
 
     def getUserSandboxes(self):
         if hasattr(self.data, 'user'):

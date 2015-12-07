@@ -46,13 +46,14 @@ class LogCollect(Emulator):
         output = getattr(self.report.data, self.stepName)
         output.outputPFN = 'ThisIsAPFN'
         output.SEName    = 'ThisIsAnSEName'
+        output.PNN       = 'ThisIsAPNN'
         output.LFN       = 'ThisIsALFN'
 
         print "Have done emulation"
         print self.report.data
 
-        return 
-                
+        return
+
 
 
     def post(self):

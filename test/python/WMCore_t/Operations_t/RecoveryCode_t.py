@@ -75,7 +75,7 @@ class TestRecoveryCode(unittest.TestCase):
     def getConfig(self):
         """
         _getConfig_
-        
+
         For now, build a config file from the ground up.
         Later, use this as a model for the JSM master config
         """
@@ -142,7 +142,7 @@ class TestRecoveryCode(unittest.TestCase):
         config.JobTracker.idleTimeLimit = 7776000
         config.JobTracker.heldTimeLimit = 7776000
         config.JobTracker.unknTimeLimit = 7776000
-        
+
 
         #ErrorHandler
         config.component_("ErrorHandler")
@@ -151,7 +151,7 @@ class TestRecoveryCode(unittest.TestCase):
         config.ErrorHandler.maxThreads   = 30
         config.ErrorHandler.maxRetries   = 10
         config.ErrorHandler.pollInterval = 10
-        
+
 
         #RetryManager
         config.component_("RetryManager")
@@ -163,7 +163,7 @@ class TestRecoveryCode(unittest.TestCase):
         config.RetryManager.pluginPath   = 'WMComponent.RetryManager.PlugIns'
         config.RetryManager.pluginName   = ''
         config.RetryManager.WMCoreBase   = WMCore.WMInit.getWMBASE()
-        
+
 
         #JobAccountant
         config.component_("JobAccountant")
@@ -197,7 +197,7 @@ class TestRecoveryCode(unittest.TestCase):
     def submitJobs(self, nJobs):
         """
         _submitJobs_
-        
+
         Submit some broken jdls to the local condor submitter
         """
 
@@ -229,13 +229,13 @@ Queue 1
             command = ["condor_submit", 'submit/submit_%i.jdl' %(i)]
             pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
             pipe.wait()
-            
+
 
     @attr('integration')
     def testPurge(self):
         """
         _testPurge_
-        
+
         Test the purge function, which should remove all job objects
         """
 
@@ -264,10 +264,10 @@ Queue 1
         #Check that jobs were actually removed
         jobCheckString = os.popen('condor_q %s' %os.getenv('USER')).readlines()[-1]
         self.assertEqual(jobCheckString, '0 jobs; 0 idle, 0 running, 0 held\n' )
-        
+
         return
 
 
 if __name__ == "__main__":
 
-    unittest.main() 
+    unittest.main()

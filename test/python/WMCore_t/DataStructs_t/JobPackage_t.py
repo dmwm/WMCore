@@ -44,7 +44,7 @@ class JobPackageTest(unittest.TestCase):
         # There is an extra key for the directory the package is stored in.
         assert len(package.keys()) == 101, \
                "Error: Wrong number of jobs in package."
-               
+
         for i in range(100):
             job = package[i]
             assert job["id"] == i, \
@@ -68,7 +68,7 @@ class JobPackageTest(unittest.TestCase):
             package[i] = newJob
 
         package.save(self.persistFile)
-        
+
         assert os.path.exists(self.persistFile), \
                "Error: Package file was never created."
 
@@ -105,11 +105,11 @@ class JobPackageTest(unittest.TestCase):
             setattr(baggage, "seed2", 22222222)
             setattr(baggage, "seed3", 33333333)
             setattr(baggage, "seed4", 44444444)
-            setattr(baggage, "seed5", 55555555)            
+            setattr(baggage, "seed5", 55555555)
             package[i] = newJob
 
         package.save(self.persistFile)
-        
+
         assert os.path.exists(self.persistFile), \
                "Error: Package file was never created."
 

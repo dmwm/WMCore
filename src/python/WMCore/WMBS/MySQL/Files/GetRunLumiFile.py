@@ -31,7 +31,7 @@ class GetRunLumiFile(DBFormatter):
                 if i[0] not in run_lumis.keys():
                     run_lumis[i[0]]=[]
                 run_lumis[i[0]].append(i[1])
-        	r.close()
+                r.close()
         return run_lumis
 
     def execute(self, file=None, conn = None, transaction = False):
@@ -40,6 +40,3 @@ class GetRunLumiFile(DBFormatter):
         result = self.dbi.processData(self.sql, binds,
                          conn = conn, transaction = transaction)
         return self.format(result)
-
-
-

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W1201, E1101
+#pylint: disable=W1201, E1101
 # W1201: Allow string formatting in logging messages
 # E1101: Allow imports from currentThread
 """
@@ -31,7 +31,7 @@ class ExecuteMaster:
 
     """
     def __init__(self):
-        pass    
+        pass
 
     def __call__(self, task, wmbsJob):
         """
@@ -50,14 +50,14 @@ class ExecuteMaster:
         except WMException:
             self.toTaskDirectory()
             raise
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Encountered unhandled exception while starting monitors:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
             self.toTaskDirectory()
             raise WMExecutionFailure(msg)
-            
+
         skipToStep = None
         for step in task.steps().nodeIterator():
             try:
@@ -72,10 +72,13 @@ class ExecuteMaster:
                 result = self.doExecution(executor, step, wmbsJob)
                 if not result == None:
                     skipToStep = result
-            except WMException, ex:
+            except WMException as ex:
+                msg = "Encountered error while running ExecuteMaster:\n"
+                msg += str(ex) + "\n"
+                logging.error(msg)
                 self.toTaskDirectory()
                 break
-            except Exception, ex:
+            except Exception as ex:
                 msg = "Encountered error while running ExecuteMaster:\n"
                 msg += str(ex) + "\n"
                 msg += str(traceback.format_exc()) + "\n"
@@ -88,13 +91,13 @@ class ExecuteMaster:
             myThread.watchdogMonitor.notifyJobEnd(task)
         except WMException:
             self.toTaskDirectory()
-        except Exception, ex:
+        except Exception as ex:
             msg =  "Encountered unhandled exception while ending the job:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
             self.toTaskDirectory()
-            
+
         return
 
     def doExecution(self, executor, step, job):
@@ -114,15 +117,15 @@ class ExecuteMaster:
         # Tell the watchdog that we're starting the step
         myThread.watchdogMonitor.notifyStepStart(step)
 
-        
+
         self.toStepDirectory(step)
         executor.initialise(step, job)
         executionObject = executor
         error = False
         if executor.emulationMode:
             executionObject = executor.emulator
-        
-        
+
+
         preOutcome = executionObject.pre()
         if preOutcome != None:
             logging.info("Pre Executor Task Change: %s" % preOutcome)
@@ -136,10 +139,10 @@ class ExecuteMaster:
             executor.report.setStepStartTime(stepName = executor.stepName)
             executionObject.execute()
             executor.report.setStepStopTime(stepName = executor.stepName)
-        except WMExecutionFailure, ex:
+        except WMExecutionFailure as ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
             error = True
-        except Exception, ex:
+        except Exception as ex:
             logging.error("Exception occured when executing step")
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")
@@ -160,7 +163,7 @@ class ExecuteMaster:
             return postOutcome
 
 
-        
+
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
@@ -172,6 +175,8 @@ class ExecuteMaster:
         # Tell the watchdog that we're done with the step
         myThread.watchdogMonitor.notifyStepEnd(step = step,
                                                stepReport = executor.report)
+        executor.saveReport()
+
         return None
 
     def toStepDirectory(self, step):
@@ -201,7 +206,3 @@ class ExecuteMaster:
         from WMTaskSpace import taskSpace
         os.chdir(taskSpace.location)
         return
-
-
-
-

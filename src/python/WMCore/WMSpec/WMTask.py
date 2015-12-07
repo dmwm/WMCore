@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=E1101
+#pylint: disable=E1101
 # E1101:  Doesn't recognize section_() as defining objects
 """
 _WMTask_
@@ -10,11 +10,11 @@ set of jobs.
 Equivalent of a WorkflowSpec in the ProdSystem.
 """
 
-import os
 import os.path
 import time
 
 from WMCore.Configuration import ConfigSection
+from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
@@ -26,58 +26,81 @@ from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
 def getTaskFromStep(stepRef):
     """
     _getTaskFromStep_
-    
+
     Traverse up the step tree until finding the first WMTask entry,
     return it wrapped in a WMTaskHelper
-    
+
     """
     nodeData = stepRef
     if isinstance(stepRef, WMStepHelper):
         nodeData = stepRef.data
-    
+
     taskNode = SpecUtils.findTaskAboveNode(nodeData)
     if taskNode == None:
         msg = "Unable to find Task containing step\n"
         #TODO: Replace with real exception class
-        raise RuntimeError, msg
-    
+        raise RuntimeError(msg)
+
     return WMTaskHelper(taskNode)
 
+
+def buildLumiMask(runs, lumis):
+    """
+        Runs are saved in the spec as a list of integers.
+        The lumi mask associated to each run is saved as a list of strings
+        where each string is in a format like '1,4,23,45'
+
+        The method convert these parameters in the corresponding lumiMask,
+        e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+    """
+
+    if len(runs) != len(lumis):
+        raise ValueError("runs and lumis must have same length")
+    for lumi in lumis:
+        if len(lumi.split(',')) % 2:
+            raise ValueError("Needs an even number of lumi in each element of lumis list")
+
+
+    lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x in lumis]
+    strRuns = [str(run) for run in runs]
+    lumiMask = dict(list(zip(strRuns, lumiLists)))
+    return lumiMask
 
 
 class WMTaskHelper(TreeHelper):
     """
     _WMTaskHelper_
-    
+
     Util wrapper containing tools & methods for manipulating the WMTask
-    data object.    
+    data object.
     """
     def __init__(self, wmTask):
         TreeHelper.__init__(self, wmTask)
         self.startTime = None
         self.endTime   = None
+        self.monitoring = None
 
-    
+
     def addTask(self, taskName):
         """
         _addTask_
-        
+
         Add a new task as a subtask with the name provided and
         return it wrapped in a TaskHelper
-        
+
         """
         node = WMTaskHelper(WMTask(taskName))
         self.addNode(node)
         pName = "%s/%s" % (self.getPathName(), taskName)
         node.setPathName(pName)
         return node
-    
+
     def taskIterator(self):
         """
         _taskIterator_
-        
+
         return output of nodeIterator(self) wrapped in TaskHelper instance
-        
+
         """
         for x in self.nodeIterator():
             yield WMTaskHelper(x)
@@ -90,25 +113,25 @@ class WMTaskHelper(TreeHelper):
         """
         for x in self.firstGenNodeChildIterator():
             yield WMTaskHelper(x)
-    
-    
+
+
     def setPathName(self, pathName):
         """
         _setPathName_
-        
+
         Set the path name of the task within the workload
         Used internally when addin tasks to workloads or subtasks
-        
+
         """
         self.data.pathName = pathName
-    
+
     def getPathName(self):
         """
         _getPathName_
-        
+
         get the path name of this task reflecting its
         structure within the workload and task tree
-        
+
         """
         return self.data.pathName
 
@@ -123,15 +146,15 @@ class WMTaskHelper(TreeHelper):
     def listPathNames(self):
         """
         _listPathNames
-        
+
         """
         for t in self.taskIterator():
             yield t.getPathName()
-    
+
     def listNames(self):
         """
         _listPathNames
-        
+
         """
         for t in self.taskIterator():
             yield t.name()
@@ -139,10 +162,10 @@ class WMTaskHelper(TreeHelper):
     def makeWorkflow(self):
         """
         _makeWorkflow_
-        
+
         Create a WMBS compatible Workflow structure that represents this
         task and the information contained within it
-        
+
         """
         workflow = DataStructsWorkflow()
         workflow.task = self.getPathName()
@@ -162,7 +185,7 @@ class WMTaskHelper(TreeHelper):
         Retrieve the name of the top step.
         """
         return self.data.steps.topStepName
-    
+
     def setStep(self, wmStep):
         """set topStep to be the step instance provided"""
         stepData = wmStep
@@ -171,7 +194,7 @@ class WMTaskHelper(TreeHelper):
             stepHelper = wmStep
         else:
             stepHelper = WMStepHelper(wmStep)
-        
+
         stepName = stepHelper.name()
         stepHelper.setTopOfTree()
         setattr(self.data.steps, stepName, stepData)
@@ -181,56 +204,56 @@ class WMTaskHelper(TreeHelper):
     def listAllStepNames(self):
         """
         _listAllStepNames_
-        
-        Get a list of all the step names contained in this task.        
+
+        Get a list of all the step names contained in this task.
         """
         step = self.steps()
         if step:
             return step.allNodeNames()
         else:
             return []
-    
+
     def getStep(self, stepName):
         """get a particular step from the workflow"""
         if self.data.steps.topStepName == None:
             return None
         topStep = self.steps()
         return topStep.getStep(stepName)
-    
+
     def makeStep(self, stepName):
         """
         _makeStep_
-        
+
         create a new WMStep instance, install it as the top step and
         return the reference to the new step wrapped in a StepHelper
-        
+
         """
         newStep = WMStep(stepName)
         self.setStep(newStep)
         return WMStepHelper(newStep)
 
-    
+
     def applyTemplates(self):
         """
         _applyTemplates_
-        
+
         For each step, load the appropriate template and install the default structure
-        
+
         TODO: Exception handling
-        
+
         """
         for step in self.steps().nodeIterator():
             stepType = step.stepType
             template = StepFactory.getStepTemplate(stepType)
             template(step)
-    
+
     def getStepHelper(self, stepName):
         """
         _getStepHelper_
-        
+
         Get the named step, look up its type specific helper and retrieve
         the step wrapped in the type based helper.
-        
+
         """
         step = self.getStep(stepName)
         stepType = step.stepType()
@@ -247,9 +270,20 @@ class WMTaskHelper(TreeHelper):
         outputModules = []
         for stepName in self.listAllStepNames():
             outputModules.append(self.getOutputModulesForStep(stepName))
-
         return outputModules
-    
+
+    def getIgnoredOutputModulesForTask(self):
+        """
+        _getIgnoredOutputModulesForTask_
+
+        Retrieve the ignored output modules in the given task.
+        """
+        ignoredOutputModules = []
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+            ignoredOutputModules.extend(stepHelper.getIgnoredOutputModules())
+        return ignoredOutputModules
+
     def getOutputModulesForStep(self, stepName):
         """
         _getOutputModulesForStep_
@@ -263,22 +297,22 @@ class WMTaskHelper(TreeHelper):
                 return step.data.output.modules
 
         return ConfigSection()
-    
+
     def build(self, workingDir):
         """
         _build_
-        
+
         Invoke the build process to create the job in the working dir provided
-        
+
         """
         master = BuildMaster(workingDir)
         master(self)
         return
-    
+
     def setupEnvironment(self):
         """
         _setupEnvironment_
-        
+
         I don't know if this should go here.
         Setup the environment variables mandated in the WMTask
         """
@@ -286,7 +320,7 @@ class WMTaskHelper(TreeHelper):
         if not hasattr(self.data, 'environment'):
             #No environment to setup, pass
             return
-        
+
         envDict = self.data.environment.dictionary_()
 
         for key in envDict.keys():
@@ -296,17 +330,15 @@ class WMTaskHelper(TreeHelper):
                 continue
             else:
                 os.environ[key] = envDict[key]
-        
+
         return
-    
-    def execute(self, wmbsJob, emulator = None):
+
+    def execute(self, wmbsJob):
         """
         _execute_
-        
-        Invoke execution of the steps using an optional Emulator
-        
-        TODO: emulator is now deprecated, remove from API
-        
+
+        Invoke execution of the steps
+
         """
         self.startTime = time.time()
         self.setupEnvironment()
@@ -315,17 +347,17 @@ class WMTaskHelper(TreeHelper):
         self.endTime   = time.time()
         return
 
-    
+
     def setInputReference(self, stepRef, **extras):
         """
         _setInputReference_
-        
+
         Add details to the input reference for the task providing
         input to this task.
         The reference is the step in the input task, plus
         any extra information.
 
-        
+
         """
         stepId = SpecUtils.stepIdentifier(stepRef)
         setattr(self.data.input, "inputStep", stepId)
@@ -350,30 +382,65 @@ class WMTaskHelper(TreeHelper):
         Retrieve the name of the input step, if there is one.
         """
         return getattr(self.data.input, "inputStep", None)
-    
+
     def inputReference(self):
         """
         _inputReference_
-        
+
         Get information about the input reference for this task.
-        
+
         """
         return self.data.input
+
+    def setFirstEventAndLumi(self, firstEvent, firstLumi):
+        """
+        _setFirstEventAndLumi_
+
+        Set an arbitrary first event and first lumi
+        Only used by production workflows
+        """
+
+        if not hasattr(self.data, "production"):
+            self.data._section("production")
+        setattr(self.data.production, "firstEvent", firstEvent)
+        setattr(self.data.production, "firstLumi", firstLumi)
+
+    def getFirstEvent(self):
+        """
+        _getFirstEvent_
+
+        Get first event to produce for the task
+        """
+        if hasattr(self.data, "production"):
+            if hasattr(self.data.production, "firstLumi"):
+                return self.data.production.firstEvent
+        return 1
+
+    def getFirstLumi(self):
+        """
+        _getFirstLumi_
+
+        Get first lumi to produce for the task
+        """
+        if hasattr(self.data, "production"):
+            if hasattr(self.data.production, "firstLumi"):
+                return self.data.production.firstLumi
+        return 1
 
     def setSplittingParameters(self, **params):
         """
         _setSplittingParameters_
 
         Set the job splitting parameters.
-        """        
+        """
         [setattr(self.data.input.splitting, key, val)
          for key, val in params.items() ]
         return
-          
+
     def setSplittingAlgorithm(self, algoName, **params):
         """
         _setSplittingAlgorithm_
-        
+
         Set the splitting algorithm name and arguments.  Clear out any old
         splitting parameters while preserving the parameters for ACDC
         resubmission which are:
@@ -384,6 +451,13 @@ class WMTaskHelper(TreeHelper):
           initial_lfn_counter
           merge_across_runs
           runWhitelist
+
+        Preserve parameters which can be set up at request creation and if not
+        specified should remain unchanged, at the moment these are:
+            include_parents
+            lheInputFiles
+
+        Also preserve the performance section.
         """
         setACDCParams = {}
         for paramName in ["collectionName", "filesetName", "couchURL",
@@ -392,52 +466,94 @@ class WMTaskHelper(TreeHelper):
             if hasattr(self.data.input.splitting, paramName):
                 setACDCParams[paramName] = getattr(self.data.input.splitting,
                                                    paramName)
-        
+        preservedParams = {}
+        for paramName in ["lheInputFiles", "include_parents", "deterministicPileup"]:
+            if hasattr(self.data.input.splitting, paramName):
+                preservedParams[paramName] = getattr(self.data.input.splitting,
+                                                     paramName)
+        performanceConfig = getattr(self.data.input.splitting, "performance", None)
+
         delattr(self.data.input, "splitting")
         self.data.input.section_("splitting")
-        
+        self.data.input.splitting.section_("performance")
+
         setattr(self.data.input.splitting, "algorithm", algoName)
+        self.setSplittingParameters(**preservedParams)
         self.setSplittingParameters(**params)
         self.setSplittingParameters(**setACDCParams)
+        if performanceConfig is not None:
+            self.data.input.splitting.performance = performanceConfig
         return
 
     def jobSplittingAlgorithm(self):
         """
         _jobSplittingAlgorithm_
-        
+
         Retrieve the job splitting algorithm name.
         """
         return getattr(self.data.input.splitting, "algorithm", None)
-    
-    def jobSplittingParameters(self):
+
+    def jobSplittingParameters(self, performance = True):
         """
         _jobSplittingParameters_
-        
+
         Retrieve the job splitting parameters.  This will combine the job
         splitting parameters specified in the spec with the site white list
         and black list as those are passed to the job splitting code.
+        If required, also extract the performance parameters and pass them in the dict.
         """
         datadict = getattr(self.data.input, "splitting")
-        splittingParams = datadict.dictionary_()
+        if performance:
+            splittingParams = datadict.dictionary_whole_tree_()
+        else:
+            splittingParams = datadict.dictionary_()
+            if "performance" in splittingParams:
+                del splittingParams['performance']
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
+        splittingParams["trustSitelists"] = self.trustSitelists()
+
+        if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
+            splittingParams["runWhitelist"] = self.inputRunWhitelist()
+        if "runBlacklist" not in splittingParams.keys() and self.inputRunBlacklist() != None:
+            splittingParams["runBlacklist"] = self.inputRunBlacklist()
+
         return splittingParams
+
+    def setJobResourceInformation(self, timePerEvent = None,
+                                  memoryReq = None, sizePerEvent = None):
+        """
+        _setJobResourceInformation_
+
+        Set the values to estimate the required computing resources for a job,
+        the three key values are main memory usage, time per processing unit (e.g. time per event) and
+        disk usage per processing unit (e.g. size per event).
+        """
+        performanceParams = getattr(self.data.input.splitting, "performance")
+        performanceParams.timePerEvent = timePerEvent \
+                        or getattr(performanceParams, "timePerEvent", None)
+        if memoryReq:
+            memoryReq = int(memoryReq)
+        performanceParams.memoryRequirement = memoryReq \
+                        or getattr(performanceParams, "memoryRequirement", None)
+        performanceParams.sizePerEvent = sizePerEvent \
+                        or getattr(performanceParams, "sizePerEvent", None)
 
     def addGenerator(self, generatorName, **settings):
         """
         _addGenerator_
 
-        
+
         """
         if not 'generators' in self.data.listSections_():
             self.data.section_('generators')
         if not generatorName in self.data.generators.listSections_():
             self.data.generators.section_(generatorName)
 
-        
+
         helper = TreeHelper(getattr(self.data.generators, generatorName))
         helper.addValue(settings)
-        
+
         return
 
     def listGenerators(self):
@@ -462,7 +578,7 @@ class WMTaskHelper(TreeHelper):
         generator = getattr(generators, generatorName, None)
         if generator == None:
             return {}
-        
+
         confValues = TreeHelper(generator)
         args = {}
         tempArgs = confValues.pythoniseDict(sections = False)
@@ -497,26 +613,26 @@ class WMTaskHelper(TreeHelper):
                 "collection": self.data.input.acdc.collection,
                 "fileset": self.data.input.acdc.fileset,
                 "database": self.data.input.acdc.database}
-    
+
     def addInputDataset(self, **options):
         """
         _addInputDataset_
-        
+
         Add details of an input dataset to this Task.
         This dataset will be used as input for the first step
         in the task
-        
+
         options should contain at least:
           - primary - primary dataset name
           - processed - processed dataset name
           - tier - data tier name
-        
+
         optional args:
           - dbsurl - dbs url if not global
           - block_whitelist - list of whitelisted fileblocks
           - block_blacklist - list of blacklisted fileblocks
           - run_whitelist - list of whitelist runs
-          - run_blacklist - list of blacklist runs        
+          - run_blacklist - list of blacklist runs
         """
         self.data.input.section_("dataset")
         self.data.input.dataset.dbsurl = None
@@ -526,15 +642,15 @@ class WMTaskHelper(TreeHelper):
         self.data.input.dataset.section_("runs")
         self.data.input.dataset.runs.whitelist = []
         self.data.input.dataset.runs.blacklist = []
-        
+
         primary = options.get("primary", None)
         processed = options.get("processed", None)
         tier = options.get("tier", None)
-        
+
         if primary == None or processed == None or tier == None:
             msg = "Primary, Processed and Tier must be set"
-            raise RuntimeError, msg
-        
+            raise RuntimeError(msg)
+
         self.data.input.dataset.primary = primary
         self.data.input.dataset.processed = processed
         self.data.input.dataset.tier = tier
@@ -554,7 +670,7 @@ class WMTaskHelper(TreeHelper):
                 self.setInputRunBlacklist(arg)
             else:
                 setattr(self.data.input.dataset, opt, arg)
-        
+
         return
 
     def inputDatasetDBSURL(self):
@@ -591,7 +707,7 @@ class WMTaskHelper(TreeHelper):
     def setInputBlockBlacklist(self, blockBlacklist):
         """
         _setInputBlockBlacklist_
-        
+
         Set the block black list for the input dataset.  This must be called
         after setInputDataset().
         """
@@ -629,7 +745,7 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data.input, "dataset"):
             return self.data.input.dataset.runs.whitelist
         return None
-    
+
     def setInputRunBlacklist(self, runBlacklist):
         """
         _setInputRunBlacklist_
@@ -650,33 +766,31 @@ class WMTaskHelper(TreeHelper):
         if hasattr(self.data.input, "dataset"):
             return self.data.input.dataset.runs.blacklist
         return None
-    
+
     def addProduction(self, **options):
         """
         _addProduction_
-        
+
         Add details of production job related information.
-        
+
         options should contain at least:
         TODO: Not sure what is necessary data ask Dave
         optional
         - totalevents - total events in dataset
-        
+
         """
-        self.data.section_("production")
-        
+        if not hasattr(self.data, "production"):
+            self.data.section_("production")
+
         for opt, arg in options.items():
-            if opt == 'totalevents':
-                self.data.production.totalEvents = arg
-            
             setattr(self.data.production, opt, arg)
-    
+
     def inputDataset(self):
         """
         _inputDataset_
-        
+
         Get the input.dataset structure from this task
-        
+
         """
         return getattr(self.data.input, "dataset", None)
 
@@ -691,28 +805,28 @@ class WMTaskHelper(TreeHelper):
             ds = getattr(self.data.input, 'dataset')
             return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
         return None
-    
+
     def siteWhitelist(self):
         """
         _siteWhitelist_
-        
+
         Accessor for the site white list for the task.
-        """        
+        """
         return self.data.constraints.sites.whitelist
 
     def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
 
-        Set the set white list for this task.
+        Set the set white list for the task.
         """
         self.data.constraints.sites.whitelist = siteWhitelist
         return
-    
+
     def siteBlacklist(self):
         """
         _siteBlacklist_
-        
+
         Accessor for the site white list for the task.
         """
         return self.data.constraints.sites.blacklist
@@ -721,29 +835,186 @@ class WMTaskHelper(TreeHelper):
         """
         _setSiteBlacklist_
 
-        Set the site black list for this task.
+        Set the site black list for the task.
         """
         self.data.constraints.sites.blacklist = siteBlacklist
         return
-    
+
+    def trustSitelists(self):
+        """
+        _trustSitelists_
+
+        Accessor for the 'trust site lists' flag for the task.
+        """
+        return self.data.constraints.sites.trustlists
+
+    def setTrustSitelists(self, trustSitelists):
+        """
+        _setTrustSitelists_
+
+        Set the 'trus site lists' flag for the task.
+        """
+        self.data.constraints.sites.trustlists = trustSitelists
+        return
+
+    def listOutputDatasetsAndModules(self):
+        """
+        _listOutputDatasetsAndModules_
+
+        Get the output datasets per output module for this task
+        """
+        outputDatasets = []
+        for stepName in self.listAllStepNames():
+                stepHelper = self.getStepHelper(stepName)
+
+                if not getattr(stepHelper.data.output, "keep", True):
+                    continue
+
+                if stepHelper.stepType() == "CMSSW":
+                    for outputModuleName in stepHelper.listOutputModules():
+                        outputModule = stepHelper.getOutputModule(outputModuleName)
+                        outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
+                                                       outputModule.processedDataset,
+                                                       outputModule.dataTier)
+                        outputDatasets.append({"outputModule"  : outputModuleName,
+                                               "outputDataset" : outputDataset})
+
+        return outputDatasets
+
+    def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
+                                         autoApproveSites = None, custodialSubType = "Replica",
+                                         nonCustodialSubType = "Replica", priority = "Low",
+                                         primaryDataset = None, dataTier = None,
+                                         deleteFromSource = False):
+        """
+        _setSubscriptionsInformation_
+
+        Set the subscription information for this task's datasets
+        The subscriptions information is structured as follows:
+        data.subscriptions.outputModules is a list of all output modules with configured datasets
+        data.subscriptions.<outputModule>.dataset
+        data.subscriptions.<outputModule>.custodialSites
+        data.subscriptions.<outputModule>.nonCustodialSites
+        data.subscriptions.<outputModule>.autoApproveSites
+        data.subscriptions.<outputModule>.priority
+        data.subscriptions.<outputModule>.custodialSubType
+        data.subscriptions.<outputModule>.nonCustodialSubType
+
+        The filters arguments allow to define a dataTier and primaryDataset. Only datasets
+        matching those values will be configured.
+        """
+
+        if not hasattr(self.data, "subscriptions"):
+            self.data.section_("subscriptions")
+            self.data.subscriptions.outputModules = []
+
+        outputDatasets = self.listOutputDatasetsAndModules()
+
+        for entry in outputDatasets:
+            outputDataset = entry["outputDataset"]
+            outputModule = entry["outputModule"]
+
+            primDs = outputDataset.split('/')[1]
+            tier = outputDataset.split('/')[3]
+            if primaryDataset and primDs != primaryDataset:
+                continue
+            if dataTier and tier != dataTier:
+                continue
+
+            if outputModule not in self.data.subscriptions.outputModules:
+                self.data.subscriptions.outputModules.append(outputModule)
+                outputModuleSection = self.data.subscriptions.section_(outputModule)
+                outputModuleSection.dataset = outputDataset
+                outputModuleSection.custodialSites = []
+                outputModuleSection.nonCustodialSites = []
+                outputModuleSection.autoApproveSites = []
+                outputModuleSection.custodialSubType = "Replica"
+                outputModuleSection.nonCustodialSubType = "Replica"
+                outputModuleSection.priority = "Low"
+                outputModuleSection.deleteFromSource = False
+
+            outputModuleSection = getattr(self.data.subscriptions, outputModule)
+            if custodialSites is not None:
+                outputModuleSection.custodialSites = custodialSites
+            if nonCustodialSites  is not None:
+                outputModuleSection.nonCustodialSites = nonCustodialSites
+            if autoApproveSites  is not None:
+                outputModuleSection.autoApproveSites = autoApproveSites
+            outputModuleSection.priority = priority
+            outputModuleSection.deleteFromSource = deleteFromSource
+            outputModuleSection.custodialSubType = custodialSubType
+            outputModuleSection.nonCustodialSubType = nonCustodialSubType
+
+        return
+
+    def updateSubscriptionDataset(self, outputModuleName, outputModuleInfo):
+        """
+        _updateSubscriptionDataset_
+
+        Updates the dataset in the subscription information for the given output module,
+        if the given output module doesn't exist it does nothing.
+        """
+        if not hasattr(self.data, "subscriptions"):
+            return
+
+        if hasattr(self.data.subscriptions, outputModuleName):
+            subscriptionInfo = getattr(self.data.subscriptions, outputModuleName)
+            subscriptionInfo.dataset = '/%s/%s/%s' % (getattr(outputModuleInfo, "primaryDataset"),
+                                                      getattr(outputModuleInfo, "processedDataset"),
+                                                      getattr(outputModuleInfo, "dataTier"))
+        return
+
+    def getSubscriptionInformation(self):
+        """
+        _getSubscriptionInformation_
+
+        Get the subscription configuration for the task
+        return a dictionary with the following structure
+        {<dataset> : {CustodialSites : [],
+                      NonCustodialSites : [],
+                      AutoApproveSites : [],
+                      Priority : "Low",
+                      CustodialSubType : "Move",
+                      NonCustodialSubType : "Replica"
+                     }
+        }
+        """
+        if not hasattr(self.data, "subscriptions"):
+            return {}
+
+        subInformation = {}
+        for outputModule in self.data.subscriptions.outputModules:
+            outputModuleSection = getattr(self.data.subscriptions, outputModule)
+            dataset = outputModuleSection.dataset
+            subInformation[dataset] = {"CustodialSites" : outputModuleSection.custodialSites,
+                                       "NonCustodialSites" : outputModuleSection.nonCustodialSites,
+                                       "AutoApproveSites" : outputModuleSection.autoApproveSites,
+                                       "Priority" : outputModuleSection.priority,
+                                       # DeleteFromSource is optional
+                                       "DeleteFromSource" : getattr(outputModuleSection, "deleteFromSource", False),
+                                       # Specs assigned before HG1303 don't have the CustodialSubtype
+                                       "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Replica"),
+                                       "NonCustodialSubType" : getattr(outputModuleSection, "nonCustodialSubType", "Replica")}
+        return subInformation
+
     def parentProcessingFlag(self):
         """
         _parentProcessingFlag_
-        
+
         accessor for parentProcessing information (two file input)
         """
         return self.jobSplittingParameters().get("include_parents", False)
-    
+
     def totalEvents(self):
         """
         _totalEvents_
-        
+
         accessor for total events in the given dataset
         """
         #TODO: save the total events for  the production job
         return int(self.data.production.totalEvents)
         #return self.data.input.dataset.totalEvents
-    
+
     def dbsUrl(self):
         """
         _dbsUrl_
@@ -754,12 +1025,12 @@ class WMTaskHelper(TreeHelper):
             return getattr(self.data.input.dataset, "dbsurl", None)
         else:
             return None
-    
-    
+
+
     def setTaskType(self, taskType):
         """
         _setTaskType_
-        
+
         Set the type field of this task
         """
         self.data.taskType = taskType
@@ -768,7 +1039,7 @@ class WMTaskHelper(TreeHelper):
     def taskType(self):
         """
         _taskType_
-        
+
         Get the task Type setting
         """
         return self.data.taskType
@@ -794,15 +1065,15 @@ class WMTaskHelper(TreeHelper):
         for taskStep in taskSteps:
             reportPath = os.path.join(jobLocation, taskStep, "Report.pkl")
             if os.path.isfile(reportPath):
-                stepReport = Report.Report(taskStep)
-                stepReport.unpersist(reportPath)
+                stepReport = Report.Report()
+                stepReport.unpersist(reportPath, taskStep)
                 finalReport.setStep(taskStep, stepReport.retrieveStep(taskStep))
             else:
                 # Then we have a missing report
                 # This should raise an alarm bell, as per Steve's request
                 # TODO: Change error code
                 finalReport.addStep(reportname = taskStep, status = 1)
-                finalReport.addError(stepName = taskStep, exitCode = 99999, errorType = "ReportManipulatingError", 
+                finalReport.addError(stepName = taskStep, exitCode = 99999, errorType = "ReportManipulatingError",
                                      errorDetails = "Could not find report file for step %s!" % taskStep)
 
         finalReport.data.completed = True
@@ -822,60 +1093,11 @@ class WMTaskHelper(TreeHelper):
     def setTaskLogBaseLFN(self, logBaseLFN):
         """
         _setTaskLogBaseLFN_
-        
+
         Set the base LFN for the task's log archive file.
         """
         self.data.logBaseLFN = logBaseLFN
         return
-
-    def setTaskTimeOut(self, taskTimeOut):
-        """
-        _setTaskTimeOut_
-
-        Set the timeout for the task.
-        """
-        monitoring = self.data.section_("watchdog")
-        monitoring.monitors = ["DashboardMonitor"]
-        monitoring.section_("DashboardMonitor")
-        monitoring.DashboardMonitor.softTimeOut = taskTimeOut
-        monitoring.DashboardMonitor.hardTimeOut = taskTimeOut + 600
-        return
-
-    def getTaskTimeOut(self):
-        """
-        _getTaskTimeOut_
-
-        Get the timeout for the task.
-        """
-        return self.data.watchdog.DashboardMonitor.softTimeOut
-
-
-    def setTaskPriority(self, priority):
-        """
-        _setTaskPriority_
-
-        Set the relative priority of this task
-        Determines run order in compatible batch systems.
-        Expects an integer.
-        Higher is better (will be given first shot at open slots)
-        """
-        if not type(priority) == int:
-            try:
-                priority = int(priority)
-            except ValueError:
-                # Can't really do anything if you don't give an int
-                return
-
-        self.data.taskPriority = priority
-        return
-
-    def getTaskPriority(self):
-        """
-        _getTaskPriority_
-
-        Get the priority level for the task
-        """
-        return getattr(self.data, 'taskPriority', None)
 
     def addNotification(self, target):
         """
@@ -896,21 +1118,62 @@ class WMTaskHelper(TreeHelper):
 
         return self.data.notifications.targets
 
-    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None):
+    def _setPerformanceMonitorConfig(self):
+        """
+        if config section for the PerformanceMonitor. If not set, it will set one 
+        """
+        if self.monitoring != None:
+            return
+        
+        self.monitoring = self.data.section_("watchdog")
+        if not hasattr(self.data.watchdog, 'monitors'):
+            self.data.watchdog.monitors = []
+        if not 'PerformanceMonitor' in self.monitoring.monitors:
+            self.monitoring.monitors.append('PerformanceMonitor')
+            self.monitoring.section_("PerformanceMonitor")
+        return
+    
+    def setMaxRSS(self, maxRSS):
+        if isinstance(maxRSS, dict):
+            maxRSS = maxRSS.get(self.name(), None)
+        
+        if maxRSS:
+            self._setPerformanceMonitorConfig()
+            self.monitoring.PerformanceMonitor.maxRSS = int(maxRSS)
+            for task in self.childTaskIterator():
+                task.setMaxRSS(maxRSS)
+        return
+    
+    def setMaxVSize(self, maxVSize):
+        if isinstance(maxVSize, dict):
+            maxVSize = maxVSize.get(self.name(), None)
+
+        if maxVSize:
+            self._setPerformanceMonitorConfig()
+            self.monitoring.PerformanceMonitor.maxVSize = int(maxVSize)
+            for task in self.childTaskIterator():
+                task.setMaxVSize(maxVSize)
+        return
+    
+    
+    def setPerformanceMonitor(self, maxRSS = None, maxVSize = None,
+                                    softTimeout = None, gracePeriod = None):
         """
         _setPerformanceMonitor_
 
-        Set the setup for a non-standard optional plugin that
-        you may or may not use because Oli wants something.
+        Set/Update the performance monitor options for the task
         """
-        monitoring = self.data.section_("watchdog")
-        if not hasattr(self.data.watchdog, 'monitors'):
-            self.data.watchdog.monitors = []
-        if not 'PerformanceMonitor' in monitoring.monitors:
-            monitoring.monitors.append('PerformanceMonitor')
-            monitoring.section_("PerformanceMonitor")
-        monitoring.PerformanceMonitor.maxRSS   = maxRSS
-        monitoring.PerformanceMonitor.maxVSize = maxVSize
+        if not maxRSS and not maxVSize and not softTimeout and not gracePeriod:
+            # if no values is specified do nothing
+            return
+        
+        self.setMaxRSS(maxRSS)
+        self.setMaxVSize(maxVSize)
+        if softTimeout:
+            self._setPerformanceMonitorConfig()
+            self.monitoring.PerformanceMonitor.softTimeout = int(softTimeout)
+            if gracePeriod:
+                self.monitoring.PerformanceMonitor.hardTimeout = int(softTimeout + gracePeriod)
         return
 
     def getSwVersion(self):
@@ -976,21 +1239,331 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
+    def setProcessingVersion(self, procVer, parentProcessingVersion = 0):
+        """
+        _setProcessingVersion_
+
+        Set the task processing version
+        """
+        if isinstance(procVer, dict):
+            taskProcVer = procVer.get(self.name(), parentProcessingVersion)
+        else:
+            taskProcVer = procVer
+        
+        self.data.parameters.processingVersion = int(taskProcVer)
+        for task in self.childTaskIterator():
+            task.setProcessingVersion(procVer, taskProcVer)
+        return
+
+    def getProcessingVersion(self):
+        """
+        _getProcessingVersion_
+
+        Get the task processing version
+        """
+        return getattr(self.data.parameters, 'processingVersion', 0)
+
+    def setProcessingString(self, procString, parentProcessingString = None):
+        """
+        _setProcessingString_
+
+        Set the task processing string
+        """
+        if isinstance(procString, dict):
+            taskProcString = procString.get(self.name(), parentProcessingString)
+        else:
+            taskProcString = procString
+        
+        self.data.parameters.processingString = taskProcString
+        
+        for task in self.childTaskIterator():
+            task.setProcessingString(procString, taskProcString)
+        return
+
+    def getProcessingString(self):
+        """
+        _getProcessingString_
+
+        Get the task processing string
+        """
+        return getattr(self.data.parameters, 'processingString', None)
+
+    def setAcquisitionEra(self, era, parentAcquisitionEra = None):
+        """
+        _setAcquistionEra_
+
+        Set the task acquisition era
+        """
+        if isinstance(era, dict):
+            taskEra = era.get(self.name(), parentAcquisitionEra)
+        else:
+            taskEra = era
+        
+        self.data.parameters.acquisitionEra = taskEra
+        
+        for task in self.childTaskIterator():
+            task.setAcquisitionEra(era, taskEra)
+        return
+
+    def getAcquisitionEra(self):
+        """
+        _getAcquisitionEra_
+
+        Get the task acquisition era
+        """
+        return getattr(self.data.parameters, 'acquisitionEra', None)
+
+    def setLumiMask(self, lumiMask = {}, override = True):
+        """
+        Attach the given LumiMask to the task
+        At this point the lumi mask is just the compactList dict not the LumiList object
+        """
+
+        if not lumiMask:
+            return
+
+        runs = getattr(self.data.input.splitting, 'runs', None)
+        lumis = getattr(self.data.input.splitting, 'lumis', None)
+        if not override and runs and lumis: # Unless instructed, don't overwrite runs and lumis which may be there from a task already
+            return
+
+        runs = []
+        lumis = []
+        for run, runLumis in lumiMask.items():
+            runs.append(int(run))
+            lumiList = []
+            for lumi in runLumis:
+                lumiList.extend([str(l) for l in lumi])
+            lumis.append(','.join(lumiList))
+
+        self.data.input.splitting.runs = runs
+        self.data.input.splitting.lumis = lumis
+        
+        for task in self.childTaskIterator():
+            task.setLumiMask(lumiMask, override)
+
+        return
+
+    def getLumiMask(self):
+        """
+            return the lumi mask
+        """
+        runs = getattr(self.data.input.splitting, 'runs', None)
+        lumis = getattr(self.data.input.splitting, 'lumis', None)
+        if runs and lumis:
+            return buildLumiMask(runs, lumis)
+
+        return {}
     
+    def _propMethodMap(self):
+        """
+        internal mapping methop which maps which method need to be call for each
+        property.
+        For now only contains properties which updates in assignment stage.
+        """
+        propMap = {"ProcessingVersion": self.setProcessingVersion,
+                   "AcquisitionEra": self.setAcquisitionEra,
+                   "ProcessingString": self.setProcessingString,
+                   "MaxRSS": self.setMaxRSS,
+                   "MaxVSize": self.setMaxVSize
+                   }
+        return propMap
+    
+    def setProperties(self, properties):
+        """
+        set task properties (only for assignment stage but make it more general). 
+        """
+        for prop, value in properties.items():
+            self._propMethodMap()[prop](value)
+
+    def setInputLocationFlag(self, flag):
+        """
+        _setInputLocationFlag_
+
+        Does not check PhEDEx for input data location
+        in case it's set to True, blindly trust the site
+        whitelist/blacklist.
+        """
+        self.data.input.trustSiteLists = flag
+
+    def inputLocationFlag(self):
+        """
+        _getInputLocationFlag
+
+        Get the flag which tells
+        whether to use the site lists
+        as data location or not
+        """
+        return getattr(self.data.input, "trustSiteLists", False)
+
+    def deleteChild(self, childName):
+        """
+        _deleteChild_
+
+        Remove the child task from the tree, if it exists
+        """
+        self.deleteNode(childName)
+
+    def setPrepID(self, prepID):
+        """
+        _setPrepID_
+
+        Set the prepID to for all the tasks below
+        """
+        # if prepID doesn exist set it, if exist ignore.
+        if not self.getPrepID() and prepID:
+            self.data.prepID = prepID
+
+        prepID = self.getPrepID()
+        # set child prepid
+        if prepID:
+            for task in self.childTaskIterator():
+                task.setPrepID(prepID)
+
+    def getPrepID(self):
+        """
+        _getPrepID_
+
+        Get the prepID for the workflow
+        """
+        return getattr(self.data, 'prepID', None)
+    
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase):
+        """
+        _setLFNBase_
+
+        Set the merged and unmerged base LFNs for all tasks.
+        """
+        self.data.mergedLFNBase = mergedLFNBase
+        self.data.unmergedLFNBase = unmergedLFNBase
+        for task in self.childTaskIterator():
+            task.setLFNBase(mergedLFNBase, unmergedLFNBase)
+
+        return
+    
+    def _getLFNBase(self):
+        """
+        private method getting lfn base.
+        lfn base should be set by workflow
+        """
+        return (getattr(self.data, 'mergedLFNBase', "/store/data"), 
+                getattr(self.data, 'unmergedLFNBase', "/store/unmerged"))
+    
+    
+    def updateLFNsAndDatasets(self, runNumber = None):
+        """
+        _updateLFNsAndDatasets_
+
+        Update all the output LFNs and data names for all tasks in the workflow.
+        This needs to be called after updating the acquisition era, processing
+        version or merged/unmerged lfn base.
+        """
+        mergedLFNBase, unmergedLFNBase = self._getLFNBase()
+            
+        taskType = self.taskType()
+        for stepName in self.listAllStepNames():
+            stepHelper = self.getStepHelper(stepName)
+
+            if stepHelper.stepType() == "CMSSW":
+                for outputModuleName in stepHelper.listOutputModules():
+                    outputModule = stepHelper.getOutputModule(outputModuleName)
+                    filterName = getattr(outputModule, "filterName", None)
+                    if self.getProcessingString():
+                        processingEra = "%s-v%i" % (self.getProcessingString(), self.getProcessingVersion())
+                    else:
+                        processingEra = "v%i" % self.getProcessingVersion()
+                    if filterName:
+                        processedDataset = "%s-%s-%s" % (self.getAcquisitionEra(),
+                                                         filterName,
+                                                         processingEra)
+                        processingString = "%s-%s" % (filterName,
+                                                      processingEra)
+                    else:
+                        processedDataset = "%s-%s" % (self.getAcquisitionEra(),
+                                                      processingEra)
+                        processingString = processingEra
+
+                    unmergedLFN = "%s/%s/%s/%s/%s" % (unmergedLFNBase,
+                                                      self.getAcquisitionEra(),
+                                                      getattr(outputModule, "primaryDataset"),
+                                                      getattr(outputModule, "dataTier"),
+                                                      processingString)
+                    mergedLFN = "%s/%s/%s/%s/%s" % (mergedLFNBase,
+                                                    self.getAcquisitionEra(),
+                                                    getattr(outputModule, "primaryDataset"),
+                                                    getattr(outputModule, "dataTier"),
+                                                    processingString)
+
+                    if runNumber != None and runNumber > 0:
+                        runString = str(runNumber).zfill(9)
+                        lfnSuffix = "/%s/%s/%s" % (runString[0:3],
+                                                   runString[3:6],
+                                                   runString[6:9])
+                        unmergedLFN += lfnSuffix
+                        mergedLFN += lfnSuffix
+
+                    lfnBase(unmergedLFN)
+                    lfnBase(mergedLFN)
+                    setattr(outputModule, "processedDataset", processedDataset)
+
+                    #Once we change an output module we must update the subscription information
+                    self.updateSubscriptionDataset(outputModuleName, outputModule)
+
+                    # For merge tasks, we want all output to go to the merged LFN base.
+                    if taskType == "Merge":
+                        setattr(outputModule, "lfnBase", mergedLFN)
+                        setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+                        if getattr(outputModule, "dataTier") in ["DQM", "DQMIO"]:
+                            datasetName = "/%s/%s/%s" % (getattr(outputModule, "primaryDataset"),
+                                                         processedDataset,
+                                                         getattr(outputModule, "dataTier"))
+                            self.updateDatasetName(datasetName)
+                    else:
+                        setattr(outputModule, "lfnBase", unmergedLFN)
+                        setattr(outputModule, "mergedLFNBase", mergedLFN)
+
+        self.setTaskLogBaseLFN(unmergedLFNBase)
+        
+        # do the samething for all the child
+        for task in self.childTaskIterator():
+            task.updateLFNsAndDatasets(runNumber = runNumber)
+
+        return
+    
+    def updateDatasetName(self, datasetName):
+        """
+        _updateDatasetName_
+
+        Updates the dataset name argument of the mergeTask's harvesting
+        children tasks
+        """
+        for task in self.childTaskIterator():
+            if task.taskType() == "Harvesting":
+                for stepName in task.listAllStepNames():
+                    stepHelper = task.getStepHelper(stepName)
+
+                    if stepHelper.stepType() == "CMSSW":
+                        cmsswHelper = stepHelper.getTypeHelper()
+                        cmsswHelper.setDatasetName(datasetName)
+
+        return
+
 class WMTask(ConfigSectionTree):
     """
     _WMTask_
-    
+
     workload management task.
     Allow a set of processing job specifications that are interdependent
     to be modelled as a tree structure.
-    
+
     """
     def __init__(self, name):
         ConfigSectionTree.__init__(self, name)
         self.objectType = self.__class__.__name__
         self.pathName = None
         self.taskType = None
+        self.prepID = None
         self.section_("steps")
         self.steps.topStepName = None
         self.section_("parameters")
@@ -998,23 +1571,28 @@ class WMTask(ConfigSectionTree):
         self.section_("constraints")
         self.section_("input")
         self.section_("notifications")
+        self.section_("subscriptions")
         self.notifications.targets = []
         self.input.sandbox = None
+        self.input.trustSiteLists = False
         self.input.section_("splitting")
         self.input.splitting.algorithm = None
+        self.input.splitting.section_("performance")
         self.constraints.section_("sites")
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []
+        self.constraints.sites.trustlists = False
+        self.subscriptions.outputModules = []
         self.input.section_("WMBS")
 
 
 def makeWMTask(taskName):
     """
     _makeWMTask_
-    
+
     Convienience method to instantiate a new WMTask with the name
     provided and wrap it in a helper
-    
+
     """
     return WMTaskHelper(WMTask(taskName))
 

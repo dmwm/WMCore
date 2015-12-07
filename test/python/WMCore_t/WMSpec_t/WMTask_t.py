@@ -7,7 +7,8 @@ Unit tests for the WMTask class.
 
 import unittest
 
-from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper, makeWMTask
+from WMCore.WMSpec.WMTask import WMTask, makeWMTask
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMStep import makeWMStep
 
 class WMTaskTest(unittest.TestCase):
@@ -24,8 +25,9 @@ class WMTaskTest(unittest.TestCase):
         Verify that the WMTask and the WMTaskHelper classes can be
         instantiated.
         """
-        task1 = WMTask("task1")
-        task2 = makeWMTask("task2")
+        WMTask("task1")
+        makeWMTask("task2")
+
         return
 
     def testTreeBuilding(self):
@@ -35,9 +37,9 @@ class WMTaskTest(unittest.TestCase):
         Verify that tasks can be created and arranged in a hierarchy.
         """
         task1 = makeWMTask("task1")
-        task2a = task1.addTask("task2a")
-        task2b = task1.addTask("task2b")
-        task2c = task1.addTask("task2c")
+        task1.addTask("task2a")
+        task1.addTask("task2b")
+        task1.addTask("task2c")
 
         goldenTasks = ["task2a", "task2b", "task2c"]
         for childTask in task1.childTaskIterator():
@@ -61,9 +63,8 @@ class WMTaskTest(unittest.TestCase):
         task2a = task1.addTask("task2a")
         task2b = task1.addTask("task2b")
         task2c = task1.addTask("task2c")
-        
-        task3 = task2a.addTask("task3")
-        
+        task2a.addTask("task3")
+
         step1 = makeWMStep("step1")
         step1.addStep("step1a")
         step1.addStep("step1b")
@@ -98,7 +99,7 @@ class WMTaskTest(unittest.TestCase):
         self.assertEqual(task2a.getStep("step4"), None)
         self.assertEqual(task2b.getStep("step2"), None)
         self.assertEqual(task2c.getStep("step1"), None)
-        
+
         self.assertEqual(task1.listNodes(), ['task1', 'task2a', 'task3', 'task2b', 'task2c'])
         return
 
@@ -134,7 +135,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Site missing from black list."
 
         return
-               
+
     def testJobSplittingArgs(self):
         """
         _testJobSplittingArgs_
@@ -147,39 +148,72 @@ class WMTaskTest(unittest.TestCase):
         testTask = makeWMTask("TestTask")
         testTask.setTaskType("Processing")
 
-        assert testTask.taskType() == "Processing", \
-               "Error: Wrong task type."
-        
+        self.assertEqual(testTask.taskType(), "Processing",
+                         "Error: Wrong task type.")
+
+        testTask.setJobResourceInformation(timePerEvent = 12, memoryReq = 2300000,
+                                           sizePerEvent = 512)
         testTask.setSplittingAlgorithm("MadeUpAlgo", events_per_job = 100,
                                        max_job_size = 24,
                                        one_more_param = "Hello")
         testTask.setSiteWhitelist(["T1_US_FNAL", "T1_CH_CERN"])
         testTask.setSiteBlacklist(["T2_US_PERDUE", "T2_US_UCSD", "T1_TW_ASGC"])
 
-        assert testTask.jobSplittingAlgorithm() == "MadeUpAlgo", \
-               "Error: Wrong job splitting algorithm name."
+        testTask.addInputDataset(primary = "PrimaryDataset",
+                                 processed = "ProcessedDataset",
+                                 tier = "DataTier",
+                                 dbsurl = "DBSURL",
+                                 block_whitelist = ["Block1", "Block2"],
+                                 block_blacklist = ["Block3", "Block4", "Block5"],
+                                 run_whitelist = [1, 2, 3],
+                                 run_blacklist = [4, 5])
 
+        # Make sure we can set individual performance parameters without affecting the others
+        testTask.setJobResourceInformation(timePerEvent = 14)
+
+        self.assertEqual(testTask.jobSplittingAlgorithm(),"MadeUpAlgo",
+               "Error: Wrong job splitting algorithm name.")
+
+        algoParams = testTask.jobSplittingParameters(performance = False)
+        self.assertEqual(len(algoParams), 9,
+                         "Error: Wrong number of algo parameters.")
         algoParams = testTask.jobSplittingParameters()
+        self.assertEqual(len(algoParams), 10,
+                         "Error: Wrong number of algo parameters.")
 
-        assert len(algoParams.keys()) == 6, \
-               "Error: Wrong number of algo parameters."
+        self.assertTrue("algorithm" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["algorithm"], "MadeUpAlgo",
+                         "Error: Parameter has wrong value.")
 
-        assert "algorithm" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["algorithm"] == "MadeUpAlgo", \
-               "Error: Parameter has wrong value."
-        assert "events_per_job" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["events_per_job"] == 100, \
-               "Error: Parameter has wrong value."
-        assert "max_job_size" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["max_job_size"] == 24, \
-               "Error: Parameter has wrong value."
-        assert "one_more_param" in algoParams.keys(), \
-               "Error: Missing algo parameter."
-        assert algoParams["one_more_param"] == "Hello", \
-               "Error: Parameter has wrong value."
+        self.assertTrue("events_per_job" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["events_per_job"], 100,
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("max_job_size" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["max_job_size"], 24,
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("one_more_param" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["one_more_param"], "Hello",
+                         "Error: Parameter has wrong value.")
+
+        self.assertTrue("runWhitelist" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(len(algoParams["runWhitelist"]), 3,
+                         "Error: Wrong number of runs in whitelist.")
+
+        self.assertTrue("performance" in algoParams,
+                        "Error: Missing algo parameter.")
+        self.assertEqual(algoParams["performance"]["timePerEvent"], 14,
+                         "Error: Wrong time per event")
+        self.assertEqual(algoParams["performance"]["memoryRequirement"], 2300000,
+                         "Error: Wrong memory requirement")
+        self.assertEqual(algoParams["performance"]["sizePerEvent"], 512,
+                         "Error: Wrong size per event")
 
         return
 
@@ -258,7 +292,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Wrong number of blocks in white list."
         assert "Block6" in testTask.inputBlockWhitelist(), \
                "Error: Block missing from white list."
-        
+
         testTask.setInputBlockBlacklist(["Block7", "Block8"])
 
         assert len(testTask.inputBlockBlacklist()) == 2, \
@@ -267,7 +301,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Block missing from black list."
         assert "Block8" in testTask.inputBlockBlacklist(), \
                "Error: Block missing from black list."
-        
+
         testTask.setInputRunWhitelist([6])
 
         assert len(testTask.inputRunWhitelist()) == 1, \
@@ -283,36 +317,7 @@ class WMTaskTest(unittest.TestCase):
                "Error: Run missing from black list."
         assert 8 in testTask.inputRunBlacklist(), \
                "Error: Run missing from black list."
-               
-        return
 
-
-
-    def testSetGetPriority(self):
-        """
-        _testSetGetPriority_
-
-        Test and see whether we can set and get the
-        priorities in a task.
-        """
-
-        testTask = makeWMTask("TestTask")
-        testTask.setTaskType("Processing")
-
-        # Should be null to start
-        self.assertEqual(testTask.getTaskPriority(), None)
-
-        # Should not accept bad values
-        testTask.setTaskPriority(priority = 'fail')
-        self.assertEqual(testTask.getTaskPriority(), None)
-
-        # Should cast strings
-        testTask.setTaskPriority(priority = '1')
-        self.assertEqual(testTask.getTaskPriority(), 1)
-
-        # Should handle ints
-        testTask.setTaskPriority(priority = 2)
-        self.assertEqual(testTask.getTaskPriority(), 2)
         return
 
     def testAddNotifications(self):
@@ -344,11 +349,36 @@ class WMTaskTest(unittest.TestCase):
 
         testTask = makeWMTask("TestTask")
 
-        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101)
+        testTask.setPerformanceMonitor(maxRSS = 100, maxVSize = 101, softTimeout = 100,
+                                       gracePeriod = 1)
 
         self.assertEqual(testTask.data.watchdog.monitors, ['PerformanceMonitor'])
-        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS,   100)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxRSS, 100)
         self.assertEqual(testTask.data.watchdog.PerformanceMonitor.maxVSize, 101)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.softTimeout, 100)
+        self.assertEqual(testTask.data.watchdog.PerformanceMonitor.hardTimeout, 101)
+        return
+
+    def testProcessedDatasetElements(self):
+        """
+        _testProcessedDatasetElements_
+
+        Test that we can add a processing version and acquisition era,
+        and then get it back.
+        """
+
+        testTask = makeWMTask("TestTask")
+        testTask.setAcquisitionEra("StoneAge")
+        testTask.setProcessingVersion(2)
+        testTask.setProcessingString("Test")
+
+        self.assertEqual(testTask.getAcquisitionEra(), "StoneAge",
+                         "Wrong acquisition era in the task")
+        self.assertEqual(testTask.getProcessingVersion(), 2,
+                         "Wrong processing version in the task")
+        self.assertEqual(testTask.getProcessingString(), "Test",
+                         "Wrong processing string in the task")
+
         return
 
     def testParameters(self):
@@ -369,11 +399,131 @@ class WMTaskTest(unittest.TestCase):
         # should be the taskType
         testTask.setTaskType("SillyTask")
         self.assertEqual(testTask.getPrimarySubType(), "SillyTask")
-        
+
         testTask.setPrimarySubType(subType = "subType")
         self.assertEqual(testTask.getPrimarySubType(), "subType")
         return
+
+    def testBuildLumiMask(self):
+        from WMCore.WMSpec.WMTask import buildLumiMask
+        runs=['3','4']
+        lumis=['1,4,23,45', '5,84,234,445']
+        expected = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+
+        #working
+        self.assertEqual(buildLumiMask(runs, lumis), expected, "buildLumiMask")
+
+        #number of runs different than number of lumis
+        runs=['3']
+        lumis=['1,4,23,45', '5,84,234,445']
+        self.assertRaises(ValueError, buildLumiMask, runs, lumis)
+
+        #wrong format of the number of lumis
+        runs=['3', '4']
+        lumis=['1,4,23,45', '5,84,234']
+        self.assertRaises(ValueError, buildLumiMask, runs, lumis)
+
+    def testAddLumiMask(self):
+        """
+        _testAddLumiMask_
+
+        Verify that setting and getting the lumiMask objects for a task works correctly.
+        Do a round trip of a typical lumi mask
+        """
+        testTask = makeWMTask("TestTask")
+
+        lumiMask = LumiList(compactList = {
+                '1': [[1, 33], [35, 35], [37, 47], [49, 75], [77, 130], [133, 136]],
+                '2':[[1,45]],
+                '3':[[1,45],[50,80]],
+            })
+
+        testTask.setLumiMask(lumiMask = lumiMask.getCompactList())
+        outMask =  LumiList(compactList = testTask.getLumiMask())
+        self.assertEqual(lumiMask.getCMSSWString(), outMask.getCMSSWString())
+
+        return
+
+
+    def testSubscriptionInformation(self):
+        """
+        _testSubscriptionInformation_
+
+        Check the three methods related to the subscription information in a task
+        Make sure that we can set the subscription information for all datasets produced by this task
+        and we can select only some primaryDatasets/DataTiers, and check that we can update the dataset
+        in a subscription information section.
+        """
+        testTask = makeWMTask("TestTask")
+        cmsswStep = testTask.makeStep("cmsRun1")
+        cmsswStep.setStepType("CMSSW")
+        testTask.applyTemplates()
+        cmsswHelper = cmsswStep.getTypeHelper()
+        cmsswHelper.addOutputModule("outputRECO", primaryDataset = "OneParticle",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "RECO")
+        cmsswHelper.addOutputModule("outputDQM", primaryDataset = "TwoParticles",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "DQM")
+        cmsswHelper.addOutputModule("outputAOD", primaryDataset = "OneParticle",
+                                    processedDataset = "DawnOfAnEra-v1", dataTier = "AOD")
+
+        self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
+
+        testTask.setSubscriptionInformation(["mercury"], ["mars", "earth"],
+                                            ["earth"], "Replica", "Move", "High",
+                                            "OneParticle")
+        subInfo = testTask.getSubscriptionInformation()
+
+        outputRecoSubInfo = {"CustodialSites" : ["mercury"],
+                             "NonCustodialSites" : ["mars", "earth"],
+                             "AutoApproveSites" : ["earth"],
+                             "Priority" : "High",
+                             "CustodialSubType" : "Replica",
+                             "NonCustodialSubType" : "Move",
+                             "DeleteFromSource" : False}
         
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
+                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
+        self.assertFalse("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+
+        testTask.setSubscriptionInformation(["jupiter"], primaryDataset = "TwoParticles")
+        subInfo = testTask.getSubscriptionInformation()
+        self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
+                         outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
+        self.assertTrue("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
+
+        recoutOutputModule = cmsswHelper.getOutputModule("outputRECO")
+        setattr(recoutOutputModule, "primaryDataset", "ThreeParticles")
+        testTask.updateSubscriptionDataset("outputRECO", recoutOutputModule)
+        subInfo = testTask.getSubscriptionInformation()
+        self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
+                        outputRecoSubInfo, "The RECO subscription information is wrong")
+        self.assertFalse("/OneParticle/DawnOfAnEra-v1/RECO" in subInfo, "The RECO subscription information is wrong")
+
+    def testDeleteChild(self):
+        """
+        _testDeleteChild_
+
+        Test that we can remove all reference from a child
+        and other children are left intact
+        """
+
+        task1 = makeWMTask("task1")
+
+        task1.addTask("task2a")
+        task1.addTask("task2b")
+        task1.addTask("task2c")
+        task1.deleteChild("task2a")
+
+        childrenNumber = 0
+        for childTask in task1.childTaskIterator():
+            if childTask.name() == "task2a":
+                self.fail("Error: It was possible to find the deleted child")
+            childrenNumber += 1
+        self.assertEqual(childrenNumber, 2, "Error: Wrong number of children tasks")
+
+        return
 
 if __name__ == '__main__':
     unittest.main()

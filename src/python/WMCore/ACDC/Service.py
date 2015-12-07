@@ -13,28 +13,28 @@ import os
 class Service(object):
     """
     docstring for Service
-    
+
     API interface definition for an ACDC Service implementation
-    
+
     """
     def __init__(self, **options):
         super(Service, self).__init__()
         self.options = {}
         self.options.update(options)
-        
+
     def listOwners(self):
         """
         _listOwners_
-        
+
         return a list of all Owners in the backend
         """
         msg = "%s.listOwners is not implemented" % self.__class__.__name__
-        raise NotImplementedError(msg)    
+        raise NotImplementedError(msg)
 
     def newOwner(self):
         """
         _newOwner_
-        
+
         Add a new owner.
         """
         msg = "%s.newOwner is not implemented" % self.__class__.__name__
@@ -43,7 +43,7 @@ class Service(object):
     def removeOwner(self):
         """
         _removeOwner_
-        
+
         Remove an owner.
         """
         msg = "%s.removeOwner is not implemented" % self.__class__.__name__
@@ -52,13 +52,13 @@ class Service(object):
     def listCollections(self, ownerInstance):
         """
         _listCollections_
-        
+
         List collections for the Owner instance provided
-        
+
         """
         msg = "%s.listCollections is not implemented" % self.__class__.__name__
-        raise NotImplementedError(msg) 
-        
+        raise NotImplementedError(msg)
+
     def listFilesets(self, collectionInstance):
         """
         _listFilesets_

@@ -6,7 +6,7 @@ Handling resubmission Block construction
 ACDC_PREFIX = "acdc"
 
 class ACDCBlock(object):
-    
+
     @staticmethod
     def name(wmspecName, taskName, offset, numOfFile):
         taskName = taskName.replace('/', ':')
@@ -35,9 +35,9 @@ class ACDCBlock(object):
         if blockSplit[1] != ACDC_PREFIX:
             return False
         elif len(blockSplit) != 6:
-            msg = """blockName should contain prefix, wmspec name, task name, 
+            msg = """blockName should contain prefix, wmspec name, task name,
                      offset and number of files %s""" % blockName
-            raise ValueError, msg
+            raise ValueError(msg)
         else:
             return {'SpecName': str(blockSplit[2]),
                     'TaskName': str(blockSplit[3]).replace(':', '/'),

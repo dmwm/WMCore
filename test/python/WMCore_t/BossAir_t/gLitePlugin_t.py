@@ -34,7 +34,6 @@ class gLitePluginTest(BossAirTest):
         """
 
         config = self.getConfig()
-        config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
         config.BossAir.gliteConf = '/afs/cern.ch/cms/LCG/LCG-2/UI/conf/glite_wms_CERN.conf'
         config.BossAir.credentialDir = '/home/crab/ALL_SETUP/credentials/'
         config.BossAir.gLiteProcesses = 2

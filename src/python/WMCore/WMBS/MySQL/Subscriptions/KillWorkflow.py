@@ -30,7 +30,7 @@ class KillWorkflow(DBFormatter):
                    wmbs_fileset_files.fileid = wmbs_sub_files_complete.fileid
                  LEFT OUTER JOIN wmbs_sub_files_failed ON
                    wmbs_subscription.id = wmbs_sub_files_failed.subscription AND
-                   wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid                 
+                   wmbs_fileset_files.fileid = wmbs_sub_files_failed.fileid
                WHERE wmbs_sub_files_complete.fileid IS Null AND
                      wmbs_sub_files_failed.fileid IS Null AND
                      wmbs_workflow.name = :workflowname"""
@@ -51,7 +51,7 @@ class KillWorkflow(DBFormatter):
                        wmbs_workflow.name = :workflowname AND
                        wmbs_subscription.subtype IN
                          (SELECT id FROM wmbs_sub_types
-                          WHERE name != 'Cleanup' AND name != 'LogCollect'))"""    
+                          WHERE name != 'Cleanup' AND name != 'LogCollect'))"""
 
     def execute(self, workflowName, conn = None, transaction = False):
         self.dbi.processData(self.sql, {"workflowname": workflowName},
@@ -59,5 +59,5 @@ class KillWorkflow(DBFormatter):
         self.dbi.processData(self.delAcq, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
         self.dbi.processData(self.delAva, {"workflowname": workflowName},
-                             conn = conn, transaction = transaction)                
+                             conn = conn, transaction = transaction)
         return

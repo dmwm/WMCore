@@ -12,6 +12,7 @@ class CloseOut(BulkOperations):
     """ Page for Data Ops to close out requests """
     def __init__(self, config):
         BulkOperations.__init__(self, config)
+        self.wmstatWriteURL = "%s/%s" % (config.couchUrl.rstrip('/'), config.wmstatDBName)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
@@ -35,7 +36,6 @@ class CloseOut(BulkOperations):
         requests = BulkOperations.requestNamesFromCheckboxes(self, kwargs)
         for requestName in requests:
             WMCore.Lexicon.identifier(requestName)
-            ChangeState.changeRequestStatus(requestName, 'closed-out')
-        return self.templatepage("Acknowledge", participle="closed out", 
+            ChangeState.changeRequestStatus(requestName, 'closed-out', wmstatUrl = self.wmstatWriteURL)
+        return self.templatepage("Acknowledge", participle="closed out",
                                  requests=requests)
-

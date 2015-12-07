@@ -15,14 +15,19 @@ class CompleteInput(DBFormatter):
     run over the files have been complete successfully.  This will also remove
     entries from the acquired and failed tables.
     """
-    fileSelect = """SELECT job_files.subscriptionid, job_files.fileid,
+    fileSelect = """SELECT job_files.subscriptionid, job_files.fileid, job_files.lfn,
+                           job_files.jobid,
                            COUNT(wmbs_job_assoc.job) AS total, SUM(wmbs_job.outcome) AS numsuccess FROM
                       (SELECT wmbs_jobgroup.subscription AS subscriptionid,
-                              wmbs_job_assoc.fileid AS fileid FROM wmbs_job_assoc
+                              wmbs_job_assoc.job AS jobid,
+                              wmbs_job_assoc.fileid AS fileid,
+                              wmbs_file_details.lfn AS lfn FROM wmbs_job_assoc
                          INNER JOIN wmbs_job ON
                            wmbs_job_assoc.job = wmbs_job.id
                          INNER JOIN wmbs_jobgroup ON
                            wmbs_job.jobgroup = wmbs_jobgroup.id
+                         INNER JOIN wmbs_file_details ON
+                           wmbs_job_assoc.fileid = wmbs_file_details.id
                        WHERE wmbs_job.id = :jobid) job_files
                       INNER JOIN wmbs_job_assoc ON
                         job_files.fileid = wmbs_job_assoc.fileid
@@ -30,21 +35,26 @@ class CompleteInput(DBFormatter):
                         wmbs_job_assoc.job = wmbs_job.id
                       INNER JOIN wmbs_jobgroup ON
                         wmbs_job.jobgroup = wmbs_jobgroup.id
-                    WHERE wmbs_jobgroup.subscription = job_files.subscriptionid    
-                    GROUP BY job_files.subscriptionid, job_files.fileid
-                    HAVING total = numsuccess"""    
+                    WHERE wmbs_jobgroup.subscription = job_files.subscriptionid
+                    GROUP BY job_files.subscriptionid, job_files.fileid, job_files.lfn,
+                             job_files.jobid
+                    HAVING total = numsuccess"""
 
     acquiredDelete = """DELETE FROM wmbs_sub_files_acquired
                         WHERE subscription = :subid AND fileid = :fileid"""
 
     failedDelete = """DELETE FROM wmbs_sub_files_failed
-                      WHERE subscription = :subid AND fileid = :fileid"""    
+                      WHERE subscription = :subid AND fileid = :fileid"""
 
     sql = """INSERT IGNORE INTO wmbs_sub_files_complete (fileid, subscription)
                VALUES (:fileid, :subid)
                """
-    
-    def execute(self, id, conn = None, transaction = False):
+
+    failSql = """INSERT IGNORE INTO wmbs_sub_files_failed (fileid, subscription)
+               VALUES (:fileid, :subid)
+               """
+
+    def execute(self, id, lfnsToSkip = None, conn = None, transaction = False):
         if type(id) == list:
             binds = []
             for singleID in id:
@@ -56,18 +66,26 @@ class CompleteInput(DBFormatter):
                                       transaction = transaction)
         possibleDeletes = self.formatDict(result)
 
-        binds = []
+        completeBinds = []
+        failBinds = []
         for possibleDelete in possibleDeletes:
-            binds.append({"fileid": possibleDelete["fileid"],
-                          "subid": possibleDelete["subscriptionid"]})
+            if lfnsToSkip and possibleDelete["lfn"] in lfnsToSkip.get(possibleDelete["jobid"], []):
+                failBinds.append({"fileid": possibleDelete["fileid"],
+                                  "subid": possibleDelete["subscriptionid"]})
+            else:
+                completeBinds.append({"fileid": possibleDelete["fileid"],
+                                      "subid": possibleDelete["subscriptionid"]})
 
-        if len(binds) == 0:
-            return
-        
-        self.dbi.processData(self.acquiredDelete, binds, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.failedDelete, binds, conn = conn,
-                             transaction = transaction)
-        self.dbi.processData(self.sql, binds, conn = conn,
-                             transaction = transaction)        
+        if len(completeBinds) > 0:
+            self.dbi.processData(self.acquiredDelete, completeBinds, conn = conn,
+                                 transaction = transaction)
+            self.dbi.processData(self.failedDelete, completeBinds, conn = conn,
+                                 transaction = transaction)
+            self.dbi.processData(self.sql, completeBinds, conn = conn,
+                                 transaction = transaction)
+        if len(failBinds) > 0:
+            self.dbi.processData(self.acquiredDelete, failBinds, conn = conn,
+                                 transaction = transaction)
+            self.dbi.processData(self.failSql, failBinds, conn = conn,
+                                 transaction = transaction)
         return

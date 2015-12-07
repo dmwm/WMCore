@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 """
 RequestManager unittest
 
 Tests the functions of the REST API
+
 """
+
+
 import os
 import json
 import shutil
@@ -12,16 +13,15 @@ import urllib
 import tempfile
 import unittest
 import threading
+import random
+from httplib import HTTPException
 
 from nose.plugins.attrib import attr
-
-import WMCore.RequestManager.RequestMaker.Processing.ReRecoRequest as ReRecoRequest
-import WMCore.WMSpec.StdSpecs.ReReco                               as ReReco
 
 from WMCore.Services.Requests   import JSONRequests
 from WMCore.Wrappers            import JsonWrapper as json
 from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
-from httplib                    import HTTPException
+
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 
 # RequestDB Interfaces
@@ -31,20 +31,18 @@ from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
 #decorator import for RESTServer setup
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup  import DefaultConfig
-from WMCore.WMSpec.StdSpecs.ReReco       import getTestArguments
 
-def getRequestSchema():
-    schema = getTestArguments()
-    schema.update(RequestName = "TestReReco", 
-                  RequestType = "ReReco",
-                  CmsPath = "/uscmst1/prod/sw/cms",
-                  CouchURL = None,
-                  CouchDBName = None,
-                  Group = "PeopleLikeMe",
-                  InputDataset = '/PRIM/PROC/TIER',
-                  Requestor = "me"
-                  )
-    return schema
+# ACDC service
+from WMCore.ACDC.CouchService import CouchService
+from WMCore.ACDC.CouchCollection import CouchCollection
+from WMCore.ACDC.CouchFileset import CouchFileset
+from WMCore.DataStructs.File import File
+from WMCore.Services.UUID import makeUUID
+from WMCore.Services.RequestManager.RequestManager import RequestManager
+
+from WMCore_t.RequestManager_t import utils
+
+
 
 class RequestManagerConfig(DefaultConfig):
         
@@ -63,7 +61,6 @@ class RequestManagerConfig(DefaultConfig):
         shutil.rmtree(self.UnitTests.views.active.rest.model.workloadCache)
     
     def setupRequestConfig(self):
-        import WMCore.RequestManager.RequestMaker.Processing.RecoRequest
         self.UnitTests.views.active.rest.workloadDBName = "test"
         self.UnitTests.views.active.rest.security_roles = []
         self._setReqMgrHost()
@@ -74,19 +71,20 @@ class RequestManagerConfig(DefaultConfig):
     def setupCouchDatabase(self, dbName):
         self.UnitTests.views.active.rest.configDBName   = dbName
         self.UnitTests.views.active.rest.workloadDBName = dbName
-        self.UnitTests.views.active.rest.clipboardDB    = dbName
+        self.UnitTests.views.active.rest.wmstatDBName   = "%s_wmstats" % dbName
+        self.UnitTests.views.active.rest.acdcDBName   = "%s_acdc" % dbName
 
     def _setupAssign(self):
-        self.UnitTests.views.active.rest.opshold    = False
         self.UnitTests.views.active.rest.sitedb  = "https://cmsweb.cern.ch/sitedb/json/index/"
+        
+        
         
 class ReqMgrTest(RESTBaseUnitTest):
     """
-    _ReqMgrTest_
-
     Basic test for the ReqMgr services.
     Setup is done off-screen in RESTBaseUnitTest - this makes
     things confusing
+    
     """
 
     def setUp(self):
@@ -96,12 +94,17 @@ class ReqMgrTest(RESTBaseUnitTest):
         """
         self.couchDBName = "reqmgr_t_0"
         RESTBaseUnitTest.setUp(self)
-        self.testInit.setupCouch("%s" % self.couchDBName,
-                                 "GroupUser", "ConfigCache")
-
-        reqMgrHost      = self.config.getServerUrl()
+        self.testInit.setupCouch("%s" % self.couchDBName, "ConfigCache", "ReqMgr")
+        self.testInit.setupCouch("%s_wmstats" % self.couchDBName,
+                                 "WMStats")
+        self.testInit.setupCouch("%s_acdc" % self.couchDBName,
+                                 "ACDC", "GroupUser")
+        reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
-        return
+
+        self.params = {}
+        self.params['endpoint'] = reqMgrHost
+        self.reqService = RequestManager(self.params)
 
     def initialize(self):
         self.config = RequestManagerConfig(
@@ -111,45 +114,18 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.config.setupCouchDatabase(dbName = self.couchDBName)
         self.config.setPort(12888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-        return
+
 
     def tearDown(self):
         """
         tearDown 
 
         Tear down everything
+        
         """
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
-        return
 
-
-    def setupSchema(self, groupName = 'PeopleLikeMe',
-                    userName = 'me', teamName = 'White Sox',
-                    CMSSWVersion = 'CMSSW_3_5_8',
-                    scramArch = 'slc5_ia32_gcc434'):
-        """
-        _setupSchema_
-
-        Set up a test schema so that we can run a test request.
-        Standardization!
-        """
-
-        self.jsonSender.put('user/%s?email=me@my.com' % userName)
-        self.jsonSender.put('group/%s' % groupName)
-        self.jsonSender.put('group/%s/%s' % (groupName, userName))
-        self.jsonSender.put(urllib.quote('team/%s' % teamName))
-        self.jsonSender.put('version/%s/%s' % (CMSSWVersion, scramArch))
-
-        schema = ReReco.getTestArguments()
-        schema['RequestName'] = 'TestReReco'
-        schema['RequestType'] = 'ReReco'
-        schema['CmsPath'] = "/uscmst1/prod/sw/cms"
-        schema['Requestor'] = '%s' % userName
-        schema['Group'] = '%s' % groupName
-        schema['CustodialSite'] = 'US_T1_FNAL'
-
-        return schema
 
     def createConfig(self, bad = False):
         """
@@ -177,6 +153,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         configCache.save()
 
         return configCache.getCouchID()
+    
 
     @attr("integration")
     def testA_testBasicSetUp(self):
@@ -186,6 +163,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         Moving the tests that were in the setUp category out of it,
         mostly because I want to make sure that they don't fail inside
         the setUp statement.
+        
         """
         if 'me' in self.jsonSender.get('user')[0]:
             self.jsonSender.delete('user/me')    
@@ -213,10 +191,11 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(self.jsonSender.put(urllib.quote('team/White Sox'))[1], 200)
         self.assertTrue('White Sox' in self.jsonSender.get('team')[0])
 
-        # some foreign key stuff to dealwith
-        self.assertTrue(self.jsonSender.put('version/CMSSW_3_5_8')[1] == 200)
-        self.assertTrue('CMSSW_3_5_8' in self.jsonSender.get('version')[0])
-        return
+        # some foreign key stuff to deal with
+        schema = utils.getSchema()
+        version = "version/" + schema["CMSSWVersion"]
+        self.assertTrue(self.jsonSender.put(version)[1] == 200)
+        self.assertTrue(schema["CMSSWVersion"] in self.jsonSender.get('version')[0])
         
 
     @attr("integration")
@@ -225,18 +204,25 @@ class ReqMgrTest(RESTBaseUnitTest):
         _ReReco_
 
         Try a basic ReReco workflow
+        
         """
-        schema = self.setupSchema()
+        schema = utils.getAndSetupSchema(self)
         schema['RequestNumEvents'] = 100
-        schema['RequestEventSize'] = 101
+        schema['SizePerEvent'] = 101
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
         self.doRequest(schema)
-        return
+
 
     def doRequest(self, schema):
         """
         _doRequest_
 
         Run all tests on a basic ReReco workflow
+        
         """
         requestName = schema['RequestName']
         self.assertRaises(HTTPException, self.jsonSender.delete, 'request/%s' % requestName)
@@ -250,27 +236,17 @@ class ReqMgrTest(RESTBaseUnitTest):
         me = self.jsonSender.get('user/me')[0]
         self.assertTrue(requestName in me['requests'])
         self.assertEqual(self.jsonSender.put('request/%s?priority=5' % requestName)[1], 200)
-        self.assertEqual(self.jsonSender.post('user/me?priority=6')[1], 200)
-        self.assertEqual(self.jsonSender.post('group/PeopleLikeMe?priority=7')[1], 200)
 
-        # default priority of group and user of 1
         request = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(request['ReqMgrRequestBasePriority'], 5)
-        self.assertEqual(request['ReqMgrRequestorBasePriority'], 6)
-        self.assertEqual(request['ReqMgrGroupBasePriority'], 7)
-        self.assertEqual(request['RequestPriority'], 5+6+7)
+        self.assertEqual(request['RequestPriority'], 5)
 
         # Check LFN Bases
         self.assertEqual(request['UnmergedLFNBase'], '/store/unmerged')
         self.assertEqual(request['MergedLFNBase'], '/store/data')
 
-        # Check random other
-        self.assertEqual(request['CustodialSite'], 'US_T1_FNAL')
-
         # Check Num events
         self.assertEqual(request['RequestNumEvents'], 100)
-        self.assertEqual(request['RequestEventSize'], 101)
-        
+        self.assertEqual(request['SizePerEvent'], 101)
 
         # only certain transitions allowed
         #self.assertEqual(self.jsonSender.put('request/%s?status=running' % requestName)[1], 400)
@@ -306,7 +282,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.jsonSender.put('message/%s' % requestName, message)
         messages = self.jsonSender.get('message/%s' % requestName)
         #self.assertEqual(messages[0][0][0], message)
-        for status in ['running', 'completed']:
+        for status in ['running-open', 'running-closed', 'completed']:
             self.jsonSender.put('request/%s?status=%s' % (requestName, status))
 
         # campaign
@@ -320,7 +296,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         req = self.jsonSender.get('request/%s' % requestName)[0]
         self.assertEqual(req['Campaign'], 'TestCampaign')
         self.jsonSender.delete('request/%s' % requestName)
-        return
+        
 
     @attr("integration")
     def testC_404Errors(self):
@@ -333,26 +309,22 @@ class ReqMgrTest(RESTBaseUnitTest):
         """
         badName = 'ThereIsNoWayThisNameShouldExist'
 
-        # First, try to find a non-existant request
+        # First, try to find a non-existent request
         # This should throw a 404 error.
         # The request name should not be in it
         self.checkForError(cls = 'request', badName = badName, exitCode = 404,
                            message = 'Given requestName not found')
 
-        # Now look for non-existant user
+        # Now look for non-existent user
         self.checkForError(cls = 'user', badName = badName, exitCode = 404,
                            message = 'Cannot find user')
 
-        # Now try non-existant group
-        self.checkForError(cls = 'group', badName = badName, exitCode = 404,
-                           message = "Cannot find group/group priority")
-
-        # Now try non-existant campaign
+        # Now try non-existent campaign
         self.checkForError(cls = 'campaign', badName = badName, exitCode = 404,
                            message = "Cannot find campaign")
 
         # Now try invalid message
-        # This raises a requestName error becuase it searches for the request
+        # This raises a requestName error because it searches for the request
         self.checkForError(cls = 'message', badName = badName, exitCode = 404,
                            message = "Given requestName not found", testEmpty = False)
 
@@ -361,7 +333,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.checkForError(cls = 'assignment', badName = badName, exitCode = 404,
                            message = 'Cannot find team')
 
-        return
 
     @attr("integration")
     def testD_400Errors(self):
@@ -371,6 +342,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         These are failures created by invalid input, such as sending
         args to a request when it doesn't accept any.  They should
         generatore 400 Errors
+        
         """
         badName = 'ThereIsNoWayThisNameShouldExist'
         
@@ -385,7 +357,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # Break the validation
         self.checkForError(cls = 'user', badName = '!', exitCode = 400,
                            message = 'Invalid input: Input data failed validation')
-        return
+        
 
     def checkForError(self, cls, badName, exitCode, message, testEmpty = True):
         """
@@ -403,26 +375,23 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         testEmpty for those that don't handle calls to the main (i.e., who require
         an argument)
-        """
         
+        """
         raises = False
-
         # First assert that the test to be tested is empty
         if testEmpty:
             result = self.jsonSender.get(cls)
             self.assertTrue(type(result[0]) in [type([]), type({})])
-
         # Next, test
         try:
             result = self.jsonSender.get('%s/%s' % (cls, badName))
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, exitCode)
             self.assertTrue(message in ex.result)
             self.assertFalse(badName in ex.result)
         self.assertTrue(raises)
 
-        return
 
     @attr("integration")
     def testE_CheckStatusChanges(self):
@@ -432,22 +401,24 @@ class ReqMgrTest(RESTBaseUnitTest):
         Check status changes for a single request.  See whether
         we can move the request through the proper chain.  Figure
         out what happens when we fail.
+        
         """
         myThread = threading.currentThread()
 
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
-
 
         # There should only be one request in the DB
         result = GetRequest.requestID(requestName = requestName)
@@ -464,7 +435,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/%s?status=negotiating' % requestName)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 403)
             self.assertTrue('Failed to change status' in ex.result)
@@ -475,7 +446,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         raises = False
         try:
             self.jsonSender.put('request/%s?status=bogus' % requestName)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 403)
             self.assertTrue('Failed to change status' in ex.result)
@@ -501,29 +472,25 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             self.changeStatusAndCheck(requestName = requestName,
                                       statusName  = 'assigned')
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertTrue('Cannot change status without a team' in ex.result)
         self.assertTrue(raises)
 
-        
         self.jsonSender.put(urllib.quote('assignment/%s/%s' % (teamName, requestName)))
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'ops-hold')
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'assigned')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'negotiating')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'acquired')
         self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'running')
+                                  statusName  = 'running-open')
+        self.changeStatusAndCheck(requestName = requestName,
+                                  statusName  = 'running-closed')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'completed')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'closed-out')
 
-        return
 
     def changeStatusAndCheck(self, requestName, statusName):
         """
@@ -531,19 +498,20 @@ class ReqMgrTest(RESTBaseUnitTest):
 
         Change the status of a request and make sure that
         the request actually did it.
+        
         """
         self.jsonSender.put('request/%s?status=%s' % (requestName, statusName))
         result = self.jsonSender.get('request/%s' % requestName)
         self.assertEqual(result[0]['RequestStatus'], statusName)
-        return
+        
 
     def loadWorkload(self, requestName):
         """
         _loadWorkload_
 
         Load the workload from couch after we've saved it there.
+        
         """
-
         workload = WMWorkloadHelper()
         url      = '%s/%s/%s/spec' % (os.environ['COUCHURL'], self.couchDBName,
                                       requestName)
@@ -556,26 +524,27 @@ class ReqMgrTest(RESTBaseUnitTest):
         _TestWhitelistBlacklist_
 
         Test whether or not we can assign the block/run blacklist/whitelist
+        
         """
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         schema['RunWhitelist'] = [1, 2, 3]
         schema['RunBlacklist'] = [4, 5, 6]
         schema['BlockWhitelist'] = ['/dataset/dataset/dataset#alpha']
         schema['BlockBlacklist'] = ['/dataset/dataset/dataset#beta']
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
 
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
-
 
         workload = self.loadWorkload(requestName = requestName)
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.runs.whitelist, schema['RunWhitelist'])
@@ -584,18 +553,19 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertEqual(workload.data.tasks.DataProcessing.input.dataset.blocks.blacklist, schema['BlockBlacklist'])
 
         req = self.jsonSender.get('request/%s' % requestName)
-        self.assertTrue(req[0].has_key('Site Blacklist'))
-        self.assertTrue(req[0].has_key('Site Whitelist'))
+        self.assertTrue('Site Blacklist' in req[0])
+        self.assertTrue('Site Whitelist' in req[0])
 
         schema['BlockBlacklist'] = {'1': '/dataset/dataset/dataset#beta'}
 
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Bad Run list of type " in ex.result)
+            print ex.result
+            self.assertTrue("Error in Workload Validation: Argument BlockBlacklist type is incorrect in schema." in ex.result)
             pass
         self.assertTrue(raises)
 
@@ -605,10 +575,10 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             raises = False
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Bad Run list of type " in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument RunWhitelist type is incorrect in schema." in ex.result)
             pass
         self.assertTrue(raises)
 
@@ -616,98 +586,92 @@ class ReqMgrTest(RESTBaseUnitTest):
         try:
             raises = True
             result = self.jsonSender.put('request/testRequest', schema)
-        except HTTPException, ex:
+        except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            self.assertTrue("Given runList without integer run numbers" in ex.result)
+            self.assertTrue("Error in Workload Validation: Argument RunWhitelist doesn't pass validation." in ex.result)
             pass
         self.assertTrue(raises)
 
-        return
 
     def testG_AddDuplicateUser(self):
         """
         _AddDuplicateUser_
 
         Test and see if we get a sensible error when adding a duplicate user.
+        
         """
-
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         raises = False
         try:
             self.jsonSender.put('group/%s/%s' % (groupName, userName))
-        except HTTPException, ex:
+        except HTTPException as ex:
             self.assertTrue("User/Group Already Linked in DB" in ex.result)
             self.assertEqual(ex.status, 400)
             raises = True
         self.assertTrue(raises)
 
-        return
 
     def testH_RemoveSoftwareVersion(self):
         """
         _RemoveSoftwareVersion_
 
         Remove the software version after submitting the request.  See what that does.
+        
         """
         myThread = threading.currentThread()
-        
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        scramArch    = 'slc5_ia32_gcc434'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion,
-                                        scramArch = scramArch)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 
         req = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
+        self.assertEqual(req['SoftwareVersions'], [schema["CMSSWVersion"]])
 
         # Delete software versions and make sure they're gone from the DB
-        SoftwareManagement.removeSoftware(softwareName = CMSSWVersion,
-                                          scramArch = scramArch)
+        SoftwareManagement.removeSoftware(softwareName = schema["CMSSWVersion"],
+                                          scramArch = schema["ScramArch"])
         versions = myThread.dbi.processData("SELECT * FROM reqmgr_software")[0].fetchall()
         self.assertEqual(versions, [])
         assocs = myThread.dbi.processData("SELECT * FROM reqmgr_software_dependency")[0].fetchall()
         self.assertEqual(assocs, [])
         
         req = self.jsonSender.get('request/%s' % requestName)[0]
-        self.assertEqual(req['SoftwareVersions'], [CMSSWVersion])
-        return
+        self.assertEqual(req['SoftwareVersions'], [schema["CMSSWVersion"]])
+        
 
     def testI_CheckConfigIDs(self):
         """
         _CheckConfigIDs_
 
         Check to see if we can pull out the ConfigIDs by request
-        """
         
+        """
         userName     = 'Taizong'
         groupName    = 'Li'
         teamName     = 'Tang'
-        CMSSWVersion = 'CMSSW_3_5_8'
-        schema       = self.setupSchema(userName = userName,
-                                        groupName = groupName,
-                                        teamName = teamName,
-                                        CMSSWVersion = CMSSWVersion)
-
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
         # Set some versions
-        schema['ProcessingVersion'] = 'pv2012'
+        schema['ProcessingVersion'] = '2012'
         schema['AcquisitionEra']    = 'ae2012'
         schema["PrimaryDataset"]    = "ReallyFake"
         schema["RequestNumEvents"]  = 100
@@ -715,19 +679,221 @@ class ReqMgrTest(RESTBaseUnitTest):
         configID = self.createConfig()
         schema["CouchDBName"] = self.couchDBName
         schema["CouchURL"]    = os.environ.get("COUCHURL")
-        schema["ProcConfigCacheID"] = configID
-        schema["InputDatasets"]     = ['/MinimumBias/Run2010B-RelValRawSkim-v1/RAW']
-
+        schema["ConfigCacheID"] = configID
+        schema["InputDataset"]     = '/MinimumBias/Run2010B-RelValRawSkim-v1/RAW'
 
         result = self.jsonSender.put('request/testRequest', schema)
         self.assertEqual(result[1], 200)
         requestName = result[0]['RequestName']
 
-        result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Commissioning10-v4&tier=RAW')[0]
+        result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Run2010B-RelValRawSkim-v1&tier=RAW')[0]
+        print result
         self.assertTrue(requestName in result.keys())
         self.assertTrue(configID in result[requestName][0])
-        return        
+        
+        
+    def testJ_CheckRequestCloning(self):
+        myThread = threading.currentThread()
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+        schema["AcquisitionEra"] = "NewEra"
+        result = self.jsonSender.put("request", schema)
+        self.assertEqual(result[1], 200)
+        requestName = result[0]["RequestName"]
+        acquisitionEra = result[0]["AcquisitionEra"]
+        self.assertTrue(schema["AcquisitionEra"], acquisitionEra)
+        # set some non-default priority
+        # when cloning a request which had some non default priority,
+        # the priority values were lost when creating a cloned request, the
+        # default values were lost. Change it here to specifically catch this case.
+        priority = 300
+        result = self.jsonSender.put("request/%s?priority=%s" % (requestName, priority))        
+        self.assertEqual(result[1], 200)
+        # get the original request from the server, although the variable result
+        # shall have the same stuff in
+        response = self.jsonSender.get("request/%s" % requestName)
+        origRequest = response[0]
+        self.assertEquals(origRequest["AcquisitionEra"], acquisitionEra)
+        # test that the priority was correctly set in the brand-new request
+        self.assertEquals(origRequest["RequestPriority"], priority)
+        
+        # test cloning not existing request
+        self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")
+        # correct attempt to clone the request
+        # this is the new request, it'll have different name
+        result = self.jsonSender.put("clone/%s" % requestName)
+        # get the cloned request from the server
+        respose = self.jsonSender.get("request/%s" % result[0]["RequestName"])
+        clonedRequest = respose[0]
+        # these request arguments shall differ in the cloned request:
+        toDiffer = ["RequestName", "RequestStatus"]
+        for differ in toDiffer:
+            self.assertNotEqual(origRequest[differ], clonedRequest[differ])
+        # check the desired status of the cloned request
+        self.assertEquals(clonedRequest["RequestStatus"], "assignment-approved",
+                          "Cloned request status should be 'assignment-approved', not '%s'." %
+                          clonedRequest["RequestStatus"])
+        # don't care about these two (they will likely be the same in the unittest
+        # since the brand new request injection as well as the cloning probably
+        # happen at roughly the same time)
+        toDiffer.extend(["RequestDate", "timeStamp", "RequestWorkflow"])
+        for differ in toDiffer:
+            del origRequest[differ]
+            del clonedRequest[differ]
+        # check the request dictionaries
+        self.assertEquals(len(origRequest), len(clonedRequest))
+        for k1, k2 in zip(sorted(origRequest.keys()), sorted(clonedRequest.keys())):
+            msg = ("Request values: original: %s: %s cloned: %s: %s differ" %
+                   (k1, origRequest[k1], k2, clonedRequest[k2]))
+            self.assertEqual(origRequest[k1], clonedRequest[k2], msg)
+            
 
+    def testK_CheckRequestFailsInjectionForbiddenInputArg(self):
+        myThread = threading.currentThread()
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        from WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel import deprecatedRequestArgs
+        for deprec in deprecatedRequestArgs:
+            schema = utils.getSchema(groupName=groupName, userName=userName)
+            schema[deprec] = "something"
+            self.assertRaises(HTTPException, self.jsonSender.put, "request", schema)
+
+    def setupACDCDatabase(self, collectionName, taskPath,
+                          user, group):
+        """
+        _setupACDCDatabase_
+
+        Populate an ACDC database with bogus records
+        associated to certain collection name, user and task path.
+        """
+        acdcServer = CouchService(url = self.testInit.couchUrl,
+                                  database = "%s_acdc" % self.couchDBName)
+        owner = acdcServer.newOwner(group, user)
+        testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                          url = self.testInit.couchUrl,
+                                          name = collectionName)
+        testCollection.setOwner(owner)
+        testFileset = CouchFileset(database = self.testInit.couchDbName,
+                                    url = self.testInit.couchUrl,
+                                    name = taskPath)
+        testCollection.addFileset(testFileset)
+
+        testFiles = []
+        for _ in range(5):
+            testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
+                            events = random.randint(1024, 4096))
+            testFiles.append(testFile)
+
+        testFileset.add(testFiles)
+
+    def testL_CascadeCloseOutAnnnouncement(self):
+        """
+        _testL_CascadeCloseOutAnnouncement_
+
+        Test the cascade closeout REST call, also
+        check that when announced a request deletes all ACDC records in the system.
+        """
+        userName     = 'Taizong'
+        groupName    = 'Li'
+        teamName     = 'Tang'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
+        result = self.jsonSender.put("request", schema)[0]
+        originalRequest = result['RequestName']
+        self.setupACDCDatabase(originalRequest, "/%s/DataProcessing" % originalRequest,
+                               result['Requestor'], result['Group'])
+        depth = 2
+        nReq = 3
+        requests = [originalRequest]
+        def createChildrenRequest(parentRequest, i, nReq):
+            createdRequests = []
+            resubSchema = utils.getResubmissionSchema(parentRequest, "/%s/DataProcessing" % parentRequest,
+                                                      groupName, userName)
+            result = self.jsonSender.put("request", resubSchema)[0]
+            requestName = result['RequestName']
+            self.setupACDCDatabase(requestName, "/%s/DataProcessing" % requestName, result['Requestor'], result['Group'])
+            createdRequests.append(requestName)
+            if i:
+                for _ in range(nReq):
+                    createdRequests.extend(createChildrenRequest(requestName, i - 1, nReq))
+            return createdRequests
+        requests.extend(createChildrenRequest(originalRequest, depth, nReq))
+        for request in requests:
+            self.changeStatusAndCheck(request, 'assignment-approved')
+        for request in requests:
+            self.jsonSender.put("assignment?team=%s&requestName=%s" % (teamName, request))
+        for status in ['acquired',
+                       'running-open', 'running-closed',
+                       'completed']:
+            for request in requests:
+                self.changeStatusAndCheck(request, status)
+        self.jsonSender.post('closeout?requestName=%s&cascade=True' % originalRequest)
+        svc = CouchService(url = self.testInit.couchUrl,
+                                  database = "%s_acdc" % self.couchDBName)
+
+        owner = svc.newOwner(groupName, userName)
+        for request in requests:
+            result = self.jsonSender.get('request/%s' % request)
+            self.assertEqual(result[0]['RequestStatus'], 'closed-out')
+            testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                             url = self.testInit.couchUrl,
+                                             name = request)
+            testCollection.setOwner(owner)
+            testCollection.populate()
+            self.assertNotEqual(len(testCollection["filesets"]), 0)
+
+        self.jsonSender.post('announce?requestName=%s&cascade=True' % originalRequest)
+        for request in requests:
+
+            result = self.jsonSender.get('request/%s' % request)
+            self.assertEqual(result[0]['RequestStatus'], 'announced')
+            testCollection = CouchCollection(database = self.testInit.couchDbName,
+                                             url = self.testInit.couchUrl,
+                                             name = request)
+            testCollection.setOwner(owner)
+            testCollection.populate()
+            self.assertEqual(len(testCollection["filesets"]), 0)
+
+            
+    def testM_PutRequestStats(self):
+        userName     = 'Kobe'
+        groupName    = 'Bryant'
+        teamName     = 'Lakers'
+        schema       = utils.getAndSetupSchema(self,
+                                               userName = userName,
+                                               groupName = groupName,
+                                               teamName = teamName)
+        configID = self.createConfig()
+        schema["ConfigCacheID"] = configID
+        schema["CouchDBName"] = self.couchDBName
+        schema["CouchURL"]    = os.environ.get("COUCHURL")
+
+        result = self.jsonSender.put("request", schema)[0]
+        originalRequest = result['RequestName']
+        stats = {'total_jobs': 100, 'input_events': 100, 'input_lumis': 100, 'input_num_files': 100}
+        result = self.reqService.putRequestStats(originalRequest, stats)
+        self.assertEqual(result['RequestName'], originalRequest)
 
 if __name__=='__main__':
     unittest.main()

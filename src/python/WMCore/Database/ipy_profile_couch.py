@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-*- coding: ISO-8859-1 -*-
-#pylint: disable-msg=E1101,C0103,R0902
+#pylint: disable=E1101,C0103,R0902
 """
 Couch DB command line admin tool
 """
@@ -104,7 +104,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     """request method using provided HTTP request and httplib library"""
     if  debug:
         httplib.HTTPConnection.debuglevel = 1
-    if  type(params) is not types.StringType:
+    if  type(params) is not str:
         params = urllib.urlencode(params, doseq=True)
     if  debug:
         print "input parameters", params
@@ -141,7 +141,7 @@ def print_data(data, lookup="value"):
     padding = ""
     for row in jsondict['rows']:
         values = row[lookup]
-        if  type(values) is types.DictType:
+        if  type(values) is dict:
             if  not padding:
                 for key in values.keys():
                     if  len(key) > maxl:
@@ -157,10 +157,10 @@ def set_prompt(in1):
     """Define shell prompt"""
     if  in1.find('|\#>')!=-1:
         in1 = in1.replace('|\#>', '').strip()
-    ip = __main__.__dict__['__IP'] 
-    prompt = getattr(ip.outputcache, 'prompt1') 
+    ip = __main__.__dict__['__IP']
+    prompt = getattr(ip.outputcache, 'prompt1')
     prompt.p_template = in1 + " |\#> "
-    prompt.set_p_str() 
+    prompt.set_p_str()
 
 def couch_help(self, arg):
     """
@@ -207,10 +207,10 @@ def couch_views():
         rdict = json.loads(res)
         for view_name, view_dict in rdict['views'].items():
             print PM.msg_blue("view name: ") + view_name
-            print PM.msg_blue("map:") 
+            print PM.msg_blue("map:")
             print PM.msg_green(view_dict['map'])
-            if  view_dict.has_key('reduce'):
-                print PM.msg_blue("reduce:") 
+            if  'reduce' in view_dict:
+                print PM.msg_blue("reduce:")
                 print PM.msg_green(view_dict['reduce'])
 
 def create_view(view_dict):
@@ -267,7 +267,7 @@ def delete_view(view_name):
 
 def delete_all_views(design):
     """
-    Delete all views in particular design document. 
+    Delete all views in particular design document.
     The db and design names are controlled via
     DB and DESIGN shell parameters, respectively.
     Parameters: <design_name, e.g. dasadmin>
@@ -338,7 +338,7 @@ def get_doc(id):
 
 def load_module(arg):
     """
-    Load custom admin module. Name it as <module>_ipython.py and place in 
+    Load custom admin module. Name it as <module>_ipython.py and place in
     your PYTHONPATH. Implement a <module>_load() function to load your stuff.
     Parameters: <module>
 
@@ -394,15 +394,15 @@ def main():
     # load configuration for couch-sh, supply a names of functions to
     # be loaded
     ip.ex(load_config([httplib_request, print_data]))
-    
+
     # autocall to "full" mode (smart mode is default, I like full mode)
     o.autocall = 2
-    
+
     # Set dbsh prompt
     o.prompt_in1 = 'couch-sh |\#> '
     o.prompt_in2 = 'couch-sh> '
     o.system_verbose = 0
-    
+
     # define couch-sh banner
     pyver  = sys.version.split('\n')[0]
     ipyver = Release.version

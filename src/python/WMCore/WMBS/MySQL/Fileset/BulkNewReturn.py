@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 _BulkNewReturn_
- 
+
 MySQL implementation of Fileset.BulkNewReturn
 """
 
@@ -25,14 +25,14 @@ class BulkNewReturn(DBFormatter):
                    WHERE name = :NAME
                    AND last_update = :LAST_UPDATE
                    AND open = :OPEN"""
-    
+
     def getBinds(self, name = None, open = False):
         bindVars = {}
         bindVars["NAME"] = name
         bindVars["OPEN"] = int(open)
         bindVars["LAST_UPDATE"] = int(time.time())
         return bindVars
-    
+
     def execute(self, nameList = None, open = False, conn = None,
                 transaction = False):
         """
@@ -43,7 +43,7 @@ class BulkNewReturn(DBFormatter):
         for name in nameList:
             binds.append(self.getBinds(name = name, open = open))
 
-        self.dbi.processData(self.sql, binds, 
+        self.dbi.processData(self.sql, binds,
                              conn = conn, transaction = transaction)
 
         result = self.dbi.processData(self.returnSQL, binds,

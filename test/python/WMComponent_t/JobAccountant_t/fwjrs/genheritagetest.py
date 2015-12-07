@@ -28,7 +28,7 @@ for i in range(totalReports):
         inputFile = loadTestReport.addInputFile("PoolSource", lfn = "input%i" % inputFileCounter,
                                                 events = 600000, size = 600000)
         inputFileCounter += 1
-        
+
     Report.addRunInfoToFile(inputFile, runInfo)
 
     for outputModule in outputModules:

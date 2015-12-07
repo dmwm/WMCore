@@ -49,10 +49,10 @@ class RunJobTest(unittest.TestCase):
                                      dbinterface = myThread.dbi)
 
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'Xanadu', seName = 'se.Xanadu',
+        resourceControl.insertSite(siteName = 'Xanadu', pnn = 'se.Xanadu',
                                    ceName = 'Xanadu', plugin = "TestPlugin")
         resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
-                                        maxSlots = 10000)
+                                        maxSlots = 10000, pendingSlots = 10000)
 
         # Create user
         wmbsFactory = DAOFactory(package = "WMCore.WMBS",
@@ -149,7 +149,7 @@ class RunJobTest(unittest.TestCase):
 
         result = myThread.dbi.processData("SELECT wmbs_id FROM bl_runjob")[0].fetchall()
         self.assertEqual(result,
-                         [(1L,), (2L,), (3L,), (4L,), (5L,), (6L,), (7L,), (8L,), (9L,), (10L,)])
+                         [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (10,)])
 
 
         loadJobsDAO = self.daoFactory(classname = "LoadByStatus")
@@ -263,5 +263,3 @@ class RunJobTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-

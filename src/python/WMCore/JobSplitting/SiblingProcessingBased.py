@@ -24,17 +24,16 @@ class SiblingProcessingBased(JobFactory):
         """
         # This doesn't use a proxy
         self.grabByProxy = False
-        
+
         filesPerJob = int(kwargs.get("files_per_job", 10))
 
         myThread = threading.currentThread()
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
-        
+
         fileAvail = daoFactory(classname = "Subscriptions.SiblingSubscriptionsComplete")
         completeFiles = fileAvail.execute(self.subscription["id"],
-                                          self.subscription["fileset"].id,
                                           conn = myThread.transaction.conn,
                                           transaction = True)
 
@@ -50,11 +49,17 @@ class SiblingProcessingBased(JobFactory):
             filesetClosed = True
 
         fileSites = {}
+        foundFiles = []
         for completeFile in completeFiles:
-            if not fileSites.has_key(completeFile["se_name"]):
-                fileSites[completeFile["se_name"]] = []
+            if completeFile["lfn"] not in foundFiles:
+                foundFiles.append(completeFile["lfn"])
+            else:
+                continue
 
-            fileSites[completeFile["se_name"]].append(completeFile)
+            if completeFile["pnn"] not in fileSites:
+                fileSites[completeFile["pnn"]] = []
+
+            fileSites[completeFile["pnn"]].append(completeFile)
 
         for siteName in fileSites.keys():
             if len(fileSites[siteName]) < filesPerJob and not filesetClosed:
@@ -66,9 +71,9 @@ class SiblingProcessingBased(JobFactory):
                 for jobFile in fileSites[siteName][0:filesPerJob]:
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
-                    newFile["locations"] = set([jobFile["se_name"]])                
+                    newFile["locations"] = set([jobFile["pnn"]])
                     self.currentJob.addFile(newFile)
-                
+
                 fileSites[siteName] = fileSites[siteName][filesPerJob:]
 
             if filesetClosed and len(fileSites[siteName]) > 0:
@@ -76,7 +81,7 @@ class SiblingProcessingBased(JobFactory):
                 for jobFile in fileSites[siteName]:
                     newFile = File(id = jobFile["id"], lfn = jobFile["lfn"],
                                    events = jobFile["events"])
-                    newFile["locations"] = set([jobFile["se_name"]])
-                    self.currentJob.addFile(newFile)            
+                    newFile["locations"] = set([jobFile["pnn"]])
+                    self.currentJob.addFile(newFile)
 
         return

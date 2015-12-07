@@ -3,6 +3,9 @@
 _ReqMgrConfig_
 
 ReqMgr config.
+
+WARNING: This config is only used for wmagent all-in-one test. Will be deplicated.
+Doesn't replex the current reqmgr config which is under deployment
 """
 
 import os
@@ -34,8 +37,9 @@ userEmail = "OPERATOR EMAIL"
 # database.  The JobDump couchapp needs to be installed into the jobdump
 # database.
 couchURL = "http://USERNAMEPASSWORD@COUCHSERVER:5984"
-configCacheDBName = "wmagent_configcache"
+configCacheDBName = "reqmgr_config_cache"
 reqMgrDBName = "reqmgrdb"
+wmstatDBName = "wmstats"
 
 # Agent name and team name.
 agentName = "WMAgentCommissioning"
@@ -90,6 +94,7 @@ config += reqMgrConfig(
     componentDir = os.path.join(config.General.workDir, "ReqMgr"),
     workloadCouchDB = reqMgrDBName,
     configCouchDB = configCacheDBName,
+    wmstatCouchDB = wmstatDBName,
     connectURL = databaseUrl,
     startup = "wmcoreD")
 

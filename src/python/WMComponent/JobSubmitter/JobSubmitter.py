@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable-msg=W6501
+#pylint: disable=W6501
 # W6501: pass information to logging using string arguments
 
 """
@@ -40,7 +40,7 @@ class JobSubmitter(Harness):
 
         # Add event loop to worker manager
         myThread = threading.currentThread()
-        
+
         pollInterval = self.config.JobSubmitter.pollInterval
         logging.info("Setting poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(JobSubmitterPoller(self.config),

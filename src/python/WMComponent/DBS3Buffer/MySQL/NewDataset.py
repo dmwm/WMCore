@@ -14,12 +14,12 @@ class NewDataset(DBFormatter):
     Check for new dataset existence and then
     insert it
     """
-    
-    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era, valid_status, global_tag, parent, custodial_site)
-               VALUES (:path, :processing_ver, :acquisition_era, :valid_status, :global_tag, :parent, :custodial_site)"""
+
+    sql = """INSERT IGNORE INTO dbsbuffer_dataset (path, processing_ver, acquisition_era, valid_status, global_tag, parent, prep_id)
+               VALUES (:path, :processing_ver, :acquisition_era, :valid_status, :global_tag, :parent, :prep_id)"""
 
     def execute(self, datasetPath, acquisitionEra = None, processingVer = None, validStatus = None,
-                globalTag = None, parent = None, custodialSite = None, conn = None, transaction = False):
+                globalTag = None, parent = None, prep_id = None, conn = None, transaction = False):
         """
         _execute_
 
@@ -27,9 +27,9 @@ class NewDataset(DBFormatter):
         """
         binds = {"path": datasetPath, 'acquisition_era': acquisitionEra,
                  'processing_ver': processingVer, 'valid_status': validStatus,
-                 'global_tag': globalTag, 'parent': parent, 'custodial_site': custodialSite}
+                 'global_tag': globalTag, 'parent': parent, 'prep_id': prep_id}
 
         self.dbi.processData(self.sql, binds, conn = conn,
                              transaction = transaction)
 
-        return 
+        return

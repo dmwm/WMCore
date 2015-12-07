@@ -3,28 +3,23 @@
 from WMComponent.RetryManager.PlugIns.RetryAlgoBase import RetryAlgoBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
 
-import os
-from math import pow
-from operator import mod
-
-
 class PauseAlgo(RetryAlgoBase):
     """
     _PauseAlgo_
 
-	This implements the Paused job algorithm, explanation of the concept in #3114
+        This implements the Paused job algorithm, explanation of the concept in #3114
     """
     def __init__ (self, config):
         RetryAlgoBase.__init__(self, config)
         self.changer = ChangeState(config)
 
-    def isReady(self, job, jobType):
+    def isReady(self, job, cooloffType):
         """
         Actual function that does the work
         """
         #This should come from configuration, pause_count
 
-        pauseCount = self.config.RetryManager.PauseCount
+        pauseCount = self.getAlgoParam(job['jobType'], param ='pauseCount', defaultReturn = 3)
 
         pauseMap = {
             'createcooloff' :    'createpaused',
@@ -32,8 +27,9 @@ class PauseAlgo(RetryAlgoBase):
             'jobcooloff'    :    'jobpaused'
         }
 
-    	# Here introduces the SquaredAlgo logic :
-        baseTimeout = self.config.RetryManager.coolOffTime.get(jobType.lower(), 10)
+        # Here introduces the SquaredAlgo logic :
+        baseTimeoutDict = self.getAlgoParam(job['jobType'])
+        baseTimeout = baseTimeoutDict.get(cooloffType.lower(), 10)
         cooloffTime = baseTimeout * pow(job['retry_count'], 2)
         currentTime = self.timestamp()
         if currentTime - job['state_time'] > cooloffTime:
@@ -43,10 +39,13 @@ class PauseAlgo(RetryAlgoBase):
 
         if retryByTimeOut :
             # If reached the pauseCount, we want the job to pause instead of retrying
-            if mod(job['retry_count'], pauseCount):
-                self.changer.propagate(job, pauseMap[job['state']], job['state'])
+            if pauseCount == 0:
+                self.changer.propagate(job, pauseMap[job['state']], job['state'],  updatesummary=True)
+                return False
+            elif job['retry_count'] > 0 and not (job['retry_count'] % pauseCount):
+                self.changer.propagate(job, pauseMap[job['state']], job['state'],  updatesummary=True)
                 return False
             else:
-                return True 
+                return True
         else:
-            return False         
+            return False

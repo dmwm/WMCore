@@ -11,7 +11,6 @@ import time
 
 from WMCore.Algorithms import BasicAlgos
 from WMCore.Configuration import ConfigSection
-from WMCore.Database.CMSCouch import CouchServer
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -30,23 +29,23 @@ class ReportTest(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection(destroyAllDatabase = True)
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
         self.xmlPath = os.path.join(getTestBase(),
                                     "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         self.badxmlPath = os.path.join(getTestBase(),
-                                    "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
+                                       "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
         self.skippedFilesxmlPath = os.path.join(getTestBase(),
-                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
+                                                "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
         self.skippedAllFilesxmlPath = os.path.join(getTestBase(),
                                                    "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
         self.fallbackXmlPath = os.path.join(getTestBase(),
-                                                   "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
+                                            "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
         self.twoFileFallbackXmlPath = os.path.join(getTestBase(),
                                                    "WMCore_t/FwkJobReport_t/CMSSWTwoFileRemote.xml")
         self.pileupXmlPath = os.path.join(getTestBase(),
-                                                   "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
+                                          "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
 
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -269,7 +268,7 @@ cms::Exception caught in EventProcessor and rethrown
                "Error: Wrong exit code."
         assert myReport.data.cmsRun1.errors.error0.details == cmsException, \
                "Error: Error details are wrong:\n|%s|\n|%s|" % (myReport.data.cmsRun1.errors.error0.details,
-                                                               cmsException)
+                                                                cmsException)
 
         # Test getStepErrors
         self.assertEqual(myReport.getStepErrors("cmsRun1")['error0'].type, "CMSException")
@@ -389,13 +388,13 @@ cms::Exception caught in EventProcessor and rethrown
 
         step = myReport.retrieveStep("cmsRun1")
         step.startTime = 1
-        step.stopTime  = 8
+        step.stopTime = 8
         step = myReport.retrieveStep("cmsRun2")
         step.startTime = 2
-        step.stopTime  = 9
+        step.stopTime = 9
         step = myReport.retrieveStep("cmsRun3")
         step.startTime = 3
-        step.stopTime  = 10
+        step.stopTime = 10
 
         self.assertEqual(myReport.getFirstStartLastStop()['stopTime'], 10)
         self.assertEqual(myReport.getFirstStartLastStop()['startTime'], 1)
@@ -430,10 +429,10 @@ cms::Exception caught in EventProcessor and rethrown
         """
 
         report = Report("cmsRun1")
-        report.setStepVSize(stepName = "cmsRun1", min = 100, max = 800, average = 244)
-        report.setStepRSS(stepName = "cmsRun1", min = 100, max = 800, average = 244)
-        report.setStepPCPU(stepName = "cmsRun1", min = 100, max = 800, average = 244)
-        report.setStepPMEM(stepName = "cmsRun1", min = 100, max = 800, average = 244)
+        report.setStepVSize(stepName="cmsRun1", min=100, max=800, average=244)
+        report.setStepRSS(stepName="cmsRun1", min=100, max=800, average=244)
+        report.setStepPCPU(stepName="cmsRun1", min=100, max=800, average=244)
+        report.setStepPMEM(stepName="cmsRun1", min=100, max=800, average=244)
 
         perf = report.retrieveStep("cmsRun1").performance
         for section in perf.dictionary_().values():
@@ -481,7 +480,7 @@ cms::Exception caught in EventProcessor and rethrown
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
 
-        perfSection = myReport.__to_json__(thunker = None)["steps"]["cmsRun1"]["performance"]
+        perfSection = myReport.__to_json__(thunker=None)["steps"]["cmsRun1"]["performance"]
 
         self.assertTrue("storage" in perfSection,
                         "Error: Storage section is missing.")
@@ -516,12 +515,12 @@ cms::Exception caught in EventProcessor and rethrown
 
         report = Report("cmsRun1")
         self.assertEqual(report.getExitCode(), 0)
-        report.addError(stepName = "cmsRun1", exitCode = None, errorType = "test", errorDetails = "test")
+        report.addError(stepName="cmsRun1", exitCode=None, errorType="test", errorDetails="test")
         self.assertEqual(report.getExitCode(), 99999)
-        self.assertEqual(report.getStepExitCode(stepName = "cmsRun1"), 99999)
-        report.addError(stepName = "cmsRun1", exitCode = '12345', errorType = "test", errorDetails = "test")
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 99999)
+        report.addError(stepName="cmsRun1", exitCode='12345', errorType="test", errorDetails="test")
         self.assertEqual(report.getExitCode(), 12345)
-        self.assertEqual(report.getStepExitCode(stepName = "cmsRun1"), 12345)
+        self.assertEqual(report.getStepExitCode(stepName="cmsRun1"), 12345)
 
     def testProperties(self):
         """
@@ -537,8 +536,8 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.setValidStatus(name)
         myReport.setGlobalTag(name)
-        myReport.setAcquisitionProcessing(acquisitionEra = 'NULL', processingVer = name)
-        myReport.setInputDataset(inputPath = '/lame/path')
+        myReport.setAcquisitionProcessing(acquisitionEra='NULL', processingVer=name)
+        myReport.setInputDataset(inputPath='/lame/path')
 
         for f in myReport.getAllFilesFromStep("cmsRun1"):
             self.assertEqual(f['globalTag'], name)
@@ -559,7 +558,7 @@ cms::Exception caught in EventProcessor and rethrown
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
 
-        files = myReport.getAllFilesFromStep(step = "cmsRun1")
+        files = myReport.getAllFilesFromStep(step="cmsRun1")
 
         f1 = files[0]
         f2 = files[1]
@@ -593,28 +592,28 @@ cms::Exception caught in EventProcessor and rethrown
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
 
-        myReport.checkForAdlerChecksum(stepName = "cmsRun1")
+        myReport.checkForAdlerChecksum(stepName="cmsRun1")
 
-        self.assertFalse(myReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertFalse(myReport.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(myReport.getExitCode(), 60451)
 
         # Now see what happens if the adler32 is set to None
         myReport2 = Report("cmsRun1")
         myReport2.parse(self.xmlPath)
-        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        fRefs = myReport2.getAllFileRefsFromStep(step="cmsRun1")
         for fRef in fRefs:
             fRef.checksums = {'adler32': None}
-        myReport2.checkForAdlerChecksum(stepName = "cmsRun1")
-        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        myReport2.checkForAdlerChecksum(stepName="cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(myReport2.getExitCode(), 60451)
 
         myReport3 = Report("cmsRun1")
         myReport3.parse(self.xmlPath)
-        fRefs = myReport3.getAllFileRefsFromStep(step = "cmsRun1")
+        fRefs = myReport3.getAllFileRefsFromStep(step="cmsRun1")
         for fRef in fRefs:
             fRef.checksums = {'adler32': 100}
 
-        myReport3.checkForAdlerChecksum(stepName = "cmsRun1")
+        myReport3.checkForAdlerChecksum(stepName="cmsRun1")
         self.assertTrue(myReport3.getExitCode() != 60451)
 
         return
@@ -630,18 +629,18 @@ cms::Exception caught in EventProcessor and rethrown
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
 
-        myReport.checkForRunLumiInformation(stepName = "cmsRun1")
+        myReport.checkForRunLumiInformation(stepName="cmsRun1")
 
         self.assertNotEqual(myReport.getExitCode(), 70452)
 
         # Remove the lumi information on purpose
         myReport2 = Report("cmsRun1")
         myReport2.parse(self.xmlPath)
-        fRefs = myReport2.getAllFileRefsFromStep(step = "cmsRun1")
+        fRefs = myReport2.getAllFileRefsFromStep(step="cmsRun1")
         for fRef in fRefs:
             fRef.runs = ConfigSection()
-        myReport2.checkForRunLumiInformation(stepName = "cmsRun1")
-        self.assertFalse(myReport2.stepSuccessful(stepName = "cmsRun1"))
+        myReport2.checkForRunLumiInformation(stepName="cmsRun1")
+        self.assertFalse(myReport2.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(myReport2.getExitCode(), 70452)
 
         return
@@ -662,7 +661,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         # Second, if we ignore cmsRun, the task
         # should succeed
-        self.assertTrue(myReport.taskSuccessful(ignoreString = 'cmsRun'))
+        self.assertTrue(myReport.taskSuccessful(ignoreString='cmsRun'))
         return
 
     def testStripReport(self):
@@ -680,7 +679,7 @@ cms::Exception caught in EventProcessor and rethrown
         path2 = os.path.join(self.testDir, 'testReport2.pkl')
 
         myReport.save(path1)
-        info = BasicAlgos.getFileInfo(filename = path1)
+        info = BasicAlgos.getFileInfo(filename=path1)
         self.assertEqual(info['Size'], 7101)
 
         inputFiles = myReport.getAllInputFiles()
@@ -689,7 +688,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(len(myReport.getAllInputFiles()), 0)
 
         myReport.save(path2)
-        info = BasicAlgos.getFileInfo(filename = path2)
+        info = BasicAlgos.getFileInfo(filename=path2)
         self.assertEqual(info['Size'], 6210)
 
         return
@@ -710,8 +709,8 @@ cms::Exception caught in EventProcessor and rethrown
         setattr(modReport.data.cmsRun1, 'testVar', 'test01')
 
         report = Report()
-        report.setStep(stepName = 'cmsRun1', stepSection = baseReport.retrieveStep('cmsRun1'))
-        report.setStep(stepName = 'cmsRun1', stepSection = modReport.retrieveStep('cmsRun1'))
+        report.setStep(stepName='cmsRun1', stepSection=baseReport.retrieveStep('cmsRun1'))
+        report.setStep(stepName='cmsRun1', stepSection=modReport.retrieveStep('cmsRun1'))
 
         self.assertEqual(report.listSteps(), ['cmsRun1'])
         self.assertEqual(report.data.cmsRun1.testVar, 'test01')
@@ -734,7 +733,7 @@ cms::Exception caught in EventProcessor and rethrown
         originalOutputModules = len(originalReport.retrieveStep("cmsRun1").outputModules)
         originalReport.deleteOutputModuleForStep("cmsRun1", "outputALCARECORECO")
         self.assertFalse(originalReport.getOutputModule("cmsRun1", "outputALCARECORECO"),
-                        "Error: The output module persists after deletion")
+                         "Error: The output module persists after deletion")
         self.assertEqual(len(originalReport.retrieveStep("cmsRun1").outputModules), originalOutputModules - 1,
                          "Error: The number of output modules is incorrect after deletion")
 
@@ -874,7 +873,7 @@ cms::Exception caught in EventProcessor and rethrown
         badReport = Report("cmsRun1")
         badReport.parse(self.skippedAllFilesxmlPath)
         badReport.checkForOutputFiles("cmsRun1")
-        self.assertFalse(badReport.stepSuccessful(stepName = "cmsRun1"))
+        self.assertFalse(badReport.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(badReport.getExitCode(), 60450)
         return
 

@@ -1,15 +1,22 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+#pylint: disable=
 """
-Module defines REST API methods and their handles.
-Implementation of handles is in corresponding modules, not here.
-
+File       : RestApiHub.py
+Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
+Description: REST API module for WMARchive
 """
 
+# futures
+from __future__ import print_function, division
+
+# cherrypy modules
 import cherrypy
 
+# WMCore modules
 from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 from WMCore.REST.Format import RawFormat
-
 from WMCore.WMArchive.Service.Methods import WMAInfo, WMAPost, WMAGet
 
 class RestApiHub(RESTApi):

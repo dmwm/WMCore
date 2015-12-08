@@ -4,8 +4,8 @@
 """
 web server.
 """
-
-__author__ = "Valentin Kuznetsov"
+# futures
+from __future__ import print_function, division
 
 # system modules
 import os

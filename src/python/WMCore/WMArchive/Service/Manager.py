@@ -12,6 +12,9 @@ of WMArchive project, see
 https://twiki.cern.ch/twiki/bin/viewauth/CMS/WMArchive
 """
 
+# futures
+from __future__ import print_function, division
+
 # system modules
 import os
 import sys

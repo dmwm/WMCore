@@ -8,6 +8,8 @@ Description: This module consists of all REST APIs required by WMArchive service
              Every API is designed as a class with appropriate get/post/put/delete
              methods, see RESTEntity class for more details.
 """
+# futures
+from __future__ import print_function, division
 
 # system modules
 import re
@@ -61,7 +63,6 @@ class WMAGet(RESTEntity):
         are not passed in the method at all.
         
         """
-        print "VALIDATE", param
         # here we implement what should be validated
         validate_str("query", param, safe, PAT_EXAMPLE, optional=True)
 

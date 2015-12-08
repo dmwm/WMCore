@@ -564,13 +564,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                 if state == 'Down':
                     continue
 
-                #If the number of running exceeded the running slots in the
-                #site then get out
-                if totalRunningSlots >= 0 and totalRunning >= totalRunningSlots:
-                    continue
-
-                #If the task is running more than allowed then get out
-                if maxSlots >= 0 and taskRunning >= maxSlots:
+                # If the task is running more than allowed then get out.
+                # As we have extensive site whitelists, we can't control the number of pending
+                # jobs per site - hence, we cannot actually control the number of running jobs per
+                # site.  Accordingly, we allow ourselves to ignore the running limits for what are
+                # considered CPU-intensive jobs.
+                if (taskType not in ["Production", "Processing"]) and (maxSlots >= 0) \
+                        and (taskRunning >= maxSlots):
                     continue
 
                 # Ignore this threshold if we've cleaned out the site

@@ -545,3 +545,14 @@ config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB 
 config.AgentStatusWatcher.enabled = True # switch to enable or not this component
 config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
+
+config.component_("ArchiveDataReporter")
+config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
+config.ArchiveDataReporter.componentDir  = config.General.workDir + "/ArchiveDataReporter"
+config.ArchiveDataReporter.pollInterval = 240
+config.ArchiveDataReporter.WMArchiverURL = None
+# This is now OPTIONAL, it defaults to the componentDir
+# HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
+# disk as the JobCreator
+#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
+config.JobArchiver.numberOfJobsToCluster = 1000

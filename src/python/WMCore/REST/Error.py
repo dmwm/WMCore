@@ -67,7 +67,7 @@ class RESTError(Exception):
         self.info = info
         self.trace = trace
 
-    def __repr__(self):
+    def __str__(self):
         return "%s %s [HTTP %d, APP %d, MSG %s, INFO %s, ERR %s]" \
           % (self.__class__.__name__, self.errid, self.http_code, self.app_code,
              repr(self.message).replace("\n", " ~~ "),

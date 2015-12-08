@@ -43,10 +43,13 @@ class DatabasePage(TemplatedPage, DBFormatter):
         exposed that passes the database connection to all the DAO's.
         """
         TemplatedPage.__init__(self, config)
-        dbConfig = ConfigDBMap(config)
-        conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
-        DBFormatter.__init__(self, self, conn)
-        myThread = threading.currentThread()
-        myThread.transaction = Transaction(conn)
-        myThread.transaction.commit()
+        try:
+            dbConfig = ConfigDBMap(config)
+            conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
+            DBFormatter.__init__(self, self, conn)
+            myThread = threading.currentThread()
+            myThread.transaction = Transaction(conn)
+            myThread.transaction.commit()
+        except:
+            pass
         return

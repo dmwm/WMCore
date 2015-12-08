@@ -267,6 +267,27 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.delete()
         return
 
+    def testFilesize(self):
+        """
+        _testFilesize_
+
+        Test storing and loading the file information from dbsbuffer_file.
+        Make sure filesize can be bigger than 32 bits
+        """
+        checksums = {"adler32": "adler32", "cksum": "cksum"}
+        testFileA = DBSBufferFile(lfn = "/this/is/a/lfn", size = 3221225472, events = 1500000,
+                                  checksums = checksums)
+        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_7_6_0",
+                               appFam = "RECO", psetHash = "GIBBERISH",
+                               configContent = "MOREGIBBERISH")
+        testFileA.setDatasetPath("/Cosmics/CRUZET09-PromptReco-v1/RECO")
+        testFileA.create()
+
+        testFileB = DBSBufferFile(lfn = testFileA["lfn"])
+        testFileB.load()
+        self.assertEqual(testFileB["size"], 3221225472, "Error: the filesize should be 3GB")
+        self.assertEqual(testFileB["events"], 1500000, "Error: the number of events should be 1.5M")
+
     def testAddChild(self):
         """
         _testAddChild_

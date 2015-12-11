@@ -29,6 +29,7 @@ from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMBS.Fileset      import Fileset
 from WMCore.WMException       import WMException
 from WMCore.WMBS.Workflow     import Workflow
+from WMCore                   import Lexicon
 
 
 class JobArchiverPollerException(WMException):
@@ -146,7 +147,6 @@ class JobArchiverPoller(BaseWorkerThread):
                 myThread.transaction.rollback()
             raise JobArchiverPollerException(msg)
 
-
         return
 
 
@@ -157,34 +157,36 @@ class JobArchiverPoller(BaseWorkerThread):
         archiveJobs will handle the master task of looking for finished jobs,
         and running the code that cleans them out.
         """
-        myThread = threading.currentThread()
-
         doneList  = self.findFinishedJobs()
         logging.info("Found %i finished jobs to archive" % len(doneList))
 
-        self.cleanWorkArea(doneList)
+        jobCounter = 0
+        for slicedList in Lexicon.slicedIterator(doneList, 10000):
+            self.cleanWorkArea(slicedList)
 
-        successList = []
-        failList    = []
-        killList    = []
+            successList = []
+            failList    = []
+            killList    = []
+            for job in slicedList:
+                if job["outcome"] == "success":
+                    successList.append(job)
+                elif job["outcome"] == "killed":
+                    killList.append(job)
+                else:
+                    failList.append(job)
 
-        for job in doneList:
-            if job["outcome"] == "success":
-                successList.append(job)
-            elif job["outcome"] == "killed":
-                killList.append(job)
-            else:
-                failList.append(job)
+            if self.uploadPublishInfo:
+                self.createAndUploadPublish(successList)
 
-        myThread.transaction.begin()
+            myThread = threading.currentThread()
+            myThread.transaction.begin()
+            self.changeState.propagate(successList, "cleanout", "success")
+            self.changeState.propagate(failList, "cleanout", "exhausted")
+            self.changeState.propagate(killList, "cleanout", "killed")
+            myThread.transaction.commit()
 
-        if self.uploadPublishInfo:
-            self.createAndUploadPublish(successList)
-
-        self.changeState.propagate(successList, "cleanout", "success")
-        self.changeState.propagate(failList, "cleanout", "exhausted")
-        self.changeState.propagate(killList, "cleanout", "killed")
-        myThread.transaction.commit()
+            jobCounter += len(slicedList)
+            logging.info("Successfully archived %d jobs out of %d.", jobCounter, len(doneList))
 
 
     def findFinishedJobs(self):

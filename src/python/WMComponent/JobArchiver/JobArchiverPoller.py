@@ -126,28 +126,30 @@ class JobArchiverPoller(BaseWorkerThread):
         Performs the archiveJobs method, looking for each type of failure
         And deal with it as desired.
         """
-        try:
-            self.archiveJobs()
-            self.pollForClosable()
-            self.markInjected()
-        except WMException:
-            myThread = threading.currentThread()
-            if getattr(myThread, 'transaction', None) != None\
-                   and getattr(myThread.transaction, 'transaction', None) != None:
-                myThread.transaction.rollback()
-            raise
-        except Exception as ex:
-            myThread = threading.currentThread()
-            msg = "Caught exception in JobArchiver\n"
-            msg += str(ex)
-            msg += "\n\n"
-            if getattr(myThread, 'transaction', None) != None\
-                   and getattr(myThread.transaction, 'transaction', None) != None:
-                myThread.transaction.rollback()
-            raise JobArchiverPollerException(msg)
-
-
-        return
+        repeat = True
+        while repeat:
+            repeat = False
+            try:
+                doneSize = self.archiveJobs()
+                if doneSize >= 10000:
+                    repeat = True
+                self.pollForClosable()
+                self.markInjected()
+            except WMException:
+                myThread = threading.currentThread()
+                if getattr(myThread, 'transaction', None) != None\
+                       and getattr(myThread.transaction, 'transaction', None) != None:
+                    myThread.transaction.rollback()
+                raise
+            except Exception as ex:
+                myThread = threading.currentThread()
+                msg = "Caught exception in JobArchiver\n"
+                msg += str(ex)
+                msg += "\n\n"
+                if getattr(myThread, 'transaction', None) != None\
+                       and getattr(myThread.transaction, 'transaction', None) != None:
+                    myThread.transaction.rollback()
+                raise JobArchiverPollerException(msg)
 
 
     def archiveJobs(self):
@@ -185,6 +187,7 @@ class JobArchiverPoller(BaseWorkerThread):
         self.changeState.propagate(failList, "cleanout", "exhausted")
         self.changeState.propagate(killList, "cleanout", "killed")
         myThread.transaction.commit()
+        return len(doneList)
 
 
     def findFinishedJobs(self):
@@ -200,9 +203,9 @@ class JobArchiverPoller(BaseWorkerThread):
         jobList2 = jobListAction.execute(state = "exhausted")
         jobList3 = jobListAction.execute(state = "killed")
 
-        jobList.extend(jobList1)
-        jobList.extend(jobList2)
-        jobList.extend(jobList3)
+        jobList.extend(jobList1)[:10000]
+        jobList.extend(jobList2)[:10000]
+        jobList.extend(jobList3)[:10000]
 
         if len(jobList) == 0:
             # Then nothing is ready

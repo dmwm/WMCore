@@ -6,15 +6,14 @@ Readonly DBS Interface
 
 """
 from collections import defaultdict
+
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
 from Utils.IterTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
-from WMCore.Services.EmulatorSwitch import emulatorHook
-
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Lexicon import cmsname
+
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3

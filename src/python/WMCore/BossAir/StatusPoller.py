@@ -106,15 +106,15 @@ class StatusPoller(BaseWorkerThread):
         # Now check for timeouts
         for job in runningJobs:
             globalState = job.get('globalState', 'Error')
-            statusTime  = job.get('status_time', None)
-            timeout     = self.timeouts.get(globalState, None)
+            statusTime = job.get('status_time', None)
+            timeout = self.timeouts.get(globalState, None)
             if statusTime == 0:
-                logging.error("Not killing job %i, the status time was zero" % job['id'])
+                logging.error("Not killing job %i, the status time was zero", job['id'])
                 continue
             if timeout != None and statusTime != None:
                 if time.time() - float(statusTime) > float(timeout):
                     # Then the job needs to be killed.
-                    logging.info("Killing job %i because it has exceeded timeout for status %s" % (job['id'], globalState))
+                    logging.info("Killing job %i because it has exceeded timeout for status %s", job['id'], globalState)
                     job['status'] = 'Timeout'
                     jobsToKill.append(job)
 
@@ -123,9 +123,8 @@ class StatusPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         myThread.transaction.begin()
         self.bossAir.update(jobs=jobsToKill)
-        self.bossAir.kill(jobs=jobsToKill, killMsg=WM_JOB_ERROR_CODES[61304], errorCode=61304)
+        self.bossAir.kill(jobs=jobsToKill, killMsg=WM_JOB_ERROR_CODES[71304], errorCode=71304)
         myThread.transaction.commit()
-
 
         return
 

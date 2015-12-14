@@ -100,13 +100,13 @@ class Report:
     The base class for the new jobReport
 
     """
-    def __init__(self, reportname = None):
+    def __init__(self, reportname=None):
         self.data = ConfigSection("FrameworkJobReport")
         self.data.steps = []
         self.data.workload = "Unknown"
 
         if reportname:
-            self.addStep(reportname = reportname)
+            self.addStep(reportname=reportname)
 
         return
 
@@ -131,7 +131,7 @@ class Report:
         reportStep.status = status
         return
 
-    def parse(self, xmlfile, stepName = "cmsRun1"):
+    def parse(self, xmlfile, stepName="cmsRun1"):
         """
         _parse_
 
@@ -152,6 +152,7 @@ class Report:
                 crashMessage += stackFrame
 
             self.addError(stepName, 50115, "BadFWJRXML", msg)
+            logging.debug(crashMessage)
             raise FwkJobReportException(msg)
 
 
@@ -177,7 +178,7 @@ class Report:
                 jsonFile["runs"] = {}
                 for runNumber in cfgSectionRuns.listSections_():
                     jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
-                                                                runNumber)
+                                                               runNumber)
             jsonFiles.append(jsonFile)
 
         return jsonFiles
@@ -279,7 +280,7 @@ class Report:
         """
         returnCodes = set()
         for stepName in self.listSteps():
-            returnCodes.update(self.getStepExitCodes(stepName = stepName))
+            returnCodes.update(self.getStepExitCodes(stepName=stepName))
         return returnCodes
 
     def getStepExitCodes(self, stepName):
@@ -306,7 +307,7 @@ class Report:
         """
         returnCode = 0
         for stepName in self.listSteps():
-            errorCode = self.getStepExitCode(stepName = stepName)
+            errorCode = self.getStepExitCode(stepName=stepName)
             if errorCode == 99999:
                 # Then we don't know what this error was
                 # Mark it for return only if we don't fine an
@@ -347,7 +348,7 @@ class Report:
         handle.close()
         return
 
-    def unpersist(self, filename, reportname = None):
+    def unpersist(self, filename, reportname=None):
         """
         _unpersist_
 
@@ -393,7 +394,7 @@ class Report:
         self.report.outputModules = []
         return
 
-    def addOutputFile(self, outputModule, file = {}):
+    def addOutputFile(self, outputModule, file={}):
         """
         _addFile_
 
@@ -515,7 +516,7 @@ class Report:
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        [ setattr(newFile, x, y) for x, y in attrs.items() ]
+        [setattr(newFile, x, y) for x, y in attrs.items()]
 
         analysisFiles.fileCount += 1
         return
@@ -533,7 +534,7 @@ class Report:
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        [ setattr(newFile, x, y) for x, y in attrs.items() ]
+        [setattr(newFile, x, y) for x, y in attrs.items()]
 
         self.report.cleanup.removed.fileCount += 1
         return
@@ -548,7 +549,7 @@ class Report:
         if self.retrieveStep(stepName) == None:
             # Create a step and set it to failed
             # Assumption: Adding an error fails a step
-            self.addStep(stepName, status = 1)
+            self.addStep(stepName, status=1)
 
         stepSection = self.retrieveStep(stepName)
 
@@ -606,7 +607,7 @@ class Report:
         runsect.eventList.append(event)
         return
 
-    def addStep(self, reportname, status = 1):
+    def addStep(self, reportname, status=1):
         """
         _addStep_
 
@@ -659,7 +660,7 @@ class Report:
         if not stepName in self.data.steps:
             self.data.steps.append(stepName)
         else:
-            logging.info("Step %s is now being overridden by a new step report" % stepName)
+            logging.info("Step %s is now being overridden by a new step report", stepName)
         self.data.section_(stepName)
         setattr(self.data, stepName, stepSection)
         return
@@ -697,7 +698,7 @@ class Report:
 
         Get the output module from a particular step
         """
-        stepReport = self.retrieveStep(step = step)
+        stepReport = self.retrieveStep(step=step)
 
         if not stepReport:
             return None
@@ -711,13 +712,13 @@ class Report:
         Takes a fileRef object and returns a DataStructs/File object as output
         """
 
-        outputMod = self.getOutputModule(step = step, outputModule = outputModule)
+        outputMod = self.getOutputModule(step=step, outputModule=outputModule)
 
         if not outputMod:
             return None
 
         fileRef = getattr(outputMod.files, fileName, None)
-        newFile = File(locations = set())
+        newFile = File(locations=set())
 
         #Locations
         newFile.setLocation(getattr(fileRef, "location", None))
@@ -762,9 +763,9 @@ class Report:
         For a given step, retrieve all the associated files
         """
 
-        stepReport = self.retrieveStep(step = step)
+        stepReport = self.retrieveStep(step=step)
         if not stepReport:
-            logging.debug("Asked to retrieve files from non-existant step %s" % step)
+            logging.debug("Asked to retrieve files from non-existant step %s", step)
             return []
 
         # steps with no outputModules can be ok (even for CMSSW steps)
@@ -774,7 +775,7 @@ class Report:
 
         listOfFiles = []
         for module in listOfModules:
-            listOfFiles.extend( self.getFilesFromOutputModule(step = step, outputModule = module) )
+            listOfFiles.extend(self.getFilesFromOutputModule(step=step, outputModule=module))
 
         return listOfFiles
 
@@ -788,7 +789,7 @@ class Report:
         listOfFiles = []
 
         for step in self.data.steps:
-            listOfFiles.extend( self.getAllFilesFromStep(step = step) )
+            listOfFiles.extend(self.getAllFilesFromStep(step=step))
 
         return listOfFiles
 
@@ -801,13 +802,13 @@ class Report:
 
         listOfFiles = []
         for step in self.data.steps:
-            tmp = self.getInputFilesFromStep(stepName = step)
+            tmp = self.getInputFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
 
         return listOfFiles
 
-    def getInputFilesFromStep(self, stepName, inputSource = None):
+    def getInputFilesFromStep(self, stepName, inputSource=None):
         """
         _getInputFilesFromStep_
 
@@ -865,14 +866,14 @@ class Report:
         Grab all the files in a particular output module
         """
 
-        outputMod = self.getOutputModule(step = step, outputModule = outputModule)
+        outputMod = self.getOutputModule(step=step, outputModule=outputModule)
 
         if not outputMod:
             return []
 
         listOfFiles = []
         for n in range(outputMod.files.fileCount):
-            file = self.getOutputFile(fileName = 'file%i' %(n), outputModule = outputModule, step = step)
+            file = self.getOutputFile(fileName='file%i' %(n), outputModule=outputModule, step=step)
             if file:
                 listOfFiles.append(file)
             else:
@@ -891,7 +892,7 @@ class Report:
         """
         listOfFiles = []
         for step in self.data.steps:
-            tmp = self.getSkippedFilesFromStep(stepName = step)
+            tmp = self.getSkippedFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
 
@@ -906,7 +907,7 @@ class Report:
         """
         listOfFiles = []
         for step in self.data.steps:
-            tmp = self.getFallbackFilesFromStep(stepName = step)
+            tmp = self.getFallbackFilesFromStep(stepName=step)
             if tmp:
                 listOfFiles.extend(tmp)
 
@@ -931,7 +932,7 @@ class Report:
             if lfn is not None:
                 skippedFiles.append(lfn)
             else:
-                logging.error("Found no LFN in file %s" % str(fileSection))
+                logging.error("Found no LFN in file %s", str(fileSection))
 
         return skippedFiles
 
@@ -956,7 +957,7 @@ class Report:
             if lfn is not None:
                 fallbackFiles.append(lfn)
             else:
-                logging.error("Found no LFN in file %s" % str(fileSection))
+                logging.error("Found no LFN in file %s", str(fileSection))
 
         return fallbackFiles
 
@@ -969,7 +970,7 @@ class Report:
         if self.retrieveStep(stepName) == None:
             # Create a step and set it to failed
             # Assumption: Adding an error fails a step
-            self.addStep(stepName, status = 1)
+            self.addStep(stepName, status=1)
 
         stepSection = self.retrieveStep(stepName)
 
@@ -986,7 +987,7 @@ class Report:
 
         Determine wether or not a step was successful.
         """
-        stepReport = self.retrieveStep(step = stepName)
+        stepReport = self.retrieveStep(step=stepName)
         status = getattr(stepReport, 'status', 1)
         # We have too many possibilities
         if status not in [0, '0', 'success', 'Success']:
@@ -995,7 +996,7 @@ class Report:
         return True
 
 
-    def taskSuccessful(self, ignoreString = 'logArch'):
+    def taskSuccessful(self, ignoreString='logArch'):
         """
         _taskSuccessful_
 
@@ -1015,7 +1016,7 @@ class Report:
             # the task to fail
             if ignoreString and re.search(ignoreString, stepName):
                 continue
-            if not self.stepSuccessful(stepName = stepName):
+            if not self.stepSuccessful(stepName=stepName):
                 value = False
 
         return value
@@ -1058,14 +1059,14 @@ class Report:
         the form of references to the ConfigSection objects in the acutal
         report.
         """
-        stepReport = self.retrieveStep(step = step)
+        stepReport = self.retrieveStep(step=step)
         if not stepReport:
             return []
 
         outputModules = getattr(stepReport, "outputModules", [])
         fileRefs = []
         for outputModule in outputModules:
-            outputModuleRef = self.getOutputModule(step = step, outputModule = outputModule)
+            outputModuleRef = self.getOutputModule(step=step, outputModule=outputModule)
 
             for i in range(outputModuleRef.files.fileCount):
                 fileRefs.append(getattr(outputModuleRef.files, "file%i" % i))
@@ -1083,8 +1084,8 @@ class Report:
         This requires the WMStep to be passed in
         """
 
-        stepReport = self.retrieveStep(step = stepName)
-        fileInfo   = FileInfo()
+        stepReport = self.retrieveStep(step=stepName)
+        fileInfo = FileInfo()
 
         if not stepReport:
             return None
@@ -1099,7 +1100,7 @@ class Report:
                     msg = "Could not find file%i in module" % (n)
                     logging.error(msg)
                     return None
-                fileInfo(fileReport = file, step = step, outputModule = module)
+                fileInfo(fileReport=file, step=step, outputModule=module)
 
 
         return
@@ -1111,7 +1112,7 @@ class Report:
         Delete any reference to the given output module in the step report
         that includes deleting any output file it produced
         """
-        stepReport = self.retrieveStep(step = stepName)
+        stepReport = self.retrieveStep(step=stepName)
 
         if not stepReport:
             return
@@ -1155,7 +1156,7 @@ class Report:
         reportStep = self.retrieveStep(stepName)
 
         startTime = getattr(reportStep, 'startTime', None)
-        stopTime  = getattr(reportStep, 'stopTime', None)
+        stopTime = getattr(reportStep, 'stopTime', None)
 
         return {'startTime': startTime, 'stopTime': stopTime}
 
@@ -1171,12 +1172,12 @@ class Report:
         if len(steps) < 1:
             return None
 
-        firstStep = self.getTimes(stepName = steps[0])
+        firstStep = self.getTimes(stepName=steps[0])
         startTime = firstStep['startTime']
         stopTime  = firstStep['stopTime']
 
         for stepName in steps:
-            timeStamps = self.getTimes(stepName = stepName)
+            timeStamps = self.getTimes(stepName=stepName)
             if timeStamps['startTime'] is None or timeStamps['stopTime'] is None:
                 # Unusable times
                 continue
@@ -1233,13 +1234,13 @@ class Report:
 
         fileRefs = []
         for step in self.data.steps:
-            tmpRefs = self.getAllFileRefsFromStep(step = step)
+            tmpRefs = self.getAllFileRefsFromStep(step=step)
             if len(tmpRefs) > 0:
                 fileRefs.extend(tmpRefs)
 
         return fileRefs
 
-    def setAcquisitionProcessing(self, acquisitionEra, processingVer, processingStr = None):
+    def setAcquisitionProcessing(self, acquisitionEra, processingVer, processingStr=None):
         """
         _setAcquisitionProcessing_
 
@@ -1252,8 +1253,8 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.acquisitionEra = acquisitionEra
-            f.processingVer  = processingVer
-            f.processingStr  = processingStr
+            f.processingVer = processingVer
+            f.processingStr = processingStr
 
         return
 
@@ -1344,8 +1345,8 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('RSSMemory')
-        reportStep.performance.RSSMemory.min     = min
-        reportStep.performance.RSSMemory.max     = max
+        reportStep.performance.RSSMemory.min = min
+        reportStep.performance.RSSMemory.max = max
         reportStep.performance.RSSMemory.average = average
 
         return
@@ -1359,8 +1360,8 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PhysicalMemory')
-        reportStep.performance.PhysicalMemory.min     = min
-        reportStep.performance.PhysicalMemory.max     = max
+        reportStep.performance.PhysicalMemory.min = min
+        reportStep.performance.PhysicalMemory.max = max
         reportStep.performance.PhysicalMemory.average = average
 
         return
@@ -1374,8 +1375,8 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PercentCPU')
-        reportStep.performance.PercentCPU.min     = min
-        reportStep.performance.PercentCPU.max     = max
+        reportStep.performance.PercentCPU.min = min
+        reportStep.performance.PercentCPU.max = max
         reportStep.performance.PercentCPU.average = average
 
         return
@@ -1390,8 +1391,8 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('VSizeMemory')
-        reportStep.performance.VSizeMemory.min     = min
-        reportStep.performance.VSizeMemory.max     = max
+        reportStep.performance.VSizeMemory.min = min
+        reportStep.performance.VSizeMemory.max = max
         reportStep.performance.VSizeMemory.average = average
 
         return
@@ -1428,7 +1429,7 @@ class Report:
         if error:
             msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60451], error)
             self.addError(stepName, 60451, "NoAdler32Checksum", msg)
-            self.setStepStatus(stepName = stepName, status = 60451)
+            self.setStepStatus(stepName=stepName, status=60451)
 
         return
 
@@ -1439,11 +1440,11 @@ class Report:
         Some steps require that all output files have run lumi information.
         This will go through all output files in a step and make sure
         they have run/lumi informaiton. If they don't it creates an error
-        with code 60452 for the step, failing it.
+        with code 70452 for the step, failing it.
 
         """
         error = None
-        files = self.getAllFilesFromStep(step = stepName)
+        files = self.getAllFilesFromStep(step=stepName)
         for f in files:
             if not f.get('runs', None):
                 error = f.get('lfn', None)
@@ -1454,9 +1455,9 @@ class Report:
                         error = f.get('lfn', None)
                         break
         if error:
-            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[60452], error)
-            self.addError(stepName, 60452, "NoRunLumiInformation", msg)
-            self.setStepStatus(stepName = stepName, status = 60452)
+            msg = '%s, file was %s' % (WM_JOB_ERROR_CODES[70452], error)
+            self.addError(stepName, 70452, "NoRunLumiInformation", msg)
+            self.setStepStatus(stepName=stepName, status=70452)
         return
 
     def checkForOutputFiles(self, stepName):
@@ -1466,12 +1467,12 @@ class Report:
         Verify that there is at least an output file, either from
         analysis or from an output module.
         """
-        files = self.getAllFilesFromStep(step = stepName)
-        analysisFiles = self.getAnalysisFilesFromStep(step = stepName)
+        files = self.getAllFilesFromStep(step=stepName)
+        analysisFiles = self.getAnalysisFilesFromStep(step=stepName)
         if len(files) == 0 and len(analysisFiles) == 0:
             msg = WM_JOB_ERROR_CODES[60450]
             self.addError(stepName, 60450, "NoOutput", msg)
-            self.setStepStatus(stepName = stepName, status = 60450)
+            self.setStepStatus(stepName=stepName, status=60450)
         return
 
     def stripInputFiles(self):

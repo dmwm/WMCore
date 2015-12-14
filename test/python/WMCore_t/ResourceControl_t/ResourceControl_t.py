@@ -646,7 +646,7 @@ class ResourceControlTest(unittest.TestCase):
         reportPath = os.path.join(self.tempDir, "Report.0.pkl")
         report = Report()
         report.load(reportPath)
-        self.assertEqual(report.getExitCode(), 61301)
+        self.assertEqual(report.getExitCode(), 71301)
         return
 
     def createConfig(self):

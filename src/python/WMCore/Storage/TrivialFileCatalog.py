@@ -85,11 +85,13 @@ class TrivialFileCatalog(dict):
                     path = caller(mapping["chain"], path)
                     if not path:
                         continue
-                try:
-                    splitList = []
-                    for split in range(len(mapping['path-match-expr'].split(path, 1)) - 2):
-                        splitList.append(mapping['path-match-expr'].split(path, 1)[split + 1])
-                except IndexError:
+                splitList = []
+                if len(mapping['path-match-expr'].split(path, 1)) > 1 :
+                    for split in range(len(mapping['path-match-expr'].split(path, 1))):
+                        s = mapping['path-match-expr'].split(path, 1)[split]
+                        if s:
+                           splitList.append(s)
+                else:
                     path = oldpath
                     continue
                 result = mapping['result']

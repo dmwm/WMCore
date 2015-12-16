@@ -170,6 +170,17 @@ class TrivialFileCatalogTest(unittest.TestCase):
         self.assertEqual(pfn, out_pfn, "Error: incorrect matching")
         f.close()
 
+    def testMultipleRegexMatch(self):
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_CH_CERNBOX_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+
+        # Check that an lfn is converted to the right pfn
+        in_lfn = '/store/user/fred/data'
+        out_pfn = "root://eosuser.cern.ch/eos/user/f/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
 
 if __name__ == "__main__":
     unittest.main()

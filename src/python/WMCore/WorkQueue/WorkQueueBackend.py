@@ -385,7 +385,7 @@ class WorkQueueBackend(object):
                 elements.append(element)
                 if site not in siteJobCounts:
                     siteJobCounts[site] = {}
-                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
+                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']*(1+element.get('BlowupFactor', 0.0))
             else:
                 self.logger.info("No possible site for %s" % element)
         # sort elements to get them in priority first and timestamp order

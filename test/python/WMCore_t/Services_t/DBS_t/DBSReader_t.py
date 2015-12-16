@@ -10,6 +10,7 @@ from nose.plugins.attrib import attr
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
+from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
 
 # a small dataset that should always exist
 DATASET = '/HighPileUp/Run2011A-v1/RAW'
@@ -17,7 +18,7 @@ BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
 FILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root'
 
 
-class DBSReaderTest(unittest.TestCase):
+class DBSReaderTest(EmulatedUnitTest):
 
     def setUp(self):
         """
@@ -28,6 +29,18 @@ class DBSReaderTest(unittest.TestCase):
         #self.endpoint = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
         self.endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
         self.dbs = None
+        super(DBSReaderTest, self).setUp()
+        return
+
+    def tearDown(self):
+        """
+        _tearDown_
+
+
+        :return:
+        """
+
+        super(DBSReaderTest, self).tearDown()
         return
 
     @attr("integration")

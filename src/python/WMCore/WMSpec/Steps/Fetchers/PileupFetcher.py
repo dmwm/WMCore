@@ -12,22 +12,23 @@ from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
-def mapSitetoSE(sites):
+def mapSitetoPNN(sites):
     """
     Receives a list of site names, query resource control and return
-    a list of SE names.
+    a list of PNNs.
     """
     from WMCore.ResourceControl.ResourceControl import ResourceControl
 
     if not len(sites):
         return []
 
-    fakeSEs = []
+    fakePNNs = []
     rControl = ResourceControl()
     for site in sites:
-        fakeSEs.extend(rControl.listSiteInfo(site)['pnn'])
-    return fakeSEs
+        fakePNNs.extend(rControl.listSiteInfo(site)['pnn'])
+    return fakePNNs
 
 g_pileup_cache = {}
 
@@ -61,36 +62,47 @@ class PileupFetcher(FetcherInterface):
         a subset of the blocks in a dataset will be at a site.
 
         """
+        # only production PhEDEx is connected (This can be moved to init method
+        phedex = PhEDEx()
+        nodeFilter = set(['UNKNOWN', None])
         # convert the siteWhitelist into SE list and add SEs to the pileup location list
-        fakeSE = []
+        fakePNNs = []
         if fakeSites:
-            fakeSE = mapSitetoSE(fakeSites)
+            fakePNNs = mapSitetoPNN(fakeSites)
 
         resultDict = {}
         # iterate over input pileup types (e.g. "cosmics", "minbias")
         for pileupType in stepHelper.data.pileup.listSections_():
             # the format here is: step.data.pileup.cosmics.dataset = [/some/data/set]
             datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
-            # each dataset input can generally be a list, iterate over dataset names
+
             blockDict = {}
             for dataset in datasets:
-                blockNames = dbsReader.listFileBlocks(dataset)
-                # DBS listBlocks returns list of DbsFileBlock objects for each dataset,
-                # iterate over and query each block to get list of files
-                for dbsBlockName in blockNames:
-                    info = g_pileup_cache.get(dbsBlockName)
-                    now = time.time()
-                    if info and info[0] > now:
-                        blockDict[dbsBlockName] = copy.deepcopy(info[1])
-                    else:
-                        expiry = now + 4*3600
-                        blockDict[dbsBlockName] = {"FileList": sorted(dbsReader.lfnsInBlock(dbsBlockName)),
-                                               "PhEDExNodeNames": dbsReader.listFileBlockLocation(dbsBlockName),
-                                               "NumberOfEvents": dbsReader.getDBSSummaryInfo(block=dbsBlockName)['NumberOfEvents']}
-                        g_pileup_cache[dbsBlockName] = (expiry, copy.deepcopy(blockDict[dbsBlockName]))
-                    blockDict[dbsBlockName]['PhEDExNodeNames'].extend(x for x in fakeSE if x not in \
-                                                                      blockDict[dbsBlockName]['PhEDExNodeNames'])
+                info = g_pileup_cache.get(dataset)
+                now = time.time()
+                if info and info[0] > now:
+                    blockDict.update(copy.deepcopy(info[1]))
+                else:    
+                    blockFileInfo = dbsReader.getFileListByDataset(dataset=dataset, validFileOnly=1, detail=True)
+                    blockReplicasInfo = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
+                    
+                    for fileInfo in blockFileInfo:
+                        blockDict.setdefault(fileInfo['block_name'], {'FileList': [], 
+                                                                      'NumberOfEvents': 0, 
+                                                                      'PhEDExNodeNames': []})
+                        blockDict[fileInfo['block_name']]['FileList'].append({'logical_file_name': fileInfo['logical_file_name']})
+                        blockDict[fileInfo['block_name']]['NumberOfEvents'] += fileInfo['event_count']
+                    
+                                    
+                    for block in blockReplicasInfo:
+                        nodes = set(blockReplicasInfo[block]) - nodeFilter | set(fakePNNs)
+                        blockDict[block]['PhEDExNodeNames'] = list(nodes)
+                        blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
+                        
+                    expiry = now + 12*3600 
+                    g_pileup_cache[dataset] = (expiry, copy.deepcopy(blockDict))
             resultDict[pileupType] = blockDict
+            
         return resultDict
 
     def _createPileupConfigFile(self, helper, fakeSites=None):

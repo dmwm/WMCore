@@ -117,7 +117,10 @@ dependencies = {'wmc-rest':{
                         'statics': ['src/couchapps/Agent+'],
                         },
                 'crabcache':{
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
                         'systems': ['wmc-rest'],
+                        'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service', 'WMCore.Services.pycurl_manager',
+                                    'WMCore.Services.EmulatorSwitch'],
                         },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.RequestManager+',
@@ -126,7 +129,8 @@ dependencies = {'wmc-rest':{
                         'systems' : ['wmc-rest', 'wmc-database'],
                         },
                 'crabclient':{
-                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+', 'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+'],
+                        'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+',
+                                     'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', 'WMCore.Services.EmulatorSwitch'],

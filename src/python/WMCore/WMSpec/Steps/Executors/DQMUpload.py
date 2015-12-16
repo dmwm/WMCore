@@ -38,7 +38,7 @@ class DQMUpload(Executor):
 
     """
 
-    def pre(self, emulator = None):
+    def pre(self, emulator=None):
         """
         _pre_
 
@@ -52,7 +52,7 @@ class DQMUpload(Executor):
         print "Steps.Executors.DQMUpload.pre called"
         return None
 
-    def execute(self, emulator = None):
+    def execute(self, emulator=None):
         """
         _execute_
 
@@ -67,7 +67,7 @@ class DQMUpload(Executor):
             except Exception as ex:
                 #Let it go, it wasn't in the sandbox. Then it must be
                 #somewhere else
-                pass
+                del ex
 
         # Search through steps for analysis files
         for step in self.stepSpace.taskSpace.stepSpaces():
@@ -75,11 +75,10 @@ class DQMUpload(Executor):
                 #Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
-            logging.info("Beginning report processing for step %s" % step)
+            logging.info("Beginning report processing for step %s", step)
             reportLocation = os.path.join(stepLocation, 'Report.pkl')
             if not os.path.isfile(reportLocation):
-                logging.error("Cannot find report for step %s in space %s" \
-                              % (step, stepLocation))
+                logging.error("Cannot find report for step %s in space %s", step, stepLocation)
                 continue
 
             # First, get everything from a file and 'unpersist' it
@@ -107,7 +106,7 @@ class DQMUpload(Executor):
 
         return
 
-    def post(self, emulator = None):
+    def post(self, emulator=None):
         """
         _post_
 
@@ -172,14 +171,14 @@ class DQMUpload(Executor):
             msg += 'Detail: %s\n' % ex.hdrs.get("Dqm-Status-Detail", None)
             msg += 'Error: %s\n' % str(ex)
             logging.error(msg)
-            raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
+            raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
         except Exception as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Problem unknown.\n'
             msg += 'Error: %s\n' % str(ex)
             msg += 'Traceback: %s\n' % traceback.format_exc()
             logging.error(msg)
-            raise WMExecutionFailure(60318, "DQMUploadFailure", msg)
+            raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
 
         return
 
@@ -216,8 +215,8 @@ class DQMUpload(Executor):
         the transfer of the large inputs and eases command line invocation
         of the CGI script.
         """
-        (type, body) = self.encode(args, files)
-        request.add_header('Content-Type', type)
+        (contentType, body) = self.encode(args, files)
+        request.add_header('Content-Type', contentType)
         request.add_header('Content-Length', str(len(body)))
         request.add_data(body)
         return
@@ -234,10 +233,7 @@ class DQMUpload(Executor):
 
         class HTTPSCertAuth(HTTPS):
             def __init__(self, host, *args, **kwargs):
-                HTTPS.__init__(self, host,
-                               key_file = uploadProxy,
-                               cert_file = uploadProxy,
-                               **kwargs)
+                HTTPS.__init__(self, host, key_file=uploadProxy, cert_file=uploadProxy, **kwargs)
 
         class HTTPSCertAuthenticate(urllib2.AbstractHTTPHandler):
             def default_open(self, req):
@@ -261,6 +257,6 @@ class DQMUpload(Executor):
 
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':
-            data = GzipFile(fileobj=StringIO(data)).read ()
+            data = GzipFile(fileobj=StringIO(data)).read()
 
         return (result.headers, data)

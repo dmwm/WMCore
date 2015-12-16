@@ -12,11 +12,10 @@ import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
 
-class Exit60318(DiagnosticHandler):
+class Exit70318(DiagnosticHandler):
     def __call__(self, errCode, executor, **args):
         msg = "Failed to upload a DQM file to the GUI server."
-        executor.report.addError(executor.step._internal_name,
-                                 60318, "DQMUploadFailure", msg)
+        executor.report.addError(executor.step._internal_name, 70318, "DQMUploadFailure", msg)
 
 
 class DUExceptionHandler(DiagnosticHandler):
@@ -64,7 +63,7 @@ class DQMUpload(Diagnostic):
 
     def __init__(self):
         Diagnostic.__init__(self)
-        self.handlers[60318] = Exit60318()
+        self.handlers[70318] = Exit70318()
 
         catchAll = DUExceptionHandler()
-        [self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers]
+        dummyOut = [self.handlers.__setitem__(x, catchAll) for x in range(0, 255) if x not in self.handlers]

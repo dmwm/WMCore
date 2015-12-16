@@ -713,8 +713,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                         breakLoop, exitLoop = True, True
 
                     # Deal with accounting
-                    if len(possibleSites) == 1:
-                        nJobsRequired -= 1
+                    nJobsRequired -= 1
                     totalPending  += 1
                     taskPending   += 1
 

@@ -13,6 +13,7 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Lexicon import cmsname, slicedIterator
 
 def remapDBS3Keys(data, stringify = False, **others):
@@ -59,6 +60,7 @@ class DBS3Reader:
 
         # connection to PhEDEx (Use default endpoint url)
         self.phedex = PhEDEx(responseType = "json")
+        self.siteDB = SiteDB()
 
     def _getLumiList(self, blockName = None, lfns = None, validFileOnly = 1):
         """
@@ -583,9 +585,9 @@ class DBS3Reader:
                     for blockInfo in self.dbs.listBlockOrigin(block_name=block):
                         if blockInfo:
                             #TODO remove this line when all DBS origin_site_name is converted to PNN
-                            blockInfo[0]['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo[0]['origin_site_name'])
+                            blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
                             #upto this
-                            blocksInfo[block] = [blockInfo[0]['origin_site_name']]
+                            blocksInfo[block] = blockInfo['origin_site_name']
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
@@ -595,7 +597,7 @@ class DBS3Reader:
                 return list()
 
             for name, node in blocksInfo.iteritems():
-                valid_nodes = set([node]) - node_filter
+                valid_nodes = set(node) - node_filter
                 if valid_nodes:  # dont add if only 'UNKNOWN' or None
                     locations[name] = list(valid_nodes)
         else:

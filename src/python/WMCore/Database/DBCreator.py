@@ -60,10 +60,10 @@ class DBCreator(DBFormatter):
                                      conn = conn,
                                      transaction = transaction)
             except Exception as e:
-                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                msg = WMEXCEPTION['WMCORE-2'] + '\n\n' +\
                                   str(self.create[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
-                raise WMException(msg,'WMCore-2')
+                raise WMException(msg,'WMCORE-2')
 
         # create indexes
         for i in self.indexes.keys():
@@ -72,10 +72,10 @@ class DBCreator(DBFormatter):
                                      conn = conn,
                                      transaction = transaction)
             except Exception as e:
-                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                msg = WMEXCEPTION['WMCORE-2'] + '\n\n' +\
                                   str(self.indexes[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
-                raise WMException(msg,'WMCore-2')
+                raise WMException(msg,'WMCORE-2')
 
         # set constraints
         for i in self.constraints.keys():
@@ -84,10 +84,10 @@ class DBCreator(DBFormatter):
                                  conn = conn,
                                  transaction = transaction)
             except Exception as e:
-                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                msg = WMEXCEPTION['WMCORE-2'] + '\n\n' +\
                                   str(self.constraints[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
-                raise WMException(msg,'WMCore-2')
+                raise WMException(msg,'WMCORE-2')
 
         # insert permanent data
         for i in self.inserts.keys():
@@ -96,10 +96,10 @@ class DBCreator(DBFormatter):
                                      conn = conn,
                                      transaction = transaction)
             except Exception as e:
-                msg = WMEXCEPTION['WMCore-2'] + '\n\n' +\
+                msg = WMEXCEPTION['WMCORE-2'] + '\n\n' +\
                                   str(self.inserts[i]) +'\n\n' +str(e)
                 self.logger.debug( msg )
-                raise WMException(msg,'WMCore-2')
+                raise WMException(msg,'WMCORE-2')
 
         return True
 

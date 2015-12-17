@@ -71,7 +71,7 @@ class MonteCarlo(StartPolicyInterface):
                                  NumberOfEvents = nEvents,
                                  Jobs = jobs,
                                  Mask = copy(mask),
-                                 BlowupFactor = self.args['BlowupFactor']))
+                                 BlowupFactor = self.args['BlowupFactor'])
 
 
             if mask['LastEvent'] > (2**32 - 1):

@@ -217,15 +217,20 @@ class Block(StartPolicyInterface):
         lumiMask = task.getLumiMask()
         taskMask = LumiList(compactList = lumiMask)
 
+        # for performance reasons, we first get all the blocknames
+        blocks = dbs.dbs.listBlocks(dataset=datasetPath)
+
         # Find all the files that have runs and lumis we are interested in,
         # fill block lfn part of maskedBlocks
-
         for run, lumis in lumiMask.items():
             files = []
-            for slumis in grouper(lumis, 50):
-                slicedFiles = dbs.dbs.listFileArray(dataset=datasetPath, run_num=run,
-                                       lumi_list=slumis, detail=True)
-                files.extend(slicedFiles)
+            
+            for slumis in grouper(lumis, 1000):
+                for block in blocks:
+                    slicedFiles = dbs.dbs.listFileArray(block_name=block.get('block_name'), run_num=run,
+                                                        lumi_list=slumis, detail=True)
+                    files.extend(slicedFiles)
+
             for lfn in files:
                 blockName = lfn['block_name']
                 fileName = lfn['logical_file_name']
@@ -235,7 +240,6 @@ class Block(StartPolicyInterface):
                     maskedBlocks[blockName][fileName] = LumiList()
 
         # Fill maskedLumis part of maskedBlocks
-
         for block in maskedBlocks:
             fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly = 1)
             for fileLumi in fileLumis:

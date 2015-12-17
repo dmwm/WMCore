@@ -60,10 +60,14 @@ class Request(RESTEntity):
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
             return
-        
-        if"status" in param.kwargs and param.kwargs["status"].endswith("-archived"):
-            raise InvalidSpecParameterValue("Can't retieve bulk archived status requests, use other search arguments")
-        
+
+        if "status" in param.kwargs and isinstance(param.kwargs["status"], basestring):
+            param.kwargs["status"] = [param.kwargs["status"]]
+        if "status" in param.kwargs:
+            for status in param.kwargs["status"]:
+                if status.endswith("-archived"):
+                    raise InvalidSpecParameterValue("Can't retrieve bulk archived status requests, use other search arguments")
+
         for prop in param.kwargs:
             safe.kwargs[prop] = param.kwargs[prop]
         
@@ -331,34 +335,12 @@ class Request(RESTEntity):
             requests[request_name] = request_info[0][request_name]
         return requests    
         
-    def _get_couch_view(self, couchdb, couchapp, view, options, keys):
-        
-        if not options:
-            options = {}
-        options.setdefault("include_docs", True)
-        if isinstance(keys, basestring):
-            keys = [keys]
-        result = couchdb.loadView(couchapp, view, options, keys)
-        
-        request_info = {}
-        for item in result["rows"]:
-            request_info[item["id"]] = item.get('doc', None)
-            if request_info[item["id"]] != None:
-                self.filterCouchInfo(request_info[item["id"]])
-        return request_info
-    
-    
     #TODO move this out of this class
     def filterCouchInfo(self, couchInfo):
         for key in ['_rev', '_attachments']:
             if  key in couchInfo:
                 del couchInfo[key]
                 
-    
-    def get_wmstats_view(self, view, options, keys):
-        return self._get_couch_view(self.wmstatsCouch, "WMStats", view,
-                                    options, keys)
-            
     def _combine_request(self, request_info, requestAgentUrl, cache):
         keys = {}
         requestAgentUrlList = []

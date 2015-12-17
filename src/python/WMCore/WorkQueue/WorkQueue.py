@@ -393,10 +393,6 @@ class WorkQueue(WorkQueueBase):
             [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
-        if wmspec.locationDataSourceFlag():
-            psns = match['Inputs'].values()[0]
-            pnns = self.SiteDB.PSNstoPNNs(psns)
-            dbsDatasetDict['PhEDExNodeNames'] = pnns
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
@@ -420,11 +416,6 @@ class WorkQueue(WorkQueueBase):
 
             block = {}
             block["Files"] = fileLists
-            if wmspec.locationDataSourceFlag():
-                psns = match['Inputs'].values()[0]
-                pnns = self.SiteDB.PSNstoPNNs(psns)
-                for fileInfo in block["Files"]:
-                    fileInfo['locations'] = pnns
             return blockName, block
         else:
             dbs = get_dbs(match['Dbs'])
@@ -433,11 +424,6 @@ class WorkQueue(WorkQueueBase):
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
 
-            if wmspec.locationDataSourceFlag():
-                blockInfo = dbsBlockDict[blockName]
-                psns = match['Inputs'].values()[0]
-                pnns = self.SiteDB.PSNstoPNNs(psns)
-                blockInfo['PhEDExNodeNames'] = pnns
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):

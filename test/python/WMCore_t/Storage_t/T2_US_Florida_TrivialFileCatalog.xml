@@ -1,0 +1,54 @@
+<storage-mapping>
+
+   <lfn-to-pfn protocol="direct" path-match=".*/LoadTest07_Florida_(.*)_.*_.*" destination-match=".*" result="/cms/data/loadtest/store/PhEDEx_LoadTest07/LoadTest07_Debug_Florida/LoadTest07_Florida_$1" />
+   <lfn-to-pfn protocol="direct" path-match=".*/MonarcTest_Florida_(.*)_.*_.*" destination-match=".*" result="/cmsdata/store/phedex_monarctest/Florida/MonarcTest_Florida_$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+LoadTest/(.*)" destination-match=".*" result="/cmsdata/SC4/phedex_loadtest/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(unmerged/SAM/testSRM/SAM-srm.ihepa.ufl.edu.*)" destination-match=".*" result="/cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(unmerged/SAM/testSRM/SAM-srm1.ihepa.ufl.edu.*)" destination-match=".*" result="/cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(user/test/SAM-srm.ihepa.ufl.edu.*)" destination-match=".*" result="/cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(user/test/SAM-srm1.ihepa.ufl.edu.*)" destination-match=".*" result="/cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/test/xrootd/T2_US_Florida/store/(mc/JobRobot/RelValProdTTbar/GEN-SIM-DIGI-RECO/MC_3XY_V24_JobRobot-v1/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/test/xrootd/T2_US_Florida/store/(mc/SAM/GenericTTbar/GEN-SIM-RECO/CMSSW_5_3_1_START53_V5-v1/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(PhEDEx_LoadTest07/.*)" destination-match=".*" result="/cms/data/loadtest/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/test/xrootd/T2_US_Florida/(store/.*)" destination-match=".*" result="/cms/data/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(temp/user/test/SAM-srmb.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(express/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(relval/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(local/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(results/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(user/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(group/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(data/.*)" destination-match=".*" result="/cms/data/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+(.*)" destination-match=".*" result="/$1" />
+   <lfn-to-pfn protocol="xrootd" path-match="/+store/(.*)" destination-match=".*" result="root://cmsxrootd.fnal.gov//store/$1?tried=xrootd1.ihepa.ufl.edu,xrootd2.ihepa.ufl.edu,gridftp3.ihepa.ufl.edu,cmsio1.rc.ufl.edu,cmsio2.rc.ufl.edu,cmsio3.rc.ufl.edu,cmsio4.rc.ufl.edu,cmsio5.rc.ufl.edu,cmsio6.rc.ufl.edu,cmsio7.rc.ufl.edu,cmsio8.rc.ufl.edu,cmsio9.rc.ufl.edu,cmsio10.rc.ufl.edu" />
+   <lfn-to-pfn protocol="gsiftp" path-match="/+(.*)" chain="direct" destination-match=".*" result="gsiftp://gridftp1.hpc.ufl.edu/$1" />
+   <lfn-to-pfn protocol="srm" path-match="/+cms/data(/.*)" chain="direct" destination-match=".*" result="srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/cms/data$1" />
+   <lfn-to-pfn protocol="srm" path-match="/+(.*)" chain="direct" destination-match=".*" result="srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(unmerged/SAM/testSRM/SAM-srm.ihepa.ufl.edu.*)" result="file:///cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(user/test/SAM-srm.ihepa.ufl.edu.*)" result="file:///cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(unmerged/SAM/testSRM/SAM-srm1.ihepa.ufl.edu.*)" result="file:///cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(user/test/SAM-srm1.ihepa.ufl.edu.*)" result="file:///cmsdata/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+(.*)" chain="direct" destination-match=".*" result="file:///$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(temp/user/test/SAM-srmb.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(express/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(relval/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(local/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(results/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(user/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(group/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+store/(data/.*)" result="file:///cms/data/store/$1" />
+   <lfn-to-pfn protocol="myread" path-match="/+(.*)" chain="direct" destination-match=".*" result="file:///cms/data/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/+cmsdata(/.*)" chain="direct" destination-match=".*" result="srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/cmsdata$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/+cms/data(/.*)" chain="direct" destination-match=".*" result="srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/cms/data$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/+(.*)" chain="direct" destination-match=".*" result="srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/$1" />
+   <pfn-to-lfn protocol="direct" path-match="/+cmsdata/SC4/phedex_loadtest/(.*)" destination-match=".*" result="/LoadTest/$1" />
+   <pfn-to-lfn protocol="gsiftp" path-match="[a-z]+://[-a-z0-9:.]+/(.*)" chain="direct" destination-match=".*" result="$1" />
+   <pfn-to-lfn protocol="srm" path-match=".*\?SFN=/+cmsdata(/.*)" result="$1" />
+   <pfn-to-lfn protocol="srm" path-match=".*\?SFN=/+raid(/.*)" result="$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/+lustre/raidl(/.*)" result="$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/+cms/data(/.*)" result="$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/+cmsdata(/.*)" result="$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/+raid(/.*)" result="$1" />
+
+</storage-mapping>

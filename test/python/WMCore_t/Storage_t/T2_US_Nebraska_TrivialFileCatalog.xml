@@ -1,0 +1,21 @@
+<storage-mapping>
+
+   <lfn-to-pfn protocol="fdt" path-match="(.*)" chain="direct" destination-match=".*" result="fdt://red-gridftp11.unl.edu:54321/$1" />
+   <lfn-to-pfn protocol="direct" path-match=".*/LoadTest07_Nebraska_(.*)_.*_.*" destination-match=".*" result="/mnt/hadoop/user/uscms01/pnfs/unl\.edu/data4/cms/store/phedex_monarctest/Nebraska/LoadTest07_Nebraska_$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(.*)" destination-match=".*" result="/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/$1" />
+   <lfn-to-pfn protocol="xrootd" path-match="/+store/(.*)" destination-match=".*" result="root://xrootd.unl.edu//store/$1" />
+   <lfn-to-pfn protocol="hadoop" path-match="/+store/(.*)" destination-match=".*" result="/user/uscms01/pnfs/unl.edu/data4/cms/store/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match=".*/LoadTest07_Nebraska_(.*)_.*_.*" chain="direct" destination-match=".*" result="srm://dcache07.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/store/PhEDEx_LoadTest07/LoadTest07_Debug_.*/Nebraska/.*/(.*)" destination-match=".*" result="srm://dcache07.unl.edu:8443/srm/v2/server?SFN=/mnt/hadoop/user/uscms01/LoadTestDownload/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/+store/unmerged/SAM/testSRM/SAM-dcache07.unl.edu.*)" chain="direct" destination-match=".*" result="srm://dcache07.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/+store/unmerged/SAM/testSRM/SAM-red-srm1.unl.edu.*)" chain="direct" destination-match=".*" result="srm://red-srm1.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/+store/.*user/test/SAM-srm.unl.edu.*)" chain="direct" destination-match=".*" result="srm://srm.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/store/unmerged/testLFN)" chain="direct" destination-match=".*" result="srm://srm.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/store/unmerged/SAM.*)" chain="direct" destination-match=".*" result="srm://srm.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*/store/mc/SAM.*)" chain="direct" destination-match=".*" result="srm://srm.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*)" chain="direct" destination-match=".*" result="srm://dcache07.unl.edu:8443/srm/v2/server?SFN=$1" />
+   <pfn-to-lfn protocol="direct" path-match="/mnt/hadoop/user/uscms01/pnfs/unl\.edu/data4/cms/(.*)" destination-match=".*" result="/$1" />
+   <pfn-to-lfn protocol="hadoop" path-match="/user/uscms01/pnfs/unl.edu/data4/cms/(.*)" destination-match=".*" result="/$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=(.*)" chain="direct" destination-match=".*" result="$1" />
+
+</storage-mapping>

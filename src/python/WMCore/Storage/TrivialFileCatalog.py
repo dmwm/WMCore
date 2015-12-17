@@ -90,7 +90,7 @@ class TrivialFileCatalog(dict):
                     for split in range(len(mapping['path-match-expr'].split(path, 1))):
                         s = mapping['path-match-expr'].split(path, 1)[split]
                         if s:
-                           splitList.append(s)
+                            splitList.append(s)
                 else:
                     path = oldpath
                     continue

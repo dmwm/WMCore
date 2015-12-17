@@ -12,6 +12,7 @@ import shutil
 import tarfile
 import traceback
 
+from Utils.IterTools import grouper
 from WMComponent.TaskArchiver.TaskArchiverPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -23,7 +24,6 @@ from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMException import WMException
 from WMCore.WMBS.Workflow import Workflow
-from WMCore import Lexicon
 
 
 class JobArchiverPollerException(WMException):
@@ -152,7 +152,7 @@ class JobArchiverPoller(BaseWorkerThread):
         logging.info("Found %i finished jobs to archive", len(doneList))
 
         jobCounter = 0
-        for slicedList in Lexicon.slicedIterator(doneList, 10000):
+        for slicedList in grouper(doneList, 10000):
             self.cleanWorkArea(slicedList)
 
             successList = []

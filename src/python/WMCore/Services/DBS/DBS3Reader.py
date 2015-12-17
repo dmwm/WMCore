@@ -6,14 +6,14 @@ Readonly DBS Interface
 
 """
 from collections import defaultdict
+
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
+from Utils.IterTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
-from WMCore.Services.EmulatorSwitch import emulatorHook
-
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Lexicon import cmsname, slicedIterator
+
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -69,7 +69,7 @@ class DBS3Reader:
                 lumiLists = self.dbs.listFileLumis(block_name=blockName, validFileOnly = validFileOnly)
             elif lfns:
                 lumiLists = []
-                for slfn in slicedIterator(lfns, 50):
+                for slfn in grouper(lfns, 50):
                     lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name = slfn))
         except dbsClientException as ex:
             msg = "Error in "
@@ -514,7 +514,7 @@ class DBS3Reader:
         parentFilesDetail = []
         #TODO: slicing parentLFNs util DBS api is handling that.
         #Remove slicing if DBS api handles
-        for pLFNs in slicedIterator(parentsLFNs, 50):
+        for pLFNs in grouper(parentsLFNs, 50):
             parentFilesDetail.extend(self.dbs.listFileArray(logical_file_name = pLFNs, detail = True))
 
         if lumis:

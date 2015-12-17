@@ -8,6 +8,8 @@ __all__ = []
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 
 from math import ceil
+
+from Utils.IterTools import grouper
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
@@ -220,7 +222,7 @@ class Block(StartPolicyInterface):
 
         for run, lumis in lumiMask.items():
             files = []
-            for slumis in Lexicon.slicedIterator(lumis, 50):
+            for slumis in grouper(lumis, 50):
                 slicedFiles = dbs.dbs.listFileArray(dataset=datasetPath, run_num=run,
                                        lumi_list=slumis, detail=True)
                 files.extend(slicedFiles)

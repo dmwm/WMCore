@@ -9,7 +9,8 @@ import threading
 import logging
 import traceback
 import time
-from httplib import HTTPException
+import cjson
+from httplib import HTTPException, ResponseNotReady, IncompleteRead, BadStatusLine
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -29,6 +30,14 @@ class PhEDExInjectorPassableError(WMException):
     terminate the loop, but continue to retry without terminating the entire
     component.
     """
+
+def isPassableErrorWithoutStatus(ex):
+    passbleHTTPErrorList = [ResponseNotReady, IncompleteRead, BadStatusLine]
+    
+    for error in passbleHTTPErrorList:
+        if isinstance(ex, error):
+            return True
+    return False
 
 class PhEDExInjectorPoller(BaseWorkerThread):
     """
@@ -69,6 +78,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.initAlerts(compName = "PhEDExInjector")
 
         self.blocksToRecover = []
+        
+        self._tError = 0
+        self._dError = 0
 
     def setup(self, parameters):
         """
@@ -247,12 +259,17 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             injectRes = self.phedex.injectBlocks(location, xmlData)
         except HTTPException as ex:
             # If we get an HTTPException of certain types, raise it as an error
-            if ex.status == 400:
+            if isPassableErrorWithoutStatus(ex) or ex.status == 400:
                 # assume it is duplicate injection error. but if that is not the case
                 # needs to be investigated
                 self.blocksToRecover.extend( self.createRecoveryFileFormat(injectData) )
-
-            msg = "PhEDEx injection failed with %s error: %s" % (ex.status, ex.result)
+            if hasattr(ex, "status"):
+                e_status = ex.status
+                reason = ex.result
+            else:
+                e_status = "No status"
+                reason = str(ex)
+            msg = "PhEDEx injection failed with %s error: %s" % (e_status, reason)
             raise PhEDExInjectorPassableError(msg)
         except Exception as ex:
             # If we get an error here, assume that it's temporary (it usually is)
@@ -291,7 +308,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
         migratedBlocks = self.getMigrated.execute()
-
+        
+        logging.info("got %s migrated blocks" % len(migratedBlocks))
         for siteName in migratedBlocks.keys():
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
@@ -319,18 +337,19 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
             myThread.transaction.begin()
             try:
+                logging.info("Closing blocks for site: %s", siteName)
                 xmlData = self.createInjectionSpec(migratedBlocks[siteName])
                 injectRes = self.phedex.injectBlocks(location, xmlData)
                 logging.info("Block closing result: %s", injectRes)
             except HTTPException as ex:
                 # If we get an HTTPException of certain types, raise it as an error
-                if ex.status == 400:
+                if isPassableErrorWithoutStatus(ex) or ex.status == 400:
                     msg =  "Received 400 HTTP Error From PhEDEx: %s" % str(ex.result)
                     logging.error(msg)
                     self.sendAlert(6, msg = msg)
                     logging.debug("Blocks: %s", migratedBlocks[siteName])
                     logging.debug("XMLData: %s", xmlData)
-                    raise
+                    raise PhEDExInjectorPassableError(msg)
                 else:
                     msg =  "Encountered error while attempting to close blocks in PhEDEx.\n"
                     msg += str(ex)
@@ -375,12 +394,19 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         the call to the PhEDEx data service on cmsweb can time out
         """
         myThread = threading.currentThread()
-
+        
+        blocksToRecover = [] 
+        logging.info("Blocks to recover %s" % len(self.blocksToRecover))
         # recover one block at a time
         for block in self.blocksToRecover:
-
-            injectedFiles = self.phedex.getInjectedFiles(block)
-
+            
+            try:
+                injectedFiles = self.phedex.getInjectedFiles(block)
+            except:
+                logging.error("block %s with (%s) file injection failed will retry" % (block.keys()[0], len(block.values()[0])))
+                blocksToRecover.append(block)
+                continue
+                
             if len(injectedFiles) > 0:
 
                 myThread.transaction.begin()
@@ -388,7 +414,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 myThread.transaction.commit()
                 logging.info("%s files already injected: changed status in dbsbuffer db", len(injectedFiles))
 
-        self.blocksToRecover = []
+        self.blocksToRecover = blocksToRecover
         return
         
     def algorithm(self, parameters):
@@ -414,6 +440,22 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             logging.error("Rolling back current transaction and terminating current loop, but not killing component.")
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollbackForError()
+        except TypeError as ex:
+            if getattr(myThread, 'transaction', None):
+                myThread.transaction.rollbackForError()
+            if str(ex) == "empty JSON description":
+                self._tError += 1
+                logging.error("Encountered %s: %s times" % (str(ex), self._tError))
+            else:
+                raise
+        except cjson.DecodeError as ex:
+            if getattr(myThread, 'transaction', None):
+                myThread.transaction.rollbackForError()
+            if str(ex) == "expected string without null bytes":
+                self._dError += 1
+                logging.error("Encountered %s: %s times" % (str(ex), self._dError))
+            else:
+                raise
         except Exception:
             # Guess we should roll back if we actually have an exception
             if getattr(myThread, 'transaction', None):

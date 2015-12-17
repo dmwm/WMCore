@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from __future__ import division
 import unittest
-import mock
-from nose.plugins.attrib import attr
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from dbs.apis.dbsClient import DbsApi
 

@@ -202,8 +202,8 @@ class ReqMgrService(TemplatedPage):
         self.configcache_url = cdict.get('couch_config_cache_url', self.couch_url)
         self.dbs_url = cdict.get('dbs_url', '')
         self.dqm_url = cdict.get('dqm_url', '')
-        self.sw_ver = cdict.get('default_sw_version', 'CMSSW_5_2_5')
-        self.sw_arch = cdict.get('default_sw_scramarch', 'slc5_amd64_gcc434')
+        self.sw_ver = cdict.get('default_sw_version', 'CMSSW_7_6_1')
+        self.sw_arch = cdict.get('default_sw_scramarch', 'slc6_amd64_gcc493')
 
         # LogDB holder
         centralurl = cdict.get("central_logdb_url", "")

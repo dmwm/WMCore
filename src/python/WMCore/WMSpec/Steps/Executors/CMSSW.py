@@ -357,7 +357,7 @@ if [ $? -ne 0 ]; then echo "***\nCouldn't chdir: $?\n"; exit 72; fi
 eval `$SCRAM_COMMAND runtime -sh`
 if [ $? -ne 0 ]; then echo "***\nCouldn't get scram runtime: $?\n*"; exit 73; fi
 if [ -n "$USER_TARBALL" ] ; then
-    python2.6 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
+    python2 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
     if [ $? -ne 0 ]; then echo "***\nCouldn't untar sandbox: $?\n"; exit 74; fi
 fi
 echo "Completed SCRAM project"

@@ -85,7 +85,7 @@ class AdminTest(RESTBaseUnitTest):
         admin = Admin.Admin(self.config)
 
         ReqMgrWebTools.updateScramArchsAndCMSSWVersions()
-        self.assertTrue('slc5_amd64_gcc434' in admin.scramArchs())
+        self.assertTrue('slc6_amd64_gcc493' in admin.scramArchs())
         
         
 

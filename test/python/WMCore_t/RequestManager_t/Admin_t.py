@@ -2,17 +2,14 @@
 Test for code in the RequestDB/Admin section
 
 """
-import os
 import unittest
-
 
 from WMCore.Services.Requests import JSONRequests
 from WMCore.RequestManager.RequestDB.Interface.Admin import SoftwareManagement
 from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools
 
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMCore_t.RequestManager_t.ReqMgr_t  import RequestManagerConfig
-from WMCore_t.RequestManager_t import utils
+from WMCore_t.RequestManager_t.ReqMgr_t import RequestManagerConfig
 
 
 class AdminTest(RESTBaseUnitTest):
@@ -20,6 +17,7 @@ class AdminTest(RESTBaseUnitTest):
     Test for the lower-level DB code in the admin section
     
     """
+
     def setUp(self):
         """
         setUP global values
@@ -32,16 +30,14 @@ class AdminTest(RESTBaseUnitTest):
         reqMgrHost = self.config.getServerUrl()
         self.jsonSender = JSONRequests(reqMgrHost)
 
-
     def initialize(self):
         self.config = RequestManagerConfig(
-                'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel')
+            'WMCore.HTTPFrontEnd.RequestManager.ReqMgrRESTModel')
         self.config.setFormatter('WMCore.WebTools.RESTFormatter')
         self.config.setupRequestConfig()
-        self.config.setupCouchDatabase(dbName = self.couchDBName)
+        self.config.setupCouchDatabase(dbName=self.couchDBName)
         self.config.setPort(12888)
         self.schemaModules = ["WMCore.RequestManager.RequestDB"]
-
 
     def tearDown(self):
         """
@@ -52,7 +48,6 @@ class AdminTest(RESTBaseUnitTest):
         """
         RESTBaseUnitTest.tearDown(self)
         self.testInit.tearDownCouch()
-    
 
     def testA_SoftwareManagement(self):
         """
@@ -73,7 +68,7 @@ class AdminTest(RESTBaseUnitTest):
         # as telling it that no softwareVersions are available.
         # It deletes every software version it is not handed, so it should give nothing out.
         for scramArch in result.keys():
-            SoftwareManagement.updateSoftware(softwareNames = [], scramArch = scramArch)
+            SoftwareManagement.updateSoftware(softwareNames=[], scramArch=scramArch)
         self.assertEqual(SoftwareManagement.listSoftware(), {})
 
         # import has to be here, otherwise getting:
@@ -86,8 +81,7 @@ class AdminTest(RESTBaseUnitTest):
 
         ReqMgrWebTools.updateScramArchsAndCMSSWVersions()
         self.assertTrue('slc6_amd64_gcc493' in admin.scramArchs())
-        
-        
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     unittest.main()

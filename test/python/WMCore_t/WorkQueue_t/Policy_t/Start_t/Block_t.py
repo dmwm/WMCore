@@ -22,19 +22,20 @@ rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 rerecoArgs["SplittingAlgo"] = "LumiBased"
 rerecoArgs["LumisPerJob"] = 8
 parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
-parentProcArgs.update(IncludeParents = "True")
+parentProcArgs.update(IncludeParents="True")
 parentProcArgs["SplittingAlgo"] = "LumiBased"
 parentProcArgs["LumisPerJob"] = 8
 
-class BlockTestCase(unittest.TestCase):
 
-    splitArgs = dict(SliceType = 'NumberOfFiles', SliceSize = 10)
+class BlockTestCase(unittest.TestCase):
+    splitArgs = dict(SliceType='NumberOfFiles', SliceSize=10)
 
     def setUp(self):
         self.fakeDBS = False
-        EmulatorHelper.setEmulators(phedex = False, dbs = self.fakeDBS,
-                            siteDB = True, requestMgr = False)
+        EmulatorHelper.setEmulators(phedex=False, dbs=self.fakeDBS,
+                                    siteDB=True, requestMgr=False)
         Globals.GlobalParams.resetParams()
+
     def tearDown(self):
         EmulatorHelper.resetEmulators()
         Globals.GlobalParams.resetParams()
@@ -47,13 +48,12 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload.data.request.priority = 69
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
-            blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(69, unit['Priority'])
                 self.assertTrue(1 <= unit['Jobs'])
@@ -65,7 +65,6 @@ class BlockTestCase(unittest.TestCase):
             self.assertEqual(len(units),
                              len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
 
-
     def testMultiTaskProcessingWorkload(self):
         """Multi Task Processing Workflow"""
         datasets = []
@@ -76,12 +75,11 @@ class BlockTestCase(unittest.TestCase):
             datasets.append("/%s/%s/%s" % (inputDataset.primary,
                                            inputDataset.processed,
                                            inputDataset.tier))
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
 
         for task in MultiTaskProcessingWorkload.taskIterator():
             units, _ = Block(**self.splitArgs)(MultiTaskProcessingWorkload, task)
             self.assertEqual(58, len(units))
-            blocks = [] # fill with blocks as we get work units for them
 
             for unit in units:
                 self.assertTrue(1 <= unit['Jobs'])
@@ -183,7 +181,7 @@ class BlockTestCase(unittest.TestCase):
         self.assertEqual(len(rejectedWork), 46)
         self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])
 
-    def atestLumiMask(self):
+    def testLumiMask(self):
         """Lumi mask test"""
         rerecoArgs2 = {}
         rerecoArgs2.update(rerecoArgs)
@@ -191,21 +189,17 @@ class BlockTestCase(unittest.TestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
 
         # Block blacklist
         lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                            rerecoArgs2)
         task = getFirstTask(lumiWorkload)
-        task.data.input.splitting.runs = ['1']
+        #task.data.input.splitting.runs = ['1']
+        task.data.input.splitting.runs = ['180992']
         task.data.input.splitting.lumis = ['1,1']
         units, rejectedWork = Block(**self.splitArgs)(lumiWorkload, task)
         self.assertEqual(len(units), 1)
-        self.assertEqual(len(rejectedWork), 1)
-
+        self.assertEqual(len(rejectedWork), 46)
 
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
@@ -214,39 +208,34 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             # Take dataset and force to run over only 1 block
             units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task,
-                                            {dataset + '#28315b28-0c5c-11e1-b764-003048caaace' : []})
+                                               {dataset + '#28315b28-0c5c-11e1-b764-003048caaace': []})
             self.assertEqual(1, len(units))
-            blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
                 self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
                 self.assertEqual(task, unit['Task'])
             self.assertNotEqual(len(units),
-                             len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
+                                len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)))
 
     def testLumiSplitTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
-        splitArgs = dict(SliceType = 'NumberOfLumis', SliceSize = 1)
+        splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
 
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+
         for task in Tier1ReRecoWorkload.taskIterator():
             units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
-            blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 self.assertTrue(1 <= unit['Jobs'])
             self.assertEqual(0, len(rejectedWork))
@@ -268,9 +257,7 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
         Tier1ReRecoWorkload.setRunWhitelist([180899, 180992])
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                 inputDataset.processed,
-                                 inputDataset.tier)
+
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
@@ -324,18 +311,18 @@ class BlockTestCase(unittest.TestCase):
 
         # invalid run whitelist
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        processingSpec.setRunWhitelist([666]) # not in this dataset
+        processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
 
-        # blocks with 0 files are skipped
-        # set all blocks in request to 0 files, no work should be found & an error is raised
-        # This test does not work without the emulator
-        #Globals.GlobalParams.setNumOfFilesPerBlock(0)
-        #processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        #for task in processingSpec.taskIterator():
-            #self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
-        #Globals.GlobalParams.resetParams()
+            # blocks with 0 files are skipped
+            # set all blocks in request to 0 files, no work should be found & an error is raised
+            # This test does not work without the emulator
+            # Globals.GlobalParams.setNumOfFilesPerBlock(0)
+            # processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
+            # for task in processingSpec.taskIterator():
+            # self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+            # Globals.GlobalParams.resetParams()
 
     def notestParentProcessing(self):
         # Does not work with a RAW dataset, need a different workload
@@ -349,13 +336,12 @@ class BlockTestCase(unittest.TestCase):
 
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in parentProcSpec.taskIterator():
             units, _ = Block(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(47, len(units))
-            blocks = [] # fill with blocks as we get work units for them
             for unit in units:
                 import pdb
                 pdb.set_trace()
@@ -375,10 +361,7 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+
         for task in Tier1ReRecoWorkload.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(**self.splitArgs), Tier1ReRecoWorkload, task)
 
@@ -392,13 +375,13 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload.data.request.priority = 69
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = policyInstance(Tier1ReRecoWorkload, task)
             self.assertEqual(47, len(units))
-            blocks = [] # fill with blocks as we get work units for them
+            blocks = []  # fill with blocks as we get work units for them
             inputs = {}
             for unit in units:
                 blocks.extend(unit['Inputs'].keys())
@@ -416,39 +399,40 @@ class BlockTestCase(unittest.TestCase):
         # Modify the spec and task, get first a fresh policy instance
         policyInstance = Block(**self.splitArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
-            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs' : inputs.keys()})
+            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': inputs.keys()})
             self.assertRaises(WorkQueueNoWorkError, policyInstance, Tier1ReRecoWorkload, task)
 
         # Pop up 2 more blocks for the dataset with different statistics
         Globals.GlobalParams.setNumOfBlocksPerDataset(Globals.GlobalParams.numOfBlocksPerDataset() + 2)
-        Globals.GlobalParams.setNumOfFilesPerBlock(10) # Emulator is crooked, it gives the sum of all the files in the dataset not block
+        Globals.GlobalParams.setNumOfFilesPerBlock(
+            10)  # Emulator is crooked, it gives the sum of all the files in the dataset not block
 
 
         # Now run another pass of the Block policy
         # Broken: makes no work
-        #policyInstance = Block(**self.splitArgs)
-        #policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs' : inputs.keys()})
-        #for task in Tier1ReRecoWorkload.taskIterator():
-            #units, rejectedWork = policyInstance(Tier1ReRecoWorkload, task)
-            #self.assertEqual(2, len(units))
-            #self.assertEqual(0, len(rejectedWork))
-            #for unit in units:
-                #blocks.extend(unit['Inputs'].keys())
-                #inputs.update(unit['Inputs'])
-                #self.assertEqual(69, unit['Priority'])
-                #self.assertEqual(1, unit['Jobs'])
-                #self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
-                #self.assertEqual(task, unit['Task'])
-                #self.assertEqual(8, unit['NumberOfLumis'])
-                #self.assertEqual(40, unit['NumberOfFiles'])
-                #self.assertEqual(40000, unit['NumberOfEvents'])
-            #self.assertEqual(len(units),
-                             #len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)) - 2)
+        # policyInstance = Block(**self.splitArgs)
+        # policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs' : inputs.keys()})
+        # for task in Tier1ReRecoWorkload.taskIterator():
+        # units, rejectedWork = policyInstance(Tier1ReRecoWorkload, task)
+        # self.assertEqual(2, len(units))
+        # self.assertEqual(0, len(rejectedWork))
+        # for unit in units:
+        # blocks.extend(unit['Inputs'].keys())
+        # inputs.update(unit['Inputs'])
+        # self.assertEqual(69, unit['Priority'])
+        # self.assertEqual(1, unit['Jobs'])
+        # self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
+        # self.assertEqual(task, unit['Task'])
+        # self.assertEqual(8, unit['NumberOfLumis'])
+        # self.assertEqual(40, unit['NumberOfFiles'])
+        # self.assertEqual(40000, unit['NumberOfEvents'])
+        # self.assertEqual(len(units),
+        # len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)) - 2)
 
         # Run one last time
         policyInstance = Block(**self.splitArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
-            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs' : inputs.keys()})
+            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': inputs.keys()})
             self.assertRaises(WorkQueueNoWorkError, policyInstance, Tier1ReRecoWorkload, task)
 
         return
@@ -467,8 +451,8 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
-            outputs = policyInstance.getDatasetLocations({'https://cmsweb.cern.ch/dbs/prod/global/DBSReader' :
-                                                          Tier1ReRecoWorkload.listOutputDatasets()})
+            outputs = policyInstance.getDatasetLocations({'https://cmsweb.cern.ch/dbs/prod/global/DBSReader':
+                                                              Tier1ReRecoWorkload.listOutputDatasets()})
             for dataset in outputs:
                 self.assertEqual(sorted(outputs[dataset]), [])
         return
@@ -508,12 +492,12 @@ class BlockTestCase(unittest.TestCase):
 
         task.data.input.splitting.runs = [181061, 180899]
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
-        lumiMask = LumiList(compactList = {'206371': [[1, 50], [60,70]], '180899':[[1,1]], } )
+        lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
         dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                     inputDataset.processed,
-                                     inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+                                 inputDataset.processed,
+                                 inputDataset.tier)
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         units, rejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
 
         nLumis = 0
@@ -544,8 +528,8 @@ class BlockTestCase(unittest.TestCase):
 
         task.data.input.splitting.runs = [166921, 166429, 166911]
         task.data.input.splitting.lumis = ['40,70', '1,50', '1,5,16,20']
-        lumiMask = LumiList(compactList = {'166921': [[40,70]], '166429':[[1,50]],  '166911':[[1,5], [16,20]], } )
-        inputLumis = LumiList(compactList = {'166921': [[1,67]], '166429':[[1,91]],  '166911':[[1,104]], } )
+        lumiMask = LumiList(compactList={'166921': [[40, 70]], '166429': [[1, 50]], '166911': [[1, 5], [16, 20]], })
+        inputLumis = LumiList(compactList={'166921': [[1, 67]], '166429': [[1, 91]], '166911': [[1, 104]], })
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                  inputDataset.processed,
                                  inputDataset.tier)

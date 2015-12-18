@@ -170,6 +170,50 @@ class TrivialFileCatalogTest(unittest.TestCase):
         self.assertEqual(pfn, out_pfn, "Error: incorrect matching")
         f.close()
 
+    def testMultipleRegexMatch(self):
+        # Check that an lfn is converted to the right pfn
+        in_lfn = '/store/user/fred/data'
+
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_CH_CERNBOX_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        out_pfn = "root://eosuser.cern.ch/eos/user/f/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
+
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_PT_NCG_Lisbon_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        out_pfn = "srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
+
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_US_Florida_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        out_pfn = "srm://srm.ihepa.ufl.edu:8443/srm/v2/server?SFN=/cms/data/store/user/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
+
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_ES_IFCA_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        out_pfn = "srm://srm01.ifca.es:8444/srm/managerv2?SFN=/cms/store/user/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
+
+        tfc_file = os.path.join(getTestBase(),
+                                "WMCore_t/Storage_t",
+                                "T2_US_Nebraska_TrivialFileCatalog.xml")
+        tfc = readTFC(tfc_file)
+        out_pfn = "srm://dcache07.unl.edu:8443/srm/v2/server?SFN=/mnt/hadoop/user/uscms01/pnfs/unl.edu/data4/cms/store/user/fred/data"
+        pfn = tfc.matchLFN('srmv2', in_lfn)
+        self.assertEqual(out_pfn, pfn)
+
 
 if __name__ == "__main__":
     unittest.main()

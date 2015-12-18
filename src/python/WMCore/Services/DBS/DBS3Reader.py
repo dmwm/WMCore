@@ -50,7 +50,6 @@ class DBS3Reader:
     def __init__(self, url, **contact):
 
         # instantiate dbs api object
-        print "Using the real DBSReader3"
         try:
             self.dbs = DbsApi(url, **contact)
         except dbsClientException as ex:

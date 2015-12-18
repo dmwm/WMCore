@@ -34,7 +34,6 @@ class EmulatorHelper(object):
             else:
                 from WMQuality.Emulators.DBSClient.DBSReader \
                     import DBSReader as DBSEmulator
-            print "Returnign DBSEmulator", DBSEmulator
             return DBSEmulator
 
         if clsName == 'SiteDBJSON':
@@ -51,7 +50,6 @@ class EmulatorHelper(object):
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
         EmulatorHelper.PhEDEx = phedex
         EmulatorHelper.DBSReader = dbs
-        print "Setting DBSReader to", dbs
         EmulatorHelper.SiteDBJSON = siteDB
         EmulatorHelper.RequestManager = requestMgr
 

@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.12 -c HG1512c -t production -p "5757 5932" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.9.patch2 -c HG1509h -t testbed-cmssrv113 -s slc6_amd64_gcc481 -r comp=comp.pre.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.12.patch2 -c HG1512c -t production -p "5757 5932" -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.12.patch2 -c HG1512e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -240,7 +240,7 @@ echo -e "\n*** Applying agent patches ***"
 if [ "x$PATCHES" != "x" ]; then
   cd $CURRENT
   for pr in $PATCHES; do
-    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2.6/site-packages/ -p 3
+    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
   done
 cd -
 fi

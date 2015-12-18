@@ -13,6 +13,7 @@ class _MockDBSApi():
     def __init__(self, args, **contact):
         # just make sure args value complies with dbs args
         try:
+            print "Creating a mockery of DBS"
             from dbs.apis.dbsClient import DbsApi
             DbsApi(args, **contact)
         except ImportError:

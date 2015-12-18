@@ -1,14 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os, sys
 import xml.dom.minidom
 import time
-import subprocess
-import urllib
 from WMCore.Database.CMSCouch import CouchServer
-try:
-    import json
-except:
-    import simplejson as json
+
 # the buildconfig file will end up being in the buildslave's main path
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave

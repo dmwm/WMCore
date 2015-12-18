@@ -6,7 +6,6 @@ import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 from WMCore.Wrappers import JsonWrapper
 import cherrypy
-import time
 from WMCore.WebTools.WebAPI import WebAPI
 import WMCore.Database.CMSCouch
 import threading
@@ -16,12 +15,13 @@ from WMCore.Database.CMSCouch import CouchUnauthorisedError
 
 class WebRequestSchema(WebAPI):
     """ Allows the user to submit a request to the RequestManager through a web interface """
+
     def __init__(self, config):
         WebAPI.__init__(self, config)
         self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
-        self.defaultArch  = getattr(config, 'defaultScramArch', "slc6_amd64_gcc493")
+        self.defaultArch = getattr(config, 'defaultScramArch', "slc6_amd64_gcc493")
         self.couchUrl = config.couchUrl
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName
@@ -35,7 +35,7 @@ class WebRequestSchema(WebAPI):
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
-        #myThread = cherrypy.thread_data
+        # myThread = cherrypy.thread_data
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
@@ -60,10 +60,10 @@ class WebRequestSchema(WebAPI):
     def javascript(self, *args):
         if args[0] == "external":
             return Utilities.serveFile('application/javascript',
-                             os.path.join(self.config.javascript), *args)
+                                       os.path.join(self.config.javascript), *args)
         return Utilities.serveFile('application/javascript',
-                          os.path.join(self.config.javascript,
-                                    'WMCore', 'WebTools'), *args)
+                                   os.path.join(self.config.javascript,
+                                                'WMCore', 'WebTools'), *args)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2()
@@ -95,11 +95,11 @@ class WebRequestSchema(WebAPI):
                                  requestor=requestor,
                                  groups=groups,
                                  versions=self.versions,
-                                 archs = self.scramArchs,
-                                 alldocs = Utilities.unidecode(self.allDocs()),
-                                 allcampaigns = campaigns,
+                                 archs=self.scramArchs,
+                                 alldocs=Utilities.unidecode(self.allDocs()),
+                                 allcampaigns=campaigns,
                                  defaultVersion=self.cmsswVersion,
-                                 defaultArch = self.defaultArch,
+                                 defaultArch=self.defaultArch,
                                  defaultSkimConfig=self.defaultSkimConfig)
 
     @cherrypy.expose
@@ -123,7 +123,8 @@ class WebRequestSchema(WebAPI):
             self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
                       "'%s' ..." % (decodedSchema, self.workloadDBName,
                                     Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
-            request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName, self.wmstatWriteURL)
+            request = Utilities.makeRequest(self, decodedSchema, self.couchUrl, self.workloadDBName,
+                                            self.wmstatWriteURL)
             # catching here KeyError is just terrible
         except (RuntimeError, KeyError, Exception) as ex:
             # TODO problem not to expose logs to the client
@@ -137,8 +138,8 @@ class WebRequestSchema(WebAPI):
             elif hasattr(ex, "name"):
                 detail = ex.name
             else:
-                detail = "check logs." 
+                detail = "check logs."
             msg = "Create request failed, %s" % detail
-            raise cherrypy.HTTPError(400, msg)            
+            raise cherrypy.HTTPError(400, msg)
         baseURL = cherrypy.request.base
         raise cherrypy.HTTPRedirect('%s/reqmgr/view/details/%s' % (baseURL, request['RequestName']))

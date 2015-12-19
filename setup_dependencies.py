@@ -12,8 +12,8 @@ dependencies = {'wmc-rest':{
                         },
                 'wmc-base':{
                         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
-                        'packages' : ['WMCore.DataStructs'],
-                        'modules': ['Utils+', 'WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
+                        'packages' : ['WMCore.DataStructs','Utils.IterTools'],
+                        'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',
                                     'WMCore.WMBase', 'WMCore.WMLogging', 'WMCore.Algorithms.Permissions'],
                         },

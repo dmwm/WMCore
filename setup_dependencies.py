@@ -52,7 +52,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.RequestManager',
                                      'WMCore.Services+',
                                      'WMCore.ACDC'],
-
+                        'modules': ['WMCore.Signals'],
                         'systems':['wmc-web', 'wmc-runtime'],
                         'statics': ['src/templates/WMCore/WebTools/RequestManager',
                                     'src/html/GlobalMonitor',
@@ -69,6 +69,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.ACDC'
                                     ],
                         'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+                        'modules': ['WMCore.Signals'],
                         'statics': ['src/couchapps/ReqMgr+',
                                     'src/couchapps/ReqMgrAux+',
                                     'src/couchapps/ConfigCache+',
@@ -153,7 +154,8 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Database.CouchUtils',
                                      'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
                                      'WMCore.ReqMgr.DataStructs.RequestStatus',
-                                     'WMCore.ReqMgr.DataStructs.RequestType'],
+                                     'WMCore.ReqMgr.DataStructs.RequestType',
+                                     'WMCore.Signals'],
                         'systems': ['wmc-base', 'wmc-rest'],
                         'statics': ['src/couchapps/WMStats+',
                                     'src/couchapps/WMStatsErl+',

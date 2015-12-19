@@ -108,8 +108,8 @@ def capResourceEstimates(jobGroups, nCores, constraints):
                 j['estimatedJobTime'] = min(j['estimatedJobTime'], constraints['MaxWallTimeSecs'])
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
             else:
-                # we assume job efficiency as nCores * 0.8 for multicore
-                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
+                # we assume job efficiency as 0.8 for multicore jobs
+                j['estimatedJobTime'] = min(j['estimatedJobTime']/0.8,
                                             constraints['MaxWallTimeSecs'])
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
                                               constraints['MaxRequestDiskKB'] * nCores)

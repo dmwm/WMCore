@@ -1,0 +1,5 @@
+<storage-mapping>
+
+        <lfn-to-pfn protocol="srmv2" path-match="/+store/user/(.)(.*)" result="root://eosuser.cern.ch/eos/user/$1/$1$2"/>
+
+</storage-mapping>

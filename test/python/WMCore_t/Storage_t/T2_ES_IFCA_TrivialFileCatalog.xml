@@ -1,0 +1,17 @@
+<storage-mapping>
+
+   <lfn-to-pfn protocol="direct" path-match=".*/LoadTest07_IFCA_(.*)_.*_.*" result="/cms/store/PhEDEx_LoadTest07/LoadTest07_Debug_IFCA/LoadTest07_IFCA_$1" />
+   <lfn-to-pfn protocol="direct" path-match=".*/LoadTest07_IFCATMP_(.*)_.*_.*" result="/cms/store/PhEDEx_LoadTest07/LoadTest07_Debug_IFCA/LoadTest07_IFCA_$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/test/xrootd/T2_ES_IFCA/store/(.*)" result="/cms/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/user/(.*)" result="/cms/store/user/$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store/(.*)" result="/cms/store/$1" />
+   <lfn-to-pfn protocol="xrootd" path-match="/+store/(.*)" destination-match=".*" result="root://xrootd-cms.infn.it//store/$1" />
+   <lfn-to-pfn protocol="file" path-match="/+(.*)" chain="direct" result="/gpfs/gaes/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match=".*/+SAM-srm01.ifca.es/(.*)" chain="direct" result="srm://srm01.ifca.es:8444/srm/managerv2?SFN=/cms/store/unmerged/SAM/testSRM/SAM-srm01.ifca.es/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match=".*/+store/user/(.*)" chain="direct" result="srm://srm01.ifca.es:8444/srm/managerv2?SFN=/cms/store/user/$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="(.*)" chain="direct" result="srm://storm.ifca.es:8444/srm/managerv2?SFN=$1" />
+   <pfn-to-lfn protocol="direct" path-match="/+cms/store/(.*)" result="/store/$1" />
+   <pfn-to-lfn protocol="file" path-match="/gpfs/gaes/(.*)" chain="direct" result="/$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=(.*)" chain="direct" result="$1" />
+
+</storage-mapping>

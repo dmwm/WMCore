@@ -1,0 +1,20 @@
+<storage-mapping>
+
+   <lfn-to-pfn protocol="direct" path-match="/+store/test/xrootd/T2_PT_NCG_Lisbon/store/(mc/SAM/GenericTTbar/GEN-SIM-RECO/CMSSW_5_3_1_START53_V5-v1/.*)" destination-match=".*" result="/gstore/t2cms/store/$1" />
+   <lfn-to-pfn protocol="direct" path-match=".*LoadTest07_NCG_Lisbon_(.*)_.*_.*" result="/store/PhEDEx_LoadTest07/LoadTest07_Debug_NCG_Lisbon/LoadTest07_NCG_Lisbon_$1" />
+   <lfn-to-pfn protocol="direct" path-match="/+store(.*)" result="/store$1" />
+   <lfn-to-pfn protocol="xrootd" path-match="/+store/(.*)" destination-match=".*" result="root://xrootd-cms.infn.it//store/$1" />
+   <lfn-to-pfn protocol="file" path-match="/+store/user(.*)" chain="direct" result="/gstore/t3cms/store/user$1" />
+   <lfn-to-pfn protocol="file" path-match="/+store(.*)" chain="direct" result="/gstore/t2cms/cms/store$1" />
+   <lfn-to-pfn protocol="srmv2" path-match=".*/LoadTest07_NCG_Lisbon_(.*)_.*_.*" result="srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cms/store/PhEDEx_LoadTest07/LoadTest07_Debug_NCG_Lisbon/LoadTest07_NCG_Lisbon_$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/+store/user(.*)" chain="direct" result="srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cmst3/store/user$1" />
+   <lfn-to-pfn protocol="srmv2" path-match="/+store(.*)" chain="direct" result="srm://srm01.ncg.ingrid.pt:8444/srm/managerv2?SFN=/cms/store$1" />
+   <pfn-to-lfn protocol="direct" path-match="/+store(.*)" result="/store$1" />
+   <pfn-to-lfn protocol="file" path-match="/gstore/t3cms(.*)" chain="direct" result="$1" />
+   <pfn-to-lfn protocol="file" path-match="/gstore/t2cms(.*)" chain="direct" result="$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/cmst3/store/user(.*)" chain="direct" result="/store/user$1" />
+   <pfn-to-lfn protocol="srmv2" path-match=".*\?SFN=/cms/store(.*)" chain="direct" result="/store$1" />
+
+</storage-mapping>
+
+

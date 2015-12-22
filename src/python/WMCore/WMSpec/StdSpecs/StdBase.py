@@ -1085,6 +1085,10 @@ class StdBase(object):
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":
                         schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
+                    elif arg == "CMSSWVersion":
+                        schema[arg] = "CMSSW_7_6_2"
+                    elif arg == "ScramArch":
+                        schema[arg] = "sl6_amd64_gcc491"
                     else:
                         schema[arg] = "fake"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:

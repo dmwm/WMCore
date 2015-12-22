@@ -373,6 +373,16 @@ class PhEDEx(dict):
                                     "call_time":0.03909, "request_date":"2013-05-15 16:46:05 UTC"}}
         return goldenResponse
 
+    def getReplicaPhEDExNodesForBlocks(self, block=None, dataset=None, complete='y'):
+        """
+        This function is a really dumb emulator that we need to supply so that the mock-based DBS emulator works
+        """
+        replicas = {}
+        if dataset:
+            block = ['%s#1' % dataset]
+        for blockName in block:
+            replicas.update({blockName: ['T1_US_FNAL_Disk']})
+        return replicas
 
     def emulator(self):
         return "PhEDEx emulator ...."

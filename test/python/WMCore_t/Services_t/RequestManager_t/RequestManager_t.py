@@ -1,6 +1,7 @@
 import os
 import unittest
 import logging
+import traceback
 from nose.plugins.attrib import attr
 
 from WMCore.Cache.WMConfigCache import ConfigCache
@@ -59,11 +60,14 @@ class RequestManagerTest(RESTBaseUnitTest):
                                          teamName = teamName)
         schema['ConfigCacheID'] = self.createConfig()
         schema['CouchDBName'] = self.couchDBName
+        schema['CouchWorkloadDBName'] = self.couchDBName
+
         try:
-            r = self.jsonSender.put('request/' + schema['RequestName'], schema)
+            r = self.jsonSender.put('request', schema)
             self.requestName = r[0]['RequestName']
         except Exception as ex:
-            print "Exception during set up, reason: %s" % ex
+            msg = traceback.format_exc()
+            print "Exception during set up, reason: %s" % msg
             raise ex
 
     def tearDown(self):

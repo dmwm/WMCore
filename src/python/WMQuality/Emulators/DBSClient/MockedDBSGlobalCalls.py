@@ -4,7 +4,7 @@ from __future__ import (division, print_function)
 
 endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
-datasets = ['/HighPileUp/Run2011A-v1/RAW']  # Datasets to get all blocks, array, and lumis from
+datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW']  # Datasets to get all blocks, array, and lumis from
 
 calls = [['listDataTiers'],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'}],

@@ -99,17 +99,17 @@ class RequestHandler(object):
             curl.setopt(pycurl.POST, 1)
             if params:
                 if isinstance(params, dict):
-                    curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
-                else:
-                    curl.setopt(pycurl.POSTFIELDS, params)
+                    params = json.dumps(params)
+                curl.setopt(pycurl.POSTFIELDS, params)
+                headers['Content-length'] = len(params)
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
             if params:
                 if isinstance(params, dict):
-                    curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
-                else:
-                    curl.setopt(pycurl.POSTFIELDS, params)
+                    params = json.dumps(params)
+                curl.setopt(pycurl.POSTFIELDS, params)
+                headers['Content-length'] = len(params)
             else:
                 curl.setopt(pycurl.POSTFIELDS, "")
         else:

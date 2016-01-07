@@ -169,28 +169,6 @@ class Requests(dict):
         headers.update(incoming_headers)
         url = self['host'] + uri
 
-        # NOTE: VK 20151026
-        # this block is added intentionally to immitate makeRequest_httplib
-        # behavior. THIS IS BAD design though since it modifies HTTP requests
-        # and instead of passing dictionary parameters it encodes them.
-        # But we need to leave it as is until WMCore APIs will be adjusted.
-#        if verb != 'GET' and params:
-#            if isinstance(encoder, type(self.get)) or hasattr(encoder, '__call__'):
-#                encoded_data = encoder(params)
-#            elif encoder == False:
-#                # Don't encode the data more than we have to
-#                #  we don't want to URL encode the data blindly,
-#                #  that breaks POSTing attachments... ConfigCache_t
-#                #encoded_data = urllib.urlencode(data)
-#                #  -- Andrew Melo 25/7/09
-#                encoded_data = params
-#            else:
-#                # Either the encoder is set to True or it's junk, so use
-#                # self.encode
-#                encoded_data = self.encode(params)
-#            if isinstance(encoded_data, basestring):
-#                headers["Content-length"] = str(len(encoded_data))
-
         response, data = self.reqmgr.request(url, params, headers, \
                     verb=verb, ckey=ckey, cert=cert, capath=capath, decode=decoder)
         return data, response.status, response.reason, response.fromcache

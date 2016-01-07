@@ -102,6 +102,8 @@ class RequestHandler(object):
                     params = json.dumps(params)
                 curl.setopt(pycurl.POSTFIELDS, params)
                 headers['Content-length'] = len(params)
+            else:
+                headers['Content-length'] = 0
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
@@ -154,7 +156,7 @@ class RequestHandler(object):
             except Exception as exc:
                 msg = 'Unable to load JSON data, %s, data type=%s, pass as is' \
                         % (str(exc), type(data))
-                logging.warning(msg)
+                logging.debug(msg)
                 return data
             return res
         else:

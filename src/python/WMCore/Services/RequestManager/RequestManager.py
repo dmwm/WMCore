@@ -57,6 +57,10 @@ class RequestManager(Service):
         result = f.read()
         f.close()
 
+        # overhead from REST model which returns results as strings or None
+        # therefore they can be encoded by JSON to None, etc.
+        if result == 'None':
+            return
         if result and decoder:
             result = decoder(result)
         return result
@@ -112,7 +116,8 @@ class RequestManager(Service):
         callname = 'workQueue'
         args['request'] = requestName
         args['url'] = str(prodAgentUrl)
-        return self._getResult(callname, args = args, verb = "PUT")
+        return self._getResult(callname, args = args, verb = "PUT",
+                contentType = 'application/json')
 
     def getTeam(self):
         """Return teams known to this ReqMgr"""
@@ -121,7 +126,8 @@ class RequestManager(Service):
     def putTeam(self, team):
         args = {'team': team}
         callname = 'team'
-        return self._getResult(callname, args = args, verb = "PUT")
+        return self._getResult(callname, args = args, verb = "PUT",
+                contentType = 'application/json')
 
     def reportRequestProgress(self, requestName, **kargs):
         """Update ReqMgr with request progress"""
@@ -129,7 +135,7 @@ class RequestManager(Service):
         args = {}
         args.update(kargs)
 
-        return self._getResult(callname, args = args, verb = "POST",
+        return self._getResult(callname, args = args, verb = "PUT",
                                contentType = 'application/json')
 
     def reportRequestStatus(self, requestName, status):
@@ -138,14 +144,17 @@ class RequestManager(Service):
         args = {}
         args["requestName"] = requestName
         args["status"] = status
-        return self._getResult(callname, args = args, verb = "PUT")
+        return self._getResult(callname, args = args, verb = "PUT",
+                contentType = 'application/json')
 
     def sendMessage(self, request, msg):
         """Attach a message to the request"""
         callname = "message/%s" %  request
+        args = {}
+        args['requestName'] = request
+        args['msg'] = msg
         return self._getResult(callname, args = msg, verb = "PUT",
-                               encoder = JsonWrapper.dumps,
-                               contentType = 'application/json')
+                contentType = 'application/json')
 
     def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',
                     DbsUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
@@ -160,9 +169,7 @@ class RequestManager(Service):
                        'TimePerEvent' : TimePerEvent, 'Memory' : Memory,
                        'SizePerEvent' : SizePerEvent})
         return self._getResult('request', args = kwargs, verb = 'PUT',
-                                encoder = JsonWrapper.dumps,
-                                contentType = 'application/json',
-                                )
+                contentType = 'application/json')
 
     def assign(self, request, team, acquisitionEra = None, processingVersion = None,
                 action = 'Assign', **kwargs):
@@ -177,12 +184,14 @@ class RequestManager(Service):
                                 args = kwargs, verb = 'POST', decoder = False)
     
     def updateRequestStatus(self, requestName, status):
-        args = {'requestName': requestName, 'status': status}
-        callname = 'request'
-        return self._getResult(callname, args = args, verb = "PUT")
+        callname = 'request/%s' % requestName
+        args = {'status': status}
+        return self._getResult(callname, args = args, verb = "PUT",
+                contentType = 'application/json')
     
     def putRequestStats(self, request, stats):
         args = {'requestName': request, 'stats': JsonWrapper.dumps(stats)}
         callname = 'request'
-        return self._getResult(callname, args = args, verb = "PUT")
+        return self._getResult(callname, args = args, verb = "PUT",
+                contentType = 'application/json')
         

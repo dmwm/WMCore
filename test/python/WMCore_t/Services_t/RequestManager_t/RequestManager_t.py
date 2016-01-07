@@ -64,7 +64,10 @@ class RequestManagerTest(RESTBaseUnitTest):
 
         try:
             r = self.jsonSender.put('request', schema)
-            self.requestName = r[0]['RequestName']
+            try:
+                self.requestName = r[0]['RequestName']
+            except:
+                self.requestName = r[0].values()[0]['RequestName']
         except Exception as ex:
             msg = traceback.format_exc()
             print "Exception during set up, reason: %s" % msg
@@ -123,11 +126,10 @@ class RequestManagerTest(RESTBaseUnitTest):
         
         self.reqService.sendMessage(requestName,"error")
         self.reqService.putWorkQueue(requestName, "http://test_url")
-        self.reqService.reportRequestProgress(requestName)
         self.reqService.reportRequestProgress(requestName,
                         percent_complete = 100, percent_success = 90)
         
-        self.reqService.reportRequestStatus(requestName, "running-open")
+        self.reqService.updateRequestStatus(requestName, "running-open")
 
         
         

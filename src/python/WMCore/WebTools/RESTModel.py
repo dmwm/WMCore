@@ -185,6 +185,14 @@ class RESTModel(WebAPI):
             if len(args) != 0:
                 # store the method name
                 method = methodKey
+                # for PUT/POST requests data may be send in body of the request
+                # we check if this is the case (no args/kwargs) and read body
+                if  verb in ['PUT', 'POST'] and \
+                    not input_args and not input_kwargs:
+                    from WMCore.Wrappers import JsonWrapper
+                    body = cherrypy.request.body.read()
+                    if  body:
+                        input_kwargs = JsonWrapper.loads( body )
                 input_data = self._sanitise_input(input_args, input_kwargs, method)
                 # store the function
                 func = function

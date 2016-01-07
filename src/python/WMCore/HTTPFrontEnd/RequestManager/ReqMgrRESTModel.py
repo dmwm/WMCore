@@ -274,8 +274,8 @@ class ReqMgrRESTModel(RESTModel):
         else:
             try:
                 result = Utilities.requestDetails(requestName)
-            except: # if we fail to get a request return nothing
-                return
+            except cherrypy.HTTPError:
+                return # if we fail to get a request return nothing
             try:
                 teamNames = GetRequest.getAssignmentsByName(requestName)
                 result['teams'] = teamNames

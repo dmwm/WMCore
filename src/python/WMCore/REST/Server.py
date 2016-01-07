@@ -320,7 +320,7 @@ class RESTFrontPage:
 
         Serves assets as documented in :meth:`_serve`."""
         if len(args) > 1 or (args and args[0] != "yui"):
-            raise HTTPError(404, "No such file")
+            return self._serve(['/'.join(args)])
         paths = request.query_string.split("&")
         if not paths:
             raise HTTPError(404, "No such file")

@@ -32,11 +32,7 @@ class ListThresholdsForCreate(DBFormatter):
                                                 bl_status.id = bl_runjob.sched_status
                                         WHERE bl_runjob.status = '1') runjob
                        ON runjob.id = wmbs_job.id
-                     WHERE wmbs_job_state.name != 'success' AND
-                           wmbs_job_state.name != 'complete' AND
-                           wmbs_job_state.name != 'exhausted' AND
-                           wmbs_job_state.name != 'cleanout' AND
-                           wmbs_job_state.name != 'killed'
+                     WHERE wmbs_job_state.name IN ( 'created', 'executing' )
                      GROUP BY wmbs_location.site_name,
                      wmbs_location.pending_slots, wmbs_location.cms_name,
                      wls.name, runjob.status, wmbs_location.plugin,
@@ -66,8 +62,7 @@ class ListThresholdsForCreate(DBFormatter):
                                 ON wsv.location_id = wmbs_file_location.location
                                 AND wsv.subscription_id = wmbs_jobgroup.subscription
                             WHERE wmbs_job.location IS NULL AND
-                                  wmbs_job_state.name != 'killed' AND
-                                  wmbs_job_state.name != 'cleanout' AND
+                                  wmbs_job_state.name NOT IN ( 'killed', 'cleanout' ) AND
                                   (wsv.valid = 1 OR
                                    (wsv.valid IS NULL AND NOT EXISTS
                                     (SELECT wsv2.valid FROM wmbs_subscription_validation wsv2

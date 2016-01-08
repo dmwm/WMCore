@@ -5,6 +5,8 @@ of pileup files in the job sandbox for the dataset.
 """
 
 import os
+import copy
+import time
 
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 import WMCore.WMSpec.WMStep as WMStep
@@ -26,6 +28,8 @@ def mapSitetoSE(sites):
     for site in sites:
         fakeSEs.extend(rControl.listSiteInfo(site)['pnn'])
     return fakeSEs
+
+g_pileup_cache = {}
 
 class PileupFetcher(FetcherInterface):
     """
@@ -74,9 +78,16 @@ class PileupFetcher(FetcherInterface):
                 # DBS listBlocks returns list of DbsFileBlock objects for each dataset,
                 # iterate over and query each block to get list of files
                 for dbsBlockName in blockNames:
-                    blockDict[dbsBlockName] = {"FileList": sorted(dbsReader.lfnsInBlock(dbsBlockName)),
+                    info = g_pileup_cache.get(dbsBlockName)
+                    now = time.time()
+                    if info and info[0] > now:
+                        blockDict[dbsBlockName] = copy.deepcopy(info[1])
+                    else:
+                        expiry = now + 4*3600
+                        blockDict[dbsBlockName] = {"FileList": sorted(dbsReader.lfnsInBlock(dbsBlockName)),
                                                "PhEDExNodeNames": dbsReader.listFileBlockLocation(dbsBlockName),
                                                "NumberOfEvents": dbsReader.getDBSSummaryInfo(block=dbsBlockName)['NumberOfEvents']}
+                        g_pileup_cache[dbsBlockName] = (expiry, copy.deepcopy(blockDict[dbsBlockName]))
                     blockDict[dbsBlockName]['PhEDExNodeNames'].extend(x for x in fakeSE if x not in \
                                                                       blockDict[dbsBlockName]['PhEDExNodeNames'])
             resultDict[pileupType] = blockDict

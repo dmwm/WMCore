@@ -319,8 +319,12 @@ class RESTFrontPage:
         with 'yui/' to make them compatible with the standard combo loading.
 
         Serves assets as documented in :meth:`_serve`."""
+        # The code was originally designed to server YUI content.
+        # Modified to support any content by joining args into single path
+        # on web page it can be /path/static/js/file.js or /path/static/css/file.css
         if len(args) > 1 or (args and args[0] != "yui"):
             return self._serve(['/'.join(args)])
+        # Path arguments must be empty, or consist of a single 'yui' string,
         paths = request.query_string.split("&")
         if not paths:
             raise HTTPError(404, "No such file")

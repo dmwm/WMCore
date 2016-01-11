@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 """
 _Unpacker_
 
@@ -23,19 +23,14 @@ import os
 import tarfile
 import zipfile
 import getopt
-import shutil
 import traceback
 
-from subprocess import Popen, PIPE
-
-
 options = {
-    "sandbox=" : "WMAGENT_SANDBOX", # sandbox archive file
-    "package=" : "WMAGENT_PACKAGE", # job package pickle file
-    "index="   : "WMAGENT_INDEX",   # index of job to be run
-    "jobname=" : "WMAGENT_JOBNAME", # job name/id
-    }
-
+    "sandbox=": "WMAGENT_SANDBOX",  # sandbox archive file
+    "package=": "WMAGENT_PACKAGE",  # job package pickle file
+    "index=": "WMAGENT_INDEX",  # index of job to be run
+    "jobname=": "WMAGENT_JOBNAME",  # job name/id
+}
 
 
 def makeErrorReport(jobName, exitCode, message):
@@ -65,7 +60,6 @@ def makeErrorReport(jobName, exitCode, message):
     handle.close()
 
 
-
 def createWorkArea(sandbox):
     """
     _createWorkArea_
@@ -78,18 +72,17 @@ def createWorkArea(sandbox):
     jobDir = "%s/job" % currentDir
     if not os.path.exists(jobDir):
         os.makedirs(jobDir)
-    if not os.path.exists(os.path.join( jobDir, 'StartupScript' ) ):
-        os.makedirs(os.path.join( jobDir, 'StartupScript' ) )
-
+    if not os.path.exists(os.path.join(jobDir, 'StartupScript')):
+        os.makedirs(os.path.join(jobDir, 'StartupScript'))
 
     tfile = tarfile.open(sandbox, "r")
     tfile.extractall(jobDir)
     tfile.close()
 
     # need to pull out the startup file from the zipball
-    zfile = zipfile.ZipFile( os.path.join( jobDir, 'WMCore.zip' ), 'r' )
-    startupScript = zfile.read( 'WMCore/WMRuntime/Startup.py' )
-    fd = os.open( os.path.join( jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY )
+    zfile = zipfile.ZipFile(os.path.join(jobDir, 'WMCore.zip'), 'r')
+    startupScript = zfile.read('WMCore/WMRuntime/Startup.py')
+    fd = os.open(os.path.join(jobDir, 'Startup.py'), os.O_CREAT | os.O_WRONLY)
     os.write(fd, startupScript)
     os.close(fd)
 
@@ -97,6 +90,7 @@ def createWorkArea(sandbox):
 
     print "export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir)
     return jobDir
+
 
 def installPackage(jobArea, jobPackage, jobIndex):
     """
@@ -108,7 +102,7 @@ def installPackage(jobArea, jobPackage, jobIndex):
     """
     target = "%s/WMSandbox" % jobArea
     pkgTarget = "%s/JobPackage.pcl" % target
-    #shutil.copy(jobPackage, pkgTarget)
+    # shutil.copy(jobPackage, pkgTarget)
     os.system("/bin/cp %s %s" % (jobPackage, pkgTarget))
 
     indexPy = "%s/JobIndex.py" % target
@@ -125,12 +119,10 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
 
     """
 
-
-
     try:
         jobArea = createWorkArea(sandbox)
         installPackage(jobArea, package, jobIndex)
-        #sys.exit(0)
+        # sys.exit(0)
     except Exception as ex:
         msg = "Unable to create job area for bootstrap\n"
         msg += str(ex)
@@ -142,7 +134,6 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
 
 if __name__ == '__main__':
 
-
     try:
         opts, args = getopt.getopt(sys.argv[1:], "", options.keys())
     except getopt.GetoptError as ex:
@@ -151,10 +142,10 @@ if __name__ == '__main__':
         print msg
         sys.exit(1)
 
-    sandbox  = os.environ.get('WMAGENT_SANDBOX', None)
-    package  = os.environ.get('WMAGENT_PACKAGE', None)
-    jobIndex = os.environ.get('WMAGENT_INDEX'  , None)
-    jobname  = os.environ.get('WMAGENT_JOBNAME', None)
+    sandbox = os.environ.get('WMAGENT_SANDBOX', None)
+    package = os.environ.get('WMAGENT_PACKAGE', None)
+    jobIndex = os.environ.get('WMAGENT_INDEX', None)
+    jobname = os.environ.get('WMAGENT_JOBNAME', None)
     for opt, arg in opts:
         if opt == "--sandbox":
             sandbox = arg
@@ -164,7 +155,6 @@ if __name__ == '__main__':
             jobIndex = arg
         if opt == "--jobname":
             jobname = arg
-
 
     if sandbox == None:
         msg = "No Sandbox provided"
@@ -182,5 +172,5 @@ if __name__ == '__main__':
         print msg
         sys.exit(1)
 
-    runUnpacker(sandbox = sandbox, package = package,
-                jobIndex = jobIndex, jobname = jobname)
+    runUnpacker(sandbox=sandbox, package=package,
+                jobIndex=jobIndex, jobname=jobname)

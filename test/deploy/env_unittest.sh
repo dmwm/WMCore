@@ -7,7 +7,7 @@ export INSTALL_DIR=$BASE_DIR/unittestdeploy/wmagent
 export ADMIN_DIR=$BASE_DIR
 export CERT_DIR=$BASE_DIR/certs
 
-export ORG_SRC_PYTHON=$INSTALL_DIR/current/apps/wmagent/lib/python2.6/site-packages/
+export ORG_SRC_PYTHON=$INSTALL_DIR/current/apps/wmagent/lib/python2.7/site-packages/
 export ORG_SRC_OTHER=$INSTALL_DIR/current/apps/wmagent/data
 export DBSOCK=$INSTALL_DIR/current/install/mysql/logs/mysql.sock
 

@@ -44,35 +44,35 @@ fi
 
 echo "WMAgent bootstrap : `date -u` : WMAgent thinks it found the correct CMSSW setup script"
 
-if [ -e "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh ]
+if [ -e "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
 then
-    . "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh
-elif [ -e "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh ]
+    . "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
+elif [ -e "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
 then
-    . "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh
-elif [ -e "$CVMFS"/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh ]
+    . "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
+elif [ -e "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
 then
-    . "$CVMFS"/COMP/slc6_amd64_gcc481/external/python/2.6.8-comp9/etc/profile.d/init.sh
+    . "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
 else
     echo "WMAgent bootstrap : `date -u` : Error: OSG_APP, VO_CMS_SW_DIR, CVMFS, /cvmfs/cms.cern.ch environment does not contain init.sh" >&2
     echo "WMAgent bootstrap : `date -u` : Error: Because of this, we can't load CMSSW. Not good." >&2
     exit 4
 fi
-command -v python2.6 > /dev/null
+command -v python2 > /dev/null
 rc=$?
 if [[ $rc != 0 ]]
 then
     echo "WMAgent bootstrap : `date -u` : Error: Python2.6 isn't available on this worker node." >&2
-    echo "WMAgent bootstrap : `date -u` : Error: WMCore/WMAgent REQUIRES python2.6" >&2
+    echo "WMAgent bootstrap : `date -u` : Error: WMCore/WMAgent REQUIRES python2" >&2
     exit 3	
 else
-    echo "WMAgent bootstrap : `date -u` : found python2.6 at.."
-    echo `which python2.6`
+    echo "WMAgent bootstrap : `date -u` : found python2 at.."
+    echo `which python2`
 fi
 
 # Should be ready to unpack and run this
 echo "WMAgent bootstrap : `date -u` : is unpacking the job..."
-python2.6 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
+python2 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
 export WMAGENTJOBDIR=$PWD
@@ -82,7 +82,7 @@ echo "WMAgent bootstrap : `date -u` :    Username: `id`"
 echo "WMAgent bootstrap : `date -u` : Environemnt:"
 env
 echo "WMAgent bootstrap : `date -u` : WMAgent is now running the job..."
-python2.6 Startup.py
+python2 Startup.py
 jobrc=$?
 echo "WMAgent bootstrap : `date -u` : WMAgent finished the job, is copying the pickled report"
 cp WMTaskSpace/Report*.pkl ../

@@ -17,11 +17,11 @@ if [ "x$VO_CMS_SW_DIR" == "x" ]; then
     exit 1
 fi
 if [ "x$SCRAM_ARCH" == "x" ]; then
-    echo "SCRAM_ARCH not set, defaulting to slc5_amd64_gcc434"
-    export SCRAM_ARCH=slc5_amd64_gcc434
+    echo "SCRAM_ARCH not set, defaulting to slc6_amd64_gcc493"
+    export SCRAM_ARCH=slc6_amd64_gcc493
 fi
-if [ "$SCRAM_ARCH" != "slc5_amd64_gcc434" ]; then
-    echo "SCRAM_ARCH not set to slc5_amd64_gcc434 which could royally balls things up..."
+if [ "$SCRAM_ARCH" != "slc6_amd64_gcc493" ]; then
+    echo "SCRAM_ARCH not set to slc6_amd64_gcc493 which could royally balls things up..."
     echo "lets see what happens..."
 fi
 if [ "x$WMCORE_ROOT" == "x" ]; then
@@ -88,10 +88,10 @@ if [ ! -e $JOB_SANDBOX ]; then
     exit 1
 fi
 
- . $VO_CMS_SW_DIR/COMP/slc5_amd64_gcc434/external/python/2.6.4/etc/profile.d/init.sh
+ . $VO_CMS_SW_DIR/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
 #
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/openssl/0.9.7m/lib
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/bz2lib/1.0.5/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/openssl/1.0.1p/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/bz2lib/1.0.6/lib
 
 UNPACKER_SCRIPT=${WMCORE_ROOT}/WMCore/WMRuntime/Unpacker.py
 
@@ -101,7 +101,7 @@ echo "   SCRAM_ARCH=$SCRAM_ARCH"
 echo "   WORKING_DIR=$WORKING_DIR"
 echo "   Unpacker=$UNPACKER_SCRIPT"
 echo "   Python Version:"
-echo     `python2.6 -V`
+echo     `python2 -V`
 echo "   package = $JOB_PACKAGE"
 echo "   sandbox = $JOB_SANDBOX"
 echo "   index   = $JOB_INDEX"
@@ -109,7 +109,7 @@ echo "   name    = $JOB_JOBNAME"
 
 cd $WORKING_DIR
 echo "Running Unpacker..."
-python2.6 $UNPACKER_SCRIPT --sandbox=$JOB_SANDBOX \
+python2 $UNPACKER_SCRIPT --sandbox=$JOB_SANDBOX \
                         --package=$JOB_PACKAGE \
                         --index=$JOB_INDEX \
                         --jobname=$JOB_JOBNAME
@@ -117,7 +117,7 @@ python2.6 $UNPACKER_SCRIPT --sandbox=$JOB_SANDBOX \
 export PYTHONPATH=$PYTHONPATH:$WORKING_DIR/job
 cd $WORKING_DIR/job
 echo "Running job..."
-python2.6 WMCore/WMRuntime/Startup.py
+python2 WMCore/WMRuntime/Startup.py
 
 
 

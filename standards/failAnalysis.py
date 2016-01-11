@@ -1,14 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os, sys
 import xml.dom.minidom
 import time
-import subprocess
-import urllib
 from WMCore.Database.CMSCouch import CouchServer
-try:
-    import json
-except:
-    import simplejson as json
+
 # the buildconfig file will end up being in the buildslave's main path
 sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave
@@ -18,8 +13,8 @@ couch = CouchServer(buildslave.conf['failTarget'])
 database = couch.connectDatabase('buildbot-couch', create = False)
 
 # what the slave does to us
-#                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python26',
-#                                                'sqlite','python2.6','standards/failAnalysis.py',
+#                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python2',
+#                                                'sqlite','python2','standards/failAnalysis.py',
 #                                                WithProperties("nosetests-" + x['db'] + "-%s.xml", 'got_revision'),
 #                                                WithProperties("%s", 'buildername'),
 #                                                WithProperties("%s", 'buildnumber'),

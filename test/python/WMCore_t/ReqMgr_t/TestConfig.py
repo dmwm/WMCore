@@ -12,7 +12,6 @@ ReqMgr unittest configuration file.
 from WMCore.Configuration import Configuration
 from os import path
 import socket
-import time
 
 HOST = socket.gethostname().lower()
 BASE_URL = "@@BASE_URL@@"
@@ -27,7 +26,7 @@ main = config.section_("main")
 srv = main.section_("server")
 srv.thread_pool = 30
 main.application = "reqmgr2"
-main.port = 9988 # main application port it listens on
+main.port = 9988  # main application port it listens on
 main.index = "ui"
 # Defaults to allow any CMS authenticated user. Write APIs should require
 # additional roles in SiteDB (i.e. "Admin" role for the "ReqMgr" group)
@@ -38,7 +37,7 @@ sec.key_file = "%s/auth/wmcore-auth/header-auth-key" % __file__.rsplit('/', 3)[0
 
 # this is where the application will be mounted, where the REST API
 # is reachable and this features in CMS web frontend rewrite rules
-app = config.section_(main.application) # string containing "reqmgr2"
+app = config.section_(main.application)  # string containing "reqmgr2"
 app.admin = "cms-service-webtools@cern.ch"
 app.description = "CMS data operations Request Manager."
 app.title = "CMS Request Manager (ReqMgr)"
@@ -69,7 +68,7 @@ data.central_logdb_url = LOG_DB_URL
 data.log_reporter = "request_manager"
 
 # number of past days since when to display requests in the default view
-data.default_view_requests_since_num_days = 30 # days
+data.default_view_requests_since_num_days = 30  # days
 # resource to fetch CMS software versions and scramarch info from
 data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
 # another source at TC, returns directly JSON, but strangely formatted (e.g.
@@ -77,15 +76,15 @@ data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype
 # https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
 
 # request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_5_2_5"
-data.default_sw_scramarch = "slc5_amd64_gcc434"
+data.default_sw_version = "CMSSW_7_6_1"
+data.default_sw_scramarch = "slc6_amd64_gcc493"
 data.dqm_url = "%s/dqm/dev" % BASE_URL
 
-#use dbs testbed for private vm test
+# use dbs testbed for private vm test
 data.dbs_url = "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader"
 
 # number of past days since when to display requests in the default view
-data.default_view_requests_since_num_days = 30 # days
+data.default_view_requests_since_num_days = 30  # days
 # resource to fetch CMS software versions and scramarch info from
 data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
 # another source at TC, returns directly JSON, but strangely formatted (e.g.
@@ -93,8 +92,8 @@ data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype
 # https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
 
 # request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_5_2_5"
-data.default_sw_scramarch = "slc5_amd64_gcc434"
+data.default_sw_version = "CMSSW_7_6_1"
+data.default_sw_scramarch = "slc6_amd64_gcc493"
 data.dqm_url = "https://cmsweb.cern.ch/dqm/dev"
 data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
@@ -103,9 +102,9 @@ data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 ui = views.section_("ui")
 ui.object = "WMCore.ReqMgr.WebGui.FrontPage.FrontPage"
 ui.static_content_dir = path.join(path.abspath(__file__.rsplit('/', 3)[0]),
-                                 "apps",
-                                 main.application,
-                                 "data")
+                                  "apps",
+                                  main.application,
+                                  "data")
 
 # end of deployment/reqmgr2/config.py 
 # ---------------------------------------------------------------------------
@@ -122,8 +121,8 @@ import os
 config.main.section_("tools")
 config.main.tools.section_("cms_auth")
 config.main.server.socket_host = "127.0.0.1"
-config.main.server.environment = "staging" # must not be "production"
-#config.main.tools.cms_auth.policy = "dangerously_insecure"
+config.main.server.environment = "staging"  # must not be "production"
+# config.main.tools.cms_auth.policy = "dangerously_insecure"
 
 # go up /deployment/reqmgr2/__file__
 first_part = os.path.abspath(__file__.rsplit('/', 3)[0])

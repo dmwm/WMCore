@@ -28,6 +28,12 @@ def getAndSetupSchema(testInstance, groupName = 'PeopleLikeMe',
 
 def getSchema(groupName = 'PeopleLikeMe', userName = 'me'):
     schema = ReRecoWorkloadFactory.getTestArguments()
+    # make sure that ScramArch and CMSSWVersion have valid values
+    # since they would be validated and should pass certain regexp
+    if 'ScramArch' not in schema or schema['ScramArch'] == 'fake':
+        schema['ScramArch'] = 'slc5_amd64_gcc478'
+    if 'CMSSWVersion' not in schema or schema['CMSSWVersion'] == 'fake':
+        schema['CMSSWVersion'] = 'CMSSW_7_0_0'
     schema['RequestName'] = 'TestReReco'
     schema['RequestType'] = 'ReReco'
     schema['Requestor'] = '%s' % userName

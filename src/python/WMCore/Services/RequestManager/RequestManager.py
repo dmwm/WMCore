@@ -147,7 +147,6 @@ class RequestManager(Service):
         args["requestName"] = request
         args["message"] = msg
         return self._getResult(callname, args = msg, verb = "PUT",
-                               encoder = JsonWrapper.dumps,
                                contentType = 'application/json')
 
     def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',

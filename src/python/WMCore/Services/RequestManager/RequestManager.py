@@ -143,6 +143,9 @@ class RequestManager(Service):
     def sendMessage(self, request, msg):
         """Attach a message to the request"""
         callname = "message/%s" %  request
+        args = {}
+        args["requestName"] = request
+        args["message"] = msg
         return self._getResult(callname, args = msg, verb = "PUT",
                                encoder = JsonWrapper.dumps,
                                contentType = 'application/json')

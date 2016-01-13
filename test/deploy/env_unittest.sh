@@ -43,4 +43,4 @@ export manage=$config/manage
 source $INSTALL_DIR/current/apps/wmagent/etc/profile.d/init.sh
 source $INSTALL_DIR/current/apps/wmcore-devtools/etc/profile.d/init.sh
 
-export PYTHONPATH=$TEST_SRC/../test/python:$PYTHONPATH
+export PYTHONPATH=$TEST_SRC/../test/python:$TEST_SRC_PYTHON:$PYTHONPATH

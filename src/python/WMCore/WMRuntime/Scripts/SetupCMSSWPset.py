@@ -6,6 +6,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 """
 
 import os
+import re
 import random
 import socket
 import traceback
@@ -574,21 +575,41 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
         Enable lazy-download for all merge jobs
         """
-        cmsswVersion = os.environ['CMSSW_VERSION']
+        cmsswVersion = os.environ.get('CMSSW_VERSION', "")
         if cmsswVersion.startswith("CMSSW_7_5") and False:
             print "Using fastCloning/lazydownload"
-            self.process.add_(
-                cms.Service("SiteLocalConfigService",
-                            overrideSourceCloneCacheHintDir=cms.untracked.string("lazy-download")
-                            )
-                )
+            self.process.add_(cms.Service("SiteLocalConfigService",
+                                          overrideSourceCloneCacheHintDir = cms.untracked.string("lazy-download")))
         elif funcName == "merge":
             print "Using lazydownload"
-            self.process.add_(
-                cms.Service("SiteLocalConfigService",
-                            overrideSourceCacheHintDir=cms.untracked.string("lazy-download")
-                            )
-                )
+            self.process.add_(cms.Service("SiteLocalConfigService",
+                                          overrideSourceCacheHintDir = cms.untracked.string("lazy-download")))
+        return
+
+    def handleCondorStatusService(self):
+        """
+        _handleCondorStatusService_
+
+        Enable CondorStatusService for CMSSW releases that support it.
+
+        """
+        result = re.match("CMSSW_([0-9]+)_([0-9]+)_([0-9]+).*", os.environ.get('CMSSW_VERSION', ""))
+
+        addCondorStatusService = False
+        if result:
+            if result.group(1) >= 8:
+                addCondorStatusService = True
+            elif result.group(1) == 7:
+                if result.group(2) >= 6:
+                    addCondorStatusService = True
+                elif result.group(2) == 5 and result.group(3) >= 1:
+                    addCondorStatusService = True
+                elif result.group(2) == 4 and result.group(3) >= 7:
+                    addCondorStatusService = True
+
+        if addCondorStatusService:
+            self.process.add_(cms.Service("CondorStatusService"))
+
         return
 
     def __call__(self):
@@ -635,6 +656,8 @@ class SetupCMSSWPset(ScriptInterface):
         if getattr(self.process, "source", None) == None:
             msg = "Error in CMSSW PSet: process is missing attribute 'source' or process.source is defined with None value."
             raise RuntimeError(msg)
+
+        self.handleCondorStatusService()
 
         self.fixupProcess()
 

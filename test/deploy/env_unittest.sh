@@ -7,7 +7,7 @@ export INSTALL_DIR=$BASE_DIR/unittestdeploy/wmagent
 export ADMIN_DIR=$BASE_DIR
 export CERT_DIR=$BASE_DIR/certs
 
-export ORG_SRC_PYTHON=$INSTALL_DIR/current/apps/wmagent/lib/python2.6/site-packages/
+export ORG_SRC_PYTHON=$INSTALL_DIR/current/apps/wmagent/lib/python*/site-packages/
 export ORG_SRC_OTHER=$INSTALL_DIR/current/apps/wmagent/data
 export DBSOCK=$INSTALL_DIR/current/install/mysql/logs/mysql.sock
 
@@ -21,6 +21,7 @@ ln -s $TEST_SRC_PYTHON/WMCore/ $ORG_SRC_PYTHON
 ln -s $TEST_SRC_PYTHON/WMComponent/ $ORG_SRC_PYTHON
 ln -s $TEST_SRC_PYTHON/PSetTweaks/ $ORG_SRC_PYTHON
 ln -s $TEST_SRC_PYTHON/WMQuality/ $ORG_SRC_PYTHON
+ln -s $TEST_SRC_PYTHON/Utils/ $ORG_SRC_PYTHON
 
 rm -rf $ORG_SRC_OTHER/*
 

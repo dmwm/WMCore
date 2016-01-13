@@ -26,7 +26,7 @@ deploy_agent() {
     curl -s https://raw.githubusercontent.com/dmwm/WMCore/master/test/deploy/env_unittest.sh > env_unittest.sh
     curl -s https://raw.githubusercontent.com/dmwm/WMCore/master/test/deploy/WMAgent_unittest.secrets > WMAgent_unittest.secrets
     source ./init.sh
-    $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=comp.pre -t $1 -A slc6_amd64_gcc481 -s 'prep sw post' $INSTALL_DIR admin/devtools wmagent
+    $PWD/deployment/Deploy -R wmagent-dev@$1 -r comp=comp -t $1 -A $DMWM_ARCH -s 'prep sw post' $INSTALL_DIR admin/devtools wmagent
 }
 
 setup_test_src() {

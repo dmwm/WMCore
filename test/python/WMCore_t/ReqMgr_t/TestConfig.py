@@ -77,8 +77,8 @@ data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype
 # https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
 
 # request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_5_2_5"
-data.default_sw_scramarch = "slc5_amd64_gcc434"
+data.default_sw_version = "CMSSW_7_6_1"
+data.default_sw_scramarch = "slc6_amd64_gcc493"
 data.dqm_url = "%s/dqm/dev" % BASE_URL
 
 #use dbs testbed for private vm test
@@ -93,8 +93,8 @@ data.tag_collector_url = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype
 # https://cmssdt.cern.ch/tc/getReleasesInformation?release_state=Announced
 
 # request related settings (e.g. default injection arguments)
-data.default_sw_version = "CMSSW_5_2_5"
-data.default_sw_scramarch = "slc5_amd64_gcc434"
+data.default_sw_version = "CMSSW_7_6_1"
+data.default_sw_scramarch = "slc6_amd64_gcc493"
 data.dqm_url = "https://cmsweb.cern.ch/dqm/dev"
 data.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 

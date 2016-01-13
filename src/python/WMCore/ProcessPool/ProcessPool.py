@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0102, W6501, C0103, W0621, W0105, W0703
+#pylint: disable=W0102, C0103, W0621, W0105, W0703
 """
 _ProcessPool_
 
@@ -92,15 +92,7 @@ class ProcessPool:
         self.slaveClassName = slaveClassName
         self.componentDir   = componentDir
         self.config         = config
-        # Grab the python version from the current version
-        # Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
-        majorVersion = sys.version_info[0]
-        minorVersion = sys.version_info[1]
-
-        if majorVersion and minorVersion:
-            self.versionString = "python%i.%i" % (majorVersion, minorVersion)
-        else:
-            self.versionString = "python2.6"
+        self.versionString = "python2"
 
         self.workers   = []
         self.nSlaves   = totalSlaves

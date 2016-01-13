@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python2
 """
 <testcase classname="WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest" name="WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest.testRelValMCWithPileup" time="0"><error type="DBSAPI.dbsApiException.DbsBadRequest">Traceback (most recent call last):
   File &quot;/jenkins/deploy/0.8.35/sw/slc5_amd64_gcc461/external/python/2.6.4-comp3/lib/python2.6/unittest.py&quot;, line 279, in run

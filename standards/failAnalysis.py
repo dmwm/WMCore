@@ -18,8 +18,8 @@ couch = CouchServer(buildslave.conf['failTarget'])
 database = couch.connectDatabase('buildbot-couch', create = False)
 
 # what the slave does to us
-#                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python26',
-#                                                'sqlite','python2.6','standards/failAnalysis.py',
+#                f.addStep(ShellCommand(command=['python','standards/wrapEnv.py','python2',
+#                                                'sqlite','python2','standards/failAnalysis.py',
 #                                                WithProperties("nosetests-" + x['db'] + "-%s.xml", 'got_revision'),
 #                                                WithProperties("%s", 'buildername'),
 #                                                WithProperties("%s", 'buildnumber'),

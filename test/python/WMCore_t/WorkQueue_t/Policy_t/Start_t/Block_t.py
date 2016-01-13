@@ -312,7 +312,7 @@ class BlockTestCase(unittest.TestCase):
 	ModuleName : WMCore.Services.DBS.DBSErrors
 	MethodName : __init__
 	ClassInstance : None
-	FileName : /data/srv/wmagent_ewv/v0.9.94c/sw/slc5_amd64_gcc461/cms/wmagent/0.9.94c/lib/python2.6/site-packages/WMCore/Services/DBS/DBSErrors.py
+	FileName : /data/srv/wmagent/current/sw.amaltaro/slc6_amd64_gcc493/cms/wmagent/1.0.12.patch2/lib/python2.7/site-packages/WMCore/Services/DBS/DBSErrors.py
 	ClassName : None
 	LineNumber : 29
 	ErrorNr : 1002

@@ -21,7 +21,7 @@ class WebRequestSchema(WebAPI):
         self.templatedir = config.templates
         self.requestor = config.requestor
         self.cmsswVersion = config.cmsswDefaultVersion
-        self.defaultArch  = getattr(config, 'defaultScramArch', "slc5_amd64_gcc434")
+        self.defaultArch  = getattr(config, 'defaultScramArch', "slc6_amd64_gcc493")
         self.couchUrl = config.couchUrl
         self.componentDir = config.componentDir
         self.configDBName = config.configDBName

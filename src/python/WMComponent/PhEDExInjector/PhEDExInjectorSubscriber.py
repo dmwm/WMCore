@@ -266,11 +266,17 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             # Avoid auto approval in T1 sites
             elif site.startswith("T1"):
                 subInfo['request_only'] = 'y'
-            
-            phedexSub = PhEDExSubscription(subInfo['path'], site,
-                                           self.group, priority = subInfo['priority'],
-                                           move = subInfo['move'], custodial = subInfo['custodial'],
-                                           request_only = subInfo['request_only'], subscriptionId = subInfo['id'])
+
+            group = subInfo['phedex_group']
+            if not group:
+                group = self.group
+
+            phedexSub = PhEDExSubscription(subInfo['path'], site, group,
+                                           priority = subInfo['priority'],
+                                           move = subInfo['move'],
+                                           custodial = subInfo['custodial'],
+                                           request_only = subInfo['request_only'],
+                                           subscriptionId = subInfo['id'])
 
             # Check if the subscription is a duplicate
             if phedexSub.matchesExistingSubscription(self.phedex) or \

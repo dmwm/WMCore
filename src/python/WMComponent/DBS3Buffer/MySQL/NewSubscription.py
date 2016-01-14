@@ -18,8 +18,8 @@ class NewSubscription(DBFormatter):
     """
 
     sql = """INSERT IGNORE INTO dbsbuffer_dataset_subscription
-            (dataset_id, site, custodial, auto_approve, move, priority, subscribed, delete_blocks)
-            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :delete_blocks)
+            (dataset_id, site, custodial, auto_approve, move, priority, subscribed, phedex_group, delete_blocks)
+            VALUES (:id, :site, :custodial, :auto_approve, :move, :priority, 0, :phedex_group, :delete_blocks)
           """
 
     def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
@@ -42,17 +42,17 @@ class NewSubscription(DBFormatter):
                 isMove = 0
                 if subscriptionInfo.get('DeleteFromSource', False):
                     delete_blocks = 1
-                    
+
         binds = []
         for site in sites:
-            subInfo = {'id' : datasetID,
-                       'site' : site,
-                       'custodial' : custodialFlag,
-                       'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
-                       'move' : isMove,
-                       'priority' : subscriptionInfo['Priority'],
-                       'delete_blocks' : delete_blocks}
-            binds.append(subInfo)
+            binds.append( {'id' : datasetID,
+                           'site' : site,
+                           'custodial' : custodialFlag,
+                           'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                           'move' : isMove,
+                           'priority' : subscriptionInfo['Priority'],
+                           'phedex_group' : subscriptionInfo.get('PhEDExGroup', None),
+                           'delete_blocks' : delete_blocks} )
         return binds
     
     def execute(self, datasetID, subscriptionInfo,

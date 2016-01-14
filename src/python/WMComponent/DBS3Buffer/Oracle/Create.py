@@ -47,6 +47,7 @@ class Create(DBCreator):
                  move               INTEGER      DEFAULT 0,
                  priority           VARCHAR(10)  DEFAULT 'Low',
                  subscribed         INTEGER      DEFAULT 0,
+                 phedex_group       VARCHAR(100),
                  delete_blocks      INTEGER,
                  PRIMARY KEY (id),
                  CONSTRAINT uq_dbs_dat_sub UNIQUE (dataset_id, site, custodial, auto_approve, move, priority)

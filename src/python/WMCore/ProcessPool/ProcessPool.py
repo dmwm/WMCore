@@ -1,11 +1,9 @@
 #!/usr/bin/env python
-#pylint: disable=W0102, W6501, C0103, W0621, W0105, W0703
+# pylint: disable=W0102, C0103, W0621, W0105, W0703
 """
 _ProcessPool_
 
 """
-
-
 
 import zmq
 import subprocess
@@ -19,8 +17,7 @@ import cPickle
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMFactory import WMFactory
-from WMCore.WMInit    import WMInit
-from WMCore           import WMLogging
+from WMCore.WMInit import WMInit
 
 from WMCore.Services.Requests import JSONRequests
 
@@ -36,6 +33,7 @@ class ProcessPoolException(WMException):
     Raise some exceptions
     """
 
+
 class ProcessPoolWorker:
     """
     _ProcessPoolWorker_
@@ -47,7 +45,6 @@ class ProcessPoolWorker:
         self.config = config
 
         return
-
 
     def __call__(self, input):
         """
@@ -62,8 +59,8 @@ class ProcessPoolWorker:
 
 class ProcessPool:
     def __init__(self, slaveClassName, totalSlaves, componentDir,
-                 config, namespace = 'WMComponent', inPort = '5555',
-                 outPort = '5558'):
+                 config, namespace='WMComponent', inPort='5555',
+                 outPort='5558'):
         """
         __init__
 
@@ -80,9 +77,9 @@ class ProcessPool:
         """
         self.enqueueIndex = 0
         self.dequeueIndex = 0
-        self.runningWork  = 0
+        self.runningWork = 0
 
-        #Use the Services.Requests JSONizer, which handles __to_json__ calls
+        # Use the Services.Requests JSONizer, which handles __to_json__ calls
         self.jsonHandler = JSONRequests()
 
         # heartbeat should be registered at this point
@@ -90,30 +87,22 @@ class ProcessPool:
             self.heartbeatAPI = HeartbeatAPI(getattr(config.Agent, "componentName", "ProcPoolSlave"))
 
         self.slaveClassName = slaveClassName
-        self.componentDir   = componentDir
-        self.config         = config
-        # Grab the python version from the current version
-        # Assume naming convention pythonA.B, i.e., python2.4 for v2.4.X
-        majorVersion = sys.version_info[0]
-        minorVersion = sys.version_info[1]
+        self.componentDir = componentDir
+        self.config = config
+        self.versionString = "python2"
 
-        if majorVersion and minorVersion:
-            self.versionString = "python%i.%i" % (majorVersion, minorVersion)
-        else:
-            self.versionString = "python2.6"
-
-        self.workers   = []
-        self.nSlaves   = totalSlaves
+        self.workers = []
+        self.nSlaves = totalSlaves
         self.namespace = namespace
-        self.inPort    = inPort
-        self.outPort   = outPort
+        self.inPort = inPort
+        self.outPort = outPort
 
 
         # Pickle the config
         self.configPath = os.path.join(componentDir, '%s_config.pkl' % slaveClassName)
         if os.path.exists(self.configPath):
             # Then we note it and overwrite it
-            msg =  "Something's in the way of the ProcessPool config: %s" % self.configPath
+            msg = "Something's in the way of the ProcessPool config: %s" % self.configPath
             logging.error(msg)
         f = open(self.configPath, 'w')
         cPickle.dump(config, f)
@@ -139,7 +128,7 @@ class ProcessPool:
                 self.sink = context.socket(zmq.PULL)
                 self.sink.bind("tcp://*:%s" % outPort)
             except Exception as ex:
-                msg =  "Error attempting to open TCP sockets\n"
+                msg = "Error attempting to open TCP sockets\n"
                 msg += str(ex)
                 logging.error(msg)
                 import traceback
@@ -149,9 +138,7 @@ class ProcessPool:
         # Now actually create the slaves
         self.createSlaves()
 
-
         return
-
 
     def createSlaves(self):
         """
@@ -162,27 +149,26 @@ class ProcessPool:
         all of them.
         """
 
-        totalSlaves    = self.nSlaves
+        totalSlaves = self.nSlaves
         slaveClassName = self.slaveClassName
-        config         = self.config
-        namespace      = self.namespace
-        inPort         = self.inPort
-        outPort        = self.outPort
+        config = self.config
+        namespace = self.namespace
+        inPort = self.inPort
+        outPort = self.outPort
 
         slaveArgs = [self.versionString, __file__, self.slaveClassName, inPort,
                      outPort, self.configPath, self.componentDir, self.namespace]
 
         count = 0
         while totalSlaves > 0:
-            #For each worker you want create a slave process
-            #That process calls this code (WMCore.ProcessPool) and opens
-            #A process pool that loads the designated class
-            slaveProcess = subprocess.Popen(slaveArgs, stdin = subprocess.PIPE,
-                                            stdout = subprocess.PIPE)
+            # For each worker you want create a slave process
+            # That process calls this code (WMCore.ProcessPool) and opens
+            # A process pool that loads the designated class
+            slaveProcess = subprocess.Popen(slaveArgs, stdin=subprocess.PIPE,
+                                            stdout=subprocess.PIPE)
             self.workers.append(slaveProcess)
             totalSlaves -= 1
             count += 1
-
 
         return
 
@@ -248,7 +234,7 @@ class ProcessPool:
         self.workers = []
         return
 
-    def enqueue(self, work, list = False):
+    def enqueue(self, work, list=False):
         """
         __enqeue__
 
@@ -275,9 +261,7 @@ class ProcessPool:
 
         return
 
-
-
-    def dequeue(self, totalItems = 1):
+    def dequeue(self, totalItems=1):
         """
         __dequeue__
 
@@ -296,7 +280,7 @@ class ProcessPool:
             try:
                 output = self.sink.recv()
                 decode = self.jsonHandler.decode(output)
-                if type(decode) == type({}) and decode.get('type', None) == 'ERROR':
+                if isinstance(decode, dict) and decode.get('type', None) == 'ERROR':
                     # Then we had some kind of error
                     msg = decode.get('msg', 'Unknown Error in ProcessPool')
                     logging.error("Received Error Message from ProcessPool Slave")
@@ -307,13 +291,12 @@ class ProcessPool:
                 self.runningWork -= 1
                 totalItems -= 1
             except Exception as ex:
-                msg =  "Exception while getting slave outputin ProcessPool.\n"
+                msg = "Exception while getting slave outputin ProcessPool.\n"
                 msg += str(ex)
                 logging.error(msg)
                 break
 
         return completedWork
-
 
     def restart(self):
         """
@@ -341,13 +324,14 @@ def setupLogging(componentDir):
     logHandler.setFormatter(logFormatter)
     logging.getLogger().addHandler(logHandler)
     logging.getLogger().setLevel(logging.INFO)
-    #This is left in as a reminder for debugging purposes
-    #SQLDEBUG turns your log files into horrible messes
-    #logging.getLogger().setLevel(logging.SQLDEBUG)
+    # This is left in as a reminder for debugging purposes
+    # SQLDEBUG turns your log files into horrible messes
+    # logging.getLogger().setLevel(logging.SQLDEBUG)
 
     myThread = threading.currentThread()
     myThread.logger = logging.getLogger()
     return
+
 
 def setupDB(config, wmInit):
     """
@@ -355,13 +339,13 @@ def setupDB(config, wmInit):
 
     Create the database connections.
     """
-    socket     = getattr(config.CoreDatabase, 'socket', None)
+    socket = getattr(config.CoreDatabase, 'socket', None)
     connectUrl = config.CoreDatabase.connectUrl
-    dialect    = config.CoreDatabase.dialect
+    dialect = config.CoreDatabase.dialect
 
-    wmInit.setDatabaseConnection(dbConfig = connectUrl,
-                                 dialect = dialect,
-                                 socketLoc = socket)
+    wmInit.setDatabaseConnection(dbConfig=connectUrl,
+                                 dialect=dialect,
+                                 socketLoc=socket)
     return
 
 
@@ -380,11 +364,11 @@ if __name__ == "__main__":
 
     # Get variables passed in
     slaveClassName = sys.argv[1]
-    inPort         = sys.argv[2]
-    outPort        = sys.argv[3]
-    configPath     = sys.argv[4]
-    componentDir   = sys.argv[5]
-    namespace      = sys.argv[6]
+    inPort = sys.argv[2]
+    outPort = sys.argv[3]
+    configPath = sys.argv[4]
+    componentDir = sys.argv[5]
+    namespace = sys.argv[6]
 
     # Set up logging
     setupLogging(componentDir)
@@ -415,12 +399,12 @@ if __name__ == "__main__":
     # Create JSON handler
     jsonHandler = JSONRequests()
 
-    wmFactory = WMFactory(name = "slaveFactory", namespace = namespace)
-    slaveClass = wmFactory.loadObject(classname = slaveClassName, args = config)
+    wmFactory = WMFactory(name="slaveFactory", namespace=namespace)
+    slaveClass = wmFactory.loadObject(classname=slaveClassName, args=config)
 
     logging.info("Have slave class")
 
-    while(True):
+    while (True):
         encodedInput = receiver.recv()
 
         try:
@@ -445,7 +429,7 @@ if __name__ == "__main__":
 
             logging.error(crashMessage)
             try:
-                output        = {'type': 'ERROR', 'msg': crashMessage}
+                output = {'type': 'ERROR', 'msg': crashMessage}
                 encodedOutput = jsonHandler.encode(output)
                 sender.send(encodedOutput)
                 logging.error("Sent error message and now breaking")
@@ -457,7 +441,7 @@ if __name__ == "__main__":
                 sys.exit(1)
 
         if output != None:
-            if type(output) == list:
+            if isinstance(output, list):
                 for item in output:
                     encodedOutput = jsonHandler.encode(item)
                     sender.send(encodedOutput)
@@ -465,7 +449,6 @@ if __name__ == "__main__":
                 encodedOutput = jsonHandler.encode(output)
                 sender.send(encodedOutput)
 
-
-    logging.info("Process with PID %s finished" %(os.getpid()))
+    logging.info("Process with PID %s finished" % (os.getpid()))
     del jsonHandler
     sys.exit(0)

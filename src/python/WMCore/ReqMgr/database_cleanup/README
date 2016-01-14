@@ -4,23 +4,23 @@ with each other, these tools are supposed to help straighten things out
 
 
 cd /data
-source /data/current/apps/reqmgr/etc/profile.d/init.sh
+source /data/srv/current/apps/reqmgr/etc/profile.d/init.sh
 
 Dump the entire Oracle database:
 	python ./oracle_dump.py user/password@server > oracle_dump.py
 
 Consistency check of the requests (reqmgr_request table and CouchDB) (on VM):
 	# dump only reqmgr_request table
-	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
-	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
+	python /data/srv/current/apps/reqmgr/lib/python2.7/site-packages/WMCore/ReqMgr/database_cleanup/oracle_dump.py user/pass@cms_reqmgr reqmgr_request > oracle_dump_request_table.py
+	python /data/srv/current/apps/reqmgr/lib/python2.7/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_comparison.py oracle_dump_request_table.py > comparison.log
 
 
 Deleting requests from CouchDB:
-	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/couchdb_cleanup.py requestlist.txt
+	python /data/srv/current/apps/reqmgr/lib/python2.7/site-packages/WMCore/ReqMgr/database_cleanup/couchdb_cleanup.py requestlist.txt
 
 
 Request values level consistency check/correction:
-	python /data/current/apps/reqmgr/lib/python2.6/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_consistency_checker.py user/pass@cms_reqmgr 2>&1 | tee log
+	python /data/srv/current/apps/reqmgr/lib/python2.7/site-packages/WMCore/ReqMgr/database_cleanup/oracle_couchdb_consistency_checker.py user/pass@cms_reqmgr 2>&1 | tee log
 	
 	
 

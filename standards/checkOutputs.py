@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.6
+#!/usr/bin/env python
 """
 <testcase classname="WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest" name="WMCore_t.WMSpec_t.StdSpecs_t.MonteCarlo_t.MonteCarloTest.testRelValMCWithPileup" time="0"><error type="DBSAPI.dbsApiException.DbsBadRequest">Traceback (most recent call last):
   File &quot;/jenkins/deploy/0.8.35/sw/slc5_amd64_gcc461/external/python/2.6.4-comp3/lib/python2.6/unittest.py&quot;, line 279, in run
@@ -8,9 +8,9 @@
 Looks at an xml file with the previous format and makes sure that nothing is failing that isn't in standards/allowed_failing_tests.txt
 """
 
-import sys, os
+import sys
 
-testfile  = sys.argv[1]
+testfile = sys.argv[1]
 whitelist = sys.argv[2]
 
 from xml.dom.minidom import parse as parseXML
@@ -18,11 +18,10 @@ from xml.dom.minidom import parse as parseXML
 allowedErrors = []
 fh = open(whitelist, 'r')
 for line in fh.readlines():
-    allowedErrors.append( line.strip() )    
+    allowedErrors.append(line.strip())
 fh.close()
 
-
-document = parseXML( testfile )
+document = parseXML(testfile)
 
 suitePasses = True
 # look at test suites
@@ -37,7 +36,7 @@ for suite in document.childNodes:
                         suitePasses = False
                     else:
                         print "Got an allowed error (FIXME): %s" % case.getAttribute('name')
-                        
+
 if suitePasses:
     print "Suite is OK"
     sys.exit(0)

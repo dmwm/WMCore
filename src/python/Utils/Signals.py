@@ -6,9 +6,9 @@ File       : Signals.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: This module provide set of hooks to running program
 The dumpthreads callback function will be called every time when
-running program will receive SIGINFO signal. E.g., in unix shell
+running program will receive SIGUSR1 signal. E.g., in unix shell
 just do
-shell# kill -s SIGINFO <pid>
+shell# kill -s SIGUSR1 <pid>
 """
 from __future__ import print_function, division
 
@@ -34,4 +34,4 @@ def dumpthreads(isignal, iframe):
                 code.append("  %s" % (line.strip()))
     print("\n".join(code))
 
-signal.signal(signal.SIGINFO, dumpthreads)
+signal.signal(signal.SIGUSR1, dumpthreads)

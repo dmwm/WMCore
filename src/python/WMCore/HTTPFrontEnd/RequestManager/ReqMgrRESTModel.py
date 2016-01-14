@@ -272,10 +272,7 @@ class ReqMgrRESTModel(RESTModel):
         if requestName == None:
             result = GetRequest.getRequests()
         else:
-            try:
-                result = Utilities.requestDetails(requestName)
-            except cherrypy.HTTPError:
-                return # if we fail to get a request return nothing
+            result = Utilities.requestDetails(requestName)
             try:
                 teamNames = GetRequest.getAssignmentsByName(requestName)
                 result['teams'] = teamNames
@@ -614,14 +611,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putMessage(self, request):
         """ Attaches a message to this request """
-        body = cherrypy.request.body.read()
-        obj = JsonWrapper.loads( body )
-        if isinstance(obj, dict):
-            message = obj.get('message', '')
-        elif isinstance(obj, basestring):
-            message = obj
-        else:
-            raise Exception("Unsupported message type, msg=%s, type=%s" % (obj, type(obj)))
+        message = JsonWrapper.loads( cherrypy.request.body.read() )
         result = ChangeState.putMessage(request, message)
         return result
 

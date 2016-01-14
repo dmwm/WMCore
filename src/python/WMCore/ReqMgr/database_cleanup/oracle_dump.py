@@ -11,7 +11,7 @@ Usage:
 
 import sys
 import cx_Oracle
-from oracle_tables import reqmgr_oracle_tables_defition
+from .oracle_tables import reqmgr_oracle_tables_defition
 
 
 def main():

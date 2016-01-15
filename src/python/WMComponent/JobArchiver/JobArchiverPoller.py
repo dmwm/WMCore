@@ -12,7 +12,6 @@ import shutil
 import tarfile
 import traceback
 
-from Utils.IterTools import grouper
 from WMComponent.TaskArchiver.TaskArchiverPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -152,7 +151,9 @@ class JobArchiverPoller(BaseWorkerThread):
         logging.info("Found %i finished jobs to archive", len(doneList))
 
         jobCounter = 0
-        for slicedList in grouper(doneList, 10000):
+        chunkSize = 10000
+        for slicedList in [ doneList[i:i+chunkSize] for i in range(0, len(doneList), chunkSize) ]:
+
             self.cleanWorkArea(slicedList)
 
             successList = []

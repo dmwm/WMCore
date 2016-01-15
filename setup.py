@@ -93,7 +93,8 @@ class EnvCommand(Command):
 
 # Need all the packages we want to build by default, this will be overridden in sub-system builds.
 # Since it's a lot of code determine it by magic.
-default_packages = list_packages(['src/python/WMCore',
+default_packages = list_packages(['src/python/Utils'
+                                  'src/python/WMCore',
                                   'src/python/WMComponent',
                                   'src/python/WMQuality',
                                   'src/python/PSetTweaks'])

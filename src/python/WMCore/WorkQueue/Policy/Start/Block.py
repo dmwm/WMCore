@@ -5,11 +5,8 @@ WorkQueue splitting by block
 """
 __all__ = []
 
-from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
-
 from math import ceil
-
-from Utils.IterTools import grouper
+from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
@@ -211,43 +208,26 @@ class Block(StartPolicyInterface):
             }
 
         """
-
         # Get mask and convert to LumiList to make operations easier
         maskedBlocks = {}
-        lumiMask = task.getLumiMask()
-        taskMask = LumiList(compactList = lumiMask)
+        lumiMask = task.getLumiMask(expanded=True)
+        taskMask = LumiList(runsAndLumis = lumiMask)
 
         # for performance reasons, we first get all the blocknames
-        blocks = dbs.dbs.listBlocks(dataset=datasetPath)
+        blocks = [x['block_name'] for x in dbs.dbs.listBlocks(dataset=datasetPath)]
 
-        # Find all the files that have runs and lumis we are interested in,
-        # fill block lfn part of maskedBlocks
-        for run, lumis in lumiMask.items():
-            files = []
-            
-            for slumis in grouper(lumis, 1000):
-                for block in blocks:
-                    slicedFiles = dbs.dbs.listFileArray(block_name=block.get('block_name'), run_num=run,
-                                                        lumi_list=slumis, detail=True)
-                    files.extend(slicedFiles)
-
-            for lfn in files:
-                blockName = lfn['block_name']
-                fileName = lfn['logical_file_name']
-                if blockName not in maskedBlocks:
-                    maskedBlocks[blockName] = {}
-                if fileName not in maskedBlocks[blockName]:
-                    maskedBlocks[blockName][fileName] = LumiList()
-
-        # Fill maskedLumis part of maskedBlocks
-        for block in maskedBlocks:
+        for block in blocks:
             fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly = 1)
             for fileLumi in fileLumis:
                 lfn = fileLumi['logical_file_name']
-                # For each run : [lumis] mask by needed lumis, append to maskedBlocks
-                if maskedBlocks[block].get(lfn, None) is not None:
-                    lumiList = LumiList(runsAndLumis = {fileLumi['run_num']: fileLumi['lumi_section_num']})
-                    maskedBlocks[block][lfn] += (lumiList & taskMask)
+                runNumber = str(fileLumi['run_num'])
+                lumis = fileLumi['lumi_section_num']
+                if lumiMask.get(runNumber, False):
+                    if len(set(lumis) & set(lumiMask[runNumber])) > 0:
+                        maskedBlocks.setdefault(block, {})
+                        maskedBlocks[block].setdefault(lfn, LumiList())
+                        lumiList = LumiList(runsAndLumis = {runNumber: lumis})
+                        maskedBlocks[block][lfn] += (lumiList & taskMask)
 
         return maskedBlocks
 

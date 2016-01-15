@@ -13,15 +13,17 @@ Equivalent of a WorkflowSpec in the ProdSystem.
 import os.path
 import time
 
+import WMCore.WMSpec.Utilities as SpecUtils
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
+
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import lfnBase
 from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
-import WMCore.WMSpec.Steps.StepFactory as StepFactory
-from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
-import WMCore.WMSpec.Utilities as SpecUtils
+from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
+from Utils.IterTools import flattenList
 
 def getTaskFromStep(stepRef):
     """
@@ -44,14 +46,18 @@ def getTaskFromStep(stepRef):
     return WMTaskHelper(taskNode)
 
 
-def buildLumiMask(runs, lumis):
+def buildLumiMask(runs, lumis, expanded=False):
     """
-        Runs are saved in the spec as a list of integers.
-        The lumi mask associated to each run is saved as a list of strings
-        where each string is in a format like '1,4,23,45'
+    Runs are saved in the spec as a list of integers.
+    The lumi mask associated to each run is saved as a list of strings
+    where each string is in a format like '1,4,23,45'
 
-        The method convert these parameters in the corresponding lumiMask,
-        e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+    The method convert these parameters in the corresponding lumiMask,
+    e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
+
+    if expanded is set to True, then it will return the lumi list in
+    an expanded way instead of ranges, e.g.:
+    runs=['3','4'], lumis=['1,4', '5,10,15,17'] => lumiMask = {3:[1,2,3,4], 4:[5,6,7,8,9,10,15,16,17]}
     """
 
     if len(runs) != len(lumis):
@@ -60,10 +66,14 @@ def buildLumiMask(runs, lumis):
         if len(lumi.split(',')) % 2:
             raise ValueError("Needs an even number of lumi in each element of lumis list")
 
-
     lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x in lumis]
     strRuns = [str(run) for run in runs]
+
+    if expanded:
+        lumiLists = [flattenList([range(int(x[0]), int(x[1]) + 1) for x in lumiLists[0]])]
+
     lumiMask = dict(list(zip(strRuns, lumiLists)))
+
     return lumiMask
 
 
@@ -1344,17 +1354,17 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def getLumiMask(self):
+    def getLumiMask(self, expanded=False):
         """
             return the lumi mask
         """
         runs = getattr(self.data.input.splitting, 'runs', None)
         lumis = getattr(self.data.input.splitting, 'lumis', None)
         if runs and lumis:
-            return buildLumiMask(runs, lumis)
+            return buildLumiMask(runs, lumis, expanded=expanded)
 
         return {}
-    
+
     def _propMethodMap(self):
         """
         internal mapping methop which maps which method need to be call for each

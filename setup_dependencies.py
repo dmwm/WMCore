@@ -68,7 +68,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services+',
                                      'WMCore.ACDC'
                                     ],
-                        'systems': ['wmc-rest', 'wmc-runtime', 'wmc-database'],
+                        'systems': ['wmc-base', 'wmc-rest', 'wmc-runtime', 'wmc-database'],
                         'statics': ['src/couchapps/ReqMgr+',
                                     'src/couchapps/ReqMgrAux+',
                                     'src/couchapps/ConfigCache+',
@@ -100,7 +100,7 @@ dependencies = {'wmc-rest':{
                                     'WMCore.JobSplitting+', 'WMCore.ProcessPool',
                                     'WMCore.Services+', 'WMCore.WMSpec+',
                                     'WMCore.WMBS+', 'WMCore.ResourceControl+'],
-                        'systems':['wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
+                        'systems':['wmc-base', 'wmc-web', 'wmc-database', 'workqueue', 'wmc-runtime'],
                         'statics': ['src/javascript/WMCore/WebTools/Agent',
                                     'src/javascript/WMCore/WebTools/WMBS',
                                     'src/javascript/external/graphael',

@@ -321,5 +321,9 @@ class DBS3Reader:
             result |= set([x['Name'] for x in block['PhEDExNodeList']])
 
         return list(result)
+    
+    def getFileListByDataset(self, dataset, detail=True):
+        
+        return self.dbs.listFileArray(dataset)
 
 # pylint: enable=W0613,R0201

@@ -77,6 +77,7 @@ class SandboxCreator:
         """
         workloadName = workload.name()
         # Create path to sandbox
+        pileupCachePath = "%s/pileupCache" % buildItHere
         path = "%s/%s/WMSandbox" % (buildItHere, workloadName)
         workloadFile = os.path.join(path, "WMWorkload.pkl")
         archivePath = os.path.join(buildItHere, "%s/%s-Sandbox.tar.bz2" % (workloadName, workloadName))
@@ -125,6 +126,11 @@ class SandboxCreator:
                 # // Execute the fetcher plugins
                 #//
                 for fetcher in fetcherInstances:
+                    #TODO: when cache directory is set as path, cache is maintained by workflow.
+                    # In that case, cache will be deleted when workflow is done, 
+                    # but if different workflow can share the same cache.
+                    # You can set the cache direcoty somewhere else, but need to have cache refresh (delete) policy
+                    fetcher.setCacheDirectory(pileupCachePath)
                     fetcher.setWorkingDirectory(taskPath)
                     fetcher(task)
 

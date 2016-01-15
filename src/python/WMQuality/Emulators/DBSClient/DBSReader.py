@@ -5,6 +5,7 @@
 """
 
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
+from WMQuality.Emulators.DataBlockGenerator.DataBlockGenerator3 import DataBlockGenerator3
 
 class _MockDBSApi():
     """Mock dbs api"""
@@ -17,6 +18,7 @@ class _MockDBSApi():
             # No dbsApi available, carry on
             pass
         self.args = args
+        self.dbg = DataBlockGenerator3()
 
     def getServerUrl(self):
         return self.args.get('url', '')
@@ -32,6 +34,23 @@ class _MockDBSApi():
             files = dbg.getFiles(block['Name'])
             for f in files:
                 f['Block'] = block
+                res.append(f)
+
+        return res
+    
+    def listFileArray(self, dataset = None, block_name = None, run_num = None, lumi_list = [], detail = False):
+        res = []
+
+        if dataset:
+            for block in self.dbg.getBlocks(dataset):
+                files = self.dbg.getFiles(block['block_name'])
+                for f in files:
+                    f['block_name'] = block['block_name']
+                    res.append(f)
+        elif block_name:
+            files = self.dbg.getFiles(block_name)
+            for f in files:
+                f['block_name'] = block_name
                 res.append(f)
 
         return res
@@ -238,5 +257,9 @@ class DBSReader:
             result |= set([x['Name'] for x in block['PhEDExNodeList']])
 
         return list(result)
+    
+    def getFileListByDataset(self, dataset, detail=True):
+        
+        return self.dbs.listFileArray(dataset)
 
 # pylint: enable=W0613,R0201

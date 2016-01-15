@@ -13,7 +13,7 @@ from dbs.exceptions.dbsClientException import *
 from Utils.IterTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 
 def remapDBS3Keys(data, stringify = False, **others):
     """Fields have been renamed between DBS2 and 3, take fields from DBS3
@@ -59,6 +59,7 @@ class DBS3Reader:
 
         # connection to PhEDEx (Use default endpoint url)
         self.phedex = PhEDEx(responseType = "json")
+        self.siteDB = SiteDB()
 
     def _getLumiList(self, blockName = None, lfns = None, validFileOnly = 1):
         """
@@ -248,7 +249,7 @@ class DBS3Reader:
             }
 
         """
-        fileDetails = self.dbs.listFileArray(dataset = datasetPath, validFileOnly = validFileOnly, detail=True)
+        fileDetails = self.getFileListByDataset(dataset=datasetPath, validFileOnly=validFileOnly, detail=True)
         blocks = set() #the set of blocks of the dataset
         #Iterate over the files and prepare the set of blocks and a dict where the keys are the files
         files = {}
@@ -583,9 +584,9 @@ class DBS3Reader:
                     for blockInfo in self.dbs.listBlockOrigin(block_name=block):
                         if blockInfo:
                             #TODO remove this line when all DBS origin_site_name is converted to PNN
-                            blockInfo[0]['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo[0]['origin_site_name'])
+                            blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
                             #upto this
-                            blocksInfo[block] = [blockInfo[0]['origin_site_name']]
+                            blocksInfo[block] = blockInfo['origin_site_name']
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
@@ -595,7 +596,7 @@ class DBS3Reader:
                 return list()
 
             for name, node in blocksInfo.iteritems():
-                valid_nodes = set([node]) - node_filter
+                valid_nodes = set(node) - node_filter
                 if valid_nodes:  # dont add if only 'UNKNOWN' or None
                     locations[name] = list(valid_nodes)
         else:
@@ -800,3 +801,23 @@ class DBS3Reader:
         """
         if blockName in ("", "*", None):
             raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
+        
+    def getFileListByDataset(self, dataset, validFileOnly=1, detail=True):
+        
+        """
+        _getFileListByDataset_
+
+        Given a dataset, retrieves all blocks, lfns and number of events (among other
+        not really important info).
+        Returns a list of dict.
+        """
+        
+        try:
+            fileList = self.dbs.listFileArray(dataset=dataset, validFileOnly=validFileOnly, detail=detail)
+            return fileList
+        except dbsClientException as ex:
+            msg = "Error in "
+            msg += "DBSReader.getFileListByDataset(%s)\n" % dataset
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)
+        

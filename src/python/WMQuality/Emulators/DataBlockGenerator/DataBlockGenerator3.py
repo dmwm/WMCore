@@ -72,8 +72,10 @@ class DataBlockGenerator3(object):
                 parentList = [self._createDBSFile(blockName, {'logical_file_name':parentFileName})]
             else:
                 parentList = []
-            dbsFile = {'logical_file_name': fileName,
+            dbsFile = {'block_name': blockName,
+                       'logical_file_name': fileName,
                        'ParentList' : parentList,
+                       'event_count': 1000
                       }
             files.append(self._createDBSFile(blockName, dbsFile))
         return files

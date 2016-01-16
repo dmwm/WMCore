@@ -46,7 +46,7 @@ class DBFormatter(WMObject):
         for r in result:
             for i in r.fetchall():
                 row = []
-                for j in i.values():
+                for j in i:
                     row.append(j)
                 out.append(row)
             r.close()
@@ -68,8 +68,22 @@ class DBFormatter(WMObject):
         """
         dictOut = []
         for r in result:
+            descriptions = r.keys
             for i in r.fetchall():
-                dictOut.append(i)
+                #WARNING: this can generate errors for some stupid reason
+                # in both oracle and mysql.
+                entry = {}
+                for index in xrange(0,len(descriptions)):
+                    # WARNING: Oracle returns table names in CAP!
+                    if type(i[index]) == unicode:
+                        entry[str(descriptions[index].lower())] = str(i[index])
+                    else:
+                        entry[str(descriptions[index].lower())] = i[index]
+
+                dictOut.append(entry)
+
+            r.close()
+
         return dictOut
 
     def formatOneDict(self, result):
@@ -80,7 +94,12 @@ class DBFormatter(WMObject):
             return {}
 
         r = result[0]
-        return r.fetchone()
+        description = map(lambda x: str(x).lower(), r.keys)
+        if len(r.data) < 1:
+            return {}
+
+        return dict(list(zip(description, r.fetchone())))
+
 
     def formatCursor(self, cursor, size=10):
         """
@@ -90,7 +109,7 @@ class DBFormatter(WMObject):
         Use fetchmany(size = default arraysize = 50)
 
         """
-        if isinstance(cursor.keys, types.MethodType):
+	if type(cursor.keys) == types.MethodType:
             keys = [x.lower() for x in cursor.keys()]
         else:
             keys = [x.lower() for x in cursor.keys]

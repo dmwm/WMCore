@@ -76,6 +76,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
         self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
+        self.cacheRefreshSize = int(getattr(self.config.JobSubmitter, 'cacheRefreshSize', 10000))
 
         # BossAir
         self.bossAir = BossAirAPI(config=self.config)
@@ -252,9 +253,15 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.workflowPrios[workflow['name']] = workflow['priority']
 
         logging.info("Querying WMBS for jobs to be submitted...")
-        newJobs = self.listJobsAction.execute()
-        logging.info("Found %s new jobs to be submitted.", len(newJobs))
-
+        logging.info("cachedJobIDs : %s" % len(self.cachedJobIDs))
+        if len(self.cachedJobIDs) < self.cacheRefreshSize:
+            newJobs = self.listJobsAction.execute()
+            logging.info("Found %s new jobs to be submitted.", len(newJobs))
+        else:
+            newJobs = []
+            dbJobs = self.cachedJobIDs
+            logging.info("Skipping cache update to be submitted. (%s job in cache)" % len(dbJobs))
+        
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:

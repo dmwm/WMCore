@@ -140,7 +140,7 @@ class RunJobTest(unittest.TestCase):
         statusDAO.execute(states = ['New', 'Gone', 'Dead'])
 
         result = myThread.dbi.processData("SELECT name FROM bl_status")[0].fetchall()
-        self.assertEqual([tuple(r.values()) for r in result], [('Dead',), ('Gone',), ('New',)])
+        self.assertEqual(result, [('Dead',), ('Gone',), ('New',)])
 
 
         newJobDAO = self.daoFactory(classname = "NewJobs")
@@ -148,7 +148,7 @@ class RunJobTest(unittest.TestCase):
 
 
         result = myThread.dbi.processData("SELECT wmbs_id FROM bl_runjob")[0].fetchall()
-        self.assertEqual([tuple(r.values()) for r in result],
+        self.assertEqual(result,
                          [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (10,)])
 
 

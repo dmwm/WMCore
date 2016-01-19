@@ -882,10 +882,10 @@ class WMTaskHelper(TreeHelper):
         return outputDatasets
 
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
-                                         autoApproveSites = None, custodialSubType = "Replica",
-                                         nonCustodialSubType = "Replica", priority = "Low",
-                                         primaryDataset = None, dataTier = None,
-                                         deleteFromSource = False):
+                                   autoApproveSites = None, custodialSubType = "Replica",
+                                   nonCustodialSubType = "Replica", priority = "Low",
+                                   primaryDataset = None, dataTier = None,
+                                   phedexGroup = None, deleteFromSource = False):
         """
         _setSubscriptionsInformation_
 
@@ -931,6 +931,7 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.custodialSubType = "Replica"
                 outputModuleSection.nonCustodialSubType = "Replica"
                 outputModuleSection.priority = "Low"
+                outputModuleSection.phedexGroup = None
                 outputModuleSection.deleteFromSource = False
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
@@ -941,6 +942,7 @@ class WMTaskHelper(TreeHelper):
             if autoApproveSites  is not None:
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
+            outputModuleSection.phedexGroup = phedexGroup
             outputModuleSection.deleteFromSource = deleteFromSource
             outputModuleSection.custodialSubType = custodialSubType
             outputModuleSection.nonCustodialSubType = nonCustodialSubType
@@ -990,7 +992,8 @@ class WMTaskHelper(TreeHelper):
                                        "NonCustodialSites" : outputModuleSection.nonCustodialSites,
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
-                                       # DeleteFromSource is optional
+                                       # PhEDExGroup and DeleteFromSource are optional
+                                       "PhEDExGroup" : getattr(outputModuleSection, "phedexGroup", False),
                                        "DeleteFromSource" : getattr(outputModuleSection, "deleteFromSource", False),
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
                                        "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Replica"),

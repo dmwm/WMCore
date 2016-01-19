@@ -479,6 +479,7 @@ class WMTaskTest(unittest.TestCase):
                              "Priority" : "High",
                              "CustodialSubType" : "Replica",
                              "NonCustodialSubType" : "Move",
+                             "PhEDExGroup" : None,
                              "DeleteFromSource" : False}
         
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],

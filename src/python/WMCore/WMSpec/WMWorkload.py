@@ -1155,7 +1155,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             nonCustodialSites = None, autoApproveSites = None,
                                             custodialSubType = "Replica", nonCustodialSubType = "Replica",
                                             priority = "Low", primaryDataset = None, dataTier = None,
-                                            deleteFromSource = False):
+                                            phedexGroup = None, deleteFromSource = False):
         """
         _setSubscriptonInformationWildCards_
 
@@ -1196,13 +1196,14 @@ class WMWorkloadHelper(PersistencyHelper):
                                         priority = priority,
                                         primaryDataset = primaryDataset,
                                         dataTier = dataTier,
+                                        phedexGroup = phedexGroup,
                                         deleteFromSource = deleteFromSource)
 
     def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
                                    nonCustodialSites = None, autoApproveSites = None,
                                    custodialSubType = "Replica", nonCustodialSubType = "Replica",
                                    priority = "Low", primaryDataset = None, dataTier = None,
-                                   deleteFromSource = False):
+                                   phedexGroup = None, deleteFromSource = False):
         """
         _setSubscriptionInformation_
 
@@ -1227,12 +1228,12 @@ class WMWorkloadHelper(PersistencyHelper):
                                             autoApproveSites, custodialSubType,
                                             nonCustodialSubType, priority,
                                             primaryDataset, dataTier,
-                                            deleteFromSource)
+                                            phedexGroup, deleteFromSource)
             self.setSubscriptionInformation(task, custodialSites, nonCustodialSites,
                                             autoApproveSites, custodialSubType,
                                             nonCustodialSubType, priority,
                                             primaryDataset, dataTier,
-                                            deleteFromSource)
+                                            phedexGroup, deleteFromSource)
 
         return
 
@@ -1252,13 +1253,8 @@ class WMWorkloadHelper(PersistencyHelper):
         solvePrioConflicts = lambda x, y: y if x == "High" or y == "Low" else x
         # Choose replica over move
         solveTypeConflicts = lambda x, y: y if x == "Move" else x
-
-
-
-
-
-
-
+        # Choose the 'smallest' group (based on string comparison)
+        solveGroupConflicts = lambda x, y: y if x > y else x
         # Always choose a logical AND
         solveDelConflicts = lambda x, y : x and y
 
@@ -1280,6 +1276,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                                                               subInfo[dataset]["AutoApproveSites"])
                     subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
                                                                                subInfo[dataset]["Priority"])
+                    subInfo[dataset]["PhEDExGroup"] = solveGroupConflicts(taskSubInfo[dataset]["PhEDExGroup"],
+                                                                          subInfo[dataset]["PhEDExGroup"])
                     subInfo[dataset]["DeleteFromSource"] = solveDelConflicts(taskSubInfo[dataset]["DeleteFromSource"],
                                                                                subInfo[dataset]["DeleteFromSource"])
                     subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],

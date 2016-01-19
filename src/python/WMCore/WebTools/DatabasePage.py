@@ -45,11 +45,12 @@ class DatabasePage(TemplatedPage, DBFormatter):
         TemplatedPage.__init__(self, config)
         try:
             dbConfig = ConfigDBMap(config)
+        except AssertionError as ex:
+            print("WARNING: unable to load database configuration from config file, %s" % str(ex))
+        else:
             conn = DBFactory(self, dbConfig.getDBUrl(), dbConfig.getOption()).connect()
             DBFormatter.__init__(self, self, conn)
             myThread = threading.currentThread()
             myThread.transaction = Transaction(conn)
             myThread.transaction.commit()
-        except:
-            pass
         return

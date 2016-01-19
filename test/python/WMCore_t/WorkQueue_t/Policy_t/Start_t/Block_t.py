@@ -492,7 +492,7 @@ class BlockTestCase(unittest.TestCase):
 
         task.data.input.splitting.runs = [181061, 180899]
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
-        lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
+        lumiMask = LumiList(compactList={'181061': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                  inputDataset.processed,

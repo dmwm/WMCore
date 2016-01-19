@@ -2,7 +2,7 @@
 from __future__ import division, print_function
 
 from itertools import islice
-
+from itertools import chain
 
 def grouper(iterable, n):
     """
@@ -16,3 +16,10 @@ def grouper(iterable, n):
     """
     iterable = iter(iterable)
     return iter(lambda: list(islice(iterable, n)), [])
+
+
+def flattenList(doubleList):
+    """
+    Make flat a list of lists.
+    """
+    return list(chain.from_iterable(doubleList))

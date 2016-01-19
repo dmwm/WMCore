@@ -597,15 +597,18 @@ class SetupCMSSWPset(ScriptInterface):
 
         addCondorStatusService = False
         if result:
-            if result.group(1) >= 8:
-                addCondorStatusService = True
-            elif result.group(1) == 7:
-                if result.group(2) >= 6:
+            try:
+                if int(result.group(1)) >= 8:
                     addCondorStatusService = True
-                elif result.group(2) == 5 and result.group(3) >= 1:
-                    addCondorStatusService = True
-                elif result.group(2) == 4 and result.group(3) >= 7:
-                    addCondorStatusService = True
+                elif int(result.group(1)) == 7:
+                    if int(result.group(2)) >= 6:
+                        addCondorStatusService = True
+                    elif int(result.group(2)) == 5 and int(result.group(3)) >= 1:
+                        addCondorStatusService = True
+                    elif int(result.group(2)) == 4 and int(result.group(3)) >= 7:
+                        addCondorStatusService = True
+            except ValueError:
+                pass
 
         if addCondorStatusService:
             self.process.add_(cms.Service("CondorStatusService"))

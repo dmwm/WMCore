@@ -55,7 +55,6 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.phedex = phedex
         self.dbsUrl = config.DBSInterface.globalDBSUrl
-        self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         self.phedexNodes = {'MSS':[], 'Disk':[]}
         for node in nodeMappings["phedex"]["node"]:
@@ -267,11 +266,7 @@ class PhEDExInjectorSubscriber(BaseWorkerThread):
             elif site.startswith("T1"):
                 subInfo['request_only'] = 'y'
 
-            group = subInfo['phedex_group']
-            if not group:
-                group = self.group
-
-            phedexSub = PhEDExSubscription(subInfo['path'], site, group,
+            phedexSub = PhEDExSubscription(subInfo['path'], site, subInfo['phedex_group'],
                                            priority = subInfo['priority'],
                                            move = subInfo['move'],
                                            custodial = subInfo['custodial'],

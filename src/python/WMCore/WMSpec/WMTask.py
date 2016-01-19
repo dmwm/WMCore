@@ -892,10 +892,11 @@ class WMTaskHelper(TreeHelper):
         return outputDatasets
 
     def setSubscriptionInformation(self, custodialSites = None, nonCustodialSites = None,
-                                   autoApproveSites = None, custodialSubType = "Replica",
-                                   nonCustodialSubType = "Replica", priority = "Low",
-                                   primaryDataset = None, dataTier = None,
-                                   phedexGroup = None, deleteFromSource = False):
+                                   autoApproveSites = None,
+                                   custodialSubType = "Replica", nonCustodialSubType = "Replica",
+                                   custodialGroup = "DataOps", nonCustodialGroup = "DataOps",
+                                   priority = "Low", primaryDataset = None,
+                                   dataTier = None, deleteFromSource = False):
         """
         _setSubscriptionsInformation_
 
@@ -940,8 +941,9 @@ class WMTaskHelper(TreeHelper):
                 outputModuleSection.autoApproveSites = []
                 outputModuleSection.custodialSubType = "Replica"
                 outputModuleSection.nonCustodialSubType = "Replica"
+                outputModuleSection.custodialGroup = "DataOps"
+                outputModuleSection.nonCustodialGroup = "DataOps"
                 outputModuleSection.priority = "Low"
-                outputModuleSection.phedexGroup = None
                 outputModuleSection.deleteFromSource = False
 
             outputModuleSection = getattr(self.data.subscriptions, outputModule)
@@ -952,10 +954,11 @@ class WMTaskHelper(TreeHelper):
             if autoApproveSites  is not None:
                 outputModuleSection.autoApproveSites = autoApproveSites
             outputModuleSection.priority = priority
-            outputModuleSection.phedexGroup = phedexGroup
             outputModuleSection.deleteFromSource = deleteFromSource
             outputModuleSection.custodialSubType = custodialSubType
             outputModuleSection.nonCustodialSubType = nonCustodialSubType
+            outputModuleSection.custodialGroup = custodialGroup
+            outputModuleSection.nonCustodialGroup = nonCustodialGroup
 
         return
 
@@ -986,7 +989,7 @@ class WMTaskHelper(TreeHelper):
                       NonCustodialSites : [],
                       AutoApproveSites : [],
                       Priority : "Low",
-                      CustodialSubType : "Move",
+                      CustodialSubType : "Replica",
                       NonCustodialSubType : "Replica"
                      }
         }
@@ -1002,8 +1005,9 @@ class WMTaskHelper(TreeHelper):
                                        "NonCustodialSites" : outputModuleSection.nonCustodialSites,
                                        "AutoApproveSites" : outputModuleSection.autoApproveSites,
                                        "Priority" : outputModuleSection.priority,
-                                       # PhEDExGroup and DeleteFromSource are optional
-                                       "PhEDExGroup" : getattr(outputModuleSection, "phedexGroup", False),
+                                       # These might not be present in all specs
+                                       "CustodialGroup" : getattr(outputModuleSection, "custodialGroup", "DataOps"),
+                                       "NonCustodialGroup" : getattr(outputModuleSection, "nonCustodialGroup", "DataOps"),
                                        "DeleteFromSource" : getattr(outputModuleSection, "deleteFromSource", False),
                                        # Specs assigned before HG1303 don't have the CustodialSubtype
                                        "CustodialSubType" : getattr(outputModuleSection, "custodialSubType", "Replica"),

@@ -10,18 +10,12 @@ from __future__ import print_function
 #     -> this prints out html file, normally resulting html snippet will be used ...
 
 
-import random, urllib, math
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
+import json
+import random
+import urllib
 
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
-from WMQuality.WebTools.RESTClientAPI import makeRequest
-from WMCore.Wrappers import JsonWrapper
 
 
 # random colour chooser (or use matplotlib colourmap)

@@ -75,10 +75,7 @@ def load_config(func_list=[]):
     msg = """
 import os, re, sys, time, types, traceback, inspect
 import urllib, urllib2, httplib
-try:
-    import json # Python 2.6
-except:
-    import simplejson as json # prior 2.6 require simplejson
+import json
 from json import JSONDecoder, JSONEncoder
 try:
     from path import path

@@ -7,16 +7,15 @@ Request.
 
 """
 from __future__ import print_function
-import os, re, traceback
-from dbs.apis.dbsClient import DbsApi
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-from mechanize import Browser
-from bs4 import BeautifulSoup
 
-try:
-    import json
-except:
-    import simplejson as json
+import json
+import os
+
+from bs4 import BeautifulSoup
+from dbs.apis.dbsClient import DbsApi
+from mechanize import Browser
+
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
 #dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"

@@ -10,18 +10,12 @@ from __future__ import print_function
 #     -> this prints out html file, normally resulting html snippet will be used ...
 
 
-import random, urllib
-try:
-    # Python 2.6
-    import json
-except:
-    # Prior to 2.6 requires simplejson
-    import simplejson as json
-
+import json
+import random
+import urllib
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import STATES
 from WMQuality.WebTools.RESTClientAPI import makeRequest
-from WMCore.Wrappers import JsonWrapper
 
 
 # random colour chooser (or use matplotlib colourmap)
@@ -72,7 +66,7 @@ hardCodedPlotData = urllib.quote(json.dumps(plotDefinition, ensure_ascii = True)
 # URL http://localhost:8888/workqueue/elementsinfo
 data, _, _, _ = makeRequest(DATA_SOURCE_URL, verb = "GET", accept = "text/json+das",
                             contentType = "application/json")
-data = JsonWrapper.loads(data)
+data = json.loads(data)
 
 systemSeries = series[:]
 states = {}

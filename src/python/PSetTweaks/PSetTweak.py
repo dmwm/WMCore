@@ -7,18 +7,13 @@ independent python structure
 
 """
 
-import inspect
-import pickle
 import StringIO
 import imp
+import inspect
+import json
+import pickle
 import sys
 from functools import reduce
-
-#py2.6 compatibility
-try:
-    import json
-except ImportError as ex:
-    import simplejson as json
 
 
 class PSetHolder(object):

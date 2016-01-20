@@ -1,21 +1,20 @@
 #!/usr/bin/env python
 from __future__ import division
 
-import cjson
 import copy
+import json
 import logging
 import pprint
-import time
 import sys
-
+import time
 from datetime import datetime
 
-from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Database.CMSCouch import Document as CouchDoc
+from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.McM.McM import McM, McMNoDataError
-from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
+from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
 maxMCMCalls = 250 # Maximum # of entries to retrieve from McM per run
 
@@ -327,7 +326,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                 try:
                     newCouchDoc['updateTime'] = int(time.time())
                     report[wf]['updateTime'] = int(time.time())
-                    cjson.encode(newCouchDoc) # Make sure it encodes before trying to queue
+                    dummy = json.dumps(newCouchDoc) # Make sure it encodes before trying to queue
                     couchdb.queue(newCouchDoc)
                 except:
                     log.error("Failed to queue document:%s \n" % pprint.pprint(newCouchDoc))

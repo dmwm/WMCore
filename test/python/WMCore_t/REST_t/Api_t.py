@@ -1,5 +1,5 @@
 # system modules
-import cjson, re, zlib
+import json, re, zlib
 import cherrypy
 from cherrypy.test import webtest
 from cherrypy import response
@@ -145,7 +145,7 @@ class Tester(webtest.WebCase):
         h.append(("Accept", "application/json"))
         self.getPage("/test/simple", headers = h)
         self.assertStatus("200 OK")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -161,7 +161,7 @@ class Tester(webtest.WebCase):
         self.assertStatus("200 OK")
         self.assertHeader("Content-Length")
         self.assertHeader("Content-Encoding", "deflate")
-        b = cjson.decode(zlib.decompress(self.body, -zlib.MAX_WBITS))
+        b = json.loads(zlib.decompress(self.body, -zlib.MAX_WBITS))
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -175,7 +175,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -203,7 +203,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi?lim=5&etag=x", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -231,7 +231,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi?lim=10&etag=x", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b

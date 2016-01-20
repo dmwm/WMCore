@@ -1,6 +1,15 @@
-import re, cherrypy, cjson, types, hashlib, xml.sax.saxutils, zlib, json
-from WMCore.REST.Error import RESTError, ExecutionError, report_rest_error
+import hashlib
+import json
+import types
+import xml.sax.saxutils
+import zlib
 from traceback import format_exc
+
+import cherrypy
+import xml.sax.saxutils
+
+from WMCore.REST.Error import RESTError, ExecutionError, report_rest_error
+
 try:
   from cherrypy.lib import httputil
 except:
@@ -226,7 +235,7 @@ class JSONFormat(RESTFormat):
 
             try:
                 for obj in stream:
-                    chunk = comma + cjson.encode(obj) + "\n"
+                    chunk = comma + json.dumps(obj) + "\n"
                     etag.update(chunk)
                     yield chunk
                     comma = ","
@@ -253,7 +262,7 @@ class JSONFormat(RESTFormat):
         preamble = "{"
         trailer = "]}\n"
         if cherrypy.request.rest_generate_preamble:
-            desc = cjson.encode(cherrypy.request.rest_generate_preamble)
+            desc = json.dumps(cherrypy.request.rest_generate_preamble)
             preamble += '"desc": %s' % desc
             comma = ", "
         preamble += '%s"%s": [\n' % (comma, cherrypy.request.rest_generate_data)

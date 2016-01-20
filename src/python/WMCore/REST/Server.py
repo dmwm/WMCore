@@ -1,13 +1,20 @@
-import os, re, hashlib, signal, cherrypy, traceback, random, string, inspect, time
-from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
-from threading import Thread, Condition, Lock
-from rfc822 import formatdate as rfc822_date
+import cherrypy
+import inspect
+import os
+import re
+import signal
+import string
+import time
 from collections import namedtuple
-from traceback import format_exc
 from functools import wraps
+from threading import Thread, Condition
+
+from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
+
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
+
 try:
   from cherrypy.lib import httputil
 except:
@@ -177,7 +184,7 @@ class RESTFrontPage:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
                          for k, v in instances().iteritems()]
             instances.sort(lambda a, b: a["order"] - b["order"])
-            self._preamble += (", REST_INSTANCES = %s" % cjson.encode(instances))
+            self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
         self._preamble += ";\n%s" % (preamble or "")
 

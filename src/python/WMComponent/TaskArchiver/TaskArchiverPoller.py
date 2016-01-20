@@ -157,7 +157,7 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     with tarfile.open(name=tgzName, mode='w:gz') as tgzFile:
         tgzFile.add(jsonName)
 
-    result = ufc.upload(fileName=tgzName, name=baseName)
+    result = ufc.upload(fileName=tgzName)
     logging.debug('Upload result %s' % result)
     # If this doesn't work, exception will propogate up and block archiving the task
     logging.info('Uploaded with name %s and hashkey %s' % (result['name'], result['hashkey']))

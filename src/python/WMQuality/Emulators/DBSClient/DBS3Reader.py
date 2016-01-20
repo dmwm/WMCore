@@ -6,8 +6,6 @@
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBS3Reader import remapDBS3Keys
 
-import pdb
-
 class _MockDBSApi():
     """Mock dbs api"""
     def __init__(self, args, **contact):
@@ -321,5 +319,9 @@ class DBS3Reader:
             result |= set([x['Name'] for x in block['PhEDExNodeList']])
 
         return list(result)
+    
+    def getFileListByDataset(self, dataset, detail=True):
+        
+        return self.dbs.listFileArray(dataset)
 
 # pylint: enable=W0613,R0201

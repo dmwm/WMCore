@@ -154,10 +154,8 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     with open(jsonName, 'w') as jsonFile:
         json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
 
-    # Only in 2.7 does tarfile become usable as context manager
-    tgzFile = tarfile.open(name=tgzName, mode='w:gz')
-    tgzFile.add(jsonName)
-    tgzFile.close()
+    with tarfile.open(name=tgzName, mode='w:gz') as tgzFile:
+        tgzFile.add(jsonName)
 
     result = ufc.upload(fileName=tgzName, name=baseName)
     logging.debug('Upload result %s' % result)

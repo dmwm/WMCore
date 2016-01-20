@@ -1,3 +1,154 @@
+1.0.12 to 1.0.13.pre6:
+  - Merge pull request #6515 from ticoann/pile_up_fix
+  - remove unused import
+  - Merge pull request #6528 from ticoann/remove_signal_import
+  - Merge pull request #6525 from ericvaandering/pylint_setup
+  - due to the conflict signal handling
+  - Cleanup setup.py
+  - add cache for pile up data and call by dataset instead of block
+  - Merge pull request #6512 from amaltaro/listFileArray-run
+  - Do not call listFileArray with run_num=1
+  - Merge pull request #6521 from hufnagel/subscribe-ownership
+  - Merge pull request #6524 from hufnagel/condorstatusservice-fix
+  - fix CMSSW version check for CondorStatusService
+  - 1.0.13.pre5
+  - Merge pull request #6522 from dmwm/revert-6337-fix-tran-con-gen
+  - allow to configure group ownership for a subscription
+  - Revert "Fix transaction logic; connection usage; use generator objects in DBCore; clean patch replacement of 6284"
+  - 1.0.13.pre4
+  - Merge pull request #6520 from ticoann/fix_dependency
+  - fix typo
+  - 1.0.13.pre3
+  - Merge pull request #6518 from ticoann/jobsubmitter_improvement
+  - Merge pull request #6516 from ticoann/fix_dependency
+  - adhoc way to control the cache refresh
+  - fix wmagent dependency
+  - Merge pull request #6510 from ericvaandering/remove_dbswriter
+  - 1.0.13.pre2
+  - Merge pull request #6509 from ticoann/deployment_script
+  - Merge pull request #6514 from ticoann/fix_dependency
+  - change default arch to gcc493
+  - add Utils dependency in wmagent
+  - Merge pull request #6508 from hufnagel/missing-init
+  - Remove the DBSWriter (DBS2) which is not used
+  - Merge pull request #6504 from ticoann/remove_signal_import
+  - change the module import
+  - Merge pull request #6507 from vkuznet/fix-siginfo
+  - add a few missing init.py files
+  - Change SIGINFO to SIGUSR1 since the former only exists in newest version of python 2.7.11
+  - 1.0.13.pre1
+  - Merge pull request #6501 from ticoann/pycurl_revert
+  - Merge pull request #6502 from ticoann/update_wmcore_to_py27
+  - Merge pull request #6494 from hufnagel/condorstatusservice
+  - Merge pull request #6325 from hufnagel/eos-auth-problems
+  - Merge pull request #6337 from vkuznet/fix-tran-con-gen
+  - Cleaning pylint issues
+  - update to py2.7 and gcc493
+  - Merge pull request #6500 from dmwm/ericvaandering-patch-6
+  - Merge pull request #6499 from dmwm/ericvaandering-patch-5
+  - revert changes made by 6495
+  - Update env_unittest.sh
+  - Update env_unittest.sh
+  - Update deploy_unittest.sh
+  - work around EOS auth problems
+  - add CondorStatusService
+  - Merge pull request #6497 from dmwm/ericvaandering-patch-3
+  - Switch to new architecture, comp repo
+  - Merge pull request #6495 from vkuznet/fix_rest_reqmgr
+  - Merge pull request #6493 from vkuznet/fix_restfrontpage
+  - Merge pull request #6496 from ticoann/stop_submission_at_pending_theshold
+  - Add comments
+  - Stop submission at pending threshold
+  - Catch explicitly HTTPError
+  - Changes to fix RequestManager_t unittest and migration to pycurl; the later uses POST/PUT requests and send values in a body of the request instead of positional arguments
+  - Relax constrain on passed args (when no YUI is used)
+  - Merge pull request #6492 from ericvaandering/add_HIdata
+  - Add the HI dataset
+  - Merge pull request #6489 from ticoann/fix_reqmgr_client_unittest
+  - fix RequestManager unittest
+  - Merge pull request #6491 from ticoann/fix_dependency
+  - fix dependencies
+  - Merge pull request #6488 from ericvaandering/update_phedex_emulator
+  - Add a dumb function to the PhEDEx emulator to make mocked-DBS work
+  - Merge pull request #6475 from amaltaro/request-reqmgr2
+  - Fix pylint issues
+  - Merge pull request #6483 from amaltaro/deploy-gcc493
+  - Make deployment compatible with py2.7/gcc493
+  - Merge pull request #6437 from HassenRiahi/FixRegexSupport
+  - Merge pull request #6443 from vkuznet/error_msg_bug
+  - Merge pull request #6456 from bbockelm/log_threadid
+  - Merge pull request #6481 from jha2/using_mock2
+  - Merge pull request #6474 from ericvaandering/make_mock_json
+  - Merge pull request #6479 from ticoann/grouper_patch
+  - Implemented comments from pylint for #6481
+  - Merge remote-tracking branch 'upstream/master' into grouper_patch
+  - Merge pull request #6446 from amaltaro/dbs-lumiList
+  - Adding unit test using mock for DbsApi.
+  - Pylint complaints for DBSReader
+  - Sliced iterator that works on all iterables
+  - Update unit test and fix bad identation.
+  - Merge pull request #6450 from amaltaro/jobArchiver-sliced
+  - Fix status validation in reqmgr2
+  - Merge pull request #6470 from ericvaandering/dbs_mock_wo_gather
+  - A program to be run interactively to add to or replace the JSON files in test/data used to mock the DBS emulator
+  - Fix the TFC algo. and add unit test.
+  - Merge remote branch 'origin/FixRegexSupport'
+  - Merge remote branch 'upstream/master'
+  - Filling out the stub and add JSON files
+  - Merge pull request #6462 from mmascher/crabcache_dependencies
+  - Merge pull request #6454 from ericvaandering/fix_exception_case
+  - Update dependencies for crabcache
+  - Fixed pylint issues
+  - Split job work for JobArchiver
+  - Harmonize case of exception labels
+  - Merge pull request #6427 from juztas/errors
+  - Add threadid to logfile.
+  - Improve listFileArray usage; query by block+lumi instead of dataset+lumi
+  - pylint fixes
+  - Merge pull request #6436 from amaltaro/filesize-schema
+  - Fix RESTError method name to show actual error, we must use __str__ instead of __repr__
+  - Added filesize unit test
+  - Make filesize BIGINT in MySQL
+  - Fix regex. support.
+  - Merge pull request #1 from dmwm/master
+  - All Error codes of CMS jobs and Stageout related for ASO/CRAB3
+  - Merge pull request #6412 from ticoann/delete_wmstats_on_server
+  - Merge pull request #6393 from hufnagel/heavyion-physicsskims
+  - Merge pull request #6264 from mmascher/recycling_sandbox
+  - Merge pull request #6417 from AndresTanasijczuk/validFileOnly
+  - Merge pull request #6429 from mmascher/get_groups2
+  - Merge pull request #6432 from ericvaandering/fix_scram
+  - Merge pull request #6422 from ticoann/allowed_actions
+  - Merge pull request #6425 from vkuznet/issue6411
+  - Fixup pylint
+  - Remove 60515 from the other place
+  - Redo logging to be faster
+  - Fix pylint problems
+  - Fix scram error number
+  - Merge pull request #6428 from vkuznet/hooks
+  - Merge pull request #6430 from amaltaro/bump-deploy2
+  - Add invisible_input class/style
+  - Bump example deployment command
+  - Add __future__ print/division
+  - Add getAllUserGroups API to Proxy module. See https://github.com/dmwm/CRABServer/issues/5090
+  - Add WMCore.Signals to main rest server
+  - New module to handle system signals. Right now it implements threads dump on stdout for SIGINFO signal
+  - Adjust css
+  - Adjust input class for visible attributes
+  - Use readonly attributes only when visible_attrs is present in function call
+  - Fix typo
+  - Changes to make visible attributes in a table
+  - add the structure to control modifiable status by status
+  - Add argument validFileOnly in some DBS3Reader APIs.
+  - delete WMStats document locally
+  - add some more PhysicsSkims
+  - Add items/iteritems methods to ResultRow class
+  - Make pylint happier
+  - Fix transaction logic; connection usage; use generator objects in DBCore; clean patch replacement of 6284
+  - New UserFileCache checksum: add parameter for backward compatibility
+  - Fix unit tests for new UFC checksum
+  - New algorithm to calculate the checksum in UserTarball. See https://github.com/dmwm/CRABServer/issues/4948
+
 1.0.12 to 1.0.13.pre5:
   - Merge pull request #6522 from dmwm/revert-6337-fix-tran-con-gen
   - Revert "Fix transaction logic; connection usage; use generator objects in DBCore; clean patch replacement of 6284"

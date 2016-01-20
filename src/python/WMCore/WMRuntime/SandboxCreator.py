@@ -12,15 +12,12 @@ import tarfile
 import tempfile
 import WMCore.WMSpec.WMTask as WMTask
 import WMCore.WMSpec.WMStep as WMStep
-import urllib
 import urlparse
 import zipfile
 import shutil
 
-import WMCore
 import PSetTweaks
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
-from WMCore.WMBase import getWMBASE
 
 def tarballExclusion(path):
     """

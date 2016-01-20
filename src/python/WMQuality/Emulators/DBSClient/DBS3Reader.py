@@ -6,8 +6,6 @@
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBS3Reader import remapDBS3Keys
 
-import pdb
-
 class _MockDBSApi():
     """Mock dbs api"""
     def __init__(self, args, **contact):

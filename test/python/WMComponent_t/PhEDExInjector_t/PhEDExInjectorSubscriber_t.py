@@ -14,9 +14,7 @@ from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-
-from WMComponent.PhEDExInjector.PhEDExInjectorSubscriber import PhEDExInjectorSubscriber
+from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
@@ -32,7 +30,6 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
     """
     _PhEDExInjectorSubscriberTest_
 
-    Unit tests for the PhEDExInjectorSubscriber.
     Create some database inside DBSBuffer, run the subscriber algorithm
     using a PhEDEx emulator and verify that it works both in unsafe and safe mode.
     For unsafe mode there a WMBS database is also created
@@ -255,20 +252,9 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         self.stuffDatabase()
         config = self.createConfig()
 
-        phedex = PhEDEx({"endpoint": config.PhEDExInjector.phedexurl}, "json")
-        try:
-            nodeMappings = phedex.getNodeMap()
-        except Exception:
-            time.sleep(2)
-            try:
-                nodeMappings = phedex.getNodeMap()
-            except Exception:
-                time.sleep(4)
-                nodeMappings = phedex.getNodeMap()
-
-        subscriber = PhEDExInjectorSubscriber(config, phedex, nodeMappings)
+        subscriber = PhEDExInjectorPoller(config)
         subscriber.setup({})
-        subscriber.algorithm({})
+        subscriber.subscribeDatasets()
 
         phedexInstance = subscriber.phedex
         subscriptions = phedexInstance.subRequests
@@ -320,7 +306,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
 
         # Reset and run again and make sure that no duplicate subscriptions are created
         myThread.dbi.processData("UPDATE dbsbuffer_dataset_subscription SET subscribed = 0")
-        subscriber.algorithm({})
+        subscriber.subscribeDatasets()
         self.assertEqual(len(subscriptions[self.testDatasetA]), 3)
         self.assertEqual(len(subscriptions[self.testDatasetB]), 2)
 

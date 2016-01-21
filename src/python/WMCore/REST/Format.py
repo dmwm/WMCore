@@ -440,7 +440,7 @@ def _etag_match(status, etagval, match, nomatch):
     # as they need to be handled as request pre-condition, not in the
     # streaming out part here.
     if cherrypy.request.method in ('GET', 'HEAD'):
-        status, reason, msg = httputil.valid_status(status)
+        status, dummyReason, dummyMsg = httputil.valid_status(status)
         if status >= 200 and status <= 299:
             if match and ("*" in match or etagval in match):
                 raise cherrypy.HTTPError(412, "Precondition on ETag %s failed" % etagval)

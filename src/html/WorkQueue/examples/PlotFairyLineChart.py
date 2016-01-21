@@ -23,7 +23,7 @@ def random_colour():
     return '#%02x%02x%02x'%(random.randint(0,255),random.randint(0,255),random.randint(0,255))
 
 def random_data():
-    return [random.randint(10, 20) for x in range(4)]
+    return [random.randint(10, 20) for _ in range(4)]
 
 
 # output file name

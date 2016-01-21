@@ -110,7 +110,7 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                         log.error("Setting NoMcMData for %s" % wf)
                         report[wf].update({'mcmApprovalTime':'NoMcMData'})
                     except (RuntimeError, IOError):
-                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        exc_type, dummy_exc_value, dummy_exc_traceback = sys.exc_info()
                         log.error("%s getting history from McM for PREP ID %s. May be transient and/or SSO problem." %
                             (exc_type, prepID))
                     except:

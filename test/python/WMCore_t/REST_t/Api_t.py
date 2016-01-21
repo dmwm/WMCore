@@ -1,9 +1,12 @@
 # system modules
-import json, re, zlib
-import cherrypy
-from cherrypy.test import webtest
-from cherrypy import response
+import json
+import re
+import zlib
 from multiprocessing import Process
+
+import cherrypy
+from cherrypy import response
+from cherrypy.test import webtest
 
 # WMCore modules
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
@@ -13,7 +16,6 @@ from WMCore.REST.Validation import validate_num, validate_str
 from WMCore.REST.Error import InvalidObject
 from WMCore.REST.Format import RawFormat
 from WMCore.REST.Tools import tools
-import WMCore.REST.Test as T
 
 gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
              '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'

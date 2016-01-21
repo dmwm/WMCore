@@ -298,5 +298,44 @@ class LumiListTest(unittest.TestCase):
         self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=ccl).getCMSSWString())
         self.assertEqual(LumiList(compactList=acl).getCMSSWString(), LumiList(compactList=dcl).getCMSSWString())
 
+    def testWMagentFormat(self):
+        """
+        Test the constuction of the double-string-based version of lumi lists
+        used in some places by WMAgent
+        """
+
+        clumis = {'1': range(2, 20) + range(31, 39) + range(45, 49),
+                  '2': range(6, 20) + range(30, 40),
+                  '3': range(10, 20) + range(30, 40) + range(50, 60),
+                  '4': range(1, 100),
+                  }
+        runs = [1, 2, 3, 4]
+        lumis = ['2,19,31,38,45,48', '6,19,30,39', '10,19,30,39,50,59', '1,99']
+
+        c = LumiList(runsAndLumis=clumis)
+        w = LumiList(wmagentFormat=(runs, lumis))
+        self.assertEqual(w.getCMSSWString(), c.getCMSSWString())
+
+        clumis = {'12': [4, 5]}
+        runs = [12]
+        lumis = ['4,5']
+
+        c = LumiList(runsAndLumis=clumis)
+        w = LumiList(wmagentFormat=(runs, lumis))
+        self.assertEqual(w.getCMSSWString(), c.getCMSSWString())
+
+        aruns = [1]
+        alumis = ['1,10,11,20']
+        bruns = [1]
+        blumis = ['1,20']
+        self.assertEqual(LumiList(wmagentFormat=(aruns, alumis)).getCMSSWString(),
+                         LumiList(wmagentFormat=(bruns, blumis)).getCMSSWString())
+
+        with self.assertRaises(RuntimeError):
+            w = LumiList(wmagentFormat=([1,2,3]))  # No lumis
+        with self.assertRaises(RuntimeError):
+            w = LumiList(wmagentFormat=([1], ['1,2,3']))  # Need twice as many lumis as runs
+
+
 if __name__ == '__main__':
     unittest.main()

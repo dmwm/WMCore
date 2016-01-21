@@ -8,6 +8,7 @@ from __future__ import (division, print_function)
 import unittest
 
 import mock
+
 from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 
 
@@ -20,17 +21,14 @@ class EmulatedUnitTest(unittest.TestCase):
     """
 
     def setUp(self):
-        # In python 2.7 code like this will be possible (making cleanup a sure thing
-        # dbsPatcher = mock.patch('dbs.apis.dbsClient.DbsApi')
-        # self.MockDbsApi = dbsPatcher.start()
-        # self.addCleanup(dbsPatcher.stop)
+        """
+        Start the various mocked versions and add cleanups in case of exceptions
 
-        # For python 2.6 we need to cache this in self (may want to for inherited unit tests anyhow
+        TODO: parameters to turn off emulators individually
+        """
+
         self.dbsPatcher = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
         self.inUseDbsApi = self.dbsPatcher.start()
-        return
+        self.addCleanup(self.dbsPatcher.stop)
 
-    def tearDown(self):
-        # Needed in python 2.6, not needed in 2.7 with addCleanup
-        self.inUseDbsApi = self.dbsPatcher.stop()
         return

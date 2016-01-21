@@ -154,12 +154,10 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     with open(jsonName, 'w') as jsonFile:
         json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
 
-    # Only in 2.7 does tarfile become usable as context manager
-    tgzFile = tarfile.open(name=tgzName, mode='w:gz')
-    tgzFile.add(jsonName)
-    tgzFile.close()
+    with tarfile.open(name=tgzName, mode='w:gz') as tgzFile:
+        tgzFile.add(jsonName)
 
-    result = ufc.upload(fileName=tgzName, name=baseName)
+    result = ufc.upload(fileName=tgzName)
     logging.debug('Upload result %s' % result)
     # If this doesn't work, exception will propogate up and block archiving the task
     logging.info('Uploaded with name %s and hashkey %s' % (result['name'], result['hashkey']))
@@ -1001,7 +999,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         interestingDatasets = []
         # Are the datasets from this request interesting? Do they have DQM output? One might ask afterwards if they have harvest
         for dataset in workload.listOutputDatasets():
-            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+            (dummy, PD, dummyProcDS, dataTier) = dataset.split('/')
             if PD in interestingPDs and dataTier == "DQM":
                 interestingDatasets.append(dataset)
         # We should have found 1 interesting dataset at least
@@ -1032,8 +1030,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         # If all is true, get the run numbers processed by this worklfow        
         runList = listRunsWorkflow.execute(workflow = workload.name())
         # GO to DQM GUI, get what you want 
-        for dataset in interestingDatasets :
-            (nothing, PD, procDataSet, dataTier) = dataset.split('/')
+        for dataset in interestingDatasets:
+            (dummy, PD, dummyProcDS, dataTier) = dataset.split('/')
             worthPoints = {}
             for run in runList :
                 responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
@@ -1147,7 +1145,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         if self.uploadPublishDir:
             workDir = self.uploadPublishDir
         else:
-            workDir, taskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
+            workDir, dummyTaskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
 
         try:
             return uploadPublishWorkflow(self.config, workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)

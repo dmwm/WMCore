@@ -15,7 +15,6 @@ import cherrypy
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Agent.Harness import Harness
 from WMCore.WMFactory import WMFactory
-from WMCore.HTTPFrontEnd import Downloader
 from WMCore.WebTools.Root import Root
 
 factory = WMFactory('generic')

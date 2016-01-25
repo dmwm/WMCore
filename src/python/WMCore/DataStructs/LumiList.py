@@ -14,6 +14,7 @@ This code began life in COMP/CRAB/python/LumiList.py
 
 
 import copy
+import itertools
 import json
 import re
 import urllib2
@@ -45,8 +46,8 @@ class LumiList(object):
         is a subset of the compactList example above
     """
 
-
-    def __init__(self, filename = None, lumis = None, runsAndLumis = None, runs = None, compactList = None, url = None):
+    def __init__(self, filename=None, lumis=None, runsAndLumis=None, runs=None, compactList=None, url=None,
+                 wmagentFormat=None):
         """
         Constructor takes filename (JSON), a list of run/lumi pairs,
         or a dict with run #'s as the keys and a list of lumis as the values, or just a list of runs
@@ -103,6 +104,34 @@ class LumiList(object):
                 runString = str(run)
                 if compactList[run]:
                     self.compactList[runString] = compactList[run]
+
+        if wmagentFormat:
+            """
+            Expecting a list or tuple of two elements. First is a list of run #s, the second is a list of strings.
+            Each string is a comma separated list of lumi numbers. Even numbers are the start of a lumi range,
+            odd numbers are the end of that lumi range.
+            """
+
+            if not isinstance(wmagentFormat, (list, tuple)) or len(wmagentFormat) != 2:
+                raise RuntimeError('Improper format for wmagentFormat. Must be list or tuple of lists')
+
+            runs, lumis = wmagentFormat
+
+            if len(runs) <= 0 or len(lumis) != len(runs):
+                raise RuntimeError('Improper format for wmagentFormat. # of lumi lists must match # of runs')
+
+            for run, lumiString in itertools.izip(runs, lumis):
+                runLumis = lumiString.split(',')
+                if not str(run) in self.compactList:
+                    self.compactList[str(run)] = []
+                if len(runLumis) % 2:
+                    raise RuntimeError('Improper format for wmagentFormat. Lumis must be in pairs')
+
+                # Walk through the list two at a time, get both values
+                it = iter(runLumis)
+                for beginLumi in it:
+                    endLumi = next(it)
+                    self.compactList[str(run)].append([int(beginLumi), int(endLumi)])
 
         # Compact each run and make it unique
 

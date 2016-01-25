@@ -468,27 +468,38 @@ class WMTaskTest(unittest.TestCase):
 
         self.assertEqual(testTask.getSubscriptionInformation(), {}, "There should not be any subscription info")
 
-        testTask.setSubscriptionInformation(["mercury"], ["mars", "earth"],
-                                            ["earth"], "Replica", "Move", "High",
-                                            "OneParticle")
+        testTask.setSubscriptionInformation(custodialSites = ["mercury"],
+                                            nonCustodialSites = ["mars", "earth"],
+                                            autoApproveSites = ["earth"],
+                                            custodialSubType = "Replica",
+                                            nonCustodialSubType = "Move",
+                                            custodialGroup = "DataOps",
+                                            nonCustodialGroup = "AnalysisOps",
+                                            priority = "Normal",
+                                            deleteFromSource = True,
+                                            primaryDataset = "OneParticle")
         subInfo = testTask.getSubscriptionInformation()
 
         outputRecoSubInfo = {"CustodialSites" : ["mercury"],
                              "NonCustodialSites" : ["mars", "earth"],
                              "AutoApproveSites" : ["earth"],
-                             "Priority" : "High",
                              "CustodialSubType" : "Replica",
                              "NonCustodialSubType" : "Move",
-                             "PhEDExGroup" : None,
-                             "DeleteFromSource" : False}
-        
+                             "CustodialGroup" : "DataOps",
+                             "NonCustodialGroup" : "AnalysisOps",
+                             "Priority" : "Normal",
+                             "DeleteFromSource" : True}
+
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
         self.assertFalse("/TwoParticles/DawnOfAnEra-v1/DQM" in subInfo, "The DQM subscription information is wrong")
 
-        testTask.setSubscriptionInformation(["jupiter"], primaryDataset = "TwoParticles")
+        testTask.setSubscriptionInformation(custodialSites = ["jupiter"],
+                                            primaryDataset = "TwoParticles")
+
         subInfo = testTask.getSubscriptionInformation()
+
         self.assertEqual(subInfo["/OneParticle/DawnOfAnEra-v1/RECO"],
                          outputRecoSubInfo, "The RECO subscription information is wrong")
         self.assertTrue("/OneParticle/DawnOfAnEra-v1/AOD" in subInfo, "The AOD subscription information is wrong")
@@ -496,7 +507,9 @@ class WMTaskTest(unittest.TestCase):
 
         recoutOutputModule = cmsswHelper.getOutputModule("outputRECO")
         setattr(recoutOutputModule, "primaryDataset", "ThreeParticles")
+
         testTask.updateSubscriptionDataset("outputRECO", recoutOutputModule)
+
         subInfo = testTask.getSubscriptionInformation()
         self.assertEqual(subInfo["/ThreeParticles/DawnOfAnEra-v1/RECO"],
                         outputRecoSubInfo, "The RECO subscription information is wrong")

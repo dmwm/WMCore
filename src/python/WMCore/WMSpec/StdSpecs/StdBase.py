@@ -999,7 +999,7 @@ class StdBase(object):
                                             "validate" : lambda x: all([cmsname(y) for y in x])},
                      "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": True, 
                                                        "validate" : lambda x: all([cmsname(y) for y in x])},
-                     # should be Low, Normal, High
+                     # should be Low, Normal or High
                      "SubscriptionPriority" : {"default" : "Low", "assign_optional": True,
                                                "validate" : lambda x: x in ["Low", "Normal", "High"]},
                      # should be Move Replica  
@@ -1007,6 +1007,13 @@ class StdBase(object):
                                            "validate" : lambda x: x in ["Move", "Replica"]},
                      "NonCustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
                                               "validate" : lambda x: x in ["Move", "Replica"]},
+
+                     # should be a valid PhEDEx group
+                     "CustodialGroup" : {"default" : "DataOps", "type" : str, "assign_optional": True },
+                     "NonCustodialGroup" : {"default" : "DataOps", "type" : str, "assign_optional": True },
+
+                     # should be True or False
+                     "DeleteFromSource" : {"default" : False, "type" : bool},
                      
                      # Block closing information
                      "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},

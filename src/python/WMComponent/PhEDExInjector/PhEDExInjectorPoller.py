@@ -46,7 +46,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         self.config = config
         self.phedex = phedex
         self.dbsUrl = config.DBSInterface.globalDBSUrl
-        self.group = getattr(config.PhEDExInjector, "group", "DataOps")
 
         # This will be used to map SE names which are stored in the DBSBuffer to
         # PhEDEx node names.  The first key will be the "kind" which consists

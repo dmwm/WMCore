@@ -176,6 +176,21 @@ class StageOutMgr:
         self.fallbacks.append(overrideParams)
         return
 
+# MOVE to dashboardAPI when #6420 pull request is merged
+    def prepareDashboardReport(self, fileToStage, seName, pnn, command, stageOutType, stageOutExit):
+        """
+        Prepare Dashboard report.
+        This dashboard report will be used for reporting to dashboard and visualize local/fallback
+        stageout related issues for prod/analysis jobs.
+        """
+        tempDict = {}
+        tempDict['LFN'] = fileToStage['LFN']
+        tempDict['SEName'] = seName if seName else fileToStage['SEName'] if 'SEName' in fileToStage else None
+        tempDict['PNN'] = pnn if pnn else fileToStage['PNN'] if 'PNN' in fileToStage else None
+        tempDict['StageOutCommand'] = command if command else fileToStage['command'] if 'command' in fileToStage else None
+        tempDict['StageOutType'] = stageOutType
+        tempDict['StageOutExit'] = stageOutExit
+        fileToStage['DashboardReport'].append(tempDict)
 
     def __call__(self, fileToStage):
         """
@@ -188,6 +203,8 @@ class StageOutMgr:
 
         print "==>Working on file: %s" % fileToStage['LFN']
         lfn = fileToStage['LFN']
+
+        fileToStage['DashboardReport'] = []
 
         #  //
         # // No override => use local-stage-out from site conf
@@ -203,16 +220,19 @@ class StageOutMgr:
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
                 print "===> Stage Out Successful: %s" % fileToStage
+                self.prepareDashboardReport(fileToStage, None, None, None, 'LOCAL', 0)
                 return fileToStage
             except WMException as ex:
                 lastException = ex
                 print "===> Local Stage Out Failure for file:"
                 print "======>  %s\n" % fileToStage['LFN']
+                self.prepareDashboardReport(fileToStage, self.siteCfg.localStageOut['se-name'], self.siteCfg.localStageOut['phedex-node'], self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
             except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
                                                 error = str(ex))
                 print "===> Local Stage Out Failure for file:\n"
                 print "======>  %s\n" % fileToStage['LFN']
+                self.prepareDashboardReport(fileToStage, self.siteCfg.localStageOut['se-name'], self.siteCfg.localStageOut['phedex-node'], self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
 
         #  //
         # // Still here => failure, start using the fallback stage outs
@@ -231,9 +251,12 @@ class StageOutMgr:
                 if lfn in self.failed:
                     del self.failed[lfn]
 
+
                 print "===> Stage Out Successful: %s" % fileToStage
+                self.prepareDashboardReport(fileToStage, None, None, None, 'FALLBACK', 0)
                 return fileToStage
             except Exception as ex:
+                self.prepareDashboardReport(fileToStage, fallback['se-name'], fallback['PNN'], fallback['command'], 'FALLBACK', 60310)
                 lastException = ex
                 continue
 

@@ -28,6 +28,8 @@ class MonteCarlo(StartPolicyInterface):
         self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
         self.args.setdefault('SubSliceSize', self.args['SliceSize']) # events per lumi
         self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
+        self.args.setdefault('blowupFactor', 1.0) # Estimate of additional jobs following tasks.
+                                                  # Total WQE tasks will be Jobs*(1+blowupFactor)
 
         if not self.mask:
             self.mask = Mask(FirstRun = 1,
@@ -68,7 +70,9 @@ class MonteCarlo(StartPolicyInterface):
                                  NumberOfLumis = nLumis,
                                  NumberOfEvents = nEvents,
                                  Jobs = jobs,
-                                 Mask = copy(mask))
+                                 Mask = copy(mask),
+                                 blowupFactor = self.args['blowupFactor'])
+
 
             if mask['LastEvent'] > (2**32 - 1):
                 #This is getting tricky, to ensure consecutive

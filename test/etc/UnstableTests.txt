@@ -11,3 +11,4 @@ WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testConflicts
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testResubmissionWorkflow
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testProductionMultiQueue
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testDeleteWork 
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testPrioritiesWorkPolling

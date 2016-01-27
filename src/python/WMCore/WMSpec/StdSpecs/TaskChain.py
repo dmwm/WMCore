@@ -220,6 +220,20 @@ class TaskChainWorkloadFactory(StdBase):
         StdBase.__call__(self, workloadName, arguments)
         self.workload = self.createWorkload()
 
+        # Detect blow-up factor from first task in chain.
+        blowupFactor = 0
+        if (self.taskChain > 1) and 'TimePerEvent' in arguments["Task1"]:
+            origTpe = arguments["Task1"]['TimePerEvent']
+            if origTpe <= 0: origTpe = 1.0
+            sumTpe = 0
+            tpeCount = 0
+            for i in range(1, self.taskChain + 1):
+                if 'TimePerEvent' in arguments["Task%d" % i]:
+                    sumTpe += arguments["Task%d" % i]['TimePerEvent']
+                    tpeCount += 1
+            if tpeCount > 0:
+                blowupFactor = sumTpe / float(origTpe)
+
         for i in range(1, self.taskChain + 1):
 
             originalTaskConf = arguments["Task%d" % i]
@@ -252,13 +266,15 @@ class TaskChainWorkloadFactory(StdBase):
                 if isGenerator(arguments):
                     # generate mc events
                     self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'])
+                                                          taskConf['SplittingArguments'],
+                                                          BlowupFactor=blowupFactor)
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'])
+                                                          taskConf['SplittingArguments'],
+                                                          BlowupFactor=blowupFactor)
                     self.setupTask(task, taskConf)
                 self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:

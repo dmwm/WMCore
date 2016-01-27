@@ -177,7 +177,6 @@ class DatasetTestCase(EmulatedUnitTest):
         # Run Blacklist
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        #rerecoArgs3.update({'RunBlacklist' : [2]})
         rerecoArgs3.update({'RunBlacklist' : [181175]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
                                                     rerecoArgs3)

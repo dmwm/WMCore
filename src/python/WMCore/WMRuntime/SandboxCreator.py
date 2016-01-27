@@ -17,6 +17,7 @@ import zipfile
 import shutil
 
 import PSetTweaks
+import Utils
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
 
 def tarballExclusion(path):
@@ -180,6 +181,10 @@ class SandboxCreator:
 
             psetTweaksPath = PSetTweaks.__path__[0]
             archive.add(psetTweaksPath, '/PSetTweaks',
+                        exclude = tarballExclusion)
+            
+            utilsPath = Utils.__path__[0]
+            archive.add(utilsPath, '/Utils',
                         exclude = tarballExclusion)
 
         for sb in userSandboxes:

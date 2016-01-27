@@ -84,6 +84,7 @@ Example initial processing task
      "SplittingArguments"    : {"files_per_job" : 1 }, Size of jobs in terms of splitting algorithm
  },
 """
+from __future__ import division
 
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -220,7 +221,22 @@ class TaskChainWorkloadFactory(StdBase):
         StdBase.__call__(self, workloadName, arguments)
         self.workload = self.createWorkload()
 
-        for i in range(1, self.taskChain + 1):
+        # Detect blow-up factor from first task in chain.
+        blowupFactor = 1
+        if (self.taskChain > 1) and 'TimePerEvent' in arguments["Task1"]:
+            origTpe = arguments["Task1"]['TimePerEvent']
+            if origTpe <= 0:
+                origTpe = 1.0
+            sumTpe = 0
+            tpeCount = 0
+            for i in xrange(1, self.taskChain + 1):
+                if 'TimePerEvent' in arguments["Task%d" % i]:
+                    sumTpe += arguments["Task%d" % i]['TimePerEvent']
+                    tpeCount += 1
+            if tpeCount > 0:
+                blowupFactor = sumTpe / origTpe
+
+        for i in xrange(1, self.taskChain + 1):
 
             originalTaskConf = arguments["Task%d" % i]
             taskConf = {}
@@ -252,13 +268,15 @@ class TaskChainWorkloadFactory(StdBase):
                 if isGenerator(arguments):
                     # generate mc events
                     self.workload.setWorkQueueSplitPolicy("MonteCarlo", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'])
+                                                          taskConf['SplittingArguments'],
+                                                          blowupFactor=blowupFactor)
                     self.workload.setEndPolicy("SingleShot")
                     self.setupGeneratorTask(task, taskConf)
                 else:
                     # process an existing dataset
                     self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
-                                                          taskConf['SplittingArguments'])
+                                                          taskConf['SplittingArguments'],
+                                                          blowupFactor=blowupFactor)
                     self.setupTask(task, taskConf)
                 self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
@@ -477,7 +495,7 @@ class TaskChainWorkloadFactory(StdBase):
                                        taskConf.get("FilterEfficiency")
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / (taskConf.get("TimePerEvent", self.timePerEvent)))
+            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 
@@ -642,7 +660,7 @@ class TaskChainWorkloadFactory(StdBase):
         """
         numTasks = schema['TaskChain']
         transientMapping = {}
-        for i in range(1, numTasks + 1):
+        for i in xrange(1, numTasks + 1):
             taskName = "Task%s" % i
             if taskName not in schema:
                 msg = "No Task%s entry present in request" % i

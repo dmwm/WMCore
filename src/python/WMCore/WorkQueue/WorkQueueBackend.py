@@ -9,7 +9,7 @@ import random
 import time
 import urllib
 
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document, CouchMonitor
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
 from WMCore.Wrappers import JsonWrapper as json
@@ -385,7 +385,7 @@ class WorkQueueBackend(object):
                 elements.append(element)
                 if site not in siteJobCounts:
                     siteJobCounts[site] = {}
-                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']
+                siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']*element.get('blowupFactor', 1.0)
             else:
                 self.logger.info("No possible site for %s" % element)
         # sort elements to get them in priority first and timestamp order
@@ -542,7 +542,7 @@ class WorkQueueBackend(object):
         """
         deleted = 0
         dbs = [self.db, self.inbox]
-        if type(workflowNames) != list:
+        if not isinstance(workflowNames, list):
             workflowNames = [workflowNames]
         
         if len(workflowNames) == 0:

@@ -70,7 +70,8 @@ def buildLumiMask(runs, lumis, expanded=False):
     strRuns = [str(run) for run in runs]
 
     if expanded:
-        lumiLists = [flattenList([range(int(x[0]), int(x[1]) + 1) for x in lumiLists[0]])]
+        nestedLumiList = [[range(int(y[0]), int(y[1]) + 1) for y in x] for x in lumiLists]
+        lumiLists = [flattenList(x) for x in nestedLumiList]
 
     lumiMask = dict(list(zip(strRuns, lumiLists)))
 

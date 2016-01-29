@@ -22,7 +22,7 @@ class KillWorkflow(DBFormatter):
                    wmbs_workflow.id = wmbs_subscription.workflow AND
                    wmbs_subscription.subtype IN
                     (SELECT id FROM wmbs_sub_types
-                     WHERE name != 'Cleanup' AND name != 'LogCollect')
+                     WHERE name != 'Cleanup' %s)
                  INNER JOIN wmbs_fileset_files ON
                    wmbs_subscription.fileset = wmbs_fileset_files.fileset
                  LEFT OUTER JOIN wmbs_sub_files_complete ON
@@ -42,7 +42,7 @@ class KillWorkflow(DBFormatter):
                        wmbs_workflow.name = :workflowname AND
                        wmbs_subscription.subtype IN
                          (SELECT id FROM wmbs_sub_types
-                          WHERE name != 'Cleanup' AND name != 'LogCollect'))"""
+                          WHERE name != 'Cleanup' %s))"""
 
     delAva = """DELETE FROM wmbs_sub_files_available WHERE subscription IN
                   (SELECT wmbs_subscription.id FROM wmbs_workflow
@@ -51,13 +51,23 @@ class KillWorkflow(DBFormatter):
                        wmbs_workflow.name = :workflowname AND
                        wmbs_subscription.subtype IN
                          (SELECT id FROM wmbs_sub_types
-                          WHERE name != 'Cleanup' AND name != 'LogCollect'))"""
+                          WHERE name != 'Cleanup' %s))"""
 
-    def execute(self, workflowName, conn = None, transaction = False):
-        self.dbi.processData(self.sql, {"workflowname": workflowName},
+    def execute(self, workflowName, deleteLogCollect=False, conn=None, transaction=False):
+        if deleteLogCollect:
+            # need a space in str
+            condition = " AND name != 'LogCollect'"
+        else:
+            condition = ""
+            
+        sql = self.sql % condition
+        delAcq = self.delAcq % condition
+        delAva = self.delAva % condition
+        
+        self.dbi.processData(sql, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAcq, {"workflowname": workflowName},
+        self.dbi.processData(delAcq, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
-        self.dbi.processData(self.delAva, {"workflowname": workflowName},
+        self.dbi.processData(delAva, {"workflowname": workflowName},
                              conn = conn, transaction = transaction)
         return

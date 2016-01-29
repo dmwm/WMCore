@@ -179,7 +179,9 @@ class WorkQueueReqMgrInterface():
                                     continue
                     else:
                         pass # assume workqueue status will catch up later
-                elif request['RequestStatus'] == 'aborted' or request['RequestStatus'] == 'force-complete':
+                elif request['RequestStatus'] == 'aborted':
+                    queue.cancelWork(WorkflowName=request['RequestName'], deleteLogCollect=True)
+                elif request['RequestStatus'] == 'force-complete':
                     queue.cancelWork(WorkflowName=request['RequestName'])
                 # Check consistency of running-open/closed and the element closure status
                 elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):

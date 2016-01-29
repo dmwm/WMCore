@@ -41,6 +41,7 @@ class DatasetTestCase(EmulatedUnitTest):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
+        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
@@ -83,6 +84,7 @@ class DatasetTestCase(EmulatedUnitTest):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
+        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         white_list = "#5c53d062-0bed-11e1-b764-003048caaace"
         black_list = "#f29b82f0-0c50-11e1-b764-003048caaace"
         #Block blacklist
@@ -285,6 +287,7 @@ class DatasetTestCase(EmulatedUnitTest):
         parentProcSpec.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
+        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
         for task in parentProcSpec.taskIterator():
             units, _ = Dataset(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))

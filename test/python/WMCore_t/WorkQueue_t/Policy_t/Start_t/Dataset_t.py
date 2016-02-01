@@ -5,17 +5,18 @@
 
 import unittest
 
-from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
-from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
-from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+
+from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
+from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -23,7 +24,6 @@ parentProcArgs.update(IncludeParents="True")
 
 
 class DatasetTestCase(EmulatedUnitTest):
-
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=5)
 
     def setUp(self):
@@ -41,7 +41,7 @@ class DatasetTestCase(EmulatedUnitTest):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
-        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dummyDBS = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
@@ -75,7 +75,6 @@ class DatasetTestCase(EmulatedUnitTest):
             count += 1
         self.assertEqual(tasks, count)
 
-
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
@@ -84,13 +83,13 @@ class DatasetTestCase(EmulatedUnitTest):
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
-        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dummyDBS = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         white_list = "#5c53d062-0bed-11e1-b764-003048caaace"
         black_list = "#f29b82f0-0c50-11e1-b764-003048caaace"
-        #Block blacklist
+        # Block blacklist
         rerecoArgs2 = {}
         rerecoArgs2.update(rerecoArgs)
-        rerecoArgs2.update({'BlockBlacklist' : [dataset + black_list]})
+        rerecoArgs2.update({'BlockBlacklist': [dataset + black_list]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -131,7 +130,7 @@ class DatasetTestCase(EmulatedUnitTest):
         # Run Whitelist
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        rerecoArgs3.update({'RunWhitelist' : [181061]})
+        rerecoArgs3.update({'RunWhitelist': [181061]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -146,7 +145,7 @@ class DatasetTestCase(EmulatedUnitTest):
 
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        rerecoArgs3.update({'RunWhitelist' : [181061, 181175]})
+        rerecoArgs3.update({'RunWhitelist': [181061, 181175]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -161,7 +160,7 @@ class DatasetTestCase(EmulatedUnitTest):
         # Run Blacklist
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        rerecoArgs3.update({'RunBlacklist' : [181175]})
+        rerecoArgs3.update({'RunBlacklist': [181175]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -177,7 +176,7 @@ class DatasetTestCase(EmulatedUnitTest):
         # Run Mixed Whitelist
         rerecoArgs3 = {}
         rerecoArgs3.update(rerecoArgs)
-        rerecoArgs3.update({'RunBlacklist' : [181175], 'RunWhitelist' : [181061]})
+        rerecoArgs3.update({'RunBlacklist': [181175], 'RunWhitelist': [181061]})
         blacklistBlockWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs3)
         blacklistBlockWorkload.setStartPolicy('Dataset', **self.splitArgs)
         task = getFirstTask(blacklistBlockWorkload)
@@ -189,7 +188,6 @@ class DatasetTestCase(EmulatedUnitTest):
         self.assertEqual(1, units[0]['NumberOfFiles'])
         self.assertEqual(5694, units[0]['NumberOfEvents'])
 
-
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
@@ -197,10 +195,11 @@ class DatasetTestCase(EmulatedUnitTest):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
-        dbs = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
-            Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task, {dataset : []})
-            self.assertRaises(RuntimeError, Dataset(**self.splitArgs), Tier1ReRecoWorkload, task, dbs, {dataset + '1': []})
+            Dataset(**self.splitArgs)(Tier1ReRecoWorkload, task, {dataset: []})
+            self.assertRaises(RuntimeError, Dataset(**self.splitArgs), Tier1ReRecoWorkload, task, dbs,
+                              {dataset + '1': []})
 
     def testLumiSplitTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow split by Lumi"""
@@ -245,7 +244,7 @@ class DatasetTestCase(EmulatedUnitTest):
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
                         # This is what it is with DBS3 unless we calculate it
-                        self.assertEqual(runLumis[run], None)  
+                        self.assertEqual(runLumis[run], None)
             self.assertEqual(250, int(wq_jobs))
 
     def testInvalidSpecs(self):
@@ -267,7 +266,7 @@ class DatasetTestCase(EmulatedUnitTest):
 
         # invalid run whitelist
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        processingSpec.setRunWhitelist([666]) # not in this dataset
+        processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
 
@@ -287,7 +286,7 @@ class DatasetTestCase(EmulatedUnitTest):
         parentProcSpec.setStartPolicy('Dataset', **self.splitArgs)
         inputDataset = getFirstTask(parentProcSpec).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
-        dummyDBS = {inputDataset.dbsurl : DBSReader(inputDataset.dbsurl)}
+        dummyDBS = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in parentProcSpec.taskIterator():
             units, _ = Dataset(**self.splitArgs)(parentProcSpec, task)
             self.assertEqual(1, len(units))
@@ -298,6 +297,7 @@ class DatasetTestCase(EmulatedUnitTest):
                 self.assertEqual(unit['Inputs'].keys(), [dataset])
                 self.assertEqual(True, unit['ParentFlag'])
                 self.assertEqual(0, len(unit['ParentData']))
+
 
 if __name__ == '__main__':
     unittest.main()

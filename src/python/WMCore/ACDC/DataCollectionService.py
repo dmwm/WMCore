@@ -20,6 +20,31 @@ from WMCore.WMException      import WMException
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run  import Run
 
+
+def mergeFakeFiles(chunkFiles):
+    """
+    _mergeFakeFiles_
+
+    Receive a list of dicts with acdc files info and merge them together
+    (sum up events) belonging to the same MCFakeFile.
+    """
+    # do not do anything for real files
+    if not chunkFiles[0]['lfn'].startswith('MCFakeFile'):
+        return chunkFiles
+
+    logging.info("Merging %d ACDC FakeFiles...", len(chunkFiles))
+    mergedFiles = {}
+    for acdcFile in chunkFiles:
+        if acdcFile['lfn'] not in mergedFiles:
+            mergedFiles[acdcFile['lfn']] = acdcFile
+        else:
+            mergedFiles[acdcFile['lfn']]['events'] += acdcFile['events']
+            mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
+    logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
+
+    return mergedFiles.values()
+
+
 class ACDCDCSException(WMException):
     """
     Yet another dummy variable class
@@ -236,7 +261,7 @@ class DataCollectionService(CouchService):
         files = self._getFilesetInfo(collectionName, filesetName, 
                                        user, group, chunkOffset, chunkSize)
 
-
+        files = mergeFakeFiles(files)
         for fileInfo in files:
             newFile = File(lfn = fileInfo["lfn"], size = fileInfo["size"],
                            events = fileInfo["events"], parents = set(fileInfo["parents"]),
@@ -249,6 +274,7 @@ class DataCollectionService(CouchService):
             chunkFiles.append(newFile)
 
         return chunkFiles
+
 
     @CouchUtils.connectToCouch
     def getProductionACDCInfo(self, collectionID, taskName, user = "cmsdataops",

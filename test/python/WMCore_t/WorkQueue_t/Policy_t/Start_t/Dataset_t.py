@@ -27,11 +27,13 @@ class DatasetTestCase(EmulatedUnitTest):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=5)
 
     def setUp(self):
+        super(DatasetTestCase, self).setUp()
         Globals.GlobalParams.resetParams()
         EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=True, requestMgr=False)
 
     def tearDown(self):
         EmulatorHelper.resetEmulators()
+        super(DatasetTestCase, self).tearDown()
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""

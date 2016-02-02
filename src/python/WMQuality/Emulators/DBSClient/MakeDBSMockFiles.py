@@ -37,14 +37,29 @@ for endpoint, outFile, calls, datasets in instances:
     realDBS = dbs.wrapped.dbs
 
     for dataset in datasets:
+        calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
+        calls.append(['listBlocks', {'detail': True, 'dataset': dataset}])
+        calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
+        calls.append(['listRuns', {'dataset': dataset}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:
             calls.append(['listBlocks', {'block_name': unicode(block['block_name'])}])
             calls.append(['listBlocks', {'block_name': unicode(block['block_name']), 'detail': True}])
+            calls.append(['listBlockParents', {'block_name': str(block['block_name'])}])
             calls.append(['listFileLumis', {'block_name': unicode(block['block_name'])}])
             calls.append(['listFileLumis', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
             calls.append(['listFileArray', {'block_name': unicode(block['block_name']),
                                             'detail': True, 'validFileOnly': 1}])
+            calls.append(['listFileSummaries', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
+            calls.append(['listFileSummaries', {'block_name': str(block['block_name']), 'validFileOnly': 1}])
+            calls.append(['listRuns', {'block_name': unicode(block['block_name'])}])
+            calls.append(['listFileParents', {'block_name': unicode(block['block_name'])}])
+            files = realDBS.listFiles(block_name=block['block_name'])
+            for dbsFile in files:
+                lfn = unicode(dbsFile['logical_file_name'])
+                calls.append(['listFileArray', {'logical_file_name': [lfn], 'detail': True}])
+                calls.append(['listFileArray', {'logical_file_name': [lfn]}])
+                calls.append(['listFileLumiArray', {'logical_file_name': [lfn]}])
 
     for call in calls:
         func = getattr(realDBS, call[0])

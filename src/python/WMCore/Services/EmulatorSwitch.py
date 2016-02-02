@@ -5,6 +5,7 @@ import os
 import tempfile
 import sys
 import logging
+import inspect
 
 from WMCore.Configuration import Configuration, saveConfigurationFile
 
@@ -69,6 +70,15 @@ class EmulatorHelper(object):
             and EMULATOR_CONFIG environment variable is set,
         r
         """
+        if not EmulatorHelper.DBSReader and  cls.__name__ == 'DBSReader':
+            foundEUT = False
+            frames = inspect.stack()
+            for frame in frames:
+                if 'EmulatedUnitTest' in frame[0].f_globals:
+                    foundEUT = True
+            if not foundEUT:
+                raise NotImplementedError('Cannot use DBS in unit tests without using EmulatedUnitTest')
+
         emFlag = getattr(EmulatorHelper, cls.__name__)
         if emFlag:
             return EmulatorHelper.getEmulatorClass(cls.__name__, *args)

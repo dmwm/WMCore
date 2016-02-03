@@ -388,6 +388,12 @@ class Assign(WebAPI):
         nonCustodialType = kwargs.get("NonCustodialSubType", "Replica")
         if nonCustodialType not in ["Move", "Replica"]:
             raise cherrypy.HTTPError(400, "Invalid noncustodial subscription type %s" % nonCustodialType)
+        if "CustodialGroup" in kwargs and not isinstance(kwargs["CustodialGroup"], basestring):
+            raise cherrypy.HTTPError(400, "Invalid CustodialGroup format %s" % kwargs["CustodialGroup"])
+        if "NonCustodialGroup" in kwargs and not isinstance(kwargs["NonCustodialGroup"], basestring):
+            raise cherrypy.HTTPError(400, "Invalid NonCustodialGroup format %s" % kwargs["NonCustodialGroup"])
+        if "DeleteFromSource" in kwargs and not isinstance(kwargs["DeleteFromSource"], bool):
+            raise cherrypy.HTTPError(400, "Invalid DeleteFromSource format %s" % kwargs["DeleteFromSource"])
 
         helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
                                                    custodialSites = custodialList,
@@ -395,7 +401,10 @@ class Assign(WebAPI):
                                                    autoApproveSites = autoApproveList,
                                                    custodialSubType = custodialType,
                                                    nonCustodialSubType = nonCustodialType,
-                                                   priority = subscriptionPriority)
+                                                   custodialGroup = kwargs.get("CustodialGroup", "DataOps"),
+                                                   nonCustodialGroup = kwargs.get("NonCustodialGroup", "DataOps"),
+                                                   priority = subscriptionPriority,
+                                                   deleteFromSource = kwargs.get("DeleteFromSource", False))
 
         # Block closing information
         blockCloseMaxWaitTime = int(kwargs.get("BlockCloseMaxWaitTime", helper.getBlockCloseMaxWaitTime()))
@@ -427,8 +436,15 @@ class Assign(WebAPI):
                                        "SubscriptionPriority": subscriptionPriority,
                                        "CustodialSubType": custodialType,
                                        "NonCustodialSubType": nonCustodialType,
+                                       "CustodialGroup": kwargs.get("CustodialGroup", "DataOps"),
+                                       "NonCustodialGroup": kwargs.get("NonCustodialGroup", "DataOps"),
+                                       "DeleteFromSource": kwargs.get("DeleteFromSource", False),
                                        "Teams": kwargs["Teams"],
                                        "OutputDatasets": outputDatasets,
                                        "SiteWhitelist": whiteList,
-                                       "SiteBlacklist": blackList},
+                                       "SiteBlacklist": blackList,
+                                       "Dashboard": kwargs.get("Dashboard", ""),
+                                       "UseSiteListAsLocation": kwargs.get("useSiteListAsLocation", False),
+                                       "TrustSitelists": kwargs.get("trustSitelists", False),
+                                       "AllowOpportunistic": kwargs.get("allowOpportunistic", False)},
                                useBody=True)

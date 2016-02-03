@@ -129,7 +129,7 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
         else:
             optional = argumentDefinition[argument].get(optionKey, True)
         if not optional and (argument not in arguments):
-            raise WMSpecFactoryException("Validation failed: %s is mendatory %s" % (argument, 
+            raise WMSpecFactoryException("Validation failed: %s is mandatory %s" % (argument, 
                                                                 argumentDefinition[argument]))
         #If assign_optional is set to false it need to be assigned later.
         #TODO this need to be done earlier then this function
@@ -172,15 +172,29 @@ def validateInputDatasSetAndParentFlag(arguments):
     return
 
 def validatePhEDExSubscription(arguments):
-    autoApproveList = arguments.get("AutoApproveSubscriptionSites", [])
-    notAllowedSites = []
-    for site in autoApproveList:
-        if site.endswith('_MSS'):
-            notAllowedSites.append(site)
+    """
+    _validatePhEDExSubscription_
 
-    if len(notAllowedSites) > 0:
-        msg = "Validation failed: Auto-approval to MSS endpoint not allowed: %s" % notAllowedSites
-        raise WMSpecFactoryException(msg)
+    Validate all the PhEDEx arguments provided during request
+    creation and assignment.
+    """
+    for site in arguments.get("AutoApproveSubscriptionSites", []):
+        if site.endswith('_MSS'):
+            raise WMSpecFactoryException("Auto-approval to MSS endpoint is not allowed: %s" % site)
+    if arguments.get("SubscriptionPriority", "Low") not in ["Low", "Normal", "High"]:
+        raise WMSpecFactoryException("Invalid subscription priority: %s" % arguments["SubscriptionPriority"])
+    if arguments.get("CustodialSubType", "Replica") not in ["Move", "Replica"]:
+        raise WMSpecFactoryException("Invalid custodial subscription type: %s" % arguments["CustodialSubType"])
+    if arguments.get("NonCustodialSubType", "Replica") not in ["Move", "Replica"]:
+        raise WMSpecFactoryException("Invalid non custodial subscription type: %s" % arguments["NonCustodialSubType"])
+
+    if 'CustodialGroup' in arguments and not isinstance(arguments["CustodialGroup"], basestring):
+        raise WMSpecFactoryException("Invalid custodial PhEDEx group: %s" % arguments["CustodialGroup"])
+    if 'NonCustodialGroup' in arguments and not isinstance(arguments["NonCustodialGroup"], basestring):
+        raise WMSpecFactoryException("Invalid non custodial PhEDEx group: %s" % arguments["NonCustodialGroup"])
+    if 'DeleteFromSource' in arguments and not isinstance(arguments["DeleteFromSource"], bool):
+        raise WMSpecFactoryException("Invalid DeleteFromSource type, it must be boolean")
+
     return 
 
 def validateSiteLists(arguments):

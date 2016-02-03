@@ -1753,12 +1753,15 @@ class WMWorkloadHelper(PersistencyHelper):
         # Set phedex subscription information
         if self._checkKeys(kwargs, phedexParams):
             self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
-                                        custodialSites = kwargs["CustodialSites"],
-                                        nonCustodialSites = kwargs["NonCustodialSites"],
-                                        autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
-                                        custodialSubType = kwargs["CustodialSubType"],
-                                        nonCustodialSubType = kwargs["NonCustodialSubType"],
-                                        priority = kwargs["SubscriptionPriority"])
+                                                     custodialSites = kwargs["CustodialSites"],
+                                                     nonCustodialSites = kwargs["NonCustodialSites"],
+                                                     autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
+                                                     custodialSubType = kwargs["CustodialSubType"],
+                                                     nonCustodialSubType = kwargs["NonCustodialSubType"],
+                                                     custodialGroup = kwargs["CustodialGroup"],
+                                                     nonCustodialGroup = kwargs["NonCustodialGroup"],
+                                                     priority = kwargs["SubscriptionPriority"],
+                                                     deleteFromSource = kwargs["DeleteFromSource"])
 
         # Block closing information
         if self._checkKeys(kwargs, blockCloseParams):

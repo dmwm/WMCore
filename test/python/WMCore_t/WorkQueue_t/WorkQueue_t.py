@@ -1183,7 +1183,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
         spec.setSiteWhitelist('T1_US_FNAL')
-        spec.setLocationDataSourceFlag()
+        spec.setTrustLocationFlag()
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team = "cmsdataops")

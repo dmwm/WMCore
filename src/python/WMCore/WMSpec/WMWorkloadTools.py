@@ -14,14 +14,16 @@ from WMCore.DataStructs.LumiList import LumiList
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
+
 def makeLumiList(lumiDict):
     try:
         if isinstance(lumiDict, basestring):
             lumiDict = JsonWrapper.loads(lumiDict)
-        ll = LumiList(compactList = lumiDict)
+        ll = LumiList(compactList=lumiDict)
         return ll.getCompactList()
     except:
         raise WMSpecFactoryException("Could not parse LumiList, %s: %s" % (type(lumiDict), lumiDict))
+
 
 def makeList(stringList):
     """
@@ -38,8 +40,9 @@ def makeList(stringList):
         toks = stringList.lstrip(' [').rstrip(' ]').split(',')
         if toks == ['']:
             return []
-        return[str(tok.strip(' \'"')) for tok in toks]
+        return [str(tok.strip(' \'"')) for tok in toks]
     raise WMSpecFactoryException("Can't convert to list %s" % stringList)
+
 
 def strToBool(string):
     """
@@ -58,10 +61,11 @@ def strToBool(string):
     else:
         raise WMSpecFactoryException("Can't convert to bool: %s" % string)
 
+
 def _verifyDBSCall(dbsURL, uri):
     try:
-        #from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-        #DBS3Reader(dbsURL).dbs.serverinfo()
+        # from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+        # DBS3Reader(dbsURL).dbs.serverinfo()
         from WMCore.Services.Requests import JSONRequests
         jsonSender = JSONRequests(dbsURL)
         result = jsonSender.get("/%s" % uri)
@@ -69,20 +73,21 @@ def _verifyDBSCall(dbsURL, uri):
             raise WMSpecFactoryException("DBS is not connected: %s : %s" % (dbsURL, str(result)))
     except:
         raise WMSpecFactoryException("DBS is not responding: %s" % dbsURL)
-    
+
     return result[0]
-    
+
+
 def checkDBSURL(dbsURL):
     # use the import statement here since this is packed and used in RunTime code.
     # dbs client is not shipped with it.
-    
+
     if dbsURL:
         _verifyDBSCall(dbsURL, "serverinfo")
         return True
-    
+
     return True
 
-    
+
 def parsePileupConfig(mcPileup, dataPileup):
     """
     _parsePileupConfig_
@@ -98,51 +103,54 @@ def parsePileupConfig(mcPileup, dataPileup):
         pileUpConfig['data'] = [dataPileup]
     return pileUpConfig
 
+
 def _validateArgument(argument, value, argumentDefinition):
     validNull = argumentDefinition[argument]["null"]
     if not validNull and value is None:
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
     elif validNull and value is None:
         return value
-                    
+
     try:
-        value = argumentDefinition[argument]["type"](value)        
+        value = argumentDefinition[argument]["type"](value)
     except Exception:
         raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
-    
+
     validateFunction = argumentDefinition[argument]["validate"]
     if validateFunction is not None:
         try:
             if not validateFunction(value):
-                raise WMSpecFactoryException("Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+                raise WMSpecFactoryException(
+                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
             raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
     return value
 
+
 def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
-    
     for argument in argumentDefinition:
         if optionKey == None:
             optional = True
         else:
             optional = argumentDefinition[argument].get(optionKey, True)
         if not optional and (argument not in arguments):
-            raise WMSpecFactoryException("Validation failed: %s is mendatory %s" % (argument, 
-                                                                argumentDefinition[argument]))
-        #If assign_optional is set to false it need to be assigned later.
-        #TODO this need to be done earlier then this function
-        #elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
+            raise WMSpecFactoryException("Validation failed: %s is mandatory %s" % (argument,
+                                                                                    argumentDefinition[argument]))
+        # If assign_optional is set to false it need to be assigned later.
+        # TODO this need to be done earlier then this function
+        # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
         #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
         elif optional and (argument not in arguments):
             continue
         elif optional and (argument in arguments) and (arguments[argument] == ""):
-            del arguments[argument] 
+            del arguments[argument]
         else:
             arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
         return
+
 
 def _validateInputDataset(arguments):
     inputdataset = arguments.get("InputDataset", None)
@@ -154,34 +162,51 @@ def _validateInputDataset(arguments):
             raise WMSpecFactoryException(msg)
     return
 
+
 def validateInputDatasSetAndParentFlag(arguments):
     inputdataset = arguments.get("InputDataset", None)
     if strToBool(arguments.get("IncludeParents", False)):
         if inputdataset == None:
-            msg = "Validation failed: IncludeParent flag is True but there is no inputdataset"
+            msg = "IncludeParent flag is True but there is no inputdataset"
             raise WMSpecFactoryException(msg)
         else:
             dbsURL = arguments.get("DbsUrl", None)
             if dbsURL != None:
                 result = _verifyDBSCall(dbsURL, "datasetparents?dataset=%s" % inputdataset)
                 if len(result) == 0:
-                    msg = "Validation failed: IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
+                    msg = "IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
                     raise WMSpecFactoryException(msg)
     else:
         _validateInputDataset(arguments)
     return
 
-def validatePhEDExSubscription(arguments):
-    autoApproveList = arguments.get("AutoApproveSubscriptionSites", [])
-    notAllowedSites = []
-    for site in autoApproveList:
-        if site.endswith('_MSS'):
-            notAllowedSites.append(site)
 
-    if len(notAllowedSites) > 0:
-        msg = "Validation failed: Auto-approval to MSS endpoint not allowed: %s" % notAllowedSites
-        raise WMSpecFactoryException(msg)
-    return 
+def validatePhEDExSubscription(arguments):
+    """
+    _validatePhEDExSubscription_
+
+    Validate all the PhEDEx arguments provided during request
+    creation and assignment.
+    """
+    for site in arguments.get("AutoApproveSubscriptionSites", []):
+        if site.endswith('_MSS'):
+            raise WMSpecFactoryException("Auto-approval to MSS endpoint is not allowed: %s" % site)
+    if arguments.get("SubscriptionPriority", "Low") not in ["Low", "Normal", "High"]:
+        raise WMSpecFactoryException("Invalid subscription priority: %s" % arguments["SubscriptionPriority"])
+    if arguments.get("CustodialSubType", "Replica") not in ["Move", "Replica"]:
+        raise WMSpecFactoryException("Invalid custodial subscription type: %s" % arguments["CustodialSubType"])
+    if arguments.get("NonCustodialSubType", "Replica") not in ["Move", "Replica"]:
+        raise WMSpecFactoryException("Invalid non custodial subscription type: %s" % arguments["NonCustodialSubType"])
+
+    if 'CustodialGroup' in arguments and not isinstance(arguments["CustodialGroup"], basestring):
+        raise WMSpecFactoryException("Invalid custodial PhEDEx group: %s" % arguments["CustodialGroup"])
+    if 'NonCustodialGroup' in arguments and not isinstance(arguments["NonCustodialGroup"], basestring):
+        raise WMSpecFactoryException("Invalid non custodial PhEDEx group: %s" % arguments["NonCustodialGroup"])
+    if 'DeleteFromSource' in arguments and not isinstance(arguments["DeleteFromSource"], bool):
+        raise WMSpecFactoryException("Invalid DeleteFromSource type, it must be boolean")
+
+    return
+
 
 def validateSiteLists(arguments):
     whiteList = arguments.get("SiteWhitelist", [])
@@ -195,7 +220,8 @@ def validateSiteLists(arguments):
         msg = "Validation failed: The same site cannot be white and blacklisted: %s" % list(res)
         raise WMSpecFactoryException(msg)
     return
-            
+
+
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
     _validateArguments_
@@ -211,6 +237,7 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     validatePhEDExSubscription(arguments)
     validateSiteLists(arguments)
     return
+
 
 def validateArgumentsUpdate(arguments, argumentDefinition):
     """
@@ -239,6 +266,7 @@ def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
     """
     return _validateArgumentOptions(arguments, argumentDefinition, None)
 
+
 def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
     """
     sets the default value if arguments value is specified as None
@@ -248,15 +276,16 @@ def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
             arguments[argument] = argumentDefinition[argument]["default"]
     return
 
-def loadSpecClassByType(specType):        
+
+def loadSpecClassByType(specType):
     factoryName = "%sWorkloadFactory" % specType
     mod = __import__("WMCore.WMSpec.StdSpecs.%s" % specType,
                      globals(), locals(), [factoryName])
     specClass = getattr(mod, factoryName)
-    
+
     return specClass
 
-def loadSpecByType(specType):        
+
+def loadSpecByType(specType):
     specClass = loadSpecClassByType(specType)
     return specClass()
-

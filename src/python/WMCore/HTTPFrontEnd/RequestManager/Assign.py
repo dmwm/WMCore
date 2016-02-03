@@ -23,8 +23,10 @@ from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMSpec.WMWorkloadTools import strToBool
 from WMCore.Services.DBS.DBSReader import DBSReader
 
+
 class Assign(WebAPI):
     """ Used by data ops to assign requests to processing sites"""
+
     def __init__(self, config, noSiteDB=False):
         """
         _init_
@@ -55,7 +57,7 @@ class Assign(WebAPI):
         else:
             self.sites = []
 
-        #store result lfn base with all Physics group
+        # store result lfn base with all Physics group
         storeResultLFNBase = ["/store/results/analysisops",
                               "/store/results/b_physics",
                               "/store/results/b_tagging",
@@ -104,11 +106,11 @@ class Assign(WebAPI):
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
-        #myThread = cherrypy.thread_data
+        # myThread = cherrypy.thread_data
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
-    def validate(self, v, name = ""):
+    def validate(self, v, name=""):
         """
         _validate_
 
@@ -116,7 +118,7 @@ class Assign(WebAPI):
         if not the field name is not known then apply the identifier check
         """
 
-        #Make sure the value is a string, otherwise the Lexicon complains
+        # Make sure the value is a string, otherwise the Lexicon complains
         strValue = str(v)
         try:
             if name == "ProcessingVersion":
@@ -175,21 +177,21 @@ class Assign(WebAPI):
         blockCloseMaxSize = helper.getBlockCloseMaxSize()
         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
 
-        return self.templatepage("Assign", requests = [request], teams = teams,
-                                 assignments = assignments, sites = self.sites,
-                                 phedexNodes = self.phedexNodes,
-                                 mergedLFNBases = self.allMergedLFNBases,
-                                 reqMergedBase = reqMergedBase,
-                                 unmergedLFNBases = self.allUnmergedLFNBases,
-                                 reqUnmergedBase = reqUnmergedBase,
-                                 acqEra = acqEra, procVer = procVer,
-                                 procString = procString,
-                                 dashboardActivity = dashboardActivity,
-                                 badRequests = [],
-                                 blockCloseMaxWaitTime = blockCloseMaxWaitTime,
-                                 blockCloseMaxFiles = blockCloseMaxFiles,
-                                 blockCloseMaxSize = blockCloseMaxSize,
-                                 blockCloseMaxEvents = blockCloseMaxEvents)
+        return self.templatepage("Assign", requests=[request], teams=teams,
+                                 assignments=assignments, sites=self.sites,
+                                 phedexNodes=self.phedexNodes,
+                                 mergedLFNBases=self.allMergedLFNBases,
+                                 reqMergedBase=reqMergedBase,
+                                 unmergedLFNBases=self.allUnmergedLFNBases,
+                                 reqUnmergedBase=reqUnmergedBase,
+                                 acqEra=acqEra, procVer=procVer,
+                                 procString=procString,
+                                 dashboardActivity=dashboardActivity,
+                                 badRequests=[],
+                                 blockCloseMaxWaitTime=blockCloseMaxWaitTime,
+                                 blockCloseMaxFiles=blockCloseMaxFiles,
+                                 blockCloseMaxSize=blockCloseMaxSize,
+                                 blockCloseMaxEvents=blockCloseMaxEvents)
 
     @cherrypy.expose
     @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles)
@@ -211,65 +213,65 @@ class Assign(WebAPI):
         blockCloseMaxFiles = 500
         blockCloseMaxEvents = 250000000
         blockCloseMaxSize = 5000000000000
-#         for request in allRequests:
-#             # make sure there's a workload attached
-#             try:
-#                 helper = Utilities.loadWorkload(request)
-#             except Exception, ex:
-#                 logging.error("Assign error: %s " % str(ex))
-#                 badRequestNames.append(request["RequestName"])
-#             else:
-#                 # get defaults from the first good one
-#                 if not goodRequests:
-#                     # forget it if it fails.
-#                     try:
-#                         if helper.getAcquisitionEra() != None:
-#                             acqEra = helper.getAcquisitionEra()
-#                         if helper.getProcessingVersion() != None:
-#                             procVer = helper.getProcessingVersion()
-#                         if helper.getProcessingString() != None:
-#                             procString = helper.getProcessingString()
-#                         blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
-#                         blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
-#                         blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
-#                         blockCloseMaxSize = helper.getBlockCloseMaxSize()
-#                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
-#                         dashboardActivity = helper.getDashboardActivity()
-#                         goodRequests.append(request)
-#                     except Exception, ex:
-#                         logging.error("Assign error: %s " % str(ex))
-#                         badRequestNames.append(request["RequestName"])
-#                 else:
-#                     goodRequests.append(request)
+        #         for request in allRequests:
+        #             # make sure there's a workload attached
+        #             try:
+        #                 helper = Utilities.loadWorkload(request)
+        #             except Exception, ex:
+        #                 logging.error("Assign error: %s " % str(ex))
+        #                 badRequestNames.append(request["RequestName"])
+        #             else:
+        #                 # get defaults from the first good one
+        #                 if not goodRequests:
+        #                     # forget it if it fails.
+        #                     try:
+        #                         if helper.getAcquisitionEra() != None:
+        #                             acqEra = helper.getAcquisitionEra()
+        #                         if helper.getProcessingVersion() != None:
+        #                             procVer = helper.getProcessingVersion()
+        #                         if helper.getProcessingString() != None:
+        #                             procString = helper.getProcessingString()
+        #                         blockCloseMaxWaitTime = helper.getBlockCloseMaxWaitTime()
+        #                         blockCloseMaxFiles = helper.getBlockCloseMaxFiles()
+        #                         blockCloseMaxEvents = helper.getBlockCloseMaxEvents()
+        #                         blockCloseMaxSize = helper.getBlockCloseMaxSize()
+        #                         (reqMergedBase, reqUnmergedBase) = helper.getLFNBases()
+        #                         dashboardActivity = helper.getDashboardActivity()
+        #                         goodRequests.append(request)
+        #                     except Exception, ex:
+        #                         logging.error("Assign error: %s " % str(ex))
+        #                         badRequestNames.append(request["RequestName"])
+        #                 else:
+        #                     goodRequests.append(request)
 
-        return self.templatepage("Assign", all = all, requests = goodRequests, teams = teams,
-                                 assignments = [], sites = self.sites,
-                                 phedexNodes = self.phedexNodes,
-                                 mergedLFNBases = self.allMergedLFNBases,
-                                 reqMergedBase = reqMergedBase,
-                                 unmergedLFNBases = self.allUnmergedLFNBases,
-                                 reqUnmergedBase = reqUnmergedBase,
-                                 acqEra = acqEra, procVer = procVer,
-                                 procString = procString,
-                                 dashboardActivity = dashboardActivity,
-                                 badRequests = badRequestNames,
-                                 blockCloseMaxWaitTime = blockCloseMaxWaitTime,
-                                 blockCloseMaxFiles = blockCloseMaxFiles,
-                                 blockCloseMaxSize = blockCloseMaxSize,
-                                 blockCloseMaxEvents = blockCloseMaxEvents)
+        return self.templatepage("Assign", all=all, requests=goodRequests, teams=teams,
+                                 assignments=[], sites=self.sites,
+                                 phedexNodes=self.phedexNodes,
+                                 mergedLFNBases=self.allMergedLFNBases,
+                                 reqMergedBase=reqMergedBase,
+                                 unmergedLFNBases=self.allUnmergedLFNBases,
+                                 reqUnmergedBase=reqUnmergedBase,
+                                 acqEra=acqEra, procVer=procVer,
+                                 procString=procString,
+                                 dashboardActivity=dashboardActivity,
+                                 badRequests=badRequestNames,
+                                 blockCloseMaxWaitTime=blockCloseMaxWaitTime,
+                                 blockCloseMaxFiles=blockCloseMaxFiles,
+                                 blockCloseMaxSize=blockCloseMaxSize,
+                                 blockCloseMaxEvents=blockCloseMaxEvents)
 
     @cherrypy.expose
-    #@cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles) security issue fix
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
+    # @cherrypy.tools.secmodv2(role=ReqMgrAuth.assign_roles) security issue fix
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group=Utilities.security_groups())
     def handleAssignmentPage(self, **kwargs):
         """ handler for the main page """
-        #Accept Json encoded strings
+        # Accept Json encoded strings
         decodedArgs = {}
         for key in kwargs.keys():
             try:
                 decodedArgs[key] = JsonWrapper.loads(kwargs[key])
             except Exception:
-                #Probably wasn't JSON
+                # Probably wasn't JSON
                 decodedArgs[key] = kwargs[key]
         kwargs = decodedArgs
         # handle the checkboxes
@@ -287,7 +289,7 @@ class Assign(WebAPI):
 
         for requestName in requestNames:
             if kwargs['action'] == 'Reject':
-                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl = self.wmstatWriteURL)
+                ChangeState.changeRequestStatus(requestName, 'rejected', wmstatUrl=self.wmstatWriteURL)
             else:
                 assignments = GetRequest.getAssignmentsByName(requestName)
                 if teams == [] and assignments == []:
@@ -296,20 +298,19 @@ class Assign(WebAPI):
                 self.assignWorkload(requestName, kwargs)
                 for team in teams:
                     if not team in assignments:
-                        ChangeState.assignRequest(requestName, team, wmstatUrl = self.wmstatWriteURL)
-                priority = kwargs.get(requestName+':priority', '')
+                        ChangeState.assignRequest(requestName, team, wmstatUrl=self.wmstatWriteURL)
+                priority = kwargs.get(requestName + ':priority', '')
                 if priority != '':
                     Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
-        participle = kwargs['action']+'ed'
+        participle = kwargs['action'] + 'ed'
         return self.templatepage("Acknowledge", participle=participle, requests=requestNames)
-
 
     def assignWorkload(self, requestName, kwargs):
         """ Make all the necessary changes in the Workload to reflect the new assignment """
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
 
-        #Validate the different parts of the processed dataset
+        # Validate the different parts of the processed dataset
         processedDatasetParts = {"AcquisitionEra": helper.getAcquisitionEra(),
                                  "ProcessingString": helper.getProcessingString(),
                                  "ProcessingVersion": helper.getProcessingVersion()}
@@ -327,8 +328,8 @@ class Assign(WebAPI):
             whiteList = [whiteList]
         if not isinstance(blackList, list):
             blackList = [blackList]
-        helper.setSiteWildcardsLists(siteWhitelist = whiteList, siteBlacklist = blackList,
-                                     wildcardDict = self.wildcardSites)
+        helper.setSiteWildcardsLists(siteWhitelist=whiteList, siteBlacklist=blackList,
+                                     wildcardDict=self.wildcardSites)
         res = set(whiteList) & set(blackList)
         if len(res):
             raise cherrypy.HTTPError(400, "White and blacklist the same site is not allowed %s" % list(res))
@@ -352,13 +353,13 @@ class Assign(WebAPI):
                 WMCore.Lexicon.procdataset(procds)
             except AssertionError as ex:
                 raise cherrypy.HTTPError(400,
-                            "Bad output dataset name, check the processed dataset.\n %s" % 
-                            str(ex))
+                                         "Bad output dataset name, check the processed dataset.\n %s" %
+                                         str(ex))
 
         # Verify whether the output datatiers are available in DBS
         self.validateDatatier(datatier, dbsUrl=helper.getDbsUrl())
 
-        #FIXME not validated
+        # FIXME not validated
         helper.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
         helper.setMergeParameters(int(kwargs.get("MinMergeSize", 2147483648)),
                                   int(kwargs.get("MaxMergeSize", 4294967296)),
@@ -369,8 +370,8 @@ class Assign(WebAPI):
                                           kwargs.get("GracePeriod", None))
 
         # Check whether we should check location for the data
-        helper.setLocationDataSourceFlag(flag=strToBool(kwargs.get("useSiteListAsLocation", False)))
-        helper.setAllowOpportunistic(allowOpport=strToBool(kwargs.get("allowOpportunistic", False)))
+        helper.setTrustLocationFlag(flag=strToBool(kwargs.get("TrustSitelists", False)))
+        helper.setAllowOpportunistic(allowOpport=strToBool(kwargs.get("AllowOpportunistic", False)))
 
         # Set phedex subscription information
         custodialList = kwargs.get("CustodialSites", [])
@@ -388,14 +389,23 @@ class Assign(WebAPI):
         nonCustodialType = kwargs.get("NonCustodialSubType", "Replica")
         if nonCustodialType not in ["Move", "Replica"]:
             raise cherrypy.HTTPError(400, "Invalid noncustodial subscription type %s" % nonCustodialType)
+        if "CustodialGroup" in kwargs and not isinstance(kwargs["CustodialGroup"], basestring):
+            raise cherrypy.HTTPError(400, "Invalid CustodialGroup format %s" % kwargs["CustodialGroup"])
+        if "NonCustodialGroup" in kwargs and not isinstance(kwargs["NonCustodialGroup"], basestring):
+            raise cherrypy.HTTPError(400, "Invalid NonCustodialGroup format %s" % kwargs["NonCustodialGroup"])
+        if "DeleteFromSource" in kwargs and not isinstance(kwargs["DeleteFromSource"], bool):
+            raise cherrypy.HTTPError(400, "Invalid DeleteFromSource format %s" % kwargs["DeleteFromSource"])
 
-        helper.setSubscriptionInformationWildCards(wildcardDict = self.wildcardSites,
-                                                   custodialSites = custodialList,
-                                                   nonCustodialSites = nonCustodialList,
-                                                   autoApproveSites = autoApproveList,
-                                                   custodialSubType = custodialType,
-                                                   nonCustodialSubType = nonCustodialType,
-                                                   priority = subscriptionPriority)
+        helper.setSubscriptionInformationWildCards(wildcardDict=self.wildcardSites,
+                                                   custodialSites=custodialList,
+                                                   nonCustodialSites=nonCustodialList,
+                                                   autoApproveSites=autoApproveList,
+                                                   custodialSubType=custodialType,
+                                                   nonCustodialSubType=nonCustodialType,
+                                                   custodialGroup=kwargs.get("CustodialGroup", "DataOps"),
+                                                   nonCustodialGroup=kwargs.get("NonCustodialGroup", "DataOps"),
+                                                   priority=subscriptionPriority,
+                                                   deleteFromSource=kwargs.get("DeleteFromSource", False))
 
         # Block closing information
         blockCloseMaxWaitTime = int(kwargs.get("BlockCloseMaxWaitTime", helper.getBlockCloseMaxWaitTime()))
@@ -427,8 +437,15 @@ class Assign(WebAPI):
                                        "SubscriptionPriority": subscriptionPriority,
                                        "CustodialSubType": custodialType,
                                        "NonCustodialSubType": nonCustodialType,
+                                       "CustodialGroup": kwargs.get("CustodialGroup", "DataOps"),
+                                       "NonCustodialGroup": kwargs.get("NonCustodialGroup", "DataOps"),
+                                       "DeleteFromSource": kwargs.get("DeleteFromSource", False),
                                        "Teams": kwargs["Teams"],
                                        "OutputDatasets": outputDatasets,
                                        "SiteWhitelist": whiteList,
-                                       "SiteBlacklist": blackList},
+                                       "SiteBlacklist": blackList,
+                                       "Dashboard": kwargs.get("Dashboard", ""),
+                                       "UseSiteListAsLocation": kwargs.get("useSiteListAsLocation", False),
+                                       "TrustSitelists": kwargs.get("trustSitelists", False),
+                                       "AllowOpportunistic": kwargs.get("allowOpportunistic", False)},
                                useBody=True)

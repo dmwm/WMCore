@@ -983,8 +983,7 @@ class StdBase(object):
                      "Multicore" : {"default" : 1, "null" : True,
                                     "validate" : lambda x : x == "auto" or (int(x) > 0)},
                      # data location management
-                     "TrustSitelists" : {"default" : False, "type" : strToBool},
-                     "UseSiteListAsLocation" : {"default" : False, "type" : bool},
+                     "TrustSitelists" : {"default" : False, "type" : bool},
                      "AllowOpportunistic" : {"default" : False, "type" : bool},
                      #from assignment: performance monitoring data
                      "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},

@@ -103,6 +103,7 @@ class DBS3Reader:
     Mock up dbs access
     """
     def __init__(self, url, **contact):
+        raise NotImplementedError
         self.dataBlocks = DataBlockGenerator3()
         self.dbs = _MockDBSApi(url, **contact)
 

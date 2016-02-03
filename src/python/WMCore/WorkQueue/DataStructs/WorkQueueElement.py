@@ -237,4 +237,33 @@ class WorkQueueElement(dict):
         if site in self['SiteBlacklist']:
             return False
         return True
+    
+    def intersectionWithEmptySet(self, a, b):
+        """
+        interaction of 2 sets but if one of the set is empty returns union
+        """
+        if len(a) == 0 or len(b) == 0:
+            return a | b
+        else:
+            return a & b
 
+    def possibleSites(self):
+        
+        if self['NoLocationUpdate']:
+            return self['SiteWhitelist']
+        
+        possibleSites = set()
+        
+        if self['SiteWhitelist']:
+            possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
+        
+        if self['Inputs']:
+            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['Inputs'].values() for y in x]))
+        
+        if self['PileupData']:
+            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['PileupData'].values() for y in x]))
+            
+        if self['ParentFlag']:
+            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['ParentData'].values() for y in x]))
+                  
+        return list(possibleSites)

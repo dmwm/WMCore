@@ -23,6 +23,8 @@ class WorkQueueElementResult(dict):
                             sum([x['EventsWritten'] for x in self['Elements']]))
             self.setdefault('FilesProcessed',
                             sum([x['FilesProcessed'] for x in self['Elements']]))
+            self.setdefault('Jobs',
+                            sum([x['Jobs'] for x in self['Elements'] if x['Jobs'] != None]))
             self.setdefault('PercentComplete',
                             int(sum([x['PercentComplete'] for x in self['Elements']],
                                 0.0) / len(self['Elements'])))
@@ -31,14 +33,17 @@ class WorkQueueElementResult(dict):
                                 0.0) / len(self['Elements'])))
             self.setdefault('RequestName', self['Elements'][0]['RequestName'])
             self.setdefault('TeamName', self['Elements'][0]['TeamName'])
+            self.setdefault('Priority', self['Elements'][0]['Priority'])
             self.setdefault('ParentQueueId', self['Elements'][0]['ParentQueueId'])
         elif self.get('ParentQueueElement'):
             self.setdefault('EventsWritten', self['ParentQueueElement']['EventsWritten'])
             self.setdefault('FilesProcessed', self['ParentQueueElement']['FilesProcessed'])
+            self.setdefault('Jobs', self['ParentQueueElement']['Jobs'])
             self.setdefault('PercentComplete', self['ParentQueueElement']['PercentComplete'])
             self.setdefault('PercentSuccess', self['ParentQueueElement']['PercentSuccess'])
             self.setdefault('RequestName', self['ParentQueueElement']['RequestName'])
             self.setdefault('TeamName', self['ParentQueueElement']['TeamName'])
+            self.setdefault('Priority', self['ParentQueueElement']['Priority'])
             self.setdefault('ParentQueueId', self['ParentQueueElement'].id)
         else:
             raise RuntimeError("Can create WQEResult: No elements or parent provided")
@@ -131,3 +136,4 @@ class WorkQueueElementResult(dict):
         for item in to_remove:
             result.pop(item)
         return result
+    

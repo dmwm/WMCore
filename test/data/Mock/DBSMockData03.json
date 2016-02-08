@@ -1,31 +1,31 @@
 {
  "listBlockOrigin:[('block_name', '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab')]": [
   {
-   "block_size": 2430430225, 
-   "create_by": "hernan", 
-   "open_for_writing": 0, 
-   "last_modified_by": "hernan", 
-   "dataset": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER", 
-   "block_name": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab", 
-   "file_count": 100, 
-   "origin_site_name": "srm.ciemat.es", 
-   "last_modification_date": 1395136627, 
+   "block_size": 2430430225,
+   "create_by": "hernan",
+   "open_for_writing": 0,
+   "last_modified_by": "hernan",
+   "dataset": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER",
+   "block_name": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab",
+   "file_count": 100,
+   "origin_site_name": "srm.ciemat.es",
+   "last_modification_date": 1395136627,
    "creation_date": 1395136627
   }
- ], 
- "listBlockOrigin:[('block_name', '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caabcd')]": [], 
+ ],
  "listBlockOrigin:[('block_name', '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e')]": [
   {
-   "block_size": 2429979565, 
-   "create_by": "hernan", 
-   "open_for_writing": 0, 
-   "last_modified_by": "hernan", 
-   "dataset": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER", 
-   "block_name": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e", 
-   "file_count": 100, 
-   "origin_site_name": "srm.ciemat.es", 
-   "last_modification_date": 1395135060, 
+   "block_size": 2429979565,
+   "create_by": "hernan",
+   "open_for_writing": 0,
+   "last_modified_by": "hernan",
+   "dataset": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER",
+   "block_name": "/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e",
+   "file_count": 100,
+   "origin_site_name": "srm.ciemat.es",
+   "last_modification_date": 1395135060,
    "creation_date": 1395135060
   }
- ]
+ ],
+ "listBlockOrigin:[('block_name', '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caabcd')]": []
 }

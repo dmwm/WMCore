@@ -11,7 +11,6 @@ import json
 import os
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
-
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DBSClient.MockedDBSGlobalCalls import calls as calls00
@@ -37,6 +36,9 @@ for endpoint, outFile, calls, datasets in instances:
     realDBS = dbs.wrapped.dbs
 
     for dataset in datasets:
+        calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
+        calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
+        calls.append(['listRuns', {'dataset': dataset}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:
             calls.append(['listBlocks', {'block_name': unicode(block['block_name'])}])
@@ -45,6 +47,8 @@ for endpoint, outFile, calls, datasets in instances:
             calls.append(['listFileLumis', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
             calls.append(['listFileArray', {'block_name': unicode(block['block_name']),
                                             'detail': True, 'validFileOnly': 1}])
+            calls.append(['listFileSummaries', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
+            calls.append(['listRuns', {'block_name': unicode(block['block_name'])}])
 
     for call in calls:
         func = getattr(realDBS, call[0])

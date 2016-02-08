@@ -207,7 +207,6 @@ def validatePhEDExSubscription(arguments):
 
     return
 
-
 def validateSiteLists(arguments):
     whiteList = arguments.get("SiteWhitelist", [])
     blackList = arguments.get("SiteBlacklist", [])

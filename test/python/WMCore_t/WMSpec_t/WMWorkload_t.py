@@ -1822,7 +1822,7 @@ class WMWorkloadTest(unittest.TestCase):
         """
         _testAllowOpportunistic_
 
-        Verify that the allowOpportunistic flag can be read and set.
+        Verify that the AllowOpportunistic flag can be read and set.
         """
         testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         self.assertFalse(testWorkload.getAllowOpportunistic(), "Should be None, I did not set you yet.")

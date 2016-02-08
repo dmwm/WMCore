@@ -54,7 +54,7 @@
     "ProcessingString": {"DIGIPU1" : "ProcessingString-OVERRIDE-ME",
                          "RECOPU1" : "ProcessingString-1-OVERRIDE-ME"},
     "Dashboard": "Dashboard-OVERRIDE-ME",
-    "allowOpportunistic": "True",
+    "AllowOpportunistic": "True",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
     "UnmergedLFNBase": "/store/unmerged",

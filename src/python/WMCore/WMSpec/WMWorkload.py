@@ -10,12 +10,13 @@ from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, strToBool, \
-                        loadSpecClassByType, setAssignArgumentsWithDefault
+    loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 
-parseTaskPath = lambda p: [ x for x in p.split('/') if x.strip() != '' ]
+parseTaskPath = lambda p: [x for x in p.split('/') if x.strip() != '']
+
 
 def getWorkloadFromTask(taskRef):
     """
@@ -32,16 +33,17 @@ def getWorkloadFromTask(taskRef):
     if not hasattr(topNode, "objectType"):
         msg = "Top Node is not a WM definition object:\n"
         msg += "Object has no objectType attribute"
-        #TODO: Replace with real exception class
+        # TODO: Replace with real exception class
         raise RuntimeError(msg)
 
     objType = getattr(topNode, "objectType")
     if objType != "WMWorkload":
         msg = "Top level object is not a WMWorkload: %s" % objType
-        #TODO: Replace with real exception class
+        # TODO: Replace with real exception class
         raise RuntimeError(msg)
 
     return WMWorkloadHelper(topNode)
+
 
 class WMWorkloadException(WMException):
     """
@@ -58,7 +60,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
     Methods & Utils for working with a WMWorkload instance.
     """
-    def __init__(self, wmWorkload = None):
+
+    def __init__(self, wmWorkload=None):
         self.data = wmWorkload
 
     def setSpecUrl(self, url):
@@ -151,7 +154,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.owner.dictionary_()
 
-    def setOwner(self, name, ownerProperties = {'dn': 'DEFAULT'}):
+    def setOwner(self, name, ownerProperties={'dn': 'DEFAULT'}):
         """
         _setOwner_
         sets the owner of wmspec.
@@ -168,7 +171,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setOwnerDetails(self, name, group, ownerProperties = {'dn': 'DEFAULT'}):
+    def setOwnerDetails(self, name, group, ownerProperties={'dn': 'DEFAULT'}):
         """
         _setOwnerDetails_
 
@@ -218,8 +221,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the Start policy and its parameters
         """
         self.data.policies.start.policyName = policyName
-        [ setattr(self.data.policies.start, key, val)
-          for key, val in params.items() ]
+        [setattr(self.data.policies.start, key, val)
+         for key, val in params.items()]
 
     def startPolicy(self):
         """
@@ -245,8 +248,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the End policy and its parameters
         """
         self.data.policies.end.policyName = policyName
-        [ setattr(self.data.policies.end, key, val)
-          for key, val in params.items() ]
+        [setattr(self.data.policies.end, key, val)
+         for key, val in params.items()]
 
     def endPolicy(self):
         """
@@ -290,7 +293,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         taskList = parseTaskPath(taskPath)
 
-        if taskList[0] != self.name(): # should always be workload name first
+        if taskList[0] != self.name():  # should always be workload name first
             msg = "Workload name does not match:\n"
             msg += "requested name %s from workload %s " % (taskList[0],
                                                             self.name())
@@ -300,7 +303,6 @@ class WMWorkloadHelper(PersistencyHelper):
             msg = "Task Path does not contain a top level task:\n"
             msg += taskPath
             raise RuntimeError(msg)
-
 
         topTask = self.getTask(taskList[1])
         if topTask == None:
@@ -328,7 +330,6 @@ class WMWorkloadHelper(PersistencyHelper):
             if t != None:
                 result.extend(t.listNodes())
         return result
-
 
     def listAllTaskPathNames(self):
         """
@@ -360,7 +361,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Get tasks matching the type provided
         """
-        return [ t for t in self.taskIterator() if t.taskType() == ttype ]
+        return [t for t in self.taskIterator() if t.taskType() == ttype]
 
     def getAllTasks(self):
         """
@@ -371,10 +372,9 @@ class WMWorkloadHelper(PersistencyHelper):
         tasks = []
         pathNames = self.listAllTaskPathNames()
         for n in pathNames:
-            tasks.append(self.getTaskByPath(taskPath = n))
+            tasks.append(self.getTaskByPath(taskPath=n))
 
         return tasks
-
 
     def addTask(self, wmTask):
         """
@@ -400,9 +400,6 @@ class WMWorkloadHelper(PersistencyHelper):
         setattr(self.data.tasks, taskName, task)
         return
 
-
-
-
     def newTask(self, taskName):
         """
         _newTask_
@@ -421,7 +418,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.addTask(helper)
         return helper
 
-
     def removeTask(self, taskName):
         """
         _removeTask_
@@ -432,7 +428,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.__delattr__(taskName)
         self.data.tasks.tasklist.remove(taskName)
         return
-
 
     def setSiteWildcardsLists(self, siteWhitelist, siteBlacklist, wildcardDict):
         """
@@ -450,26 +445,26 @@ class WMWorkloadHelper(PersistencyHelper):
         'US*': ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
         'T1*': ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL']}
         """
-        newWhiteList = self.removeWildcardsFromList(siteList = siteWhitelist, wildcardDict = wildcardDict)
-        newBlackList = self.removeWildcardsFromList(siteList = siteBlacklist, wildcardDict = wildcardDict)
+        newWhiteList = self.removeWildcardsFromList(siteList=siteWhitelist, wildcardDict=wildcardDict)
+        newBlackList = self.removeWildcardsFromList(siteList=siteBlacklist, wildcardDict=wildcardDict)
 
         for site in newWhiteList:
             if '*' in site:
                 msg = "Invalid wildcard site %s in site whitelist!" % site
-                #logging.error(msg)
+                # logging.error(msg)
                 raise WMWorkloadException(msg)
         for site in newBlackList:
             if '*' in site:
                 msg = "Invalid wildcard site %s in site blacklist!" % site
-                #logging.error(msg)
+                # logging.error(msg)
                 raise WMWorkloadException(msg)
 
-        self.setSiteWhitelist(siteWhitelist = newWhiteList)
-        self.setSiteBlacklist(siteBlacklist = newBlackList)
+        self.setSiteWhitelist(siteWhitelist=newWhiteList)
+        self.setSiteBlacklist(siteBlacklist=newBlackList)
 
         return
 
-    def removeWildcardsFromList(self, siteList, wildcardDict = {}):
+    def removeWildcardsFromList(self, siteList, wildcardDict={}):
         """
         _removeWildcardsFromList_
 
@@ -524,7 +519,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setBlockWhitelist(self, blockWhitelist, initialTask = None):
+    def setBlockWhitelist(self, blockWhitelist, initialTask=None):
         """
         _setBlockWhitelist_
 
@@ -546,7 +541,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setBlockBlacklist(self, blockBlacklist, initialTask = None):
+    def setBlockBlacklist(self, blockBlacklist, initialTask=None):
         """
         _setBlockBlacklist_
 
@@ -568,7 +563,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setRunWhitelist(self, runWhitelist, initialTask = None):
+    def setRunWhitelist(self, runWhitelist, initialTask=None):
         """
         _setRunWhitelist_
 
@@ -585,12 +580,12 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             if task.getInputDatasetPath():
                 task.setInputRunWhitelist(runWhitelist)
-                task.setSplittingParameters(runWhitelist = runWhitelist)
+                task.setSplittingParameters(runWhitelist=runWhitelist)
             self.setRunWhitelist(runWhitelist, task)
 
         return
 
-    def setRunBlacklist(self, runBlacklist, initialTask = None):
+    def setRunBlacklist(self, runBlacklist, initialTask=None):
         """
         _setRunBlacklist_
 
@@ -611,7 +606,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def updateLFNsAndDatasets(self, runNumber = None):
+    def updateLFNsAndDatasets(self, runNumber=None):
         """
         _updateLFNsAndDatasets_
 
@@ -622,7 +617,7 @@ class WMWorkloadHelper(PersistencyHelper):
         taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            task.updateLFNsAndDatasets(runNumber = runNumber)
+            task.updateLFNsAndDatasets(runNumber=runNumber)
         return
 
     def updateDatasetName(self, mergeTask, datasetName):
@@ -655,7 +650,7 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setAcquisitionEra(acquisitionEras)
 
         self.updateLFNsAndDatasets()
-        #set acquistionEra for workload (need to refactor)
+        # set acquistionEra for workload (need to refactor)
         self.acquisitionEra = acquisitionEras
         return
 
@@ -701,7 +696,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in self.taskIterator():
             task.setLumiMask(lumiLists, override=False)
 
-        #set lumiList for workload (need to refactor)
+        # set lumiList for workload (need to refactor)
         self.lumiList = lumiLists
         return
 
@@ -712,7 +707,7 @@ class WMWorkloadHelper(PersistencyHelper):
         numTasks = requestArgs['TaskChain']
         taskArgs = []
         for i in range(numTasks):
-            taskArgs.append(requestArgs["Task%s" % (i+1)])
+            taskArgs.append(requestArgs["Task%s" % (i + 1)])
 
         for prop in taskArgs:
             taskName = prop['TaskName']
@@ -857,7 +852,6 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.properties.campaign = campaign
         return
 
-
     def getCampaign(self):
         """
         _getCampaign_
@@ -866,7 +860,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return getattr(self.data.properties, 'campaign', None)
 
-    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, runNumber = None):
+    def setLFNBase(self, mergedLFNBase, unmergedLFNBase, runNumber=None):
         """
         _setLFNBase_
 
@@ -879,11 +873,11 @@ class WMWorkloadHelper(PersistencyHelper):
         # set all child tasks lfn base.
         for task in self.taskIterator():
             task.setLFNBase(mergedLFNBase, unmergedLFNBase)
-        self.updateLFNsAndDatasets(runNumber = runNumber)
+        self.updateLFNsAndDatasets(runNumber=runNumber)
         return
 
     def setMergeParameters(self, minSize, maxSize, maxEvents,
-                           initialTask = None):
+                           initialTask=None):
         """
         _setMergeParameters_
 
@@ -902,9 +896,9 @@ class WMWorkloadHelper(PersistencyHelper):
                     stepHelper.setMinMergeSize(minSize, maxEvents)
 
             if task.taskType() == "Merge":
-                task.setSplittingParameters(min_merge_size = minSize,
-                                            max_merge_size = maxSize,
-                                            max_merge_events = maxEvents)
+                task.setSplittingParameters(min_merge_size=minSize,
+                                            max_merge_size=maxSize,
+                                            max_merge_events=maxEvents)
 
             self.setMergeParameters(minSize, maxSize, maxEvents, task)
 
@@ -924,12 +918,12 @@ class WMWorkloadHelper(PersistencyHelper):
                                   "EventBased": ["NumberOfEvents",
                                                  "NumberOfEventsPerLumi"],
                                   "LumiBased": ["NumberOfLumis"],
-                                  "EventAwareLumiBased" : ["NumberOfEvents"]}
+                                  "EventAwareLumiBased": ["NumberOfEvents"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
                              "NumberOfLumis": "lumis_per_job",
                              "NumberOfEventsPerLumi": "events_per_lumi"}
-        startPolicyArgs = {'SplittingAlgo' : splitAlgo}
+        startPolicyArgs = {'SplittingAlgo': splitAlgo}
         startPolicyArgs.update(kwargs)
 
         sliceTypes = SplitAlgoToStartPolicy.get(splitAlgo, ["NumberOfFiles"])
@@ -1003,16 +997,16 @@ class WMWorkloadHelper(PersistencyHelper):
                 else:
                     stepHelper.disableStraightToMerge()
             if stepHelper.stepType() == "CMSSW" and splitAlgo == "WMBSMergeBySize" \
-                and stepHelper.getSkipBadFiles():
+                    and stepHelper.getSkipBadFiles():
                 stepHelper.setSkipBadFiles(False)
 
             if taskHelper.isTopOfTree() and stepHelper.stepType() == "CMSSW" \
-                and taskHelper.taskType() == "Production":
+                    and taskHelper.taskType() == "Production":
                 stepHelper.setEventsPerLumi(splitArgs.get("events_per_lumi",
                                                           None))
         return
 
-    def listJobSplittingParametersByTask(self, initialTask = None, performance = True):
+    def listJobSplittingParametersByTask(self, initialTask=None, performance=True):
         """
         _listJobSplittingParametersByTask_
 
@@ -1052,7 +1046,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return inputDatasets
 
-    def listOutputDatasets(self, initialTask = None):
+    def listOutputDatasets(self, initialTask=None):
         """
         _listOutputDatasets_
 
@@ -1091,7 +1085,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return outputDatasets
 
-    def listPileupDatasets(self, initialTask = None):
+    def listPileupDatasets(self, initialTask=None):
         """
         _listPileUpDataset_
 
@@ -1110,7 +1104,7 @@ class WMWorkloadHelper(PersistencyHelper):
                 stepHelper = task.getStepHelper(stepName)
                 if stepHelper.stepType() == "CMSSW":
                     pileupSection = stepHelper.getPileup()
-                    if pileupSection is None: 
+                    if pileupSection is None:
                         continue
                     dbsUrl = stepHelper.data.dbsUrl
                     if dbsUrl not in pileupDatasets:
@@ -1123,7 +1117,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return pileupDatasets
 
-    def listOutputProducingTasks(self, initialTask = None):
+    def listOutputProducingTasks(self, initialTask=None):
         """
         _listOutputProducingTasks_
 
@@ -1151,12 +1145,12 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return taskList
 
-    def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites = None,
-                                            nonCustodialSites = None, autoApproveSites = None,
-                                            custodialSubType = "Replica", nonCustodialSubType = "Replica",
-                                            custodialGroup = "DataOps", nonCustodialGroup = "DataOps",
-                                            priority = "Low", primaryDataset = None,
-                                            dataTier = None, deleteFromSource = False):
+    def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites=None,
+                                            nonCustodialSites=None, autoApproveSites=None,
+                                            custodialSubType="Replica", nonCustodialSubType="Replica",
+                                            custodialGroup="DataOps", nonCustodialGroup="DataOps",
+                                            priority="Low", primaryDataset=None,
+                                            dataTier=None, deleteFromSource=False):
         """
         _setSubscriptionInformationWildCards_
 
@@ -1172,9 +1166,9 @@ class WMWorkloadHelper(PersistencyHelper):
         if autoApproveSites and not isinstance(autoApproveSites, type([])):
             autoApproveSites = [autoApproveSites]
 
-        newCustodialList = self.removeWildcardsFromList(siteList = custodialSites, wildcardDict = wildcardDict)
-        newNonCustodialList = self.removeWildcardsFromList(siteList = nonCustodialSites, wildcardDict = wildcardDict)
-        newAutoApproveList = self.removeWildcardsFromList(siteList = autoApproveSites, wildcardDict = wildcardDict)
+        newCustodialList = self.removeWildcardsFromList(siteList=custodialSites, wildcardDict=wildcardDict)
+        newNonCustodialList = self.removeWildcardsFromList(siteList=nonCustodialSites, wildcardDict=wildcardDict)
+        newAutoApproveList = self.removeWildcardsFromList(siteList=autoApproveSites, wildcardDict=wildcardDict)
 
         for site in newCustodialList:
             if '*' in site:
@@ -1189,24 +1183,24 @@ class WMWorkloadHelper(PersistencyHelper):
                 msg = "Invalid wildcard site %s in auto approval site list!" % site
                 raise WMWorkloadException(msg)
 
-        self.setSubscriptionInformation(custodialSites = newCustodialList,
-                                        nonCustodialSites = newNonCustodialList,
-                                        autoApproveSites = newAutoApproveList,
-                                        custodialSubType = custodialSubType,
-                                        nonCustodialSubType = nonCustodialSubType,
-                                        custodialGroup = custodialGroup,
-                                        nonCustodialGroup = nonCustodialGroup,
-                                        priority = priority,
-                                        primaryDataset = primaryDataset,
-                                        dataTier = dataTier,
-                                        deleteFromSource = deleteFromSource)
+        self.setSubscriptionInformation(custodialSites=newCustodialList,
+                                        nonCustodialSites=newNonCustodialList,
+                                        autoApproveSites=newAutoApproveList,
+                                        custodialSubType=custodialSubType,
+                                        nonCustodialSubType=nonCustodialSubType,
+                                        custodialGroup=custodialGroup,
+                                        nonCustodialGroup=nonCustodialGroup,
+                                        priority=priority,
+                                        primaryDataset=primaryDataset,
+                                        dataTier=dataTier,
+                                        deleteFromSource=deleteFromSource)
 
-    def setSubscriptionInformation(self, initialTask = None, custodialSites = None,
-                                   nonCustodialSites = None, autoApproveSites = None,
-                                   custodialSubType = "Replica", nonCustodialSubType = "Replica",
-                                   custodialGroup = "DataOps", nonCustodialGroup = "DataOps",
-                                   priority = "Low", primaryDataset = None,
-                                   dataTier = None, deleteFromSource = False):
+    def setSubscriptionInformation(self, initialTask=None, custodialSites=None,
+                                   nonCustodialSites=None, autoApproveSites=None,
+                                   custodialSubType="Replica", nonCustodialSubType="Replica",
+                                   custodialGroup="DataOps", nonCustodialGroup="DataOps",
+                                   priority="Low", primaryDataset=None,
+                                   dataTier=None, deleteFromSource=False):
         """
         _setSubscriptionInformation_
 
@@ -1243,7 +1237,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def getSubscriptionInformation(self, initialTask = None):
+    def getSubscriptionInformation(self, initialTask=None):
         """
         _getSubscriptionInformation_
 
@@ -1262,7 +1256,7 @@ class WMWorkloadHelper(PersistencyHelper):
         # Choose the 'smallest' group (based on string comparison)
         solveGroupConflicts = lambda x, y: y if x > y else x
         # Always choose a logical AND
-        solveDelConflicts = lambda x, y : x and y
+        solveDelConflicts = lambda x, y: x and y
 
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
@@ -1274,27 +1268,30 @@ class WMWorkloadHelper(PersistencyHelper):
             taskSubInfo = self.getSubscriptionInformation(task)
             for dataset in taskSubInfo:
                 if dataset in subInfo:
-                    subInfo[dataset]["CustodialSites"]    = extendWithoutDups(taskSubInfo[dataset]["CustodialSites"],
-                                                                              subInfo[dataset]["CustodialSites"])
+                    subInfo[dataset]["CustodialSites"] = extendWithoutDups(taskSubInfo[dataset]["CustodialSites"],
+                                                                           subInfo[dataset]["CustodialSites"])
                     subInfo[dataset]["NonCustodialSites"] = extendWithoutDups(taskSubInfo[dataset]["NonCustodialSites"],
                                                                               subInfo[dataset]["NonCustodialSites"])
-                    subInfo[dataset]["AutoApproveSites"]  = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
-                                                                              subInfo[dataset]["AutoApproveSites"])
-                    subInfo[dataset]["Priority"]          = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
-                                                                               subInfo[dataset]["Priority"])
+                    subInfo[dataset]["AutoApproveSites"] = extendWithoutDups(taskSubInfo[dataset]["AutoApproveSites"],
+                                                                             subInfo[dataset]["AutoApproveSites"])
+                    subInfo[dataset]["Priority"] = solvePrioConflicts(taskSubInfo[dataset]["Priority"],
+                                                                      subInfo[dataset]["Priority"])
                     subInfo[dataset]["DeleteFromSource"] = solveDelConflicts(taskSubInfo[dataset]["DeleteFromSource"],
-                                                                               subInfo[dataset]["DeleteFromSource"])
+                                                                             subInfo[dataset]["DeleteFromSource"])
                     subInfo[dataset]["CustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["CustodialSubType"],
                                                                               subInfo[dataset]["CustodialSubType"])
-                    subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(taskSubInfo[dataset]["NonCustodialSubType"],
-                                                                                 subInfo[dataset]["NonCustodialSubType"])
+                    subInfo[dataset]["NonCustodialSubType"] = solveTypeConflicts(
+                        taskSubInfo[dataset]["NonCustodialSubType"],
+                        subInfo[dataset]["NonCustodialSubType"])
                     subInfo[dataset]["CustodialGroup"] = solveGroupConflicts(taskSubInfo[dataset]["CustodialGroup"],
                                                                              subInfo[dataset]["CustodialGroup"])
-                    subInfo[dataset]["NonCustodialGroup"] = solveGroupConflicts(taskSubInfo[dataset]["NonCustodialGroup"],
-                                                                                subInfo[dataset]["NonCustodialGroup"])
+                    subInfo[dataset]["NonCustodialGroup"] = solveGroupConflicts(
+                        taskSubInfo[dataset]["NonCustodialGroup"],
+                        subInfo[dataset]["NonCustodialGroup"])
                 else:
                     subInfo[dataset] = taskSubInfo[dataset]
-                subInfo[dataset]["CustodialSites"] = list(set(subInfo[dataset]["CustodialSites"]) - set(subInfo[dataset]["NonCustodialSites"]))
+                subInfo[dataset]["CustodialSites"] = list(
+                    set(subInfo[dataset]["CustodialSites"]) - set(subInfo[dataset]["NonCustodialSites"]))
 
         return subInfo
 
@@ -1417,7 +1414,7 @@ class WMWorkloadHelper(PersistencyHelper):
         pass
 
     def truncate(self, newWorkloadName, initialTaskPath, serverUrl,
-                 databaseName, collectionName = None):
+                 databaseName, collectionName=None):
         """
         _truncate_
 
@@ -1437,13 +1434,13 @@ class WMWorkloadHelper(PersistencyHelper):
         newTopLevelTask.setInputStep(None)
         workloadOwner = self.getOwner()
         self.setInitialJobCount(self.getInitialJobCount() + 10000000)
-        newTopLevelTask.setSplittingParameters(collectionName = collectionName,
-                                               filesetName = initialTaskPath,
-                                               couchURL = serverUrl,
-                                               couchDB = databaseName,
-                                               owner = workloadOwner["name"],
-                                               group = workloadOwner["group"],
-                                               initial_lfn_counter = self.getInitialJobCount())
+        newTopLevelTask.setSplittingParameters(collectionName=collectionName,
+                                               filesetName=initialTaskPath,
+                                               couchURL=serverUrl,
+                                               couchDB=databaseName,
+                                               owner=workloadOwner["name"],
+                                               group=workloadOwner["group"],
+                                               initial_lfn_counter=self.getInitialJobCount())
 
         for taskPath in allTaskPaths:
             if not taskPath.startswith(initialTaskPath) or taskPath == initialTaskPath:
@@ -1483,7 +1480,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                                         newTopLevelTask.name()))
         return
 
-    def ignoreOutputModules(self, badModules, initialTask = None):
+    def ignoreOutputModules(self, badModules, initialTask=None):
         """
         _ignoreOutputModules_
 
@@ -1503,8 +1500,8 @@ class WMWorkloadHelper(PersistencyHelper):
             taskIterator = self.taskIterator()
 
         for task in taskIterator:
-            #Find the children tasks that have a bad output module as
-            #input, disown them. Can't delete them on the spot, save the names in a list
+            # Find the children tasks that have a bad output module as
+            # input, disown them. Can't delete them on the spot, save the names in a list
             childTasksToDelete = []
             for childTask in task.childTaskIterator():
                 taskInput = childTask.inputReference()
@@ -1512,23 +1509,23 @@ class WMWorkloadHelper(PersistencyHelper):
                 if inputOutputModule in badModules:
                     childTasksToDelete.append(childTask.name())
 
-            #Now delete
+            # Now delete
             for childTaskName in childTasksToDelete:
                 task.deleteChild(childTaskName)
 
             if childTasksToDelete:
-                #Tell any CMSSW step to ignore the output modules
+                # Tell any CMSSW step to ignore the output modules
                 for stepName in task.listAllStepNames():
                     stepHelper = task.getStepHelper(stepName)
                     if stepHelper.stepType() == "CMSSW":
                         stepHelper.setIgnoredOutputModules(badModules)
-            #Go deeper in the tree
+            # Go deeper in the tree
             self.ignoreOutputModules(badModules, task)
 
         return
 
-    def setCMSSWParams(self, cmsswVersion = None, globalTag = None,
-                       scramArch = None, initialTask = None):
+    def setCMSSWParams(self, cmsswVersion=None, globalTag=None,
+                       scramArch=None, initialTask=None):
         """
         _setCMSSWVersion_
 
@@ -1547,10 +1544,10 @@ class WMWorkloadHelper(PersistencyHelper):
                 if stepHelper.stepType() == "CMSSW":
                     if cmsswVersion != None:
                         if scramArch != None:
-                            stepHelper.cmsswSetup(cmsswVersion = cmsswVersion,
-                                                  scramArch = scramArch)
+                            stepHelper.cmsswSetup(cmsswVersion=cmsswVersion,
+                                                  scramArch=scramArch)
                         else:
-                            stepHelper.cmsswSetup(cmsswVersion = cmsswVersion)
+                            stepHelper.cmsswSetup(cmsswVersion=cmsswVersion)
 
                     if globalTag != None:
                         stepHelper.setGlobalTag(globalTag)
@@ -1578,7 +1575,6 @@ class WMWorkloadHelper(PersistencyHelper):
                     versions.append(version)
         return versions
 
-
     def generateWorkloadSummary(self):
         """
         _generateWorkloadSummary_
@@ -1592,11 +1588,11 @@ class WMWorkloadHelper(PersistencyHelper):
         Intended for use in putting WMSpec info into couch
         """
         summary = {'tasks': [],
-                   'ACDC': { "collection" : None, "filesets": {} },
+                   'ACDC': {"collection": None, "filesets": {}},
                    'input': [],
                    'output': [],
-                   'owner' : {},
-                   }
+                   'owner': {},
+                  }
 
         summary['tasks'] = self.listAllTaskPathNames()
         summary['output'] = self.listOutputDatasets()
@@ -1609,19 +1605,18 @@ class WMWorkloadHelper(PersistencyHelper):
         return summary
 
     def setupPerformanceMonitoring(self, maxRSS, maxVSize, softTimeout,
-                                         gracePeriod):
+                                   gracePeriod):
         """
         _setupPerformanceMonitoring_
 
         Setups performance monitors for all tasks in the workflow
         """
         for task in self.getAllTasks():
-            task.setPerformanceMonitor(maxRSS = maxRSS, maxVSize = maxVSize,
-                                       softTimeout = softTimeout,
-                                       gracePeriod = gracePeriod)
+            task.setPerformanceMonitor(maxRSS=maxRSS, maxVSize=maxVSize,
+                                       softTimeout=softTimeout,
+                                       gracePeriod=gracePeriod)
 
         return
-
 
     def listAllCMSSWConfigCacheIDs(self):
         """
@@ -1634,7 +1629,7 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-    def setLocationDataSourceFlag(self, flag = False):
+    def setLocationDataSourceFlag(self, flag=False):
         """
         _setLocationDataSourceFlag_
 
@@ -1671,21 +1666,21 @@ class WMWorkloadHelper(PersistencyHelper):
         if all keys exist return True
         if partial keys exsit raise Exception
         """
-        if  isinstance(keys, basestring):
+        if isinstance(keys, basestring):
             keys = [keys]
         validKey = 0
         for key in keys:
-            if  key in kwargs:
+            if key in kwargs:
                 validKey += 1
         if validKey == 0:
             return False
         elif validKey == len(keys):
             return True
         else:
-            #TODO raise proper exception
+            # TODO raise proper exception
             raise Exception("not all the key is specified %s" % keys)
 
-    def updateArguments(self, kwargs, wildcardSites = {}):
+    def updateArguments(self, kwargs, wildcardSites={}):
         """
         set up all the argument related to assigning request.
         args are validated before update.
@@ -1716,10 +1711,10 @@ class WMWorkloadHelper(PersistencyHelper):
         setAssignArgumentsWithDefault(kwargs, argumentDefinition, assignParams)
 
         if self._checkKeys(kwargs, siteParams):
-            self.setSiteWildcardsLists(siteWhitelist = kwargs["SiteWhitelist"],
-                                       siteBlacklist = kwargs["SiteBlacklist"],
-                                       wildcardDict = wildcardSites)
-        #FIXME not validated
+            self.setSiteWildcardsLists(siteWhitelist=kwargs["SiteWhitelist"],
+                                       siteBlacklist=kwargs["SiteBlacklist"],
+                                       wildcardDict=wildcardSites)
+        # FIXME not validated
         if self._checkKeys(kwargs, lfnParams):
             self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
 
@@ -1730,7 +1725,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
-        
+
         if self._checkKeys(kwargs, "ProcessingVersion"):
             self.setProcessingVersion(kwargs["ProcessingVersion"])
         if self._checkKeys(kwargs, "AcquisitionEra"):
@@ -1746,19 +1741,22 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Check whether we should check location for the data
         if self._checkKeys(kwargs, "useSiteListAsLocation"):
-            self.setLocationDataSourceFlag(flag = strToBool(kwargs["useSiteListAsLocation"]))
+            self.setLocationDataSourceFlag(flag=strToBool(kwargs["useSiteListAsLocation"]))
         if self._checkKeys(kwargs, "allowOpportunistic"):
-            self.setAllowOpportunistic(allowOpport = strToBool(kwargs["allowOpportunistic"]))
+            self.setAllowOpportunistic(allowOpport=strToBool(kwargs["allowOpportunistic"]))
 
         # Set phedex subscription information
         if self._checkKeys(kwargs, phedexParams):
-            self.setSubscriptionInformationWildCards(wildcardDict = wildcardSites,
-                                        custodialSites = kwargs["CustodialSites"],
-                                        nonCustodialSites = kwargs["NonCustodialSites"],
-                                        autoApproveSites = kwargs["AutoApproveSubscriptionSites"],
-                                        custodialSubType = kwargs["CustodialSubType"],
-                                        nonCustodialSubType = kwargs["NonCustodialSubType"],
-                                        priority = kwargs["SubscriptionPriority"])
+            self.setSubscriptionInformationWildCards(wildcardDict=wildcardSites,
+                                                     custodialSites=kwargs["CustodialSites"],
+                                                     nonCustodialSites=kwargs["NonCustodialSites"],
+                                                     autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                                     custodialSubType=kwargs["CustodialSubType"],
+                                                     nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                                     custodialGroup=kwargs["CustodialGroup"],
+                                                     nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                                     priority=kwargs["SubscriptionPriority"],
+                                                     deleteFromSource=kwargs["DeleteFromSource"])
 
         # Block closing information
         if self._checkKeys(kwargs, blockCloseParams):
@@ -1769,20 +1767,17 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if self._checkKeys(kwargs, "DashboardActivity"):
             self.setDashboardActivity(kwargs["DashboardActivity"])
-            
+
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)
 
-
         return kwargs
-
 
     def loadSpecFromCouch(self, couchurl, requestName):
         """
         This depends on PersitencyHelper.py saveCouch (That method better be decomposed)
         """
         return self.load("%s/%s/spec" % (couchurl, requestName))
-
 
     def setTaskPropertiesFromWorkload(self):
         """
@@ -1802,6 +1797,7 @@ class WMWorkloadHelper(PersistencyHelper):
         self.setPrepID(self.getPrepID())
         return
 
+
 class WMWorkload(ConfigSection):
     """
     _WMWorkload_
@@ -1809,27 +1805,28 @@ class WMWorkload(ConfigSection):
     Request container
 
     """
+
     def __init__(self, name="test"):
         ConfigSection.__init__(self, name)
         self.objectType = self.__class__.__name__
         #  //persistent data
         # //
-        #//
+        # //
         self.section_("persistency")
         self.persistency.specUrl = None
         #  //
         # // request related information
-        #//
+        # //
         self.section_("request")
-        self.request.priority = None # what should be the default value
+        self.request.priority = None  # what should be the default value
         #  //
         # // owner related information
-        #//
+        # //
         self.section_("owner")
 
         #  //
         # // Policies applied to this workload by the processing system
-        #//
+        # //
         self.section_("policies")
         self.policies.section_("start")
         self.policies.section_("end")
@@ -1838,7 +1835,7 @@ class WMWorkload(ConfigSection):
 
         #  //
         # // properties of the Workload and all tasks there-in
-        #//
+        # //
         self.section_("properties")
         self.properties.unmergedLFNBase = "/store/unmerged"
         self.properties.mergedLFNBase = "/store/data"
@@ -1854,7 +1851,7 @@ class WMWorkload(ConfigSection):
 
         #  //
         # // tasks
-        #//
+        # //
         self.section_("tasks")
         self.tasks.tasklist = []
 
@@ -1864,6 +1861,7 @@ class WMWorkload(ConfigSection):
 
         self.sandbox = None
         self.initialJobCount = 0
+
 
 def newWorkload(workloadName):
     """

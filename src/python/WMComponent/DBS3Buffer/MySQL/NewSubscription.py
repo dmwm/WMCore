@@ -10,6 +10,7 @@ Created on May 2, 2013
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class NewSubscription(DBFormatter):
     """
     _NewSubscription_
@@ -23,43 +24,33 @@ class NewSubscription(DBFormatter):
           """
 
     def _createPhEDExSubBinds(self, datasetID, subscriptionInfo, custodialFlag):
-        
+
         # DeleteFromSource is not supported for move subscriptions
-        phedex_group = None
         delete_blocks = None
         if custodialFlag:
             sites = subscriptionInfo['CustodialSites']
             phedex_group = subscriptionInfo['CustodialGroup']
-            if subscriptionInfo['CustodialSubType'] == 'Move':
-                isMove = 1
-            else:
-                isMove = 0
-                if subscriptionInfo.get('DeleteFromSource', False):
-                    delete_blocks = 1
+            isMove = 1 if subscriptionInfo['CustodialSubType'] == 'Move' else 0
         else:
             sites = subscriptionInfo['NonCustodialSites']
             phedex_group = subscriptionInfo['NonCustodialGroup']
-            if subscriptionInfo['NonCustodialSubType'] == 'Move':
-                isMove = 1
-            else:
-                isMove = 0
-                if subscriptionInfo.get('DeleteFromSource', False):
-                    delete_blocks = 1
+            isMove = 1 if subscriptionInfo['NonCustodialSubType'] == 'Move' else 0
+        if not isMove:
+            delete_blocks = 1 if subscriptionInfo.get('DeleteFromSource', False) else None
 
         binds = []
         for site in sites:
-            binds.append( {'id' : datasetID,
-                           'site' : site,
-                           'custodial' : custodialFlag,
-                           'auto_approve' : 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
-                           'move' : isMove,
-                           'priority' : subscriptionInfo['Priority'],
-                           'phedex_group' : phedex_group,
-                           'delete_blocks' : delete_blocks} )
+            binds.append({'id': datasetID,
+                          'site': site,
+                          'custodial': custodialFlag,
+                          'auto_approve': 1 if site in subscriptionInfo['AutoApproveSites'] else 0,
+                          'move': isMove,
+                          'priority': subscriptionInfo['Priority'],
+                          'phedex_group': phedex_group,
+                          'delete_blocks': delete_blocks})
         return binds
-    
-    def execute(self, datasetID, subscriptionInfo,
-                conn = None, transaction = False):
+
+    def execute(self, datasetID, subscriptionInfo, conn=None, transaction=False):
         """
         _execute_
 
@@ -67,9 +58,8 @@ class NewSubscription(DBFormatter):
         """
         binds = self._createPhEDExSubBinds(datasetID, subscriptionInfo, True)
         binds.extend(self._createPhEDExSubBinds(datasetID, subscriptionInfo, False))
-        
+
         if not binds:
             return
 
-        self.dbi.processData(self.sql, binds = binds, 
-                             conn = conn, transaction = transaction)
+        self.dbi.processData(self.sql, binds=binds, conn=conn, transaction=transaction)

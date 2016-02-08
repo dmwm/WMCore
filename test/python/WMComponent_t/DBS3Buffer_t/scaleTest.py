@@ -46,7 +46,7 @@ class scaleTestFiller:
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         myThread = threading.currentThread()
-        self.bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        self.bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                         logger = myThread.logger,
                                         dbinterface = myThread.dbi)
 
@@ -129,7 +129,7 @@ class scaleTestFiller:
         config.DBS3Upload.DBSBlockMaxTime  = 600
         config.DBS3Upload.DBSBlockMaxSize  = 999999999999
         config.DBS3Upload.dbsUrl           = 'http://cms-xen40.fnal.gov:8787/dbs/prod/global/DBSWriter'
-        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBSUpload'
+        config.DBS3Upload.namespace        = 'WMComponent.DBS3Buffer.DBS3Upload'
         config.DBS3Upload.componentDir     = os.path.join(os.getcwd(), 'Components')
         config.DBS3Upload.nProcesses       = 1
         config.DBS3Upload.dbsWaitTime      = 1

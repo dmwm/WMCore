@@ -8,7 +8,7 @@ Add PSetHash to Algo in DBS Buffer
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.UpdateAlgo import UpdateAlgo as MySQLUpdateAlgo
+from WMComponent.DBS3Buffer.MySQL.UpdateAlgo import UpdateAlgo as MySQLUpdateAlgo
 
 class UpdateAlgo(MySQLUpdateAlgo):
     """

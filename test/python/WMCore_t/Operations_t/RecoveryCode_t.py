@@ -181,13 +181,6 @@ class TestRecoveryCode(unittest.TestCase):
         #config.JobArchiver.logLevel      = 'SQLDEBUG'
         config.JobArchiver.logDir        = os.path.join(os.getcwd(), 'logs')
 
-        #DBSBuffer
-        #Part of the JobAccountant
-        config.component_("DBSBuffer")
-        config.DBSBuffer.logLevel          = self.logLevel
-        config.DBSBuffer.namespace         = 'WMComponent.DBSBuffer.DBSBuffer'
-        config.DBSBuffer.maxThreads        = 1
-        config.DBSBuffer.jobSuccessHandler = 'WMComponent.DBSBuffer.Handler.JobSuccess'
 
 
 

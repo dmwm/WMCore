@@ -8,7 +8,7 @@ Oracle implementation of AddChecksum
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddChecksum import AddChecksum as MySQLAddChecksum
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.AddChecksum import AddChecksum as MySQLAddChecksum
 
 class AddChecksum(MySQLAddChecksum):
     """

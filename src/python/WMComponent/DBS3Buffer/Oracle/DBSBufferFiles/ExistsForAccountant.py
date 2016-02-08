@@ -9,7 +9,7 @@ __all__ = []
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.ExistsForAccountant import ExistsForAccountant as MySQLExistsForAccountant
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.ExistsForAccountant import ExistsForAccountant as MySQLExistsForAccountant
 
 class ExistsForAccountant(MySQLExistsForAccountant):
     """

@@ -261,7 +261,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         assocAction = self.daoFactory(classname = "AlgoDatasetAssoc")
         existsAction = self.daoFactory(classname = "DBSBufferFiles.Exists")
 
-        uploadFactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+        uploadFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = self.logger,
                                    dbinterface = self.dbi)
         setDatasetAlgoAction = uploadFactory(classname = "SetDatasetAlgo")

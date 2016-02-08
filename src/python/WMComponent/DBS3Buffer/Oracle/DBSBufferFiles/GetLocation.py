@@ -8,7 +8,7 @@ Oracle implementation of File.GetLocation
 
 #This has been modified for Oracle
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetLocation import GetLocation as MySQLGetLocation
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetLocation import GetLocation as MySQLGetLocation
 
 class GetLocation(MySQLGetLocation):
     sql = """select se_name from dbsbuffer_location

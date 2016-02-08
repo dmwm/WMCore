@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.GetBlockFromDataset
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.GetBlockFromDataset import GetBlockFromDataset as MySQLGetBlockFromDataset
+from WMComponent.DBS3Buffer.MySQL.GetBlockFromDataset import GetBlockFromDataset as MySQLGetBlockFromDataset
 
 class GetBlockFromDataset(MySQLGetBlockFromDataset):
     """

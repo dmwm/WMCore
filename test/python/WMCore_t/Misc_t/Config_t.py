@@ -31,7 +31,7 @@ from WMComponent.JobArchiver.JobArchiver        import JobArchiver
 from WMComponent.TaskArchiver.TaskArchiver      import TaskArchiver
 from WMComponent.ErrorHandler.ErrorHandler      import ErrorHandler
 from WMComponent.RetryManager.RetryManager      import RetryManager
-from WMComponent.DBSUpload.DBSUpload            import DBSUpload
+from WMComponent.DBS3Buffer.DBS3Upload          import DBS3Upload
 from WMComponent.PhEDExInjector.PhEDExInjector  import PhEDExInjector
 
 
@@ -52,7 +52,7 @@ class ConfigTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection(destroyAllDatabase = True)
         self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMComponent.DBSBuffer.Database",
+                                                 "WMComponent.DBS3Buffer",
                                                  'WMCore.ResourceControl',
                                                  'WMCore.BossAir'],
                                 useDefault = False)
@@ -156,7 +156,7 @@ class ConfigTest(unittest.TestCase):
         components.append(TaskArchiver(config = config))
         components.append(ErrorHandler(config = config))
         components.append(RetryManager(config = config))
-        components.append(DBSUpload(config = config))
+        components.append(DBS3Upload(config = config))
 
 
         # Now the optional ones

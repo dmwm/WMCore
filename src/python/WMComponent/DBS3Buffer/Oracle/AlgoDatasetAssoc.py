@@ -5,7 +5,7 @@ _AlgoDatasetAssoc_
 Associate an algorithm with a dataset in DBSBuffer.
 """
 
-from WMComponent.DBSBuffer.Database.MySQL.AlgoDatasetAssoc import AlgoDatasetAssoc as MySQLAlgoDatasetAssoc
+from WMComponent.DBS3Buffer.MySQL.AlgoDatasetAssoc import AlgoDatasetAssoc as MySQLAlgoDatasetAssoc
 
 class AlgoDatasetAssoc(MySQLAlgoDatasetAssoc):
 

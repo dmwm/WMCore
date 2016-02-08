@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.ListDataset
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.ListDataset import ListDataset as MySQLListDataset
+from WMComponent.DBS3Buffer.MySQL.ListDataset import ListDataset as MySQLListDataset
 
 class ListDataset(MySQLListDataset):
     """

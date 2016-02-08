@@ -6,7 +6,7 @@ Oracle implementation of GetRunLumiFile
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetRunLumiFile import GetRunLumiFile as MySQLGetRunLumiFile
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetRunLumiFile import GetRunLumiFile as MySQLGetRunLumiFile
 
 
 class GetRunLumiFile(MySQLGetRunLumiFile):

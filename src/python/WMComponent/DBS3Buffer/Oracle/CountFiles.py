@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.CountFiles
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.CountFiles import CountFiles as MySQLCountFiles
+from WMComponent.DBS3Buffer.MySQL.CountFiles import CountFiles as MySQLCountFiles
 
 class CountFiles(MySQLCountFiles):
     """

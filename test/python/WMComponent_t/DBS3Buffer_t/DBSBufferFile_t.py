@@ -36,10 +36,6 @@ class DBSBufferFileTest(unittest.TestCase):
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
-        self.daoFactory2 = DAOFactory(package = "WMComponent.DBSUpload.Database",
-                                      logger = myThread.logger,
-                                      dbinterface = myThread.dbi)
-
         locationAction = self.daoFactory(classname = "DBSBufferFiles.AddLocation")
         locationAction.execute(siteName = "se1.cern.ch")
         locationAction.execute(siteName = "se1.fnal.gov")
@@ -969,7 +965,7 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.create()
 
         # There are no accessors for these things because load is never called
-        action = self.daoFactory2(classname = "LoadInfoFromDAS")
+        action = self.daoFactory(classname = "LoadInfoFromDAS")
         das    = action.execute(ids = [1])[0]
         self.assertEqual(das['Parent'], 'Parent')
         self.assertEqual(das['GlobalTag'], 'GlobalTag')

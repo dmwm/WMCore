@@ -8,7 +8,7 @@ Oracle implementation of DBSBufferFiles.SetLocation
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.SetLocation import SetLocation as \
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.SetLocation import SetLocation as \
      MySQLSetLocation
 
 class SetLocation(MySQLSetLocation):

@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.ListAlgoDatasetAssoc
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.ListAlgoDatasetAssoc import ListAlgoDatasetAssoc as MySQLListAlgoDatasetAssoc
+from WMComponent.DBS3Buffer.MySQL.ListAlgoDatasetAssoc import ListAlgoDatasetAssoc as MySQLListAlgoDatasetAssoc
 
 class ListAlgoDatasetAssoc(MySQLListAlgoDatasetAssoc):
     """

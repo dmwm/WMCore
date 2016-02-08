@@ -8,7 +8,7 @@ Oracle implementation of DBSBufferFiles.HeritageLFNChild
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.HeritageLFNChild import \
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.HeritageLFNChild import \
      HeritageLFNChild as MySQLHeritageLFNChild
 
 class HeritageLFNChild(MySQLHeritageLFNChild):

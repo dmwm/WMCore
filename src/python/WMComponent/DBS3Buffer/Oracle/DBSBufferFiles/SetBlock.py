@@ -5,7 +5,7 @@ _SetBlock_
 Oracle implementation of DBSBufferFiles.SetBlock
 """
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.SetBlock import SetBlock as MySQLSetBlock
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.SetBlock import SetBlock as MySQLSetBlock
 
 
 

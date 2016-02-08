@@ -107,7 +107,7 @@ dependencies = {'wmc-rest':{
                                     'src/templates/WMCore/WebTools/WMBS'],
                         },
                 'asyncstageout':{
-                        'packages': ['WMCore.Agent+', 'WMCore.Storage+', 'WMComponent.DBSUpload',
+                        'packages': ['WMCore.Agent+', 'WMCore.Storage+',
                                      'WMCore.Credential', 'WMCore.WorkerThreads', 'WMCore.Services.SiteDB+',
                                      'WMCore.Services.PhEDEx+', 'WMCore.ACDC', 'WMCore.Alerts+',
                                      'WMCore.Services.UserFileCache'],

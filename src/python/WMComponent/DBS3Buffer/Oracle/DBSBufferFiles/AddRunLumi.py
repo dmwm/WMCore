@@ -5,7 +5,7 @@ Oracle implementation of AddRunLumi
 
 #This has been modified for Oracle
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddRunLumi import AddRunLumi as MySQLAddRunLumi
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.AddRunLumi import AddRunLumi as MySQLAddRunLumi
 
 class AddRunLumi(MySQLAddRunLumi):
 

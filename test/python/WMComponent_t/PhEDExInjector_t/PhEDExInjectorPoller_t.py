@@ -51,7 +51,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                                 useDefault = False)
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        daofactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
 
@@ -179,7 +179,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
 
         createAction.execute(blocks = [newBlockA, newBlockB])
 
-        bufferFactory = DAOFactory(package = "WMComponent.DBSBuffer.Database",
+        bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                    logger = myThread.logger,
                                    dbinterface = myThread.dbi)
 
@@ -293,7 +293,7 @@ class PhEDExInjectorPollerTest(unittest.TestCase):
                "Error: Files missing from PhEDEx replica: %s" % goldenLFNs
 
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.DBSUpload.Database",
+        daofactory = DAOFactory(package = "WMComponent.DBS3Buffer",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         setBlock = daofactory(classname = "SetBlockStatus")

@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.UpdateAlgoDatasetAssoc
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.UpdateAlgoDatasetAssoc import UpdateAlgoDatasetAssoc as MySQLUpdateAlgoDatasetAssoc
+from WMComponent.DBS3Buffer.MySQL.UpdateAlgoDatasetAssoc import UpdateAlgoDatasetAssoc as MySQLUpdateAlgoDatasetAssoc
 
 class UpdateAlgoDatasetAssoc(MySQLUpdateAlgoDatasetAssoc):
     """

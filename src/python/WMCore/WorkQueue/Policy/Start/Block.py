@@ -40,7 +40,7 @@ class Block(StartPolicyInterface):
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
                 for dbsBlock in dbs.listBlockParents(block["block"]):
-                    if self.initialTask.inputLocationFlag():
+                    if self.initialTask.getTrustSitelists():
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
                         parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
@@ -54,7 +54,7 @@ class Block(StartPolicyInterface):
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
                                  OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False,
-                                 NoLocationUpdate = self.initialTask.inputLocationFlag()
+                                 NoLocationUpdate = self.initialTask.getTrustSitelists()
                                  )
 
 
@@ -76,7 +76,7 @@ class Block(StartPolicyInterface):
         runBlackList = task.inputRunBlacklist()
         if task.getLumiMask(): #if we have a lumi mask get only the relevant blocks
             maskedBlocks = self.getMaskedBlocks(task, dbs, datasetPath)
-        if task.inputLocationFlag():
+        if task.getTrustSitelists():
             # Then get the locations from the site whitelist/blacklist + SiteDB
             siteWhitelist = task.siteWhitelist()
             siteBlacklist = task.siteBlacklist()
@@ -181,7 +181,7 @@ class Block(StartPolicyInterface):
                     block['NumberOfFiles'] = acceptedFileCount
                     block['NumberOfEvents'] = acceptedEventCount
             # save locations
-            if task.inputLocationFlag():
+            if task.getTrustSitelists():
                 self.data[block['block']] = self.sites
             else:
                 self.data[block['block']] = self.siteDB.PNNstoPSNs(dbs.listFileBlockLocation(block['block']))

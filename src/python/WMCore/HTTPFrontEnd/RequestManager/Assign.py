@@ -369,8 +369,8 @@ class Assign(WebAPI):
                                           kwargs.get("GracePeriod", None))
 
         # Check whether we should check location for the data
-        helper.setLocationDataSourceFlag(flag=strToBool(kwargs.get("useSiteListAsLocation", False)))
-        helper.setAllowOpportunistic(allowOpport=strToBool(kwargs.get("allowOpportunistic", False)))
+        helper.setTrustLocationFlag(flag=strToBool(kwargs.get("TrustSitelists", False)))
+        helper.setAllowOpportunistic(allowOpport=strToBool(kwargs.get("AllowOpportunistic", False)))
 
         # Set phedex subscription information
         custodialList = kwargs.get("CustodialSites", [])

@@ -9,6 +9,7 @@ __all__ = []
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from math import ceil
 from WMCore import Lexicon
 
@@ -19,6 +20,7 @@ class Dataset(StartPolicyInterface):
         self.args.setdefault('SliceType', 'NumberOfFiles')
         self.args.setdefault('SliceSize', 1)
         self.lumiType = "NumberOfLumis"
+        self.sites = []
         self.siteDB = SiteDB()
 
     def split(self):
@@ -40,11 +42,14 @@ class Dataset(StartPolicyInterface):
         if not blocks:
             return
 
+        blocksOpenned = False
         for block in blocks:
             work += float(block[self.args['SliceType']])
             numLumis +=  int(block[self.lumiType])
             numFiles += int(block['NumberOfFiles'])
             numEvents += int(block['NumberOfEvents'])
+            if str(block['OpenForWriting']) == '1':
+                blocksOpenned = True
 
         dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
 
@@ -68,8 +73,9 @@ class Dataset(StartPolicyInterface):
                              NumberOfLumis = numLumis,
                              NumberOfFiles = numFiles,
                              NumberOfEvents = numEvents,
-                             Jobs = ceil(float(work) /
-                                         float(self.args['SliceSize']))
+                             Jobs = ceil(float(work) / float(self.args['SliceSize'])),
+                             OpenForNewData = blocksOpenned,
+                             NoLocationUpdate = self.initialTask.getTrustSitelists()
                              )
 
 
@@ -90,7 +96,11 @@ class Dataset(StartPolicyInterface):
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
-        siteWhiteList = task.siteWhitelist()
+
+        if task.getTrustSitelists():
+            siteWhitelist = task.siteWhitelist()
+            siteBlacklist = task.siteBlacklist()
+            self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
 
         for blockName in dbs.listFileBlocks(datasetPath):
             block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
@@ -166,8 +176,8 @@ class Dataset(StartPolicyInterface):
                 locations = locations.intersection(dbs.listFileBlockLocation(block['block']))
 
         # all needed blocks present at these sites
-        if self.wmspec.locationDataSourceFlag():
-            self.data[datasetPath] = list(locations.union(siteWhiteList))
+        if self.wmspec.getTrustLocationFlag():
+            self.data[datasetPath] = self.sites
         elif locations:
             self.data[datasetPath] = list(set(self.siteDB.PNNstoPSNs(locations)))
 

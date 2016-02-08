@@ -52,7 +52,7 @@
     "CustodialSites": [],
     "NonCustodialSites": [],
     "AutoApproveSubscriptionSites": [],
-    "useSiteListAsLocation" : "True",
+    "TrustSitelists" : "True",
     "SubscriptionPriority": "Low",
     "CustodialSubType" : "Move",
     "BlockCloseMaxWaitTime" : 72000,

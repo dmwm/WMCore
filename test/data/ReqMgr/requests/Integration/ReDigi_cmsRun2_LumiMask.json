@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {         
-    "Comments": "ReDigi with 2 steps per job. useSiteListAsLocation enabled. LumiMask for 1 run and 7l in total",
+    "Comments": "ReDigi with 2 steps per job. TrustSitelists enabled. LumiMask for 1 run and 7l in total",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_19",
@@ -51,7 +51,7 @@
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
-    "useSiteListAsLocation" : "True",
+    "TrustSitelists" : "True",
     "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
     "MinMergeSize": 2147483648,

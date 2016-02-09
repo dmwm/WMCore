@@ -65,7 +65,7 @@ function(head, req) {
             continue;
         }
 
-        // Don't check anything if useSiteListAsLocation/trusSiteLists is enabled
+        // Don't check anything if trustSitelists is enabled
         if (ele['NoLocationUpdate']) {
             // subtract element jobs from site resources
             if (first !== true) {

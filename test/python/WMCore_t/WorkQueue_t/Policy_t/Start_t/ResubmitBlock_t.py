@@ -79,7 +79,7 @@ class ResubmitBlockTest(unittest.TestCase):
                                      self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessing' % self.workflowName, splittingAlgo, splittingArgs)
         if setLocationFlag:
-            Tier1ReRecoWorkload.setLocationDataSourceFlag()
+            Tier1ReRecoWorkload.setTrustLocationFlag()
             Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         return Tier1ReRecoWorkload
 

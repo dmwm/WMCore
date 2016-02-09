@@ -9,11 +9,12 @@ import datetime
 import time
 import shutil
 
-from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 
 def mapSitetoPNN(sites):
     """
@@ -30,6 +31,7 @@ def mapSitetoPNN(sites):
     for site in sites:
         fakePNNs.extend(rControl.listSiteInfo(site)['pnn'])
     return fakePNNs
+
 
 class PileupFetcher(FetcherInterface):
     """
@@ -215,13 +217,11 @@ class PileupFetcher(FetcherInterface):
         wmTask is instance of WMTask.WMTaskHelper
 
         """
-        siteWhitelist = wmTask.siteWhitelist()
+        fakeSites = []
 
         # check whether we need to pretend PU data location
-        if wmTask.inputLocationFlag():
-            fakeSites = wmTask.siteWhitelist()
-        else:
-            fakeSites = []
+        if wmTask.getTrustSitelists():
+            fakeSites = makeLocationsList(wmTask.siteWhitelist(), wmTask.siteBlacklist())
 
         for step in wmTask.steps().nodeIterator():
             helper = WMStep.WMStepHelper(step)

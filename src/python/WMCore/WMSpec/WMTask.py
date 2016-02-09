@@ -522,7 +522,7 @@ class WMTaskHelper(TreeHelper):
                 del splittingParams['performance']
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
-        splittingParams["trustSitelists"] = self.trustSitelists()
+        splittingParams["trustSitelists"] = self.getTrustSitelists()
 
         if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
@@ -851,9 +851,9 @@ class WMTaskHelper(TreeHelper):
         self.data.constraints.sites.blacklist = siteBlacklist
         return
 
-    def trustSitelists(self):
+    def getTrustSitelists(self):
         """
-        _trustSitelists_
+        _getTrustSitelists_
 
         Accessor for the 'trust site lists' flag for the task.
         """
@@ -863,7 +863,7 @@ class WMTaskHelper(TreeHelper):
         """
         _setTrustSitelists_
 
-        Set the 'trus site lists' flag for the task.
+        Set the 'trust site lists' flag for the task.
         """
         self.data.constraints.sites.trustlists = trustSitelists
         return
@@ -1394,26 +1394,6 @@ class WMTaskHelper(TreeHelper):
         for prop, value in properties.items():
             self._propMethodMap()[prop](value)
 
-    def setInputLocationFlag(self, flag):
-        """
-        _setInputLocationFlag_
-
-        Does not check PhEDEx for input data location
-        in case it's set to True, blindly trust the site
-        whitelist/blacklist.
-        """
-        self.data.input.trustSiteLists = flag
-
-    def inputLocationFlag(self):
-        """
-        _getInputLocationFlag
-
-        Get the flag which tells
-        whether to use the site lists
-        as data location or not
-        """
-        return getattr(self.data.input, "trustSiteLists", False)
-
     def deleteChild(self, childName):
         """
         _deleteChild_
@@ -1592,7 +1572,6 @@ class WMTask(ConfigSectionTree):
         self.section_("subscriptions")
         self.notifications.targets = []
         self.input.sandbox = None
-        self.input.trustSiteLists = False
         self.input.section_("splitting")
         self.input.splitting.algorithm = None
         self.input.splitting.section_("performance")

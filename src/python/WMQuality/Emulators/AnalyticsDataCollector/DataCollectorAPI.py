@@ -7,6 +7,7 @@ JobInfoByID
 
 Retrieve information about a job from couch and format it nicely.
 """
+from __future__ import print_function
 
 
 import logging
@@ -29,7 +30,7 @@ class LocalCouchDBData():
 
     def __init__(self, couchURL, summaryLevel):
         # set the connection for local couchDB call
-        print "Using LocalCouchDBData Emulator"
+        print("Using LocalCouchDBData Emulator")
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.summaryLevel = summaryLevel
@@ -88,7 +89,7 @@ class WMAgentDBData():
     def __init__(self, summaryLevel, dbi, logger):
 
         # interface to WMBS/BossAir db
-        print "Using %s Emulator" % self.__class__
+        print("Using %s Emulator" % self.__class__)
 
     def getHeartBeatWarning(self):
 

@@ -2,6 +2,7 @@
 """
 The actual taskArchiver algorithm
 """
+from __future__ import print_function
 __all__ = []
 
 
@@ -30,8 +31,8 @@ class WMAgentTasks(BaseWorkerThread):
         """
 
         data = self.wq.getWork(self.resources, {})
-        print "Data back from workqueue"
-        print "%s: %s" % (self.resources, data)
+        print("Data back from workqueue")
+        print("%s: %s" % (self.resources, data))
         if len(data) != 0:
             elementIDs = []
             for element in data:

@@ -3,6 +3,7 @@
     WorkQueue tests
 """
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 import shutil
 import tempfile
@@ -70,7 +71,7 @@ class WMSpecGenerator(object):
         if inputDataset != None:
             spec.taskIterator().next().data.input.dataset.primary = inputDataset
         if dbsUrl != None:
-            print dbsUrl
+            print(dbsUrl)
             spec.taskIterator().next().data.input.dataset.dbsurl = dbsUrl
         return self._selectReturnType(spec, returnType, splitter)
 

@@ -7,6 +7,7 @@ Component that can parse a cvs log
 and generate a file for checking the
 code style.
 """
+from __future__ import print_function
 
 
 
@@ -49,9 +50,9 @@ class Code:
         anomalies.
         """
 
-        print 'Quality script: '+ self.script
-        print 'Report file:    '+ self.report
-        print 'Base dir:       '+ self.baseDir
+        print('Quality script: '+ self.script)
+        print('Report file:    '+ self.report)
+        print('Base dir:       '+ self.baseDir)
 
         cont = raw_input('Are these values correct? ' + \
             'Press "A" to abbort or any other key to proceed ')

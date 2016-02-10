@@ -5,6 +5,7 @@
 Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
+from __future__ import print_function
 
 
 
@@ -27,10 +28,10 @@ class TaskArchiver(Harness):
 
         self.config = config
 
-        print "TaskArchiver.__init__"
+        print("TaskArchiver.__init__")
 
     def preInitialization(self):
-        print "TaskArchiver.preInitialization"
+        print("TaskArchiver.preInitialization")
 
         # Add event loop to worker manager
         myThread = threading.currentThread()

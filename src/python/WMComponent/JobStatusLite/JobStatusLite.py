@@ -5,6 +5,7 @@
 Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
+from __future__ import print_function
 
 
 
@@ -33,7 +34,7 @@ class JobStatusLite(Harness):
         #self.config.JobStatusLite.pollInterval
         #self.config.JobStatusLite.queryInterval
 
-        print "JobStatusLite.__init__"
+        print("JobStatusLite.__init__")
 
     def preInitialization(self):
         """

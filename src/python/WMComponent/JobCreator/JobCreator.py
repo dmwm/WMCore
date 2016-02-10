@@ -6,6 +6,7 @@ Creates jobs for new subscriptions
 Handler implementation for polling
 
 """
+from __future__ import print_function
 
 
 
@@ -36,14 +37,14 @@ class JobCreator(Harness):
         #myThread = threading.currentThread()
         #myThread.database = os.getenv("DATABASE")
 
-        print "JobCreator.__init__"
+        print("JobCreator.__init__")
 
     def preInitialization(self):
         """
         Step that actually adds the worker thread properly
 
         """
-        print "JobCreator.preInitialization"
+        print("JobCreator.preInitialization")
 
 
         # Add event loop to worker manager

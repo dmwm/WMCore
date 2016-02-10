@@ -7,6 +7,7 @@ Performs bulk DBS File(s) insertion by :
         buffering in the database
         if buffer has hit the configured limit
 """
+from __future__ import print_function
 
 
 
@@ -34,10 +35,10 @@ class DBS3Upload(Harness):
         # call the base class
         Harness.__init__(self, config)
         self.pollTime = 1
-        print "DBS3Upload.__init__"
+        print("DBS3Upload.__init__")
 
     def preInitialization(self):
-        print "DBS3Upload.preInitialization"
+        print("DBS3Upload.preInitialization")
 
         # Add event loop to worker manager
         myThread = threading.currentThread()

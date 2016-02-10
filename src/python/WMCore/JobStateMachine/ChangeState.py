@@ -70,7 +70,12 @@ class ChangeState(WMObject, WMConnectionBase):
             self.dbname = getattr(self.config.JobStateMachine, "couchDBName")
         else:
             self.dbname = couchDbName
-
+            
+        self.jobsdatabase = None
+        self.fwjrdatabase = None
+        self.jsumdatabase = None
+        self.statsumdatabase = None
+        
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self._connectDatabases()
 
@@ -139,7 +144,7 @@ class ChangeState(WMObject, WMConnectionBase):
         Return the jobs back, throw assertion error if the state change is not allowed
         and other exceptions as appropriate
         """
-        if type(jobs) != list:
+        if not isinstance(jobs, list):
             jobs = [jobs]
 
         if len(jobs) == 0:
@@ -311,12 +316,15 @@ class ChangeState(WMObject, WMConnectionBase):
 
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
+                jsonFWJR = job["fwjr"].__to_json__(None)
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "retrycount": job["retry_count"],
-                                "fwjr": job["fwjr"].__to_json__(None),
+                                "archivestatus": "ready",
+                                "fwjr": jsonFWJR,
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
+                
                 updateSummaryDB(self.statsumdatabase, job)
 
                 #TODO: can add config switch to swich on and off

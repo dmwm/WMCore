@@ -5,6 +5,7 @@ _JobSubmitter_t_
 JobSubmitter unit-test, uses the MockPlugin to submit and tests
 the different dynamics that occur inside the JobSubmitter.
 """
+from __future__ import print_function
 
 import cProfile
 import os
@@ -792,7 +793,7 @@ class JobSubmitterTest(unittest.TestCase):
         cProfile.runctx("JobSubmitterPoller(config=config).algorithm()", globals(), locals(), filename="testStats.stat")
         stopTime = time.time()
 
-        print "Job took %f seconds to complete" % (stopTime - startTime)
+        print("Job took %f seconds to complete" % (stopTime - startTime))
 
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')

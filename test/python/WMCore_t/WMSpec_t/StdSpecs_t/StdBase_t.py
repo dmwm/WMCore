@@ -5,6 +5,7 @@ Created on Jun 14, 2013
 
 @author: dballest
 """
+from __future__ import print_function
 
 import unittest
 from nose.plugins.attrib import attr
@@ -44,7 +45,7 @@ class StdBaseTest(unittest.TestCase):
         """
         arguments = StdBase.getTestArguments()
         for k in sorted(arguments.keys()):
-            print k, arguments[k]
+            print(k, arguments[k])
         stdBaseInstance = StdBase()
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return

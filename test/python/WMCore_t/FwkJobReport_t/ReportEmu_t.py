@@ -4,6 +4,7 @@ _ReportEmu_t_
 
 Tests for the JobReport emulator.
 """
+from __future__ import print_function
 
 import unittest
 
@@ -33,7 +34,7 @@ class ReportEmuTest(unittest.TestCase):
         self.primaryDataset = "MinimumBias"
 
         self.workload = WMSpecGenerator().createReRecoSpec("Tier1ReReco")
-        print self.workload.data
+        print(self.workload.data)
         return
 
     def verifyOutputMetaData(self, outputFile, job):

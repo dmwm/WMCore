@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import unittest
 import shutil
@@ -33,7 +34,7 @@ class WMStatsTest(RESTBaseUnitTestWithDBBackend):
         #
         #self.jsonSender.put('request/' + schema['RequestName'], schema) 
         #print self.jsonSender.get('request', incoming_headers=self.adminHeader)
-        print self.jsonSender.get('requests')
+        print(self.jsonSender.get('requests'))
     
 if __name__ == '__main__':
 

@@ -3,6 +3,7 @@
 """
 WorkQueuManager test
 """
+from __future__ import print_function
 
 import os
 import logging
@@ -103,7 +104,7 @@ class WorkQueueManagerTest(WorkQueueTestCase):
         testWorkQueueManager.prepareToStart()
 
         time.sleep(30)
-        print "Killing"
+        print("Killing")
         myThread.workerThreadManager.terminateWorkers()
 
         return

@@ -5,6 +5,7 @@ _scaleTest_
 
 Fills a DBSBuffer with random data and then runs a DBSUpload process on it.
 """
+from __future__ import print_function
 import os
 import sys
 import time
@@ -75,7 +76,7 @@ class scaleTestFiller:
         name = '%s-v0' % name
         files = self.getFiles(name = name, nFiles = nFiles)
 
-        print "Inserting %i files for dataset %s" % (nFiles * 2, name)
+        print("Inserting %i files for dataset %s" % (nFiles * 2, name))
 
         try:
             self.dbsUploader.algorithm()
@@ -193,7 +194,7 @@ if __name__ == "__main__":
     if False: # Enable test at your own risk
         scaleTester = scaleTestFiller()
         while True:
-            print "Ready to begin scale testing"
+            print("Ready to begin scale testing")
             scaleTester()
-            print "Done running for now, sleeping temporarily"
+            print("Done running for now, sleeping temporarily")
             time.sleep(random.randint(10, 60))

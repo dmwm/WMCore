@@ -6,6 +6,7 @@ AutomaticSeeding_t.py
 Created by Dave Evans on 2010-08-30.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from __future__ import print_function
 
 import sys
 import os
@@ -54,7 +55,7 @@ class AutomaticSeeding_tTests(unittest.TestCase):
         for x in job.baggage.process.RandomNumberGeneratorService:
             parameter = "process.RandomNumberGeneratorService.%s.initialSeed" % x._internal_name
             tweak.addParameter(parameter, x.initialSeed)
-        print tweak
+        print(tweak)
 
 
 

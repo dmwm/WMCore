@@ -4,6 +4,7 @@
 WorkerNode unittest for WMRuntime/WMSpec
 
 """
+from __future__ import print_function
 
 
 
@@ -369,8 +370,8 @@ class RuntimeTest(unittest.TestCase):
             sys.path.append(taskDir)
 
             # Scream, run around in panic, blow up machine
-            print "About to run jobs"
-            print taskDir
+            print("About to run jobs")
+            print(taskDir)
             miniStartup(dir = taskDir)
 
 

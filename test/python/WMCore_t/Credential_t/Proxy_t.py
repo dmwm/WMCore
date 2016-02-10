@@ -5,6 +5,7 @@ Test the basic Proxy operations.
 You need to source your UI before running these tests.
 Your proxy is initialized in testAAACreateProxy method and it is used by the remaining tests.
 """
+from __future__ import print_function
 
 import unittest
 import os
@@ -256,7 +257,7 @@ class ProxyTest(unittest.TestCase):
         """
         proxyPath = self.proxy.getProxyFilename( )
         groups = self.proxy.getAllUserGroups(proxyPath)
-        print list(groups)
+        print(list(groups))
 
 
 if __name__ == '__main__':

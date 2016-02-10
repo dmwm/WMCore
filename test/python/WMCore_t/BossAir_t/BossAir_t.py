@@ -3,6 +3,7 @@
 """
 BossAir preliminary test
 """
+from __future__ import print_function
 
 import os.path
 import threading
@@ -426,7 +427,7 @@ class BossAirTest(unittest.TestCase):
         nJobs = 10
 
         jobDummies = self.createDummyJobs(nJobs = nJobs)
-        print jobDummies
+        print(jobDummies)
 
         baAPI.createNewJobs(wmbsJobs = jobDummies)
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Base class for integration test for request lifecycle"""
+from __future__ import print_function
 
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
@@ -109,7 +110,7 @@ class RequestLifeCycleBase_t():
                     raise
         self.assertTrue(self.__class__.request)
         self.assertTrue(self.__class__.request_name)
-        print "Injected request %s" % self.__class__.request_name
+        print("Injected request %s" % self.__class__.request_name)
         self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
         self.assertEqual(self.__class__.request['RequestStatus'], 'new')
 

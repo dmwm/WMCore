@@ -3,6 +3,7 @@
 testing file manager
 
 """
+from __future__ import print_function
 
 import unittest
 import logging
@@ -205,7 +206,7 @@ class FileManagerTest(unittest.TestCase):
                                 'phedex-node'  : 'test-win',
                                 'lfn-prefix': self.testDir})
         retval = wrapper(fileForTransfer)
-        print "got the retval %s" % retval
+        print("got the retval %s" % retval)
         newPfn = retval['PFN']
         wrapper = DeleteMgr(**{
                                 'command'    : 'cp',

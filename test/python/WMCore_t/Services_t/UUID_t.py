@@ -4,6 +4,7 @@
 
 
 
+from __future__ import print_function
 import unittest
 import os
 import logging
@@ -54,7 +55,7 @@ class UUIDTest(unittest.TestCase):
         startTime = time.clock()
         for i in range(0,nUIDs):
             makeUUID()
-        print "We can make %i UUIDs in %f seconds" %(nUIDs, time.clock() - startTime)
+        print("We can make %i UUIDs in %f seconds" %(nUIDs, time.clock() - startTime))
 
 
 if __name__ == '__main__':

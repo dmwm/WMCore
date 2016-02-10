@@ -3,6 +3,7 @@
 """
 Component test TestComponent module and the harness
 """
+from __future__ import print_function
 
 
 

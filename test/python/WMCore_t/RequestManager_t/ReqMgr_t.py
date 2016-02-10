@@ -4,6 +4,7 @@ RequestManager unittest
 Tests the functions of the REST API
 
 """
+from __future__ import print_function
 
 
 import os
@@ -564,7 +565,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            print ex.result
+            print(ex.result)
             self.assertTrue("Error in Workload Validation: Argument BlockBlacklist type is incorrect in schema." in ex.result)
             pass
         self.assertTrue(raises)
@@ -687,7 +688,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         requestName = result[0]['RequestName']
 
         result = self.jsonSender.get('configIDs?prim=MinimumBias&proc=Run2010B-RelValRawSkim-v1&tier=RAW')[0]
-        print result
+        print(result)
         self.assertTrue(requestName in result.keys())
         self.assertTrue(configID in result[requestName][0])
         

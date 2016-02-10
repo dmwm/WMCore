@@ -5,6 +5,7 @@ Created on Aug 6, 2009
 
 @author: meloam
 '''
+from __future__ import print_function
 import unittest
 import WMCore.Services.Requests as Requests
 import os
@@ -34,7 +35,7 @@ def runboth(testcase):
         import cjson
         implementations.append('cjson')
     except:
-        print "No cjson module is found, only testing with json"
+        print("No cjson module is found, only testing with json")
 
     @wraps(testcase)
     def decorated_test(self):
@@ -140,17 +141,17 @@ class testRepeatCalls(RESTBaseUnitTest):
 
         for i in range(0, 5):
             time.sleep(i)
-            print 'test %s starting at %s' % (i, time.time())
+            print('test %s starting at %s' % (i, time.time()))
             try:
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'})
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
             except HTTPException as he:
-                print 'test %s raised a %s error' % (i, he.status)
+                print('test %s raised a %s error' % (i, he.status))
                 fail_count += 1
             except Exception as e:
-                print 'test %s raised an unexpected exception of type %s' % (i, type(e))
-                print e
+                print('test %s raised an unexpected exception of type %s' % (i, type(e)))
+                print(e)
                 fail_count += 1
         if fail_count > 0:
             raise Exception('Test did not pass!')
@@ -162,17 +163,17 @@ class testRepeatCalls(RESTBaseUnitTest):
 
         for i in range(0, 5):
             time.sleep(i)
-            print 'test %s starting at %s' % (i, time.time())
+            print('test %s starting at %s' % (i, time.time()))
             try:
                 result = req.get('/', incoming_headers={'Cache-Control':'no-cache'}, decode=False)
                 self.assertEqual(False, result[3])
                 self.assertEqual(200, result[1])
             except HTTPException as he:
-                print 'test %s raised a %s error' % (i, he.status)
+                print('test %s raised a %s error' % (i, he.status))
                 fail_count += 1
             except Exception as e:
-                print 'test %s raised an unexpected exception of type %s' % (i, type(e))
-                print e
+                print('test %s raised an unexpected exception of type %s' % (i, type(e)))
+                print(e)
                 fail_count += 1
         if fail_count > 0:
             raise Exception('Test did not pass!')

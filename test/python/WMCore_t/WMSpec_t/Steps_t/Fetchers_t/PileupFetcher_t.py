@@ -4,6 +4,7 @@ _PileupFetcher_t_
 The purpose of this test is to track what is happening in the PileupFetcher module.
 The test instantiates a MC worklow and calls the PileupFetcher on its generation task.
 """
+from __future__ import print_function
 
 import os
 import unittest
@@ -118,8 +119,8 @@ class PileupFetcherTest(unittest.TestCase):
                     self.assertEqual(set(blockDict[dbsFileBlockName]["StorageElementNames"]), storageElemNames, m)
                     m = ("FileList don't agree for pileup type '%s', dataset '%s' "
                          " in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    print fileList
-                    print blockDict[dbsFileBlockName]["FileList"]
+                    print(fileList)
+                    print(blockDict[dbsFileBlockName]["FileList"])
                     self.assertEqual(sorted(blockDict[dbsFileBlockName]["FileList"]), sorted(fileList))
 
     def _queryPileUpConfigFile(self, defaultArguments, task, taskPath):

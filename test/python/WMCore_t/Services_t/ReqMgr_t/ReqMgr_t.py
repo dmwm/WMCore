@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import unittest
 
@@ -104,7 +105,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         # get by status
         response = self.reqSvc.getRequestByStatus('new')
         self.assertEqual(len(response), 1)
-        print response
+        print(response)
         
 
         self.reqSvc.updateRequestStatus(requestName, 'assignment-approved')

@@ -7,6 +7,7 @@ A class that parses a workflow specification file
 stub classes.
 
 """
+from __future__ import print_function
 
 
 

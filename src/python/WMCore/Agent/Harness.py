@@ -19,6 +19,7 @@ including session objects and workflow entities.
 (6) Method to publish monitoring information
 
 """
+from __future__ import print_function
 
 
 

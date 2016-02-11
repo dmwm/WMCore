@@ -3,6 +3,7 @@ _CreateWMBS_
 
 Base class for creating the WMBS database.
 """
+from __future__ import print_function
 
 
 
@@ -80,5 +81,5 @@ class CreateAgentBase(DBCreator):
             DBCreator.execute(self, conn, transaction)
             return True
         except Exception as e:
-            print "ERROR: %s" % e
+            print("ERROR: %s" % e)
             return False

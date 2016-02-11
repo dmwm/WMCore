@@ -5,6 +5,7 @@ _DeleteFiles_
 Builder implementation for DeleteFiles
 
 """
+from __future__ import print_function
 from WMCore.WMSpec.Steps.Builder import Builder
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
@@ -30,4 +31,4 @@ class DeleteFiles(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print "Builders.DeleteFiles.build called on %s" % stepName
+        print("Builders.DeleteFiles.build called on %s" % stepName)

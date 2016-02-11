@@ -8,6 +8,7 @@ objects, with options to save in different formats
 Placeholder for ideas at present....
 
 """
+from __future__ import print_function
 
 
 
@@ -127,7 +128,7 @@ class PersistencyHelper:
         database = server.connectDatabase(couchDBName)
         # doesn't work
         if not database.documentExists(id):
-            print "Could not find document " + id
+            print("Could not find document " + id)
             return
         doc = database.delete_doc(id)
         return

@@ -3,6 +3,7 @@ Created on Jul 31, 2014
 
 @author: sryu
 '''
+from __future__ import print_function
 import cherrypy
 import traceback
 from WMCore.WMLogging import getTimeRotatingLogger
@@ -54,10 +55,10 @@ class PeriodicWorker(Thread):
         self.logger = logger
         try: 
             name = func.__class__.__name__
-            print name
+            print(name)
         except:
             name = func.__name__
-            print name
+            print(name)
         Thread.__init__(self, name=name)
         cherrypy.engine.subscribe('start', self.start, priority = 100)
         cherrypy.engine.subscribe('stop', self.stop, priority = 100)

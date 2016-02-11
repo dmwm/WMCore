@@ -5,6 +5,7 @@ _Step.Executor.AlcaHarvest_
 Implementation of an Executor for a AlcaHarvest step
 
 """
+from __future__ import print_function
 import os
 import sys
 import stat
@@ -38,7 +39,7 @@ class AlcaHarvest(Executor):
         if emulator != None:
             return emulator.emulatePre(self.step)
 
-        print "Steps.Executors.AlcaHarvest.pre called"
+        print("Steps.Executors.AlcaHarvest.pre called")
         return None
 
     def execute(self, emulator = None):
@@ -164,5 +165,5 @@ class AlcaHarvest(Executor):
         if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print "Steps.Executors.AlcaHarvest.post called"
+        print("Steps.Executors.AlcaHarvest.post called")
         return None

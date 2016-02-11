@@ -5,6 +5,7 @@ _AlcaHarvest_
 Builder implementation for AlcaHarvest
 
 """
+from __future__ import print_function
 from WMCore.WMSpec.Steps.Builder import Builder
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
@@ -27,4 +28,4 @@ class AlcaHarvest(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print "Builders.AlcaHarvest.build called on %s" % stepName
+        print("Builders.AlcaHarvest.build called on %s" % stepName)

@@ -3,6 +3,7 @@ Created on Jun 16, 2009
 
 @author: meloam
 '''
+from __future__ import print_function
 import os
 import sys
 from types import *
@@ -70,13 +71,13 @@ class ChildProcess(object):
                 if (self.ourStdout):
                     sys.stderr = self.ourStdout
                 exitCode = self.execute()
-                print "Falling through ChildProcess.forkAndExecute with code %s" %\
-                         exitCode
+                print("Falling through ChildProcess.forkAndExecute with code %s" %\
+                         exitCode)
                 sys.stdout.flush()
                 sys.stderr.flush()
                 os._exit( exitCode )
             except Exception as e:
-                print "Something bad happened in ChildProcess.forkAndExecute in the child: %s" % e
+                print("Something bad happened in ChildProcess.forkAndExecute in the child: %s" % e)
                 os._exit(99)
 
         else:

@@ -5,6 +5,7 @@ _Builder_
 Interface definition for Step Builder implementations
 
 """
+from __future__ import print_function
 
 import WMCore.WMSpec.Steps.BuildTools as BuildTools
 from WMCore.WMSpec.ConfigSectionTree import nodeName
@@ -59,7 +60,7 @@ class Builder:
         Build standard stuff that is common to all jobs
 
         """
-        print "%s.coreBuild invoked" % self.__class__.__name__
+        print("%s.coreBuild invoked" % self.__class__.__name__)
         dirs = BuildTools.makeDirectory(step)
         dirs.create(workingDirectory)
         self.stepDir = "%s/%s" % (workingDirectory, self.stepName)

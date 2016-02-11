@@ -5,6 +5,7 @@ _LogArchive_
 Basic Emulator for LogArchive Step
 
 """
+from __future__ import print_function
 
 import os
 import os.path
@@ -41,7 +42,7 @@ class LogArchive(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating LogArchive Step"
+        print("Emulating LogArchive Step")
 
         #Find all the reports produced in previous steps
         listOfReports = []

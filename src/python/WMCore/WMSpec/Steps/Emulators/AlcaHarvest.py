@@ -5,6 +5,7 @@ _AlcaHarvest_
 Basic Emulator for AlcaHarvest Step
 
 """
+from __future__ import print_function
 
 from WMCore.WMSpec.Steps.Emulator import Emulator
 
@@ -36,7 +37,7 @@ class AlcaHarvest(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating AlcaHarvest Step"
+        print("Emulating AlcaHarvest Step")
 
 
     def post(self):

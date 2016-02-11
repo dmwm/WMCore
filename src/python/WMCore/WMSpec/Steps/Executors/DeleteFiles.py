@@ -6,6 +6,7 @@ _Step.Executor.DeleteFiles_
 Implementation of an Executor for a Delete step
 
 """
+from __future__ import print_function
 
 
 
@@ -43,7 +44,7 @@ class DeleteFiles(Executor):
 
 
 
-        print "Steps.Executors.DeleteFiles.pre called"
+        print("Steps.Executors.DeleteFiles.pre called")
         return None
 
 
@@ -101,7 +102,7 @@ class DeleteFiles(Executor):
         else:
             # new style
             logging.critical("DeleteFiles IS USING NEW STAGEOUT CODE")
-            print "DeleteFiles IS USING NEW STAGEOUT CODE"
+            print("DeleteFiles IS USING NEW STAGEOUT CODE")
             manager = WMCore.Storage.FileManager.DeleteMgr(
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,
@@ -176,5 +177,5 @@ class DeleteFiles(Executor):
         if (emulator != None):
             return emulator.emulatePost( self.step )
 
-        print "Steps.Executors.DeleteFiles.post called"
+        print("Steps.Executors.DeleteFiles.post called")
         return None

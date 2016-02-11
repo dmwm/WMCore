@@ -13,6 +13,7 @@ the database), using DELETE HTTP verb, the document stays in the database
 too, however, only id, rev, and _deleted flag, everything else is wiped.
 
 """
+from __future__ import print_function
 
 couch_host = "https://cmsweb.cern.ch"
 couch_uri = "couchdb/reqmgr_workload_cache"
@@ -43,30 +44,30 @@ def main():
     # {"error":"conflict","reason":"Document update conflict."} (409 code)
     for request_name in f:
         request_name = request_name.strip()
-        print "Deleting request: '%s' ... " % request_name
+        print("Deleting request: '%s' ... " % request_name)
         uri="/%s/%s" % (couch_uri, request_name)
-        print "Getting document revision _rev ..."
+        print("Getting document revision _rev ...")
         # getting _rev
         conn.request("GET", uri, None)
         resp = conn.getresponse()
-        print "Response: %s" % resp.status
+        print("Response: %s" % resp.status)
         try:
             data = json.loads(resp.read())
         except Exception as ex:
-            print "Reason: %s, %s" % (resp.reason, ex)
+            print("Reason: %s, %s" % (resp.reason, ex))
             sys.exit(1)
         if resp.status != 200:
-            print data
-            print "Skipping ..."
+            print(data)
+            print("Skipping ...")
             continue
         rev = data["_rev"]
-        print "Delete request itself ..."
+        print("Delete request itself ...")
         uri += "?rev=%s" % rev
         conn.request("DELETE", uri, None)
         resp = conn.getresponse()
         # have to read the data, otherwise getting httplib.ResponseNotReady
         data = resp.read() 
-        print "Response: %s\n" % resp.status
+        print("Response: %s\n" % resp.status)
     f.close()
 
 

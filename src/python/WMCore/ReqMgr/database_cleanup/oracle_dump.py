@@ -7,6 +7,7 @@ Usage:
        oracle_dump_request_table.py
        
 """
+from __future__ import print_function
 
 
 import sys
@@ -16,7 +17,7 @@ from .oracle_tables import reqmgr_oracle_tables_defition
 
 def main():
     if len(sys.argv) < 2:
-        print "Missing the connect TNS argument."
+        print("Missing the connect TNS argument.")
         sys.exit(1)
     tns = sys.argv[1]
     # tables is dictionary:
@@ -30,7 +31,7 @@ def main():
     tables = {}
     if len(sys.argv) > 2:
         table_name = sys.argv[2]
-        print "# Dumping only '%s' ..." % table_name
+        print("# Dumping only '%s' ..." % table_name)
         tables[table_name] = reqmgr_oracle_tables_defition[table_name]
     else:
         tables = reqmgr_oracle_tables_defition
@@ -40,17 +41,17 @@ def main():
     
     for table in tables:
         cmd = "select %s from %s" % (", ".join(tables[table]), table)
-        print "# %s" % cmd
+        print("# %s" % cmd)
         cursor.prepare(cmd)
         cursor.execute(cmd)
-        print "%s = [" % table
+        print("%s = [" % table)
         for row in cursor.fetchall():
-            print "{"
+            print("{")
             for k, v in zip(tables[table], row):
-                print "\t'%s': '%s'," % (k, v)
-            print "},"
-        print "]"    
-        print "# rowcount: %s\n\n\n" % cursor.rowcount
+                print("\t'%s': '%s'," % (k, v))
+            print("},")
+        print("]")    
+        print("# rowcount: %s\n\n\n" % cursor.rowcount)
 
     cursor.close()
 

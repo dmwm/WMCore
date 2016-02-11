@@ -7,6 +7,7 @@ Util class to provide delete functionality as an interface object.
 Based on StageOutMgr class
 
 """
+from __future__ import print_function
 
 import os
 
@@ -109,7 +110,7 @@ class DeleteMgr:
             msg += str(ex)
             raise StageOutInitError( msg )
 
-        print msg
+        print(msg)
         self.seName = seName
         self.pnn = pnn
         return
@@ -150,7 +151,7 @@ class DeleteMgr:
         for key, val in overrideParams.items():
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
-        print msg
+        print(msg)
         self.fallbacks.append(overrideParams)
         self.seName = overrideParams['se-name']
         self.pnn = overrideParams['phedex-node']
@@ -164,7 +165,7 @@ class DeleteMgr:
         Use call to delete a file
 
         """
-        print "==>Working on file: %s" % fileToDelete['LFN']
+        print("==>Working on file: %s" % fileToDelete['LFN'])
 
         lfn = fileToDelete['LFN']
         fileToDelete['SEName'] = self.seName
@@ -176,7 +177,7 @@ class DeleteMgr:
         # // No override => use local-stage-out from site conf
         #//  invoke for all files and check failures/successes
         if not self.override:
-            print "===> Attempting To Delete."
+            print("===> Attempting To Delete.")
             try:
                 fileToDelete['PFN'] = self.deleteLFN(lfn)
                 deleteSuccess = True
@@ -184,13 +185,13 @@ class DeleteMgr:
                 msg = "===> Local Stage Out Failure for file:\n"
                 msg += "======>  %s\n" % fileToDelete['LFN']
                 msg += str(ex)
-                print msg
+                print(msg)
 
         if not deleteSuccess and len(self.fallbacks) > 0:
             #  //
             # // Still here => override start using the fallback stage outs
             #//  If override is set, then that will be the only fallback available
-            print "===> Attempting To Delete with Override."
+            print("===> Attempting To Delete with Override.")
             for fallback in self.fallbacks:
                 if not deleteSuccess:
                     try:
@@ -205,7 +206,7 @@ class DeleteMgr:
             msg += "====> PFN: %s\n" % fileToDelete['PFN']
             msg += "====> SE:  %s\n" % fileToDelete['SEName']
             msg += "====> PNN:  %s\n" % fileToDelete['PNN']
-            print msg
+            print(msg)
             return fileToDelete
         else:
             msg = "Unable to delete file:\n"
@@ -312,13 +313,13 @@ class DeleteMgr:
         if self.tfc == None:
             msg = "Trivial File Catalog not available to match LFN:\n"
             msg += lfn
-            print msg
+            print(msg)
             return None
         if self.tfc.preferredProtocol == None:
             msg = "Trivial File Catalog does not have a preferred protocol\n"
             msg += "which prevents local stage out for:\n"
             msg += lfn
-            print msg
+            print(msg)
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
@@ -329,7 +330,7 @@ class DeleteMgr:
 
         msg = "LFN to PFN match made:\n"
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print msg
+        print(msg)
         return pfn
 
 

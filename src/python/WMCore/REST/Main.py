@@ -6,6 +6,7 @@
 Manages a web server application. Loads configuration and all views, starting
 up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
+from __future__ import print_function
 
 import sys, os, errno, re, os.path, subprocess, socket, time
 import cherrypy, logging, thread, traceback
@@ -312,11 +313,11 @@ class RESTDaemon(RESTMain):
         running, pid = self.daemon_pid()
         if not running:
             if pid != None:
-                print "Removing stale pid file %s" % self.pidfile
+                print("Removing stale pid file %s" % self.pidfile)
                 os.remove(self.pidfile)
             else:
                 if not silent:
-                    print "%s not running, not killing" % self.appname
+                    print("%s not running, not killing" % self.appname)
         else:
             if not silent:
                 sys.stdout.write("Killing %s pgid %d " % (self.appname, pid))
@@ -474,17 +475,17 @@ def main():
     opts, args = opt.parse_args()
 
     if len(args) != 1:
-        print >> sys.stderr, "%s: exactly one configuration file required" % sys.argv[0]
+        print("%s: exactly one configuration file required" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
 
     if not os.path.isfile(args[0]) or not os.access(args[0], os.R_OK):
-        print >> sys.stderr, "%s: %s: invalid configuration file" % (sys.argv[0], args[0])
+        print("%s: %s: invalid configuration file" % (sys.argv[0], args[0]), file=sys.stderr)
         sys.exit(1)
 
     if not opts.statedir or \
        not os.path.isdir(opts.statedir) or \
        not os.access(opts.statedir, os.W_OK):
-        print >> sys.stderr, "%s: %s: invalid state directory" % (sys.argv[0], opts.statedir)
+        print("%s: %s: invalid state directory" % (sys.argv[0], opts.statedir), file=sys.stderr)
         sys.exit(1)
 
     # Create server object.
@@ -501,18 +502,18 @@ def main():
         running, pid = server.daemon_pid()
         if running:
             if not opts.quiet:
-                print "%s is %sRUNNING%s, PID %d" \
-                  % (app, COLOR_OK, COLOR_NORMAL, pid)
+                print("%s is %sRUNNING%s, PID %d" \
+                  % (app, COLOR_OK, COLOR_NORMAL, pid))
             sys.exit(0)
         elif pid != None:
             if not opts.quiet:
-                print "%s is %sNOT RUNNING%s, stale PID %d" \
-                  % (app, COLOR_WARN, COLOR_NORMAL, pid)
+                print("%s is %sNOT RUNNING%s, stale PID %d" \
+                  % (app, COLOR_WARN, COLOR_NORMAL, pid))
             sys.exit(2)
         else:
             if not opts.quiet:
-                print "%s is %sNOT RUNNING%s" \
-                  % (app, COLOR_WARN, COLOR_NORMAL)
+                print("%s is %sNOT RUNNING%s" \
+                  % (app, COLOR_WARN, COLOR_NORMAL))
             sys.exit(1)
 
     elif opts.kill:
@@ -540,8 +541,7 @@ def main():
         else:
             running, pid = server.daemon_pid()
             if running:
-                print >> sys.stderr, \
-                  "Refusing to start over an already running daemon, pid %d" % pid
+                print("Refusing to start over an already running daemon, pid %d" % pid, file=sys.stderr)
                 sys.exit(1)
 
         # If we are (re)starting and were given a log file option, convert

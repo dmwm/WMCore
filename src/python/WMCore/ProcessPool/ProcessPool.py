@@ -4,6 +4,7 @@
 _ProcessPool_
 
 """
+from __future__ import print_function
 
 import zmq
 import subprocess
@@ -132,7 +133,7 @@ class ProcessPool:
                 msg += str(ex)
                 logging.error(msg)
                 import traceback
-                print traceback.format_exc()
+                print(traceback.format_exc())
                 raise ProcessPoolException(msg)
 
         # Now actually create the slaves

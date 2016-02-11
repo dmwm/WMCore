@@ -5,6 +5,7 @@ _XRDCPImpl_
 Implementation of StageOutImpl interface for RFIO in Castor-2
 
 """
+from __future__ import print_function
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -39,7 +40,7 @@ class XRDCPImpl(StageOutImpl):
 
         """
         original_size = os.stat(sourcePFN)[6]
-        print "Local File Size is: %s" % original_size
+        print("Local File Size is: %s" % original_size)
         result = ". /afs/cern.ch/user/c/cmsprod/scratch1/releases/CMSSW_1_8_0_pre0/src/runtime.sh ; xrdcp -d 3"
         if options != None:
             result += " %s " % options

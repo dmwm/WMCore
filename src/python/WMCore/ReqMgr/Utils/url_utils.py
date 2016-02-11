@@ -6,6 +6,7 @@ File       : url_utils.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: 
 """
+from __future__ import print_function
 
 # system modules
 import os
@@ -106,7 +107,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
     if  not headers:
         headers = {}
     if  verbose:
-        print '+++ getdata, url=%s, headers=%s' % (url, headers)
+        print('+++ getdata, url=%s, headers=%s' % (url, headers))
     obj=sys.version_info
     if  obj[0] == 2 and obj[1] == 7 and obj[2] >= 9:
         # disable SSL verification, since it is default in python 2.7.9
@@ -124,7 +125,7 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
     ckey, cert = get_key_cert()
     handler = HTTPSClientAuthHandler(ckey, cert, verbose)
     if  verbose:
-        print "handler", handler, handler.__dict__
+        print("handler", handler, handler.__dict__)
     opener  = urllib2.build_opener(handler)
     urllib2.install_opener(opener)
     try:
@@ -135,8 +136,8 @@ def getdata(url, params, headers=None, post=None, verbose=False, jsondecoder=Tru
         info = data.info()
         code = data.getcode()
         if  verbose > 1:
-            print "+++ response code:", code
-            print "+++ response info\n", info
+            print("+++ response code:", code)
+            print("+++ response info\n", info)
         if  jsondecoder:
             data = json.load(data)
         else:

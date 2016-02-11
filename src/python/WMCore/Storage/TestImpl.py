@@ -5,6 +5,7 @@ _TestImpl_
 Test harness for invoking an Implementation plugin
 
 """
+from __future__ import print_function
 
 import sys
 import getopt
@@ -18,8 +19,8 @@ valid = ['input-pfn=', 'protocol=', "impl=", "target-pfn=", "cleanup"]
 try:
     opts, args = getopt.getopt(sys.argv[1:], "", valid)
 except getopt.GetoptError as ex:
-    print usage
-    print str(ex)
+    print(usage)
+    print(str(ex))
     sys.exit(1)
 
 inputPfn = None
@@ -43,28 +44,28 @@ for opt, arg in opts:
 
 if implName == None:
     msg = "Error: ImplName not provided, you need to provide the --impl option"
-    print msg
+    print(msg)
     sys.exit(1)
 
 if inputPfn == None:
     msg = "Error: Input PFN not provided: use the --input-pfn option"
-    print msg
+    print(msg)
     sys.exit(1)
 
 if targetPfn == None:
     msg = "Error: Target PFN not provided: use the --target-pfn option"
-    print msg
+    print(msg)
     sys.exit(1)
 
 try:
     implInstance = retrieveStageOutImpl(implName)
 except StageOutError as ex:
-    print "Error retrieving plugin from registry named: %s" % implName
-    print str(ex)
+    print("Error retrieving plugin from registry named: %s" % implName)
+    print(str(ex))
     sys.exit(1)
 
 
-print " Invoking StageOutImpl: %s" % implName
+print(" Invoking StageOutImpl: %s" % implName)
 implInstance(protocol, inputPfn, targetPfn)
 
 
@@ -72,5 +73,5 @@ if doCleanup:
     #  //
     # // Cleanup implies that we invoke the implementations
     #//  removeFile method on the target PFN after the transfer
-    print "Invoking %s.removeFile on %s" % (implName, targetPfn)
+    print("Invoking %s.removeFile on %s" % (implName, targetPfn))
     implInstance.removeFile(targetPfn)

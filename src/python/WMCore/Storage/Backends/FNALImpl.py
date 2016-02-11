@@ -5,6 +5,7 @@ _FNALImpl_
 Implementation of StageOutImpl interface for FNAL
 
 """
+from __future__ import print_function
 import os
 import commands
 import logging
@@ -47,7 +48,7 @@ class FNALImpl(StageOutImpl):
             method = 'xrdcp'
         if PFN.startswith("srm://"):
             method = 'srm'
-        print "Using method %s for PFN %s" % (method, PFN)
+        print("Using method %s for PFN %s" % (method, PFN))
         return method
 
 
@@ -104,9 +105,9 @@ class FNALImpl(StageOutImpl):
 
         if ((method == 'srm' and sourceMethod == 'xrdcp') or
             (method == 'xrdcp' and sourceMethod == 'srm')):
-            print "Incompatible methods for source and target"
-            print "\tSource: method %s for PFN %s" % (sourceMethod, sourcePFN)
-            print "\tTarget: method %s for PFN %s" % (method, targetPFN)
+            print("Incompatible methods for source and target")
+            print("\tSource: method %s for PFN %s" % (sourceMethod, sourcePFN))
+            print("\tTarget: method %s for PFN %s" % (method, targetPFN))
             return 1
 
         if method == 'srm' or sourceMethod == 'srm':
@@ -114,7 +115,7 @@ class FNALImpl(StageOutImpl):
 
         if method == 'xrdcp' or sourceMethod == 'xrdcp':
             original_size = os.stat(sourcePFN)[6]
-            print "Local File Size is: %s" % original_size
+            print("Local File Size is: %s" % original_size)
             pfnWithoutChecksum = stripPrefixTOUNIX(targetPFN)
             
             useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
@@ -125,7 +126,7 @@ class FNALImpl(StageOutImpl):
 
                 # therefor embed information into target URL
                 targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
-                print "Local File Checksum is: %s\"\n" % checksums['adler32']
+                print("Local File Checksum is: %s\"\n" % checksums['adler32'])
             
             # always overwrite the output
 

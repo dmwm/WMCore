@@ -8,6 +8,7 @@ Dumps entire database documents IDs when run without arguments.
 Dumps entire database, entire documents when run just with -f (full).
 
 """
+from __future__ import print_function
 
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couch_db_name = "reqmgr_workload_cache"
@@ -19,7 +20,7 @@ from WMCore.Database.CMSCouch import CouchServer, Database, Document
 
 
 def dump(full_dump=False, fields=None):
-    print "Querying fields: %s\n\n" % fields
+    print("Querying fields: %s\n\n" % fields)
     db = Database(couch_db_name, couch_url)
     couch_requests = db.allDocs()
     doc_counter = 0
@@ -33,15 +34,15 @@ def dump(full_dump=False, fields=None):
                     s += "%s:%s  " % (f, doc[f])
                 except KeyError:
                     s += "%s:n/a  " % f 
-            print "%s  %s\n" % (s, doc["RequestName"])
+            print("%s  %s\n" % (s, doc["RequestName"]))
         elif full_dump:
-            print "%s\n%s\n%s\n" % (row["id"], doc, 70*'-')
+            print("%s\n%s\n%s\n" % (row["id"], doc, 70*'-'))
         else:
-            print row["id"]
+            print(row["id"])
         doc_counter += 1
         #if doc_counter > 100:
         #    break
-    print "Total documents: %s" % doc_counter 
+    print("Total documents: %s" % doc_counter) 
         
 
 def main():

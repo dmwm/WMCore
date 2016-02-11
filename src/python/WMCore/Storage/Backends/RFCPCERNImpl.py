@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for RFIO in Castor2
 with specific code to set the RAW tape families for CERN
 
 """
+from __future__ import print_function
 import os
 import re
 
@@ -227,7 +228,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         """
         command = "rfstat %s 2> /dev/null | grep Protection" % directory
-        print "Check dir existence : %s" % command
+        print("Check dir existence : %s" % command)
         try:
             exitCode, output = runCommandWithOutput(command)
         except Exception as ex:

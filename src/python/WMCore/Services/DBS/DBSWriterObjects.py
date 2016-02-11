@@ -6,6 +6,7 @@ Functions to instantiate and return DBS Objects and insert them
 into DBS if required
 
 """
+from __future__ import print_function
 
 import logging
 
@@ -102,7 +103,7 @@ def createAlgorithm(datasetInfo, configMetadata = None, apiRef = None):
             msg += "TEST HACK USED FOR Config File Name"
             msg += ">>>>>>>>>>>>>>>>>>>>>>>>>>>>"
             logging.warning(msg)
-            print msg
+            print(msg)
             configMetadata['name'] = cfgName[-99]
 
         psetInstance = DbsQueryableParameterSet(

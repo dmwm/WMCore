@@ -5,6 +5,7 @@ _RFCPImpl_
 Implementation of StageOutImpl interface for RFIO
 
 """
+from __future__ import print_function
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -41,7 +42,7 @@ class RFCPImpl(StageOutImpl):
         targetdir= self.getDirname(targetPFN)
 
         checkdircmd="rfstat \"%s\" > /dev/null " % targetdir
-        print "Check dir existence : %s" %checkdircmd
+        print("Check dir existence : %s" %checkdircmd)
         try:
             checkdirexitCode = self.run(checkdircmd)
         except Exception as ex:
@@ -49,12 +50,12 @@ class RFCPImpl(StageOutImpl):
             msg += "%s\n" % checkdircmd
             msg += "Exception: %s\n" % str(ex)
             msg += "Go on anyway..."
-            print msg
+            print(msg)
             pass
 
         if checkdirexitCode:
             mkdircmd = "rfmkdir -m 775 -p %s" % targetdir
-            print "=> creating the dir : %s" %mkdircmd
+            print("=> creating the dir : %s" %mkdircmd)
             try:
                 self.run(mkdircmd)
             except Exception as ex:
@@ -62,10 +63,10 @@ class RFCPImpl(StageOutImpl):
                 msg += "%s\n" % mkdircmd
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
-                print msg
+                print(msg)
                 pass
         else:
-            print "=> dir already exists... do nothing."
+            print("=> dir already exists... do nothing.")
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):

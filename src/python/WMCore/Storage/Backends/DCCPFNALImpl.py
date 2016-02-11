@@ -4,6 +4,7 @@ _DCCPFNALImpl_
 
 Implementation of StageOutImpl interface for DCCPFNAL
 """
+from __future__ import print_function
 
 import os
 import commands
@@ -62,7 +63,7 @@ class DCCPFNALImpl(StageOutImpl):
         will be seen from the worker node
 
         """
-        print "createOutputDirectory(): %s" % targetPFN
+        print("createOutputDirectory(): %s" % targetPFN)
 
         # only create dir on remote storage
         if targetPFN.find('/pnfs/') == -1 and targetPFN.find('/lustre/unmerged/') == -1:
@@ -82,7 +83,7 @@ class DCCPFNALImpl(StageOutImpl):
         else:
             targetdir= os.path.dirname(targetPFN)
             checkdircmd="/bin/ls %s > /dev/null " % targetdir
-            print "Check dir existence : %s" %checkdircmd
+            print("Check dir existence : %s" %checkdircmd)
             try:
                 (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
             except Exception as ex:
@@ -90,11 +91,11 @@ class DCCPFNALImpl(StageOutImpl):
                 msg += "%s\n" % checkdircmd
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
-                print msg
+                print(msg)
                 pass
             if checkdirexitCode:
                 mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-                print "=> creating the dir : %s" %mkdircmd
+                print("=> creating the dir : %s" %mkdircmd)
                 try:
                     self.executeCommand(mkdircmd)
                 except Exception as ex:
@@ -102,10 +103,10 @@ class DCCPFNALImpl(StageOutImpl):
                     msg += "%s\n" % mkdircmd
                     msg += "Exception: %s\n" % str(ex)
                     msg += "Go on anyway..."
-                    print msg
+                    print(msg)
                     pass
             else:
-                print "=> dir already exists... do nothing."
+                print("=> dir already exists... do nothing.")
 
 
     def createSourceName(self, protocol, pfn):
@@ -119,12 +120,12 @@ class DCCPFNALImpl(StageOutImpl):
             return pfn
 
         if pfn.find('/store/unmerged/') == -1:
-            print "Translating PFN: %s\n To use dcache door" % pfn
+            print("Translating PFN: %s\n To use dcache door" % pfn)
             dcacheDoor = commands.getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
-            print "Created Target PFN with dCache Door: ", pfn
+            print("Created Target PFN with dCache Door: ", pfn)
         else:
             pfnSplit = pfn.split("/store/unmerged/", 1)[1]
             pfn = "/lustre/unmerged/%s" % pfnSplit
@@ -183,12 +184,12 @@ fi
 
 """ % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
 
-            print "Executing:\n", result
+            print("Executing:\n", result)
             return result
 
         else:
             original_size = os.stat(sourcePFN)[6]
-            print "Local File Size is: %s" % original_size
+            print("Local File Size is: %s" % original_size)
             result = "/bin/cp "
             if options != None:
                 result += " %s " % options
@@ -256,12 +257,12 @@ fi
        pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
        pnfsPfn(targetPFN))
 
-            print "Executing:\n", result
+            print("Executing:\n", result)
             return result
 
         else:
             original_size = os.stat(sourcePFN)[6]
-            print "Local File Size is: %s" % original_size
+            print("Local File Size is: %s" % original_size)
             result = "/bin/cp "
             if options != None:
                 result += " %s " % options

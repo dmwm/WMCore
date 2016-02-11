@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import cherrypy
 import cherrypy.process.wspbus as cherrybus
@@ -43,10 +44,10 @@ class RESTBaseUnitTest(unittest.TestCase):
             except RuntimeError as e:
                 # there appears to be worker threads from a previous test
                 # hanging out. Try to slay them so that we can keep going
-                print "Failed to load cherrypy with exception: %s\n" % e
-                print "The threads are: \n%s\n" % threading.enumerate()
-                print "The previous test was %s\n" % self.rt.getLastTest()
-                print traceback.format_exc()
+                print("Failed to load cherrypy with exception: %s\n" % e)
+                print("The threads are: \n%s\n" % threading.enumerate())
+                print("The previous test was %s\n" % self.rt.getLastTest())
+                print(traceback.format_exc())
                 self.rt.stop()
                 raise e
 

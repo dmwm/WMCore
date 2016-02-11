@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 import cherrypy
 import cherrypy.process.wspbus as cherrybus
@@ -64,7 +65,7 @@ class RESTBaseUnitTestWithDBBackend(unittest.TestCase):
             self.jsonSender = self.server.jsonSender
             # find the way to check the api with the permission
             self.test_authz_key = self.server.test_authz_key
-            print "init root"
+            print("init root")
 
     def tearDown(self):
         if self.initRoot:

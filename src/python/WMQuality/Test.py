@@ -7,6 +7,7 @@ Component that can parse a cvs log
 and generate a file for generating test that map
 to developers responsible for the test.
 """
+from __future__ import print_function
 
 
 

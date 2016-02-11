@@ -11,6 +11,7 @@ This class is not a test but an auxilary class and
 is based on the WMCore.WMInit class.
 
 """
+from __future__ import print_function
 
 import logging
 import os
@@ -29,8 +30,8 @@ hasDatabase = True
 try:
     from WMCore.WMInit import WMInit
 except ImportError as ex:
-    print str(ex)
-    print "NOTE: TestInit is being loaded without database support"
+    print(str(ex))
+    print("NOTE: TestInit is being loaded without database support")
     hasDatabase = False
 
 # Sorry for the global, but I think this should go here
@@ -51,11 +52,11 @@ def deleteDatabaseAfterEveryTest(areYouSerious):
     # python is idiotic for its scoping system
     global trashDatabases
     if areYouSerious == "I'm Serious":
-        print "We are going to trash databases after every test"
+        print("We are going to trash databases after every test")
         trashDatabases = True
     else:
         #"I'm glad you weren't serious"
-        print "We are not going to trash databases after every test"
+        print("We are not going to trash databases after every test")
         trashDatabases = False
 
 def requiresPython26(testMethod, *args, **kwargs):
@@ -66,7 +67,7 @@ def requiresPython26(testMethod, *args, **kwargs):
     than 2.6 is being used.
     """
     def skipTest(*args, **kwargs):
-        print "SKIPPING"
+        print("SKIPPING")
         raise nose.SkipTest
 
     import sys
@@ -210,7 +211,7 @@ class TestInit:
         try:
             self.init.setSchema(modules.keys(), params = params)
         except Exception as ex:
-            print traceback.format_exc()
+            print(traceback.format_exc())
             raise ex
 
         # store the list of modules we've added to the DB
@@ -263,8 +264,8 @@ class TestInit:
             config.CoreDatabase.dialect = self.getBackendFromDbURL(os.getenv("DATABASE"))
             config.CoreDatabase.socket = os.getenv("DBSOCK")
             if os.getenv("DBHOST"):
-                print "****WARNING: the DBHOST environment variable will be deprecated soon***"
-                print "****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****"
+                print("****WARNING: the DBHOST environment variable will be deprecated soon***")
+                print("****WARNING: UPDATE YOUR ENVIRONMENT OR TESTS WILL FAIL****")
             # after this you can augment it with whatever you need.
 
         couchurl = os.getenv("COUCHURL")
@@ -303,7 +304,7 @@ class TestInit:
     def attemptToCloseDBConnections(self):
         return
         myThread = threading.currentThread()
-        print "Closing DB"
+        print("Closing DB")
 
         try:
             if not myThread.transaction \
@@ -312,13 +313,13 @@ class TestInit:
 
                 myThread.transaction.conn.close()
                 myThread.transaction.conn = None
-                print "Connection Closed"
+                print("Connection Closed")
         except Exception as e:
-            print "tried to close DBI but failed: %s" % e
+            print("tried to close DBI but failed: %s" % e)
 
         try:
             if hasattr(myThread, "dbFactory"):
                 del myThread.dbFactory
-                print "dbFactory removed"
+                print("dbFactory removed")
         except Exception as e:
-            print "tried to delete factory but failed %s" % e
+            print("tried to delete factory but failed %s" % e)

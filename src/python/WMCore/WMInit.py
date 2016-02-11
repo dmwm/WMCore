@@ -5,6 +5,7 @@ _WMInit
 Init class that can be used by external projects
 that only use part of the libraries
 """
+from __future__ import print_function
 
 
 
@@ -41,17 +42,17 @@ def connectToDB():
     Connect to the database specified in the WMAgent config.
     """
     if "WMAGENT_CONFIG" not in os.environ:
-        print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
+        print("Please set WMAGENT_CONFIG to point at your WMAgent configuration.")
         sys.exit(1)
 
     if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
-        print "Can't find config: %s" % os.environ["WMAGENT_CONFIG"]
+        print("Can't find config: %s" % os.environ["WMAGENT_CONFIG"])
         sys.exit(1)
 
     wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
 
     if not hasattr(wmAgentConfig, "CoreDatabase"):
-        print "Your config is missing the CoreDatabase section."
+        print("Your config is missing the CoreDatabase section.")
         sys.exit(1)
 
     socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)

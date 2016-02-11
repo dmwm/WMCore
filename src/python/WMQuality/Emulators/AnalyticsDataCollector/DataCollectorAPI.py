@@ -1,17 +1,17 @@
 """
 Provide functions to collect data and upload data
 """
+from __future__ import print_function
+
+import logging
+
+from WMCore.Lexicon import splitCouchServiceURL
 
 """
 JobInfoByID
 
 Retrieve information about a job from couch and format it nicely.
 """
-from __future__ import print_function
-
-
-import logging
-from WMCore.Lexicon import splitCouchServiceURL
 
 REQUEST_NAME_PREFIX = "test-request-"
 SITE_NAME_PREFIX = "T1_test-site-"

@@ -445,7 +445,6 @@ class Assign(WebAPI):
                                        "SiteWhitelist": whiteList,
                                        "SiteBlacklist": blackList,
                                        "Dashboard": kwargs.get("Dashboard", ""),
-                                       "UseSiteListAsLocation": kwargs.get("useSiteListAsLocation", False),
-                                       "TrustSitelists": kwargs.get("trustSitelists", False),
-                                       "AllowOpportunistic": kwargs.get("allowOpportunistic", False)},
+                                       "TrustSitelists": kwargs.get("TrustSitelists", False),
+                                       "AllowOpportunistic": kwargs.get("AllowOpportunistic", False)},
                                useBody=True)

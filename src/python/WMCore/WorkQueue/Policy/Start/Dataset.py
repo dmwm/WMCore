@@ -5,16 +5,17 @@ WorkQueue splitting by dataset
 """
 __all__ = []
 
-
+from math import ceil
+from WMCore import Lexicon
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
-from math import ceil
-from WMCore import Lexicon
+
 
 class Dataset(StartPolicyInterface):
     """Split elements into datasets"""
+
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
@@ -35,23 +36,20 @@ class Dataset(StartPolicyInterface):
                                      inputDataset.processed,
                                      inputDataset.tier)
         # dataset splitting can't have its data selection overridden
-        if (self.data and self.data.keys() != [datasetPath]):
+        if self.data and self.data.keys() != [datasetPath]:
             raise RuntimeError("Can't provide different data to split with")
 
         blocks = self.validBlocks(self.initialTask, self.dbs())
         if not blocks:
             return
 
-        blocksOpenned = False
         for block in blocks:
             work += float(block[self.args['SliceType']])
-            numLumis +=  int(block[self.lumiType])
+            numLumis += int(block[self.lumiType])
             numFiles += int(block['NumberOfFiles'])
             numEvents += int(block['NumberOfEvents'])
-            if str(block['OpenForWriting']) == '1':
-                blocksOpenned = True
 
-        dataset = dbs.getDBSSummaryInfo(dataset = datasetPath)
+        dataset = dbs.getDBSSummaryInfo(dataset=datasetPath)
 
         # If the dataset which is not in dbs is passed, just return.
         # The exception will be created in upper level
@@ -60,24 +58,19 @@ class Dataset(StartPolicyInterface):
             return
 
         # parentage
-        if self.initialTask.parentProcessingFlag():
-            parentFlag = True
-        else:
-            parentFlag = False
+        parentFlag = True if self.initialTask.parentProcessingFlag() else False
 
         if not work:
             work = dataset[self.args['SliceType']]
 
-        self.newQueueElement(Inputs = {dataset['path'] : self.data.get(dataset['path'], [])},
-                             ParentFlag = parentFlag,
-                             NumberOfLumis = numLumis,
-                             NumberOfFiles = numFiles,
-                             NumberOfEvents = numEvents,
-                             Jobs = ceil(float(work) / float(self.args['SliceSize'])),
-                             OpenForNewData = blocksOpenned,
-                             NoLocationUpdate = self.initialTask.getTrustSitelists()
-                             )
-
+        self.newQueueElement(Inputs={dataset['path']: self.data.get(dataset['path'], [])},
+                             ParentFlag=parentFlag,
+                             NumberOfLumis=numLumis,
+                             NumberOfFiles=numFiles,
+                             NumberOfEvents=numEvents,
+                             Jobs=ceil(float(work) / float(self.args['SliceSize'])),
+                             NoLocationUpdate=self.initialTask.getTrustSitelists()
+                            )
 
     def validate(self):
         """Check args and spec work with block splitting"""
@@ -88,7 +81,7 @@ class Dataset(StartPolicyInterface):
     def validBlocks(self, task, dbs):
         """Return blocks that pass the input data restriction"""
         datasetPath = task.getInputDatasetPath()
-        Lexicon.dataset(datasetPath) # check dataset name
+        Lexicon.dataset(datasetPath)  # check dataset name
         validBlocks = []
         locations = None
 
@@ -103,7 +96,7 @@ class Dataset(StartPolicyInterface):
             self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
 
         for blockName in dbs.listFileBlocks(datasetPath):
-            block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
+            block = dbs.getDBSSummaryInfo(datasetPath, block=blockName)
 
             # check block restrictions
             if blockWhiteList and block['block'] not in blockWhiteList:
@@ -114,7 +107,7 @@ class Dataset(StartPolicyInterface):
             # check run restrictions
             if runWhiteList or runBlackList:
                 # listRunLumis returns a dictionary with the lumi sections per run
-                runLumis = dbs.listRunLumis(block = block['block'])
+                runLumis = dbs.listRunLumis(block=block['block'])
                 runs = set(runLumis.keys())
                 recalculateLumiCounts = False
                 if len(runs) > 1:
@@ -131,7 +124,7 @@ class Dataset(StartPolicyInterface):
                 # any runs left are ones we will run on, if none ignore block
                 if not runs:
                     continue
-                
+
                 if recalculateLumiCounts:
                     # get correct lumi count
                     # Recalculate effective size of block
@@ -139,7 +132,7 @@ class Dataset(StartPolicyInterface):
                     acceptedLumiCount = 0
                     acceptedEventCount = 0
                     acceptedFileCount = 0
-                    fileInfo = dbs.listFilesInBlock(fileBlockName = block['block'])
+                    fileInfo = dbs.listFilesInBlock(fileBlockName=block['block'])
                     for fileEntry in fileInfo:
                         acceptedFile = False
                         acceptedFileLumiCount = 0
@@ -152,19 +145,19 @@ class Dataset(StartPolicyInterface):
                             acceptedFileCount += 1
                             acceptedLumiCount += acceptedFileLumiCount
                             if len(fileEntry['LumiList']) != acceptedFileLumiCount:
-                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents']/len(fileEntry['LumiList'])
+                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents'] / len(
+                                    fileEntry['LumiList'])
                             else:
                                 acceptedEventCount += fileEntry['NumberOfEvents']
                 else:
                     acceptedLumiCount = block["NumberOfLumis"]
                     acceptedFileCount = block['NumberOfFiles']
                     acceptedEventCount = block['NumberOfEvents']
-                    
+
                 # recalculate effective size of block
                 # make a guess for new event/file numbers from ratio
                 # of accepted lumi sections (otherwise have to pull file info)
-                
-                fullLumiCount = block["NumberOfLumis"]
+
                 block[self.lumiType] = acceptedLumiCount
                 block['NumberOfFiles'] = acceptedFileCount
                 block['NumberOfEvents'] = acceptedEventCount

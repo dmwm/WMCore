@@ -159,6 +159,8 @@ class Proxy(Credential):
         if self.uisource is not None and len(self.uisource) > 0:
             ret = 'source ' + self.uisource + ' && ' + ret
         if self.cleanEnvironment:
+            # Need to escape ' in cmd
+            ret = ret.replace("'", r"'\''")
             ret = "env -i sh -c '%s'" % ret
 
         return ret

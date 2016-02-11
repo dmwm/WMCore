@@ -7,6 +7,7 @@ Note: This can be used within the CMSSW environment to act on a
 process/config but does not depend on any CMSSW libraries. It needs to stay like this.
 
 """
+from __future__ import print_function
 import logging
 import pickle
 
@@ -186,7 +187,7 @@ def setParameter(process, param, value):
         if lastPSet == None:
             msg = "Cannot find attribute named: %s\n" % pset
             msg += "Cannot set value: %s" % param
-            print msg
+            print(msg)
             return
 
     lastPSet.setValue(value)

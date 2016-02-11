@@ -6,6 +6,7 @@ CouchObject.py
 Created by Dave Evans on 2010-07-14.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from __future__ import print_function
 
 import sys
 import os
@@ -83,7 +84,7 @@ class CouchObject(dict):
             msg = "Exception instantiating couch services for :\n"
             msg += " url = %s\n database = %s\n" % (self.cdb_url, self.cdb_database)
             msg += " Exception: %s" % str(ex)
-            print msg
+            print(msg)
             raise CouchConnectionError(msg)
 
     @Decorators.requireConnection

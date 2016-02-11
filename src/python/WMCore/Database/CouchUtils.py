@@ -6,6 +6,7 @@ CouchUtils.py
 Created by Dave Evans on 2010-03-11.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from __future__ import print_function
 
 import sys
 import os
@@ -37,7 +38,7 @@ def initialiseCouch(objectRef):
         msg = "Exception instantiating couch services for :\n"
         msg += " url = %s\n database = %s\n" % (objectRef.url, objectRef.database)
         msg += " Exception: %s" % str(e)
-        print msg
+        print(msg)
         raise CouchConnectionError(msg)
 
 def connectToCouch(funcRef):

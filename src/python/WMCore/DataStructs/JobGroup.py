@@ -29,6 +29,7 @@ complete).
 
 WMAgent deals with groups and calls group.status periodically
 """
+from __future__ import print_function
 
 
 
@@ -111,7 +112,7 @@ class JobGroup(WMObject):
 
             return jobIDs
         else:
-            print "Unknown type: %s" % type
+            print("Unknown type: %s" % type)
 
         return
 

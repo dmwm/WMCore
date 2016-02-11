@@ -6,6 +6,7 @@ Interface.py
 Created by Dave Evans on 2010-07-21.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from __future__ import print_function
 
 
 
@@ -29,7 +30,7 @@ class Interface:
             msg = "Exception instantiating couch services for :\n"
             msg += " url = %s\n database = %s\n" % (self.cdb_url, self.cdb_database)
             msg += " Exception: %s" % str(ex)
-            print msg
+            print(msg)
             raise CouchConnectionError(msg)
 
 

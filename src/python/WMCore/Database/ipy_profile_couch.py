@@ -4,6 +4,7 @@
 """
 Couch DB command line admin tool
 """
+from __future__ import print_function
 
 
 
@@ -35,15 +36,15 @@ class PrintManager:
 
     def print_red(self, msg):
         """print message using red color"""
-        print self.msg_red(msg)
+        print(self.msg_red(msg))
 
     def print_green(self, msg):
         """print message using blue color"""
-        print self.msg_green(msg)
+        print(self.msg_green(msg))
 
     def print_blue(self, msg):
         """print message using blue color"""
-        print self.msg_blue(msg)
+        print(self.msg_blue(msg))
 
     def msg_red(self, msg):
         """yield message using red color"""
@@ -107,7 +108,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     if  type(params) is not str:
         params = urllib.urlencode(params, doseq=True)
     if  debug:
-        print "input parameters", params
+        print("input parameters", params)
     headers = {"Content-type": "application/x-www-form-urlencoded",
                "Accept": "text/plain"}
     if  host.find('https://') != -1:
@@ -123,7 +124,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     response = conn.getresponse()
 
     if  response.reason != "OK":
-        print response.status, response.reason, response.read()
+        print(response.status, response.reason, response.read())
         res = None
     else:
         res = response.read()
@@ -148,10 +149,10 @@ def print_data(data, lookup="value"):
                         maxl = len(key)
             for key, val in values.items():
                 padding = " "*(maxl-len(key))
-                print "%s%s: %s" % (padding, PM.msg_blue(key), val)
-            print
+                print("%s%s: %s" % (padding, PM.msg_blue(key), val))
+            print()
         else:
-            print values
+            print(values)
 
 def set_prompt(in1):
     """Define shell prompt"""
@@ -174,7 +175,7 @@ def couch_help(self, arg):
     msg += "List of pre-defined variables to control your interactions "
     msg += "with CouchDB:\n"
     msg += pmgr.msg_green("    URI, DB, DESIGN, DEBUG\n")
-    print msg
+    print(msg)
 
 ### MAGIC COMMANDS ###
 def db_info():
@@ -201,17 +202,17 @@ def couch_views():
     results    = {}
     for item in designdocs['rows']:
         doc   = item['key']
-        print PM.msg_blue("design: ") + doc
+        print(PM.msg_blue("design: ") + doc)
         path  = '/%s/%s' % (DB, doc)
         res   = httplib_request(host, path, {}, 'GET', DEBUG)
         rdict = json.loads(res)
         for view_name, view_dict in rdict['views'].items():
-            print PM.msg_blue("view name: ") + view_name
-            print PM.msg_blue("map:")
-            print PM.msg_green(view_dict['map'])
+            print(PM.msg_blue("view name: ") + view_name)
+            print(PM.msg_blue("map:"))
+            print(PM.msg_green(view_dict['map']))
             if  'reduce' in view_dict:
-                print PM.msg_blue("reduce:")
-                print PM.msg_green(view_dict['reduce'])
+                print(PM.msg_blue("reduce:"))
+                print(PM.msg_green(view_dict['reduce']))
 
 def create_view(view_dict):
     """
@@ -358,7 +359,7 @@ def load_module(arg):
         msg  = "Loaded %s module. " % arg
         msg += "Use " + PM.msg_blue("%s_help" %arg) + \
                     " for concrete module help if it's implemented"
-        print msg
+        print(msg)
     except:
         traceback.print_exc()
         pass

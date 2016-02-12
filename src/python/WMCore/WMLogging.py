@@ -41,6 +41,7 @@ def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
     formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(module)s:%(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
     return logger
 

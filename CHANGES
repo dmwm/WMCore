@@ -1,3 +1,32 @@
+1.0.13 to 1.0.14.pre1:
+  - Merge pull request #6569 from amaltaro/trustSite-patch3
+  - Pylint fixes
+  - Merge UseSiteListAsLocation features into TrustSitelists
+  - Merge pull request #6578 from ericvaandering/print_in_quality
+  - Merge pull request #6576 from ericvaandering/print_in_pset
+  - Merge pull request #6570 from juztas/proxyEscape
+  - Move imports further up in file
+  - Escape single quote if execute in clean env
+  - Merge pull request #6538 from hufnagel/phedexinjector-refactor
+  - Merge pull request #6440 from ticoann/add_wmarchive
+  - Update print statements from WMQuality/ directory
+  - Update print statements from PSetTweaks/ directory
+  - skeleton stuff for WMArchive (Do not merge!)
+  - refactor phedexinjector, fixes #6451
+  - Merge pull request #6559 from ticoann/workqueue_resource_monitor
+  - add unittest
+  - add methods to support get the higher priority jobs than given workflow
+  - Merge pull request #6555 from ericvaandering/fix_dataset_t
+  - Merge pull request #6557 from amaltaro/phedexGroup-fix
+  - Pylint fixes
+  - Update PhEDEx groups during assignment
+  - Make it actually use the emulator
+  - New data to pass Dataset_t with emulated data
+  - Merge pull request #6552 from ericvaandering/cleanup_datasetT
+  - PEP-8 cleanup from Eric
+  - Few fixes in order to keep pylint silent
+  - Adding mock version of DBS and Using mock for  WMCore_t/WorkQueue_t/Policy_t/Start_t/Dataset_t.py unit-tests
+
 1.0.12 to 1.0.13:
   - 1.0.13.pre8
   - Merge pull request #6550 from amaltaro/refix-listFileArray

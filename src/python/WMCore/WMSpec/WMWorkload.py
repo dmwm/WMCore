@@ -1629,28 +1629,28 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-    def setLocationDataSourceFlag(self, flag=False):
+    def setTrustLocationFlag(self, flag=False):
         """
-        _setLocationDataSourceFlag_
+        _setTrustLocationFlag_
 
         Set the flag in the top level tasks
         indicating that site lists should be
         used as location data
         """
         for task in self.getTopLevelTask():
-            task.setInputLocationFlag(flag)
+            task.setTrustSitelists(flag)
         return
 
-    def locationDataSourceFlag(self):
+    def getTrustLocationFlag(self):
         """
-        _locationDataSourceFlag_
+        _getTrustLocationFlag_
 
         Get the flag in the top level tasks
         that indicates whether the site lists
         should be trusted as the location for data
         """
         for task in self.getTopLevelTask():
-            return task.inputLocationFlag()
+            return task.getTrustSitelists()
         return False
 
     def validateArgumentForAssignment(self, schema):
@@ -1664,7 +1664,7 @@ class WMWorkloadHelper(PersistencyHelper):
         check whether list of keys exist in the kwargs
         if no keys exist return False
         if all keys exist return True
-        if partial keys exsit raise Exception
+        if partial keys exist raise Exception
         """
         if isinstance(keys, basestring):
             keys = [keys]
@@ -1686,7 +1686,7 @@ class WMWorkloadHelper(PersistencyHelper):
         args are validated before update.
         assignment is common for all different types spec.
         """
-        siteParams = ["SiteWhitelist", "SiteBlacklist"]
+        siteParams = ["SiteWhitelist", "SiteBlacklist", "TrustSitelists"]
         lfnParams = ["MergedLFNBase", "UnmergedLFNBase"]
         mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
         performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
@@ -1714,6 +1714,8 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setSiteWildcardsLists(siteWhitelist=kwargs["SiteWhitelist"],
                                        siteBlacklist=kwargs["SiteBlacklist"],
                                        wildcardDict=wildcardSites)
+            self.setTrustLocationFlag(flag=strToBool(kwargs["TrustSitelists"]))
+
         # FIXME not validated
         if self._checkKeys(kwargs, lfnParams):
             self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
@@ -1740,10 +1742,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                             int(kwargs["GracePeriod"]))
 
         # Check whether we should check location for the data
-        if self._checkKeys(kwargs, "useSiteListAsLocation"):
-            self.setLocationDataSourceFlag(flag=strToBool(kwargs["useSiteListAsLocation"]))
-        if self._checkKeys(kwargs, "allowOpportunistic"):
-            self.setAllowOpportunistic(allowOpport=strToBool(kwargs["allowOpportunistic"]))
+        if self._checkKeys(kwargs, "AllowOpportunistic"):
+            self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
 
         # Set phedex subscription information
         if self._checkKeys(kwargs, phedexParams):
@@ -1765,8 +1765,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                        kwargs["BlockCloseMaxEvents"],
                                        kwargs["BlockCloseMaxSize"])
 
-        if self._checkKeys(kwargs, "DashboardActivity"):
-            self.setDashboardActivity(kwargs["DashboardActivity"])
+        if self._checkKeys(kwargs, "Dashboard"):
+            self.setDashboardActivity(kwargs["Dashboard"])
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

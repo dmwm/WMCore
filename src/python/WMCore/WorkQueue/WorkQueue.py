@@ -55,8 +55,8 @@ def globalQueue(logger=None, dbi=None, **kwargs):
                 'SplittingMapping': {'DatasetBlock':
                                          {'name': 'Dataset',
                                           'args': {}}
-                                    },
-               }
+                                     },
+                }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 
@@ -153,23 +153,23 @@ class WorkQueue(WorkQueueBase):
         self.params['SplittingMapping'].setdefault('DatasetBlock',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('MonteCarlo',
                                                    {'name': 'MonteCarlo',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('Dataset',
                                                    {'name': 'Dataset',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('Block',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                  )
+                                                   )
         self.params['SplittingMapping'].setdefault('ResubmitBlock',
                                                    {'name': 'ResubmitBlock',
                                                     'args': {}}
-                                                  )
+                                                   )
 
         self.params.setdefault('EndPolicySettings', {})
 
@@ -202,9 +202,12 @@ class WorkQueue(WorkQueueBase):
                                                               sitedb=self.SiteDB,
                                                               locationFrom=self.params['TrackLocationOrSubscription'],
                                                               incompleteBlocks=self.params['ReleaseIncompleteBlocks'],
-                                                              requireBlocksSubscribed=not self.params['ReleaseIncompleteBlocks'],
-                                                              fullRefreshInterval=self.params['FullLocationRefreshInterval'],
-                                                              updateIntervalCoarseness=self.params['LocationRefreshInterval'])
+                                                              requireBlocksSubscribed=not self.params[
+                                                                  'ReleaseIncompleteBlocks'],
+                                                              fullRefreshInterval=self.params[
+                                                                  'FullLocationRefreshInterval'],
+                                                              updateIntervalCoarseness=self.params[
+                                                                  'LocationRefreshInterval'])
 
         # used for only global WQ
         if self.params.get('ReqMgrServiceURL'):
@@ -352,7 +355,7 @@ class WorkQueue(WorkQueueBase):
 
                 if match['StartPolicy'] == 'Dataset':
                     # actually returns dataset name and dataset info
-                    blockName, dbsBlock = self._getDBSDataset(match, wmspec)
+                    blockName, dbsBlock = self._getDBSDataset(match)
                 elif match['Inputs']:
                     blockName, dbsBlock = self._getDBSBlock(match, wmspec)
 
@@ -377,7 +380,7 @@ class WorkQueue(WorkQueueBase):
         self.logger.info('Injected %s units into WMBS' % len(results))
         return results
 
-    def _getDBSDataset(self, match, wmspec):
+    def _getDBSDataset(self, match):
         """Get DBS info for this dataset"""
         tmpDsetDict = {}
         dbs = get_dbs(match['Dbs'])
@@ -393,10 +396,6 @@ class WorkQueue(WorkQueueBase):
             [f for block in tmpDsetDict.values() for f in block['PhEDExNodeNames']])
         dbsDatasetDict['PhEDExNodeNames'] = list(set(dbsDatasetDict['PhEDExNodeNames']))
 
-        if wmspec.locationDataSourceFlag():
-            psns = match['Inputs'].values()[0]
-            pnns = self.SiteDB.PSNstoPNNs(psns)
-            dbsDatasetDict['PhEDExNodeNames'] = pnns
         return datasetName, dbsDatasetDict
 
     def _getDBSBlock(self, match, wmspec):
@@ -420,11 +419,6 @@ class WorkQueue(WorkQueueBase):
 
             block = {}
             block["Files"] = fileLists
-            if wmspec.locationDataSourceFlag():
-                psns = match['Inputs'].values()[0]
-                pnns = self.SiteDB.PSNstoPNNs(psns)
-                for fileInfo in block["Files"]:
-                    fileInfo['locations'] = pnns
             return blockName, block
         else:
             dbs = get_dbs(match['Dbs'])
@@ -433,11 +427,6 @@ class WorkQueue(WorkQueueBase):
             else:
                 dbsBlockDict = dbs.getFileBlock(blockName)
 
-            if wmspec.locationDataSourceFlag():
-                blockInfo = dbsBlockDict[blockName]
-                psns = match['Inputs'].values()[0]
-                pnns = self.SiteDB.PSNstoPNNs(psns)
-                blockInfo['PhEDExNodeNames'] = pnns
         return blockName, dbsBlockDict[blockName]
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
@@ -879,7 +868,7 @@ class WorkQueue(WorkQueueBase):
         for key, value in requestsInfo.items():
             if (value["RequestStatus"] == None) or (value["RequestStatus"] in deletableStates):
                 deleteRequests.append(key)
-            
+
         return self.backend.deleteWQElementsByWorkflow(deleteRequests)
 
     def performSyncAndCancelAction(self, skipWMBS):
@@ -938,7 +927,8 @@ class WorkQueue(WorkQueueBase):
                     updated_elements = [x for x in result['Elements'] if x.modified]
                     for x in updated_elements:
                         self.logger.debug("Updating progress %s (%s): %s" % (x['RequestName'], x.id, x.statusMetrics()))
-                    if not updated_elements and (float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
+                    if not updated_elements and (
+                        float(parent.updatetime) + self.params['stuckElementAlertTime']) < time.time():
                         self.sendAlert(5, msg='Element for %s stuck for 24 hours.' % wf)
                     [self.backend.updateElements(x.id, **x.statusMetrics()) for x in updated_elements]
             except Exception as ex:

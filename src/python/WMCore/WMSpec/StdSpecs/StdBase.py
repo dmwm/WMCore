@@ -14,8 +14,8 @@ from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSURL, validateArgumentsCreate
 
-
 analysisTaskTypes = ['Analysis', 'PrivateMC']
+
 
 class StdBase(object):
     """
@@ -23,6 +23,7 @@ class StdBase(object):
 
     Base class with helper functions for standard WMSpec file.
     """
+
     def __init__(self):
         """
         __init__
@@ -81,9 +82,9 @@ class StdBase(object):
 
         return
 
-    def determineOutputModules(self, scenarioFunc = None, scenarioArgs = None,
-                               configDoc = None, couchURL = None,
-                               couchDBName = None, configCacheUrl = None):
+    def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
+                               configDoc=None, couchURL=None,
+                               couchDBName=None, configCacheUrl=None):
         """
         _determineOutputModules_
 
@@ -96,67 +97,66 @@ class StdBase(object):
         outputModules = {}
         if configDoc != None and configDoc != "":
             url = configCacheUrl or couchURL
-            if  (url, couchDBName) in self.config_cache:
+            if (url, couchDBName) in self.config_cache:
                 configCache = self.config_cache[(url, couchDBName)]
             else:
                 configCache = ConfigCache(url, couchDBName, True)
                 self.config_cache[(url, couchDBName)] = configCache
-            #TODO: need to change to DataCache
-            #configCache.loadDocument(configDoc)
+            # TODO: need to change to DataCache
+            # configCache.loadDocument(configDoc)
             configCache.loadByID(configDoc)
             outputModules = configCache.getOutputModuleInfo()
         else:
-            if 'outputs' in scenarioArgs and scenarioFunc in [ "promptReco", "expressProcessing", "repack" ]:
+            if 'outputs' in scenarioArgs and scenarioFunc in ["promptReco", "expressProcessing", "repack"]:
 
                 for output in scenarioArgs.get('outputs', []):
 
                     moduleLabel = output['moduleLabel']
-                    outputModules[moduleLabel] = { 'dataTier' : output['dataTier'] }
+                    outputModules[moduleLabel] = {'dataTier': output['dataTier']}
                     if 'primaryDataset' in output:
                         outputModules[moduleLabel]['primaryDataset'] = output['primaryDataset']
                     if 'filterName' in output:
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
-                for physicsSkim in scenarioArgs.get('PhysicsSkims',[]):
-
-                    skimToDataTier = { 'LogError' : 'RAW-RECO',
-                                       'LogErrorMonitor' : 'USER',
-                                       'ZElectron' : 'RAW-RECO',
-                                       'ZMu' : 'RAW-RECO',
-                                       'MuTau' : 'RAW-RECO',
-                                       'TopMuEG' : 'RAW-RECO',
-                                       'EcalActivity' : 'RAW-RECO',
-                                       'CosmicSP' : 'RAW-RECO',
-                                       'CosmicTP' : 'RAW-RECO',
-                                       'ZMM' : 'RAW-RECO',
-                                       'Onia' : 'RECO',
-                                       'HighPtJet' : 'RAW-RECO',
-                                       'D0Meson' : 'RECO',
-                                       'Photon' : 'AOD',
-                                       'ZEE' : 'AOD',
-                                       'BJet' : 'AOD',
-                                       'OniaCentral' : 'RECO',
-                                       'OniaPeripheral' : 'RECO',
-                                       'SingleTrack' : 'AOD',
-                                       'MinBias' : 'AOD',
-                                       'OniaUPC' : 'RAW-RECO'
-                                       }
+                for physicsSkim in scenarioArgs.get('PhysicsSkims', []):
+                    skimToDataTier = {'LogError': 'RAW-RECO',
+                                      'LogErrorMonitor': 'USER',
+                                      'ZElectron': 'RAW-RECO',
+                                      'ZMu': 'RAW-RECO',
+                                      'MuTau': 'RAW-RECO',
+                                      'TopMuEG': 'RAW-RECO',
+                                      'EcalActivity': 'RAW-RECO',
+                                      'CosmicSP': 'RAW-RECO',
+                                      'CosmicTP': 'RAW-RECO',
+                                      'ZMM': 'RAW-RECO',
+                                      'Onia': 'RECO',
+                                      'HighPtJet': 'RAW-RECO',
+                                      'D0Meson': 'RECO',
+                                      'Photon': 'AOD',
+                                      'ZEE': 'AOD',
+                                      'BJet': 'AOD',
+                                      'OniaCentral': 'RECO',
+                                      'OniaPeripheral': 'RECO',
+                                      'SingleTrack': 'AOD',
+                                      'MinBias': 'AOD',
+                                      'OniaUPC': 'RAW-RECO'
+                                     }
                     dataTier = skimToDataTier.get(physicsSkim, 'USER')
                     moduleLabel = "SKIMStream%s" % physicsSkim
-                    outputModules[moduleLabel] = { 'dataTier' : dataTier,
-                                                   'filterName' : physicsSkim }
+                    outputModules[moduleLabel] = {'dataTier': dataTier,
+                                                  'filterName': physicsSkim}
 
             elif scenarioFunc == "alcaSkim":
 
-                for alcaSkim in scenarioArgs.get('skims',[]):
+                for alcaSkim in scenarioArgs.get('skims', []):
                     moduleLabel = "ALCARECOStream%s" % alcaSkim
                     if alcaSkim.startswith("PromptCalibProd"):
                         dataTier = "ALCAPROMPT"
                     else:
                         dataTier = "ALCARECO"
-                    outputModules[moduleLabel] = { 'dataTier' : dataTier,
-                                                   'primaryDataset' : scenarioArgs.get('primaryDataset'),
-                                                   'filterName' : alcaSkim }
+                    outputModules[moduleLabel] = {'dataTier': dataTier,
+                                                  'primaryDataset': scenarioArgs.get('primaryDataset'),
+                                                  'filterName': alcaSkim}
 
         return outputModules
 
@@ -166,9 +166,9 @@ class StdBase(object):
 
         Add dashboard monitoring for the given task.
         """
-        #A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
+        # A gigabyte defined as 1024^3 (assuming RSS and VSize is in KiByte)
         gb = 1024.0 * 1024.0
-        #Default timeout defined in CMS policy
+        # Default timeout defined in CMS policy
         softTimeout = 47.0 * 3600.0 + 40.0 * 60.0
         hardTimeout = 47.0 * 3600.0 + 45.0 * 60.0
 
@@ -185,7 +185,6 @@ class StdBase(object):
         monitoring.PerformanceMonitor.hardTimeout = hardTimeout
         return task
 
-
     def reportWorkflowToDashboard(self, dashboardActivity):
         """
         _reportWorkflowToDashboard_
@@ -193,33 +192,32 @@ class StdBase(object):
         dashboard
         """
         try:
-        #Create a fake config
+            # Create a fake config
             conf = ConfigSection()
             conf.section_('DashboardReporter')
             conf.DashboardReporter.dashboardHost = self.dashboardHost
             conf.DashboardReporter.dashboardPort = self.dashboardPort
 
-            #Create the reporter
+            # Create the reporter
             reporter = DashboardReporter(conf)
 
-            #Assemble the info
+            # Assemble the info
             workflow = {}
             workflow['name'] = self.workloadName
             workflow['application'] = self.frameworkVersion
             workflow['TaskType'] = dashboardActivity
-            #Let's try to build information about the inputDataset
+            # Let's try to build information about the inputDataset
             dataset = 'DoesNotApply'
             if hasattr(self, 'inputDataset'):
                 dataset = self.inputDataset
             workflow['datasetFull'] = dataset
             workflow['user'] = 'cmsdataops'
 
-            #Send the workflow info
+            # Send the workflow info
             reporter.addTask(workflow)
         except:
-            #This is not critical, if it fails just leave it be
+            # This is not critical, if it fails just leave it be
             logging.error("There was an error with dashboard reporting")
-
 
     def createWorkload(self):
         """
@@ -231,13 +229,13 @@ class StdBase(object):
 
         workload = newWorkload(self.workloadName)
         workload.setOwnerDetails(self.owner, self.group, ownerProps)
-        workload.setStartPolicy("DatasetBlock", SliceType = "NumberOfFiles", SliceSize = 1)
+        workload.setStartPolicy("DatasetBlock", SliceType="NumberOfFiles", SliceSize=1)
         workload.setEndPolicy("SingleShot")
-        workload.setAcquisitionEra(acquisitionEras = self.acquisitionEra)
-        workload.setProcessingVersion(processingVersions = self.processingVersion)
-        workload.setProcessingString(processingStrings = self.processingString)
-        workload.setValidStatus(validStatus = self.validStatus)
-        workload.setLumiList(lumiLists = self.lumiList)
+        workload.setAcquisitionEra(acquisitionEras=self.acquisitionEra)
+        workload.setProcessingVersion(processingVersions=self.processingVersion)
+        workload.setProcessingString(processingStrings=self.processingString)
+        workload.setValidStatus(validStatus=self.validStatus)
+        workload.setLumiList(lumiLists=self.lumiList)
         workload.setPriority(self.priority)
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
@@ -245,19 +243,19 @@ class StdBase(object):
         workload.setAllowOpportunistic(self.allowOpportunistic)
         return workload
 
-    def setupProcessingTask(self, procTask, taskType, inputDataset = None, inputStep = None,
-                            inputModule = None, scenarioName = None,
-                            scenarioFunc = None, scenarioArgs = None, couchURL = None,
-                            couchDBName = None, configDoc = None, splitAlgo = "LumiBased",
-                            splitArgs = {'lumis_per_job': 8}, seeding = None,
-                            totalEvents = None, eventsPerLumi = None,
-                            userDN = None, asyncDest = None, owner_vogroup = "DEFAULT",
-                            owner_vorole = "DEFAULT", stepType = "CMSSW",
-                            userSandbox = None, userFiles = [], primarySubType = None,
-                            forceMerged = False, forceUnmerged = False,
-                            configCacheUrl = None, timePerEvent = None, memoryReq = None,
-                            sizePerEvent = None, useMulticore = True, applySiteLists = True,
-                            cmsswVersion=None, scramArch=None, globalTag=None, taskConf = {}):
+    def setupProcessingTask(self, procTask, taskType, inputDataset=None, inputStep=None,
+                            inputModule=None, scenarioName=None,
+                            scenarioFunc=None, scenarioArgs=None, couchURL=None,
+                            couchDBName=None, configDoc=None, splitAlgo="LumiBased",
+                            splitArgs={'lumis_per_job': 8}, seeding=None,
+                            totalEvents=None, eventsPerLumi=None,
+                            userDN=None, asyncDest=None, owner_vogroup="DEFAULT",
+                            owner_vorole="DEFAULT", stepType="CMSSW",
+                            userSandbox=None, userFiles=[], primarySubType=None,
+                            forceMerged=False, forceUnmerged=False,
+                            configCacheUrl=None, timePerEvent=None, memoryReq=None,
+                            sizePerEvent=None, useMulticore=True, applySiteLists=True,
+                            cmsswVersion=None, scramArch=None, globalTag=None, taskConf={}):
         """
         _setupProcessingTask_
 
@@ -323,9 +321,9 @@ class StdBase(object):
         if not globalTag and self.globalTag:
             globalTag = self.globalTag
 
-        procTask.setJobResourceInformation(timePerEvent = timePerEvent,
-                                           sizePerEvent = sizePerEvent,
-                                           memoryReq = memoryReq)
+        procTask.setJobResourceInformation(timePerEvent=timePerEvent,
+                                           sizePerEvent=sizePerEvent,
+                                           memoryReq=memoryReq)
 
         procTask.setTaskType(taskType)
         procTask.setProcessingVersion(self.processingVersion)
@@ -338,23 +336,23 @@ class StdBase(object):
 
         if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
             procTask.addGenerator(seeding)
-            procTask.addProduction(totalEvents = totalEvents)
-            procTask.setFirstEventAndLumi(firstEvent = self.firstEvent,
-                                          firstLumi = self.firstLumi)
+            procTask.addProduction(totalEvents=totalEvents)
+            procTask.setFirstEventAndLumi(firstEvent=self.firstEvent,
+                                          firstLumi=self.firstLumi)
         else:
             if inputDataset != None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")
-                procTask.addInputDataset(primary = primary, processed = processed,
-                                         tier = tier, dbsurl = self.dbsUrl,
-                                         block_blacklist = self.blockBlacklist,
-                                         block_whitelist = self.blockWhitelist,
-                                         run_blacklist = self.runBlacklist,
-                                         run_whitelist = self.runWhitelist)
+                procTask.addInputDataset(primary=primary, processed=processed,
+                                         tier=tier, dbsurl=self.dbsUrl,
+                                         block_blacklist=self.blockBlacklist,
+                                         block_whitelist=self.blockWhitelist,
+                                         run_blacklist=self.runBlacklist,
+                                         run_whitelist=self.runWhitelist)
             elif inputStep != None and inputModule != None:
-                procTask.setInputReference(inputStep, outputModule = inputModule)
+                procTask.setInputReference(inputStep, outputModule=inputModule)
 
         if primarySubType:
-            procTask.setPrimarySubType(subType = primarySubType)
+            procTask.setPrimarySubType(subType=primarySubType)
 
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
@@ -367,7 +365,7 @@ class StdBase(object):
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(globalTag)
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
-        procTaskCmsswHelper.setErrorDestinationStep(stepName = procTaskLogArch.name())
+        procTaskCmsswHelper.setErrorDestinationStep(stepName=procTaskLogArch.name())
 
         if forceMerged:
             procTaskStageHelper.setMinMergeSize(0, 0)
@@ -376,8 +374,8 @@ class StdBase(object):
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
 
-        procTaskCmsswHelper.cmsswSetup(cmsswVersion, softwareEnvironment = "",
-                                       scramArch = scramArch)
+        procTaskCmsswHelper.cmsswSetup(cmsswVersion, softwareEnvironment="",
+                                       scramArch=scramArch)
 
         if "events_per_lumi" in newSplitArgs:
             eventsPerLumi = newSplitArgs["events_per_lumi"]
@@ -394,7 +392,7 @@ class StdBase(object):
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
                                                 configOutput[outputModuleName].get('filterName', None),
-                                                forceMerged = forceMerged, forceUnmerged = forceUnmerged)
+                                                forceMerged=forceMerged, forceUnmerged=forceUnmerged)
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
@@ -415,8 +413,8 @@ class StdBase(object):
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
-                        stepName = "cmsRun1", forceMerged = False,
-                        forceUnmerged = False):
+                        stepName="cmsRun1", forceMerged=False,
+                        forceUnmerged=False):
         """
         _addOutputModule_
 
@@ -425,7 +423,7 @@ class StdBase(object):
         """
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
-        haveRunNumber  = (self.runNumber != None and self.runNumber > 0)
+        haveRunNumber = (self.runNumber != None and self.runNumber > 0)
 
         processedDataset = "%s-" % self.acquisitionEra
         if haveFilterName:
@@ -441,9 +439,8 @@ class StdBase(object):
 
         if haveRunNumber:
             stringRunNumber = str(self.runNumber).zfill(9)
-            runSections = [stringRunNumber[i:i+3] for i in range(0, 9, 3)]
+            runSections = [stringRunNumber[i:i + 3] for i in range(0, 9, 3)]
             runLFN = "/".join(runSections)
-
 
         if parentTask.name() in analysisTaskTypes:
 
@@ -498,20 +495,20 @@ class StdBase(object):
         cmsswStep = parentTask.getStep(stepName)
         cmsswStepHelper = cmsswStep.getTypeHelper()
         cmsswStepHelper.addOutputModule(outputModuleName,
-                                        primaryDataset = primaryDataset,
-                                        processedDataset = processedDataset,
-                                        dataTier = dataTier,
-                                        filterName = filterName,
-                                        lfnBase = unmergedLFN,
-                                        mergedLFNBase = mergedLFN,
-                                        transient = isTransient)
+                                        primaryDataset=primaryDataset,
+                                        processedDataset=processedDataset,
+                                        dataTier=dataTier,
+                                        filterName=filterName,
+                                        lfnBase=unmergedLFN,
+                                        mergedLFNBase=mergedLFN,
+                                        transient=isTransient)
 
         return {"primaryDataset": primaryDataset,
                 "dataTier": dataTier,
                 "processedDataset": processedDataset,
                 "filterName": filterName}
 
-    def addLogCollectTask(self, parentTask, taskName = "LogCollect", filesPerJob = 500):
+    def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500):
         """
         _addLogCollectTask_
 
@@ -524,16 +521,16 @@ class StdBase(object):
         logCollectStep.setStepType("LogCollect")
         logCollectStep.setNewStageoutOverride(self.enableNewStageout)
         logCollectTask.applyTemplates()
-        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job = filesPerJob)
+        logCollectTask.setSplittingAlgorithm("MinFileBased", files_per_job=filesPerJob)
         logCollectTask.setTaskType("LogCollect")
 
         parentTaskLogArch = parentTask.getStep("logArch1")
-        logCollectTask.setInputReference(parentTaskLogArch, outputModule = "logArchive")
+        logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName = "cmsRun1", doLogCollect = True,
-                     lfn_counter = 0):
+                     parentStepName="cmsRun1", doLogCollect=True,
+                     lfn_counter=0):
         """
         _addMergeTask_
 
@@ -555,7 +552,8 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         if doLogCollect:
-            self.addLogCollectTask(mergeTask, taskName = "%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+            self.addLogCollectTask(mergeTask,
+                                   taskName="%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -568,15 +566,15 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        mergeTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        mergeTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
 
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                        scramArch = self.scramArch)
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                        scramArch=self.scramArch)
 
-        mergeTaskCmsswHelper.setErrorDestinationStep(stepName = mergeTaskLogArch.name())
+        mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
@@ -584,33 +582,33 @@ class StdBase(object):
             mergeTaskCmsswHelper.setSkipBadFiles(True)
 
         mergeTask.setSplittingAlgorithm(splitAlgo,
-                                        max_merge_size = self.maxMergeSize,
-                                        min_merge_size = self.minMergeSize,
-                                        max_merge_events = self.maxMergeEvents,
-                                        max_wait_time = self.maxWaitTime,
-                                        initial_lfn_counter = lfn_counter)
+                                        max_merge_size=self.maxMergeSize,
+                                        min_merge_size=self.minMergeSize,
+                                        max_merge_events=self.maxMergeEvents,
+                                        max_wait_time=self.maxWaitTime,
+                                        initial_lfn_counter=lfn_counter)
 
         if getattr(parentOutputModule, "dataTier") == "DQMIO":
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge",
-                                                         newDQMIO = True)
+                                                         newDQMIO=True)
         else:
             mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
 
         mergeTaskStageHelper.setMinMergeSize(0, 0)
 
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset = getattr(parentOutputModule, "primaryDataset"),
-                             dataTier = getattr(parentOutputModule, "dataTier"),
-                             filterName = getattr(parentOutputModule, "filterName"),
-                             forceMerged = True)
+                             primaryDataset=getattr(parentOutputModule, "primaryDataset"),
+                             dataTier=getattr(parentOutputModule, "dataTier"),
+                             filterName=getattr(parentOutputModule, "filterName"),
+                             forceMerged=True)
 
         self.addCleanupTask(parentTask, parentOutputModuleName)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
-                                   uploadProxy = self.dqmUploadProxy,
-                                   periodic_harvest_interval= self.periodicHarvestInterval,
-                                   doLogCollect = doLogCollect,
-                                   dqmHarvestUnit = self.dqmHarvestUnit)
+                                   uploadProxy=self.dqmUploadProxy,
+                                   periodic_harvest_interval=self.periodicHarvestInterval,
+                                   doLogCollect=doLogCollect,
+                                   dqmHarvestUnit=self.dqmHarvestUnit)
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName):
@@ -624,17 +622,17 @@ class StdBase(object):
         cleanupTask.setTaskType("Cleanup")
 
         parentTaskCmssw = parentTask.getStep("cmsRun1")
-        cleanupTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
-        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job=50)
 
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
         return
 
-    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy = None,
-                          periodic_harvest_interval = 0, periodic_harvest_sibling = False,
-                          parentStepName = "cmsRun1", doLogCollect = True, dqmHarvestUnit = "byRun"):
+    def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,
+                          periodic_harvest_interval=0, periodic_harvest_sibling=False,
+                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun"):
         """
         _addDQMHarvestTask_
 
@@ -659,18 +657,18 @@ class StdBase(object):
 
         harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:
-            self.addLogCollectTask(harvestTask, taskName = "%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
-                                                                                           parentOutputModuleName,
-                                                                                           harvestType))
+            self.addLogCollectTask(harvestTask, taskName="%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
+                                                                                         parentOutputModuleName,
+                                                                                         harvestType))
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
-                                          scramArch = self.scramArch)
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+                                          scramArch=self.scramArch)
 
-        harvestTaskCmsswHelper.setErrorDestinationStep(stepName = harvestTaskLogArch.name())
+        harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())
         harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
         harvestTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
@@ -679,12 +677,12 @@ class StdBase(object):
         parentTaskCmssw = parentTask.getStep(parentStepName)
         parentOutputModule = parentTaskCmssw.getOutputModule(parentOutputModuleName)
 
-        harvestTask.setInputReference(parentTaskCmssw, outputModule = parentOutputModuleName)
+        harvestTask.setInputReference(parentTaskCmssw, outputModule=parentOutputModuleName)
 
         harvestTask.setSplittingAlgorithm("Harvest",
-                                          periodic_harvest_interval = periodic_harvest_interval,
-                                          periodic_harvest_sibling = periodic_harvest_sibling,
-                                          dqmHarvestUnit = dqmHarvestUnit)
+                                          periodic_harvest_interval=periodic_harvest_interval,
+                                          periodic_harvest_sibling=periodic_harvest_sibling,
+                                          dqmHarvestUnit=dqmHarvestUnit)
 
         datasetName = "/%s/%s/%s" % (getattr(parentOutputModule, "primaryDataset"),
                                      getattr(parentOutputModule, "processedDataset"),
@@ -697,10 +695,10 @@ class StdBase(object):
                 harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
-            scenarioArgs = { 'globalTag' : self.globalTag,
-                             'datasetName' : datasetName,
-                             'runNumber' : self.runNumber,
-                             'dqmSeq' : self.dqmSequences }
+            scenarioArgs = {'globalTag': self.globalTag,
+                            'datasetName': datasetName,
+                            'runNumber': self.runNumber,
+                            'dqmSeq': self.dqmSequences}
             if self.globalTagConnect:
                 scenarioArgs['globalTagConnect'] = self.globalTagConnect
             if getattr(parentOutputModule, "dataTier") == "DQMIO":
@@ -715,10 +713,11 @@ class StdBase(object):
 
         # if this was a Periodic harvesting add another for EndOfRun
         if periodic_harvest_interval:
-            self.addDQMHarvestTask(parentTask = parentTask, parentOutputModuleName = parentOutputModuleName, uploadProxy = uploadProxy,
-                                   periodic_harvest_interval = 0, periodic_harvest_sibling = True,
-                                   parentStepName = parentStepName, doLogCollect = doLogCollect,
-                                   dqmHarvestUnit = dqmHarvestUnit)
+            self.addDQMHarvestTask(parentTask=parentTask, parentOutputModuleName=parentOutputModuleName,
+                                   uploadProxy=uploadProxy,
+                                   periodic_harvest_interval=0, periodic_harvest_sibling=True,
+                                   parentStepName=parentStepName, doLogCollect=doLogCollect,
+                                   dqmHarvestUnit=dqmHarvestUnit)
 
         return
 
@@ -775,12 +774,12 @@ class StdBase(object):
         ids = set()
         for doc in docs:
             for key, val in doc.iteritems():
-                if  key.endswith('ConfigCacheID'):
+                if key.endswith('ConfigCacheID'):
                     ids.add(val)
         ids = list(ids)
         couchURL = docs[0]['CouchURL']
         couchDBName = docs[0]['CouchDBName']
-        if  (couchURL, couchDBName) in self.config_cache:
+        if (couchURL, couchDBName) in self.config_cache:
             configCache = self.config_cache[(couchURL, couchDBName)]
         else:
             configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName)
@@ -806,9 +805,9 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
-        self.masterValidation(schema = arguments)
-        self.validateSchema(schema = arguments)
-        workload = self.__call__(workloadName = workloadName, arguments = arguments)
+        self.masterValidation(schema=arguments)
+        self.validateSchema(schema=arguments)
+        workload = self.__call__(workloadName=workloadName, arguments=arguments)
         self.validateWorkload(workload)
 
         return workload
@@ -841,10 +840,10 @@ class StdBase(object):
         """
 
         logging.error("About to raise exception %s" % msg)
-        raise WMSpecFactoryException(message = msg)
+        raise WMSpecFactoryException(message=msg)
 
     def validateConfigCacheExists(self, configID, couchURL, couchDBName,
-                                  getOutputModules = True):
+                                  getOutputModules=True):
         """
         _validateConfigCacheExists_
 
@@ -852,21 +851,20 @@ class StdBase(object):
         """
 
         if configID == '' or configID == ' ':
-            self.raiseValidationException(msg = "ConfigCacheID is invalid and cannot be loaded")
+            self.raiseValidationException(msg="ConfigCacheID is invalid and cannot be loaded")
 
-        if  (couchURL, couchDBName) in self.config_cache:
+        if (couchURL, couchDBName) in self.config_cache:
             configCache = self.config_cache[(couchURL, couchDBName)]
         else:
-            configCache = ConfigCache(dbURL = couchURL, couchDBName = couchDBName, detail = getOutputModules)
+            configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName, detail=getOutputModules)
             self.config_cache[(couchURL, couchDBName)] = configCache
-        
+
         try:
             # if dtail option is set return outputModules
             return configCache.validate(configID)
         except ConfigCacheException as ex:
             self.raiseValidationException(ex.message())
 
-    
     def getSchema(self):
         return self.schema
 
@@ -887,10 +885,10 @@ class StdBase(object):
                    and a default value is provided, this is only meant for test purposes.
         - type: A function that verifies the type of the argument, it may also cast it into the appropiate python type.
                 If the input is not compatible with the expected type, this method must throw an exception.
-        - optional: This boolean value indicates if the value must be provided or not by user 
+        - optional: This boolean value indicates if the value must be provided or not by user
                     or inherited class can overwrite with default value.
         - assign_optional: This boolean value indicates if the value must be provided when workflow is assinged if False.
-                    
+
         - validate: A function which validates the input after type casting,
                     it returns True if the input is valid, it can throw exceptions on invalid input.
         - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
@@ -918,135 +916,134 @@ class StdBase(object):
         self.priority = arguments.get("RequestPriority", 0)
         """
         # if key is not specified it is set by default value
-        
-        arguments = {"RequestType" : {"optional" : False}, # this need to be overwritten by inherited class
-                     "Requestor": {"default": "unknown", "attr" : "owner"},
-                     "RequestorDN" : {"default": "unknown", "attr" : "owner_dn"},
-                     "Group" : {"default": "unknown"},
-                     "RequestPriority": {"default" : 8000, "type" : int, 
-                                         "validate" : lambda x : (x >= 0 and x < 1e6),
-                                         "attr" : "priority"},
-                     "VoGroup" : {"default" : "unknown", "attr" : "owner_vogroup"},
-                     "VoRole" : {"default" : "unknown", "attr" : "owner_vorole"},
-                     "Campaign" : {"default" : ""},
-                     "AcquisitionEra" : {"default" : "FAKE", "validate" : acqname, "assign_optional": False},
-                     "CMSSWVersion" : {"validate" : cmsswversion,
-                                       "optional" : False, "attr" : "frameworkVersion"},
-                     "ScramArch" : {"default" : "slc5_amd64_gcc462", "optional" : False},
-                     "GlobalTag" : {"null" : True},
-                     "GlobalTagConnect" : {"null" : True},
-                     "ProcessingVersion" : {"default" : 1, "type" : int},
-                     "ProcessingString" : {"null" : True},
-                     "LumiList" : {"default" : {}, "type" : makeLumiList},
-                     "SiteBlacklist" : {"default" : [], "type" : makeList,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "SiteWhitelist" : {"default" : [], "type" : makeList,
-                                        "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "BlockBlacklist" : {"default" : [], "type" : makeList, 
-                                         "validate" : lambda x: all([block(y) for y in x])},
-                     "BlockWhitelist" : {"default" : [], "type" : makeList, 
-                                         "validate" : lambda x: all([block(y) for y in x])},
-                     "UnmergedLFNBase" : {"default" : "/store/unmerged"},
-                     "MergedLFNBase" : {"default" : "/store/data"},
-                     "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,
-                                       "validate" : lambda x : x > 0},
-                     "MaxMergeSize" : {"default" : 4 * 1024 * 1024 * 1024, "type" : int,
-                                       "validate" : lambda x : x > 0},
-                     "MaxWaitTime" : {"default" : 24 * 3600, "type" : int,
-                                      "validate" : lambda x : x > 0},
-                     "MaxMergeEvents" : {"default" : 100000, "type" : int,
-                                         "validate" : lambda x : x > 0},
-                     "ValidStatus" : {"default" : "PRODUCTION"},
-                     "DbsUrl" : {"default" : "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
-                                 "null" : True, "validate" : checkDBSURL},
-                     "DashboardHost" : {"default" : "cms-wmagent-job.cern.ch"},
-                     "DashboardPort" : {"default" : 8884, "type" : int,
-                                        "validate" : lambda x : x > 0},
-                     "OverrideCatalog" : {"null" : True},
-                     "RunNumber" : {"default" : 0, "type" : int},
-                     "TimePerEvent" : {"default" : 12.0, "type" : float,
-                                       "validate" : lambda x : x > 0},
-                     "Memory" : {"default" : 2300.0, "type" : float,
-                                 "validate" : lambda x : x > 0},
-                     "SizePerEvent" : {"default" : 512.0, "type" : float,
-                                        "validate" : lambda x : x > 0},
-                     "PeriodicHarvestInterval" : {"default" : 0, "type" : int,
-                                                  "validate" : lambda x : x >= 0},
-                     "DQMHarvestUnit" : {"default" : "byRun", "type" : str, "attr" : "dqmHarvestUnit"},
-                     "DQMUploadProxy" : {"null" : True, "attr" : "dqmUploadProxy"},
-                     "DQMUploadUrl" : {"default" : "https://cmsweb.cern.ch/dqm/dev", "attr" : "dqmUploadUrl"},
-                     "DQMSequences" : {"default" : [], "type" : makeList, "attr" : "dqmSequences"},
-                     "DQMConfigCacheID" : {"null" : True, "attr" : "dqmConfigCacheID"},
-                     "EnableHarvesting" : {"default" : False, "type" : strToBool},
-                     "EnableNewStageout" : {"default" : False, "type" : strToBool},
-                     "IncludeParents" : {"default" : False,  "type" : strToBool},
-                     "Multicore" : {"default" : 1, "null" : True,
-                                    "validate" : lambda x : x == "auto" or (int(x) > 0)},
+
+        arguments = {"RequestType": {"optional": False},  # this need to be overwritten by inherited class
+                     "Requestor": {"default": "unknown", "attr": "owner"},
+                     "RequestorDN": {"default": "unknown", "attr": "owner_dn"},
+                     "Group": {"default": "unknown"},
+                     "RequestPriority": {"default": 8000, "type": int,
+                                         "validate": lambda x: (x >= 0 and x < 1e6),
+                                         "attr": "priority"},
+                     "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
+                     "VoRole": {"default": "unknown", "attr": "owner_vorole"},
+                     "Campaign": {"default": ""},
+                     "AcquisitionEra": {"default": "FAKE", "validate": acqname, "assign_optional": False},
+                     "CMSSWVersion": {"validate": cmsswversion,
+                                      "optional": False, "attr": "frameworkVersion"},
+                     "ScramArch": {"default": "slc5_amd64_gcc462", "optional": False},
+                     "GlobalTag": {"null": True},
+                     "GlobalTagConnect": {"null": True},
+                     "ProcessingVersion": {"default": 1, "type": int},
+                     "ProcessingString": {"null": True},
+                     "LumiList": {"default": {}, "type": makeLumiList},
+                     "SiteBlacklist": {"default": [], "type": makeList,
+                                       "validate": lambda x: all([cmsname(y) for y in x])},
+                     "SiteWhitelist": {"default": [], "type": makeList,
+                                       "validate": lambda x: all([cmsname(y) for y in x])},
+                     "BlockBlacklist": {"default": [], "type": makeList,
+                                        "validate": lambda x: all([block(y) for y in x])},
+                     "BlockWhitelist": {"default": [], "type": makeList,
+                                        "validate": lambda x: all([block(y) for y in x])},
+                     "UnmergedLFNBase": {"default": "/store/unmerged"},
+                     "MergedLFNBase": {"default": "/store/data"},
+                     "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxWaitTime": {"default": 24 * 3600, "type": int,
+                                     "validate": lambda x: x > 0},
+                     "MaxMergeEvents": {"default": 100000, "type": int,
+                                        "validate": lambda x: x > 0},
+                     "ValidStatus": {"default": "PRODUCTION"},
+                     "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
+                                "null": True, "validate": checkDBSURL},
+                     "DashboardHost": {"default": "cms-wmagent-job.cern.ch"},
+                     "DashboardPort": {"default": 8884, "type": int,
+                                       "validate": lambda x: x > 0},
+                     "OverrideCatalog": {"null": True},
+                     "RunNumber": {"default": 0, "type": int},
+                     "TimePerEvent": {"default": 12.0, "type": float,
+                                      "validate": lambda x: x > 0},
+                     "Memory": {"default": 2300.0, "type": float,
+                                "validate": lambda x: x > 0},
+                     "SizePerEvent": {"default": 512.0, "type": float,
+                                      "validate": lambda x: x > 0},
+                     "PeriodicHarvestInterval": {"default": 0, "type": int,
+                                                 "validate": lambda x: x >= 0},
+                     "DQMHarvestUnit": {"default": "byRun", "type": str, "attr": "dqmHarvestUnit"},
+                     "DQMUploadProxy": {"null": True, "attr": "dqmUploadProxy"},
+                     "DQMUploadUrl": {"default": "https://cmsweb.cern.ch/dqm/dev", "attr": "dqmUploadUrl"},
+                     "DQMSequences": {"default": [], "type": makeList, "attr": "dqmSequences"},
+                     "DQMConfigCacheID": {"null": True, "attr": "dqmConfigCacheID"},
+                     "EnableHarvesting": {"default": False, "type": strToBool},
+                     "EnableNewStageout": {"default": False, "type": strToBool},
+                     "IncludeParents": {"default": False, "type": strToBool},
+                     "Multicore": {"default": 1, "null": True,
+                                   "validate": lambda x: x == "auto" or (int(x) > 0)},
                      # data location management
-                     "TrustSitelists" : {"default" : False, "type" : strToBool},
-                     "UseSiteListAsLocation" : {"default" : False, "type" : bool},
-                     "AllowOpportunistic" : {"default" : False, "type" : bool},
-                     #from assignment: performance monitoring data
-                     "MaxRSS" : {"default" : 2411724, "type" : int, "validate" : lambda x : x > 0},
-                     "MaxVSize" : {"default" : 20411724, "type" : int, "validate" : lambda x : x > 0},
-                     "SoftTimeout" : {"default" : 129600, "type" : int, "validate" : lambda x : x > 0},
-                     "GracePeriod" : {"default" : 300, "type" : int, "validate" : lambda x : x > 0},
-                     
+                     "TrustSitelists": {"default": False, "type": bool},
+                     "AllowOpportunistic": {"default": False, "type": bool},
+                     # from assignment: performance monitoring data
+                     "MaxRSS": {"default": 2411724, "type": int, "validate": lambda x: x > 0},
+                     "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
+                     "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
+                     "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
+
                      # Set phedex subscription information
-                     "CustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
-                                         "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "NonCustodialSites" : {"default" : [], "type" : makeList, "assign_optional": True,
-                                            "validate" : lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites" : {"default" : [], "type" : makeList, "assign_optional": True, 
-                                                       "validate" : lambda x: all([cmsname(y) for y in x])},
+                     "CustodialSites": {"default": [], "type": makeList, "assign_optional": True,
+                                        "validate": lambda x: all([cmsname(y) for y in x])},
+                     "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
+                                           "validate": lambda x: all([cmsname(y) for y in x])},
+                     "AutoApproveSubscriptionSites": {"default": [], "type": makeList, "assign_optional": True,
+                                                      "validate": lambda x: all([cmsname(y) for y in x])},
                      # should be Low, Normal or High
-                     "SubscriptionPriority" : {"default" : "Low", "assign_optional": True,
-                                               "validate" : lambda x: x in ["Low", "Normal", "High"]},
-                     # should be Move Replica  
-                     "CustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
-                                           "validate" : lambda x: x in ["Move", "Replica"]},
-                     "NonCustodialSubType" : {"default" : "Replica", "type" : str, "assign_optional": True,
-                                              "validate" : lambda x: x in ["Move", "Replica"]},
+                     "SubscriptionPriority": {"default": "Low", "assign_optional": True,
+                                              "validate": lambda x: x in ["Low", "Normal", "High"]},
+                     # should be Move Replica
+                     "CustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
+                                          "validate": lambda x: x in ["Move", "Replica"]},
+                     "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
+                                             "validate": lambda x: x in ["Move", "Replica"]},
 
                      # should be a valid PhEDEx group
-                     "CustodialGroup" : {"default" : "DataOps", "type" : str, "assign_optional": True },
-                     "NonCustodialGroup" : {"default" : "DataOps", "type" : str, "assign_optional": True },
+                     "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
+                     "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
 
                      # should be True or False
-                     "DeleteFromSource" : {"default" : False, "type" : bool},
-                     
+                     "DeleteFromSource": {"default": False, "type": bool},
+
                      # Block closing information
-                     "BlockCloseMaxWaitTime" : {"default" : 66400, "type" : int, "validate" : lambda x : x > 0},
-                     "BlockCloseMaxFiles" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0},
-                     "BlockCloseMaxEvents" : {"default" : 25000000, "type" : int, "validate" : lambda x : x > 0},
-                     "BlockCloseMaxSize" : {"default" : 5000000000000, "type" : int, "validate" : lambda x : x > 0},
-                     
+                     "BlockCloseMaxWaitTime": {"default": 66400, "type": int, "validate": lambda x: x > 0},
+                     "BlockCloseMaxFiles": {"default": 500, "type": int, "validate": lambda x: x > 0},
+                     "BlockCloseMaxEvents": {"default": 25000000, "type": int, "validate": lambda x: x > 0},
+                     "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
+
                      # dashboard activity
-                     "Dashboard" : {"default": "", "type" : str},
+                     "Dashboard": {"default": "", "type": str},
                      # team name
-                     "Team" : {"default": "", "type" : str},
-                     "PrepID": {"default" : None, "null" : True}
-                     }
-       
+                     "Team": {"default": "", "type": str},
+                     "PrepID": {"default": None, "null": True}
+                    }
+
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
 
         return arguments
-    
+
     @staticmethod
     def getWorkloadArgumentsWithReqMgr():
         # arguments need to be defined all the workflows which uses reqmgr
-        reqMgrArguments = {"Requestor": {"optional" : False, "attr" : "owner"},
-                           "RequestorDN" : {"default" : None, "optional" : False, "attr" : "owner_dn"},
-                           "Group" : {"default" : "DATAOPS"},
-                           "CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",
-                                         "validate" : couchurl},
-                           "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
-                                            "validate" : identifier},
-                           "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
-                           "ConfigCacheID" : {"optional" : False, "validate" : None},
-                           "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "validate" : identifier},
-                         }
+        reqMgrArguments = {"Requestor": {"optional": False, "attr": "owner"},
+                           "RequestorDN": {"default": None, "optional": False, "attr": "owner_dn"},
+                           "Group": {"default": "DATAOPS"},
+                           "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb",
+                                        "validate": couchurl},
+                           "CouchDBName": {"default": "reqmgr_config_cache", "type": str,
+                                           "validate": identifier},
+                           "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                           "ConfigCacheID": {"optional": False, "validate": None},
+                           "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
+                          }
 
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(reqMgrArguments)
@@ -1083,7 +1080,7 @@ class StdBase(object):
             if arg == "DashboardHost":
                 schema[arg] = "127.0.0.1"
             elif arg == "CouchURL" or arg == "ConfigCacheUrl":
-                
+
                 import os
                 schema[arg] = os.environ["COUCHURL"]
             elif arg == "CouchDBName":
@@ -1100,7 +1097,7 @@ class StdBase(object):
                         schema[arg] = "fake"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
                     schema[arg] = 1
-                else: # A non-optional list or similar. Just copy.
+                else:  # A non-optional list or similar. Just copy.
                     schema[arg] = workloadDefinition[arg]['default']
             else:
                 schema[arg] = workloadDefinition[arg]['default']

@@ -19,7 +19,6 @@ ACDC unsupported:
 """
 __all__ = []
 
-
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from math import ceil
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
@@ -28,8 +27,10 @@ from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 
+
 class ResubmitBlock(StartPolicyInterface):
     """Split elements into blocks"""
+
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
@@ -38,17 +39,16 @@ class ResubmitBlock(StartPolicyInterface):
         self.lumiType = "NumberOfLumis"
 
         # Define how to handle the different splitting algorithms
-        self.algoMapping = {'Harvest' : self.singleChunk,
-                            'ParentlessMergeBySize' : self.singleChunk,
-                            'MinFileBased' : self.singleChunk,
-                            'LumiBased' : self.singleChunk,
-                            'EventAwareLumiBased' : self.singleChunk,
-                            'EventBased' : self.singleChunk}
+        self.algoMapping = {'Harvest': self.singleChunk,
+                            'ParentlessMergeBySize': self.singleChunk,
+                            'MinFileBased': self.singleChunk,
+                            'LumiBased': self.singleChunk,
+                            'EventAwareLumiBased': self.singleChunk,
+                            'EventBased': self.singleChunk}
         self.unsupportedAlgos = ['WMBSMergeBySize', 'SiblingProcessingBased']
         self.defaultAlgo = self.fixedSizeChunk
         self.sites = []
         self.siteDB = SiteDB()
-
 
     def split(self):
         """Apply policy to spec"""
@@ -62,16 +62,15 @@ class ResubmitBlock(StartPolicyInterface):
                 parentFlag = True
             else:
                 parentFlag = False
-            self.newQueueElement(Inputs = {block['Name'] : block['Sites']},
-                                 ParentFlag = parentFlag,
-                                 NumberOfLumis = block[self.lumiType],
-                                 NumberOfFiles = block['NumberOfFiles'],
-                                 NumberOfEvents = block['NumberOfEvents'],
-                                 Jobs = ceil(float(block[self.args['SliceType']]) /
-                                             float(self.args['SliceSize'])),
-                                 ACDC = block['ACDC'],
-                                 )
-
+            self.newQueueElement(Inputs={block['Name']: block['Sites']},
+                                 ParentFlag=parentFlag,
+                                 NumberOfLumis=block[self.lumiType],
+                                 NumberOfFiles=block['NumberOfFiles'],
+                                 NumberOfEvents=block['NumberOfEvents'],
+                                 Jobs=ceil(float(block[self.args['SliceType']]) /
+                                           float(self.args['SliceSize'])),
+                                 ACDC=block['ACDC'],
+                                )
 
     def validate(self):
         """Check args and spec work with block splitting"""
@@ -100,18 +99,18 @@ class ResubmitBlock(StartPolicyInterface):
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
                                       acdcBlockSplit['NumOfFiles'],
-                                      user = self.wmspec.getOwner().get("name"),
-                                      group = self.wmspec.getOwner().get("group"))
+                                      user=self.wmspec.getOwner().get("name"),
+                                      group=self.wmspec.getOwner().get("group"))
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock['ACDC'] = acdcInfo
-            if task.inputLocationFlag():
+            if task.getTrustSitelists():
                 dbsBlock["Sites"] = self.sites
             else:
-                #TODO remove this line when all DBS origin_site_name is converted to PNN
+                # TODO remove this line when all DBS origin_site_name is converted to PNN
                 block["locations"] = self.siteDB.checkAndConvertSENameToPNN(block["locations"])
-                #upto this
+                # upto this
                 dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             validBlocks.append(dbsBlock)
         else:
@@ -131,8 +130,8 @@ class ResubmitBlock(StartPolicyInterface):
         acdcBlocks = acdc.chunkFileset(acdcInfo['collection'],
                                        acdcInfo['fileset'],
                                        chunkSize,
-                                       user = self.wmspec.getOwner().get("name"),
-                                       group = self.wmspec.getOwner().get("group"))
+                                       user=self.wmspec.getOwner().get("name"),
+                                       group=self.wmspec.getOwner().get("group"))
         for block in acdcBlocks:
             dbsBlock = {}
             dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
@@ -141,12 +140,12 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
-            if task.inputLocationFlag():
+            if task.getTrustSitelists():
                 dbsBlock["Sites"] = self.sites
             else:
-                #TODO remove this line when all DBS origin_site_name is converted to PNN
+                # TODO remove this line when all DBS origin_site_name is converted to PNN
                 block["locations"] = self.siteDB.checkAndConvertSENameToPNN(block["locations"])
-                #upto this
+                # upto this
                 dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             dbsBlock['ACDC'] = acdcInfo
             if dbsBlock['NumberOfFiles']:
@@ -157,9 +156,9 @@ class ResubmitBlock(StartPolicyInterface):
         """Return a single block (inside a list) with all associated ACDC records"""
         result = []
         acdcBlock = acdc.singleChunkFileset(acdcInfo['collection'],
-                                             acdcInfo['fileset'],
-                                             user = self.wmspec.getOwner().get("name"),
-                                             group = self.wmspec.getOwner().get("group"))
+                                            acdcInfo['fileset'],
+                                            user=self.wmspec.getOwner().get("name"),
+                                            group=self.wmspec.getOwner().get("group"))
         dbsBlock = {}
         dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
                                           acdcInfo["fileset"],
@@ -167,12 +166,12 @@ class ResubmitBlock(StartPolicyInterface):
         dbsBlock['NumberOfFiles'] = acdcBlock['files']
         dbsBlock['NumberOfEvents'] = acdcBlock['events']
         dbsBlock['NumberOfLumis'] = acdcBlock['lumis']
-        if task.inputLocationFlag():
+        if task.getTrustSitelists():
             dbsBlock["Sites"] = self.sites
         else:
-            #TODO remove this line when all DBS origin_site_name is converted to PNN
+            # TODO remove this line when all DBS origin_site_name is converted to PNN
             acdcBlock["locations"] = self.siteDB.checkAndConvertSENameToPNN(acdcBlock["locations"])
-            #upto this
+            # upto this
             dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(acdcBlock["locations"])
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:

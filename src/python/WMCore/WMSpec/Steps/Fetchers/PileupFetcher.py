@@ -9,11 +9,13 @@ import datetime
 import time
 import shutil
 
-from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
+from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
+from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
+
 
 def mapSitetoPNN(sites):
     """
@@ -30,6 +32,7 @@ def mapSitetoPNN(sites):
     for site in sites:
         fakePNNs.extend(rControl.listSiteInfo(site)['pnn'])
     return fakePNNs
+
 
 class PileupFetcher(FetcherInterface):
     """
@@ -77,27 +80,28 @@ class PileupFetcher(FetcherInterface):
             # each dataset input can generally be a list, iterate over dataset names
             blockDict = {}
             for dataset in datasets:
-            
+
                 blockFileInfo = dbsReader.getFileListByDataset(dataset=dataset, detail=True)
-                
+
                 for fileInfo in blockFileInfo:
-                    blockDict.setdefault(fileInfo['block_name'], {'FileList': [], 
-                                                                  'NumberOfEvents': 0, 
+                    blockDict.setdefault(fileInfo['block_name'], {'FileList': [],
+                                                                  'NumberOfEvents': 0,
                                                                   'PhEDExNodeNames': []})
-                    blockDict[fileInfo['block_name']]['FileList'].append({'logical_file_name': fileInfo['logical_file_name']})
+                    blockDict[fileInfo['block_name']]['FileList'].append(
+                        {'logical_file_name': fileInfo['logical_file_name']})
                     blockDict[fileInfo['block_name']]['NumberOfEvents'] += fileInfo['event_count']
-                
+
                 blockReplicasInfo = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
                 for block in blockReplicasInfo:
                     nodes = set(blockReplicasInfo[block]) - node_filter | set(fakePNNs)
                     blockDict[block]['PhEDExNodeNames'] = list(nodes)
                     blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
-                 
+
             resultDict[pileupType] = blockDict
         return resultDict
 
     def _getCacheFilePath(self, stepHelper):
-        
+
         fileName = ""
         for pileupType in stepHelper.data.pileup.listSections_():
             datasets = getattr(getattr(stepHelper.data.pileup, pileupType), "dataset")
@@ -106,17 +110,17 @@ class PileupFetcher(FetcherInterface):
         # here is possibility of hash value collision
         cacheFile = "%s/pileupconf-%s.json" % (self.cacheDirectory(), hash(fileName))
         return cacheFile
-    
+
     def _getStepFilePath(self, stepHelper):
         stepPath = "%s/%s" % (self.workingDirectory(), stepHelper.name())
         fileName = "%s/%s" % (stepPath, "pileupconf.json")
-        
+
         return fileName
-    
+
     def _writeFile(self, filePath, json):
-        
+
         directory = filePath.rsplit('/', 1)[0]
-        
+
         if not os.path.exists(directory):
             os.mkdir(directory)
         try:
@@ -127,31 +131,31 @@ class PileupFetcher(FetcherInterface):
             raise RuntimeError(m)
         finally:
             f.close()
-    
+
     def _copyFile(self, src, dest):
-        
-        directory =  dest.rsplit('/', 1)[0]
-        
+
+        directory = dest.rsplit('/', 1)[0]
+
         if not os.path.exists(directory):
-            os.mkdir(directory) 
+            os.mkdir(directory)
         shutil.copyfile(src, dest)
-        
-    def _isCacheExpired(self, cacheFilePath, delta = 24):
+
+    def _isCacheExpired(self, cacheFilePath, delta=24):
         """Is the cache expired? At delta hours (default 24) in the future.
         """
         # cache can either be a file name or an already opened file object
-        
+
         if not os.path.exists(cacheFilePath):
             return True
 
-        delta = datetime.timedelta(hours = delta)
+        delta = datetime.timedelta(hours=delta)
         t = datetime.datetime.now() - delta
         # cache file mtime has been set to cache expiry time
-        if (os.path.getmtime(cacheFilePath) < time.mktime(t.timetuple())):
+        if os.path.getmtime(cacheFilePath) < time.mktime(t.timetuple()):
             return True
 
         return False
-            
+
     def _isCacheValid(self, stepHelper):
         """
         Check whether cache is exits
@@ -159,24 +163,24 @@ class PileupFetcher(FetcherInterface):
               We can add cache refresh policy here
         """
         cacheFile = self._getCacheFilePath(stepHelper)
-        
+
         if not self._isCacheExpired(cacheFile) and os.path.getsize(cacheFile) > 0:
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
-            fileName  = self._getStepFilePath(stepHelper)
+            fileName = self._getStepFilePath(stepHelper)
             if not os.path.isfile(fileName) or os.path.getsize(fileName) != os.path.getsize(cacheFile):
                 self._copyFile(cacheFile, fileName)
             return True
         else:
             return False
-    
+
     def _saveFile(self, stepHelper, json):
-        
+
         cacheFile = self._getCacheFilePath(stepHelper)
         self._writeFile(cacheFile, json)
-        fileName  = self._getStepFilePath(stepHelper)
+        fileName = self._getStepFilePath(stepHelper)
         self._copyFile(cacheFile, fileName)
-            
+
     def _createPileupConfigFile(self, helper, fakeSites=None):
         """
         Stores pileup JSON configuration file in the working
@@ -186,7 +190,7 @@ class PileupFetcher(FetcherInterface):
 
         if fakeSites is None:
             fakeSites = []
-        
+
         if self._isCacheValid(helper):
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
@@ -204,7 +208,7 @@ class PileupFetcher(FetcherInterface):
         # create JSON and save into a file
         json = encoder.encode(configDict)
         self._saveFile(helper, json)
-    
+
     def __call__(self, wmTask):
         """
         Method is called  when WorkQueue creates the sandbox for a job.
@@ -215,13 +219,11 @@ class PileupFetcher(FetcherInterface):
         wmTask is instance of WMTask.WMTaskHelper
 
         """
-        siteWhitelist = wmTask.siteWhitelist()
+        fakeSites = []
 
         # check whether we need to pretend PU data location
-        if wmTask.inputLocationFlag():
-            fakeSites = wmTask.siteWhitelist()
-        else:
-            fakeSites = []
+        if wmTask.getTrustSitelists():
+            fakeSites = makeLocationsList(wmTask.siteWhitelist(), wmTask.siteBlacklist())
 
         for step in wmTask.steps().nodeIterator():
             helper = WMStep.WMStepHelper(step)

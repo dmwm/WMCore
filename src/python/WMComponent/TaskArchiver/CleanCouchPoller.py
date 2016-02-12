@@ -15,6 +15,7 @@ from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMComponent.TaskArchiver.DataCache import DataCache
 
 class CleanCouchPoller(BaseWorkerThread):
     """
@@ -93,17 +94,23 @@ class CleanCouchPoller(BaseWorkerThread):
                                                                         self.deletableState)
             commonWfs = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
                                                                                    False, endTime)
-            deletableWorkflows = list(set(wfs) & set(commonWfs))
+            
+            #TODO: this could have race condition since workflows will be deleted frm wmbs in TaskArchiverPoller thread
+            #need to move the deleting function here.
+            finishedWfs = DataCache.getFinishedWorkflows()
+            deletableWorkflows = list(set(wfs) & set(commonWfs) & finishedWfs)
             logging.info("Ready to archive normal %s workflows", len(deletableWorkflows))
             numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
             logging.info("archive normal %s workflows", numUpdated)
             
             abortedWorkflows = self.centralRequestDBReader.getRequestByStatus(["aborted-completed"])
+            abortedWorkflows = list(set(abortedWorkflows) & finishedWfs)
             logging.info("Ready to archive aborted %s workflows", len(abortedWorkflows))
             numUpdated = self.archiveWorkflows(abortedWorkflows, "aborted-archived")
             logging.info("archive aborted %s workflows", numUpdated)
             
             rejectedWorkflows = self.centralRequestDBReader.getRequestByStatus(["rejected"])
+            rejectedWorkflows = list(set(rejectedWorkflows) & finishedWfs)
             logging.info("Ready to archive rejected %s workflows", len(rejectedWorkflows))
             numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
             logging.info("archive rejected %s workflows", numUpdated)

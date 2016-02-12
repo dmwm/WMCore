@@ -58,6 +58,7 @@ from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
+from WMComponent.TaskArchiver.DataCache import DataCache 
 
 class TaskArchiverPollerException(WMException):
     """
@@ -286,13 +287,18 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         Executes the two main methods of the poller:
         1. findAndMarkFinishedSubscriptions
-        2. archiveTasks
+        2. completeTasks
         Final result is that finished workflows get their summary built and uploaded to couch,
         and all traces of them are removed from the agent WMBS and couch (this last one on demand).
         """
         try:
             self.findAndMarkFinishedSubscriptions()
-            self.archiveTasks()
+            (finishedwfs, finishedwfsWithLogCollectAndCleanUp) = self.getFinishedWorkflows()
+            # set the data cache which can be used other thread (no ther thread should set the data cache)
+            DataCache.setFinishedWorkflows(set(finishedwfsWithLogCollectAndCleanUp.keys()))
+            
+            self.completeWithLogCollectAndCleanUp(finishedwfsWithLogCollectAndCleanUp)
+            self.completeTasks(finishedwfs)
             self.deleteWorkflowFromWMBSAndDisk()
         except WMException:
             myThread = threading.currentThread()
@@ -330,21 +336,36 @@ class TaskArchiverPoller(BaseWorkerThread):
         myThread.transaction.commit()
 
         return
-
-    def archiveTasks(self):
+    
+    
+    def getFinishedWorkflows(self):
         """
-        _archiveTasks_
-
-        This method will call several auxiliary methods to do the following:
         1. Get finished workflows (a finished workflow is defined in Workflow.GetFinishedWorkflows)
-        2. Gather the summary information from each workflow/task and upload it to couch
-        3. Publish to DashBoard Reconstruction performance information
-        4. Notify the WorkQueue about finished subscriptions
-        5. If all succeeds, delete all information about the workflow from couch and WMBS
+        2. Get finished workflows with logCollect and Cleanup only.
+        3. combined those and make return 
+           finishedwfs - without LogCollect and CleanUp task
+           finishedwfsWithLogCollectAndCleanUp - including LogCollect and CleanUp task
         """
-        #Get the finished workflows, in descending order
+        
         finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
         finishedwfs = finishedWorkflowsDAO.execute()
+        finishedLogCollectAndCleanUpwfs = finishedWorkflowsDAO.execute(onlySecondary=True)
+        finishedwfsWithLogCollectAndCleanUp = {}
+        for wf in finishedLogCollectAndCleanUpwfs:
+            if wf in finishedwfs:
+                finishedwfsWithLogCollectAndCleanUp[wf] = finishedwfs[wf]
+        return (finishedwfs, finishedwfsWithLogCollectAndCleanUp)
+        
+    def completeTasks(self, finishedwfs):
+        """
+        _completeTasks_
+
+        This method will call several auxiliary methods to do the following:
+        
+        1. Notify the WorkQueue about finished subscriptions
+        2. update dbsbuffer_workflow table with finished subscription
+        """
+
 
         #Only delete those where the upload and notification succeeded
         logging.info("Found %d candidate workflows for completing: %s" % (len(finishedwfs),finishedwfs.keys()))
@@ -371,16 +392,6 @@ class TaskArchiverPoller(BaseWorkerThread):
         if centralCouchAlive:
             for workflow in finishedwfs:
                 try:
-                    #Upload summary to couch
-                    spec = retrieveWMSpec(wmWorkloadURL = finishedwfs[workflow]["spec"])
-                    if spec:
-                        self.archiveWorkflowSummary(spec = spec)
-                        # Send Reconstruciton performance information to DashBoard
-                        if self.dashBoardUrl != None:
-                            self.publishRecoPerfToDashBoard(spec)
-                    else:
-                        logging.warn("Workflow spec was not found for %s", workflow)
-                    
                     #Notify the WorkQueue, if there is one
                     if self.workQueue != None:
                         subList = []
@@ -449,6 +460,28 @@ class TaskArchiverPoller(BaseWorkerThread):
                     continue
         return
 
+    def completeWithLogCollectAndCleanUp(self, finishedwfsWithLogCollectAndCleanUp):
+        """
+        _completeWithLogCollectAndCleanUp_
+
+        This method will call several auxiliary methods to do the following:
+        1. Archive workloadsumary when all the subscription including CleanUp and LogCollect tasks are finished.
+        2. Pulblish to Dashboard
+        3. TODO: update LogCollect and Cleanup status in central couchdb
+        """
+        #Upload summary to couch
+        for workflow in finishedwfsWithLogCollectAndCleanUp:
+            spec = retrieveWMSpec(wmWorkloadURL = finishedwfsWithLogCollectAndCleanUp[workflow]["spec"])
+            if spec:
+                self.archiveWorkflowSummary(spec = spec)
+                # Send Reconstruciton performance information to DashBoard
+                if self.dashBoardUrl != None:
+                    self.publishRecoPerfToDashBoard(spec)
+            else:
+                logging.warn("Workflow spec was not found for %s", workflow)
+                        
+        return
+    
     def notifyWorkQueue(self, subList):
         """
         _notifyWorkQueue_
@@ -831,6 +864,7 @@ class TaskArchiverPoller(BaseWorkerThread):
         logging.info("Finished committing workflow summary to couch")
 
         return
+    
     def getLogArchives(self, spec):
         """
         _getLogArchives_

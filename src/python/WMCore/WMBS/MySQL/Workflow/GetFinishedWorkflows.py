@@ -17,35 +17,47 @@ class GetFinishedWorkflows(DBFormatter):
     It assumes that a spec is not shared by two workflows of the same name.
     """
 
-    sql = """SELECT wmbs_workflow.name, wmbs_workflow.spec,
+    incompleteWf = """ SELECT wmbs_workflow.name
+                                  FROM wmbs_workflow
+                                      INNER JOIN wmbs_subscription ON
+                                         wmbs_subscription.workflow = wmbs_workflow.id
+                                      INNER JOIN wmbs_sub_types ON
+                                         wmbs_sub_types.id = wmbs_subscription.subtype
+                                  WHERE wmbs_subscription.finished = 0 
+                                       AND wmbs_sub_types.name %(include)s IN ('LogCollect', 'CleanUp')
+                                  GROUP BY wmbs_workflow.name """
+    
+    sql = """ SELECT wmbs_workflow.name, wmbs_workflow.spec,
                         wmbs_workflow.id AS workflow_id, wmbs_subscription.id AS sub_id
                  FROM wmbs_subscription
-                     INNER JOIN wmbs_workflow ON
+                    INNER JOIN wmbs_workflow ON
                          wmbs_workflow.id = wmbs_subscription.workflow
-                     INNER JOIN ( SELECT wmbs_workflow.name
-                                  FROM wmbs_workflow
-                                      LEFT OUTER JOIN wmbs_subscription ON
-                                         wmbs_subscription.workflow = wmbs_workflow.id AND
-                                         wmbs_subscription.finished = 0
-                                  GROUP BY wmbs_workflow.name
-                                  HAVING COUNT(wmbs_subscription.workflow) = 0 ) complete_workflow ON
-                         complete_workflow.name = wmbs_workflow.name
-              """
-
-    def execute(self, conn = None, transaction = False):
+                    INNER JOIN wmbs_sub_types ON
+                         wmbs_sub_types.id = wmbs_subscription.subtype
+                    WHERE wmbs_sub_types.name %(include)s IN ('LogCollect', 'CleanUp')  AND 
+                            wmbs_workflow.name NOT IN (""" + incompleteWf + """ )"""
+            
+    def execute(self, onlySecondary=False, conn=None, transaction=False):
         """
         _execute_
-
+        
+        onlySecondary if set it True gets the complete subscription for the only LogCollect and CleanUp type.
+        if False, gets the finished subscription excluding LogCollect and CleanUp tasks
         This DAO is a nested dictionary with the following structure:
         {<workflowName? : {spec : <specURL>,
                            workflows : {<workflowID> : [<subId1>, <subId2>]}
                           }
         }
         """
-
+        if not onlySecondary:
+            include = {'include': 'NOT' }
+        else:
+            include = {'include': '' }
+        
+        sql = self.sql % include
+         
         #Get the completed workflows and subscriptions
-        result = self.dbi.processData(self.sql,
-                                      conn = conn, transaction = transaction)
+        result = self.dbi.processData(sql, conn=conn, transaction=transaction)
         wfsAndSubs = self.formatDict(result)
 
         wfs = {}

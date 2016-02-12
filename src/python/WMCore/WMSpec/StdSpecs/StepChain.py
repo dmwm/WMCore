@@ -111,21 +111,25 @@ class StepChainWorkloadFactory(StdBase):
         configCacheID = taskConf['ConfigCacheID']
         splitAlgorithm = taskConf["SplittingAlgo"]
         splitArguments = taskConf["SplittingArguments"]
-        self.setupProcessingTask(task, "Production",
-                                 couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                 configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                 configCacheUrl=self.configCacheUrl,
-                                 splitArgs=splitArguments, seeding=taskConf['Seeding'],
-                                 totalEvents=taskConf['RequestNumEvents'],
-                                 timePerEvent=self.timePerEvent,
-                                 memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=self.sizePerEvent,
-                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
-                                 scramArch=taskConf.get("ScramArch", None),
-                                 globalTag=taskConf.get("GlobalTag", None),
-                                 taskConf=taskConf)
+        outMods = self.setupProcessingTask(task, "Production",
+                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
+                                           configCacheUrl=self.configCacheUrl,
+                                           splitArgs=splitArguments, seeding=taskConf['Seeding'],
+                                           totalEvents=taskConf['RequestNumEvents'],
+                                           timePerEvent=self.timePerEvent,
+                                           memoryReq=taskConf.get('Memory', None),
+                                           sizePerEvent=self.sizePerEvent,
+                                           cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                           scramArch=taskConf.get("ScramArch", None),
+                                           globalTag=taskConf.get("GlobalTag", None),
+                                           taskConf=taskConf)
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
+        # outputModules were added already, we just want to create merge tasks here
+        if strToBool(taskConf.get('KeepOutput', True)):
+            for outputModuleName in outMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo,
+                                              outputModuleName, "cmsRun1")
 
         return
 
@@ -144,19 +148,19 @@ class StepChainWorkloadFactory(StdBase):
         if not self.inputPrimaryDataset:
             self.inputPrimaryDataset = self.inputDataset[1:].split("/")[0]
 
-        self.setupProcessingTask(task, "Processing",
-                                 inputDataset=self.inputDataset,
-                                 couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                 configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                 configCacheUrl=self.configCacheUrl,
-                                 splitArgs=splitArguments,
-                                 timePerEvent=self.timePerEvent,
-                                 memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=self.sizePerEvent,
-                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
-                                 scramArch=taskConf.get("ScramArch", None),
-                                 globalTag=taskConf.get("GlobalTag", None),
-                                 taskConf=taskConf)
+        outMods = self.setupProcessingTask(task, "Processing",
+                                           inputDataset=self.inputDataset,
+                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
+                                           configCacheUrl=self.configCacheUrl,
+                                           splitArgs=splitArguments,
+                                           timePerEvent=self.timePerEvent,
+                                           memoryReq=taskConf.get('Memory', None),
+                                           sizePerEvent=self.sizePerEvent,
+                                           cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                           scramArch=taskConf.get("ScramArch", None),
+                                           globalTag=taskConf.get("GlobalTag", None),
+                                           taskConf=taskConf)
 
         lumiMask = taskConf.get("LumiList", self.workload.lumiList)
         if lumiMask:
@@ -165,7 +169,11 @@ class StepChainWorkloadFactory(StdBase):
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
+        # outputModules were added already, we just want to create merge tasks here
+        if strToBool(taskConf.get('KeepOutput', True)):
+            for outputModuleName in outMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo,
+                                              outputModuleName, "cmsRun1")
 
         return
 
@@ -177,37 +185,38 @@ class StepChainWorkloadFactory(StdBase):
         chain the output between all three steps.
         """
         configCacheUrl = self.configCacheUrl or self.couchURL
+        stepMapping = {}
+        stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
 
         for i in range(2, self.stepChain + 1):
-            inputStepName = "cmsRun%d" % (i-1)
-            parentCmsswStep = task.getStep(inputStepName)
-            parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
-            parentCmsswStepHelper.keepOutput(False)
-
-            currentStepName = "cmsRun%d" % i
+            currentStepNumber = "Step%d" % i
+            currentCmsRun = "cmsRun%d" % i
+            stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
-            for k, v in origArgs["Step%d" % i].iteritems():
+            for k, v in origArgs[currentStepNumber].iteritems():
                 taskConf[k] = v
-            # Set default values to task parameters
+
+            parentStepNumber = stepMapping.get(taskConf['InputStep'])[0]
+            parentCmsRun = stepMapping.get(taskConf['InputStep'])[1]
+            parentCmsswStep = task.getStep(parentCmsRun)
+            parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
+
+            # Set default values for the task parameters
             self.modifyTaskConfiguration(taskConf, False, 'InputDataset' not in taskConf)
             globalTag = taskConf.get("GlobalTag", self.globalTag)
             frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
             scramArch = taskConf.get("ScramArch", self.scramArch)
 
-            childCmssw = parentCmsswStep.addTopStep(currentStepName)
+            childCmssw = parentCmsswStep.addTopStep(currentCmsRun)
             childCmssw.setStepType("CMSSW")
             template = StepFactory.getStepTemplate("CMSSW")
             template(childCmssw.data)
 
-            childCmsswHelper = childCmssw.getTypeHelper()
-            childCmsswHelper.setGlobalTag(globalTag)
-            childCmsswHelper.setupChainedProcessing(inputStepName, taskConf['InputFromOutputModule'])
-            # Assuming we cannot change the CMSSW version inside the same job
-            childCmsswHelper.cmsswSetup(frameworkVersion, softwareEnvironment="",
-                                        scramArch=scramArch)
-            childCmsswHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'],
-                                            self.couchDBName)
-            childCmsswHelper.keepOutput(False)
+            childCmsswStepHelper = childCmssw.getTypeHelper()
+            childCmsswStepHelper.setGlobalTag(globalTag)
+            childCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
+            childCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
+            childCmsswStepHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -215,38 +224,43 @@ class StepChainWorkloadFactory(StdBase):
                 self.setupPileup(task, taskConf['PileupConfig'])
 
             # Handling the output modules
-            outputMods = {}
-            configOutput = self.determineOutputModules(configDoc=taskConf['ConfigCacheID'],
-                                                       couchURL=configCacheUrl,
-                                                       couchDBName=self.couchDBName)
-            for outputModuleName in configOutput.keys():
-                outputModule = self.addOutputModule(task, outputModuleName,
-                                                    self.inputPrimaryDataset,
-                                                    configOutput[outputModuleName]["dataTier"],
-                                                    configOutput[outputModuleName]["filterName"],
-                                                    stepName=currentStepName)
-                outputMods[outputModuleName] = outputModule
+            parentKeepOutput = strToBool(origArgs[parentStepNumber].get('KeepOutput', True))
+            parentCmsswStepHelper.keepOutput(parentKeepOutput)
+            childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
+            childCmsswStepHelper.keepOutput(childKeepOutput)
+            self.setupOutputModules(task, taskConf["ConfigCacheID"], currentCmsRun, childKeepOutput, taskConf['StepName'])
 
-        # Closing out the task configuration
-        # Only the last step output is important :-)
-        childCmsswHelper.keepOutput(True)
-        self.addMergeTasks(task, currentStepName, outputMods)
+        # Closing out the task configuration. The last step output must be saved/merged
+        childCmsswStepHelper.keepOutput(True)
 
         return
 
-    def addMergeTasks(self, parentTask, parentStepName, outputMods):
+    def setupOutputModules(self, task, stepConfigCacheId, stepCmsRun, keepOutput, forceTaskName=None):
         """
-        _addMergeTasks_
+        _setupOutputModules_
 
-        Add merge, logCollect and cleanup tasks for the output modules.
+        Retrieves the outputModules from the step configuration and sets up
+        a merge task for them. Only when KeepOutput is set to True.
         """
-        mergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            mergeTask = self.addMergeTask(parentTask, self.splittingAlgo,
-                                          outputModuleName, parentStepName)
-            mergeTasks[outputModuleName] = mergeTask
+        configCacheUrl = self.configCacheUrl or self.couchURL
+        outputMods = {}
 
-        return mergeTasks
+        configOutput = self.determineOutputModules(configDoc=stepConfigCacheId,
+                                                   couchURL=configCacheUrl,
+                                                   couchDBName=self.couchDBName)
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(task, outputModuleName,
+                                                self.inputPrimaryDataset,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"],
+                                                stepName=stepCmsRun)
+            outputMods[outputModuleName] = outputModule
+
+        if keepOutput:
+            for outputModuleName in outputMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName,
+                                              stepCmsRun, forceTaskName=forceTaskName)
+        return
 
     def modifyTaskConfiguration(self, taskConf, firstTask=False, generator=False):
         """
@@ -364,6 +378,8 @@ class StepChainWorkloadFactory(StdBase):
                     "InputDataset" : {"default" : None, "type" : str,
                                       "optional" : generator or not firstTask, "validate" : dataset,
                                       "null" : False},
+                    "KeepOutput": {"default": True, "type": strToBool, "optional": True, "null": False,
+                                   "validate": None},
                     "InputStep" : {"default" : None, "type" : str,
                                    "optional" : firstTask, "validate" : None,
                                    "null" : False},
@@ -420,17 +436,18 @@ class StepChainWorkloadFactory(StdBase):
 
         Go over each step and make sure it matches validation parameters.
         """
+        outputMods = []
         numSteps = schema['StepChain']
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         for i in range(1, numSteps + 1):
             stepName = "Step%s" % i
             if stepName not in schema:
-                msg = "No Step%s entry present in request" % i
+                msg = "No Step%s entry present in the request" % i
                 self.raiseValidationException(msg=msg)
 
             step = schema[stepName]
             # We can't handle non-dictionary steps
-            if type(step) != dict:
+            if not isinstance(step, dict):
                 msg = "Non-dictionary input for step in StepChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)
@@ -444,6 +461,24 @@ class StepChainWorkloadFactory(StdBase):
                                                couchURL=couchUrl,
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=True)
+
+            # keeping different outputs with the same output module is not allowed
+            if strToBool(step.get("KeepOutput", True)):
+                configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
+                                                           couchURL=couchUrl,
+                                                           couchDBName=schema["CouchDBName"])
+                for outputModuleName in configOutput.keys():
+                    if outputModuleName in outputMods:
+                        msg = "StepChain does not support KeepOutput sharing the same output module."
+                        msg += "\n%s re-using outputModule: %s" % (stepName, outputModuleName)
+                        self.raiseValidationException(msg=msg)
+                    else:
+                        outputMods.append(outputModuleName)
+
+        if 'KeepOutput' in schema[stepName] and not strToBool(schema[stepName]['KeepOutput']):
+            msg = "Dropping the output of the last step is prohibited.\n"
+            msg += "Set the 'KeepOutput' value to True and try again."
+            self.raiseValidationException(msg=msg)
 
     def validateTask(self, taskConf, taskArgumentDefinition):
         """

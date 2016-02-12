@@ -529,14 +529,17 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName="cmsRun1", doLogCollect=True,
-                     lfn_counter=0):
+                     parentStepName="cmsRun1", doLogCollect=True, lfn_counter=0, forceTaskName=None):
         """
         _addMergeTask_
 
         Create a merge task for files produced by the parent task.
         """
-        mergeTask = parentTask.addTask("%sMerge%s" % (parentTask.name(), parentOutputModuleName))
+        # StepChain use case, to avoid merge task names clashes
+        if forceTaskName is None:
+            forceTaskName = parentTask.name()
+
+        mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
         self.addDashboardMonitoring(mergeTask)
         mergeTaskCmssw = mergeTask.makeStep("cmsRun1")
         mergeTaskCmssw.setStepType("CMSSW")
@@ -553,7 +556,7 @@ class StdBase(object):
 
         if doLogCollect:
             self.addLogCollectTask(mergeTask,
-                                   taskName="%s%sMergeLogCollect" % (parentTask.name(), parentOutputModuleName))
+                                   taskName="%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName))
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -602,7 +605,7 @@ class StdBase(object):
                              filterName=getattr(parentOutputModule, "filterName"),
                              forceMerged=True)
 
-        self.addCleanupTask(parentTask, parentOutputModuleName)
+        self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:
             self.addDQMHarvestTask(mergeTask, "Merged",
                                    uploadProxy=self.dqmUploadProxy,
@@ -611,13 +614,16 @@ class StdBase(object):
                                    dqmHarvestUnit=self.dqmHarvestUnit)
         return mergeTask
 
-    def addCleanupTask(self, parentTask, parentOutputModuleName):
+    def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None):
         """
         _addCleanupTask_
 
         Create a cleanup task to delete files produces by the parent task.
         """
-        cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (parentTask.name(), parentOutputModuleName))
+        if forceTaskName is None:
+            forceTaskName = parentTask.name()
+
+        cleanupTask = parentTask.addTask("%sCleanupUnmerged%s" % (forceTaskName, parentOutputModuleName))
         self.addDashboardMonitoring(cleanupTask)
         cleanupTask.setTaskType("Cleanup")
 

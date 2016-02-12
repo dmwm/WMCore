@@ -13,7 +13,7 @@ import tarfile
 import traceback
 
 from Utils.IterTools import grouper
-from WMComponent.TaskArchiver.TaskArchiverPoller import uploadPublishWorkflow
+from WMComponent.TaskArchiver.CleanCouchPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
 

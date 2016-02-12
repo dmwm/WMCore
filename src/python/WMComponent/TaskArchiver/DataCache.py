@@ -1,7 +1,7 @@
-import time
+from __future__ import (print_function, division)
 
 class DataCache(object): 
-    _finishedWFs = [] # Global cache holding workflow lists 
+    _finishedWFs = {} # Global cache holding workflow lists 
     
     @staticmethod
     def getFinishedWorkflows():

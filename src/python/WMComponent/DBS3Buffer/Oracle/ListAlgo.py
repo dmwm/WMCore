@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.ListAlgo
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.ListAlgo import ListAlgo as MySQLListAlgo
+from WMComponent.DBS3Buffer.MySQL.ListAlgo import ListAlgo as MySQLListAlgo
 
 class ListAlgo(MySQLListAlgo):
     """

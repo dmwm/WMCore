@@ -30,7 +30,7 @@ from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.DataStructs.Run   import Run
 
 from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
 from nose.plugins.attrib import attr

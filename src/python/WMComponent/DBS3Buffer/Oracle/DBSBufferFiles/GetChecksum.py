@@ -8,7 +8,7 @@ Oracle implementation of GetChecksum
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetChecksum import GetChecksum as MySQLGetChecksum
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetChecksum import GetChecksum as MySQLGetChecksum
 
 class GetChecksum(MySQLGetChecksum):
     """

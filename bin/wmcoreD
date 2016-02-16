@@ -8,12 +8,12 @@ and control the daemons:
 
 # generates a config file based on the root dirs (it looks for DefaultConfig.py files):
 # the component sections need a namespace attribute to the class can be loaded and daemonized.
-wmcore-new-config --roots=src/python/WMComponent/ErrorHandler/,src/python/WMComponent/DBSBuffer/ --output=WMCoreConfig.py
+wmcore-new-config --roots=src/python/WMComponent/ErrorHandler/,src/python/WMComponent/DBS3Buffer/ --output=WMCoreConfig.py
 
 #edit the generated config file to fit your needs.
 
 # loads default tables and tables from a specific module. The backend is automatically selected based on the config file.
-wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.DBSBuffer.Database 
+wmcore-db-init --config=WMCoreConfig.py --create --modules=WMComponent.DBS3Buffer.Database 
 
 # start the daemons from components defined in the config file:
 wmcoreD --start --config=WMCoreConfig.py

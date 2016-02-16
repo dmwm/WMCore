@@ -9,7 +9,7 @@ Should set the database-algo inDBS switch
 
 
 
-from WMComponent.DBSUpload.Database.MySQL.SetDatasetAlgo import SetDatasetAlgo as MySQLSetDatasetAlgo
+from WMComponent.DBS3Buffer.MySQL.SetDatasetAlgo import SetDatasetAlgo as MySQLSetDatasetAlgo
 
 class SetDatasetAlgo(MySQLSetDatasetAlgo):
     """

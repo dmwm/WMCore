@@ -8,7 +8,7 @@ MySQL implementation of DBSBufferFiles.AddIgnore
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.AddIgnore import AddIgnore as \
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.AddIgnore import AddIgnore as \
      MySQLAddIgnore
 
 class AddIgnore(MySQLAddIgnore):

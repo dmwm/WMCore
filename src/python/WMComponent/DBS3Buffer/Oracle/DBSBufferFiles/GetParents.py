@@ -9,7 +9,7 @@ Return a list of lfn's which are parents for a file.
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetParents import GetParents as MySQLGetParents
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetParents import GetParents as MySQLGetParents
 
 class GetParents(MySQLGetParents):
     """

@@ -25,7 +25,7 @@ from WMCore.WMBS.Workflow import Workflow
 
 from WMComponent.JobAccountant.JobAccountantPoller import JobAccountantPoller
 from WMCore.FwkJobReport.Report import Report
-from WMComponent.DBSBuffer.Database.Interface.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 
 class ReportIntegrationTest(unittest.TestCase):
     """

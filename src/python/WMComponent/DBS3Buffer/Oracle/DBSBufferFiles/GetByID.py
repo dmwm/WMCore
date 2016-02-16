@@ -7,7 +7,7 @@ Oracle implementation of GetByID
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetByID import GetByID as MySQLGetByID
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetByID import GetByID as MySQLGetByID
 
 class GetByID(MySQLGetByID):
     """

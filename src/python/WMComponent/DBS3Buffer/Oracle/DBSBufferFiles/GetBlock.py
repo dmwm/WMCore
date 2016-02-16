@@ -8,7 +8,7 @@ Oracle implementation of DBSBufferFiles.GetBlock
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.DBSBufferFiles.GetBlock import GetBlock as MySQLGetBlock
+from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.GetBlock import GetBlock as MySQLGetBlock
 
 class GetBlock(MySQLGetBlock):
     """

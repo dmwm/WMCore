@@ -8,7 +8,7 @@ Oracle implementation of DBSBuffer.CountBlocks
 
 
 
-from WMComponent.DBSBuffer.Database.MySQL.CountBlocks import CountBlocks as MySQLCountBlocks
+from WMComponent.DBS3Buffer.MySQL.CountBlocks import CountBlocks as MySQLCountBlocks
 
 class CountBlocks(MySQLCountBlocks):
     """

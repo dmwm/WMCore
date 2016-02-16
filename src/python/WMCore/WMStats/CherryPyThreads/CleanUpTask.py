@@ -1,6 +1,6 @@
 from __future__ import (division, print_function)
 
-from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+import traceback
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
@@ -36,10 +36,18 @@ class CleanUpTask(CherryPyPeriodicTask):
         """
         loop through the workflows in couchdb, if archived delete all the data in couchdb
         """
-        
+        self.logger.info("getting archived data")
         requestNames = self.wmstatsDB.getArchivedRequests()
+        self.logger.info("archived list %s" % requestNames)
+        
         for req in requestNames:
             self.logger.info("deleting %s data" % req)
-            result = self.wmstatsDB.deleteDocsByWorkflow(req)
-            self.logger.info("%s deleted" % result)
+            try:
+                result = self.wmstatsDB.deleteDocsByWorkflow(req)
+            except Exception as ex:
+                self.logger.error("deleting %s failed" % req)
+                for line in traceback.format_exc().rstrip().split("\n"):
+                    self.logger.error(" " + line)
+            else:
+                self.logger.info("%s deleted" % len(result))
         return

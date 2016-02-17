@@ -964,13 +964,6 @@ class DBSBufferFileTest(unittest.TestCase):
         testFileA.setDatasetParent(datasetParent = "Parent")
         testFileA.create()
 
-        # There are no accessors for these things because load is never called
-        action = self.daoFactory(classname = "LoadInfoFromDAS")
-        das    = action.execute(ids = [1])[0]
-        self.assertEqual(das['Parent'], 'Parent')
-        self.assertEqual(das['GlobalTag'], 'GlobalTag')
-        self.assertEqual(das['ValidStatus'], 'VALID')
-
         return
 
 

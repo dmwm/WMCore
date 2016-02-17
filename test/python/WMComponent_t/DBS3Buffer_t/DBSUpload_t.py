@@ -317,7 +317,7 @@ class DBSUploadTest(unittest.TestCase):
         Inject a dummy worklow in DBSBuffer for testing,
         returns the workflow ID
         """
-        injectWorkflowDAO = self.buffer3Factory("InsertWorkflow")
+        injectWorkflowDAO = self.bufferFactory("InsertWorkflow")
         workflowID = injectWorkflowDAO.execute(workflowName, taskPath,
                                                MaxWaitTime, MaxFiles,
                                                MaxEvents, MaxSize)
@@ -383,6 +383,7 @@ class DBSUploadTest(unittest.TestCase):
         Verify that the dual upload mode works correctly.
         """
         self.dbsApi = DbsApi(url = self.dbsUrl)
+        config = self.getConfig()
         dbsUploader = DBSUploadPoller(config = config)
         dbsUtil = DBSBufferUtil()
 

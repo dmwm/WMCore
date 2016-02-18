@@ -64,7 +64,7 @@ class RunTest(unittest.TestCase):
         run1 += run1difflumi
         self.assertEqual(len(run1), 10)
         for l in run1difflumi:
-            self.failUnless(l in run1)
+            self.assertTrue(l in run1)
 
 
 

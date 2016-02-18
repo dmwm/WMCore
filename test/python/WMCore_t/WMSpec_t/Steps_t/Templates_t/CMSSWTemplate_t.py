@@ -52,9 +52,9 @@ class CMSSWTemplateTest(unittest.TestCase):
             self.fail(msg)
 
         #TODO: Check the step has the appropriate attributes expected for CMSSW
-        self.failUnless(
+        self.assertTrue(
             hasattr(step, "application"))
-        self.failUnless(
+        self.assertTrue(
             hasattr(step.application, "setup"))
 
 

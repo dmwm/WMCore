@@ -75,9 +75,9 @@ class Scram_t(unittest.TestCase):
             self.fail(msg)
 
         self.assertEqual(status, 0)
-        self.failUnless(os.path.exists(s.projectArea))
-        self.failUnless("project" in s.lastExecuted)
-        self.failUnless("CMSSW_X_Y_Z" in s.lastExecuted)
+        self.assertTrue(os.path.exists(s.projectArea))
+        self.assertTrue("project" in s.lastExecuted)
+        self.assertTrue("CMSSW_X_Y_Z" in s.lastExecuted)
 
         try:
             status = s.runtime()
@@ -86,8 +86,8 @@ class Scram_t(unittest.TestCase):
             self.fail(msg)
 
         self.assertEqual(status, 0)
-        self.failUnless("ru -sh" in s.lastExecuted)
-        self.failUnless("TEST_MODE" in s.runtimeEnv)
+        self.assertTrue("ru -sh" in s.lastExecuted)
+        self.assertTrue("TEST_MODE" in s.runtimeEnv)
 
         comm = "echo \"Hello World\""
         try:

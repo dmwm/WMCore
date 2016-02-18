@@ -53,24 +53,24 @@ class Interface_t(unittest.TestCase):
 
         guInt.callUpdate("ownthis","document1", group = self.owner1.group.name, user = self.owner1.name)
 
-        self.failUnless("document1" in guInt.documentsOwned(self.owner1.group.name, self.owner1.name))
+        self.assertTrue("document1" in guInt.documentsOwned(self.owner1.group.name, self.owner1.name))
         self.assertEqual(len(guInt.documentsOwned(self.owner1.group.name, self.owner1.name)), 1)
         self.assertEqual(len(guInt.documentsOwned(self.owner2.group.name, self.owner2.name)), 0)
 
         guInt.callUpdate("ownthis","document2", group = self.owner2.group.name, user = self.owner2.name)
 
-        self.failUnless("document2" in guInt.documentsOwned(self.owner2.group.name, self.owner2.name))
+        self.assertTrue("document2" in guInt.documentsOwned(self.owner2.group.name, self.owner2.name))
         self.assertEqual(len(guInt.documentsOwned(self.owner1.group.name, self.owner1.name)), 1)
         self.assertEqual(len(guInt.documentsOwned(self.owner2.group.name, self.owner2.name)), 1)
 
 
         guInt.callUpdate("newgroup", "group-DataOps", group = "DataOps")
 
-        self.failUnless(couch.documentExists("group-DataOps") )
+        self.assertTrue(couch.documentExists("group-DataOps") )
 
         guInt.callUpdate("newuser", "user-damason", group = "DataOps", user = "damason")
 
-        self.failUnless(couch.documentExists("user-damason") )
+        self.assertTrue(couch.documentExists("user-damason") )
 
 
 

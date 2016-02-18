@@ -42,16 +42,16 @@ class TemplateTest(unittest.TestCase):
             self.fail(msg)
 
         # check environment installation
-        self.failUnless(getattr(step, "environment", None) != None)
+        self.assertTrue(getattr(step, "environment", None) != None)
         env = getattr(step, "environment")
-        self.failUnless(getattr(env, "paths", None) != None)
-        self.failUnless(getattr(env, "variables", None) != None)
+        self.assertTrue(getattr(env, "paths", None) != None)
+        self.assertTrue(getattr(env, "variables", None) != None)
 
 
         # check build installation
-        self.failUnless(getattr(step, "build", None) != None)
+        self.assertTrue(getattr(step, "build", None) != None)
         build = getattr(step, "build")
-        self.failUnless(getattr(build, "directories", None) != None)
+        self.assertTrue(getattr(build, "directories", None) != None)
 
     def testC(self):
         """exceptions"""
@@ -109,13 +109,13 @@ class CoreHelperTest(unittest.TestCase):
             self.fail(msg)
 
         env = helper.environment()
-        self.failUnless(getattr(env.variables, "Variable1", None) != None)
+        self.assertTrue(getattr(env.variables, "Variable1", None) != None)
         self.assertEqual(getattr(env.variables, "Variable1"), "Value1")
 
 
 
         helper.addEnvironmentVariable("Variable2", "Value2")
-        self.failUnless(getattr(env.variables, "Variable2", None) != None)
+        self.assertTrue(getattr(env.variables, "Variable2", None) != None)
         self.assertEqual(getattr(env.variables, "Variable2"), "Value2")
 
         try:
@@ -129,7 +129,7 @@ class CoreHelperTest(unittest.TestCase):
 
 
         path1 = getattr(env.paths, "Path1", None)
-        self.failUnless(path1 != None)
+        self.assertTrue(path1 != None)
         self.assertEqual(path1, ['Entry1', 'Entry2', 'Entry3'])
 
 
@@ -158,25 +158,25 @@ class CoreHelperTest(unittest.TestCase):
             self.fail(msg)
 
         dirs = helper.directoryStructure()
-        self.failUnless(hasattr(dirs, helper.stepName()))
+        self.assertTrue(hasattr(dirs, helper.stepName()))
 
         stepDir = getattr(dirs, helper.stepName())
-        self.failUnless(hasattr(stepDir, "dir1"))
+        self.assertTrue(hasattr(stepDir, "dir1"))
         dir1 = getattr(stepDir, "dir1")
         dir2 = getattr(dir1, "dir2")
 
-        self.failUnless(hasattr(dir1, "dir2"))
-        self.failUnless(hasattr(dir1, "dir3"))
-        self.failUnless(hasattr(dir1, "dir4"))
-        self.failUnless(hasattr(dir1, "dir5"))
+        self.assertTrue(hasattr(dir1, "dir2"))
+        self.assertTrue(hasattr(dir1, "dir3"))
+        self.assertTrue(hasattr(dir1, "dir4"))
+        self.assertTrue(hasattr(dir1, "dir5"))
 
 
 
         helper.addFile("file1")
         helper.addFile("file2", "dir1/dir2/file2")
 
-        self.failUnless(hasattr(stepDir, "file1"))
-        self.failUnless(hasattr(dir2, "file2"))
+        self.assertTrue(hasattr(stepDir, "file1"))
+        self.assertTrue(hasattr(dir2, "file2"))
 
         file1 = getattr(stepDir, "file1")
         file2 = getattr(dir2, "file2")

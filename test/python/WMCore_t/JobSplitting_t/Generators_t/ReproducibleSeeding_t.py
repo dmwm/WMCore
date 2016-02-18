@@ -51,7 +51,7 @@ class ReproducibleSeedingTests(unittest.TestCase):
         seeder(job)
         baggage = job.getBaggage()
         seed1 = getattr(baggage.process.RandomNumberGeneratorService, "seed1", None)
-        self.failUnless(seed1 != None)
+        self.assertTrue(seed1 != None)
 
 
 if __name__ == '__main__':

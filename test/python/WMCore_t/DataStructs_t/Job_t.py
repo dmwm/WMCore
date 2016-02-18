@@ -162,7 +162,7 @@ class JobTest(unittest.TestCase):
 
 
 
-        self.failUnless(hasattr(baggage, "baggageContents"))
+        self.assertTrue(hasattr(baggage, "baggageContents"))
 
 if __name__ == "__main__":
     unittest.main()

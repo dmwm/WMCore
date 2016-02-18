@@ -52,7 +52,7 @@ class CouchUtils_t(unittest.TestCase):
             msg = "Error initialising couch client for test object:\n %s " % str(ex)
             self.fail(msg)
 
-        self.failUnless(couchThingy.couchdb != None)
+        self.assertTrue(couchThingy.couchdb != None)
         # test decorator on already connected object
         try:
             couchThingy()
@@ -69,7 +69,7 @@ class CouchUtils_t(unittest.TestCase):
         except Exception as ex:
             msg = "Error invoking connectToCouch decorator:\n %s" % str(msg)
             self.fail(msg)
-        self.failUnless(newCouchThingy != None)
+        self.assertTrue(newCouchThingy != None)
 
 
     def testB(self):

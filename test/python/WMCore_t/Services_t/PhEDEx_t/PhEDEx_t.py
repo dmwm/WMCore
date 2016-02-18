@@ -81,7 +81,7 @@ class PhEDExTest(unittest.TestCase):
 
         Verify that the node name is Buffer first
         """
-        self.failUnless(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
+        self.assertTrue(self.phedexApi.getBestNodeName("cmssrm.fnal.gov") == "T1_US_FNAL_Buffer")
         return
 
     @attr("integration")
@@ -92,8 +92,8 @@ class PhEDExTest(unittest.TestCase):
         Verify that the node map can be retrieve from PhEDEx and that the
         getNodeSE() and getNodeNames() methods work correctly.
         """
-        self.failUnless(self.phedexApi.getNodeSE("T2_FR_GRIF_LLR") == "polgrid4.in2p3.fr")
-        self.failUnless(self.phedexApi.getNodeNames("cmssrm.fnal.gov") == ["T1_US_FNAL_Buffer",
+        self.assertTrue(self.phedexApi.getNodeSE("T2_FR_GRIF_LLR") == "polgrid4.in2p3.fr")
+        self.assertTrue(self.phedexApi.getNodeNames("cmssrm.fnal.gov") == ["T1_US_FNAL_Buffer",
                                                                            "T1_US_FNAL_MSS"])
         return
 
@@ -178,9 +178,9 @@ class PhEDExTest(unittest.TestCase):
         tfc_map[site] = readTFC(tfc_file)
         pfn =    tfc_map[site].matchLFN('srmv2', '/store/user/jblow/dir/test.root')
 
-        self.failUnless(pfn == 'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/user/jblow/dir/test.root')
+        self.assertTrue(pfn == 'srm://cmssrm.fnal.gov:8443/srm/managerv2?SFN=/11/store/user/jblow/dir/test.root')
 
-        self.failUnless(phedexJSON.getNodeSE('T1_US_FNAL_Buffer') == 'cmssrm.fnal.gov')
+        self.assertTrue(phedexJSON.getNodeSE('T1_US_FNAL_Buffer') == 'cmssrm.fnal.gov')
 
     @attr('integration')
     def testAuth(self):

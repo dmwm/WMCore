@@ -189,14 +189,14 @@ class CouchService_t(unittest.TestCase):
 
         owner = svc.newOwner("somegroup", "someuser")
 
-        self.failUnless(len(svc.listOwners()) == 1 )
+        self.assertTrue(len(svc.listOwners()) == 1 )
 
         owner2 = svc.listOwners()[0]
         self.assertEqual(str(owner2['group']), owner['group'])
         self.assertEqual(str(owner2['name']), owner['name'])
 
         svc.removeOwner(owner2)
-        self.failUnless(len(svc.listOwners()) == 0)
+        self.assertTrue(len(svc.listOwners()) == 0)
         return
 
     def testTimestampAccounting(self):

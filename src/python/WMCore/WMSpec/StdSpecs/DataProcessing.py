@@ -5,7 +5,7 @@ _DataProcessing_
 Base module for workflows with input.
 """
 
-from WMCore.Lexicon import dataset, couchurl, identifier, block
+from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList
 
@@ -21,10 +21,11 @@ class DataProcessing(StdBase):
         StdBase.__call__(self, workloadName, arguments)
 
         # Handle the default of the various splitting algorithms
-        self.procJobSplitArgs = {"include_parents" : self.includeParents}
+        self.procJobSplitArgs = {"include_parents": self.includeParents}
+        nCores = int(getattr(self, 'multicoreNCores', 1))
         if self.procJobSplitAlgo == "EventBased" or self.procJobSplitAlgo == "EventAwareLumiBased":
             if self.eventsPerJob is None:
-                self.eventsPerJob = int((8.0 * 3600.0) / self.timePerEvent)
+                self.eventsPerJob = int(nCores * (8.0 * 3600.0) / self.timePerEvent)
             self.procJobSplitArgs["events_per_job"] = self.eventsPerJob
             if self.procJobSplitAlgo == "EventAwareLumiBased":
                 self.procJobSplitArgs["max_events_per_lumi"] = 20000

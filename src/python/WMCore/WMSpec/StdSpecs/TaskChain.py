@@ -486,6 +486,7 @@ class TaskChainWorkloadFactory(StdBase):
             if argument in taskConf:
                 taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
 
+        nCores = int(taskConf.get('Multicore', 1))
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
             # Adjust totalEvents according to the filter efficiency
@@ -495,12 +496,12 @@ class TaskChainWorkloadFactory(StdBase):
                                        taskConf.get("FilterEfficiency")
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
+            taskConf["EventsPerJob"] = int(nCores * (8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 
         taskConf["SplittingArguments"] = {}
-        if taskConf["SplittingAlgo"] == "EventBased" or taskConf["SplittingAlgo"] == "EventAwareLumiBased":
+        if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000

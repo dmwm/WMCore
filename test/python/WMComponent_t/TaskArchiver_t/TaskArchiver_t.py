@@ -794,8 +794,8 @@ class TaskArchiverTest(unittest.TestCase):
         if not (isReReco or isPromptReco):
             return
 
-        self.assertEquals(isReReco, True)
-        self.assertEquals(isPromptReco, False)
+        self.assertTrue(isReReco)
+        self.assertFalse(isPromptReco)
 
         # We are not interested if it's not a PromptReco or a ReReco
         if (isReReco or isPromptReco) == False:

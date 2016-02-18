@@ -5,25 +5,21 @@ _Subscription_t_
 Unit tests for the WMBS Subscription class and all it's DAOs.
 """
 
-import unittest
-import logging
-import random
 import threading
 import time
+import unittest
 
 from WMCore.DAOFactory import DAOFactory
-from WMQuality.TestInit import TestInit
-
+from WMCore.DataStructs.Run import Run
+from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMQuality.TestInit import TestInit
 
-from WMCore.DataStructs.Run import Run
-
-from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
 class SubscriptionTest(unittest.TestCase):
     def setUp(self):
@@ -814,32 +810,23 @@ class SubscriptionTest(unittest.TestCase):
         testSubscriptionB.load()
         testSubscriptionC.load()
 
-        assert type(testSubscriptionB["id"]) == int, \
-               "ERROR: Subscription id is not an int."
+        self.assertTrue(isinstance(testSubscriptionB["id"], int),
+                        "ERROR: Subscription id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionB["workflow"].id, int),
+                        "ERROR: Subscription workflow id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionC["workflow"].id, int),
+                        "ERROR: Subscription workflow id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionB["fileset"].id, int),
+                        "ERROR: Subscription fileset id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionC["fileset"].id, int),
+                        "ERROR: Subscription fileset id is not an int.")
 
-        assert type(testSubscriptionC["id"]) == int, \
-               "ERROR: Subscription id is not an int."
-
-        assert type(testSubscriptionB["workflow"].id) == int, \
-               "ERROR: Subscription workflow id is not an int."
-
-        assert type(testSubscriptionC["workflow"].id) == int, \
-               "ERROR: Subscription workflow id is not an int."
-
-        assert type(testSubscriptionB["fileset"].id) == int, \
-               "ERROR: Subscription fileset id is not an int."
-
-        assert type(testSubscriptionC["fileset"].id) == int, \
-               "ERROR: Subscription fileset id is not an int."
-
-        assert testWorkflow.id == testSubscriptionB["workflow"].id, \
-               "ERROR: Subscription load by ID didn't load workflow correctly"
-
-        assert testFileset.id == testSubscriptionB["fileset"].id, \
-               "ERROR: Subscription load by ID didn't load fileset correctly"
-
-        assert testSubscriptionA["id"] == testSubscriptionC["id"], \
-               "ERROR: Subscription didn't load ID correctly."
+        self.assertEqual(testWorkflow.id, testSubscriptionB["workflow"].id,
+                         "ERROR: Subscription load by ID didn't load workflow correctly")
+        self.assertEqual(testFileset.id, testSubscriptionB["fileset"].id,
+                         "ERROR: Subscription load by ID didn't load fileset correctly")
+        self.assertEqual(testSubscriptionA["id"], testSubscriptionC["id"],
+                         "ERROR: Subscription didn't load ID correctly.")
 
         return
 

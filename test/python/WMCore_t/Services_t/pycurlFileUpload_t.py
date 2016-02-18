@@ -38,7 +38,7 @@ class PyCurlRESTServer(RESTBaseUnitTest):
         res = self.requestHandler.uploadFile(fileName, 'http://127.0.0.1:8888/unittests/rest/file/')
         # the file is there now (?)
         self.assertTrue(os.path.isfile(uploadedFilename))
-        self.assertEquals(open(uploadedFilename).read(), open(fileName).read())
+        self.assertEqual(open(uploadedFilename).read(), open(fileName).read())
         # delete the uploaded file
         os.remove(uploadedFilename)
         self.assertTrue('Success' in res)

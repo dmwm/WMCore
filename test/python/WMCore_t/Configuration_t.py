@@ -264,7 +264,7 @@ class ConfigurationTest(unittest.TestCase):
         config.section_("testsection")
         self.assertTrue(hasattr(instance, "testsection"))
         config.testsection.var = 10
-        self.assertEquals(instance.testsection.var, 10)
+        self.assertEqual(instance.testsection.var, 10)
 
 
     def testH_ConfigSectionDictionariseInternalChildren(self):

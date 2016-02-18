@@ -780,7 +780,7 @@ class ResourceControlTest(unittest.TestCase):
         (_, _) = retval.communicate()
         myResourceControl = ResourceControl()
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEquals(len(result), 1)
+        self.assertEqual(len(result), 1)
         self.assertTrue('CERN' in result)
         for x in result:
             self.assertEqual(len(result[x]['thresholds']), 10)

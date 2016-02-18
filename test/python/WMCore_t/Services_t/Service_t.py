@@ -221,14 +221,14 @@ class ServiceTest(unittest.TestCase):
 
         self.logger.info('second call to refreshCache - should pass')
         data = service.refreshCache(cache, '/lies').read()
-        self.assertEquals(cacheddata, data)
+        self.assertEqual(cacheddata, data)
 
         # sleep a while so the file expires in the cache
         # FIXME: RACY
         time.sleep(2)
         self.logger.info('third call to refreshCache - should return stale cache')
         data = service.refreshCache(cache, '/lies').read()
-        self.assertEquals(cacheddata, data)
+        self.assertEqual(cacheddata, data)
 
         # sleep a while longer so the cache is dead
         # FIXME: RACY

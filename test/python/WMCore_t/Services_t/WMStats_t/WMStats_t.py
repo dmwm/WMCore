@@ -51,29 +51,29 @@ class WMStatsTest(unittest.TestCase):
         schema = generate_reqmgr_schema()
         
         result = self.reqDBWriter.insertGenericRequest(schema[0])
-        self.assertEquals(result[0]['ok'], True, 'insert fail')
+        self.assertEqual(result[0]['ok'], True, 'insert fail')
         
         result = self.reqDBWriter.updateRequestStatus(schema[0]['RequestName'], "failed")
-        self.assertEquals(result, 'OK', 'update fail')
+        self.assertEqual(result, 'OK', 'update fail')
         
         result = self.reqDBWriter.updateRequestStatus("not_exist_schema", "assigned") 
-        self.assertEquals(result,'Error: document not found')
+        self.assertEqual(result,'Error: document not found')
         
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], {"Teams": ['teamA']})
-        self.assertEquals(result, 'OK', 'update fail')
+        self.assertEqual(result, 'OK', 'update fail')
         
         result = self.reqDBWriter.updateRequestProperty("not_exist_schema", {"Teams": ['teamA']})                  
-        self.assertEquals(result, 'Error: document not found')
+        self.assertEqual(result, 'Error: document not found')
         
         totalStats = {'TotalEstimatedJobs': 100, 'TotalInputEvents': 1000, 'TotalInputLumis': 1234, 'TotalInputFiles': 5}
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], totalStats)
-        self.assertEquals(result, 'OK', 'update fail')
+        self.assertEqual(result, 'OK', 'update fail')
         
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], totalStats)
-        self.assertEquals(result, 'OK', 'update fail')
+        self.assertEqual(result, 'OK', 'update fail')
         
         result = self.reqDBWriter.updateRequestProperty("not_exist_schema", totalStats)
-        self.assertEquals(result, 'Error: document not found')
+        self.assertEqual(result, 'Error: document not found')
         
         spec1 = newWorkload(schema[0]['RequestName'])
         production = spec1.newTask("Production")
@@ -83,7 +83,7 @@ class WMStatsTest(unittest.TestCase):
                       'SiteWhitelist': spec1.getTopLevelTask()[0].siteWhitelist(),
                       'OutputDatasets': spec1.listOutputDatasets()}
         result = self.reqDBWriter.updateRequestProperty(spec1.name(), properties)
-        self.assertEquals(result, 'OK', 'update fail')
+        self.assertEqual(result, 'OK', 'update fail')
         
         spec2 = newWorkload("not_exist_schema")
         production = spec2.newTask("Production")
@@ -92,22 +92,22 @@ class WMStatsTest(unittest.TestCase):
                       'SiteWhitelist': spec2.getTopLevelTask()[0].siteWhitelist(),
                       'OutputDatasets': spec2.listOutputDatasets()}
         result = self.reqDBWriter.updateRequestProperty(spec2.name(), properties)
-        self.assertEquals(result, 'Error: document not found')
+        self.assertEqual(result, 'Error: document not found')
 
         requests = self.wmstatsReader.getRequestByStatus(["failed"], jobInfoFlag = False, legacyFormat = True)
-        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         
         requestCollection = RequestInfoCollection(requests)
         result = requestCollection.getJSONData()
-        self.assertEquals(result.keys(), [schema[0]['RequestName']])
+        self.assertEqual(result.keys(), [schema[0]['RequestName']])
         
         requests = self.wmstatsReader.getActiveData()
-        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         requests = self.wmstatsReader.getRequestByStatus(["failed"])
-        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         
         requests = self.wmstatsReader.getRequestSummaryWithJobInfo(schema[0]['RequestName'])
-        self.assertEquals(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         
 
 if __name__ == '__main__':

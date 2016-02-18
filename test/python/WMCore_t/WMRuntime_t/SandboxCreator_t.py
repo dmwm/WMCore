@@ -90,7 +90,7 @@ class SandboxCreator_t(unittest.TestCase):
     def fileExistsTest(self,file,msg = None):
         if (msg == None):
             msg = "Failed file existence test for (%s)" % file
-        self.assertEquals(os.path.exists(file),True,msg)
+        self.assertEqual(os.path.exists(file),True,msg)
 
     def setUp(self):
         # need to take a slice to make a real copy

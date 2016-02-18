@@ -410,7 +410,7 @@ class TaskArchiverTest(unittest.TestCase):
         getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
         # Assert if the URL is assembled as expected
         if run == 207214:
-            self.assertEquals('https://cmsweb.cern.ch/dqm/dev/jsonfairy/archive/207214/MinimumBias/Commissioning10-v4/DQM/DQM/TimerService/event_byluminosity',
+            self.assertEqual('https://cmsweb.cern.ch/dqm/dev/jsonfairy/archive/207214/MinimumBias/Commissioning10-v4/DQM/DQM/TimerService/event_byluminosity',
                                getUrl)
         # let's suppose it works..
         testResponseFile = open(os.path.join(getTestBase(),
@@ -457,7 +457,7 @@ class TaskArchiverTest(unittest.TestCase):
         testDashBoardPayload = testDashBoardPayloadFile.read()
         testDashBoardPayloadFile.close()
 
-        self.assertEquals(data, testDashBoardPayload)
+        self.assertEqual(data, testDashBoardPayload)
 
         return True
     
@@ -642,7 +642,7 @@ class TaskArchiverTest(unittest.TestCase):
         failedRunInfo = workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs']
         for key, value in failedRunInfo.items():
             failedRunInfo[key] = list(set(value))
-        self.assertEquals(failedRunInfo, {'10' : [12312]},
+        self.assertEqual(failedRunInfo, {'10' : [12312]},
                           "Wrong lumi information in the summary for failed jobs")
 
         # Check the failures by site histograms
@@ -809,10 +809,10 @@ class TaskArchiverTest(unittest.TestCase):
             if not release :
                 logging.info("no release for %s, bailing out" % workload.name())
 
-        self.assertEquals(release, "test_compops_CMSSW_5_3_6_patch1")
+        self.assertEqual(release, "test_compops_CMSSW_5_3_6_patch1")
         # If all is true, get the run numbers processed by this worklfow
         runList = listRunsWorkflow.execute(workflow = workload.name())
-        self.assertEquals([207214, 207215], runList)
+        self.assertEqual([207214, 207215], runList)
         # GO to DQM GUI, get what you want
         # https://cmsweb.cern.ch/dqm/offline/jsonfairy/archive/211313/PAMuon/HIRun2013-PromptReco-v1/DQM/DQM/TimerService/event
         for dataset in interestingDatasets :

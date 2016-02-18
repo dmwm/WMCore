@@ -158,8 +158,8 @@ class CMSCouchTest(unittest.TestCase):
         d['foo'] = 'bar'
         doc_info = self.db.commit(doc=d, timestamp=True)[0]
         d_from_db = self.db.document(doc_info['id'])
-        self.assertEquals(d['foo'], d_from_db['foo'])
-        self.assertEquals(d['timestamp'], d_from_db['timestamp'])
+        self.assertEqual(d['foo'], d_from_db['foo'])
+        self.assertEqual(d['timestamp'], d_from_db['timestamp'])
 
     def testAttachments(self):
         """
@@ -224,15 +224,15 @@ class CMSCouchTest(unittest.TestCase):
         data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
 
         # Should have one conflict in the repl database
-        self.assertEquals(data['total_rows'], 1)
+        self.assertEqual(data['total_rows'], 1)
         # Should have no conflicts in the source database
-        self.assertEquals(self.db.post('/%s/_temp_view' % self.db.name, conflict_view)['total_rows'], 0)
+        self.assertEqual(self.db.post('/%s/_temp_view' % self.db.name, conflict_view)['total_rows'], 0)
         self.assertTrue(repl_db.documentExists(data['rows'][0]['id'], rev=data['rows'][0]['key'][0]))
 
         repl_db.delete_doc(data['rows'][0]['id'], rev=data['rows'][0]['key'][0])
         data = repl_db.post('/%s/_temp_view' % repl_db.name, conflict_view)
 
-        self.assertEquals(data['total_rows'], 0)
+        self.assertEqual(data['total_rows'], 0)
         self.server.deleteDatabase(repl_db.name)
 
         #update it again
@@ -243,7 +243,7 @@ class CMSCouchTest(unittest.TestCase):
 
         #test that I can pull out an old revision
         doc_v1_test = self.db.document(doc_id, rev=doc_v1['_rev'])
-        self.assertEquals(doc_v1, doc_v1_test)
+        self.assertEqual(doc_v1, doc_v1_test)
 
         #test that I can check a revision exists
         self.assertTrue(self.db.documentExists(doc_id, rev=doc_v2['_rev']))
@@ -318,9 +318,9 @@ class CMSCouchTest(unittest.TestCase):
         self.db.commit(update_ddoc)
         doc = {'foo': 123, 'counter': 0}
         doc_id = self.db.commit(doc)[0]['id']
-        self.assertEquals("bumped it!", self.db.updateDocument(doc_id, 'foo', 'bump-counter'))
+        self.assertEqual("bumped it!", self.db.updateDocument(doc_id, 'foo', 'bump-counter'))
 
-        self.assertEquals(1, self.db.document(doc_id)['counter'])
+        self.assertEqual(1, self.db.document(doc_id)['counter'])
 
 
     def testList(self):

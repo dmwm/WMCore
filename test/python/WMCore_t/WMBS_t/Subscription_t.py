@@ -1500,44 +1500,44 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
 
         availableFiles = testSubscription.filesOfStatus("Available")
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
         availableFiles = testSubscription.filesOfStatus("Available", 0)
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
         availableFiles = testSubscription.filesOfStatus("Available", 3)
-        self.assertEquals(len(availableFiles), 3)
+        self.assertEqual(len(availableFiles), 3)
         availableFiles = testSubscription.filesOfStatus("Available", 7)
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
 
 
         testSubscription.acquireFiles([testFileA, testFileB, testFileC, testFileD])
         availableFiles = testSubscription.filesOfStatus("Available", 6)
-        self.assertEquals(len(availableFiles), 2)
+        self.assertEqual(len(availableFiles), 2)
 
         files = testSubscription.filesOfStatus("Acquired", 0)
-        self.assertEquals(len(files), 4)
+        self.assertEqual(len(files), 4)
         files = testSubscription.filesOfStatus("Acquired", 2)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Acquired", 6)
-        self.assertEquals(len(files), 4)
+        self.assertEqual(len(files), 4)
 
 
         testSubscription.completeFiles([testFileB, testFileC])
 
         files = testSubscription.filesOfStatus("Completed", 0)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Completed", 1)
-        self.assertEquals(len(files), 1)
+        self.assertEqual(len(files), 1)
         files = testSubscription.filesOfStatus("Completed", 6)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
 
         testSubscription.failFiles([testFileA, testFileE])
 
         files = testSubscription.filesOfStatus("Failed", 0)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Failed", 1)
-        self.assertEquals(len(files), 1)
+        self.assertEqual(len(files), 1)
         files = testSubscription.filesOfStatus("Failed", 6)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
 
 
         testSubscription.delete()
@@ -1742,10 +1742,10 @@ class SubscriptionTest(unittest.TestCase):
         finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         finishedSubs = finishedDAO.execute()
 
-        self.assertEquals(len(finishedSubs), 2,
+        self.assertEqual(len(finishedSubs), 2,
                           "Error: Wrong number of finished subscriptions.")
 
-        self.assertEquals(finishedSubs[0]["id"], testSubscription1["id"],
+        self.assertEqual(finishedSubs[0]["id"], testSubscription1["id"],
                           "Error: Wrong subscription id.")
 
         #Mark all output filesets which are input of another subscription as closed
@@ -1757,7 +1757,7 @@ class SubscriptionTest(unittest.TestCase):
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
 
-        self.assertEquals(len(finishedSubs), 4,
+        self.assertEqual(len(finishedSubs), 4,
                           "Error: Wrong number of finished subscriptions.")
 
         return

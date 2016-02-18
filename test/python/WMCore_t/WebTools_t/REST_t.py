@@ -67,8 +67,8 @@ class RESTTest(RESTBaseUnitTest):
         output={'code':200}
         data, _ = methodTest('GET', url, accept='text/json', output=output)
         data = json.loads(data)
-        self.assertEquals(type(data), list)
-        self.assertEquals(type(data[0]), dict)
+        self.assertEqual(type(data), list)
+        self.assertEqual(type(data[0]), dict)
 
     def testUnsupportedFormat(self):
         # test not accepted type should return 406 error
@@ -148,13 +148,13 @@ class RESTTest(RESTBaseUnitTest):
         urllib_data = urllib.urlopen(url)
         if self.do_production:
             #production mode returns 403 error
-            self.assertEquals(urllib_data.getcode(), 403)
+            self.assertEqual(urllib_data.getcode(), 403)
         else:
             response_data = urllib_data.read()
             response_data = json.loads(response_data)
-            self.assertEquals(response_data['type'], expected_data['type'])
-            self.assertEquals(response_data['message'], expected_data['message'])
-            self.assertEquals(urllib_data.getcode(), 400)
+            self.assertEqual(response_data['type'], expected_data['type'])
+            self.assertEqual(response_data['message'], expected_data['message'])
+            self.assertEqual(urllib_data.getcode(), 400)
 
     def testList(self):
         verb ='GET'
@@ -368,7 +368,7 @@ class RESTTest(RESTBaseUnitTest):
         verb ='PUT'
         url = self.urlbase + 'list1'
         urllib_data = urllib.urlopen(url)
-        self.assertEquals(urllib_data.getcode(), 403)
+        self.assertEqual(urllib_data.getcode(), 403)
 
         # pass proper role
         output={'code':200}

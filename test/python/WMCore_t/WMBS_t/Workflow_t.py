@@ -498,7 +498,7 @@ class WorkflowTest(unittest.TestCase):
 
         getFinishedDAO = daoFactory(classname = "Workflow.GetFinishedWorkflows")
         result = getFinishedDAO.execute()
-        self.assertEquals(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
+        self.assertEqual(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
         #Mark the first 50 subscriptions as finished
         for idx, sub in enumerate(subscriptions):
@@ -508,7 +508,7 @@ class WorkflowTest(unittest.TestCase):
 
         #No workflow is finished, none of them has all the subscriptions completed
         result = getFinishedDAO.execute()
-        self.assertEquals(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
+        self.assertEqual(len(result), 0, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
         #Now finish all workflows in wf{000-5}
         for idx, sub in enumerate(subscriptions):
@@ -518,20 +518,20 @@ class WorkflowTest(unittest.TestCase):
 
         #Check the workflows
         result = getFinishedDAO.execute()
-        self.assertEquals(len(result), 6, "A workflow is incorrectly flagged as finished: %s" % str(result))
+        self.assertEqual(len(result), 6, "A workflow is incorrectly flagged as finished: %s" % str(result))
 
         #Check the overall structure of the workflows
         for wf in result:
             #Sanity checks on the results
             # These are very specific checks and depends heavily on the names of task, spec and workflow
-            self.assertEquals(wf[2:], result[wf]['spec'][2:],
+            self.assertEqual(wf[2:], result[wf]['spec'][2:],
                             "A workflow has the wrong spec-name combination: %s" % str(wf))
             self.assertTrue(int(wf[2:]) < 6,
                             "A workflow is incorrectly flagged as finished: %s" % str(wf))
-            self.assertEquals(len(result[wf]['workflows']), 10,
+            self.assertEqual(len(result[wf]['workflows']), 10,
                               "A workflow has more tasks than it should: %s" % str(result[wf]))
             for task in result[wf]['workflows']:
-                self.assertEquals(len(result[wf]['workflows'][task]), 1,
+                self.assertEqual(len(result[wf]['workflows'][task]), 1,
                                   "A workflow has more subscriptions than it should: %s" % str(result[wf]))
 
         return

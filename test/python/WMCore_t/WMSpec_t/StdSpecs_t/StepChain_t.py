@@ -22,6 +22,7 @@ def getTestFile(partialPath):
     normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
     return os.path.join(normPath, partialPath)
 
+
 def injectStepChainConfigSingle(couchDatabase):
     """
     _injectStepChainConfigSingle_
@@ -38,9 +39,10 @@ def injectStepChainConfigSingle(couchDatabase):
         "process": {"outputModules_": ["MINIAODSIMoutput"],
                     "MINIAODSIMoutput": {"dataset": {"filterName": "", "dataTier": "MINIAODSIM"}}
                    }
-               }
+    }
     result = couchDatabase.commitOne(miniConfig)
     return result[0]["id"]
+
 
 def injectStepChainConfigMC(couchDatabase):
     """
@@ -61,7 +63,7 @@ def injectStepChainConfigMC(couchDatabase):
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "FilterA", "dataTier": "GEN-SIM"}}
                    }
-               }
+    }
 
     digiConfig = Document()
     digiConfig["info"] = None
@@ -73,7 +75,7 @@ def injectStepChainConfigMC(couchDatabase):
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "FilterB", "dataTier": "GEN-SIM-RAW"}}
                    }
-               }
+    }
 
     recoConfig = Document()
     recoConfig["info"] = None
@@ -86,7 +88,7 @@ def injectStepChainConfigMC(couchDatabase):
                     "RECOSIMoutput": {"dataset": {"filterName": "FilterC", "dataTier": "GEN-SIM-RECO"}},
                     "AODSIMoutput": {"dataset": {"filterName": "FilterD", "dataTier": "AODSIM"}}
                    }
-               }
+    }
 
     digi2Config = Document()
     digi2Config["info"] = None
@@ -98,7 +100,7 @@ def injectStepChainConfigMC(couchDatabase):
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "", "dataTier": "GEN-SIM-RAW"}}
                    }
-               }
+    }
 
     couchDatabase.queue(genConfig)
     couchDatabase.queue(digiConfig)
@@ -106,9 +108,9 @@ def injectStepChainConfigMC(couchDatabase):
     couchDatabase.queue(digi2Config)
     result = couchDatabase.commit()
 
-    docMap = {"Step1" : result[0][u'id'],
-              "Step2" : result[1][u'id'],
-              "Step3" : result[2][u'id'],
+    docMap = {"Step1": result[0][u'id'],
+              "Step2": result[1][u'id'],
+              "Step3": result[2][u'id'],
               "Step4": result[3][u'id']}
 
     return docMap
@@ -180,13 +182,13 @@ class StepChainTests(unittest.TestCase):
                 "EventsPerJob": 500,
                 "StepName": "StepMini"},
             "StepChain": 1
-            }
+        }
         testArguments.update(request)
 
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "StepMini", "GravWhatever", cachepath = self.testInit.testDir)
+        testWMBSHelper = WMBSHelper(testWorkload, "StepMini", "GravWhatever", cachepath=self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -219,7 +221,7 @@ class StepChainTests(unittest.TestCase):
         self.assertFalse(task.getInputStep(), "Wrong input step")
         outModsAndDsets = task.listOutputDatasetsAndModules()[0]
         self.assertEqual(outModsAndDsets['outputModule'], 'MINIAODSIMoutput')
-        self.assertEqual(outModsAndDsets['outputDataset'], 
+        self.assertEqual(outModsAndDsets['outputDataset'],
                          '/RSGravToGG_kMpl-01_M-5000_TuneCUEP8M1_13TeV-pythia8/SingleStep-UnitTest_StepChain-v3/MINIAODSIM')
         self.assertEqual(task.getSwVersion(), 'CMSSW_7_5_0')
         self.assertEqual(task.getScramArch(), 'slc6_amd64_gcc491')
@@ -239,15 +241,21 @@ class StepChainTests(unittest.TestCase):
             "CouchURL": os.environ["COUCHURL"],
             "ConfigCacheUrl": os.environ["COUCHURL"],
             "CouchDBName": "stepchain_t"
-            })
+        })
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
 
         factory = StepChainWorkloadFactory()
+
+        # test that we cannot stage out different samples with the same output module
+        self.assertRaises(WMSpecFactoryException, factory.factoryWorkloadConstruction,
+                          "TestWorkload", testArguments)
+
+        testArguments['Step2']['KeepOutput'] = False
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "ProdMinBias", "MCFakeBlock", cachepath = self.testInit.testDir)
+        testWMBSHelper = WMBSHelper(testWorkload, "ProdMinBias", "MCFakeBlock", cachepath=self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -269,8 +277,8 @@ class StepChainTests(unittest.TestCase):
 
         # test workload tasks and steps
         tasks = testWorkload.listAllTaskNames()
-        self.assertEqual(len(tasks), 13)
-        for t in ['ProdMinBias', 'ProdMinBiasMergeRAWSIMoutput', 'DIGIPROD1MergeRAWSIMoutput',
+        self.assertEqual(len(tasks), 10)
+        for t in ['ProdMinBias', 'ProdMinBiasMergeRAWSIMoutput',
                   'RECOPROD1MergeAODSIMoutput', 'RECOPROD1MergeRECOSIMoutput']:
             self.assertTrue(t in tasks, "Wrong task name")
         self.assertFalse('ProdMinBiasMergeAODSIMoutput' in tasks, "Wrong task name")
@@ -302,7 +310,6 @@ class StepChainTests(unittest.TestCase):
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
         self.assertEqual(outMods, set(['RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput']), "Wrong output modules")
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterA-START70_V4-v1/GEN-SIM' in outDsets)
-        self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterB-START70_V4-v1/GEN-SIM-RAW' in outDsets)
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterD-START70_V4-v1/AODSIM' in outDsets)
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterC-START70_V4-v1/GEN-SIM-RECO' in outDsets)
         self.assertEqual(task.getSwVersion(), 'CMSSW_7_0_0_pre12')
@@ -326,7 +333,7 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(step.data.input.inputOutputModule, 'RAWSIMoutput')
         self.assertEqual(step.data.output.modules.RAWSIMoutput.filterName, 'FilterB')
         self.assertEqual(step.data.output.modules.RAWSIMoutput.dataTier, 'GEN-SIM-RAW')
-        self.assertTrue(step.data.output.keep)
+        self.assertFalse(step.data.output.keep)
         self.assertEqual(step.data.tree.childNames, ["cmsRun3"])
         self.assertEqual(step.data.application.setup.cmsswVersion, 'CMSSW_7_0_0_pre11')
         self.assertEqual(step.data.application.setup.scramArch, 'slc5_amd64_gcc481')

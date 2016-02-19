@@ -17,8 +17,8 @@ made available.
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool,\
-     validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, \
+    validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
 # simple utils for data mining the request dictionary
 isGenerator = lambda args: not args["Step1"].get("InputDataset", None)
@@ -111,21 +111,25 @@ class StepChainWorkloadFactory(StdBase):
         configCacheID = taskConf['ConfigCacheID']
         splitAlgorithm = taskConf["SplittingAlgo"]
         splitArguments = taskConf["SplittingArguments"]
-        self.setupProcessingTask(task, "Production",
-                                 couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                 configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                 configCacheUrl=self.configCacheUrl,
-                                 splitArgs=splitArguments, seeding=taskConf['Seeding'],
-                                 totalEvents=taskConf['RequestNumEvents'],
-                                 timePerEvent=self.timePerEvent,
-                                 memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=self.sizePerEvent,
-                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
-                                 scramArch=taskConf.get("ScramArch", None),
-                                 globalTag=taskConf.get("GlobalTag", None),
-                                 taskConf=taskConf)
+        outMods = self.setupProcessingTask(task, "Production",
+                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
+                                           configCacheUrl=self.configCacheUrl,
+                                           splitArgs=splitArguments, seeding=taskConf['Seeding'],
+                                           totalEvents=taskConf['RequestNumEvents'],
+                                           timePerEvent=self.timePerEvent,
+                                           memoryReq=taskConf.get('Memory', None),
+                                           sizePerEvent=self.sizePerEvent,
+                                           cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                           scramArch=taskConf.get("ScramArch", None),
+                                           globalTag=taskConf.get("GlobalTag", None),
+                                           taskConf=taskConf)
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
+        # outputModules were added already, we just want to create merge tasks here
+        if strToBool(taskConf.get('KeepOutput', True)):
+            for outputModuleName in outMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo,
+                                              outputModuleName, "cmsRun1")
 
         return
 
@@ -144,19 +148,19 @@ class StepChainWorkloadFactory(StdBase):
         if not self.inputPrimaryDataset:
             self.inputPrimaryDataset = self.inputDataset[1:].split("/")[0]
 
-        self.setupProcessingTask(task, "Processing",
-                                 inputDataset=self.inputDataset,
-                                 couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                 configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                 configCacheUrl=self.configCacheUrl,
-                                 splitArgs=splitArguments,
-                                 timePerEvent=self.timePerEvent,
-                                 memoryReq=taskConf.get('Memory', None),
-                                 sizePerEvent=self.sizePerEvent,
-                                 cmsswVersion=taskConf.get("CMSSWVersion", None),
-                                 scramArch=taskConf.get("ScramArch", None),
-                                 globalTag=taskConf.get("GlobalTag", None),
-                                 taskConf=taskConf)
+        outMods = self.setupProcessingTask(task, "Processing",
+                                           inputDataset=self.inputDataset,
+                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
+                                           configCacheUrl=self.configCacheUrl,
+                                           splitArgs=splitArguments,
+                                           timePerEvent=self.timePerEvent,
+                                           memoryReq=taskConf.get('Memory', None),
+                                           sizePerEvent=self.sizePerEvent,
+                                           cmsswVersion=taskConf.get("CMSSWVersion", None),
+                                           scramArch=taskConf.get("ScramArch", None),
+                                           globalTag=taskConf.get("GlobalTag", None),
+                                           taskConf=taskConf)
 
         lumiMask = taskConf.get("LumiList", self.workload.lumiList)
         if lumiMask:
@@ -165,7 +169,11 @@ class StepChainWorkloadFactory(StdBase):
         if taskConf["PileupConfig"]:
             self.setupPileup(task, taskConf['PileupConfig'])
 
-        self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
+        # outputModules were added already, we just want to create merge tasks here
+        if strToBool(taskConf.get('KeepOutput', True)):
+            for outputModuleName in outMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo,
+                                              outputModuleName, "cmsRun1")
 
         return
 
@@ -177,37 +185,38 @@ class StepChainWorkloadFactory(StdBase):
         chain the output between all three steps.
         """
         configCacheUrl = self.configCacheUrl or self.couchURL
+        stepMapping = {}
+        stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
 
         for i in range(2, self.stepChain + 1):
-            inputStepName = "cmsRun%d" % (i-1)
-            parentCmsswStep = task.getStep(inputStepName)
-            parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
-            parentCmsswStepHelper.keepOutput(False)
-
-            currentStepName = "cmsRun%d" % i
+            currentStepNumber = "Step%d" % i
+            currentCmsRun = "cmsRun%d" % i
+            stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
-            for k, v in origArgs["Step%d" % i].iteritems():
+            for k, v in origArgs[currentStepNumber].iteritems():
                 taskConf[k] = v
-            # Set default values to task parameters
+
+            parentStepNumber = stepMapping.get(taskConf['InputStep'])[0]
+            parentCmsRun = stepMapping.get(taskConf['InputStep'])[1]
+            parentCmsswStep = task.getStep(parentCmsRun)
+            parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
+
+            # Set default values for the task parameters
             self.modifyTaskConfiguration(taskConf, False, 'InputDataset' not in taskConf)
             globalTag = taskConf.get("GlobalTag", self.globalTag)
             frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
             scramArch = taskConf.get("ScramArch", self.scramArch)
 
-            childCmssw = parentCmsswStep.addTopStep(currentStepName)
+            childCmssw = parentCmsswStep.addTopStep(currentCmsRun)
             childCmssw.setStepType("CMSSW")
             template = StepFactory.getStepTemplate("CMSSW")
             template(childCmssw.data)
 
-            childCmsswHelper = childCmssw.getTypeHelper()
-            childCmsswHelper.setGlobalTag(globalTag)
-            childCmsswHelper.setupChainedProcessing(inputStepName, taskConf['InputFromOutputModule'])
-            # Assuming we cannot change the CMSSW version inside the same job
-            childCmsswHelper.cmsswSetup(frameworkVersion, softwareEnvironment="",
-                                        scramArch=scramArch)
-            childCmsswHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'],
-                                            self.couchDBName)
-            childCmsswHelper.keepOutput(False)
+            childCmsswStepHelper = childCmssw.getTypeHelper()
+            childCmsswStepHelper.setGlobalTag(globalTag)
+            childCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
+            childCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
+            childCmsswStepHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -215,38 +224,44 @@ class StepChainWorkloadFactory(StdBase):
                 self.setupPileup(task, taskConf['PileupConfig'])
 
             # Handling the output modules
-            outputMods = {}
-            configOutput = self.determineOutputModules(configDoc=taskConf['ConfigCacheID'],
-                                                       couchURL=configCacheUrl,
-                                                       couchDBName=self.couchDBName)
-            for outputModuleName in configOutput.keys():
-                outputModule = self.addOutputModule(task, outputModuleName,
-                                                    self.inputPrimaryDataset,
-                                                    configOutput[outputModuleName]["dataTier"],
-                                                    configOutput[outputModuleName]["filterName"],
-                                                    stepName=currentStepName)
-                outputMods[outputModuleName] = outputModule
+            parentKeepOutput = strToBool(origArgs[parentStepNumber].get('KeepOutput', True))
+            parentCmsswStepHelper.keepOutput(parentKeepOutput)
+            childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
+            childCmsswStepHelper.keepOutput(childKeepOutput)
+            self.setupOutputModules(task, taskConf["ConfigCacheID"], currentCmsRun, childKeepOutput,
+                                    taskConf['StepName'])
 
-        # Closing out the task configuration
-        # Only the last step output is important :-)
-        childCmsswHelper.keepOutput(True)
-        self.addMergeTasks(task, currentStepName, outputMods)
+        # Closing out the task configuration. The last step output must be saved/merged
+        childCmsswStepHelper.keepOutput(True)
 
         return
 
-    def addMergeTasks(self, parentTask, parentStepName, outputMods):
+    def setupOutputModules(self, task, stepConfigCacheId, stepCmsRun, keepOutput, forceTaskName=None):
         """
-        _addMergeTasks_
+        _setupOutputModules_
 
-        Add merge, logCollect and cleanup tasks for the output modules.
+        Retrieves the outputModules from the step configuration and sets up
+        a merge task for them. Only when KeepOutput is set to True.
         """
-        mergeTasks = {}
-        for outputModuleName in outputMods.keys():
-            mergeTask = self.addMergeTask(parentTask, self.splittingAlgo,
-                                          outputModuleName, parentStepName)
-            mergeTasks[outputModuleName] = mergeTask
+        configCacheUrl = self.configCacheUrl or self.couchURL
+        outputMods = {}
 
-        return mergeTasks
+        configOutput = self.determineOutputModules(configDoc=stepConfigCacheId,
+                                                   couchURL=configCacheUrl,
+                                                   couchDBName=self.couchDBName)
+        for outputModuleName in configOutput.keys():
+            outputModule = self.addOutputModule(task, outputModuleName,
+                                                self.inputPrimaryDataset,
+                                                configOutput[outputModuleName]["dataTier"],
+                                                configOutput[outputModuleName]["filterName"],
+                                                stepName=stepCmsRun)
+            outputMods[outputModuleName] = outputModule
+
+        if keepOutput:
+            for outputModuleName in outputMods.keys():
+                dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName,
+                                              stepCmsRun, forceTaskName=forceTaskName)
+        return
 
     def modifyTaskConfiguration(self, taskConf, firstTask=False, generator=False):
         """
@@ -311,23 +326,23 @@ class StepChainWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "StepChain", "optional" : False},
-                    "GlobalTag" : {"type" : str, "optional" : False},
-                    "CouchURL" : {"type" : str, "optional" : False, "validate" : couchurl},
-                    "PrimaryDataset" : {"default" : None, "type" : str,
-                                        "validate" : primdataset, "null" : False},
-                    "CouchDBName" : {"type" : str, "optional" : False,
-                                     "validate" : identifier},
-                    "ConfigCacheUrl" : {"type" : str, "optional" : True, "null" : True},
-                    "StepChain" : {"default" : 1, "type" : int,
-                                   "optional" : False, "validate" : lambda x: x > 0,
-                                   "attr" : "stepChain", "null" : False},
-                    "FirstEvent" : {"default" : 1, "type" : int,
-                                    "optional" : True, "validate" : lambda x: x > 0,
-                                    "attr" : "firstEvent", "null" : False},
-                    "FirstLumi" : {"default" : 1, "type" : int,
-                                   "optional" : True, "validate" : lambda x: x > 0,
-                                   "attr" : "firstLumi", "null" : False}
+        specArgs = {"RequestType": {"default": "StepChain", "optional": False},
+                    "GlobalTag": {"type": str, "optional": False},
+                    "CouchURL": {"type": str, "optional": False, "validate": couchurl},
+                    "PrimaryDataset": {"default": None, "type": str,
+                                       "validate": primdataset, "null": False},
+                    "CouchDBName": {"type": str, "optional": False,
+                                    "validate": identifier},
+                    "ConfigCacheUrl": {"type": str, "optional": True, "null": True},
+                    "StepChain": {"default": 1, "type": int,
+                                  "optional": False, "validate": lambda x: x > 0,
+                                  "attr": "stepChain", "null": False},
+                    "FirstEvent": {"default": 1, "type": int,
+                                   "optional": True, "validate": lambda x: x > 0,
+                                   "attr": "firstEvent", "null": False},
+                    "FirstLumi": {"default": 1, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "attr": "firstLumi", "null": False}
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
@@ -343,73 +358,75 @@ class StepChainWorkloadFactory(StdBase):
         defined in StdBase.getWorkloadArguments and those do not appear here
         since they are all optional. Here only new arguments are listed.
         """
-        specArgs = {"StepName" : {"default" : None, "type" : str,
-                                  "optional" : False, "validate" : None,
-                                  "null" : False},
-                    "ConfigCacheID" : {"default" : None, "type" : str,
-                                       "optional" : False, "validate" : None,
-                                       "null" : False},
-                    "Seeding" : {"default" : "AutomaticSeeding", "type" : str, "optional" : True,
-                                 "validate" : lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
-                                 "null" : False},
-                    "RequestNumEvents" : {"default" : 1000, "type" : int,
-                                          "optional" : not generator, "validate" : lambda x: x > 0,
-                                          "null" : False},
-                    "MCPileup" : {"default" : None, "type" : str,
-                                  "optional" : True, "validate" : dataset,
-                                  "null" : False},
-                    "DataPileup" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : dataset,
-                                    "null" : False},
-                    "InputDataset" : {"default" : None, "type" : str,
-                                      "optional" : generator or not firstTask, "validate" : dataset,
-                                      "null" : False},
-                    "InputStep" : {"default" : None, "type" : str,
-                                   "optional" : firstTask, "validate" : None,
-                                   "null" : False},
-                    "InputFromOutputModule" : {"default" : None, "type" : str,
-                                               "optional" : firstTask, "validate" : None,
-                                               "null" : False},
-                    "BlockBlacklist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "null" : False},
-                    "BlockWhitelist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "null" : False},
-                    "RunBlacklist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "null" : False},
-                    "RunWhitelist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "null" : False},
-                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
-                                       "optional" : True, "null" : False,
-                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                    "EventAwareLumiBased", "FileBased"]},
-                    "EventsPerJob" : {"default" : None, "type" : int,
-                                      "optional" : True, "validate" : lambda x: x > 0,
-                                      "null" : False},
-                    "LumisPerJob" : {"default" : 8, "type" : int,
-                                     "optional" : True, "validate" : lambda x: x > 0,
-                                     "null" : False},
-                    "FilesPerJob" : {"default" : 1, "type" : int,
-                                     "optional" : True, "validate" : lambda x: x > 0,
-                                     "null" : False},
-                    "EventsPerLumi" : {"default" : None, "type" : int,
-                                       "optional" : True, "validate" : lambda x: x > 0,
-                                       "attr" : "eventsPerLumi", "null" : True},
-                    "FilterEfficiency" : {"default" : 1.0, "type" : float,
-                                          "optional" : True, "validate" : lambda x: x > 0.0,
-                                          "attr" : "filterEfficiency", "null" : False},
-                    "LheInputFiles" : {"default" : False, "type" : strToBool,
-                                       "optional" : True, "validate" : None,
-                                       "attr" : "lheInputFiles", "null" : False},
-                    "PrepID": {"default" : None, "type": str,
-                               "optional" : True, "validate" : None,
-                               "attr" : "prepID", "null" : True},
-                    "Multicore" : {"default" : None, "type" : int,
-                                   "optional" : True, "validate" : lambda x: x > 0,
-                                   "null" : False},
+        specArgs = {"StepName": {"default": None, "type": str,
+                                 "optional": False, "validate": None,
+                                 "null": False},
+                    "ConfigCacheID": {"default": None, "type": str,
+                                      "optional": False, "validate": None,
+                                      "null": False},
+                    "Seeding": {"default": "AutomaticSeeding", "type": str, "optional": True,
+                                "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
+                                "null": False},
+                    "RequestNumEvents": {"default": 1000, "type": int,
+                                         "optional": not generator, "validate": lambda x: x > 0,
+                                         "null": False},
+                    "MCPileup": {"default": None, "type": str,
+                                 "optional": True, "validate": dataset,
+                                 "null": False},
+                    "DataPileup": {"default": None, "type": str,
+                                   "optional": True, "validate": dataset,
+                                   "null": False},
+                    "InputDataset": {"default": None, "type": str,
+                                     "optional": generator or not firstTask, "validate": dataset,
+                                     "null": False},
+                    "KeepOutput": {"default": True, "type": strToBool, "optional": True, "null": False,
+                                   "validate": None},
+                    "InputStep": {"default": None, "type": str,
+                                  "optional": firstTask, "validate": None,
+                                  "null": False},
+                    "InputFromOutputModule": {"default": None, "type": str,
+                                              "optional": firstTask, "validate": None,
+                                              "null": False},
+                    "BlockBlacklist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "null": False},
+                    "BlockWhitelist": {"default": [], "type": makeList,
+                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
+                                       "null": False},
+                    "RunBlacklist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "null": False},
+                    "RunWhitelist": {"default": [], "type": makeList,
+                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
+                                     "null": False},
+                    "SplittingAlgo": {"default": "EventAwareLumiBased", "type": str,
+                                      "optional": True, "null": False,
+                                      "validate": lambda x: x in ["EventBased", "LumiBased",
+                                                                  "EventAwareLumiBased", "FileBased"]},
+                    "EventsPerJob": {"default": None, "type": int,
+                                     "optional": True, "validate": lambda x: x > 0,
+                                     "null": False},
+                    "LumisPerJob": {"default": 8, "type": int,
+                                    "optional": True, "validate": lambda x: x > 0,
+                                    "null": False},
+                    "FilesPerJob": {"default": 1, "type": int,
+                                    "optional": True, "validate": lambda x: x > 0,
+                                    "null": False},
+                    "EventsPerLumi": {"default": None, "type": int,
+                                      "optional": True, "validate": lambda x: x > 0,
+                                      "attr": "eventsPerLumi", "null": True},
+                    "FilterEfficiency": {"default": 1.0, "type": float,
+                                         "optional": True, "validate": lambda x: x > 0.0,
+                                         "attr": "filterEfficiency", "null": False},
+                    "LheInputFiles": {"default": False, "type": strToBool,
+                                      "optional": True, "validate": None,
+                                      "attr": "lheInputFiles", "null": False},
+                    "PrepID": {"default": None, "type": str,
+                               "optional": True, "validate": None,
+                               "attr": "prepID", "null": True},
+                    "Multicore": {"default": None, "type": int,
+                                  "optional": True, "validate": lambda x: x > 0,
+                                  "null": False},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
@@ -420,17 +437,18 @@ class StepChainWorkloadFactory(StdBase):
 
         Go over each step and make sure it matches validation parameters.
         """
+        outputMods = []
         numSteps = schema['StepChain']
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         for i in range(1, numSteps + 1):
             stepName = "Step%s" % i
             if stepName not in schema:
-                msg = "No Step%s entry present in request" % i
+                msg = "No Step%s entry present in the request" % i
                 self.raiseValidationException(msg=msg)
 
             step = schema[stepName]
             # We can't handle non-dictionary steps
-            if type(step) != dict:
+            if not isinstance(step, dict):
                 msg = "Non-dictionary input for step in StepChain.\n"
                 msg += "Could be an indicator of JSON error.\n"
                 self.raiseValidationException(msg=msg)
@@ -444,6 +462,24 @@ class StepChainWorkloadFactory(StdBase):
                                                couchURL=couchUrl,
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=True)
+
+            # keeping different outputs with the same output module is not allowed
+            if strToBool(step.get("KeepOutput", True)):
+                configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
+                                                           couchURL=couchUrl,
+                                                           couchDBName=schema["CouchDBName"])
+                for outputModuleName in configOutput.keys():
+                    if outputModuleName in outputMods:
+                        msg = "StepChain does not support KeepOutput sharing the same output module."
+                        msg += "\n%s re-using outputModule: %s" % (stepName, outputModuleName)
+                        self.raiseValidationException(msg=msg)
+                    else:
+                        outputMods.append(outputModuleName)
+
+        if 'KeepOutput' in schema[stepName] and not strToBool(schema[stepName]['KeepOutput']):
+            msg = "Dropping the output of the last step is prohibited.\n"
+            msg += "Set the 'KeepOutput' value to True and try again."
+            self.raiseValidationException(msg=msg)
 
     def validateTask(self, taskConf, taskArgumentDefinition):
         """
@@ -467,4 +503,3 @@ class StepChainWorkloadFactory(StdBase):
         if msg is not None:
             self.raiseValidationException(msg)
         return
-

@@ -116,7 +116,7 @@ class RootTest():
         server = Root(config)
 
         server.start(blocking=False)
-        self.assertEquals(cpconfig['tools.proxy.base'], test_proxy_base)
+        self.assertEqual(cpconfig['tools.proxy.base'], test_proxy_base)
         server.stop()
 
     def testShortHandProxyBase(self):
@@ -132,7 +132,7 @@ class RootTest():
         server = Root(config)
 
         server.start(blocking=False)
-        self.assertEquals(cpconfig['tools.proxy.base'], test_proxy_base)
+        self.assertEqual(cpconfig['tools.proxy.base'], test_proxy_base)
         server.stop()
 
     def testLongHandChangePort(self):
@@ -148,7 +148,7 @@ class RootTest():
 
         server = Root(config)
         server.start(blocking=False)
-        self.assertEquals(cpconfig['server.socket_port'], test_port)
+        self.assertEqual(cpconfig['server.socket_port'], test_port)
         server.stop()
 
     def testShortHandChangePort(self):
@@ -163,7 +163,7 @@ class RootTest():
 
         server = Root(config)
         server.start(blocking=False)
-        self.assertEquals(cpconfig['server.socket_port'], test_port)
+        self.assertEqual(cpconfig['server.socket_port'], test_port)
         server.stop()
 
     def testShortHandPortOverride(self):
@@ -182,7 +182,7 @@ class RootTest():
 
         server = Root(config)
         server.start(blocking=False)
-        self.assertEquals(cpconfig['server.socket_port'], test_port)
+        self.assertEqual(cpconfig['server.socket_port'], test_port)
         server.stop()
 
     def testSecuritySetting(self):
@@ -202,10 +202,10 @@ class RootTest():
         config.Webtools.environment = "production"
         server = Root(config)
         server.start(blocking=False)
-        self.assertEquals(cpconfig['tools.secmodv2.on'], True)
-        self.assertEquals(cpconfig['tools.secmodv2.role'], testRole)
-        self.assertEquals(cpconfig['tools.secmodv2.group'], testGroup)
-        self.assertEquals(cpconfig['tools.secmodv2.site'], testSite)
+        self.assertEqual(cpconfig['tools.secmodv2.on'], True)
+        self.assertEqual(cpconfig['tools.secmodv2.role'], testRole)
+        self.assertEqual(cpconfig['tools.secmodv2.group'], testGroup)
+        self.assertEqual(cpconfig['tools.secmodv2.site'], testSite)
         server.stop()
 
     def testInstanceInUrl(self):
@@ -239,13 +239,13 @@ class RootTest():
         for instance in config.UnitTests.instances:
             url = 'http://127.0.0.1:%s/unittests/%s/test' % (cpconfig['server.socket_port'], instance)
             html = urllib2.urlopen(url).read()
-            self.assertEquals(html, instance)
+            self.assertEqual(html, instance)
             db_url = '%s/database' % url
             html = urllib2.urlopen(db_url).read()
-            self.assertEquals(html, db_instances.section_(instance).connectUrl)
+            self.assertEqual(html, db_instances.section_(instance).connectUrl)
             sec_url = '%s/security' % url
             html = urllib2.urlopen(sec_url).read()
-            self.assertEquals(html, security_instances.section_(instance).sec_params)
+            self.assertEqual(html, security_instances.section_(instance).sec_params)
         server.stop()
 
     def testUsingFilterTool(self):

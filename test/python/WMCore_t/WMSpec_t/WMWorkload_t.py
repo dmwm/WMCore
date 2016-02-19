@@ -928,15 +928,15 @@ class WMWorkloadTest(unittest.TestCase):
         outputDatasets = testWorkload.listOutputDatasets()
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
-            self.assertEquals(datasetSub["CustodialSites"], ["CMSSite_1"],
+            self.assertEqual(datasetSub["CustodialSites"], ["CMSSite_1"],
                               "Wrong custodial sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_2"],
+            self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_2"],
                               "Wrong non-custodial sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
-            self.assertEquals(datasetSub["CustodialSubType"], "Replica",
+            self.assertEqual(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
+            self.assertEqual(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
+            self.assertEqual(datasetSub["CustodialSubType"], "Replica",
                               "Wrong custodial subscription type for %s" % outputDataset)
-            self.assertEquals(datasetSub["NonCustodialSubType"], "Replica",
+            self.assertEqual(datasetSub["NonCustodialSubType"], "Replica",
                               "Wrong custodial subscription type for %s" % outputDataset)
 
         testWorkload.setSubscriptionInformation(custodialSites=["CMSSite_1", "CMSSite_2"],
@@ -946,16 +946,16 @@ class WMWorkloadTest(unittest.TestCase):
         subInformation = testWorkload.getSubscriptionInformation()
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
-            self.assertEquals(set(datasetSub["CustodialSites"]), set(["CMSSite_1", "CMSSite_2"]),
+            self.assertEqual(set(datasetSub["CustodialSites"]), set(["CMSSite_1", "CMSSite_2"]),
                               "Wrong custodial sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["NonCustodialSites"], ["CMSSite_3"],
+            self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_3"],
                               "Wrong non-custodial sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["AutoApproveSites"], ["CMSSite_2"],
+            self.assertEqual(datasetSub["AutoApproveSites"], ["CMSSite_2"],
                               "Wrong auto-approve sites for %s" % outputDataset)
-            self.assertEquals(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
-            self.assertEquals(datasetSub["CustodialSubType"], "Move",
+            self.assertEqual(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
+            self.assertEqual(datasetSub["CustodialSubType"], "Move",
                               "Wrong custodial subscription type for %s" % outputDataset)
-            self.assertEquals(datasetSub["NonCustodialSubType"], "Move",
+            self.assertEqual(datasetSub["NonCustodialSubType"], "Move",
                               "Wrong custodial subscription type for %s" % outputDataset)
         return
 
@@ -1470,7 +1470,7 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue(testWorkload.getTaskByPath("/TestWorkload/ProcessingTask/MergeTask2/SkimTask"),
                         "Error: Skim task is not available")
 
-        self.assertEquals(procTaskCmssw.getIgnoredOutputModules(), ["badOutput"])
+        self.assertEqual(procTaskCmssw.getIgnoredOutputModules(), ["badOutput"])
         return
 
     def testSetCMSSWParams(self):

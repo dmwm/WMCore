@@ -722,9 +722,9 @@ class ReqMgrTest(RESTBaseUnitTest):
         # shall have the same stuff in
         response = self.jsonSender.get("request/%s" % requestName)
         origRequest = response[0]
-        self.assertEquals(origRequest["AcquisitionEra"], acquisitionEra)
+        self.assertEqual(origRequest["AcquisitionEra"], acquisitionEra)
         # test that the priority was correctly set in the brand-new request
-        self.assertEquals(origRequest["RequestPriority"], priority)
+        self.assertEqual(origRequest["RequestPriority"], priority)
         
         # test cloning not existing request
         self.assertRaises(HTTPException, self.jsonSender.put, "clone/%s" % "NotExistingRequestName")
@@ -739,7 +739,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         for differ in toDiffer:
             self.assertNotEqual(origRequest[differ], clonedRequest[differ])
         # check the desired status of the cloned request
-        self.assertEquals(clonedRequest["RequestStatus"], "assignment-approved",
+        self.assertEqual(clonedRequest["RequestStatus"], "assignment-approved",
                           "Cloned request status should be 'assignment-approved', not '%s'." %
                           clonedRequest["RequestStatus"])
         # don't care about these two (they will likely be the same in the unittest
@@ -750,7 +750,7 @@ class ReqMgrTest(RESTBaseUnitTest):
             del origRequest[differ]
             del clonedRequest[differ]
         # check the request dictionaries
-        self.assertEquals(len(origRequest), len(clonedRequest))
+        self.assertEqual(len(origRequest), len(clonedRequest))
         for k1, k2 in zip(sorted(origRequest.keys()), sorted(clonedRequest.keys())):
             msg = ("Request values: original: %s: %s cloned: %s: %s differ" %
                    (k1, origRequest[k1], k2, clonedRequest[k2]))

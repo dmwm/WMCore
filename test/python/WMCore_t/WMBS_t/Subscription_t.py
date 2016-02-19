@@ -5,25 +5,21 @@ _Subscription_t_
 Unit tests for the WMBS Subscription class and all it's DAOs.
 """
 
-import unittest
-import logging
-import random
 import threading
 import time
+import unittest
 
 from WMCore.DAOFactory import DAOFactory
-from WMQuality.TestInit import TestInit
-
+from WMCore.DataStructs.Run import Run
+from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
+from WMQuality.TestInit import TestInit
 
-from WMCore.DataStructs.Run import Run
-
-from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 
 class SubscriptionTest(unittest.TestCase):
     def setUp(self):
@@ -814,32 +810,23 @@ class SubscriptionTest(unittest.TestCase):
         testSubscriptionB.load()
         testSubscriptionC.load()
 
-        assert type(testSubscriptionB["id"]) == int, \
-               "ERROR: Subscription id is not an int."
+        self.assertTrue(isinstance(testSubscriptionB["id"], int),
+                        "ERROR: Subscription id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionB["workflow"].id, int),
+                        "ERROR: Subscription workflow id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionC["workflow"].id, int),
+                        "ERROR: Subscription workflow id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionB["fileset"].id, int),
+                        "ERROR: Subscription fileset id is not an int.")
+        self.assertTrue(isinstance(testSubscriptionC["fileset"].id, int),
+                        "ERROR: Subscription fileset id is not an int.")
 
-        assert type(testSubscriptionC["id"]) == int, \
-               "ERROR: Subscription id is not an int."
-
-        assert type(testSubscriptionB["workflow"].id) == int, \
-               "ERROR: Subscription workflow id is not an int."
-
-        assert type(testSubscriptionC["workflow"].id) == int, \
-               "ERROR: Subscription workflow id is not an int."
-
-        assert type(testSubscriptionB["fileset"].id) == int, \
-               "ERROR: Subscription fileset id is not an int."
-
-        assert type(testSubscriptionC["fileset"].id) == int, \
-               "ERROR: Subscription fileset id is not an int."
-
-        assert testWorkflow.id == testSubscriptionB["workflow"].id, \
-               "ERROR: Subscription load by ID didn't load workflow correctly"
-
-        assert testFileset.id == testSubscriptionB["fileset"].id, \
-               "ERROR: Subscription load by ID didn't load fileset correctly"
-
-        assert testSubscriptionA["id"] == testSubscriptionC["id"], \
-               "ERROR: Subscription didn't load ID correctly."
+        self.assertEqual(testWorkflow.id, testSubscriptionB["workflow"].id,
+                         "ERROR: Subscription load by ID didn't load workflow correctly")
+        self.assertEqual(testFileset.id, testSubscriptionB["fileset"].id,
+                         "ERROR: Subscription load by ID didn't load fileset correctly")
+        self.assertEqual(testSubscriptionA["id"], testSubscriptionC["id"],
+                         "ERROR: Subscription didn't load ID correctly.")
 
         return
 
@@ -1500,44 +1487,44 @@ class SubscriptionTest(unittest.TestCase):
         testSubscription.create()
 
         availableFiles = testSubscription.filesOfStatus("Available")
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
         availableFiles = testSubscription.filesOfStatus("Available", 0)
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
         availableFiles = testSubscription.filesOfStatus("Available", 3)
-        self.assertEquals(len(availableFiles), 3)
+        self.assertEqual(len(availableFiles), 3)
         availableFiles = testSubscription.filesOfStatus("Available", 7)
-        self.assertEquals(len(availableFiles), 6)
+        self.assertEqual(len(availableFiles), 6)
 
 
         testSubscription.acquireFiles([testFileA, testFileB, testFileC, testFileD])
         availableFiles = testSubscription.filesOfStatus("Available", 6)
-        self.assertEquals(len(availableFiles), 2)
+        self.assertEqual(len(availableFiles), 2)
 
         files = testSubscription.filesOfStatus("Acquired", 0)
-        self.assertEquals(len(files), 4)
+        self.assertEqual(len(files), 4)
         files = testSubscription.filesOfStatus("Acquired", 2)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Acquired", 6)
-        self.assertEquals(len(files), 4)
+        self.assertEqual(len(files), 4)
 
 
         testSubscription.completeFiles([testFileB, testFileC])
 
         files = testSubscription.filesOfStatus("Completed", 0)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Completed", 1)
-        self.assertEquals(len(files), 1)
+        self.assertEqual(len(files), 1)
         files = testSubscription.filesOfStatus("Completed", 6)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
 
         testSubscription.failFiles([testFileA, testFileE])
 
         files = testSubscription.filesOfStatus("Failed", 0)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
         files = testSubscription.filesOfStatus("Failed", 1)
-        self.assertEquals(len(files), 1)
+        self.assertEqual(len(files), 1)
         files = testSubscription.filesOfStatus("Failed", 6)
-        self.assertEquals(len(files), 2)
+        self.assertEqual(len(files), 2)
 
 
         testSubscription.delete()
@@ -1742,10 +1729,10 @@ class SubscriptionTest(unittest.TestCase):
         finishedDAO = daoFactory(classname = "Subscriptions.GetFinishedSubscriptions")
         finishedSubs = finishedDAO.execute()
 
-        self.assertEquals(len(finishedSubs), 2,
+        self.assertEqual(len(finishedSubs), 2,
                           "Error: Wrong number of finished subscriptions.")
 
-        self.assertEquals(finishedSubs[0]["id"], testSubscription1["id"],
+        self.assertEqual(finishedSubs[0]["id"], testSubscription1["id"],
                           "Error: Wrong subscription id.")
 
         #Mark all output filesets which are input of another subscription as closed
@@ -1757,7 +1744,7 @@ class SubscriptionTest(unittest.TestCase):
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
 
-        self.assertEquals(len(finishedSubs), 4,
+        self.assertEqual(len(finishedSubs), 4,
                           "Error: Wrong number of finished subscriptions.")
 
         return

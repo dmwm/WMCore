@@ -1153,30 +1153,30 @@ class JobTest(unittest.TestCase):
         for inFile in jobAprime['input_files']:
             if inFile['lfn'] == '/this/is/a/lfnA':
                 run = inFile['runs'].pop()
-                self.assertEquals(run.run, 1, 'The run number is wrong')
-                self.assertEquals(run.lumis, [45], 'The lumis are wrong')
+                self.assertEqual(run.run, 1, 'The run number is wrong')
+                self.assertEqual(run.lumis, [45], 'The lumis are wrong')
             else:
                 run = inFile['runs'].pop()
-                self.assertEquals(run.run, 1, 'The run number is wrong')
-                self.assertEquals(run.lumis, [46], 'The lumis are wrong')
+                self.assertEqual(run.run, 1, 'The run number is wrong')
+                self.assertEqual(run.lumis, [46], 'The lumis are wrong')
 
         mask = jobAprime['mask']
-        self.assertEquals(mask['runAndLumis'], {1 : [[45, 45]]}, "Wrong run and lumis in mask")
+        self.assertEqual(mask['runAndLumis'], {1 : [[45, 45]]}, "Wrong run and lumis in mask")
 
         jobBprime = jobs[1]
         for inFile in jobBprime['input_files']:
             if inFile['lfn'] == '/this/is/a/lfnA':
                 run = inFile['runs'].pop()
-                self.assertEquals(run.run, 1, 'The run number is wrong')
-                self.assertEquals(run.lumis, [45], 'The lumis are wrong')
+                self.assertEqual(run.run, 1, 'The run number is wrong')
+                self.assertEqual(run.lumis, [45], 'The lumis are wrong')
             else:
                 run = inFile['runs'].pop()
-                self.assertEquals(run.run, 1, 'The run number is wrong')
-                self.assertEquals(run.lumis, [46], 'The lumis are wrong')
+                self.assertEqual(run.run, 1, 'The run number is wrong')
+                self.assertEqual(run.lumis, [46], 'The lumis are wrong')
         runs = []
         for inputFile in jobBprime['input_files']:
             runs.extend(inputFile.getRuns())
-        self.assertEquals(jobBprime['mask'].filterRunLumisByMask(runs = runs), runs, "Wrong mask in jobB")
+        self.assertEqual(jobBprime['mask'].filterRunLumisByMask(runs = runs), runs, "Wrong mask in jobB")
 
         return
 

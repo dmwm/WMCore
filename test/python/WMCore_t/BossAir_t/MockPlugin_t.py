@@ -48,7 +48,7 @@ class MockPluginTest(unittest.TestCase):
         mp = MockPlugin(config)
 
         #Check that the job has been scheduled
-        self.assertEquals({}, mp.jobsScheduledEnd)
+        self.assertEqual({}, mp.jobsScheduledEnd)
 
         # Don't be racy
         currentTime = datetime.now()
@@ -65,16 +65,16 @@ class MockPluginTest(unittest.TestCase):
                          "Time till Job %s !<= Delta %s" % (timeTillJob, \
                          timedelta(minutes = TEST_JOB_LEN * 120/100 + 1)) )
         #the job is running
-        self.assertEquals( 'Running', res[0][0]['status'])
-        self.assertEquals( 'Running', res[1][0]['status'])
-        self.assertEquals( [], res[2])
+        self.assertEqual( 'Running', res[0][0]['status'])
+        self.assertEqual( 'Running', res[1][0]['status'])
+        self.assertEqual( [], res[2])
 
         #the job is not running anymore
         mp.jobsScheduledEnd[1] = datetime(1900,1,1)
         res = mp.track( jobList )
-        self.assertEquals( [], res[0])
-        self.assertEquals( 'Done', res[1][0]['status'])
-        self.assertEquals( 'Done', res[2][0]['status'])
+        self.assertEqual( [], res[0])
+        self.assertEqual( 'Done', res[1][0]['status'])
+        self.assertEqual( 'Done', res[2][0]['status'])
 
         del mp
 

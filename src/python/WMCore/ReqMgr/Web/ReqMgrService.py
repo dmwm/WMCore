@@ -386,7 +386,7 @@ class ReqMgrService(TemplatedPage):
         # loc_specs = spec_list(loc_specs_dir, 'Specs')
         # all_specs = list(set(self.std_specs + loc_specs))
         # all_specs.sort()
-        all_specs = self.std_specs
+        all_specs = list(self.std_specs)
         spec = kwds.get('form', '')
         if not spec:
             spec = self.std_specs[0]

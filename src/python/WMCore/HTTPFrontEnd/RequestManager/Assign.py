@@ -444,6 +444,8 @@ class Assign(WebAPI):
                                        "OutputDatasets": outputDatasets,
                                        "SiteWhitelist": whiteList,
                                        "SiteBlacklist": blackList,
+                                       "MergedLFNBase": kwargs["MergedLFNBase"],
+                                       "UnmergedLFNBase": kwargs["UnmergedLFNBase"],
                                        "Dashboard": kwargs.get("Dashboard", ""),
                                        "TrustSitelists": kwargs.get("TrustSitelists", False),
                                        "AllowOpportunistic": kwargs.get("AllowOpportunistic", False)},

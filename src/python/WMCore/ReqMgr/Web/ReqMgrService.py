@@ -414,6 +414,11 @@ class ReqMgrService(TemplatedPage):
         return [r for r in genobjs(jsondict)]
 
     @expose
+    def config(self, name, **kwds):
+        "Fetch config for given request name"
+        return self.reqmgr.getConfig(name).replace('\n', '<br/>')
+
+    @expose
     def fetch(self, rid, **kwds):
         "Fetch document for given id"
         rid = rid.replace('request-', '')

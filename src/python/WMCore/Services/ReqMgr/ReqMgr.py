@@ -133,8 +133,21 @@ class ReqMgr(Service):
          -- {result:[{requestTask}, {requestTask}]}
         """
         
-        query = self._createQuery({'name': name})
-        callname = 'splitting?%s' % query
+        callname = 'splitting/%s' % name
+        return self._getResult(callname, verb = "GET")
+
+    def getConfig(self, name):
+
+        """
+        _getConfig_
+        
+        :param name: request name
+        :type string: str
+        :returns:  list of dict or list of request names depending on the detail value
+         -- {result:[config_string]}
+        """
+        
+        callname = 'workload_config/%s' % name
         return self._getResult(callname, verb = "GET")
 
     def insertRequests(self, requestDict):

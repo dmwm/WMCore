@@ -89,7 +89,7 @@ $jsondata
 
 <script>
 function ChangeRequestStatus() {
-    var parameters = {'RequestStatus':\$('#RequestStatus').val()};
+    var parameters = {'RequestStatus':JSON.parse(\$('#RequestStatus').val())};
     ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }
 function Activate(tag, hidetags) {
@@ -105,7 +105,7 @@ function Activate(tag, hidetags) {
 }
 function UpdateTaskParams() {
     var parameters = \$('#taskParams').val();
-    ajaxRequest('$base/data/splitting/$rid', parameters, 'POST');
+    ajaxRequest('$base/data/splitting/$rid', JSON.parse(parameters), 'POST');
 }
 function ShowConfig() {
     var url="$base/config?name=$rid";

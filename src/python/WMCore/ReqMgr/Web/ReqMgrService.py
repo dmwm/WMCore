@@ -386,7 +386,7 @@ class ReqMgrService(TemplatedPage):
         # loc_specs = spec_list(loc_specs_dir, 'Specs')
         # all_specs = list(set(self.std_specs + loc_specs))
         # all_specs.sort()
-        all_specs = self.std_specs
+        all_specs = list(self.std_specs)
         spec = kwds.get('form', '')
         if not spec:
             spec = self.std_specs[0]
@@ -420,6 +420,8 @@ class ReqMgrService(TemplatedPage):
         doc = self.reqmgr.getRequestByNames(rid)
         transitions = []
         tstamp = time.time()
+        # get request tasks
+        tasks = self.reqmgr.getRequestTasks(rid)
         if len(doc) == 1:
             try:
                 doc = doc[rid]
@@ -432,7 +434,8 @@ class ReqMgrService(TemplatedPage):
             if status in transitions:
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
-            content = self.templatepage('doc', title=title, status=status, name=name,
+            content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
+                                        tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(doc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())

@@ -1,3 +1,4 @@
+<! -- doc.tmpl -->
 #if $table
 <header class="group">
     <nav class="navbar navbar-left">
@@ -7,6 +8,7 @@
         <ul>
         <li><button class="btn btn-small btn-active" id="btn-table" onclick="Activate('table', ['json', 'comment'])">Table</button></li>
         <li><button class="btn btn-small" id="btn-json" onclick="Activate('json', ['table', 'comment'])">JSON</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="ShowTag('tasks')">Tasks</button></li>
         <li><button class="btn btn-small btn-yellow" id="btn-comment" onclick="Activate('comment', ['table', 'json'])">Comment</button></li>
         </ul>
     </nav>
@@ -70,6 +72,19 @@ $jsondata
 </form>
 </div>
 
+<div id="tasks" name="tasks" class="hide">
+<div class="tasks">
+    <div align="right"><a href="javascript:HideTag('tasks')">Close</a></div>
+#if $status=="new" or $status=="assigned-approved"
+    <textarea id="taskParams" name="taskParams" class="editor">$tasks</textarea>
+    <input type="submit" class="btn btn-small unit-push-right" onclick="javascript:UpdateTaskParams()" value="Update" />
+#else
+    <pre><code>$tasks</code></pre>
+#end if
+    <div><a href="javascript:HideTag('tasks')">Close</a></div>
+</div>
+</div>
+
 <script>
 function ChangeRequestStatus() {
     var parameters = {'RequestStatus':\$('#RequestStatus').val()};
@@ -86,8 +101,13 @@ function Activate(tag, hidetags) {
     }
     ShowTag('edit-'+tag);
 }
+function UpdateTaskParams() {
+    var parameters = \$('#taskParams').val()};
+    ajaxRequest('$base/data/splitting/$rid', parameters, 'PUT');
+}
 function loadSpec(tag) {
     var url="$base/create?form="+tag.value;
     load(url);
 }
 </script>
+<! -- End of doc.tmpl -->

@@ -122,6 +122,21 @@ class ReqMgr(Service):
         callname = 'request?%s' % query
         return  self._getResult(callname, verb = "GET")
         
+    def getRequestTasks(self, name):
+
+        """
+        _getRequestTasks_
+        
+        :param name: request name
+        :type string: str
+        :returns:  list of dict or list of request names depending on the detail value
+         -- {result:[{requestTask}, {requestTask}]}
+        """
+        
+        query = self._createQuery({'name': name})
+        callname = 'splitting?%s' % query
+        return self._getResult(callname, verb = "GET")
+
     def insertRequests(self, requestDict):
         """
         _insertRequests_

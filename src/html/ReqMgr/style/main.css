@@ -105,7 +105,7 @@ input[type=text]:focus, textarea:focus {
     z-index:999;
 }
 .tasks {
-    background-color: #EADBD2;
+    background-color: #E7E5C1;
     padding-left: 5px;
     padding-right: 5px;
     padding-top: 5px;
@@ -118,6 +118,7 @@ input[type=text]:focus, textarea:focus {
     left: 40%;
     transform: translate(-40%, -40%);
     z-index:999;
+    overflow: scroll;
 }
 .fadeout {
     opacity: 0;

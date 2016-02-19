@@ -76,7 +76,7 @@ class BlackWhiteListParserTest(unittest.TestCase):
         other = ['t2-srm-02.lnl.infn.it', 'se-dcache.hepgrid.uerj.br']
         results = self.separser.checkBlackList(other + blacklist)
         results = set(results)
-        self.failUnless(results == set(other))
+        self.assertTrue(results == set(other))
 
     def testSEWhiteList(self):
         """
@@ -87,7 +87,7 @@ class BlackWhiteListParserTest(unittest.TestCase):
         other = ['f-dpm001.grid.sinica.edu.tw', 'cmsrm-se01.roma1.infn.it']
         results = self.separser.checkWhiteList(other + whitelist)
         results = set(results)
-        self.failUnless(results == set(whitelist))
+        self.assertTrue(results == set(whitelist))
 
     def testCEBlackList(self):
         """
@@ -99,7 +99,7 @@ class BlackWhiteListParserTest(unittest.TestCase):
             'grid006.lca.uc.pt']
         results = self.ceparser.checkBlackList(other + blacklist)
         results = set(results)
-        self.failUnless(results == set(other))
+        self.assertTrue(results == set(other))
 
     def testCEWhiteList(self):
         """
@@ -110,7 +110,7 @@ class BlackWhiteListParserTest(unittest.TestCase):
         other = ['gridce2.pi.infn.it', 'lcg02.ciemat.es']
         results = self.ceparser.checkWhiteList(other + whitelist)
         results = set(results)
-        self.failUnless(results == set(whitelist))
+        self.assertTrue(results == set(whitelist))
 
 
 seBlackList = 'ccsrm.in2p3.fr, T1_*'

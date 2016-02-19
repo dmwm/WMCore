@@ -17,7 +17,7 @@ class Locale_t(unittest.TestCase):
         """check sections/fields exist in Locale template"""
         sections = ['reqmgr', 'gwq', 'lwq', 'agent', 'crabserver', 'couch', 'mysql']
         for s in sections:
-            self.failUnless(hasattr(Locale.locale, s))
+            self.assertTrue(hasattr(Locale.locale, s))
 
     def testB(self):
         """check set/get"""
@@ -34,7 +34,7 @@ class Locale_t(unittest.TestCase):
         conf = Configuration()
 
         conf + Locale
-        self.failUnless(hasattr(conf, 'locale'))
+        self.assertTrue(hasattr(conf, 'locale'))
 
 
 

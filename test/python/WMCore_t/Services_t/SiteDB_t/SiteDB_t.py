@@ -25,11 +25,11 @@ class SiteDBTest(unittest.TestCase):
         """
         target = ['T1_US_FNAL_MSS','T1_US_FNAL_Buffer']
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL")
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
         
         target = ['T1_US_FNAL_Disk']
         results = self.mySiteDB.cmsNametoPhEDExNode("T1_US_FNAL_Disk")
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
 
     def testCmsNametoSE(self):
         """
@@ -37,7 +37,7 @@ class SiteDBTest(unittest.TestCase):
         """
         target = [u'srm-cms-disk.gridpp.rl.ac.uk', u'srm-cms.gridpp.rl.ac.uk']
         results = self.mySiteDB.cmsNametoSE("T1_UK_RAL")
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
 
     def testCmsNamePatterntoSE(self):
         """
@@ -45,7 +45,7 @@ class SiteDBTest(unittest.TestCase):
         """
         target = [u'srm-eoscms.cern.ch', u'srm-eoscms.cern.ch', u'storage01.lcg.cscs.ch', u'eoscmsftp.cern.ch']
         results = self.mySiteDB.cmsNametoSE("%T2_CH")
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
 
     def testSEtoCmsName(self):
         """
@@ -53,19 +53,19 @@ class SiteDBTest(unittest.TestCase):
         """
         target = [u'T1_US_FNAL']
         results = self.mySiteDB.seToCMSName("cmssrm.fnal.gov")
-        self.failUnless(results == target)
+        self.assertTrue(results == target)
         
         target = sorted([u'T2_CH_CERN', u'T2_CH_CERN_HLT'])
         results = sorted(self.mySiteDB.seToCMSName("srm-eoscms.cern.ch"))
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
         
         target = sorted([u'T0_CH_CERN', u'T1_CH_CERN'])
         results = sorted(self.mySiteDB.seToCMSName("srm-cms.cern.ch"))
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
         
         target = sorted([u'T2_CH_CERN_AI'])
         results = sorted(self.mySiteDB.seToCMSName("eoscmsftp.cern.ch"))
-        self.failUnless(sorted(results) == sorted(target))
+        self.assertTrue(sorted(results) == sorted(target))
 
     def testDNUserName(self):
         """
@@ -74,7 +74,7 @@ class SiteDBTest(unittest.TestCase):
         testDn = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=gutsche/CN=582680/CN=Oliver Gutsche"
         testUserName = "gutsche"
         userName = self.mySiteDB.dnUserName(dn=testDn)
-        self.failUnless(testUserName == userName)
+        self.assertTrue(testUserName == userName)
 
     def testDNWithApostrophe(self):
         """
@@ -83,7 +83,7 @@ class SiteDBTest(unittest.TestCase):
         testDn = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'"
         testUserName = "liviof"
         userName = self.mySiteDB.dnUserName(dn=testDn)
-        self.failUnless(testUserName == userName)
+        self.assertTrue(testUserName == userName)
 
     def testSEFinder(self):
         """
@@ -105,16 +105,16 @@ class SiteDBTest(unittest.TestCase):
         """
 
         result = self.mySiteDB.PNNtoPSN('T1_US_FNAL_Disk')
-        self.failUnless(result == ['T1_US_FNAL'])
+        self.assertTrue(result == ['T1_US_FNAL'])
         result = self.mySiteDB.PNNtoPSN('T1_US_FNAL_Tape')
-        self.failUnless(result == [])
+        self.assertTrue(result == [])
         result = self.mySiteDB.PNNtoPSN('T2_UK_London_IC')
-        self.failUnless(result == ['T2_UK_London_IC'])
+        self.assertTrue(result == ['T2_UK_London_IC'])
         return
     
     def testCMSNametoList(self):
         result = self.mySiteDB.cmsNametoList("T1_US*", "SE")
-        self.failUnless(result == [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
+        self.assertTrue(result == [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
         
 
 if __name__ == '__main__':

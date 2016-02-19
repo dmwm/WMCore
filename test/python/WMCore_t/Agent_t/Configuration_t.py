@@ -47,11 +47,11 @@ class ConfigurationTest(unittest.TestCase):
         config.section_("Section1")
 
         section1 = getattr(config, "Section1", None)
-        self.failUnless(section1 != None)
+        self.assertTrue(section1 != None)
 
         config.section_("Section2")
         section2 = getattr(config, "Section2", None)
-        self.failUnless(section2 != None)
+        self.assertTrue(section2 != None)
 
         self.assertRaises(AttributeError, getattr, config, "Section3")
 
@@ -77,10 +77,10 @@ class ConfigurationTest(unittest.TestCase):
             msg += "%s\n" % str(ex)
             self.fail(msg)
 
-        self.failUnless( "Parameter1" in section1Dict)
-        self.failUnless( "Parameter2" in section1Dict)
-        self.failUnless( "Parameter3" in section1Dict)
-        self.failUnless( "Parameter4" in section1Dict)
+        self.assertTrue( "Parameter1" in section1Dict)
+        self.assertTrue( "Parameter2" in section1Dict)
+        self.assertTrue( "Parameter3" in section1Dict)
+        self.assertTrue( "Parameter4" in section1Dict)
 
         self.assertEqual(section1Dict['Parameter1'],
                          config.Section1.Parameter1)
@@ -129,9 +129,9 @@ class ConfigurationTest(unittest.TestCase):
         config.component_("Component3")
 
         comp1 = getattr(config, "Component1", None)
-        self.failUnless(comp1 != None)
+        self.assertTrue(comp1 != None)
         comp2 = getattr(config, "Component2", None)
-        self.failUnless(comp2 != None)
+        self.assertTrue(comp2 != None)
 
 
     def testD(self):

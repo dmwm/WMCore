@@ -35,6 +35,7 @@ from WMCore.WMBase            import getTestBase
 
 from WMComponent.DBS3Buffer.DBSBufferFile        import DBSBufferFile
 from WMComponent.TaskArchiver.TaskArchiverPoller import TaskArchiverPoller
+from WMComponent.TaskArchiver.CleanCouchPoller import CleanCouchPoller
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.FwkJobReport.Report         import Report
@@ -159,9 +160,11 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.userFileCacheURL = os.getenv('UFCURL', 'http://cms-xen38.fnal.gov:7725/userfilecache/')
         config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
         config.TaskArchiver.ReqMgrServiceURL = "https://cmsweb-dev.cern.ch/reqmgr/rest"
-        
+        config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+         
         config.component_("AnalyticsDataCollector")
         config.AnalyticsDataCollector.centralRequestDBURL = '%s/reqmgrdb_t' % config.JobStateMachine.couchurl
+        config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
 
         config.section_("ACDC")
         config.ACDC.couchurl                = config.JobStateMachine.couchurl
@@ -217,7 +220,8 @@ class TaskArchiverTest(unittest.TestCase):
     def createTestJobGroup(self, config, name = "TestWorkthrough",
                            filesetName = "TestFileset",
                            specLocation = "spec.xml", error = False,
-                           task = "/TestWorkload/ReReco"):
+                           task = "/TestWorkload/ReReco",
+                           type = "Processing"):
         """
         Creates a group of several jobs
 
@@ -263,7 +267,8 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         testSubscription = Subscription(fileset = testWMBSFileset,
-                                        workflow = testWorkflow)
+                                        workflow = testWorkflow,
+                                        type = type)
         testSubscription.create()
 
         testJobGroup = JobGroup(subscription = testSubscription)
@@ -491,7 +496,8 @@ class TaskArchiverTest(unittest.TestCase):
                                                 name = workload.name(),
                                                 filesetName = "TestFileset_2",
                                                 specLocation = workloadPath,
-                                                task = "/TestWorkload/ReReco/LogCollect")
+                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                type = "LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -530,6 +536,10 @@ class TaskArchiverTest(unittest.TestCase):
         self.populateWorkflowWithCompleteStatus()
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
+        
+        cleanCouch = CleanCouchPoller(config = config)
+        cleanCouch.setup()
+        cleanCouch.algorithm()
 
         result = myThread.dbi.processData("SELECT * FROM wmbs_job")[0].fetchall()
         self.assertEqual(len(result), 0)
@@ -611,6 +621,13 @@ class TaskArchiverTest(unittest.TestCase):
                                                name = workload.name(),
                                                specLocation = workloadPath,
                                                error = True)
+        # Create second workload
+        testJobGroup2 = self.createTestJobGroup(config = config,
+                                                name = workload.name(),
+                                                filesetName = "TestFileset_2",
+                                                specLocation = workloadPath,
+                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                type = "LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
                                  "TestWorkload", "ReReco")
@@ -631,6 +648,10 @@ class TaskArchiverTest(unittest.TestCase):
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
 
+        cleanCouch = CleanCouchPoller(config = config)
+        cleanCouch.setup()
+        cleanCouch.algorithm()
+        
         dbname       = getattr(config.JobStateMachine, "couchDBName")
         workdatabase = couchdb.connectDatabase("%s/workloadsummary" % dbname)
     
@@ -677,17 +698,14 @@ class TaskArchiverTest(unittest.TestCase):
         jobList = self.createGiantJobSet(name = name, config = config,
                                          nSubs = 10, nJobs = 1000, nFiles = 10)
 
-        testTaskArchiver = TaskArchiverPoller(config = config)
+        cleanCouch = CleanCouchPoller(config = config)
+        cleanCouch.setup()
 
-
-        cProfile.runctx("testTaskArchiver.algorithm()", globals(), locals(), filename = "testStats.stat")
+        cProfile.runctx("cleanCouch.algorithm()", globals(), locals(), filename = "testStats.stat")
 
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
         p.print_stats()
-
-
-
         return
 
     def testD_Timing(self):
@@ -763,6 +781,12 @@ class TaskArchiverTest(unittest.TestCase):
                                                name = workload.name(),
                                                specLocation = workloadPath,
                                                error = True)
+        testJobGroup2 = self.createTestJobGroup(config = config,
+                                                name = workload.name(),
+                                                filesetName = "TestFileset_2",
+                                                specLocation = workloadPath,
+                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                type = "LogCollect")
 
         # Adding request type as ReReco, real ReqMgr requests have it
         workload.data.request.section_("schema")

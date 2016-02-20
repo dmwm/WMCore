@@ -4,6 +4,7 @@ _WorkerThreadManager_
 
 A class used to manage regularly running worker threads.
 """
+from __future__ import print_function
 
 import threading
 import logging
@@ -152,7 +153,7 @@ class WorkerThreadManager:
                         try:
                             self.slavelist.remove(slavename)
                         except Exception as ex:
-                            print "couldn't remove thread.. %s " % ex
+                            print("couldn't remove thread.. %s " % ex)
                             pass
                         else:
                             self.activeThreadCount -= 1

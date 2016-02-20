@@ -7,6 +7,7 @@ starts an appropriately configured CherryPy instance. Views are loaded
 dynamically and can be turned on/off via configuration file.
 
 """
+from __future__ import print_function
 
 
 # CherryPy
@@ -208,9 +209,9 @@ class Root(Harness):
             cherrypy.log.error_log.setLevel(err_lvl)
             cherrypy.log.access_log.setLevel(acc_lvl)
         else:
-            print
-            print 'THIS BETTER NOT BE A PRODUCTION SERVER'
-            print
+            print()
+            print('THIS BETTER NOT BE A PRODUCTION SERVER')
+            print()
             cherrypy.config["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
             cherrypy.config["engine.autoreload_on"] = configDict.get("autoreload", False)
             # Allow debug output
@@ -438,9 +439,9 @@ if __name__ == "__main__":
         daemon = Details('%s/Daemon.xml' % workdir)
 
         if not daemon.isAlive():
-            print "Component:%s Not Running" % component
+            print("Component:%s Not Running" % component)
         else:
-            print "Component:%s Running:%s" % (component, daemon['ProcessID'])
+            print("Component:%s Running:%s" % (component, daemon['ProcessID']))
     elif opts.kill:
         daemon = Details('%s/Daemon.xml' % workdir)
         daemon.kill()

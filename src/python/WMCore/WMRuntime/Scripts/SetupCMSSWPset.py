@@ -4,6 +4,7 @@ _SetupCMSSWPset_
 Create a CMSSW PSet suitable for running a WMAgent job.
 
 """
+from __future__ import print_function
 
 import os
 import re
@@ -189,7 +190,7 @@ class SetupCMSSWPset(ScriptInterface):
                 self.process = mergeProcess(**funcArgs)
             except Exception as ex:
                 msg = "Failed to create a merge process."
-                print msg
+                print(msg)
                 raise ex
         elif funcName == "repack":
             try:
@@ -197,7 +198,7 @@ class SetupCMSSWPset(ScriptInterface):
                 self.process = repackProcess(**funcArgs)
             except Exception as ex:
                 msg = "Failed to create a repack process."
-                print msg
+                print(msg)
                 raise ex
         else:
             try:
@@ -208,13 +209,13 @@ class SetupCMSSWPset(ScriptInterface):
                 msg += str(scenario)
                 msg += "\nWith Error:"
                 msg += str(ex)
-                print msg
+                print(msg)
                 raise ex
             try:
                 self.process = getattr(scenarioInst, funcName)(**funcArgs)
             except Exception as ex:
                 msg = "Failed to load process from Scenario %s (%s)." % (scenario, scenarioInst)
-                print msg
+                print(msg)
                 raise ex
 
         return
@@ -235,7 +236,7 @@ class SetupCMSSWPset(ScriptInterface):
         except ImportError as ex:
             msg = "Unable to import process from %s:\n" % psetModule
             msg += str(ex)
-            print msg
+            print(msg)
             raise ex
 
         return
@@ -354,9 +355,9 @@ class SetupCMSSWPset(ScriptInterface):
 
         tfcName = "override_catalog.xml"
         tfcPath = os.path.join(os.getcwd(), tfcName)
-        print "Creating override TFC, contents below, saving into '%s'" % tfcPath
+        print("Creating override TFC, contents below, saving into '%s'" % tfcPath)
         tfcStr = tfc.getXML()
-        print tfcStr
+        print(tfcStr)
         tfcFile = open(tfcPath, 'w')
         tfcFile.write(tfcStr)
         tfcFile.close()
@@ -373,7 +374,7 @@ class SetupCMSSWPset(ScriptInterface):
         # find out local site SE name
         siteConfig = loadSiteLocalConfig()
         PhEDExNodeName = siteConfig.localStageOut["phedex-node"]
-        print "Running on site '%s', local PNN: '%s'" % (siteConfig.siteName, PhEDExNodeName)
+        print("Running on site '%s', local PNN: '%s'" % (siteConfig.siteName, PhEDExNodeName))
 
         pileupDict = self._getPileupConfigFromJson()
 
@@ -441,7 +442,7 @@ class SetupCMSSWPset(ScriptInterface):
                             # For deterministic pileup, we want to shuffle the list the
                             # same for every job in the task and skip events
                             random.seed(self.job['task'])
-                            print "Skipping %d pileup events for deterministic data mixing" % baggage.skipPileupEvents
+                            print("Skipping %d pileup events for deterministic data mixing" % baggage.skipPileupEvents)
                             inputTypeAttrib.skipEvents = cms.untracked.uint32(int(baggage.skipPileupEvents) % eventsAvailable)
                             inputTypeAttrib.sequential = cms.untracked.bool(True)
                     # Shuffle according to the seed above or randomly
@@ -481,7 +482,7 @@ class SetupCMSSWPset(ScriptInterface):
         """
         workingDir = self.stepSpace.location
         jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
-        print "Pileup JSON configuration file: '%s'" % jsonPileupConfig
+        print("Pileup JSON configuration file: '%s'" % jsonPileupConfig)
         # load the JSON config file into a Python dictionary
         decoder = JSONDecoder()
         try:
@@ -536,7 +537,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         Repack jobs should only use one core in CMSSW
         """
-        print "Hardcoding read/cache strategies for repack"
+        print("Hardcoding read/cache strategies for repack")
         self.process.add_(
             cms.Service("SiteLocalConfigService",
                         overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
@@ -577,11 +578,11 @@ class SetupCMSSWPset(ScriptInterface):
         """
         cmsswVersion = os.environ.get('CMSSW_VERSION', "")
         if cmsswVersion.startswith("CMSSW_7_5") and False:
-            print "Using fastCloning/lazydownload"
+            print("Using fastCloning/lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
                                           overrideSourceCloneCacheHintDir = cms.untracked.string("lazy-download")))
         elif funcName == "merge":
-            print "Using lazydownload"
+            print("Using lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
                                           overrideSourceCacheHintDir = cms.untracked.string("lazy-download")))
         return
@@ -635,8 +636,8 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 self.createProcess(scenario, funcName, funcArgs)
             except Exception as ex:
-                print "Error creating process for Config/DataProcessing:"
-                print traceback.format_exc()
+                print("Error creating process for Config/DataProcessing:")
+                print(traceback.format_exc())
                 raise ex
 
             if funcName == "repack":
@@ -651,8 +652,8 @@ class SetupCMSSWPset(ScriptInterface):
             try:
                 self.loadPSet()
             except Exception as ex:
-                print "Error loading PSet:"
-                print traceback.format_exc()
+                print("Error loading PSet:")
+                print(traceback.format_exc())
                 raise ex
 
         # Check process.source exists
@@ -674,7 +675,7 @@ class SetupCMSSWPset(ScriptInterface):
                 options.numberOfThreads = cms.untracked.uint32(numCores)
                 options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
         except AttributeError:
-            print "No value for numberOfCores. Not setting"
+            print("No value for numberOfCores. Not setting")
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:
@@ -735,7 +736,7 @@ class SetupCMSSWPset(ScriptInterface):
 
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):
-            print "Found a TFC override: %s" % self.step.data.application.overrideCatalog
+            print("Found a TFC override: %s" % self.step.data.application.overrideCatalog)
             self.process.source.overrideCatalog = \
                 cms.untracked.string(self.step.data.application.overrideCatalog)
 
@@ -752,8 +753,8 @@ class SetupCMSSWPset(ScriptInterface):
             handle.write("process = pickle.load(handle)\n")
             handle.write("handle.close()\n")
         except Exception as ex:
-            print "Error writing out PSet:"
-            print traceback.format_exc()
+            print("Error writing out PSet:")
+            print(traceback.format_exc())
             raise ex
         finally:
             handle.close()

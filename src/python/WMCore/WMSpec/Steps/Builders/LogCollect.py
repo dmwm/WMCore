@@ -5,6 +5,7 @@ _LogCollect_
 Builder implementation for LogCollect
 
 """
+from __future__ import print_function
 from WMCore.WMSpec.Steps.Builder import Builder
 from WMCore.WMSpec.ConfigSectionTree import nodeName
 
@@ -30,4 +31,4 @@ class LogCollect(Builder):
         stepName = nodeName(step)
         stepWorkingArea = "%s/%s" % (workingDir, stepName)
         self.installWorkingArea(step, stepWorkingArea)
-        print "Builders.LogCollect.build called on %s" % stepName
+        print("Builders.LogCollect.build called on %s" % stepName)

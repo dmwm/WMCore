@@ -8,6 +8,7 @@ A subscription is just a way to link many sets of jobs to a
 fileset and track the process of the associated jobs. It is
 associated to a single fileset and a single workflow.
 """
+from __future__ import print_function
 
 import logging
 
@@ -244,7 +245,7 @@ class Subscription(WMBSBase, WMSubscription):
         try:
             self.commitTransaction(existingTransaction)
         except Exception as ex:
-            print "Found exception %s" % (ex)
+            print("Found exception %s" % (ex))
             logging.error("Exception found in commiting " \
                           + "acquireFiles transaction: %s" % (ex))
         return

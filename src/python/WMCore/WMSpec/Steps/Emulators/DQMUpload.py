@@ -5,6 +5,7 @@ _DQMUpload_
 Basic Emulator for DQMUpload Step
 
 """
+from __future__ import print_function
 
 from WMCore.WMSpec.Steps.Emulator import Emulator
 
@@ -36,7 +37,7 @@ class DQMUpload(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating DQMUpload Step"
+        print("Emulating DQMUpload Step")
 
 
     def post(self):

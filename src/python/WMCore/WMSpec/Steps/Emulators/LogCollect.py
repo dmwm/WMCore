@@ -5,6 +5,7 @@ _LogCollect_
 Basic Emulator for LogCollect Step
 
 """
+from __future__ import print_function
 
 import os
 import os.path
@@ -41,7 +42,7 @@ class LogCollect(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating LogCollect Step"
+        print("Emulating LogCollect Step")
 
         output = getattr(self.report.data, self.stepName)
         output.outputPFN = 'ThisIsAPFN'
@@ -49,8 +50,8 @@ class LogCollect(Emulator):
         output.PNN       = 'ThisIsAPNN'
         output.LFN       = 'ThisIsALFN'
 
-        print "Have done emulation"
-        print self.report.data
+        print("Have done emulation")
+        print(self.report.data)
 
         return
 

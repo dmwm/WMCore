@@ -10,6 +10,7 @@ _Step.Executor.StageOut_
 Implementation of an Executor for a StageOut step
 
 """
+from __future__ import print_function
 
 import os
 import os.path
@@ -50,7 +51,7 @@ class StageOut(Executor):
 
 
 
-        print "Steps.Executors.StageOut.pre called"
+        print("Steps.Executors.StageOut.pre called")
         return None
 
 
@@ -104,7 +105,7 @@ class StageOut(Executor):
         else:
             # new style
             logging.critical("STAGEOUT IS USING NEW STAGEOUT CODE")
-            print "STAGEOUT IS USING NEW STAGEOUT CODE"
+            print("STAGEOUT IS USING NEW STAGEOUT CODE")
             manager = WMCore.Storage.FileManager.StageOutMgr(
                                 retryPauseTime  = self.step.retryDelay,
                                 numberOfRetries = self.step.retryCount,
@@ -294,7 +295,7 @@ class StageOut(Executor):
 
             stepReport.persist(reportLocation)
 
-        print "Steps.Executors.StageOut.post called"
+        print("Steps.Executors.StageOut.post called")
         return None
 
 

@@ -4,6 +4,7 @@ _UnpackUserTarball_
 
 Unpack the user tarball and put it's contents in the right place
 """
+from __future__ import print_function
 
 import commands
 import os
@@ -48,13 +49,13 @@ def getRetriever(scheme):
         certfile = os.environ['X509_USER_PROXY']
     else:
         if scheme == 'https':
-            print "User proxy not found. Trying to retrieve the file without using certificates"
+            print("User proxy not found. Trying to retrieve the file without using certificates")
         certfile = None
 
     if scheme == 'http' or not certfile:
         retriever = urllib.urlretrieve
     else:
-        print "Using %s as X509 certificate" % certfile
+        print("Using %s as X509 certificate" % certfile)
         op = URLopener(None, key_file=certfile, cert_file=certfile)
         op.addheader( 'Accept', 'application/octet-stream' )
         retriever = op.retrieve
@@ -77,12 +78,12 @@ def UnpackUserTarball():
 
         # Is it a URL or a file that exists in the jobDir?
         if splitResult[0] in ['xrootd', 'root']:
-            print "Fetching tarball %s through xrootd" % tarball
+            print("Fetching tarball %s through xrootd" % tarball)
             try:
                 subprocess.check_call(['xrdcp', '-d', '1', '-f', tarball, 'TEMP_TARBALL.tgz'])
                 subprocess.check_call(['tar', 'xzf', 'TEMP_TARBALL.tgz'])
             except subprocess.CalledProcessError:
-                print "Couldn't retrieve/extract file from xrootd"
+                print("Couldn't retrieve/extract file from xrootd")
                 raise
             finally:
                 if os.path.exists('TEMP_TARBALL.tgz'):
@@ -93,14 +94,14 @@ def UnpackUserTarball():
             with tempfile.NamedTemporaryFile() as tempFile:
                 if setHttpProxy(tarball):
                     try:
-                        print 'Fetching URL tarball %s through proxy server' % tarball
+                        print('Fetching URL tarball %s through proxy server' % tarball)
                         fileName, headers = retriever(tarball, tempFile.name)
                     except (RuntimeError, IOError):
                         del os.environ['http_proxy']
-                        print 'Fetching URL tarball %s after proxy server failure' % tarball
+                        print('Fetching URL tarball %s after proxy server failure' % tarball)
                         fileName, headers = retriever(tarball, tempFile.name)
                 else:
-                    print 'Fetching URL tarball %s without proxy server' % tarball
+                    print('Fetching URL tarball %s without proxy server' % tarball)
                     fileName, headers = retriever(tarball, tempFile.name)
 
                 try:
@@ -108,14 +109,14 @@ def UnpackUserTarball():
                 except subprocess.CalledProcessError:
                     raise RuntimeError('Error extracting %s' % tarball)
         elif os.path.isfile(tarFile):
-            print "Untarring ", tarFile
+            print("Untarring ", tarFile)
             subprocess.check_call(['tar', 'xzf', tarFile])
         else:
             raise IOError('%s does not exist' % tarFile)
 
     for userFile in userFiles:
         if userFile:
-            print "Moving", userFile, "to execution directory."
+            print("Moving", userFile, "to execution directory.")
             shutil.move(userFile, '..')
 
     return 0

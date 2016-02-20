@@ -7,6 +7,7 @@ and then for each task do the jobs necessary for the task
 to start as a proper job.
 
 """
+from __future__ import print_function
 
 
 
@@ -102,7 +103,7 @@ class TaskMaker:
             try:
                 os.mkdir(inputWorkdir)
             except Exception as ex:
-                print 'Caught exception %s in creating workdir %s' %(str(ex), inputWorkdir)
+                print('Caught exception %s in creating workdir %s' %(str(ex), inputWorkdir))
                 raise Exception(ex)
 
         self.workdir = inputWorkdir

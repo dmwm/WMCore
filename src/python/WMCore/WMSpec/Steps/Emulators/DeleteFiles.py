@@ -5,6 +5,7 @@ _DeleteFiles_
 Basic Emulator for DeleteFiles Step
 
 """
+from __future__ import print_function
 
 from WMCore.WMSpec.Steps.Emulator import Emulator
 
@@ -36,7 +37,7 @@ class DeleteFiles(Emulator):
         self.step.section_("emulation")
         self.step.emulation.emulatedBy = str(self.__class__.__name__)
 
-        print "Emulating DeleteFiles Step"
+        print("Emulating DeleteFiles Step")
 
 
     def post(self):

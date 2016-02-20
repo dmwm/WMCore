@@ -18,6 +18,7 @@ This will then do the following:
 - set everything up so that you can just add the job dir to the pythonpath and then call the runtime startup for the WMCore/WMRuntime stuff
 
 """
+from __future__ import print_function
 import sys
 import os
 import tarfile
@@ -88,7 +89,7 @@ def createWorkArea(sandbox):
 
     zfile.close()
 
-    print "export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir)
+    print("export PYTHONPATH=$PYTHONPATH:%s/WMCore.zip:%s" % (jobDir, jobDir))
     return jobDir
 
 
@@ -128,7 +129,7 @@ def runUnpacker(sandbox, package, jobIndex, jobname):
         msg += str(ex)
         msg += str(traceback.format_exc())
         makeErrorReport(jobname, 1, msg)
-        print msg
+        print(msg)
         sys.exit(1)
 
 
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     except getopt.GetoptError as ex:
         msg = "Error processing commandline args:\n"
         msg += str(ex)
-        print msg
+        print(msg)
         sys.exit(1)
 
     sandbox = os.environ.get('WMAGENT_SANDBOX', None)
@@ -159,17 +160,17 @@ if __name__ == '__main__':
     if sandbox == None:
         msg = "No Sandbox provided"
         makeErrorReport(jobname, 1, msg)
-        print msg
+        print(msg)
         sys.exit(1)
     if package == None:
         msg = "No Job Package provided"
         makeErrorReport(jobname, 1, msg)
-        print msg
+        print(msg)
         sys.exit(1)
     if jobIndex == None:
         msg = "No Job Index provided"
         makeErrorReport(jobname, 1, msg)
-        print msg
+        print(msg)
         sys.exit(1)
 
     runUnpacker(sandbox=sandbox, package=package,

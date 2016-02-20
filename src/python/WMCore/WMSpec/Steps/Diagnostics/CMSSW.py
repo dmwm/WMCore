@@ -8,6 +8,7 @@ Diagnostic implementation for a CMSSW job
 
 
 """
+from __future__ import print_function
 
 import logging
 import os.path
@@ -155,7 +156,7 @@ class CMSRunHandler(DiagnosticHandler):
         self.desc = desc
 
     def __call__(self, errCode, executor, **args):
-        print "%s Diagnostic Handler invoked" % self.__class__.__name__
+        print("%s Diagnostic Handler invoked" % self.__class__.__name__)
         msg = "Exit %s: %s Exception from cmsRun" % (self.code, self.desc)
         jobRepXml = os.path.join(executor.step.builder.workingDir,
                                  executor.step.output.jobReport)
@@ -194,7 +195,7 @@ class CMSRunHandler(DiagnosticHandler):
                 executor.report.addError(executor.step._internal_name,
                                          self.code, self.desc, msg)
 
-        print executor.report.report.errors
+        print(executor.report.report.errors)
         return
 
 

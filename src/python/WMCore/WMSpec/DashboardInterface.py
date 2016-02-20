@@ -8,6 +8,7 @@ of the job and the report.
 
 
 """
+from __future__ import print_function
 
 
 
@@ -243,7 +244,7 @@ class DashboardInterface(object):
             raise Exception(ex)
 
 
-        print self.document.toprettyxml()
+        print(self.document.toprettyxml())
 
         return
 

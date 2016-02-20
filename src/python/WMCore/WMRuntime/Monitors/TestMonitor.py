@@ -5,6 +5,7 @@ _TestMonitor_
 
 This is the test class for monitors
 """
+from __future__ import print_function
 
 
 
@@ -109,7 +110,7 @@ class TestMonitor(WMRuntimeMonitor):
         Handles the monitor initiation
 
         """
-        print "In TestMonitor.initMonitor"
+        print("In TestMonitor.initMonitor")
 
         self.softTimeOut = args.get('softTimeOut', None)
         self.hardTimeOut = args.get('hardTimeOut', None)
@@ -119,7 +120,7 @@ class TestMonitor(WMRuntimeMonitor):
         """
         Job start notifier.
         """
-        print "Yeehaw!  I started a job"
+        print("Yeehaw!  I started a job")
 
         return
 
@@ -130,7 +131,7 @@ class TestMonitor(WMRuntimeMonitor):
 
         """
 
-        print "Job ended"
+        print("Job ended")
 
         return
 
@@ -143,7 +144,7 @@ class TestMonitor(WMRuntimeMonitor):
         self.currentStepName  = getStepName(step)
         self.currentStepSpace = getStepSpace(self.currentStepName)
         self.startTime        = time.time()
-        print "Step started"
+        print("Step started")
 
         return
 
@@ -155,7 +156,7 @@ class TestMonitor(WMRuntimeMonitor):
         self.currentStep      = None
         self.currentStepName  = None
         self.currentStepSpace = None
-        print "Step ended"
+        print("Step ended")
 
 
     def periodicUpdate(self):

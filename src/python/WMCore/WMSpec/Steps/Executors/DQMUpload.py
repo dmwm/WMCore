@@ -5,6 +5,7 @@ _Step.Executor.DQMUpload_
 Implementation of an Executor for a DQMUpload step
 
 """
+from __future__ import print_function
 import os
 import sys
 import httplib
@@ -49,7 +50,7 @@ class DQMUpload(Executor):
         if emulator != None:
             return emulator.emulatePre(self.step)
 
-        print "Steps.Executors.DQMUpload.pre called"
+        print("Steps.Executors.DQMUpload.pre called")
         return None
 
     def execute(self, emulator=None):
@@ -117,7 +118,7 @@ class DQMUpload(Executor):
         if emulator != None:
             return emulator.emulatePost(self.step)
 
-        print "Steps.Executors.DQMUpload.post called"
+        print("Steps.Executors.DQMUpload.post called")
         return None
 
 

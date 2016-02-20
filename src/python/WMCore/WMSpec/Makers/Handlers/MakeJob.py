@@ -2,6 +2,7 @@
 """
 Default function for Job Maker
 """
+from __future__ import print_function
 __all__ = []
 
 
@@ -43,4 +44,4 @@ class MakeJob(BaseHandler):
         # as we defined a threadpool we can enqueue our item
         # and move to the next.
         self.threadpool.enqueue(event, payload)
-        print "Thread with payload " + str(payload) + " is enqueued"
+        print("Thread with payload " + str(payload) + " is enqueued")

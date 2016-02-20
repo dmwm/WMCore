@@ -4,6 +4,7 @@ _Step.Executor.LogCollect_
 
 Implementation of an Executor for a StageOut step.
 """
+from __future__ import print_function
 
 import os
 import logging
@@ -44,7 +45,7 @@ class LogCollect(Executor):
         if (emulator != None):
             return emulator.emulatePre( self.step )
 
-        print "Steps.Executors.LogCollect.pre called"
+        print("Steps.Executors.LogCollect.pre called")
         return None
 
     def execute(self, emulator = None):
@@ -217,7 +218,7 @@ class LogCollect(Executor):
         except Exception as ex:
             msg = "Unable to stage out log archive:\n"
             msg += str(ex)
-            print "MSG: %s" % msg
+            print("MSG: %s" % msg)
             raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
@@ -227,7 +228,7 @@ class LogCollect(Executor):
         except Exception as ex:
             msg = "Unable to stage out log archive to EOS:\n"
             msg += str(ex)
-            print "WARNING: %s" % msg
+            print("WARNING: %s" % msg)
             
         # Add to report
         outputRef = getattr(self.report.data, self.stepName)
@@ -248,5 +249,5 @@ class LogCollect(Executor):
         if (emulator != None):
             return emulator.emulatePost( self.step )
 
-        print "Steps.Executors.LogCollect.post called"
+        print("Steps.Executors.LogCollect.post called")
         return None

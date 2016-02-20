@@ -4,6 +4,7 @@
 """
 Makes jobs in the proper state.
 """
+from __future__ import print_function
 
 
 
@@ -21,10 +22,10 @@ class JobMaker(Harness):
     def __init__(self, config):
         # call the base class
         Harness.__init__(self, config)
-        print "JobMaker.__init__"
+        print("JobMaker.__init__")
 
     def preInitialization(self):
-        print "JobMaker.preInitialization"
+        print("JobMaker.preInitialization")
 
         # use a factory to dynamically load handlers.
         factory = WMFactory('generic')

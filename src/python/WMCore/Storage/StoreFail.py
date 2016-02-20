@@ -7,6 +7,7 @@ Util class to stage out a set of files from a job report to the /store/unmerged/
 namespace
 
 """
+from __future__ import print_function
 
 
 
@@ -57,9 +58,9 @@ class StoreFailMgr:
         for fileToStage in self.report.files:
             lfn = fileToStage['LFN']
             newLfn = modifyLFN(lfn)
-            print "Remapping LFN:\n%s\n" % lfn
-            print " -TO-\n%s\n" % newLfn
-            print "Staging Out: %s" % newLfn
+            print("Remapping LFN:\n%s\n" % lfn)
+            print(" -TO-\n%s\n" % newLfn)
+            print("Staging Out: %s" % newLfn)
             fileToStage['LFN'] = newLfn
             try:
                 result = self.mgr(**fileToStage)

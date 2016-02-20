@@ -6,6 +6,7 @@ File       : utils.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description:
 """
+from __future__ import print_function
 
 # system modules
 import cgi
@@ -46,7 +47,7 @@ def quote(data):
             else:
                 res = ""
         except Exception as exc:
-            print "Unable to cgi.escape(%s, quote=True)" % data
+            print("Unable to cgi.escape(%s, quote=True)" % data)
             res = ""
     return res
 

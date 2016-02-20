@@ -6,6 +6,7 @@ File       : LogDBReport.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: LogDB report class to represent LogDB messages
 """
+from __future__ import print_function
 
 # system modules
 import os
@@ -65,7 +66,7 @@ class LogDBReport(object):
     def to_stdout(self, request, order='ts'):
         """Yield to stdout LogDB messages for given request/type"""
         msg = '\nReport for %s' % request
-        print msg, '\n', '-'*len(msg)
+        print(msg, '\n', '-'*len(msg))
         docs = self.orderby(self.docs(request), order)
         times = []
         messages = []
@@ -82,4 +83,4 @@ class LogDBReport(object):
             tcol = '%s%s' % (times[idx], ' '*(tstpad-len(times[idx])))
             mcol = '%s%s' % (messages[idx], ' '*(msgpad-len(messages[idx])))
             ecol = '%s%s' % (mtypes[idx], ' '*(mtppad-len(mtypes[idx])))
-            print "%s %s %s" % (tcol, mcol, ecol)
+            print("%s %s %s" % (tcol, mcol, ecol))

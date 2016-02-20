@@ -24,6 +24,7 @@ All checks and updates correspond to progress recoreded on
 https://github.com/dmwm/WMCore/issues/4388
 
 """
+from __future__ import print_function
 
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couchdb_name = "reqmgr_workload_cache"
@@ -169,9 +170,9 @@ SQL=("select "
 
 
 def oracle_query(oradb, sql_cmd):
-    print "Retrieving data from Oracle ..."
+    print("Retrieving data from Oracle ...")
     ora_cursor = cx_Oracle.Cursor(oradb)
-    print "# SQL: '%s'" % sql_cmd
+    print("# SQL: '%s'" % sql_cmd)
     ora_cursor.prepare(sql_cmd)
     ora_cursor.execute(sql_cmd)
     return ora_cursor
@@ -202,7 +203,7 @@ def get_couchdb_row_count(db):
     Returns number of request documents excluding design documents.
     
     """
-    print "Retrieving data from CouchDB ..."
+    print("Retrieving data from CouchDB ...")
     doc_count = 0 
     for row in db.allDocs()["rows"]:
         if row["id"].startswith("_design"): continue
@@ -212,25 +213,25 @@ def get_couchdb_row_count(db):
 
 def main():
     if len(sys.argv) < 2:
-        print "Missing the connect Oracle TNS argument (user/password@server)."
+        print("Missing the connect Oracle TNS argument (user/password@server).")
         sys.exit(1)
     tns = sys.argv[1]
     
-    print "Creating CouchDB database connection ..."
+    print("Creating CouchDB database connection ...")
     couchdb = Database(couchdb_name, couch_url)
-    print "Creating Oracle database connection ..."
+    print("Creating Oracle database connection ...")
     oradb = cx_Oracle.Connection(tns)
     
     num_couch_requests = get_couchdb_row_count(couchdb)
-    print "Total CouchDB request documents in ReqMgr: %s" % num_couch_requests
+    print("Total CouchDB request documents in ReqMgr: %s" % num_couch_requests)
     num_oracle_requests = get_oracle_row_count(oradb, "reqmgr_request")                                                
-    print "Total Oracle requests entries in ReqMgr: %s" % num_oracle_requests
+    print("Total Oracle requests entries in ReqMgr: %s" % num_oracle_requests)
         
     if num_couch_requests != num_oracle_requests:
-        print "Number of requests in Oracle, CouchDB don't agree, fix that first."
+        print("Number of requests in Oracle, CouchDB don't agree, fix that first.")
         sys.exit(1)
     else:
-        print "Database cross-check (Oracle request names vs CouchDB): DONE, THE SAME."
+        print("Database cross-check (Oracle request names vs CouchDB): DONE, THE SAME.")
         
     
     def get_couch_value(couch_req, mapping):
@@ -251,7 +252,7 @@ def main():
             # https://cmsweb.cern.ch/couchdb/reqmgr_workload_cache/linacre_2011A_442p2_DataReprocessingMuOnia_111119_005717/spec
             from_wf_url_req_name = oracle_value.rsplit('/', 2)[-2]
             if req_name != from_wf_url_req_name:
-                print "Workflow URL mismatch: %s" % o
+                print("Workflow URL mismatch: %s" % o)
                 sys.exit(1) 
 
 
@@ -267,7 +268,7 @@ def main():
         #    continue
         
         counter += 1
-        print "\n\n%s (%s)" % (req_name, counter)        
+        print("\n\n%s (%s)" % (req_name, counter))        
                 
         couch_req = couchdb.document(req_name)
         couch_fields_to_correct = {}
@@ -281,19 +282,19 @@ def main():
             # compare oracle and couch values
             # don't update value in couch if it exists and is non-empty
             if (couch_missing or o != c) and c in ('None', '0', '', "N/A"):
-                print "%s %s != %s" % (mapping, o, c)
+                print("%s %s != %s" % (mapping, o, c))
                 # correct couch request by oracle value
                 couch_fields_to_correct[mapping["couch"]] = o
         
         if couch_fields_to_correct:
-            print "Couch corrected fields:"
-            print couch_fields_to_correct
+            print("Couch corrected fields:")
+            print(couch_fields_to_correct)
             if sys.argv[-1] == "-c":
                 couchdb.updateDocument(req_name, "ReqMgr", "updaterequest",
                                        fields=couch_fields_to_correct, useBody=True)
-                print "Couch updated"
+                print("Couch updated")
         else:
-            print "OK"
+            print("OK")
         
         # fields that should be removed from couch
         """

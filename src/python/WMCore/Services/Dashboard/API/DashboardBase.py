@@ -7,6 +7,7 @@ Allow only to publish a dictionary
 
 """
 from __future__ import absolute_import
+from __future__ import print_function
 
 
 
@@ -250,12 +251,12 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
 
         if len(self.publisher) == 0:
             self.publisher = [ApmonTransPort(self.taskid, self.jobid)]
-            print "DashboardBase: Using default transport agent as ML server"
+            print("DashboardBase: Using default transport agent as ML server")
         else:
             for inst in self.publisher:
                 if isinstance(inst, ApmonTransPort):
-                    print "DashboardBase: Using transport agent as ML server"
+                    print("DashboardBase: Using transport agent as ML server")
                 elif isinstance(inst, MSGTransPortAgent):
-                    print "DashboardBase: Using transport agent as MSG server"
+                    print("DashboardBase: Using transport agent as MSG server")
 
         return

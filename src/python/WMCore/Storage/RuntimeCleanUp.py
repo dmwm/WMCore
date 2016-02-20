@@ -5,6 +5,7 @@ _RuntimeCleanUp_
 Runtime binary file for CleanUp type nodes
 
 """
+from __future__ import print_function
 import sys
 import os
 from WMCore.Storage.TaskState import TaskState, getTaskState
@@ -24,7 +25,7 @@ class CleanUpSuccess(Exception):
         Exception.__init__(self, "CleanUpSuccess")
         msg = "Succesful Cleanup of LFN:\n%s\n" % lfn
         msg += "  PFN: %s\n" % pfn
-        print msg
+        print(msg)
 
 class CleanUpFailure(Exception):
     """
@@ -42,7 +43,7 @@ class CleanUpFailure(Exception):
         for key, val in details.items():
             msg += "  %s: %s\n" % (key, val)
 
-        print msg
+        print(msg)
 
 class SkippedFileFilter:
     def __init__(self, skippedFiles):
@@ -86,7 +87,7 @@ class CleanUpManager:
         """
         msg = "Cleaning up input files for job: "
         msg += self.inputState.taskAttrs['Name']
-        print msg
+        print(msg)
         self.inputState.loadJobReport()
         inputReport = self.inputState.getJobReport()
 
@@ -124,7 +125,7 @@ class CleanUpManager:
         for lfn in lfnList:
             msg += " Removing: %s\n" % lfn
 
-        print msg
+        print(msg)
 
         self.inputFiles = lfnList
         return
@@ -159,7 +160,7 @@ class CleanUpManager:
             self.tfc = siteCfg.trivialFileCatalog()
             msg = "Trivial File Catalog has been loaded:\n"
             msg += str(self.tfc)
-            print msg
+            print(msg)
         except Exception as ex:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Clean Up will not be attempted\n"
@@ -179,7 +180,7 @@ class CleanUpManager:
             raise RuntimeError(msg)
         msg = "Stage Out Implementation to be used for cleanup is:"
         msg += "%s" % self.implName
-        print msg
+        print(msg)
 
 
 
@@ -193,7 +194,7 @@ class CleanUpManager:
         for deleteFile in self.inputFiles:
 
             try:
-                print "Deleting File: %s" % deleteFile
+                print("Deleting File: %s" % deleteFile)
                 self.invokeCleanUp(deleteFile)
                 self.success.append(deleteFile)
             except CleanUpFailure as ex:
@@ -218,7 +219,7 @@ class CleanUpManager:
             status = 60312
 
         msg = "Exit Status for this task is: %s\n" % status
-        print msg
+        print(msg)
 
         # //
         # // Writing framework Jobreport for cleanup jobs
@@ -360,7 +361,7 @@ def cleanUp():
         msg += "Error reading RunResDB XML file:\n"
         msg += "%s\n" % state.runresdb
         msg += "and extracting details for task in: %s\n" % os.getcwd()
-        print msg
+        print(msg)
         exitCode = 60312
         f = open("exit.status", 'w')
         f.write(str(exitCode))
@@ -393,7 +394,7 @@ def cleanUp():
 
 
 if __name__ == '__main__':
-    print "RuntimeCleanUp invoked..."
+    print("RuntimeCleanUp invoked...")
     exitCode = cleanUp()
 
     f = open("exit.status", 'w')

@@ -6,6 +6,7 @@ Interface for Stage Out Plugins. All stage out implementations should
 inherit this object and implement the methods accordingly
 
 """
+from __future__ import print_function
 import time
 import os
 from WMCore.Storage.Execute import runCommand
@@ -43,13 +44,13 @@ class StageOutImpl:
         try:
             exitCode = runCommand(command)
             msg = "%s : Command exited with status: %s\n" % (time.strftime("%Y-%m-%dT%H:%M:%S"), exitCode)
-            print msg
+            print(msg)
         except Exception as ex:
             raise StageOutError(str(ex), Command=command, ExitCode=60311)
         if exitCode:
             msg = "%s : Command exited non-zero" % time.strftime("%Y-%m-%dT%H:%M:%S")
-            print "ERROR: Exception During Stage Out:\n"
-            print msg
+            print("ERROR: Exception During Stage Out:\n")
+            print(msg)
             raise StageOutError(msg, Command=command, ExitCode=exitCode)
         return
 
@@ -146,14 +147,14 @@ class StageOutImpl:
         # //
         for retryCount in range(1, self.numRetries + 1):
             try:
-                print "%s : Creating output directory..." % time.strftime("%Y-%m-%dT%H:%M:%S")
+                print("%s : Creating output directory..." % time.strftime("%Y-%m-%dT%H:%M:%S"))
                 self.createOutputDirectory(targetPFN)
                 break
             except StageOutError as ex:
                 msg = "Attempt %s to create a directory for stageout failed.\n" % retryCount
                 msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)
-                print msg
+                print(msg)
                 if retryCount == self.numRetries:
                     #  //
                     # // last retry, propagate exception
@@ -171,14 +172,14 @@ class StageOutImpl:
 
         for retryCount in range(1, self.numRetries + 1):
             try:
-                print "%s : Running the stage out..." % time.strftime("%Y-%m-%dT%H:%M:%S")
+                print("%s : Running the stage out..." % time.strftime("%Y-%m-%dT%H:%M:%S"))
                 self.executeCommand(command)
                 break
             except StageOutError as ex:
                 msg = "Attempt %s to stage out failed.\n" % retryCount
                 msg += "Automatically retrying in %s secs\n " % self.retryPause
                 msg += "Error details:\n%s\n" % str(ex)
-                print msg
+                print(msg)
                 if retryCount == self.numRetries:
                     #  //
                     # // last retry, propagate exception

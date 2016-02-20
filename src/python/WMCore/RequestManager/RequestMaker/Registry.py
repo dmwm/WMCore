@@ -8,6 +8,7 @@ classes and instantiate them via a factory method
 Note that a schema is retrieved via its corresponding maker.
 
 """
+from __future__ import print_function
 import logging
 import time
 from WMCore.Wrappers import JsonWrapper
@@ -51,7 +52,7 @@ def retrieveRequestMaker(typename):
 
     """
     if typename not in _Registry._Makers:
-        print _Registry._Makers.keys()
+        print(_Registry._Makers.keys())
         msg = "No RequestMaker implementation registered with name:"
         msg += " %s" % typename
         raise RuntimeError(msg)

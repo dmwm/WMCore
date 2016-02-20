@@ -6,6 +6,7 @@ File       : WorkflowManager.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Workflow management tools
 """
+from __future__ import print_function
 
 # system modules
 import os
@@ -318,7 +319,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if 'UpgradePhase1Age' in campaign and 'dr61SLHCx' in specialName:
             specialName = specialName.replace("dr61SLHCx","_DR61SLHCx")
         if 'dr61SLHCx' in specialName:
-            print 'WARNING: using new campaign name format'          
+            print('WARNING: using new campaign name format')          
 
         if campaign == 'HiFall11_DR44X' or campaign == 'HiFall11DR44':
             era = 'HiFall11'
@@ -345,7 +346,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
             elif '__' in workflow:
                 specialName = ''
             else:
-                print 'ERROR: unexpected special name string in workflow name'
+                print('ERROR: unexpected special name string in workflow name')
                 sys.exit(0)
 
         # Handle NewG4Phys
@@ -373,7 +374,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if pileupDataset != 'None':
             [subscribedOurSite, subscribedOtherSite] = checkAcceptedSubscriptionRequest(self.url, pileupDataset, siteSE)
             if not subscribedOurSite:
-                print 'ERROR: pileup dataset not subscribed/approved to required Disk endpoint'
+                print('ERROR: pileup dataset not subscribed/approved to required Disk endpoint')
                 sys.exit(0)            
       
         # Determine pileup scenario
@@ -383,7 +384,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if campaign == 'Summer12_DR53X_RD':
             pileupScenario = 'PU_RD1'
         if pileupScenario == 'Unknown' and 'MinBias' in pileupDataset and 'LowPU2010DR42' not in workflow:
-            print 'ERROR: unable to determine pileup scenario'
+            print('ERROR: unable to determine pileup scenario')
             sys.exit(0)
         elif 'Fall11_R2' in workflow or 'Fall11_R4' in workflow or 'Fall11R2' in workflow or 'Fall11R4' in workflow:
             matchObj = re.match(r".*Fall11-(.*)_START.*", inputDataset)
@@ -534,7 +535,7 @@ def getPileupScenario(winfo, config):
     if scenario == 'PU':
        scenario = 'PU' + meanPileUp + 'bx' + bunchSpacing
        if meanPileUp == 'None' or bunchSpacing == 'None':
-          print 'ERROR: unexpected pileup settings in config'
+          print('ERROR: unexpected pileup settings in config')
           sys.exit(0)
     if scenario == 'PU_RD1' and cmdLineOptions != 'None':
        if '--runsAndWeightsForMC [(190482,0.924) , (194270,4.811), (200466,7.21), (207214,7.631)]' in cmdLineOptions:

@@ -4,6 +4,7 @@
 """
 web server.
 """
+from __future__ import print_function
 
 __author__ = "Valentin Kuznetsov"
 
@@ -268,9 +269,9 @@ class ReqMgrService(TemplatedPage):
     @expose
     def admin(self, **kwds):
         """admin page"""
-        print "\n### ADMIN PAGE"
+        print("\n### ADMIN PAGE")
         rows = self.admin_info.get()
-        print "rows", [r for r in rows]
+        print("rows", [r for r in rows])
 
         content = self.templatepage('admin')
         return self.abs_page('admin', content)
@@ -287,7 +288,7 @@ class ReqMgrService(TemplatedPage):
     def add_group(self, **kwds):
         """add_group action"""
         rows = self.admin_group.get()
-        print "\n### GROUPS", [r for r in rows]
+        print("\n### GROUPS", [r for r in rows])
         rid = genid(kwds)
         status = "ok"  # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
@@ -297,8 +298,8 @@ class ReqMgrService(TemplatedPage):
     def add_team(self, **kwds):
         """add_team action"""
         rows = self.admin_team.get()
-        print "\n### TEAMS", kwds, [r for r in rows]
-        print "request to add", kwds
+        print("\n### TEAMS", kwds, [r for r in rows])
+        print("request to add", kwds)
         rid = genid(kwds)
         status = "ok"  # chagne to whatever it would be
         content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)

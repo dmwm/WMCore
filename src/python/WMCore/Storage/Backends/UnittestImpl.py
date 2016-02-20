@@ -5,6 +5,7 @@ _TestImpl_
 Couple of test implementations for unittests
 
 """
+from __future__ import print_function
 
 import os
 import os.path
@@ -25,12 +26,12 @@ class WinImpl(StageOutImpl):
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
-        print "WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
+        print("WinImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "WIN!!!"
 
 
     def removeFile(self, pfnToRemove):
-        print "WinImpl.removeFile(%s)" % pfnToRemove
+        print("WinImpl.removeFile(%s)" % pfnToRemove)
         return "WIN!!!"
 
 
@@ -52,12 +53,12 @@ class FailImpl(StageOutImpl):
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
-        print "FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums)
+        print("FailImpl.createStageOutCommand(%s, %s, %s, %s)" % (sourcePFN, targetPFN, options, checksums))
         return "FAIL!!!"
 
 
     def removeFile(self, pfnToRemove):
-        print "FailImpl.removeFile(%s)" % pfnToRemove
+        print("FailImpl.removeFile(%s)" % pfnToRemove)
         return "FAIL!!!"
 
 

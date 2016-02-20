@@ -4,6 +4,7 @@ _DCCPFNALImpl_
 
 Implementation of StageOutImpl interface for DCCPFNAL
 """
+from __future__ import print_function
 
 import os
 import commands
@@ -94,7 +95,7 @@ class DCCPFNALImpl(StageOutImplV2):
 
             logging.info("Staging out with DCCPFNAL")
             logging.info("  commandline: %s" % copyCommand)
-            print "command is %s" % copyCommand
+            print("command is %s" % copyCommand)
             (exitCode, output) = self.doWrapped(copyCommand)
             if exitCode:
                 logging.error("Transfer failed")
@@ -189,12 +190,12 @@ class DCCPFNALImpl(StageOutImplV2):
             return pfn
 
         if pfn.find('/store/unmerged/lustre/') == -1:
-            print "Translating PFN: %s\n To use dcache door" % pfn
+            print("Translating PFN: %s\n To use dcache door" % pfn)
             dcacheDoor = commands.getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
-            print "Created Target PFN with dCache Door: ", pfn
+            print("Created Target PFN with dCache Door: ", pfn)
         else:
             pfnSplit = pfn.split("/store/unmerged/lustre/", 1)[1]
             pfn = "/lustre/unmerged/%s" % pfnSplit

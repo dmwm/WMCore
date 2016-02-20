@@ -5,6 +5,7 @@ _SRMV2Impl_
 Implementation of StageOutImpl interface for SRM Version 2
 
 """
+from __future__ import print_function
 import os, re
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -82,13 +83,13 @@ class SRMV2Impl(StageOutImpl):
                 msg += "%s\n" % checkdircmd + dir
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
-                print msg
+                print(msg)
                 pass
 
         #  // Create needed directory levels from end of previous loop
         # //  to end of directory structure
         for dir in dirs[levelToCreateFrom:]:
-            print "Create directory: %s" % dir
+            print("Create directory: %s" % dir)
             try:
                 exitCode, output = self.run(mkdircommand + dir)
                 if exitCode:
@@ -98,7 +99,7 @@ class SRMV2Impl(StageOutImpl):
                 msg += "%s\n" % mkdircommand + dir
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
-                print msg
+                print(msg)
                 pass
 
     def createRemoveFileCommand(self, pfn):

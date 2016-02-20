@@ -6,6 +6,7 @@ ApMon based Transport Layer
 Use _dict_ for all transportation
 
 """
+from __future__ import print_function
 
 
 
@@ -58,7 +59,7 @@ class ApmonTransPort:
         except AttributeError as ex:
             msg = "ApmonTransPort: Unable to sendAll the params, use _dict_ - "
             msg += str(ex)
-            print msg
+            print(msg)
         else:
             self.apmon.sendParams(params)
 

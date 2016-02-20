@@ -4,6 +4,7 @@
 Set values in CouchDB request database.
 
 """
+from __future__ import print_function
 
 
 couch_url = "https://cmsweb-testbed.cern.ch/couchdb"
@@ -17,7 +18,7 @@ from WMCore.Database.CMSCouch import CouchServer, Database, Document
 
 
 def couchdb_setter(db):
-    print "Retrieving data from CouchDB ..."
+    print("Retrieving data from CouchDB ...")
     doc_count = 0
     fields = to_set 
     for row in db.allDocs()["rows"]:
@@ -26,18 +27,18 @@ def couchdb_setter(db):
         doc_count += 1
         request = db.document(request_name)
         try:
-            print "%s: %s" % (request_name, request["CouchWorkloadDBName"])
+            print("%s: %s" % (request_name, request["CouchWorkloadDBName"]))
             continue
         except KeyError:
-            print "%s: %s" % (request_name, "n/a")
-        print "Setting %s ..." % request_name
+            print("%s: %s" % (request_name, "n/a"))
+        print("Setting %s ..." % request_name)
         db.updateDocument(request_name, "ReqMgr", "updaterequest", fields=fields, useBody=True)
-    print "Queried %s request documents." % doc_count 
+    print("Queried %s request documents." % doc_count) 
 
 
 
 def main():
-    print "Creating CouchDB database connection ..."
+    print("Creating CouchDB database connection ...")
     couchdb = Database(couchdb_name, couch_url)
     couchdb_setter(couchdb)
     

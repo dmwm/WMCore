@@ -7,6 +7,7 @@ Util class to provide stage in functionality as an interface object.
 Based on StageOutMgr class
 
 """
+from __future__ import print_function
 
 import os
 
@@ -115,7 +116,7 @@ class StageInMgr:
             msg += str(ex)
             raise StageOutInitError( msg )
 
-        print msg
+        print(msg)
         return
 
 
@@ -154,7 +155,7 @@ class StageInMgr:
         for key, val in overrideParams.items():
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
-        print msg
+        print(msg)
         self.fallbacks = []
         self.fallbacks.append(overrideParams)
         return
@@ -170,7 +171,7 @@ class StageInMgr:
 
 
         try:
-            print "==>Working on file: %s" % fileToStage['LFN']
+            print("==>Working on file: %s" % fileToStage['LFN'])
 
             lfn = fileToStage['LFN']
 
@@ -178,7 +179,7 @@ class StageInMgr:
             # // No override => use local-stage-out from site conf
             #//  invoke for all files and check failures/successes
             if not self.override:
-                print "===> Attempting Local Stage In."
+                print("===> Attempting Local Stage In.")
                 try:
                     pfn = self.localStageIn(lfn)
                     fileToStage['PFN'] = pfn
@@ -187,11 +188,11 @@ class StageInMgr:
                     msg = "===> Local Stage Out Failure for file:\n"
                     msg += "======>  %s\n" % fileToStage['LFN']
                     msg += str(ex)
-                    print msg
+                    print(msg)
             #  //
             # // Still here => override start using the fallback stage outs
             #//  If override is set, then that will be the only fallback available
-            print "===> Attempting %s Override Stage Outs" % len(self.fallbacks)
+            print("===> Attempting %s Override Stage Outs" % len(self.fallbacks))
             for fallback in self.fallbacks:
                 try:
                     pfn = self.localStageIn(lfn, fallback)
@@ -204,7 +205,7 @@ class StageInMgr:
             msg = "===> Stage In Successful:\n"
             msg += "====> LFN: %s\n" % fileToStage['LFN']
             msg += "====> PFN: %s\n" % fileToStage['PFN']
-            print msg
+            print(msg)
             return fileToStage
         msg = "Unable to stage out file:\n"
         msg += fileToStage['LFN']
@@ -281,13 +282,13 @@ class StageInMgr:
         if self.tfc == None:
             msg = "Trivial File Catalog not available to match LFN:\n"
             msg += lfn
-            print msg
+            print(msg)
             return None
         if self.tfc.preferredProtocol == None:
             msg = "Trivial File Catalog does not have a preferred protocol\n"
             msg += "which prevents local stage out for:\n"
             msg += lfn
-            print msg
+            print(msg)
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
@@ -298,5 +299,5 @@ class StageInMgr:
 
         msg = "LFN to PFN match made:\n"
         msg += "LFN: %s\nPFN: %s\n" % (lfn, pfn)
-        print msg
+        print(msg)
         return pfn

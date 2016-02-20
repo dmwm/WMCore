@@ -5,6 +5,7 @@ _HadoopImpl_
 Implementation of StageOutImpl interface for Hadoop
 
 """
+from __future__ import print_function
 import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -48,7 +49,7 @@ class HadoopImpl(StageOutImpl):
 
         """
         original_size = os.stat(sourcePFN)[6]
-        print "Local File Size is: %s" % original_size
+        print("Local File Size is: %s" % original_size)
         result = "hadoop fs -put "
         if options != None:
             result += " %s " % options

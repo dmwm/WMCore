@@ -6,6 +6,7 @@ A copy of the CP implementation that's not implemented with the V2 plugins
 this will let us test that the fallback works properly
 
 """
+from __future__ import print_function
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -41,7 +42,7 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
         targetdir= os.path.dirname(targetPFN)
 
         checkdircmd="/bin/ls %s > /dev/null " % targetdir
-        print "Check dir existence : %s" %checkdircmd
+        print("Check dir existence : %s" %checkdircmd)
         try:
             checkdirexitCode = self.run(checkdircmd)
         except Exception as ex:
@@ -49,12 +50,12 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
             msg += "%s\n" % checkdircmd
             msg += "Exception: %s\n" % str(ex)
             msg += "Go on anyway..."
-            print msg
+            print(msg)
             pass
 
         if checkdirexitCode:
             mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-            print "=> creating the dir : %s" %mkdircmd
+            print("=> creating the dir : %s" %mkdircmd)
             try:
                 self.run(mkdircmd)
             except Exception as ex:
@@ -62,10 +63,10 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
                 msg += "%s\n" % mkdircmd
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
-                print msg
+                print(msg)
                 pass
         else:
-            print "=> dir already exists... do nothing."
+            print("=> dir already exists... do nothing.")
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
@@ -76,14 +77,14 @@ class TestFallbackToOldBackendImpl(StageOutImpl):
 
         """
         original_size = os.stat(sourcePFN)[6]
-        print "Local File Size is: %s" % original_size
+        print("Local File Size is: %s" % original_size)
         result = " /bin/cp "
         if options != None:
             result += " %s " % options
         result += " %s " % sourcePFN
         result += " %s " % targetPFN
         result += "; DEST_SIZE=`/bin/ls -l %s | awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' -eq $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
-        print result
+        print(result)
         return result
 
 

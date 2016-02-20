@@ -5,6 +5,7 @@
 Checks for finished subscriptions
 Upon finding finished subscriptions, notifies WorkQueue and kills them
 """
+from __future__ import print_function
 
 
 
@@ -33,7 +34,7 @@ class JobTracker(Harness):
 
         self.config = config
 
-        print "JobTracker.__init__"
+        print("JobTracker.__init__")
 
     def preInitialization(self):
         """

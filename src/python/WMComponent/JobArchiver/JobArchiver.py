@@ -5,6 +5,7 @@
 Checks for finished jobs
 Upon finding jobs cleans out their logs.
 """
+from __future__ import print_function
 
 
 
@@ -34,7 +35,7 @@ class JobArchiver(Harness):
 
         self.config = config
 
-        print "JobArchiver.__init__"
+        print("JobArchiver.__init__")
 
     def preInitialization(self):
         """

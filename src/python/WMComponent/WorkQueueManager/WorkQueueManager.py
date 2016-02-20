@@ -4,6 +4,7 @@ WorkQueuemanager component
 
 Runs periodic tasks for WorkQueue
 """
+from __future__ import print_function
 import threading
 
 from WMCore.Agent.Harness import Harness
@@ -29,7 +30,7 @@ class WorkQueueManager(Harness):
 
 
     def preInitialization(self):
-        print "WorkQueueManager.preInitialization"
+        print("WorkQueueManager.preInitialization")
 
         # Add event loop to worker manager
         myThread = threading.currentThread()

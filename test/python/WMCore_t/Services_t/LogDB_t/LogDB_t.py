@@ -4,6 +4,7 @@ _LogDB_t_
 
 LogDB tests
 """
+from __future__ import print_function
 
 import os
 import time
@@ -206,9 +207,9 @@ class LogDBTest(unittest.TestCase):
         time.sleep(1)
         self.report.to_stdout(request)
         out = self.report.to_txt(request)
-        print "\n### txt report\n", out
+        print("\n### txt report\n", out)
         out = self.report.to_html(request)
-        print "\n### html report\n", out
+        print("\n### html report\n", out)
 
         docs = self.agent_inst.get(request)
         tdocs = self.report.orderby(docs, order='ts')

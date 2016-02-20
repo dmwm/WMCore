@@ -16,6 +16,7 @@ Test that the following dburl's are correctly made:
             oracle://username:password@tnsName
             oracle://username:password@host:port/sidname
 """
+from __future__ import print_function
 
 
 
@@ -46,11 +47,11 @@ class DBFactoryTest(unittest.TestCase):
         try:
             dbf = DBFactory(self.logger, options=testoptions)
             if self.urlTest(dbf.dburl, testurl):
-                print testname, " : ", testurl, "  .... OK!"
+                print(testname, " : ", testurl, "  .... OK!")
             else:
-                print testname, " : ", testurl, "  .... FAIL!"
+                print(testname, " : ", testurl, "  .... FAIL!")
         except Exception as e:
-            print testname, " : ", testurl, "  .... EXCEPTION!", e
+            print(testname, " : ", testurl, "  .... EXCEPTION!", e)
 
     def testAllURLs(self):
         """
@@ -73,11 +74,11 @@ class DBFactoryTest(unittest.TestCase):
             try:
                 dbf = DBFactory(self.logger, dburl=testurl)
                 if self.urlTest(dbf.dburl, testurl):
-                    print "testAllURLs : ", testurl, "  .... OK!"
+                    print("testAllURLs : ", testurl, "  .... OK!")
                 else:
-                    print "testAllURLs : ", testurl, "  .... FAIL!"
+                    print("testAllURLs : ", testurl, "  .... FAIL!")
             except Exception as e:
-                print "testAllURLs : ", testurl, "  .... EXCEPTION!", e
+                print("testAllURLs : ", testurl, "  .... EXCEPTION!", e)
 
     def testSQLiteInMemory(self):
         """

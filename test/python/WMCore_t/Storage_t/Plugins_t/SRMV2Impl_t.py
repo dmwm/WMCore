@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import logging
 logging.basicConfig(level = logging.DEBUG)
@@ -19,7 +20,7 @@ from nose.plugins.attrib import attr
 class popenMockHelper(object):
     def Popen(self,args,**kwargs):
         # an empty thing so I can mock this
-        print "This should never be called if mox is working properly"
+        print("This should never be called if mox is working properly")
         pass
 
 

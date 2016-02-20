@@ -2,6 +2,7 @@
 Unittest for ReqMgr utilities
 
 """
+from __future__ import print_function
 
 import unittest
 from WMCore.HTTPFrontEnd.RequestManager import ReqMgrWebTools 
@@ -63,7 +64,7 @@ class ReqMgrWebToolsTest(unittest.TestCase):
             except RequestCheckInError as ex:
                 raise ex
         except RequestCheckInError as ex:
-            print str(ex)
+            print(str(ex))
             
 if __name__=='__main__':
     unittest.main()

@@ -9,6 +9,7 @@ This class is abstract, serving as a superclass for all
 DB Performance Testcases
 
 """
+from __future__ import print_function
 
 import logging, time
 
@@ -85,7 +86,7 @@ class Performance:
         #Performance testing block END
         diffTotal = diffTotal + diffTime
         if self.verbose == 'True':
-            print string
+            print(string)
 
         assert diffTotal <= self.threshold, actionstring+' DAO class - '+ \
                        'Operation too slow ( elapsed time:'+ str(diffTotal)+ \

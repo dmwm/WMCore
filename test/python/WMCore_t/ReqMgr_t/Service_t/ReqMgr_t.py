@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import os
 import unittest
 import shutil
@@ -249,7 +250,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
     def atestRequestClone(self):
         requestName = self.insertRequest(self.rerecoCreateArgs)
         response = self.cloneRequestWithAuth(requestName)
-        print response
+        print(response)
         self.assertEqual(response[1], 200, "put request clone")
         response = self.getRequestWithNoStale('status=new')
         self.assertEqual(self.resultLength(response), 2)

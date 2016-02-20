@@ -5,6 +5,7 @@ _SetupCMSSWPset_t.py
 Tests for the PSet configuration code.
 
 """
+from __future__ import print_function
 
 import imp
 import unittest
@@ -269,7 +270,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # will be needed later
         siteConfig = loadSiteLocalConfig()
         seLocalName = siteConfig.localStageOut["se-name"]
-        print "Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName)
+        print("Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName))
 
         # before calling the script, SetupCMSSWPset will try to load JSON
         # pileup configuration file, need to create it in self.testDir

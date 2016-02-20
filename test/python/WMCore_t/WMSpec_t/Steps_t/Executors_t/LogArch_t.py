@@ -3,6 +3,7 @@ Created on Jun 18, 2009
 
 @author: meloam
 '''
+from __future__ import print_function
 import WMCore_t.WMSpec_t.samples.BasicProductionWorkload as testWorkloads
 import WMCore.WMSpec.Steps.Templates.LogArchive as LogArchiveTemplate
 import WMCore.WMSpec.Steps.Executors.LogArchive as LogArchiveExecutor
@@ -421,7 +422,7 @@ class otherLogArchiveTexst:#(unittest.TestCase):
                         '/store/unmerged/WMAgent/storetest-%s' % time.time()]
 
         for file in targetFiles:
-            print "Adding file for LogArchive %s" % file
+            print("Adding file for LogArchive %s" % file)
             self.addLogArchiveFile(myReport, file )
 
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -429,15 +430,15 @@ class otherLogArchiveTexst:#(unittest.TestCase):
 
         executor.initialise( self.stepdata, self.job)
         executor.step = self.stepdata
-        print "beginning stageout"
+        print("beginning stageout")
         executor.execute( )
-        print "stageout done"
+        print("stageout done")
 
         # pull in the report with the stage out info
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
-        print "Got the stage out data back"
-        print myReport.data
+        print("Got the stage out data back")
+        print(myReport.data)
 
 
         # now, transfer them back
@@ -445,7 +446,7 @@ class otherLogArchiveTexst:#(unittest.TestCase):
         import WMCore.Storage.FileManager as FileManagerModule
         fileManager = FileManagerModule.FileManager( numberOfRetries = 10, retryPauseTime = 1)
         for file in targetFiles:
-            print "Staging in %s" % file
+            print("Staging in %s" % file)
 
             fileManager.stageOut( fileToStage = { 'LFN' : file,
                                     'PFN' : '%s/%s' % (self.testDir, file) },
@@ -455,12 +456,12 @@ class otherLogArchiveTexst:#(unittest.TestCase):
 
         # now, should delete the files we made
         for file in targetFiles:
-            print "deleting %s" % file
+            print("deleting %s" % file)
             fileManager.deleteLFN(file)
 
         # try staging in again to make sure teh files are gone
         for file in targetFiles:
-            print "Staging in (should fail) %s" % file
+            print("Staging in (should fail) %s" % file)
             self.assertRaises( LogArchiveError, \
                                FileManagerModule.FileManager.stageOut, \
                                fileManager,fileToStage = { 'LFN' : file,

@@ -4,6 +4,7 @@ RequestManager unittest
 Tests the functions of the REST API
 
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -226,7 +227,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 400)
-            print ex.result
+            print(ex.result)
             self.assertTrue("Priority must have abs() less then MAXINT!" in ex.result)
         self.assertTrue(raises)
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import \
         SequentialTaskBase, PeriodicWorker, CherryPyPeriodicTask
 
@@ -8,20 +9,20 @@ class Hello(SequentialTaskBase):
         self._callSequence = [self.printHello, self.printThere, self.printA]
     
     def printHello(self, config):
-        print "Hello"
+        print("Hello")
         
     def printThere(self, config):
-        print "there"
+        print("there")
     
     def printA(self, config):
-        print "A"
+        print("A")
     
 
 def sayHello(config):
-    print "Hi Hello"
+    print("Hi Hello")
 
 def sayBye(config):
-    print "Bye"
+    print("Bye")
 
 class WMDataMining(CherryPyPeriodicTask):
     

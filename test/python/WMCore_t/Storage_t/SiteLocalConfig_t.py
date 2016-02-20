@@ -4,6 +4,7 @@ _SiteLocalConfig_t_
 
 Unit test for parsing the site local config file.
 """
+from __future__ import print_function
 
 import os
 import unittest
@@ -182,7 +183,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                 try:
                     slc = loadSiteLocalConfig()
                 except SiteConfigError as e:
-                    print e.args[0]
+                    print(e.args[0])
                 phedexNode = slc.localStageOut.get("phedex-node")
                 # If slc is correct, perform check
                 if "se-name" in slc.localStageOut and slc.localStageOut["se-name"] in node_map and phedexNode != None:

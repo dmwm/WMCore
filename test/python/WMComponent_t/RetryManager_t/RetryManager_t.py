@@ -6,6 +6,7 @@
 """
 RetryManager test for module and the harness
 """
+from __future__ import print_function
 
 
 

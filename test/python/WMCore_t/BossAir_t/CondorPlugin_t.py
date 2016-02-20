@@ -5,6 +5,7 @@ _CondorPlugin_t_
 
 CondorPlugin unittests
 """
+from __future__ import print_function
 import time
 import os.path
 import threading
@@ -50,7 +51,7 @@ class CondorPluginTest(BossAirTest):
 
         baAPI  = BossAirAPI(config=config)
 
-        print self.testDir
+        print(self.testDir)
 
         jobPackage = os.path.join(self.testDir, 'JobPackage.pkl')
         f = open(jobPackage, 'w')

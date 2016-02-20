@@ -1,3 +1,4 @@
+from __future__ import print_function
 # system modules
 import cherrypy
 from multiprocessing import Process
@@ -104,7 +105,7 @@ class TaskTest(webtest.WebCase):
         h.append(("Accept", "application/json"))
         for _ in xrange(0, 10):
             self.getPage("/test/status", headers=h)
-            print self.body
+            print(self.body)
             time.sleep(.3)
 
 def setup_server():

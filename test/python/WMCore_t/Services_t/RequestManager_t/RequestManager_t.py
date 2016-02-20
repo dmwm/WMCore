@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import unittest
 import logging
@@ -70,7 +71,7 @@ class RequestManagerTest(RESTBaseUnitTest):
                 self.requestName = r[0].values()[0]['RequestName']
         except Exception as ex:
             msg = traceback.format_exc()
-            print "Exception during set up, reason: %s" % msg
+            print("Exception during set up, reason: %s" % msg)
             raise ex
 
     def tearDown(self):

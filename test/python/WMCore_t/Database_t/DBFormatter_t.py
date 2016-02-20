@@ -5,6 +5,7 @@ _DBFormatterTest_
 Unit tests for the DBFormatter class
 
 """
+from __future__ import print_function
 
 
 

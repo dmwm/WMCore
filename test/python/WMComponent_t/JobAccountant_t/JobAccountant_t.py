@@ -4,6 +4,7 @@ _JobAccountant_t_
 
 Unit tests for the WMAgent JobAccountant component.
 """
+from __future__ import print_function
 
 import os.path
 import threading
@@ -1615,7 +1616,7 @@ class JobAccountantTest(unittest.TestCase):
         Run the big heritage test.
         """
         return
-        print "Starting Heritage Test"
+        print("Starting Heritage Test")
 
         print("  Filling DB...")
 

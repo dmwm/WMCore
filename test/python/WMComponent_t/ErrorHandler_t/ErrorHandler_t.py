@@ -2,6 +2,7 @@
 """
 ErrorHandler test TestErrorHandler module and the harness
 """
+from __future__ import print_function
 
 import os
 import os.path

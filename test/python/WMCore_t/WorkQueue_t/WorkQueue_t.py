@@ -4,6 +4,7 @@ _WorkQueue_t_
 
 WorkQueue tests
 """
+from __future__ import print_function
 
 import unittest
 import os
@@ -423,10 +424,10 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(numUnit, len(self.globalQueue))
 
         # pull work to localQueue2 - check local doesn't get any
-        print "first"
+        print("first")
         numWork = self.localQueue2.pullWork({'T2_XX_SiteA': total})
         self.assertEqual(numUnit, numWork)
-        print "second"
+        print("second")
         self.assertEqual(0, self.localQueue.pullWork({'T2_XX_SiteA': total}))
         syncQueues(self.localQueue)
         syncQueues(self.localQueue2)
@@ -963,7 +964,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         syncQueues(self.localQueue)
         # local cancelded
-        print self.localQueue.status()
+        print(self.localQueue.status())
         # self.assertEqual(len(self.localQueue.status(status='Canceled')), 1)
         # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())

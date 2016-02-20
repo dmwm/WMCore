@@ -4,6 +4,7 @@ _XMLParser_
 
 Read the raw XML output from the cmsRun executable.
 """
+from __future__ import print_function
 
 
 
@@ -38,7 +39,7 @@ def reportDispatcher(targets):
     while True:
         report, node = (yield)
         if node.name != "FrameworkJobReport":
-            print "Not Handling: ", node.name
+            print("Not Handling: ", node.name)
             #TODO: throw
             continue
 

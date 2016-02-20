@@ -8,6 +8,7 @@ Not in the Framework XML
 
 
 """
+from __future__ import print_function
 
 
 import os
@@ -47,7 +48,7 @@ class FileInfo:
             # Then figure out what to do with it
             # For now, do nothing since we can't find it
             logging.error(msg)
-            print msg
+            print(msg)
             return
         if not os.path.isabs(pfn):
             # Get an absolute path

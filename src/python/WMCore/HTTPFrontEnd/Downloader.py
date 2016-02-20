@@ -1,3 +1,4 @@
+from __future__ import print_function
 from cherrypy.lib.static import serve_file
 import os
 import logging
@@ -10,7 +11,7 @@ class Downloader:
 
     """
     def __init__(self, config):
-        print str(config)
+        print(str(config))
         self.rootdir = config.dir
 
     def index(self, filepath):

@@ -8,6 +8,7 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 
 NOT A THREAD SAFE CLASS.
 """
+from __future__ import print_function
 
 
 
@@ -204,7 +205,7 @@ class Database(CouchDBRequests):
             self.timestamp(doc, timestamp)
         #TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
-            print 'queue larger than %s records, committing' % self._queue_size
+            print('queue larger than %s records, committing' % self._queue_size)
             self.commit(viewlist=viewlist, callback = callback)
         self._queue.append(doc)
 
@@ -587,7 +588,7 @@ class Database(CouchDBRequests):
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
             raise RuntimeError("File not found, deleted")
         if (id == "nonexistantid"):
-            print attachment
+            print(attachment)
         return attachment
     
     def bulkDeleteByIDs(self, ids):

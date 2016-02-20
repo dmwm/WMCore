@@ -6,6 +6,7 @@ _Report_
 
 Framework job report object.
 """
+from __future__ import print_function
 
 import re
 import cPickle
@@ -402,7 +403,7 @@ class Report:
         """
         if not checkFileForCompletion(file):
             # Then the file is not complete, and should not be added
-            print "ERROR"
+            print("ERROR")
             return None
 
         # Now load the output module and create the file object

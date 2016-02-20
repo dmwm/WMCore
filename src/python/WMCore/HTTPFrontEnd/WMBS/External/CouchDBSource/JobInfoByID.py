@@ -3,6 +3,7 @@ JobInfoByID
 
 Retrieve information about a job from couch and format it nicely.
 """
+from __future__ import print_function
 
 import sys
 import datetime
@@ -40,10 +41,10 @@ def getJobInfo(jobID, couchConfig):
     jobDocResult = changeStateDB.loadView("JobDump", "jobsByJobID", options)
 
     if len(jobDocResult["rows"]) == 0:
-        print "Unknown job: %s" % jobID
+        print("Unknown job: %s" % jobID)
         sys.exit(1)
     elif len(jobDocResult["rows"]) > 1:
-        print "Multiple entries for this job: %s" % jobID
+        print("Multiple entries for this job: %s" % jobID)
         sys.exit(1)
 
     jobDoc = jobDocResult["rows"][0]["doc"]

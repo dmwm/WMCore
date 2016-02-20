@@ -5,6 +5,7 @@ _Fileset_
 Data object that contains a set of files
 
 """
+from __future__ import print_function
 __all__ = []
 
 
@@ -71,8 +72,8 @@ class Fileset(WMObject):
             try:
                 files.sort(lambda x, y: cmp(x['lfn'], y['lfn']))
             except Exception as e:
-                print 'Problem with listFiles for fileset:', self.name
-                print files.pop()
+                print('Problem with listFiles for fileset:', self.name)
+                print(files.pop())
                 raise e
             return files
         elif type == 'set':

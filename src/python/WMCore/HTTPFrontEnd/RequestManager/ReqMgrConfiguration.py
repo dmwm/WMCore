@@ -1,11 +1,7 @@
-import os, re, socket
-from WMCore.WMInit import getWMBASE
-from WMCore.Configuration import Configuration
-
 __all__ = []
 
 import os
-
+from WMCore.Configuration import Configuration
 basedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def reqMgrConfig(
@@ -13,18 +9,15 @@ def reqMgrConfig(
     installation = os.environ["WMCORE_ROOT"],
     port = 8240,
     user = None,
-    reqMgrHost = "http://%s:%d" % (socket.gethostname().lower(), 8240),
     proxyBase = None,
     couchurl = os.getenv("COUCHURL"),
     yuiroot = "/reqmgr/yuiserver/yui",
     configCouchDB = 'reqmgr_config_cache',
     workloadCouchDB = 'reqmgr_workload_cache',
-    workloadSummaryCouchDB = "workloadsummary",
     wmstatCouchDB = "wmstats",
     acdcCouchDB = "acdcserver",
     connectURL = None,
-    startup = "Root.py",
-    addMonitor = True):
+    startup = "Root.py"):
 
     config = Configuration()
     reqMgrHtml = os.path.join(installation, 'data/html/RequestManager')
@@ -38,7 +31,7 @@ def reqMgrConfig(
         config.Webtools.port = port
         config.Webtools.application = "reqmgr"
         if(proxyBase):
-            config.Webtools.proxy_base = proxy_base
+            config.Webtools.proxy_base = proxyBase
         config.Webtools.environment = 'production'
         config.component_('reqmgr')
         from ReqMgrSecrets import connectUrl

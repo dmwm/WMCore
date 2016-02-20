@@ -29,10 +29,7 @@ def reqMgrConfig(
     config = Configuration()
     reqMgrHtml = os.path.join(installation, 'data/html/RequestManager')
     reqMgrTemplates = os.path.join(installation, 'data/templates/WMCore/WebTools/RequestManager')
-    reqMgrJavascript = os.path.join(installation, 'data/javascript')
-    globalOverviewTemplates = os.path.join(installation, 'data/templates/WMCore/WebTools/GlobalMonitor')
-    globalOverviewJavascript = reqMgrJavascript
-    globalOverviewHtml = os.path.join(installation, 'data/html')
+    reqMgrJavascript = os.path.join(installation, 'data/javascript')   
 
     if startup == "Root.py":
         # CMS web mode of ReqMgr running
@@ -117,25 +114,5 @@ def reqMgrConfig(
     active.create.object = 'WMCore.HTTPFrontEnd.RequestManager.WebRequestSchema'
     active.create.requestor = user
     active.create.cmsswDefaultVersion = 'CMSSW_5_2_5'
-
-    if addMonitor:
-        active.section_('GlobalMonitor')
-        active.GlobalMonitor.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorPage'
-        active.GlobalMonitor.templates = globalOverviewTemplates
-        active.GlobalMonitor.javascript = globalOverviewJavascript
-        active.GlobalMonitor.html = globalOverviewHtml
-        active.GlobalMonitor.serviceLevel = 'RequestManager'
-
-        active.section_('monitorSvc')
-        active.monitorSvc.serviceURL = "%s/reqmgr/reqMgr" % reqMgrHost
-        active.monitorSvc.serviceLevel = active.GlobalMonitor.serviceLevel
-        active.monitorSvc.workloadSummaryCouchURL = "%s/%s" % (couchurl, workloadSummaryCouchDB)
-        active.monitorSvc.section_('model')
-        active.monitorSvc.section_('formatter')
-        active.monitorSvc.object = 'WMCore.WebTools.RESTApi'
-        active.monitorSvc.model.object = 'WMCore.HTTPFrontEnd.GlobalMonitor.GlobalMonitorRESTModel'
-        active.monitorSvc.default_expires = 0 # no caching
-        active.monitorSvc.formatter.object = 'WMCore.WebTools.RESTFormatter'
-        active.monitorSvc.template = os.path.join(installation, 'data/templates/WMCore/WebTools')
 
     return config

@@ -3,6 +3,7 @@ _Create_
 
 Base class for creating the BossAir database
 """
+from __future__ import print_function
 
 import threading
 
@@ -151,5 +152,5 @@ class Create(DBCreator):
             DBCreator.execute(self, conn, transaction)
             return True
         except Exception as e:
-            print "ERROR: %s" % e
+            print("ERROR: %s" % e)
             return False

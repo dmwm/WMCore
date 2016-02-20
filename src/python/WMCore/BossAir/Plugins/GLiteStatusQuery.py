@@ -3,6 +3,7 @@
 _GLiteLBQuery_
 GLite LB query functions
 """
+from __future__ import print_function
 
 
 import sys
@@ -18,7 +19,7 @@ except:
     try:
         path = os.environ['GLITE_LOCATION']
     except:
-        print "\nPlease set the GLITE_WMS_LOCATION environment variable pointing to the User Interface installation path.\n"
+        print("\nPlease set the GLITE_WMS_LOCATION environment variable pointing to the User Interface installation path.\n")
         sys.exit(1)
 
 # append lib/lib64 directories to search path
@@ -33,8 +34,8 @@ try :
     # 'wmsui_api' exists only on gLite 3.2 !!!
     import wmsui_api
 except :
-    print "\nProblem loading python LB API."
-    print "Your default python is %s \n" % sys.version
+    print("\nProblem loading python LB API.")
+    print("Your default python is %s \n" % sys.version)
     sys.exit(1)
 
 # manage json library using the appropriate WMCore wrapper
@@ -355,7 +356,7 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:],
                                    "", ["help", "parentId=", "jobId="])
     except getopt.GetoptError as err:
-        print usage()
+        print(usage())
         sys.exit(1)
 
     parent = []
@@ -364,18 +365,18 @@ def main():
     for o, a in opts:
 
         if o in ("-h", "--help"):
-            print usage()
+            print(usage())
             sys.exit(1)
         elif o in ("-p", "--parentId"):
             parent = a.split(',')
         elif o in ("-j", "--jobId"):
             jobList = a.split(',')
         else:
-            print '\ Unknown parameter.\n'
+            print('\ Unknown parameter.\n')
             sys.exit(1)
 
     if len(jobList)==0 :
-        print '\nAt least one jobId is needed.\n'
+        print('\nAt least one jobId is needed.\n')
         sys.exit(1)
 
     # LB data structures
@@ -416,11 +417,11 @@ def main():
 
     json = MyJSONEncoder()
     if errors :
-        print '\nError during API calls.\n'
-        print str(errors)
+        print('\nError during API calls.\n')
+        print(str(errors))
         sys.exit(1)
     else :
-        print json.dumps(jobIds)
+        print(json.dumps(jobIds))
 
 
 ########## END MAIN ##########

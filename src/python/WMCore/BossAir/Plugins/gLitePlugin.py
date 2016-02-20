@@ -5,6 +5,7 @@ gLite Plugin
 
 
 """
+from __future__ import print_function
 
 import logging
 import subprocess
@@ -58,7 +59,7 @@ def processWorker(input, results):
         except (EOFError, IOError):
             crashMessage = "Hit EOF/IO in getting new work\n"
             crashMessage += "Assuming this is a graceful break attempt.\n"
-            print crashMessage
+            print(crashMessage)
             break
 
         if work == 'STOP':
@@ -84,7 +85,7 @@ def processWorker(input, results):
             else:
                 jsout = stdout
         except ValueError as val:
-            print val, stdout, stderr
+            print(val, stdout, stderr)
             jsout = stdout
         except Exception as err:
             jsout = str(work) + '\n' + str(err)

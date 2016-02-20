@@ -415,12 +415,19 @@ class ReqMgrService(TemplatedPage):
         return [r for r in genobjs(jsondict)]
 
     @expose
+    def config(self, name, **kwds):
+        "Fetch config for given request name"
+        return self.reqmgr.getConfig(name).replace('\n', '<br/>')
+
+    @expose
     def fetch(self, rid, **kwds):
         "Fetch document for given id"
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
         transitions = []
         tstamp = time.time()
+        # get request tasks
+        tasks = self.reqmgr.getRequestTasks(rid)
         if len(doc) == 1:
             try:
                 doc = doc[rid]
@@ -433,7 +440,8 @@ class ReqMgrService(TemplatedPage):
             if status in transitions:
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
-            content = self.templatepage('doc', title=title, status=status, name=name,
+            content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
+                                        tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(doc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())

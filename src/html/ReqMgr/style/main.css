@@ -104,6 +104,22 @@ input[type=text]:focus, textarea:focus {
     transform: translate(-50%, -50%);
     z-index:999;
 }
+.tasks {
+    background-color: #E7E5C1;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 5px;
+    border: 1px solid #000000;
+    width:80%;
+    height:500px;
+    font-weight: bold;
+    position: fixed;
+    top: 40%;
+    left: 40%;
+    transform: translate(-40%, -40%);
+    z-index:999;
+    overflow: scroll;
+}
 .fadeout {
     opacity: 0;
     -webkit-transition: opacity 4s ease-in;

@@ -122,6 +122,34 @@ class ReqMgr(Service):
         callname = 'request?%s' % query
         return  self._getResult(callname, verb = "GET")
         
+    def getRequestTasks(self, name):
+
+        """
+        _getRequestTasks_
+        
+        :param name: request name
+        :type string: str
+        :returns:  list of dict or list of request names depending on the detail value
+         -- {result:[{requestTask}, {requestTask}]}
+        """
+        
+        callname = 'splitting/%s' % name
+        return self._getResult(callname, verb = "GET")
+
+    def getConfig(self, name):
+
+        """
+        _getConfig_
+        
+        :param name: request name
+        :type string: str
+        :returns:  list of dict or list of request names depending on the detail value
+         -- {result:[config_string]}
+        """
+        
+        callname = 'workload_config/%s' % name
+        return self._getResult(callname, verb = "GET")
+
     def insertRequests(self, requestDict):
         """
         _insertRequests_

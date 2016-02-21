@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-from __future__ import absolute_import
-import os
+from __future__ import (print_function, division)
 import unittest
-import shutil
-
-from WMCore.Wrappers import JsonWrapper
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from pprint import pprint
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from .WMStatsDocGenerator import *
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection \
+    import RequestInfoCollection, RequestInfo
+
+from WMCore_t.Services_t.WMStats_t.WMStatsDocGenerator \
+   import generate_reqmgr_schema, sample_request_info, sample_complete
+    
 class WMStatsTest(unittest.TestCase):
     """
     """
@@ -96,7 +96,7 @@ class WMStatsTest(unittest.TestCase):
 
         requests = self.wmstatsReader.getRequestByStatus(["failed"], jobInfoFlag = False, legacyFormat = True)
         self.assertEqual(requests.keys(), [schema[0]['RequestName']])
-        
+
         requestCollection = RequestInfoCollection(requests)
         result = requestCollection.getJSONData()
         self.assertEqual(result.keys(), [schema[0]['RequestName']])
@@ -109,6 +109,9 @@ class WMStatsTest(unittest.TestCase):
         requests = self.wmstatsReader.getRequestSummaryWithJobInfo(schema[0]['RequestName'])
         self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         
+    def testCompletedCheck(self):
+        self.assertEqual(RequestInfo(sample_request_info).isWorkflowFinished(), False)
+        self.assertEqual(RequestInfo(sample_complete).isWorkflowFinished(), True)
 
 if __name__ == '__main__':
 

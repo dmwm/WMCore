@@ -22,9 +22,9 @@ class JobSummary(object):
         
         #TODO need to validate the structure.
         for key, value in self.jobStatus.items():
-            if type(value) == int:
+            if isinstance(value, int):
                 self.jobStatus[key] += jobStatus.get(key, 0)
-            elif type(value) == dict:
+            elif isinstance(value, dict):
                 for secondKey, secondValue in value.items():
                     if key in jobStatus and secondKey in jobStatus[key]:
                         self.jobStatus[key][secondKey] += jobStatus[key][secondKey]
@@ -129,6 +129,23 @@ class TaskInfo(object):
             raise Exception("task doesn't match %s" % msg)
         
         self.jobSummary.addJobSummary(taskInfo.jobSummary)
+    
+    def getRequestName(self):
+        return self.requestName
+    
+    def getTaskName(self):
+        return self.taskName
+    
+    def getTaskType(self):
+        return self.taskType
+    
+    def getJobSummary(self):
+        return self.jobSummary
+    
+    def isTaskCompleted(self):
+        totalJobs = self.jobSummary.getTotalJobs()
+        completedJobs = self.jobSummary.getCompleted()
+        return (totalJobs != 0 and totalJobs == completedJobs) 
             
             
 class RequestInfo(object):
@@ -145,7 +162,11 @@ class RequestInfo(object):
 
         
     def setData(self, data):
-        self.requestName = data['workflow']
+        #If RequestName doesn't exist, try legacy format (workflow)
+        if 'RequestName' in data:
+            self.requestName = data['RequestName']
+        else:
+            self.requestName = data['workflow']
         self.data = data
         self.jobSummaryByAgent = {}
         self.tasks = {}
@@ -235,7 +256,22 @@ class RequestInfo(object):
             return self.data["request_status"][-1]
         else:
             return self.data["request_status"][-1]['status']
-     
+        
+    def isWorkflowFinished(self):
+        """
+        check whether workflow  is completed including LogCollect and CleanUp tasks
+        TODO: If the parent task all failed and next task are not created at all, 
+            It can't detect complete status. 
+            If the one of the task doesn't contain any jobs, it will return False
+        """
+        if len(self.tasks) == 0:
+            return False
+        
+        for taskInfo in self.tasks.values():
+            if not taskInfo.isTaskCompleted():
+                return False
+        return True
+                
 class RequestInfoCollection(object):
     
     def __init__(self, data):

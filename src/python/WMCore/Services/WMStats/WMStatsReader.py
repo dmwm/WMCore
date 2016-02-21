@@ -1,4 +1,5 @@
 from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 
@@ -352,4 +353,17 @@ class WMStatsReader(object):
                 archivedRequests.append(request)
         
         return archivedRequests
+    
+    def isWorkflowCompletedWithLogCollectAndCleanUp(self, requestName):
+        """
+        check whether workflow  is completed including LogCollect and CleanUp tasks
+        TODO: If the parent task all failed and next task are not created at all, 
+            It can't detect complete status. 
+            If the one of the task doesn't contain any jobs, it will return False
+        """
+        
+        requestInfo = self.getRequestSummaryWithJobInfo(requestName)
+        reqInfoInstance = RequestInfo(requestInfo[requestName])
+        return reqInfoInstance.isWorkflowFinished()
+        
     

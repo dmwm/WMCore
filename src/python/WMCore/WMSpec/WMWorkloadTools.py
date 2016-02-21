@@ -211,10 +211,8 @@ def validatePhEDExSubscription(arguments):
 def validateSiteLists(arguments):
     whiteList = arguments.get("SiteWhitelist", [])
     blackList = arguments.get("SiteBlacklist", [])
-    if not isinstance(whiteList, list):
-        whiteList = [whiteList]
-    if not isinstance(blackList, list):
-        blackList = [blackList]
+    whiteList = makeList(whiteList)
+    blackList = makeList(blackList)
     res = (set(whiteList) & set(blackList))
     if len(res):
         msg = "Validation failed: The same site cannot be white and blacklisted: %s" % list(res)

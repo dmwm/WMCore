@@ -4,6 +4,7 @@ _injectAnalysisWorkflow_
 
 Create a Analysis workflow and inject it as well as some files into WMBS.
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -41,7 +42,7 @@ arguments = {
         }
 
 if "WMAGENT_CONFIG" not in os.environ:
-    print "Please set WMAGENT_CONFIG to point at your WMAgent configuration."
+    print("Please set WMAGENT_CONFIG to point at your WMAgent configuration.")
     sys.exit(1)
 
 if len(sys.argv) != 1:
@@ -55,7 +56,7 @@ else:
 wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
 
 if not hasattr(wmAgentConfig, "CoreDatabase"):
-    print "Your config is missing the CoreDatabase section."
+    print("Your config is missing the CoreDatabase section.")
 
 socketLoc = getattr(wmAgentConfig.CoreDatabase, "socket", None)
 connectUrl = getattr(wmAgentConfig.CoreDatabase, "connectUrl", None)
@@ -92,8 +93,8 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     _injectTaskIntoWMBS_
 
     """
-    print "%sinjecting %s" % (doIndent(indent), task.getPathName())
-    print "%s  input fileset: %s" % (doIndent(indent), inputFileset.name)
+    print("%sinjecting %s" % (doIndent(indent), task.getPathName()))
+    print("%s  input fileset: %s" % (doIndent(indent), inputFileset.name))
 
     
     myWorkflow = Workflow(spec = specUrl, owner = arguments['Requestor'],
@@ -109,7 +110,7 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
     outputModules =  task.getOutputModulesForStep(task.getTopStepName())
  
     for outputModuleName in outputModules.listSections_():
-        print "%s  configuring output module: %s" % (doIndent(indent), outputModuleName)
+        print("%s  configuring output module: %s" % (doIndent(indent), outputModuleName))
         if task.taskType() == "Merge":
             outputFilesetName = "%s/merged-%s" % (task.getPathName(),
                                                   outputModuleName)
@@ -117,14 +118,14 @@ def injectTaskIntoWMBS(specUrl, workflowName, task, inputFileset, indent = 0):
             outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
                                                     outputModuleName)
 
-        print "%s    output fileset: %s" % (doIndent(indent), outputFilesetName)
+        print("%s    output fileset: %s" % (doIndent(indent), outputFilesetName))
         outputFileset = Fileset(name = outputFilesetName)
         outputFileset.create()
 
         myWorkflow.addOutput(outputModuleName, outputFileset)
 
         # See if any other steps run over this output.
-        print "%s    searching for child tasks..." % (doIndent(indent))
+        print("%s    searching for child tasks..." % (doIndent(indent)))
         for childTask in task.childTaskIterator():
             if childTask.data.input.outputModule == outputModuleName:
                 injectTaskIntoWMBS(specUrl, workflowName, childTask, outputFileset, indent + 4)                
@@ -134,7 +135,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     _injectFilesFromDBS_
 
     """
-    print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
+    print("injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name))
     args={}
     args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_0_9"
@@ -146,7 +147,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     dbsResults =dbsResults[0:2]
 
 
-    print "  found %d files, inserting into wmbs..." % (len(dbsResults))
+    print("  found %d files, inserting into wmbs..." % (len(dbsResults)))
 
 
     for dbsResult in dbsResults:
@@ -167,7 +168,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
 
 
 for workloadTask in workload.taskIterator():
-    print "Worload ", workloadTask
+    print("Worload ", workloadTask)
     inputFileset = Fileset(name = workloadTask.getPathName())
     inputFileset.create()
 

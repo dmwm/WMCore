@@ -2,6 +2,7 @@
 Helper script to send an Alert message directly to AlertProcesor for testing.
 
 """
+from __future__ import print_function
 
 
 import sys
@@ -31,6 +32,6 @@ sender.register()
 a = Alert(**preAlert)
 a["Timestamp"] = time.time()
 a["Level"] = 6
-print "sending alert:\n'%s'" % a
+print("sending alert:\n'%s'" % a)
 sender(a)
 sender.unregister()

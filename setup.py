@@ -2,6 +2,7 @@
 """
 Build, clean and test the WMCore package.
 """
+from __future__ import print_function
 
 import os
 import os.path
@@ -53,10 +54,10 @@ class EnvCommand(Command):
     def run(self):
         if not os.getenv('DATABASE', False):
             # Use an in memory sqlite one if none is configured.
-            print 'export DATABASE=sqlite://'
+            print('export DATABASE=sqlite://')
         if not os.getenv('COUCHURL', False):
             # Use the default localhost URL if none is configured.
-            print 'export COUCHURL=http://localhost:5984'
+            print('export COUCHURL=http://localhost:5984')
         here = get_path_to_wmcore_root()
 
         tests = here + '/test/python'
@@ -77,13 +78,13 @@ class EnvCommand(Command):
             if pth not in expath:
                 expath.append(pth)
 
-        print 'export PYTHONPATH=%s' % ':'.join(pypath)
-        print 'export PATH=%s' % ':'.join(expath)
+        print('export PYTHONPATH=%s' % ':'.join(pypath))
+        print('export PATH=%s' % ':'.join(expath))
 
         # We want the WMCORE root set, too
-        print 'export WMCORE_ROOT=%s' % get_path_to_wmcore_root()
-        print 'export WMCOREBASE=$WMCORE_ROOT'
-        print 'export WTBASE=$WMCORE_ROOT/src'
+        print('export WMCORE_ROOT=%s' % get_path_to_wmcore_root())
+        print('export WMCOREBASE=$WMCORE_ROOT')
+        print('export WTBASE=$WMCORE_ROOT/src')
 
 # The actual setup command, and the classes associated to the various options
 

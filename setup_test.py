@@ -1,3 +1,4 @@
+from __future__ import print_function
 from distutils.core import Command
 from unittest import TextTestRunner, TestLoader, TestSuite
 from setup_build import get_path_to_wmcore_root
@@ -200,7 +201,7 @@ if can_nose:
             collectOnlyArgs.extend([ '-q', '--collect-only', '--with-id' ])
             retval = nose.run(argv=collectOnlyArgs, addplugins=[DetailedOutputter()])           
             if not retval:
-                print "Failed to collect TestCase IDs"
+                print("Failed to collect TestCase IDs")
                 return retval
 
             idhandle = open( ".noseids", "r" )
@@ -210,7 +211,7 @@ if can_nose:
             if os.path.exists("nosetests.xml"):
                 os.unlink("nosetests.xml")
 
-            print "path lists is %s" % pathList
+            print("path lists is %s" % pathList)
             # divide it up
             totalCases = len(testIds)
             myIds      = []
@@ -231,7 +232,7 @@ if can_nose:
                                 myIds.append( str(id) )
                                 break
             myIds = sorted( myIds )
-            print "Out of %s cases, we will run %s" % (totalCases, len(myIds))
+            print("Out of %s cases, we will run %s" % (totalCases, len(myIds)))
             if not myIds:
                 return True
             
@@ -248,10 +249,10 @@ if can_nose:
 
             testPath = 'test/python'
             if self.testCertainPath:
-                print "Using the tests below: %s" % self.testCertainPath
+                print("Using the tests below: %s" % self.testCertainPath)
                 testPath = self.testCertainPath
             else:
-				print "Nose is scanning all tests"
+				print("Nose is scanning all tests")
                 
             if self.quickTestMode:
                 quickTestArg = ['--stop']
@@ -259,8 +260,8 @@ if can_nose:
                 quickTestArg = []
                 
             if self.reallyDeleteMyDatabaseAfterEveryTest:
-                print "#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####"
-                print "#### buildbotmode is %s" % self.buildBotMode
+                print("#### WE ARE DELETING YOUR DATABASE. 3 SECONDS TO CANCEL ####")
+                print("#### buildbotmode is %s" % self.buildBotMode)
                 sys.stdout.flush()
                 import WMQuality.TestInit
                 WMQuality.TestInit.deleteDatabaseAfterEveryTest( "I'm Serious" )
@@ -274,7 +275,7 @@ if can_nose:
                 args.extend( quickTestArg )
                 retval = self.callNose(args, paths = testPath)
             else:
-                print "### We are in buildbot mode ###"
+                print("### We are in buildbot mode ###")
                 srcRoot = os.path.join(os.path.normpath(os.path.dirname(__file__)), 'src', 'python')
                 modulesToCover = []
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMCore'), 'WMCore'))
@@ -322,7 +323,7 @@ if can_nose:
                 sys.stderr.write("The threads are: \n%s\n" % threading.enumerate())
                 
             threadCount = len(threading.enumerate())
-            print "Testing complete, there are now %s threads" % len(threading.enumerate())
+            print("Testing complete, there are now %s threads" % len(threading.enumerate()))
                                     
             # try to exit
             if retval:
@@ -340,7 +341,7 @@ else:
     class TestCommand(Command):
         user_options = [ ]
         def run(self):
-            print "Nose isn't installed. You must install the nose package to run tests (easy_install nose might do it)"
+            print("Nose isn't installed. You must install the nose package to run tests (easy_install nose might do it)")
             sys.exit(1)
             pass
 
@@ -437,7 +438,7 @@ if can_lint:
             # behaviour
             sys.path.insert(0, os.getcwd())
             if self.linter.config.profile:
-                print >> sys.stderr, '** profiled run'
+                print('** profiled run', file=sys.stderr)
                 from hotshot import Profile, stats
                 prof = Profile('stones.prof')
                 prof.runcall(linter.check, args)
@@ -516,9 +517,9 @@ def lint_files(files, reports=False):
                                              lntr.linter.config.evaluation)
                          }
         if reports:
-            print '----------------------------------'
-            print 'Your code has been rated at %.2f/10' % \
-                    lint_score(lntr.linter.stats, lntr.linter.config.evaluation)
+            print('----------------------------------')
+            print('Your code has been rated at %.2f/10' % \
+                    lint_score(lntr.linter.stats, lntr.linter.config.evaluation))
 
     return results, lntr.linter.config.evaluation
 
@@ -564,17 +565,17 @@ class LintCommand(Command):
            results, evaluation = lint_files(files_to_lint, self.report)
            ln = len(results)
            scr = 0
-           print
+           print()
            for k, v in results.items():
-               print "%s: %.2f/10" % (k.replace('src/python/', ''), v['score'])
+               print("%s: %.2f/10" % (k.replace('src/python/', ''), v['score']))
                scr += v['score']
            if ln > 1:
-               print '--------------------------------------------------------'
-               print 'Average pylint score for %s is: %.2f/10' % (self.package,
-                                                                 scr/ln)
+               print('--------------------------------------------------------')
+               print('Average pylint score for %s is: %.2f/10' % (self.package,
+                                                                 scr/ln))
 
        else:
-           print 'You need to install pylint before using the lint command'
+           print('You need to install pylint before using the lint command')
 
 class ReportCommand(Command):
    description = "Generate a simple html report for ease of viewing in buildbot"
@@ -645,31 +646,31 @@ class ReportCommand(Command):
        coverage = 0 # TODO: calculate this
        testless_classes = [] # TODO: generate this
 
-       print "<table>"
-       print "<tr>"
-       print "<td colspan=2><h1>WMCore test report</h1></td>"
-       print "</tr>"
-       print "<tr>"
-       print "<td>Average lint score</td>"
-       print "<td>%.2f</td>" % lint_score
-       print "</tr>"
-       print "<tr>"
-       print "<td>% code coverage</td>"
-       print "<td>%s</td>" % coverage
-       print "</tr>"
-       print "<tr>"
-       print "<td>Classes missing tests</td>"
-       print "<td>"
+       print("<table>")
+       print("<tr>")
+       print("<td colspan=2><h1>WMCore test report</h1></td>")
+       print("</tr>")
+       print("<tr>")
+       print("<td>Average lint score</td>")
+       print("<td>%.2f</td>" % lint_score)
+       print("</tr>")
+       print("<tr>")
+       print("<td>% code coverage</td>")
+       print("<td>%s</td>" % coverage)
+       print("</tr>")
+       print("<tr>")
+       print("<td>Classes missing tests</td>")
+       print("<td>")
        if len(testless_classes) == 0:
-           print "None"
+           print("None")
        else:
-           print "<ul>"
+           print("<ul>")
            for c in testless_classes:
-               print "<li>%c</li>" % c
-           print "</ul>"
-       print "</td>"
-       print "</tr>"
-       print "</table>"
+               print("<li>%c</li>" % c)
+           print("</ul>")
+       print("</td>")
+       print("</tr>")
+       print("</table>")
 
 class CoverageCommand(Command):
    description = "Run code coverage tests"
@@ -720,5 +721,5 @@ class CoverageCommand(Command):
            cov.report(morfs = files, file=sys.stdout)
            return 0
        else:
-           print 'You need the coverage module installed before running the' +\
-                           ' coverage command'
+           print('You need the coverage module installed before running the' +\
+                           ' coverage command')

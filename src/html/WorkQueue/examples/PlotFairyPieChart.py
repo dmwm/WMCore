@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 # HOWTO run:
 # 1) set up WMCore
@@ -95,4 +96,4 @@ finalPage = pageTemplate % {"url": PLOT_SERVICE_URL, "plotType": "Pie",
                             "systemData": systemData}
 outputFile.write(finalPage)
 outputFile.close()
-print "result html page '%s' written" % FILE_NAME
+print("result html page '%s' written" % FILE_NAME)

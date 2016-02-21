@@ -1,3 +1,4 @@
+from __future__ import print_function
 from distutils.core import Command
 from distutils.command.build import build
 from distutils.command.install import install
@@ -62,7 +63,7 @@ def list_packages(package_dirs = [], recurse=True):
                     rel_path = rel_path.split('/')[2:]
                     packages.append('.'.join(rel_path))
                 else:
-                    print 'Ignoring %s' % dirpath
+                    print('Ignoring %s' % dirpath)
         else:
             rel_path = os.path.relpath(a_dir, get_path_to_wmcore_root())
             rel_path = rel_path.split('/')[2:]
@@ -87,7 +88,7 @@ def data_files_for(dir):
                 localfiles = [os.path.join(rel_path, f) for f in filenames]
                 add_static((rel_path.replace('src/', 'data/'), localfiles))
             else:
-                print 'Ignoring %s' % dirpath
+                print('Ignoring %s' % dirpath)
     else:
         localfiles = []
         for ifile in os.listdir(dir):
@@ -130,13 +131,13 @@ def check_system(command):
     elif command.system == None:
         msg = "System not specified: -s option for %s must be specified and provide one of:\n" % command.get_command_name()
         msg += ", ".join(dependencies.keys())
-        print msg
+        print(msg)
         sys.exit(1)
     else:
         msg = "Specified system [%s] is unknown:" % command.system
         msg += " -s option for %s must be specified and provide one of:\n" % command.get_command_name()
         msg += ", ".join(dependencies.keys())
-        print msg
+        print(msg)
         sys.exit(1)
 
 def things_to_build(command):
@@ -152,7 +153,7 @@ def things_to_build(command):
     for package in dependency_tree['packages']:
         # Need to recurse packages
         recurse = package.endswith('+')
-        print package, recurse
+        print(package, recurse)
         package = package.rstrip('+')
         src_path = '%s/src/python/%s' % (get_path_to_wmcore_root(), package.replace('.','/'))
         package_src_dirs.extend(list_packages([src_path], recurse))
@@ -230,7 +231,7 @@ class BuildCommand(Command):
             for dir, files in self.distribution.data_files:
                 for f in files:
                     if f.find("-min.") >= 0:
-                        print "removing", f
+                        print("removing", f)
                         os.remove(f)
         else:
             rxfileref = re.compile(r"(/[-A-Za-z0-9_]+?)(?:-min)?(\.(html|js|css))")
@@ -251,7 +252,7 @@ class BuildCommand(Command):
                 elif dir == 'data/templates':
                     for f in files:
                         if f.endswith(".html"):
-                            print "minifying", f
+                            print("minifying", f)
                             minified = open(f).read()
                             minified = re.sub(re.compile(r"\n\s*([<>])", re.S), r"\1", minified)
                             minified = re.sub(re.compile(r"\n\s*", re.S), " ", minified)
@@ -306,7 +307,7 @@ class InstallCommand(install):
         check_system(self)
         # Check install destination looks valid if patching.
         if self.patch and not os.path.isdir("%s/xbin" % self.prefix):
-            print "Patch destination %s does not look like a valid location." % self.prefix
+            print("Patch destination %s does not look like a valid location." % self.prefix)
             sys.exit(1)
         # Set what actually gets installed
         self.distribution.packages, self.distribution.py_modules = things_to_build(self)

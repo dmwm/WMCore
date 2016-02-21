@@ -6,6 +6,7 @@ Creates a JSON file with the information for a StoreResults
 Request.
 
 """
+from __future__ import print_function
 import os, re, traceback
 from dbs.apis.dbsClient import DbsApi
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
@@ -173,7 +174,7 @@ class RequestQuery:
         scramArchByCMSSW = self.getScramArchByCMSSW()
         self.nodeMappings = self.phedex.getNodeMap()
         task = ticket
-        print "Processing ticket: %s" % task
+        print("Processing ticket: %s" % task)
         
         #splitting input dataset       
         input_primary_dataset = input_dataset.split('/')[1].replace(' ','')
@@ -293,8 +294,8 @@ class RequestQuery:
         """
         Print out a report
         """
-        print "%20s %5s %10s %50s %50s" %( 'Ticket','json','local DBS','Sites','se_names') 
-        print "%20s %5s %10s %50s %50s" %( '-'*20,'-'*5,'-'*10,'-'*50,'-'*50 )
+        print("%20s %5s %10s %50s %50s" %( 'Ticket','json','local DBS','Sites','se_names')) 
+        print("%20s %5s %10s %50s %50s" %( '-'*20,'-'*5,'-'*10,'-'*50,'-'*50 ))
         
         json = report["json"]
         ticket = report["task"]
@@ -302,6 +303,6 @@ class RequestQuery:
         localUrl = report["localUrl"].split('/')[5]
         site = ', '.join(report["sites"])
         se_names = ', '.join(report["se_names"])
-        print "%20s %5s %10s %50s %50s" %(ticket,json,localUrl,site,se_names)  
+        print("%20s %5s %10s %50s %50s" %(ticket,json,localUrl,site,se_names))  
 
         

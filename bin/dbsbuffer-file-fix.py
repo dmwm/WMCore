@@ -1,5 +1,6 @@
 """
 """
+from __future__ import print_function
 
 import logging
 import os
@@ -27,16 +28,16 @@ def fixDBSmissingFileAssoc():
                                where dfl.location is null)
                       """
     unfinishedTasks = formatter.formatDict(formatter.dbi.processData(problemFilesSql))
-    print "%s lenth" % len(unfinishedTasks)
+    print("%s lenth" % len(unfinishedTasks))
     result = {}
     for row in unfinishedTasks:
         result.setdefault(row["fileid"], row)
-        print row
-    print "trimed %s lenth" % len(result)
+        print(row)
+    print("trimed %s lenth" % len(result))
     insertSQL = """INSERT INTO dbsbuffer_file_location (filename, location)
                VALUES (:fileid, :seid)"""
     done = formatter.dbi.processData(insertSQL, result.values())
-    print "inserted %s" % done
+    print("inserted %s" % done)
 
 if __name__ == '__main__':
     fixDBSmissingFileAssoc()

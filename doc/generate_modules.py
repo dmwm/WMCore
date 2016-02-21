@@ -7,6 +7,7 @@ This script parses a directory tree looking for python modules and packages and
 creates ReST files appropriately to create code documentation with Sphinx.
 It also creates a modules index (named modules.<suffix>).
 """
+from __future__ import print_function
 
 # Copyright 2008 Société des arts technologiques (SAT), http://www.sat.qc.ca/
 # Copyright 2010 Thomas Waldmann <tw AT waldmann-edv DOT de>
@@ -51,9 +52,9 @@ def write_file(name, text, opts):
         return
     fname = os.path.join(opts.destdir, "%s.%s" % (name, opts.suffix))
     if not opts.force and os.path.isfile(fname):
-        print 'File %s already exists, skipping.' % fname
+        print('File %s already exists, skipping.' % fname)
     else:
-        print 'Creating file %s.' % fname
+        print('Creating file %s.' % fname)
         f = open(fname, 'w')
         f.write(text)
         f.close()
@@ -261,9 +262,9 @@ Note: By default this script will not overwrite already created files.""")
                 excludes = normalize_excludes(rootpath, excludes)
                 recurse_tree(rootpath, excludes, opts)
             else:
-                print '%s is not a valid output destination directory.' % opts.destdir
+                print('%s is not a valid output destination directory.' % opts.destdir)
         else:
-            print '%s is not a valid directory.' % rootpath
+            print('%s is not a valid directory.' % rootpath)
 
 
 if __name__ == '__main__':

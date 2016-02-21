@@ -14,6 +14,7 @@ Production ConfigCache: https://cmsweb.cern.ch/couchdb/reqmgr_config_cache/
 Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -101,8 +102,8 @@ class ReqMgrClient(RESTClient):
         logging.info("Call %s %s %s" % (urn, verb, input_data))
         status, data = self.http_request(verb, urn, data=input_data)
         if status != 200:
-            print status
-            print data
+            print(status)
+            print(data)
             return
         data = json.loads(data)["result"]
         if exp_data:
@@ -110,7 +111,7 @@ class ReqMgrClient(RESTClient):
             assert data[0] == exp_data, "'%s' != '%s' mismatch." % (data[0], exp_data)
         else:
             assert status == 200, "Call status is: %s" % status
-            print "status: %s\n%s" % (status, data)
+            print("status: %s\n%s" % (status, data))
         return data
 
     def delete_requests(self, config):
@@ -120,7 +121,7 @@ class ReqMgrClient(RESTClient):
             args = urllib.urlencode({"request_name": request_name})
             status, data = self.http_request("DELETE", urn, data=args)
             if status != 200:
-                print data
+                print(data)
                 sys.exit(1)
             logging.info("Done.")
 
@@ -137,10 +138,10 @@ class ReqMgrClient(RESTClient):
                                          headers=self.headersBody)
         if status > 216:
             logging.error("Error occurred, exit.")
-            print data
+            print(data)
             sys.exit(1)
         data = json.loads(data)
-        print data
+        print(data)
         request_name = data["result"][0]["request"]
         self.approve_request(request_name)
         if config.assign_request or config.change_splitting:
@@ -165,7 +166,7 @@ class ReqMgrClient(RESTClient):
 
         if status != 200:
             logging.error("Approve did not succeed.")
-            print data
+            print(data)
             sys.exit(1)
         logging.info("Approve succeeded.")
 
@@ -185,10 +186,10 @@ class ReqMgrClient(RESTClient):
                                          headers=self.headersBody)
         if status > 216:
             logging.error("Error occurred, exit.")
-            print data
+            print(data)
             sys.exit(1)
         data = json.loads(data)
-        print data
+        print(data)
         request_name = str(data["result"][0].keys()[0])
         logging.info("Assign succeeded.")
         return request_name
@@ -215,11 +216,11 @@ class ReqMgrClient(RESTClient):
                 urn = self.urn_prefix + "/request?name=%s" % request_name
                 status, data = self.http_request("GET", urn)
                 if status != 200:
-                    print data
+                    print(data)
                     sys.exit(1)
                 request = json.loads(data)["result"][0]
                 for k, v in sorted(request.items()):
-                    print "\t%s: %s" % (k, v)
+                    print("\t%s: %s" % (k, v))
                 requests_data.append(request)
             # returns data on requests in the same order as in the config.request_names
             return requests_data
@@ -229,13 +230,13 @@ class ReqMgrClient(RESTClient):
             urn = self.urn_prefix + "/request?all=true"
             status, data = self.http_request("GET", urn)
             if status != 200:
-                print data
+                print(data)
                 sys.exit(1)
             requests = json.loads(data)
             requests = requests["result"][0]["rows"]
             keys = ("RequestName", "RequestType", "RequestType", "RequestStatus")
             for r in requests:
-                print " ".join(["%s: '%s'" % (k, r["value"][k]) for k in keys])
+                print(" ".join(["%s: '%s'" % (k, r["value"][k]) for k in keys]))
             logging.info("%s requests in the system." % len(requests))
             return requests
 
@@ -289,7 +290,7 @@ class ReqMgrClient(RESTClient):
         assert request["RequestName"] == new_request_name
         assert request["RequestStatus"] == "new"
 
-        print "\nall_tests succeeded."
+        print("\nall_tests succeeded.")
 
     def __del__(self):
         self.conn.close()

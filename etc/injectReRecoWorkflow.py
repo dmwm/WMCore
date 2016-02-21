@@ -3,6 +3,7 @@
 _injectReRecoWorkflow_
 
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -34,8 +35,8 @@ arguments["SkimJobSplitAlgo"] = "FileBased"
 arguments["SkimJobSplitArgs"] = {"files_per_job": 1, "include_parents": True}
 
 if len(sys.argv) != 2:
-    print "Usage:"
-    print "./injectReRecoWorkflow.py PROCESSING_VERSION"
+    print("Usage:")
+    print("./injectReRecoWorkflow.py PROCESSING_VERSION")
     sys.exit(1)
 else:
     arguments["ProcessingVersion"] = sys.argv[1]
@@ -62,7 +63,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     _injectFilesFromDBS_
 
     """
-    print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
+    print("injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name))
     args={}
     args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_0_9"
@@ -70,7 +71,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
     dbsResults = dbsResults[0:10]
-    print "  found %d files, inserting into wmbs..." % (len(dbsResults))
+    print("  found %d files, inserting into wmbs..." % (len(dbsResults)))
 
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],

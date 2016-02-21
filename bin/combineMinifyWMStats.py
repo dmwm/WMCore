@@ -1,3 +1,4 @@
+from __future__ import print_function
 from glob import iglob
 import shutil
 import os
@@ -119,10 +120,10 @@ def concatenateFiles(filelist, fileName):
     destination.close()
     try:
         from subprocess import call
-        print destPath
+        print(destPath)
         call(["uglifyjs", destPath, "-o", destPath])
     except Exception as ex:
-        print "%s" % str(ex)
+        print("%s" % str(ex))
         pass
     
 if __name__ == "__main__":

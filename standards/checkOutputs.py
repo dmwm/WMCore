@@ -7,6 +7,7 @@
 
 Looks at an xml file with the previous format and makes sure that nothing is failing that isn't in standards/allowed_failing_tests.txt
 """
+from __future__ import print_function
 
 import sys
 
@@ -32,14 +33,14 @@ for suite in document.childNodes:
             for child in case.childNodes:
                 if child.localName == 'error':
                     if case.getAttribute('name') not in allowedErrors:
-                        print "Got an unallowed error: %s" % case.getAttribute('name')
+                        print("Got an unallowed error: %s" % case.getAttribute('name'))
                         suitePasses = False
                     else:
-                        print "Got an allowed error (FIXME): %s" % case.getAttribute('name')
+                        print("Got an allowed error (FIXME): %s" % case.getAttribute('name'))
 
 if suitePasses:
-    print "Suite is OK"
+    print("Suite is OK")
     sys.exit(0)
 else:
-    print "Suite FAILED"
+    print("Suite FAILED")
     sys.exit(1)

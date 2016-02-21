@@ -3,6 +3,7 @@
 _injectMonteCarloWorkflow_
 
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -28,8 +29,8 @@ arguments = getTestArguments()
 numEvents = None
 
 if len(sys.argv) != 3:
-    print "Usage:"
-    print "./injectMonteCarloWorkflow.py PROCESSING_VERSION NUM_EVENTS"
+    print("Usage:")
+    print("./injectMonteCarloWorkflow.py PROCESSING_VERSION NUM_EVENTS")
     sys.exit(1)
 else:
     arguments["ProcessingVersion"] = sys.argv[1]

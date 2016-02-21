@@ -3,6 +3,7 @@
 _harvestingInjector_
 
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -65,8 +66,8 @@ for option in options.__dict__:
     if getattr(options, option) is None and option in mandatory:
         missing.append(option)
 if missing:
-    print "Error: The following mandatory options are missing:"
-    print "\n".join(missing)
+    print("Error: The following mandatory options are missing:")
+    print("\n".join(missing))
     sys.exit(1) 
 
 # The default arguments are set in:
@@ -97,14 +98,14 @@ def injectFilesFromDBS(inputFileset, datasetPath, runsWhiteList=[]):
     _injectFilesFromDBS_
 
     """
-    print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
+    print("injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name))
     args={}
     args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["version"] = "DBS_2_1_1"
     args["mode"] = "GET"
     dbsApi = DbsApi(args)
     dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
-    print "  found %d files, inserting into wmbs..." % (len(dbsResults))
+    print("  found %d files, inserting into wmbs..." % (len(dbsResults)))
 
     for dbsResult in dbsResults:
         if runsWhiteList and str(dbsResult["LumiList"][0]["RunNumber"]) not in runsWhiteList:

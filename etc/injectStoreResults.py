@@ -3,6 +3,7 @@
 _injectStoreResultsWorkflow_
 
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -48,8 +49,8 @@ arguments["MergedLFNBase"] =  "/store/temp/results"
         #44      })
 
 if len(sys.argv) != 2:
-    print "Usage:"
-    print "./injectStoreResults.py PROCESSING_VERSION"
+    print("Usage:")
+    print("./injectStoreResults.py PROCESSING_VERSION")
     sys.exit(1)
 else:
     arguments["ProcessingVersion"] = sys.argv[1]
@@ -74,7 +75,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     _injectFilesFromDBS_
 
     """
-    print "injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name)
+    print("injecting files from %s into %s, please wait..." % (datasetPath, inputFileset.name))
     args={}
     args["url"] = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     args["mode"] = "GET"
@@ -82,7 +83,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
     dbsResults = dbsApi.listFileArray(path = datasetPath, retriveList = ["retrive_lumi", "retrive_run"])
     # Limiter on number of files
     dbsResults = dbsResults[0:20]
-    print "  found %d files, inserting into wmbs..." % (len(dbsResults))
+    print("  found %d files, inserting into wmbs..." % (len(dbsResults)))
 
     for dbsResult in dbsResults:
         myFile = File(lfn = dbsResult["LogicalFileName"], size = dbsResult["FileSize"],

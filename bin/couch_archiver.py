@@ -4,6 +4,7 @@ _couch_archiver_
 
 Replicate an agent's jobdump to another couch machine.
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -13,11 +14,11 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
 
 if len(sys.argv) != 3:
-    print "Usage: "
-    print "  archiver.py [Destination Couch URL] [Destination DB Name]"
-    print ""
-    print "Example:"
-    print "  archiver.py http://username:password@cms-xen41.fnal.gov:5984 cmssrv98_070_jobdump"
+    print("Usage: ")
+    print("  archiver.py [Destination Couch URL] [Destination DB Name]")
+    print("")
+    print("Example:")
+    print("  archiver.py http://username:password@cms-xen41.fnal.gov:5984 cmssrv98_070_jobdump")
     sys.exit(0)
 
 wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
@@ -34,23 +35,23 @@ destJobsDb = destCouchHost + "/" + destDbBase + "%2Fjobs"
 srcFwjrsDb = srcCouchHost + "/" + srcDbBase + "%2Ffwjrs"
 destFwjrsDb = destCouchHost + "/" + destDbBase + "%2Ffwjrs"
 
-print "Archiving %s/%s to %s/%s..." % (srcCouchHost, srcDbBase, destCouchHost, destDbBase)
+print("Archiving %s/%s to %s/%s..." % (srcCouchHost, srcDbBase, destCouchHost, destDbBase))
 
 # Replicate the FWJR and Jobs databases...
-print "  Replicating jobs database..."
+print("  Replicating jobs database...")
 destCouchServer.replicate(srcJobsDb, destJobsDb, create_target = True)
-print "  Replication fwjrs database..."
+print("  Replication fwjrs database...")
 destCouchServer.replicate(srcFwjrsDb, destFwjrsDb, create_target = True)
 
 # Generate views for the various databases
 destJobsDb = destCouchServer.connectDatabase(destDbBase + "/jobs")
 destFwjrsDb = destCouchServer.connectDatabase(destDbBase + "/fwjrs")
-print "  Triggering view generation for jobs database..."
+print("  Triggering view generation for jobs database...")
 destJobsDb.loadView("JobDump", "statusByWorkflowName", options = {"limit": 1})
-print "  Triggering view generation for fwjrs database..."
+print("  Triggering view generation for fwjrs database...")
 destFwjrsDb.loadView("FWJRDump", "outputByWorkflowName", options = {"limit": 1})
 
-print ""
+print("")
 # Query destination DB for list of workflows
 summaryBase = "%s/%s%%2Ffwjrs/_design/FWJRDump/_show/workflowSummary/%s" # dest host, dest db base, workflow name
 successBase = "%s/%s%%2Fjobs/_design/JobDump/_list/successJobs/statusByWorkflowName?startkey=%%5B%%22%s%%22%%5D&endkey=%%5B%%22%s%%22%%2C%%7B%%7D%%5D&reduce=false" # dest host, dest db base, workflow, workflow

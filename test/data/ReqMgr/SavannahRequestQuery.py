@@ -8,6 +8,7 @@ the Request Interface, creation of the JSON steering file and
 providing information for the bookeeping database
 
 """
+from __future__ import print_function
 import os, re, traceback
 from dbs.apis.dbsClient import DbsApi
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
@@ -63,7 +64,7 @@ class RequestQuery:
         
         # Check to see if login was successful
         if not re.search('Logged in as ' + username, response.read()):
-            print 'login unsuccessful, please check your username and password'
+            print('login unsuccessful, please check your username and password')
             return False
         else:
             return True
@@ -311,7 +312,7 @@ class RequestQuery:
 
                     ## remove leading &nbsp and # from task
                     task = link.text.replace('#','').decode('utf-8').strip()
-                    print "Processing ticket: %s" % task
+                    print("Processing ticket: %s" % task)
                     
                     ## Get input dataset name
                     control = self.br.find_control("custom_tf1",type="text")
@@ -352,7 +353,7 @@ class RequestQuery:
                             msg+= "Your StoreResults team"
                             self.closeRequest(task,msg)
                             self.br.back()
-                            print "I tried to Close ticket %s due to CMSSW not valid" % task
+                            print("I tried to Close ticket %s due to CMSSW not valid" % task)
                             continue
                     
                     # close the request if release has not ScramArch match
@@ -365,7 +366,7 @@ class RequestQuery:
                             msg+= "Your StoreResults team"
                             self.closeRequest(task,msg)
                             self.br.back()
-                            print "I tried to Close ticket %s due to ScramArch mismatch" % task
+                            print("I tried to Close ticket %s due to ScramArch mismatch" % task)
                             continue
                     else: 
                         index=len(scramArchByCMSSW[release])
@@ -375,7 +376,7 @@ class RequestQuery:
                     try:
                         data_at_url = self.isDataAtUrl(dbs_url,input_dataset)
                     except:
-                        print 'I got an error trying to look for dataset %s at %s, please look at this ticket: %s' %(input_dataset,dbs_url,task)
+                        print('I got an error trying to look for dataset %s at %s, please look at this ticket: %s' %(input_dataset,dbs_url,task))
                         continue
                     if not data_at_url:
                         msg = "Your request is not valid, I could not find the given dataset at %s\n" % dbs_url
@@ -385,7 +386,7 @@ class RequestQuery:
                         msg+= "Your StoreResults team"
                         self.closeRequest(task,msg)
                         self.br.back()
-                        print "I tried to Close ticket %s, dataset is not at DBS url" % task
+                        print("I tried to Close ticket %s, dataset is not at DBS url" % task)
                         continue
                         
                     # Avoid not approved Tickets
@@ -430,9 +431,9 @@ class RequestQuery:
                     
                 except Exception as ex:
                     self.br.back()
-                    print "There is a problem with this ticket %s, please have a look to the error:" % task
-                    print str(ex)
-                    print traceback.format_exc()
+                    print("There is a problem with this ticket %s, please have a look to the error:" % task)
+                    print(str(ex))
+                    print(traceback.format_exc())
                     continue
                 
                 self.br.back()
@@ -550,7 +551,7 @@ class RequestQuery:
                 control.value = [self.DBSByLabelDict["phys03"]]
             else:
                 msg = 'DBS URL of the old request is neither phys01, phys02 nor phys03. Please, check!'
-                print msg
+                print(msg)
                 raise RuntimeError(msg)
 
         return
@@ -584,8 +585,8 @@ class RequestQuery:
         """
         Print out a report
         """
-        print "%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','se_names') 
-        print "%20s %10s %5s %35s %10s %50s %50s" %( '-'*20,'-'*10,'-'*5,'-'*35,'-'*10,'-'*50,'-'*50 )
+        print("%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','se_names')) 
+        print("%20s %10s %5s %35s %10s %50s %50s" %( '-'*20,'-'*10,'-'*5,'-'*35,'-'*10,'-'*50,'-'*50 ))
         
         for report in requests:
             
@@ -596,6 +597,6 @@ class RequestQuery:
             localUrl = report["localUrl"].split('/')[5]
             site = ', '.join(report["sites"])
             se_names = ', '.join(report["se_names"])
-            print "%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,se_names)  
+            print("%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,se_names))  
 
         

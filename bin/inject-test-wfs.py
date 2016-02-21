@@ -12,6 +12,7 @@ It will:
  4. assign workflows during creation time (also based on the parameters
  provided in command line) 
 """
+from __future__ import print_function
 
 import sys, os, shlex, json
 from optparse import OptionParser
@@ -43,7 +44,7 @@ def main():
     
     (options, args) = parser.parse_args()
     if not options.camp and not options.reqStr:
-        print "Ex.: python inject-test-wfs.py -c Agent105_Validation -r Robot_Alan -t testbed-vocms009 -a DMWM_Test -p TEST_Alan_LoL_v2"  
+        print("Ex.: python inject-test-wfs.py -c Agent105_Validation -r Robot_Alan -t testbed-vocms009 -a DMWM_Test -p TEST_Alan_LoL_v2")  
         parser.error('Campaign and requestString *must* be provided')
         sys.exit(1)
     mode = options.mode if options.mode else "DMWM"
@@ -55,8 +56,8 @@ def main():
     procStr = options.procStr if options.procStr else "TEST_Alan_LoL"
 
     if os.path.isdir('WMCore'):
-        print "WMCore directory found. I'm not going to clone it again."
-        print "You have 5 secs to abort this operation or live with that forever...\n"
+        print("WMCore directory found. I'm not going to clone it again.")
+        print("You have 5 secs to abort this operation or live with that forever...\n")
         sleep(5)
     else:
         # Cloning WMCore repo
@@ -64,12 +65,12 @@ def main():
         try:
             retcode = call(command)
             if retcode == 0:
-                print "WMCore repository successfully cloned!"
+                print("WMCore repository successfully cloned!")
             else:
-                print "Failed to clone WMCore ", -retcode
+                print("Failed to clone WMCore ", -retcode)
                 sys.exit(1)
         except OSError as e:
-            print "Execution failed:", e
+            print("Execution failed:", e)
             sys.exit(2)
 
     # Retrieve template names available and filter blacklisted
@@ -79,7 +80,7 @@ def main():
         if os.path.isfile(wmcorePath + file):
             templates = [ file ]
         else:
-            print "File %s not found." % (wmcorePath + file)
+            print("File %s not found." % (wmcorePath + file))
             sys.exit(2)
     else:
         templates = os.listdir(wmcorePath)
@@ -135,17 +136,17 @@ def main():
         injectComm = shlex.split(strComm)
 
         if options.dryRun:
-            print injectComm
+            print(injectComm)
             continue
 
         # Actually injects and assign request
         retcode = call(injectComm)
         if retcode == 0:
-            print "%s request successfully created!" % filename
+            print("%s request successfully created!" % filename)
         else:
-            print "%s request FAILED injection!" % filename
+            print("%s request FAILED injection!" % filename)
 
-    print "\n%d templates should have been injected. Good job!" % len(templates)
+    print("\n%d templates should have been injected. Good job!" % len(templates))
        
 if __name__ == '__main__':
     main()

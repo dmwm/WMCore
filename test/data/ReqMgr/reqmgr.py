@@ -30,6 +30,7 @@ by a user on the command line, whichever other argument can be overridden too.
 // "Team"+team: "checked" (the same for "checkbox"+workflow: "checked")
 
 """
+from __future__ import print_function
 
 
 import os
@@ -109,7 +110,7 @@ class ReqMgrClient(RESTClient):
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
         if status > 216:
             logging.error("Error occurred, exit.")
-            print data
+            print(data)
             sys.exit(1)
         data = json.loads(data)
         # ReqMgr returns dictionary with key: 'WMCore.RequestManager.DataStructs.Request.Request'
@@ -131,7 +132,7 @@ class ReqMgrClient(RESTClient):
                                          data=encodedParams, headers=self.textHeaders)        
         if status > 216 and status != 303:
             logging.error("Error occurred, exit.")
-            print data
+            print(data)
             sys.exit(1)
         # this is a call to a webpage/webform and the response here is HTML page
         # retrieve the request name from the returned HTML page       
@@ -172,7 +173,7 @@ class ReqMgrClient(RESTClient):
                                         data=encodedParams, headers=self.textHeaders)
         if status != 200:
             logging.error("Approve did not succeed.")
-            print data
+            print(data)
             sys.exit(1)
         logging.info("Approve succeeded.")
             
@@ -208,7 +209,7 @@ class ReqMgrClient(RESTClient):
                                             data=encodedParams, headers=self.textHeaders)
             if status != 200:
                 logging.error("Assign did not succeed.")
-                print data
+                print(data)
                 sys.exit(1)
             logging.info("Assign succeeded.")
 
@@ -237,7 +238,7 @@ class ReqMgrClient(RESTClient):
 
             if status != 200:
                 logging.error("Splitting change did not succeed.")
-                print data
+                print(data)
                 sys.exit(1)
             logging.info("Splitting change succeeded.")
 
@@ -294,11 +295,11 @@ class ReqMgrClient(RESTClient):
                 logging.info("Querying '%s' request ..." % requestName)
                 status, data = self.httpRequest("GET", "/reqmgr/reqMgr/request/%s" % requestName)
                 if status != 200:
-                    print data
+                    print(data)
                     sys.exit(1)           
                 request = json.loads(data)
                 for k, v in sorted(request.items()):
-                    print "\t%s: %s" % (k, v)
+                    print("\t%s: %s" % (k, v))
                 requestsData.append(request)
             # returns data on requests in the same order as in the config.requestNames
             return requestsData
@@ -306,7 +307,7 @@ class ReqMgrClient(RESTClient):
             logging.info("Querying all requests ...")
             status, data = self.httpRequest("GET", "/reqmgr/reqMgr/request")
             if status != 200:
-                print data
+                print(data)
                 sys.exit(1)
             requests = json.loads(data)
             keys = ("RequestName", "AcquisitionEra", "RequestType", "Requestor",
@@ -314,7 +315,7 @@ class ReqMgrClient(RESTClient):
             for request in requests:
                 type = request["type"]
                 r = request[type]
-                print " ".join(["%s: '%s'" % (k, r[k]) for k in keys])
+                print(" ".join(["%s: '%s'" % (k, r[k]) for k in keys]))
             logging.info("%s requests in the system." % len(requests))
             return requests
             
@@ -324,7 +325,7 @@ class ReqMgrClient(RESTClient):
             logging.info("Deleting '%s' request ..." % requestName)
             status, data = self.httpRequest("DELETE", "/reqmgr/reqMgr/request/%s" % requestName)
             if status != 200:
-                print data
+                print(data)
                 sys.exit(1)
             logging.info("Done.")           
 
@@ -337,7 +338,7 @@ class ReqMgrClient(RESTClient):
                                          headers=headers)
         if status > 216:
             logging.error("Error occurred, exit.")
-            print data  
+            print(data)  
             sys.exit(1)
         data = json.loads(data)
         # ReqMgr returns dictionary with key: 'WMCore.RequestManager.DataStructs.Request.Request'
@@ -364,7 +365,7 @@ class ReqMgrClient(RESTClient):
                                         data=encodedParams, headers=self.textHeaders)
         if status > 200:
             logging.error("Error occurred, exit.")
-            print data
+            print(data)
             sys.exit(1)
 
     def testResubmission(self, config):
@@ -549,7 +550,7 @@ class ReqMgrClient(RESTClient):
         Method is called whenever there is a new request created.
         
         """
-        print "Checking CouchDB parameters on stored request %s" % requestName
+        print("Checking CouchDB parameters on stored request %s" % requestName)
         # request parameters (fields) not allowed in Couch request document
         deprecatedArgs = ["ReqMgrGroupID",
                           "ReqMgrRequestID",
@@ -603,7 +604,7 @@ class ReqMgrClient(RESTClient):
                 print ("Request %s doesn't have optional parameter defined: %s" %
                        (requestName, arg))
                 
-        print "CouchDB parameters OK."
+        print("CouchDB parameters OK.")
         
             
     def allTests(self, config):

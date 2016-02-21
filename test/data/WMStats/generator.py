@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 import time, datetime
 import random, string
@@ -35,7 +36,7 @@ def installCouchApp(couchUrl, couchDBName, couchAppName, basePath = None):
     """
     if not basePath:
         basePath = couchAppRoot()
-    print "Installing %s into %s" % (couchAppName, couchDBName)
+    print("Installing %s into %s" % (couchAppName, couchDBName))
 
     couchServer = CouchServer(couchUrl)
     couchappConfig = Config()
@@ -367,7 +368,7 @@ def main(options):
         for req in reqmgr_requests:
             db.queue(req)
         db.commit()
-        print "Added %s reqmgr requests" % len(reqmgr_requests)
+        print("Added %s reqmgr requests" % len(reqmgr_requests))
 
 
     if options.add_agent_data:
@@ -377,8 +378,8 @@ def main(options):
             for job in jobDocs:
                 db.queue(job)
         db.commit()
-        print "Added %s agent requests" % len(agent_requests)
-        print "Added %s job Docs" % (len(agent_requests) * len(jobDocs))
+        print("Added %s agent requests" % len(agent_requests))
+        print("Added %s job Docs" % (len(agent_requests) * len(jobDocs)))
 
 if __name__ == "__main__":
     main(parse_opts())

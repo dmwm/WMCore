@@ -4,12 +4,13 @@
         handles munging PATH, PYTHONPATH, DATABASE variables for tests
         read configuration from standards/buildslave.py .. there is an 
         example file at buildslave.py.sample"""
+from __future__ import print_function
     
 import sys
 import os
 if (len(sys.argv) < 3):
-    print "Usage: %s <python version> <database type> <command> [arg1] [arg2] .." %\
-                sys.argv[0]
+    print("Usage: %s <python version> <database type> <command> [arg1] [arg2] .." %\
+                sys.argv[0])
     sys.exit(1)
 
 requestedPython = sys.argv[1]
@@ -20,7 +21,7 @@ sys.path.append( os.path.realpath(os.path.join(os.getcwd(), "..",".." )) )
 import buildslaveconfig as buildslave
 
 if ( not (requestedPython in buildslave.conf) ):
-    print "Requested python version isn't in the slave configuration"
+    print("Requested python version isn't in the slave configuration")
     sys.exit(1)
 
 if 'PYTHONPATH' in buildslave.conf[requestedPython]:
@@ -40,7 +41,7 @@ if ( not (requestedDB in buildslave.conf) ):
         # give a default for sqlite, since it doesnt matter
         os.environ['DATABASE'] = 'sqlite:///temp.db'
     else:
-        print "Requested database type isn't in the slave configuration"
+        print("Requested database type isn't in the slave configuration")
         sys.exit(1)
 else:
     os.environ['DATABASE'] = buildslave.conf[requestedDB]
@@ -52,13 +53,13 @@ os.environ['USER'] = "buildbotslave"
 commandLine = sys.argv[3:]
 
 # actually run
-print "Commandline: %s" % commandLine
-print "PATH: %s" % os.environ['PATH']
-print "LD_LIBRARY_PATH: %s" % os.environ['LD_LIBRARY_PATH']
+print("Commandline: %s" % commandLine)
+print("PATH: %s" % os.environ['PATH'])
+print("LD_LIBRARY_PATH: %s" % os.environ['LD_LIBRARY_PATH'])
 if 'PYTHONHOME' in os.environ:
-    print "PYTHONHOME: %s" % os.environ['PYTHONHOME']
+    print("PYTHONHOME: %s" % os.environ['PYTHONHOME'])
 if 'PYTHONPATH' in os.environ:
-    print "PYTHONPATH: %s" % os.environ['PYTHONPATH']
+    print("PYTHONPATH: %s" % os.environ['PYTHONPATH'])
 sys.stdout.flush()
 os.execvp( commandLine[0], commandLine[0:] )
 

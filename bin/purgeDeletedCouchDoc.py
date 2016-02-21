@@ -1,3 +1,4 @@
+from __future__ import print_function
 from optparse import OptionParser
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Database.CMSCouch import CouchServer
@@ -7,7 +8,7 @@ def cleanDeletedDoc(couchURL, totalLimit, filter, limit, type, lastSeq):
     couchDB = CouchServer(couchURLBase).connectDatabase(dbName, False)
     couchDB["timeout"] = 3600
     _cleanDeletedDoc(couchDB, totalLimit, filter, limit, type, lastSeq)
-    print "last sequence %s" % couchDB.last_seq
+    print("last sequence %s" % couchDB.last_seq)
 
 def _cleanDeletedDoc(couchDB, totalLimit, filter, limit, type, lastSeq):
     cleanLimit = 0
@@ -24,12 +25,12 @@ def _cleanDeletedDoc(couchDB, totalLimit, filter, limit, type, lastSeq):
             break;
         if (type == "purge"):
             report = purgeDoc(couchDB, data, cleanLimit)
-            print report
-            print "delete sequence %s" % couchDB.last_seq
+            print(report)
+            print("delete sequence %s" % couchDB.last_seq)
         if (type == "delete"):
             report = deleteDoc(couchDB, data, cleanLimit)
             #print report
-            print "delete sequence %s" % couchDB.last_seq
+            print("delete sequence %s" % couchDB.last_seq)
             
 def purgeDoc(couchDB, data, cleanLimit):
     purgeDict = {}

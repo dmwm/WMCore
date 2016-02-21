@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os, sys
 import xml.dom.minidom
 import time
@@ -21,7 +22,7 @@ database = couch.connectDatabase('buildbot-couch', create = False)
 #                                                WithProperties("%s", 'got_revision'),
 #                                                x['db']],
 #                                                description="Analyzing fail", descriptionDone="Fail Being Analyzed"))
-print "confused .. %s" % sys.argv
+print("confused .. %s" % sys.argv)
 myname, xmlfile, buildername, buildnumber, revision, db = sys.argv[:6]
 timestamp = time.time()
 #(myname, xmlfile, buildername, buildnumber, revision, db ) = ('dum', '../nosetests.xml',1,2,3,4)
@@ -91,10 +92,10 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
 database.commit()
 
 longRunning.reverse()
-print "These are the longest-running tests:"
+print("These are the longest-running tests:")
 tmp = 1
 for longTest in longRunning:
-    print "%s) %s seconds - %s.%s" % (tmp, longTest[0],longTest[1], longTest[2])
+    print("%s) %s seconds - %s.%s" % (tmp, longTest[0],longTest[1], longTest[2]))
     tmp += 1
     
 

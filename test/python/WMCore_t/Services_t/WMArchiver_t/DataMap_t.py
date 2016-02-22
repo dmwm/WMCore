@@ -1,6 +1,6 @@
 from __future__ import (division, print_function) 
 import unittest
-from WMCore.Services.WMArchiver.WMArchiver import convertToArchiverFormat
+from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
 
 SAMPLE_FWJR = {'fallbackFiles': [],
  'skippedFiles': [],
@@ -111,10 +111,23 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                                                    'runs': {},
                                                    'size': 0}]},
                         'parameters': {},
-                        'performance': {'cpu': {},
-                                        'memory': {},
-                                        'multicore': {},
-                                        'storage': {}},
+                        'performance': {"storage": {},
+                                        "multicore": {},
+                                        "memory": {
+                                                   "PeakValueRss": 0,
+                                                   "PeakValueVsize": 0
+                                                   },
+                                        "cpu": {
+                                                "TotalJobCPU": 0.39894,
+                                                "AvgEventCPU": "-nan", #convert to -2.0
+                                                "MaxEventCPU": 0,
+                                                "AvgEventTime": "inf", #convert to -1.0
+                                                "MinEventCPU": 0,
+                                                "TotalEventCPU": 0,
+                                                "TotalJobTime": 26.4577,
+                                                "MinEventTime": 0.0,
+                                                "MaxEventTime": 0.0
+                                                }},
                         'site': 'T2_CH_CERN',
                         'start': 1454569735,
                         'status': 0,
@@ -136,18 +149,24 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                          'stop': 1454569735}},
  'task': '/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD'}
 
-class WMArchiver_t(unittest.TestCase):
+class DataMap_t(unittest.TestCase):
 
     def testConvertToArchiverFormat(self):
-        newData = convertToArchiverFormat(SAMPLE_FWJR)
-        outputModules = set([a['outputModule'] for a in newData['steps']['cmsRun1']['output']]) 
-        outModules = set(SAMPLE_FWJR['steps']['cmsRun1']['output'].keys())
-        self.assertEqual(outputModules - outModules, set())
+
+        jobid = "1-0"
+        newData = createArchiverDoc(jobid, SAMPLE_FWJR)
+        import pprint
+        pprint.pprint(newData)
+        
+        #outputModules = set([a['outputModule'] for a in newData['steps']['cmsRun1']['output']]) 
+        #outModules = set(SAMPLE_FWJR['steps']['cmsRun1']['output'].keys())
+        #self.assertEqual(outputModules - outModules, set())
         
         run = SAMPLE_FWJR['steps']['cmsRun1']['output']['ALCARECOStreamMuAlCalIsolatedMu'][0]['runs']
-        runInfo = newData['steps']['cmsRun1']['output'][0]['value'][0]['runs'][0]
-        self.assertEqual(run[runInfo['runNumber']], runInfo['lumis'])
-        
+        for step in newData['steps']:
+            if step['name'] == 'cmsRun1':
+                runInfo = step['output'][0]['runs'][0]
+        self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
         
 if __name__ == '__main__':
     unittest.main()

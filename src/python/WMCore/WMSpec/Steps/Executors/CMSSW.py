@@ -224,6 +224,9 @@ class CMSSW(Executor):
         else:
             returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
 
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
+        self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
+
         stdoutHandle.close()
         stderrHandle.close()
 

@@ -157,6 +157,9 @@ class DBS3Reader:
         return runs
 
     def listRunLumis(self, dataset = None, block = None):
+        block = unicode(block)
+        dataset = unicode(dataset)
+
         """
         It gets a list of DBSRun objects and returns the number of lumisections per run
         DbsRun (RunNumber,

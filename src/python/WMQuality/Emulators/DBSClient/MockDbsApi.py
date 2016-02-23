@@ -5,6 +5,7 @@ Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 
 from __future__ import (division, print_function)
 
+import copy
 import json
 import os
 
@@ -17,8 +18,6 @@ from WMCore.WMBase import getTestBase
 mockData = {}
 globalFile = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData.json')
 phys03File = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData03.json')
-
-print (globalFile)
 
 try:
     with open(globalFile, 'r') as mockFile:
@@ -44,6 +43,52 @@ class MockDbsApi(object):
     def serverinfo(self):
         return None
 
+    def listFileArray(self, **kwargs):
+        """
+        Handle the case when logical_file_name is called with a list (longer than one) of files
+        since we don't want to store all permutations. Rebuild the list of dicts that DBS returns
+
+        Args:
+            **kwargs: any kwargs that dbs client accepts
+
+        Returns:
+
+        """
+        self.item = 'listFileArray'
+
+        if 'logical_file_name' in kwargs and len(kwargs['logical_file_name']) > 1:
+            origArgs = copy.deepcopy(kwargs)
+            returnDicts = []
+            for lfn in kwargs['logical_file_name']:
+                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                returnDicts.extend(self.genericLookup(**origArgs))
+            return returnDicts
+        else:
+            return self.genericLookup(**kwargs)
+
+    def listFileLumiArray(self, **kwargs):
+        """
+        Handle the case when logical_file_name is called with a list (longer than one) of files
+        since we don't want to store all permutations. Rebuild the list of dicts that DBS returns
+
+        Args:
+            **kwargs: any kwargs that dbs client accepts
+
+        Returns:
+
+        """
+        self.item = 'listFileLumiArray'
+
+        if 'logical_file_name' in kwargs and len(kwargs['logical_file_name']) > 1:
+            origArgs = copy.deepcopy(kwargs)
+            returnDicts = []
+            for lfn in kwargs['logical_file_name']:
+                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                returnDicts.extend(self.genericLookup(**origArgs))
+            return returnDicts
+        else:
+            return self.genericLookup(**kwargs)
+
     def __getattr__(self, item):
         """
         __getattr__ gets called in case lookup of the actual method fails. We use this to return data based on
@@ -52,27 +97,27 @@ class MockDbsApi(object):
         :param item: The method name the user is trying to call
         :return: The generic lookup function
         """
+        self.item = item
+        return self.genericLookup
 
-        def genericLookup(*args, **kwargs):
-            """
-            This function returns the mocked DBS data
+    def genericLookup(self, *args, **kwargs):
+        """
+        This function returns the mocked DBS data
 
-            :param args: positional arguments it was called with
-            :param kwargs: named arguments it was called with
-            :return: the dictionary that DBS would have returned
-            """
-            if kwargs:
-                signature = '%s:%s' % (item, sorted(kwargs.iteritems()))
+        :param args: positional arguments it was called with
+        :param kwargs: named arguments it was called with
+        :return: the dictionary that DBS would have returned
+        """
+        if kwargs:
+            signature = '%s:%s' % (self.item, sorted(kwargs.iteritems()))
+        else:
+            signature = self.item
+
+        try:
+            if mockData[self.url][signature] == 'Raises HTTPError':
+                raise HTTPError
             else:
-                signature = item
-
-            try:
-                if mockData[self.url][signature] == 'Raises HTTPError':
-                    raise HTTPError
-                else:
-                    return mockData[self.url][signature]
-            except KeyError:
-                raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
-                               (item, args, kwargs, self.url))
-
-        return genericLookup
+                return mockData[self.url][signature]
+        except KeyError:
+            raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
+                           (self.item, args, kwargs, self.url))

@@ -631,6 +631,7 @@ class DBS3Reader:
 
 
         """
+        fileBlockName = unicode(fileBlockName)
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)

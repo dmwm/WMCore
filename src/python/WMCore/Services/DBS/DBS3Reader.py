@@ -157,6 +157,12 @@ class DBS3Reader:
         return runs
 
     def listRunLumis(self, dataset = None, block = None):
+        # Pointless code in python3
+        if isinstance(block, str):
+            block = unicode(block)
+        if isinstance(dataset, str):
+            dataset = unicode(dataset)
+
         """
         It gets a list of DBSRun objects and returns the number of lumisections per run
         DbsRun (RunNumber,
@@ -631,6 +637,9 @@ class DBS3Reader:
 
 
         """
+        # Pointless code in python3
+        if isinstance(fileBlockName, str):
+            fileBlockName = unicode(fileBlockName)
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
@@ -657,6 +666,9 @@ class DBS3Reader:
         files
 
         """
+        if isinstance(fileBlockName, str):
+            fileBlockName = unicode(fileBlockName)
+
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)

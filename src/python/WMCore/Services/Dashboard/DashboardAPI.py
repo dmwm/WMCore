@@ -56,24 +56,24 @@ def getApmonInstance(logr=None, apmonServer=None):
         APMONINIT = True
         if APMONUSEURL:
             apm = None
-            #print "Creating ApMon with dynamic configuration/url"
+            print("Creating ApMon with dynamic configuration/url")
             try:
                 apm = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
-            except Exception:
-                pass
+            except Exception as ex:
+                print('Got exception %s' % str(ex))
             if apm is not None and not apm.initializedOK():
-                #print "Setting ApMon to static configuration"
+                print("Setting ApMon to static configuration")
                 try:
                     apm.setDestinations(APMONCONF)
                 except Exception:
                     apm = None
             APMONINSTANCE = apm
         if APMONINSTANCE is None:
-            #print "Creating ApMon with static configuration"
+            print("Creating ApMon with static configuration")
             try:
                 APMONINSTANCE = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
-            except Exception:
-                pass
+            except Exception as ex:
+                print('Got exception %s' % str(ex))
     return APMONINSTANCE
 
 #

@@ -157,8 +157,11 @@ class DBS3Reader:
         return runs
 
     def listRunLumis(self, dataset = None, block = None):
-        block = unicode(block)
-        dataset = unicode(dataset)
+        # Pointless code in python3
+        if isinstance(block, str):
+            block = unicode(block)
+        if isinstance(dataset, str):
+            dataset = unicode(dataset)
 
         """
         It gets a list of DBSRun objects and returns the number of lumisections per run
@@ -568,12 +571,12 @@ class DBS3Reader:
         Get origin_site_name of a block
 
         """
-        
+
         singleBlockName = None
         if isinstance(fileBlockNames, basestring):
             singleBlockName = fileBlockNames
             fileBlockNames = [fileBlockNames]
- 
+
         for block in fileBlockNames:
             self.checkBlockName(block)
 
@@ -634,7 +637,10 @@ class DBS3Reader:
 
 
         """
-        fileBlockName = unicode(fileBlockName)
+        # Pointless code in python3
+        if isinstance(fileBlockName, str):
+            fileBlockName = unicode(fileBlockName)
+
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
@@ -661,6 +667,9 @@ class DBS3Reader:
         files
 
         """
+        if isinstance(fileBlockName, str):
+            fileBlockName = unicode(fileBlockName)
+
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
@@ -759,7 +768,7 @@ class DBS3Reader:
         self.checkDatasetPath(datasetName)
 
         locations=set()
-        
+
         if dbsOnly:
             try:
                 blocksInfo = self.dbs.listBlockOrigin(dataset = datasetName)
@@ -789,7 +798,7 @@ class DBS3Reader:
             if blocksInfo:
                 for blockSites in blocksInfo.values():
                     locations.update(blockSites)
-            
+
         return list(locations)
 
     def checkDatasetPath(self, pathName):
@@ -805,9 +814,9 @@ class DBS3Reader:
         """
         if blockName in ("", "*", None):
             raise DBSReaderError("Invalid Block name: => %s <=" % blockName)
-        
+
     def getFileListByDataset(self, dataset, validFileOnly=1, detail=True):
-        
+
         """
         _getFileListByDataset_
 
@@ -815,7 +824,7 @@ class DBS3Reader:
         not really important info).
         Returns a list of dict.
         """
-        
+
         try:
             fileList = self.dbs.listFileArray(dataset=dataset, validFileOnly=validFileOnly, detail=detail)
             return fileList
@@ -824,4 +833,4 @@ class DBS3Reader:
             msg += "DBSReader.getFileListByDataset(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-        
+

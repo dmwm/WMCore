@@ -54,6 +54,7 @@ def main():
     site = options.site if options.site else ["T1_US_FNAL", "T2_CH_CERN"]
     acqEra = options.acqEra if options.acqEra else "DMWM_TEST"
     procStr = options.procStr if options.procStr else "TEST_Alan_LoL"
+    cernTemplates = ['MonteCarlo_LHE.json', 'TaskChainZJetsLNu_LHE.json']
 
     if os.path.isdir('WMCore'):
         print("WMCore directory found. I'm not going to clone it again.")
@@ -107,7 +108,7 @@ def main():
             tmpProcStr = filename.replace('.json','_') + procStr
             # assignment setup
             assignRequest = {"assignRequest": {}}
-            assignRequest['assignRequest']['SiteWhitelist']    = site 
+            assignRequest['assignRequest']['SiteWhitelist']    = "T2_CH_CERN" if filename in cernTemplates else site 
             assignRequest['assignRequest']['Team']             = team 
             assignRequest['assignRequest']['Dashboard']        = "integration" 
             assignRequest['assignRequest']['AcquisitionEra']   = acqEra 

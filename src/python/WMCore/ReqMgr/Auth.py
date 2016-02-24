@@ -3,28 +3,22 @@ Define Authentiction roles and groups for the access permission for writing the 
 WMCore.REST.Auth authz_match
 """
 ALL_ROLES = ['developer', 'admin', 'data-manager', 'production-operator', 'web-service']
+ALL_GROUP = ['reqmgr', 'facops', 'dataops']
 ADMIN_ROLES = ['admin', 'web-service']
 ADMIN_GROUP = ['reqmgr', 'facops']
-#OTHER_GROUP = ['dataops']
 
-DEFAULT_PERMISSION =  {'role': ALL_ROLES,
-                      'group': []}
+DEFAULT_PERMISSION =  {'role': ALL_ROLES, 'group': ALL_GROUP}
 
 ADMIN_PERMISSION = {'role': ADMIN_ROLES, 'group': ADMIN_GROUP}
 
-DEFAULT_STATUS_PERMISSION = {'role': ALL_ROLES,
-                             'group': []}
-
-CREATE_PERMISSION = ADMIN_PERMISSION
-
-ASSIGN_PERMISSION = DEFAULT_STATUS_PERMISSION
+DEFAULT_STATUS_PERMISSION = {'role': ALL_ROLES, 'group': ALL_GROUP}
 
 APPROVE_PERMISSION = DEFAULT_STATUS_PERMISSION
+ASSIGN_PERMISSION = DEFAULT_STATUS_PERMISSION
+CREATE_PERMISSION = DEFAULT_STATUS_PERMISSION
 
 STORE_RESULT_ASSIGN_PERMISSION = DEFAULT_PERMISSION
-
 STORE_RESULT_APPROVE_PERMISSION = DEFAULT_PERMISSION
-
 STORE_RESULT_CREATE_PERMISSION = CREATE_PERMISSION
 
 def getPermissionByStatusType(requestType, requestStatus):

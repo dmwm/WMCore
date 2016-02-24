@@ -76,7 +76,7 @@ $jsondata
 <div id="tasks" name="tasks" class="hide">
 <div class="tasks">
     <div align="right"><a href="javascript:HideTag('tasks')">Close</a></div>
-#if $status=="new" or $status=="assigned-approved"
+#if $status=="new" or $status=="assignment-approved"
     <textarea id="taskParams" name="taskParams" class="editor">$tasks</textarea>
     <input type="submit" class="btn btn-small btn-green unit-push-right" onclick="javascript:UpdateTaskParams()" value="Update" />
     <div><a href="javascript:HideTag('tasks')">Close</a></div>

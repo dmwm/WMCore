@@ -126,6 +126,14 @@ $misc_json
 
 </div> <!-- end of manage section -->
 
+<div id="splitting" name="splitting" class="hide">
+<div class="tasks">
+<div align="right"><a href="javascript:HideTag('splitting')">Close</a></div>
+<textarea id="taskParams" name="taskParams" class="editor"></textarea>
+<input id="taskSubmit" name="taskSubmit" type="submit" class="btn btn-small btn-green unit-push-right" value="Update" />
+<div><a href="javascript:HideTag('splitting')">Close</a></div>
+</div>
+</div>
 
 <script>
 function activateMiscTable() {
@@ -215,6 +223,7 @@ function BuildList(tag, data) {
     data.forEach(function(item) {
         var html = '<div>';
         var rid = 'request-'+item.RequestName;
+        html += '<button class="btn btn-small bold alignRight" onclick="activateSplitting(\''+item.RequestName+'\')">Splitting</button>'
         html += '<input type="checkbox" name="'+rid+'" id="'+rid+'" class="request-id" /> '
         html += '<b>Request:</b> <span class="record"><a href="$base/fetch?rid='+rid+'">'+item.RequestName+'</a></span><br/>';
         html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
@@ -232,6 +241,26 @@ function BuildList(tag, data) {
         items[i].className='menu-item';
     }
     tag.className='menu-item underline';
+}
+function activateSplitting(rname) {
+    ShowTag('splitting');
+    ajaxRequestSplitting('$base/data/splitting/'+rname, 'taskParams');
+    \$('#taskSubmit').click(function() { UpdateTaskParams(rname); });
+}
+function UpdateTaskParams(rname) {
+    var parameters = \$('#taskParams').val();
+    ajaxRequest('$base/data/splitting/'+rname, JSON.parse(parameters), 'POST');
+}
+function ajaxRequestSplitting(path, tag) {
+    var request = $.ajax({
+        url: path,
+        contentType: "application/json",
+        type: 'GET',
+        dataType: "json"
+    });
+    request.done(function(data, msg, xhr) {
+        \$('#taskParams').val(JSON.stringify(data.result, null, 4));
+    });
 }
 // Put data into container
 BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));

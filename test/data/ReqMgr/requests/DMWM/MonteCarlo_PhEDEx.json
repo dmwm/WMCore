@@ -2,6 +2,8 @@
 "createRequest":
 {         
     "Comments": "MC from scratch with 5l per job. Normal non-custodial Move to Disk (auto-approved) and custodial Replica to MSS FNAL",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_1_20_patch2",
@@ -19,7 +21,7 @@
     "Group": "DATAOPS",
     "TimePerEvent": 28.7602,
     "SplittingAlgo": "EventBased",
-    "LheInputFiles": "False",
+    "LheInputFiles": false,
     "EventsPerJob": 500,
     "EventsPerLumi": 100,
     "Memory": 1000,
@@ -33,7 +35,7 @@
     {
         "SplittingAlgo" : "EventBased",
         "events_per_job" : 500,
-        "include_parents" : "False"
+        "include_parents" : false
     }
 },
 "assignRequest":
@@ -60,6 +62,8 @@
     "SubscriptionPriority": "Normal",
     "CustodialSubType" : "Replica",
     "NonCustodialSubType" : "Move",
+    "CustodialGroup" : "FacOps",
+    "NonCustodialGroup" : "AnalysisOps",
     "BlockCloseMaxWaitTime" : 36000,
     "BlockCloseMaxFiles" : 500,
     "BlockCloseMaxEvents" : 20000000,

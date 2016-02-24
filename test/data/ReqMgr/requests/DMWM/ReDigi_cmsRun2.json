@@ -2,6 +2,8 @@
 "createRequest":
 {         
     "Comments": "ReDigi with 2 steps per job. One block whitelisted. 1l per job",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_19",
@@ -19,10 +21,10 @@
     "InputDataset": "/QDTojWinc_NC_M-1400_TuneZ2star_8TeV-madgraph/Summer12-START53_V7C-v1/GEN-SIM",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "StepOneConfigCacheID": "13781a5a5bbb4736e868a76467505c48",
-    "KeepStepOneOutput" : "False",
+    "KeepStepOneOutput" : false,
     "StepOneOutputModuleName": "RAWSIMoutput",
     "StepTwoConfigCacheID": "13781a5a5bbb4736e868a764676b0dd9",
-    "KeepStepTwoOutput": "True",        
+    "KeepStepTwoOutput": true,
     "PrepID": "B2G-Summer12DR53X-00743",            
     "Group": "DATAOPS",
     "SplittingAlgo": "LumiBased",
@@ -38,8 +40,8 @@
     {
         "SplittingAlgo" : "LumiBased",
         "lumis_per_job" : 8,
-        "halt_job_on_file_boundaries" : "True",
-        "include_parents" : "False"
+        "halt_job_on_file_boundaries" : true,
+        "include_parents" : false
     }
 },
 "assignRequest":

@@ -2,6 +2,8 @@
 "createRequest":
 {         
     "Comments": "ReDigi miniAOD. OpenRunningTimeout 2h",
+    "AcquisitionEra": "Integ_Test",
+    "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_6_patch1",
@@ -19,7 +21,7 @@
     "InputDataset": "/LambdaBToLambdaMumuToPPiMuMu_EtaPtFilter_13TeV-pythia6-evtgen/Spring14dr-PU20bx25_POSTLS170_V5-v2/AODSIM",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "StepOneConfigCacheID": "5e331f921723ff91e11687f3a68c7cd2",
-    "KeepStepOneOutput" : "True",
+    "KeepStepOneOutput" : true,
     "PrepID": "BPH-Spring14miniaod-00004",            
     "Group": "DATAOPS",
     "SplittingAlgo": "LumiBased",
@@ -36,8 +38,8 @@
     {
         "SplittingAlgo" : "LumiBased",
         "lumis_per_job" : 8,
-        "halt_job_on_file_boundaries" : "True",
-        "include_parents" : "False"
+        "halt_job_on_file_boundaries" : true,
+        "include_parents" : false
     }
 },
 "assignRequest":

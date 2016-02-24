@@ -2,6 +2,8 @@
 "createRequest":
 {         
     "Comments": "ReDigi with 3 separated steps. TpE and SpE provided for each step. Two blocks whitelisted. 100 events per job",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",        
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0_patch1",
@@ -19,10 +21,10 @@
     "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "StepOneConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a45fde6",
-    "KeepStepOneOutput" : "True",
+    "KeepStepOneOutput" : true,
     "StepOneOutputModuleName": "RAWSIMoutput",
     "StepTwoConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a466cef",
-    "KeepStepTwoOutput": "True",        
+    "KeepStepTwoOutput": true,
     "StepTwoOutputModuleName": "AODSIMoutput",
     "StepThreeConfigCacheID": "9bdc3d7b2fc90e0f4ca24e270a467ac3",
     "PrepID": "ReDigi-cmsRun3",            

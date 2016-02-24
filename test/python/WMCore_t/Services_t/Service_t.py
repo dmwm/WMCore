@@ -261,8 +261,8 @@ class ServiceTest(unittest.TestCase):
             thishash = self.myService.cacheFileName('bob', inputdata = data)
             thishash2 = self.myService2.cacheFileName('bob', inputdata = data)
             self.assertNotEqual(thishash, thishash2)
-            self.assert_(thishash not in hashes, '%s is not unique' % thishash)
-            self.assert_(thishash2 not in hashes,
+            self.assertTrue(thishash not in hashes, '%s is not unique' % thishash)
+            self.assertTrue(thishash2 not in hashes,
                          '%s is not unique' % thishash2)
             hashes[thishash], hashes[thishash2] = None, None
 

@@ -21,12 +21,12 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, validate_request_update_args
+from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
+    validate_request_update_args, loadRequestSchema
 
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
-
-
+    
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
@@ -370,7 +370,7 @@ class Request(RESTEntity):
 
         if workload == None:
             (workload, request_args) = self.initialize_clone(request_args["OriginalRequestName"])
-            return self.post(workload, request_args)
+            return self.post([workload, request_args])
 
         dn = cherrypy.request.user.get("dn", "unknown")
 
@@ -395,7 +395,9 @@ class Request(RESTEntity):
                     msg = traceback.format_exc()
                     cherrypy.log("Error for request args %s: %s" % (request_args, msg))
                     raise InvalidSpecParameterValue(str(ex))
-
+                
+                # legacy update schema to support ops script
+                loadRequestSchema(workload, request_args)
                 # trailing / is needed for the savecouchUrl function
                 workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
 
@@ -483,7 +485,10 @@ class Request(RESTEntity):
         out = []
         for workload, request_args in workload_pair_list:
             self._update_additional_request_args(workload, request_args)
-
+            
+            # legacy update schema to support ops script
+            loadRequestSchema(workload, request_args)
+            
             cherrypy.log("INFO: Create request, input args: %s ..." % request_args)
             workload.saveCouch(request_args["CouchURL"], request_args["CouchWorkloadDBName"],
                                metadata=request_args)

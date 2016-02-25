@@ -89,7 +89,7 @@ class UnpackUserTarballTest(unittest.TestCase):
         """
         sys.argv = ['scriptName','unittestTarball.tgz','']
         UnpackUserTarball()
-        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
+        self.assertTrue(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
 
 
     def testBadFile(self):
@@ -113,7 +113,7 @@ class UnpackUserTarballTest(unittest.TestCase):
 
         sys.argv = ['scriptName','http://home.fnal.gov/~ewv/unittestTarball.tgz','']
         UnpackUserTarball()
-        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
+        self.assertTrue(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
 
 
     def testUrlNotTar(self):
@@ -151,8 +151,8 @@ class UnpackUserTarballTest(unittest.TestCase):
         sys.argv = ['scriptName','unittestTarball.tgz,http://home.fnal.gov/~ewv/unittestTarball.tgz','']
         UnpackUserTarball()
         # First is only in web tarball, second only in local
-        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
-        self.assert_(os.path.isfile('lib/slc5_ia32_gcc434/libSomefile.so'))
+        self.assertTrue(os.path.isfile('lib/slc5_ia32_gcc434/libSomething.so'))
+        self.assertTrue(os.path.isfile('lib/slc5_ia32_gcc434/libSomefile.so'))
 
 
     def testFileRelocation(self):
@@ -165,8 +165,8 @@ class UnpackUserTarballTest(unittest.TestCase):
 
         sys.argv = ['scriptName','unittestTarball.tgz','extra_file.txt,additional_file.txt']
         UnpackUserTarball()
-        self.assert_(os.path.isfile('../extra_file.txt'))
-        self.assert_(os.path.isfile('../additional_file.txt'))
+        self.assertTrue(os.path.isfile('../extra_file.txt'))
+        self.assertTrue(os.path.isfile('../additional_file.txt'))
 
 
 

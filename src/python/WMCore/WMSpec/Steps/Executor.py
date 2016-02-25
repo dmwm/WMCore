@@ -7,7 +7,10 @@ Interface definition for a step executor
 
 """
 
+import os
 import sys
+import json
+import subprocess
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMSpec.WMStep import WMStepHelper
@@ -25,7 +28,6 @@ def getStepSpace(stepName):
     you use it
 
     """
-
     modName = "WMTaskSpace"
     if modName in sys.modules.keys():
         taskspace = sys.modules[modName]
@@ -47,7 +49,6 @@ def getStepSpace(stepName):
         msg += str(ex)
         raise RuntimeError(msg)
     return stepSpace
-
 
 
 class Executor:
@@ -104,11 +105,6 @@ class Executor:
             self.emulator.initialise(self)
             self.emulationMode = True
 
-
-
-
-
-
         return
 
 
@@ -123,7 +119,6 @@ class Executor:
         return
 
 
-
     def pre(self, emulator = None):
         """
         _pre_
@@ -136,6 +131,7 @@ class Executor:
 
         """
         return None
+
 
     def execute(self, emulator = None):
         """
@@ -163,3 +159,26 @@ class Executor:
 
         """
         return None
+
+
+    def setCondorChirpAttrDelayed(self, key, value):
+        """
+        _setCondorChirpAttrDelayed_
+
+        Util to call condor_chirp and publish the key/value pair
+
+        """
+        # construct condor_chirp binary location from CONDOR_CONFIG
+        condor_chirp_bin = None
+        condor_config = os.getenv('CONDOR_CONFIG', None)
+        if condor_config:
+            condor_config_dir = os.path.dirname(condor_config)
+            condor_chirp_bin = os.path.join(condor_config_dir, 'main/condor/libexec/condor_chirp')
+            if not os.path.isfile(condor_chirp_bin):
+                condor_chirp_bin = None
+
+        if condor_chirp_bin:
+            args = [ condor_chirp_bin, 'set_job_attr_delayed', key, json.dumps(value) ]
+            returncode = subprocess.call(args)
+
+        return

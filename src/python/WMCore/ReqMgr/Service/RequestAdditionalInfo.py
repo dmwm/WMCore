@@ -203,7 +203,9 @@ class WorkloadSplitting(RESTEntity):
                 raise cherrypy.HTTPError(404, "Cannot find workload: % "+ name)
             
             helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
-        
-        url = "%s/%s" % (self.reqdb_url, name)
-        result = helper.saveCouchUrl(url)    
+            
+            # Not sure why it needs to updated per each task but if following lines are outside the loop
+            # it doesn't work
+            url = "%s/%s" % (self.reqdb_url, name)
+            result = helper.saveCouchUrl(url)    
         return result

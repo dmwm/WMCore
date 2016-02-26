@@ -15,7 +15,6 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py
 """
 from __future__ import print_function
-
 import os
 import sys
 from httplib import HTTPSConnection, HTTPConnection
@@ -144,10 +143,10 @@ class ReqMgrClient(RESTClient):
         print(data)
         request_name = data["result"][0]["request"]
         self.approve_request(request_name)
-        if config.assign_request or config.change_splitting:
-            # if --assign_request or --change_splitting at the same time, it will be checking requestNames
-            config.request_name = request_name
         logging.info("Create request '%s' succeeded." % request_name)
+
+        config.request_names = request_name
+
         return request_name
 
     def approve_request(self, request_name):
@@ -180,8 +179,7 @@ class ReqMgrClient(RESTClient):
         assign_args = config.request_args["assignRequest"]
         assign_args["RequestStatus"] = "assigned"
         json_args = json.dumps(assign_args)
-
-        urn = self.urn_prefix + "/request/%s" % config.request_name
+        urn = self.urn_prefix + "/request/%s" % config.request_names
         status, data = self.http_request("PUT", urn, data=json_args,
                                          headers=self.headersBody)
         if status > 216:
@@ -376,7 +374,7 @@ def define_cli_options(parser):
     parser.add_option("-v", "--verbose", action="store_true", help=help)
     # actions definition below ----------------------------------------------    
     # -i --------------------------------------------------------------------   
-    help = ("Action: Create and inject a request. Whichever from the config "
+    help = ("Action: Create and approve a request. Whichever from the config "
             "file defined arguments can be overridden from "
             "command line and a few have to be so (*-OVERRIDE-ME ending). "
             "Depends on --config_file.")
@@ -384,7 +382,7 @@ def define_cli_options(parser):
     actions.append(action)
     parser.add_option("-i", "--" + action, action="store_true", help=help)
     # -g --------------------------------------------------------------------
-    help = ("Action: Approve and assign request(s) specified by --request_names "
+    help = ("Action: Assign request(s) specified by --request_names "
             "or a new request when used with --create_request. "
             "Depends on --request_names and --config_file when used without "
             "--create_request")

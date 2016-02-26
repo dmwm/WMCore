@@ -21,7 +21,7 @@ class EmulatedUnitTest(unittest.TestCase):
     FIXME: For now only DBS is mocked
     """
 
-    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True):  # FIXME: Default to False for both?
+    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=False):  # FIXME: Default to False for both?
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         super(EmulatedUnitTest, self).__init__(methodName)

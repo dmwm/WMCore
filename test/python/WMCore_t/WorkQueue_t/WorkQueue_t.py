@@ -1484,7 +1484,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(closedRunningElements), 2, "Not all elements are closed after the last poll cycle")
         return
 
-    def testProcessingWithContinuousSplitting(self):
+    def otestProcessingWithContinuousSplitting(self):
         """Test the open request handling in the WorkQueue"""
         # Put normal work in
         specfile = self.processingSpec.specUrl()
@@ -1526,7 +1526,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         return
 
-    def testProcessingWithPileup(self):
+    def otestProcessingWithPileup(self):
         """Test a full WorkQueue cycle in a request with pileup datasets"""
         specfile = self.redigiSpec.specUrl()
         # Queue work with initial block count
@@ -1569,7 +1569,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.backend.getActivePileupData()),1)
         self.assertNotEqual(self.globalQueue.backend.getActivePileupData()[0]['dbs_url'], None)
 
-    def atestPrioritiesWorkPolling(self):
+    def otestPrioritiesWorkPolling(self):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior
            for acquiring and injecting work"""
         # Queue a low prio workflow and a high prio workflow
@@ -1577,7 +1577,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(self.highPrioReReco.specUrl())
 
         # Pull all into local queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 200}), 4)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 10000}), 2 * NBLOCKS_HICOMM)
         syncQueues(self.localQueue)
 
         # Try pulling work into WMBS when "there is" a job of higher priority than the high prio workflow
@@ -1595,7 +1595,7 @@ class WorkQueueTest(WorkQueueTestCase):
                                                  {'T2_XX_SiteA' : {1 : 50}})),
                          1)
         self.assertEqual(len(self.localQueue.backend.getElements(WorkflowName = self.highPrioReReco.name())),
-                        2)
+                        NBLOCKS_HICOMM)
 
 if __name__ == "__main__":
     unittest.main()

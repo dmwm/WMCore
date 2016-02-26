@@ -1,8 +1,6 @@
-#!/bin/env python
-#pylint: disable=E1101, W6501, W0142, E1103, C0121
+#!/usr/bin/env python
+#pylint: disable=E1101, E1103, C0121
 #E1101 doesn't allow you to define config sections using .section_()
-#W6501: Allow us to use string formatting for logging messages
-#W0142: Use ** magic
 #E1103: Transaction attached to myThread
 
 
@@ -13,8 +11,6 @@ Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
 
-
-
 import os
 import os.path
 import threading
@@ -22,12 +18,10 @@ import logging
 import traceback
 
 from subprocess import Popen, PIPE
-
 from WMCore.DAOFactory        import DAOFactory
-
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
-
 from WMCore.WMException import WMException
+from Utils.IterTools import grouper
 
 
 def createDirectories(dirList):
@@ -35,33 +29,18 @@ def createDirectories(dirList):
     Create the directory if everything is sane
 
     """
-
-
-    #This is gonna be tricky
-    cmdList = []
-    cmdArgs = ['mkdir']
-
-    while len(dirList) > 500:
-        cmdArgs.extend(dirList[:500])
-        cmdList.append(cmdArgs)
+    for sdirList in grouper(dirList, 500):
         cmdArgs = ['mkdir']
-        dirList = dirList[500:]
-    if len(dirList) > 0:
-        cmdArgs.extend(dirList)
-        cmdList.append(cmdArgs)
-
-    logging.info('Executing makedir commands')
-    for command in cmdList:
-        pipe = Popen(command, stdout = PIPE, stderr = PIPE, shell = False)
+        cmdArgs.extend(sdirList)
+        pipe = Popen(cmdArgs, stdout = PIPE, stderr = PIPE, shell = False)
         stdout, stderr = pipe.communicate()
         if not stderr == "":
             msg = "Error in making directories: %s\n" % stderr
             logging.error(msg)
-            logging.debug("Executing command %s\n" % command)
+            logging.debug("Executing command %s\n" % cmdArgs)
             raise CreateWorkAreaException(msg)
 
     return
-
 
 
 def makedirs(directory):

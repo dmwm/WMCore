@@ -452,7 +452,10 @@ class Request(RESTEntity):
         # Add the output datasets if necessary
         # for some bizarre reason OutpuDatasets is list of lists
         request_args['OutputDatasets'] = workload.listOutputDatasets()
-
+        
+        #Add initial priority only for the creation of the request
+        request_args['InitialPriority'] = request_args["RequestPriority"]
+         
         # TODO: remove this after reqmgr2 replice reqmgr (reqmgr2Only)
         request_args['ReqMgr2Only'] = True
         return

@@ -375,7 +375,7 @@ class Request(RESTEntity):
         dn = cherrypy.request.user.get("dn", "unknown")
 
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
+            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
 
         if 'RequestPriority' in request_args:
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])

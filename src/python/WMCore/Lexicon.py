@@ -177,6 +177,8 @@ def procdataset(candidate):
     """
     if candidate == '' or not candidate:
         return candidate
+    if candidate.startswith('None'):
+        raise AssertionError("Acquisition era cannot be None.")
 
     commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
     prodCheck = check(PROCDATASET_RE, candidate)

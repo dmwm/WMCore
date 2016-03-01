@@ -374,43 +374,42 @@ class Request(RESTEntity):
 
         dn = cherrypy.request.user.get("dn", "unknown")
 
-        if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
-
         if 'RequestPriority' in request_args:
             self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
 
+        if 'SoftTimeout' in request_args and 'GracePeriod' in request_args:
+            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
+
         if "total_jobs" in request_args:
-            # only GQ update this stats
-            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
+            # only GQ update these statistics: {'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
-        # if is not just updating status
-        else:
-            req_status = request_args.get("RequestStatus", None)
 
-            if len(request_args) >= 1 and req_status == None:
-                try:
-                    workload.updateArguments(request_args)
-                except Exception as ex:
-                    msg = traceback.format_exc()
-                    cherrypy.log("Error for request args %s: %s" % (request_args, msg))
-                    raise InvalidSpecParameterValue(str(ex))
+        req_status = request_args.get("RequestStatus", None)
+        if len(request_args) > 1 and req_status == "assigned":
+            try:
+                workload.updateArguments(request_args)
+            except Exception as ex:
+                msg = traceback.format_exc()
+                cherrypy.log("Error for request args %s: %s" % (request_args, msg))
+                raise InvalidSpecParameterValue(str(ex))
                 
-                # legacy update schema to support ops script
-                loadRequestSchema(workload, request_args)
-                # trailing / is needed for the savecouchUrl function
-                workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
-
-            elif (req_status in ["closed-out"  "announced"]) and request_args.get("cascade", False):
-                cascade_list = self._retrieveResubmissionChildren(workload.name)
+            # legacy update schema to support ops script
+            loadRequestSchema(workload, request_args)
+            # if we don't update the Team with this call, GQ does not see the Team name
+            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+            # trailing / is needed for the savecouchUrl function
+            workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
+        elif req_status in ["closed-out", "announced"]:
+            if request_args.get("cascade", False):
+                cascade_list = self._retrieveResubmissionChildren(workload.name())
                 for req_name in cascade_list:
-                    report = self.reqmgr_db_service.updateRequestStatus(req_name, req_status)
+                    report = self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
+        elif len(request_args) == 1 and req_status in ["aborted", "force-complete"]:
+            self.gq_service.cancelWorkflow(workload.name())
 
-            # If it is aborted or force-complete transition call workqueue to cancel the request
-            else:
-                if req_status == "aborted" or req_status == "force-complete":
-                    self.gq_service.cancelWorkflow(workload.name())
-                report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        # request assigned are already updated
+        if not req_status in [ None, "assigned"]:
+            report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
 
         if report == 'OK':
             return {workload.name(): "OK"}

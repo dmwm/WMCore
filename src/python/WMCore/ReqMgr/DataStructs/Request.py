@@ -18,6 +18,7 @@ TODO/NOTE:
 import time
 import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 
 def initialize_request_args(request, config, clone = False):
     """
@@ -69,9 +70,16 @@ def generateRequestName(request):
     
     current_time = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
     seconds = int(10000 * (time.time() % 1.0))
-    request_string = request.get("RequestString", "")
-    if request_string != "":
-        request["RequestName"] = "%s_%s" % (request["Requestor"], request_string)
-    else:
-        request["RequestName"] = request["Requestor"]
+    
+    if "RequestString" not in request:
+        raise InvalidSpecParameterValue("RequestString need to be specified")
+    
+    #TODO change to lexicon when we have exact format of RequestString
+    if '@' in request["RequestString"]:
+        raise InvalidSpecParameterValue("RequestString cannot contain @: %s" % request["RequestString"])
+    
+    prefix = request["Requestor"].split('@')[0]
+    request["RequestName"] = "%s_%s" % (prefix, request["RequestString"])
+    # addd time info
     request["RequestName"] += "_%s_%s" % (current_time, seconds)
+    

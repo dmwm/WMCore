@@ -6,6 +6,7 @@ from __future__ import (division, print_function)
 import logging
 import traceback
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
+from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
 from WMCore.Services.WMArchiver.WMArchiver import WMArchiver
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 
@@ -44,7 +45,7 @@ class ArchiveDataPoller(BaseWorkerThread):
             jobIDs = []
             archiverDocs = []
             for job in data:
-                doc = self.wmarchiver.createArchiverDoc(job["id"], job['doc']["fwjr"])
+                doc = createArchiverDoc(job["id"], job['doc']["fwjr"])
                 archiverDocs.append(doc)
                 jobIDs.append(job["id"])
                 

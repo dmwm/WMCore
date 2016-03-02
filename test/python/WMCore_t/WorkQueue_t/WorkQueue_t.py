@@ -393,7 +393,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         return workload
 
-    def otestProduction(self):
+    def testProduction(self):
         """
         Enqueue and get work for a production WMSpec.
         """
@@ -417,7 +417,7 @@ class WorkQueueTest(WorkQueueTestCase):
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : total}, {})))
 
-    def otestProductionMultiQueue(self):
+    def testProductionMultiQueue(self):
         """Test production with multiple queueus"""
         specfile = self.spec.specUrl()
         numUnit = 1
@@ -439,7 +439,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(sanitizeURL(self.localQueue2.params['QueueURL'])['url'],
                          self.globalQueue.status()[0]['ChildQueueUrl'])
 
-    def otestPriority(self):
+    def testPriority(self):
         """
         Test priority change functionality
         """
@@ -463,7 +463,7 @@ class WorkQueueTest(WorkQueueTestCase):
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : jobSlot}, {})))
 
-    def otestProcessing(self):
+    def testProcessing(self):
         """
         Enqueue and get work for a processing WMSpec.
         """
@@ -519,7 +519,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(work), 0)  # no more work available
 
-    def otestBlackList(self):
+    def testBlackList(self):
         """
         Black list functionality
         """
@@ -539,7 +539,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'T2_XX_SiteB': 1000}, {})
         self.assertEqual(len(work), 17 + 19)
 
-    def otestWhiteList(self):
+    def testWhiteList(self):
         """
         White list functionality
         """
@@ -559,7 +559,7 @@ class WorkQueueTest(WorkQueueTestCase):
         work = self.queue.getWork({'T2_XX_SiteB': 1000, 'T2_XX_SiteAA': 1000}, {})
         self.assertEqual(len(work), 17 + 19)
 
-    def otestQueueChaining(self):
+    def testQueueChaining(self):
         """
         Chain WorkQueues, pull work down and verify splitting
         """
@@ -582,7 +582,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # pull work down to the lowest queue
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), numBlocks)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}), NBLOCKS_HICOMM)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue), NBLOCKS_HICOMM)
 
@@ -599,7 +599,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # mark work done & check this passes upto the top level
         self.localQueue.setStatus('Done', [x.id for x in work])
 
-    def otestQueueChainingStatusUpdates(self):
+    def testQueueChainingStatusUpdates(self):
         """Chain workQueues, pass work down and verify lifecycle"""
 
         self.assertEqual(0, len(self.globalQueue))
@@ -653,7 +653,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([x['PercentComplete'] for x in elements], [100])
         self.assertEqual([x['PercentSuccess'] for x in elements], [99])
 
-    def otestMultiTaskProduction(self):
+    def testMultiTaskProduction(self):
         """
         Test Multi top level task production spec.
         multiTaskProduction spec consist 2 top level tasks each task has event size 1000 and 2000
@@ -713,7 +713,7 @@ class WorkQueueTest(WorkQueueTestCase):
         except OSError:
             pass
 
-    def otestTeams(self):
+    def testTeams(self):
         """
         Team behaviour
         """
@@ -735,7 +735,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork(slots, {})), 1)
         self.assertEqual(0, len(self.globalQueue))
 
-    def otestMultipleTeams(self):
+    def testMultipleTeams(self):
         """Multiple teams"""
         slots = {'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000}
         self.globalQueue.queueWork(self.spec.specUrl(), team = 'The B-Team')
@@ -748,7 +748,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork(slots, {})), NBLOCKS_HICOMM + 1)
 
-    def otestSplittingLargeInputs(self):
+    def testSplittingLargeInputs(self):
         """
         _testSplittingLargeInputs_
 
@@ -761,7 +761,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(inboxElement[0]['ProcessedInputs']), NBLOCKS_HICOMM)
         return
 
-    def otestGlobalBlockSplitting(self):
+    def testGlobalBlockSplitting(self):
         """Block splitting at global level"""
         # force global queue to split work on block
         self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Block'
@@ -805,7 +805,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.status(status = 'Done')),
                          totalBlocks)
 
-    def otestGlobalDatasetSplitting(self):
+    def testGlobalDatasetSplitting(self):
         """Dataset splitting at global level"""
 
         # force global queue to split work on block
@@ -846,7 +846,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.status(status = 'Done')),
                          totalSpec)
 
-    def otestResetWork(self):
+    def testResetWork(self):
         """Reset work in global to different child queue"""
         #TODO: This test sometimes fails - i suspect a race condition (maybe conflict in couch)
         # Cancel code needs reworking so this will hopefully be fixed then
@@ -884,7 +884,7 @@ class WorkQueueTest(WorkQueueTestCase):
                           if x['ChildQueueUrl'] == sanitizeURL(self.localQueue2.params['QueueURL'])['url']]
         self.assertEqual(len(work_at_local2), totalBlocks)
 
-    def otestCancelWork(self):
+    def testCancelWork(self):
         """Cancel work"""
         self.queue.queueWork(self.processingSpec.specUrl())
         elements = len(self.queue)
@@ -912,7 +912,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(canceled, ids)
         self.assertEqual(len(self.queue), 0)
 
-    def otestCancelWorkGlobal(self):
+    def testCancelWorkGlobal(self):
         """Cancel work in global queue"""
         # queue to global & pull an element to local
         self.globalQueue.queueWork(self.processingSpec.specUrl())
@@ -980,7 +980,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.deleteWorkflows(self.whitelistSpec.name())
         self.assertEqual(len(self.globalQueue.statusInbox()), 0)
 
-    def otestInvalidSpecs(self):
+    def testInvalidSpecs(self):
         """Complain on invalid WMSpecs"""
         # request != workflow name
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork,
@@ -1054,7 +1054,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
-    def otestIgnoreDuplicates(self):
+    def testIgnoreDuplicates(self):
         """Ignore duplicate work"""
         specfile = self.spec.specUrl()
         self.globalQueue.queueWork(specfile)
@@ -1064,7 +1064,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.queueWork(specfile)
         self.assertEqual(1, len(self.globalQueue))
 
-    def otestConflicts(self):
+    def testConflicts(self):
         """Resolve conflicts between global & local queue"""
         self.globalQueue.queueWork(self.spec.specUrl())
         self.localQueue.pullWork({'T2_XX_SiteA' : 10000})
@@ -1086,7 +1086,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual([x for x in self.localQueue.statusInbox()],
                          [x for x in self.globalQueue.status()])
 
-    def otestDeleteWork(self):
+    def testDeleteWork(self):
         """Delete finished work
         TODO: do emulate the reqmgr2 and change the status of request 
         so actually request gets deleted when performCleanupAction is run.
@@ -1115,7 +1115,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox(WorkflowName = self.spec.name())),
                          1) # not deleted until request status is update
 
-    def otestResubmissionWorkflow(self):
+    def testResubmissionWorkflow(self):
         """Test workflow resubmission via ACDC"""
         acdcCouchDB = "workqueue_t_acdc"
         self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
@@ -1130,7 +1130,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork({"T1_US_FNAL": 100}, {})), 1)
 
-    def otestResubmissionWithParentsWorkflow(self):
+    def testResubmissionWithParentsWorkflow(self):
         """Test workflow resubmission with parentage via ACDC"""
         acdcCouchDB = "workqueue_t_acdc"
         self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
@@ -1145,7 +1145,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.localQueue.getWork({"T1_US_FNAL": 100}, {})
 
-    def otestResubmissionWorkflowSiteWhitelistLocations(self):
+    def testResubmissionWorkflowSiteWhitelistLocations(self):
         """ Test an ACDC workflow where we use the site whitelist as locations"""
         acdcCouchDB = "workqueue_t_acdc"
         self.testInit.setupCouch(acdcCouchDB, "GroupUser", "ACDC")
@@ -1163,7 +1163,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.getWork({"T1_US_FNAL": 100}, {})),1) 
 
-    def otestThrottling(self):
+    def testThrottling(self):
         """Pull work only if all previous work processed in child"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
@@ -1178,7 +1178,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # pull works again
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
 
-    def otestSitesFromResourceControl(self):
+    def testSitesFromResourceControl(self):
         """Test sites from resource control"""
         # Most tests pull work for specific sites (to give us control)
         # In reality site list will come from resource control so test
@@ -1188,7 +1188,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 1)
 
-    def otestParentProcessing(self):
+    def testParentProcessing(self):
         """
         Enqueue and get work for a processing WMSpec.
         """
@@ -1222,7 +1222,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # no more work available
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA': 1000}, {})))
 
-    def otestDrainMode(self):
+    def testDrainMode(self):
         """Stop acquiring work when DrainMode set"""
         self.localQueue.params['DrainMode'] = True
         self.globalQueue.queueWork(self.spec.specUrl())
@@ -1276,10 +1276,10 @@ class WorkQueueTest(WorkQueueTestCase):
                           self.localQueue.getWMBSInjectionStatus,
                           "NotExistWorkflow")
 
-    def otestEndPolicyNegotiating(self):
+    def testEndPolicyNegotiating(self):
         """Test end policy processing of request before splitting"""
         work = self.globalQueue.queueWork(self.processingSpec.specUrl())
-        self.assertEqual(work, 2)
+        self.assertEqual(work, NBLOCKS_HICOMM)
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
         self.localQueue.backend.pullFromParent() # pull work into inbox (Negotiating state)
         self.localQueue.processInboundWork()
@@ -1291,7 +1291,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox(Status='Negotiating')), 1)
         self.assertEqual(len(self.localQueue), 1)
 
-    def otestFailRequestAfterTimeout(self):
+    def testFailRequestAfterTimeout(self):
         """Fail a request if it errors for too long"""
         # force queue to fail queueing
         self.queue.params['SplittingMapping'] = 'thisisswrong'
@@ -1303,7 +1303,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertRaises(Exception, self.queue.queueWork, self.processingSpec.specUrl())
         self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
 
-    def otestSiteStatus(self):
+    def testSiteStatus(self):
         """Check that we only pull work on sites in Normal status"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())
         self.globalQueue.queueWork(self.spec.specUrl())
@@ -1405,7 +1405,7 @@ class WorkQueueTest(WorkQueueTestCase):
         syncQueues(self.localQueue)
         self.assertTrue(self.localQueue.getWMBSInjectionStatus(self.processingSpec.name()))
 
-    def otestCloseWorkTimeout(self):
+    def testCloseWorkTimeout(self):
         """Check that it can close inbox elements on demand and on timeout"""
         # Put some work in
         self.globalQueue.queueWork(self.processingSpec.specUrl())
@@ -1484,7 +1484,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(closedRunningElements), 2, "Not all elements are closed after the last poll cycle")
         return
 
-    def otestProcessingWithContinuousSplitting(self):
+    def testProcessingWithContinuousSplitting(self):
         """Test the open request handling in the WorkQueue"""
         # Put normal work in
         specfile = self.processingSpec.specUrl()
@@ -1526,7 +1526,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         return
 
-    def otestProcessingWithPileup(self):
+    def testProcessingWithPileup(self):
         """Test a full WorkQueue cycle in a request with pileup datasets"""
         specfile = self.redigiSpec.specUrl()
         # Queue work with initial block count
@@ -1560,7 +1560,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 0)
         self.assertGreaterEqual(len(self.localQueue), 4)
 
-    def otestPileupOnProduction(self):
+    def testPileupOnProduction(self):
         """Test that we can split properly a Production workflow with pileup"""
         specfile = self.productionPileupSpec.specUrl()
         # Sanity check on queueWork only
@@ -1569,7 +1569,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.backend.getActivePileupData()),1)
         self.assertNotEqual(self.globalQueue.backend.getActivePileupData()[0]['dbs_url'], None)
 
-    def otestPrioritiesWorkPolling(self):
+    def testPrioritiesWorkPolling(self):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior
            for acquiring and injecting work"""
         # Queue a low prio workflow and a high prio workflow

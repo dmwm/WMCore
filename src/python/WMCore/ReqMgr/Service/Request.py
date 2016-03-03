@@ -265,7 +265,7 @@ class Request(RESTEntity):
             return rows([request_docs])
 
         # list of status
-        status = kwargs.get("status", False)
+        status = kwargs.get("status", [])
         # list of request names
         name = kwargs.get("name", False)
         request_type = kwargs.get("request_type", False)
@@ -290,14 +290,14 @@ class Request(RESTEntity):
 
         request_info = []
 
-        if status and not team and not request_type:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, status))
-        if status and team:
-            request_info.append(
-                self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
-        if status and request_type:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype", option,
-                                                                             [[status, request_type]]))
+        for st in status:
+            if not team and not request_type:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, st))
+            elif team:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, st]]))
+            elif request_type:
+                request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype",
+                                                                                 option, [[st, request_type]]))
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
         if prep_id:

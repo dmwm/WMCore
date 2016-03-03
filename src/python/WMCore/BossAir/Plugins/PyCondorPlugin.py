@@ -263,7 +263,10 @@ class PyCondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS==\"any\") || (GLIDEIN_REQUIRED_OS==REQUIRED_OS))"
+        self.reqStr = "stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && \
+                       ((DESIRED_OpSyses==\"any\") || (DESIRED_OpSyses==GLIDEIN_DESIRED_OpSyses)) && \
+                       ((DESIRED_Archs==\"any\") || (DESIRED_Archs==GLIDEIN_DESIRED_Archs)) && \
+                       ((DESIRED_OpSysMajorVers==\"any\") || (DESIRED_OpSysMajorVers==GLIDEIN_DESIRED_OpSysMajorVers))"
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -866,7 +869,7 @@ class PyCondorPlugin(BasePlugin):
         These are the Glide-in specific bits
         """
         jdl = []
-        jdl.append('+DESIRED_Archs = \"INTEL,X86_64\"\n')
+        jdl.append('+DESIRED_Archs = \"X86_64\"\n')
         jdl.append('+REQUIRES_LOCAL_DATA = True\n')
 
         return jdl
@@ -1008,11 +1011,29 @@ class PyCondorPlugin(BasePlugin):
             jdl.append('machine_count = 1\n')
             jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
 
-        #Add OS requirements for jobs
-        if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_") :
-            jdl.append('+REQUIRED_OS = "rhel6"\n')
+        # Adding OS and Architecture requirements for jobs
+        if job.get('scramArch'):
+            if job.get('scramArch').startswith('slc6'):
+                jdl.append('+DESIRED_OpSyses = "LINUX"\n')
+                jdl.append('+DESIRED_OpSysMajorVers = "6"\n')
+            elif job.get('scramArch').startswith('slc5'):
+                jdl.append('+DESIRED_OpSyses = "LINUX"\n')
+                jdl.append('+DESIRED_OpSysMajorVers = "5"\n')
+            elif job.get('scramArch').startswith('osx'):
+                jdl.append('+DESIRED_OpSyses = "Darwin"\n')
+                jdl.append('+DESIRED_OpSysMajorVers = "any"\n')
+            else:
+                jdl.append('+DESIRED_OpSyses = "any"\n')
+                jdl.append('+DESIRED_OpSysMajorVers = "any"\n')
+
+            if job.get('scramArch').split('_')[1] == 'amd64':
+                jdl.append('+DESIRED_Archs = "X86_64"\n')
+            else:
+                jdl.append('+DESIRED_Archs = "%s"\n' % job.get('scramArch').split('_')[1])
         else:
-            jdl.append('+REQUIRED_OS = "any"\n')
+            jdl.append('+DESIRED_OpSyses = "any"\n')
+            jdl.append('+DESIRED_OpSysMajorVers = "any"\n')
+            jdl.append('+DESIRED_Archs = "any"\n')
 
         return jdl
 

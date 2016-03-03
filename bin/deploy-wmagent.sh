@@ -300,11 +300,11 @@ echo "*** Populating resource-control ***"
 cd $MANAGE
 if [[ "$TEAMNAME" == relval* || "$TEAMNAME" == *testbed* ]]; then
   echo "Adding only T1 and T2 sites to resource-control..."
-  ./manage execute-agent wmagent-resource-control --add-T1s --plugin=CondorPlugin --pending-slots=50 --running-slots=50 --down
-  ./manage execute-agent wmagent-resource-control --add-T2s --plugin=CondorPlugin --pending-slots=50 --running-slots=50 --down
+  ./manage execute-agent wmagent-resource-control --add-T1s --plugin=PyCondorPlugin --pending-slots=50 --running-slots=50 --down
+  ./manage execute-agent wmagent-resource-control --add-T2s --plugin=PyCondorPlugin --pending-slots=50 --running-slots=50 --down
 else
   echo "Adding ALL sites to resource-control..."
-  ./manage execute-agent wmagent-resource-control --add-all-sites --plugin=CondorPlugin --pending-slots=50 --running-slots=50 --down
+  ./manage execute-agent wmagent-resource-control --add-all-sites --plugin=PyCondorPlugin --pending-slots=50 --running-slots=50 --down
 fi
 echo "Done!" && echo
 

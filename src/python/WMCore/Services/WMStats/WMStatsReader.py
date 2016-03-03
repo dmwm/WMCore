@@ -54,7 +54,6 @@ class WMStatsReader(object):
     ACTIVE_STATUS = ["new",
                  "assignment-approved",
                  "assigned",
-                 "negotiating",
                  "acquired",
                  "running",
                  "running-open",

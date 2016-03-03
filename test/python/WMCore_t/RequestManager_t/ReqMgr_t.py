@@ -435,7 +435,7 @@ class ReqMgrTest(RESTBaseUnitTest):
         # Let's try an illegal status change, just for the hell of it
         raises = False
         try:
-            self.jsonSender.put('request/%s?status=negotiating' % requestName)
+            self.jsonSender.put('request/%s?status=assigned' % requestName)
         except HTTPException as ex:
             raises = True
             self.assertEqual(ex.status, 403)
@@ -479,8 +479,6 @@ class ReqMgrTest(RESTBaseUnitTest):
         self.assertTrue(raises)
 
         self.jsonSender.put(urllib.quote('assignment/%s/%s' % (teamName, requestName)))
-        self.changeStatusAndCheck(requestName = requestName,
-                                  statusName  = 'negotiating')
         self.changeStatusAndCheck(requestName = requestName,
                                   statusName  = 'acquired')
         self.changeStatusAndCheck(requestName = requestName,

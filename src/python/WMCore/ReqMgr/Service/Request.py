@@ -366,6 +366,75 @@ class Request(RESTEntity):
             childrenRequestNames.extend(self._retrieveResubmissionChildren(child['id']))
         return childrenRequestNames
 
+    def _handleNoStatusUpdate(self, workload, request_args):
+        """
+        only few values can be updated without state transition involved
+        currently 'RequestPriority' and 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'
+        """
+        if 'RequestPriority' in request_args: 
+            self.gq_service.updatePriority(workload.name(), int(request_args['RequestPriority']))
+            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
+
+        elif "total_jobs" in request_args:
+            # only GQ update this stats
+            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
+            report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+        else:
+            InvalidSpecParameterValue(
+                 "can't update value without state transition: %s" % request_args)
+        
+        return report
+
+    def _handleAssignmentStateTransition(self, workload, request_args, dn):
+        
+        if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
+            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
+        
+        #Only allow extra value update for assigned status
+        try:
+            workload.updateArguments(request_args)
+        except Exception as ex:
+            msg = traceback.format_exc()
+            cherrypy.log("Error for request args %s: %s" % (request_args, msg))
+            raise InvalidSpecParameterValue(str(ex))
+        
+        # legacy update schema to support ops script
+        loadRequestSchema(workload, request_args)
+        # trailing / is needed for the savecouchUrl function
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
+        return report
+    
+    def _handleCascadeUpdate(self, workload, request_args, dn):
+        
+        """
+        only closed-out and announced has this option
+        """
+        req_status = request_args["RequestStatus"]
+        # check whehter it is casecade option
+        if request_args["cascade"]:
+            cascade_list = self._retrieveResubmissionChildren(workload.name())
+            for req_name in cascade_list:
+                self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
+        # update original workflow status
+        report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
+        return report
+    
+    def _handleOnlyStateTransition(self, workload, req_status, dn):
+        
+        """
+        only handles state transition, when aborted and force completed.
+        GQ elements need to be cancelled.
+        Allows assigned and assigned approved transition without args update
+        """
+        # incase only the state transition happens
+        if req_status == "aborted" or req_status == "force-complete":
+            # cancel the workflow first
+            self.gq_service.cancelWorkflow(workload.name())
+        #update the request status in couchdb   
+        report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
+        return report
+    
     def _updateRequest(self, workload, request_args):
 
         if workload == None:
@@ -373,57 +442,25 @@ class Request(RESTEntity):
             return self.post([workload, request_args])
 
         dn = cherrypy.request.user.get("dn", "unknown")
-
-        # allow Priority update any time.
-        if 'RequestPriority' in request_args: 
-            self.gq_service.updatePriority(workload.name(), int(request_args['RequestPriority']))
-
-        if "total_jobs" in request_args:
-            # only GQ update this stats
-            # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
-            report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
+   
+        if "RequestStatus" not in request_args:
+            report = self._handleNoStatusUpdate(workload, request_args)
             
-        if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
-        
-        
-        req_status = request_args.get("RequestStatus", None)
-
-        if (len(request_args) >= 1 and req_status == None) or \
-            (len(request_args) > 1 and req_status in ["assigned", "assignment-approved"]):
-            #Only allow extra value update for assigned status
-            try:
-                workload.updateArguments(request_args)
-            except Exception as ex:
-                msg = traceback.format_exc()
-                cherrypy.log("Error for request args %s: %s" % (request_args, msg))
-                raise InvalidSpecParameterValue(str(ex))
-            
-            # legacy update schema to support ops script
-            loadRequestSchema(workload, request_args)
-            # trailing / is needed for the savecouchUrl function
-            report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
-            workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
-        
-        elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
-             request_args.get("cascade", False):
-            # check whehter it is casecade option
-            cascade_list = self._retrieveResubmissionChildren(workload.name())
-            for req_name in cascade_list:
-                report = self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
-            # update original workflow status
-            report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
-            
-        elif len(request_args) == 1 and req_status != None:
-            # incase only the state transition happens
-            if req_status == "aborted" or req_status == "force-complete":
-                # cancel the workflow first
-                self.gq_service.cancelWorkflow(workload.name())
-            #update the request status in couchdb    
-            report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         else:
-            raise InvalidSpecParameterValue(
-                        "can't update value except transition to assigned status: %s" % request_args)
+            req_status = request_args["RequestStatus"]
+            
+            if len(request_args) > 1 and req_status in ["assigned", "assignment-approved"]:
+                report = self._handleAssignmentStateTransition(workload, request_args, dn)
+            
+            elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
+                "cascade" in request_args:
+                report = self._handleCascadeUpdate(workload, request_args, dn)
+                
+            elif len(request_args) == 1:
+                report = self._handleOnlyStateTransition(workload, req_status, dn)
+            else:
+                raise InvalidSpecParameterValue(
+                    "can't update value except transition to assigned status: %s" % request_args)
 
         if report == 'OK':
             return {workload.name(): "OK"}

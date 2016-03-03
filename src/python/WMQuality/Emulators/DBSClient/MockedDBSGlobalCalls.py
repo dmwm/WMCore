@@ -5,7 +5,7 @@ from __future__ import (division, print_function)
 endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
 # Datasets to get all blocks, array, and lumis from
-datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW',
+datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW', '/Cosmics/ComissioningHI-v1/RAW',
             '/Cosmics/ComissioningHI-PromptReco-v1/RECO', '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO']
 
 calls = [['listDataTiers'],
@@ -82,4 +82,5 @@ calls = [['listDataTiers'],
           {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaaceasas', 'detail': True,
            'dataset': '/HighPileUp/Run2011A-v1/RAW'}],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#blah'}],
-         ]
+         ['listBlocks', {'detail': True, 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
+        ]

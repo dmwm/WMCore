@@ -9,7 +9,7 @@ from dbs.apis.dbsClient import DbsApi
 # a small dataset that should always exist
 DATASET = '/HighPileUp/Run2011A-v1/RAW'
 BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
-FILE_NAMES = [u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root', u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/04FBE4D8-2DCF-E411-B827-02163E0124D5.root', u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root', u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/FA4E40C0-2DCF-E411-AD1A-02163E012186.root']
+FILE_NAMES = [u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root']
 
 
 class MockDbsApiTest(unittest.TestCase):
@@ -38,7 +38,7 @@ class MockDbsApiTest(unittest.TestCase):
         members = {'listDataTiers':{},
                 'listDatasets':{'data_tier_name':'RAW', 'primary_ds_name':'Jet'},
                 'listFileLumis':{'block_name':BLOCK, 'validFileOnly':1},
-                'listFileLumiArray':{'logical_file_name': FILE_NAMES},
+                # 'listFileLumiArray':{'logical_file_name': FILE_NAMES},
                 'listFileParents':{'block_name':block_with_parent},
                 'listPrimaryDatasets':{'primary_ds_name':'Jet*'},
                 'listRuns':{'dataset':DATASET},

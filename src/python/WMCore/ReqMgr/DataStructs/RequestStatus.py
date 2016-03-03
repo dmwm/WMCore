@@ -13,16 +13,10 @@ REQUEST_STATE_TRANSITION = {
     "assignment-approved": ["assigned", #manual transition
                             "rejected"], #manual transition
                              
-    "assigned": ["negotiating",
-                 "acquired",
+    "assigned": ["acquired",
                  "aborted", # manual transition
                  "failed"],
-                             
-    "negotiating": ["acquired",
-                    "assigned",
-                    "aborted",
-                    "failed"],
-                             
+                                                          
     "acquired": ["running-open",
                  "completed",
                  "acquired",
@@ -71,7 +65,6 @@ REQUEST_STATE_TRANSITION = {
 ACTIVE_STATUS = ["new",
                  "assignment-approved",
                  "assigned",
-                 "negotiating",
                  "acquired",
                  "running",
                  "running-open",
@@ -88,7 +81,6 @@ ACTIVE_STATUS = ["new",
 # if the state is not defined here (new, assignment-approved) allows all the property to get 
 ALLOWED_ACTIONS_FOR_STATUS = {
                  "assigned": ["RequestPriority"],
-                 "negotiating": ["RequestPriority"],
                  "acquired": ["RequestPriority"],
                  "running": ["RequestPriority"],
                  "running-open": ["RequestPriority"],

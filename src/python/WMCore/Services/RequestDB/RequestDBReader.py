@@ -141,7 +141,6 @@ class RequestDBReader():
     def getDBInstance(self):
         return self.couchDB
     
-    
     def getRequestByNames(self, requestNames, detail = True):
         if isinstance(requestNames, basestring):
             requestNames = [requestNames]

@@ -60,15 +60,19 @@ class Request(RESTEntity):
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
             return
-
-        if "status" in param.kwargs and isinstance(param.kwargs["status"], basestring):
-            param.kwargs["status"] = [param.kwargs["status"]]
+        
+        no_multi_key = ["detail", "_nostale", "date_range"]
+        for key, value in param.kwargs.items():
+            # convert string to list
+            if key not in no_multi_key and isinstance(value, basestring):
+                param.kwargs[key] = [value]
+                
         if "status" in param.kwargs:
             for status in param.kwargs["status"]:
                 if status.endswith("-archived"):
                     raise InvalidSpecParameterValue(
                         "Can't retrieve bulk archived status requests, use other search arguments")
-
+                    
         for prop in param.kwargs:
             safe.kwargs[prop] = param.kwargs[prop]
 
@@ -258,26 +262,20 @@ class Request(RESTEntity):
             _rev: 4-c6ceb2737793aaeac3f1cdf591593da4
 
         """
-        if len(kwargs) == 0:
-            kwargs['status'] = "running"
-            options = {"descending": True, 'include_docs': True, 'limit': 200}
-            request_docs = self.reqmgr_db.loadView("ReqMgr", "bystatus", options)
-            return rows([request_docs])
-
         # list of status
-        status = kwargs.get("status", False)
+        status = kwargs.get("status", [])
         # list of request names
-        name = kwargs.get("name", False)
-        request_type = kwargs.get("request_type", False)
-        prep_id = kwargs.get("prep_id", False)
-        inputdataset = kwargs.get("inputdataset", False)
-        outputdataset = kwargs.get("outputdataset", False)
+        name = kwargs.get("name", [])
+        request_type = kwargs.get("request_type", [])
+        prep_id = kwargs.get("prep_id", [])
+        inputdataset = kwargs.get("inputdataset", [])
+        outputdataset = kwargs.get("outputdataset",[])
         date_range = kwargs.get("date_range", False)
-        campaign = kwargs.get("campaign", False)
-        workqueue = kwargs.get("workqueue", False)
-        team = kwargs.get("team", False)
-        mc_pileup = kwargs.get("mc_pileup", False)
-        data_pileup = kwargs.get("data_pileup", False)
+        campaign = kwargs.get("campaign", [])
+        workqueue = kwargs.get("workqueue", [])
+        team = kwargs.get("team", [])
+        mc_pileup = kwargs.get("mc_pileup", [])
+        data_pileup = kwargs.get("data_pileup", [])
         detail = kwargs.get("detail", True)
         if detail in (False, "false", "False"):
             option = {"include_docs": False}
@@ -293,11 +291,13 @@ class Request(RESTEntity):
         if status and not team and not request_type:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, status))
         if status and team:
+            query_keys = [[t, s] for t in team for s in status] 
             request_info.append(
-                self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, [[team, status]]))
+                self.reqmgr_db_service.getRequestByCouchView("byteamandstatus", option, query_keys))
         if status and request_type:
-            request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype", option,
-                                                                             [[status, request_type]]))
+            query_keys = [[s, rt] for rt in request_type for s in status]
+            request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype", 
+                                                                             option, query_keys))
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
         if prep_id:

@@ -1736,10 +1736,10 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setProcessingString(kwargs["ProcessingString"])
 
         if self._checkKeys(kwargs, performanceParams):
-            self.setupPerformanceMonitoring(int(kwargs["MaxRSS"]),
-                                            int(kwargs["MaxVSize"]),
-                                            int(kwargs["SoftTimeout"]),
-                                            int(kwargs["GracePeriod"]))
+            self.setupPerformanceMonitoring(kwargs["MaxRSS"],
+                                            kwargs["MaxVSize"],
+                                            kwargs["SoftTimeout"],
+                                            kwargs["GracePeriod"])
 
         # Check whether we should check location for the data
         if self._checkKeys(kwargs, "AllowOpportunistic"):

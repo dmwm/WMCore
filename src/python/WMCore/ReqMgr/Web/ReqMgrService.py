@@ -342,7 +342,8 @@ class ReqMgrService(TemplatedPage):
                      'ProcessingVersion': 1,
                      'ProcessingString': '',
                      'MergedLFNBase': lfn_bases(),
-                     'UnmergedLFNBase': lfn_unmerged_bases(), }
+                     'UnmergedLFNBase': lfn_unmerged_bases(),
+                     'Team': ''}
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,

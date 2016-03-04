@@ -13,7 +13,7 @@ from WMCore.Wrappers import JsonWrapper
 
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
-from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
@@ -247,7 +247,7 @@ class Request(RESTEntity):
                                                     clone_args)
         return (workload, clone_args)
 
-    @restcall(formats=[('application/json', JSONFormat())])
+    @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     def get(self, **kwargs):
         """
         Returns request info depending on the conditions set by kwargs

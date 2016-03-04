@@ -387,8 +387,18 @@ class Request(RESTEntity):
 
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         
+        req_status = request_args["RequestStatus"]
+        
+        if not request_args.get('Team', '').strip() and \
+           not request_args.get('Teamd', []) and req_status == "assigned":
+            raise InvalidSpecParameterValue("Team need to be set when assign the workflow: %s" % 
+                                            request_args)
+            
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
-            request_args['HardTimeout'] = int(request_args['SoftTimeout']) + int(request_args['GracePeriod'])
+            request_args['SoftTimeout'] = int(request_args['SoftTimeout'])
+            #TODO: not sure why GracePeriod when passed from web ingerface but convert here
+            request_args['GracePeriod'] = int(request_args['GracePeriod'])
+            request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
         
         #Only allow extra value update for assigned status
         try:

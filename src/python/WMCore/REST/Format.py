@@ -1,4 +1,4 @@
-import re, cherrypy, cjson, types, hashlib, xml.sax.saxutils, zlib
+import re, cherrypy, cjson, types, hashlib, xml.sax.saxutils, zlib, json
 from WMCore.REST.Error import RESTError, ExecutionError, report_rest_error
 from traceback import format_exc
 try:
@@ -259,6 +259,41 @@ class JSONFormat(RESTFormat):
         preamble += '%s"%s": [\n' % (comma, cherrypy.request.rest_generate_data)
         return preamble, trailer
 
+class PrettyJSONFormat(JSONFormat):
+    """ Format used for human, (web browser)"""
+
+    def stream_chunked(self, stream, etag, preamble, trailer):
+        """Generator for actually producing the output."""
+        comma = " "
+
+        try:
+            if preamble:
+                etag.update(preamble)
+                yield preamble
+
+            try:
+                for obj in stream:
+                    chunk = comma + json.dumps(obj, indent=2)
+                    etag.update(chunk)
+                    yield chunk
+                    comma = ","
+            except GeneratorExit:
+                etag.invalidate()
+                trailer = None
+                raise
+            finally:
+                if trailer:
+                    etag.update(trailer)
+                    yield trailer
+
+            cherrypy.response.headers["X-REST-Status"] = 100
+        except RESTError as e:
+            etag.invalidate()
+            report_rest_error(e, format_exc(), False)
+        except Exception as e:
+            etag.invalidate()
+            report_rest_error(ExecutionError(), format_exc(), False)
+            
 class RawFormat(RESTFormat):
     """Format an iterable of objects as raw data.
 
@@ -295,7 +330,7 @@ class RawFormat(RESTFormat):
         except BaseException:
             etag.invalidate()
             raise
-
+            
 class DigestETag:
     """Compute hash digest over contents for ETag header."""
     algorithm = None

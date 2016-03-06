@@ -5,16 +5,15 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
-import unittest
 import os
 
-from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Database.CMSCouch import CouchMonitor
-
-from WMQuality.TestInit import TestInit
+from WMCore.Database.CMSCouch import CouchServer
+from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
-class WorkQueueTestCase(unittest.TestCase):
+
+class WorkQueueTestCase(EmulatedUnitTest):
 
     def setSchema(self):
         "this can be override if the schema setting is different"
@@ -28,6 +27,7 @@ class WorkQueueTestCase(unittest.TestCase):
         Setup the database and logging connection.  Try to create all of the
         WMBS tables.  Also add some dummy locations.
         """
+        super(WorkQueueTestCase, self).setUp()
         self.queueDB = 'workqueue_t'
         self.queueInboxDB = 'workqueue_t_inbox'
         self.globalQDB = 'workqueue_t_global'
@@ -79,3 +79,4 @@ class WorkQueueTestCase(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        super(WorkQueueTestCase, self).tearDown()

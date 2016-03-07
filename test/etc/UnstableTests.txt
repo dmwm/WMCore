@@ -2,4 +2,5 @@ WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testH_PauseAlgo
 WMComponent_t.RetryManager_t.RetryManager_t.RetryManagerTest:testI_MultipleJobTypes
 WMCore_t.ACDC_t.CouchService_t.CouchService_t:testTimestampAccounting
 WMCore_t.WebTools_t.NestedModel_t.NestedModelTest:testInnerPingPass
+WMCore_t.WebTools_t.NestedModel_t.NestedModelTest:testOuterFooPass
 WMCore_t.WorkQueue_t.Policy_t.Start_t.Block_t.BlockTestCase:testWhiteBlackLists

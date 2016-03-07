@@ -10,6 +10,7 @@ import time
 import shutil
 
 import WMCore.WMSpec.WMStep as WMStep
+from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -31,6 +32,7 @@ def mapSitetoPNN(sites):
     rControl = ResourceControl()
     for site in sites:
         fakePNNs.extend(rControl.listSiteInfo(site)['pnn'])
+
     return fakePNNs
 
 
@@ -57,8 +59,8 @@ class PileupFetcher(FetcherInterface):
         {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
                          "BlockB": {"FileList": [], "PhEDExNodeName": []}, ....}
 
-        this structure preserves knowledge of where particular files of data
-        set are physically (list of SEs) located. DBS only lists sites which
+        this structure preserves knowledge of where particular files of dataset
+        are physically (list of PNNs) located. DBS only lists sites which
         have all files belonging to blocks but e.g. BlockA of dataset DS1 may
         be located at site1 and BlockB only at site2 - it's possible that only
         a subset of the blocks in a dataset will be at a site.
@@ -117,20 +119,18 @@ class PileupFetcher(FetcherInterface):
 
         return fileName
 
-    def _writeFile(self, filePath, json):
+    def _writeFile(self, filePath, jsonPU):
 
         directory = filePath.rsplit('/', 1)[0]
 
         if not os.path.exists(directory):
             os.mkdir(directory)
         try:
-            f = open(filePath, 'w')
-            f.write(json)
+            with open(filePath, 'w') as f:
+                f.write(jsonPU)
         except IOError:
             m = "Could not save pileup JSON configuration file: '%s'" % filePath
             raise RuntimeError(m)
-        finally:
-            f.close()
 
     def _copyFile(self, src, dest):
 
@@ -139,6 +139,24 @@ class PileupFetcher(FetcherInterface):
         if not os.path.exists(directory):
             os.mkdir(directory)
         shutil.copyfile(src, dest)
+
+    def _updatePileupPNNs(self, stepHelper, fakeSites):
+        """
+        Update the workflow copy of the cached pileup file with PNNs
+        forced by TrustSitelists flag
+        """
+        fileName = self._getStepFilePath(stepHelper)
+        fakePNNs = mapSitetoPNN(fakeSites)
+        with open(fileName, 'r') as puO:
+            pileupData = json.load(puO)
+
+        for dummyPUType, blockDict in pileupData.iteritems():
+            for dummyBlockName, blockInfo in blockDict.iteritems():
+                blockInfo['PhEDExNodeNames'].extend([x for x in fakePNNs if x not in blockInfo])
+
+        encoder = JSONEncoder()
+        jsonPU = encoder.encode(pileupData)
+        self._writeFile(fileName, jsonPU)
 
     def _isCacheExpired(self, cacheFilePath, delta=24):
         """Is the cache expired? At delta hours (default 24) in the future.
@@ -174,10 +192,10 @@ class PileupFetcher(FetcherInterface):
         else:
             return False
 
-    def _saveFile(self, stepHelper, json):
+    def _saveFile(self, stepHelper, jsonPU):
 
         cacheFile = self._getCacheFilePath(stepHelper)
-        self._writeFile(cacheFile, json)
+        self._writeFile(cacheFile, jsonPU)
         fileName = self._getStepFilePath(stepHelper)
         self._copyFile(cacheFile, fileName)
 
@@ -192,6 +210,10 @@ class PileupFetcher(FetcherInterface):
             fakeSites = []
 
         if self._isCacheValid(helper):
+            # we need to update the new sandbox json file in case TrustSitelists is on
+            if fakeSites:
+                self._updatePileupPNNs(helper, fakeSites)
+
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
             return
@@ -206,8 +228,8 @@ class PileupFetcher(FetcherInterface):
         configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader, fakeSites)
 
         # create JSON and save into a file
-        json = encoder.encode(configDict)
-        self._saveFile(helper, json)
+        jsonPU = encoder.encode(configDict)
+        self._saveFile(helper, jsonPU)
 
     def __call__(self, wmTask):
         """

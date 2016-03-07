@@ -11,7 +11,7 @@ from WMCore.REST.Server import RESTApi
 from WMCore.REST.Format import JSONFormat
 
 from WMCore.WMStats.Service.MetaDataInfo import ServerInfo
-from WMCore.WMStats.Service.RequestInfo import RequestInfo, FinishedStatusInfo
+from WMCore.WMStats.Service.RequestInfo import RequestInfo, FinishedStatusInfo, TeamInfo
 from WMCore.WMStats.Service.ActiveRequestJobInfo import ActiveRequestJobInfo
 
 class RestApiHub(RESTApi):
@@ -32,6 +32,7 @@ class RestApiHub(RESTApi):
         # only allows json format for return value
         self.formats =  [('application/json', JSONFormat())]
         self._add({"info": ServerInfo(app, self, config, mount),
+                   "teams": TeamInfo(app, self, config, mount),
                    "request": RequestInfo(app, self, config, mount),
                    "isfinished": FinishedStatusInfo(app, self, config, mount),
                    "requestcache": ActiveRequestJobInfo(app, self, config, mount)

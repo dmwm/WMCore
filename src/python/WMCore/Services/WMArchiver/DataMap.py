@@ -3,7 +3,6 @@ from __future__ import (division, print_function)
 import socket
 import time
 import copy
-import WMCore
 
 # From top level
 
@@ -20,20 +19,34 @@ WMARCHIVE_DATA_MAP = {"OutputPFN": "outputPFNs", "inputPath": "inputDataset",
 WMARCHIVE_REMOVE_FIELD = ["InputPFN", "pfn", "user_dn", "user_vogroup", "user_vorole"]
 WMARCHIVE_COMBINE_FIELD = {"outputDataset": ["primaryDataset", "processedDataset", "dataTier"]}
 
-WMARCHIVE_FILE_REF_KEY = ["lfn", "pfn", "files"]
+WMARCHIVE_LFN_REF_KEY = ["lfn", "files"]
+WMARCHIVE_PFN_REF_KEY = ["pfn"]
+WMARCHIVE_FILE_REF_KEY = {"LFN": WMARCHIVE_LFN_REF_KEY, 
+                          "PFN": WMARCHIVE_PFN_REF_KEY}
 
 PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                             'AvgEventTime': float,
-                            'MaxEventCPU': int,
+                            'MaxEventCPU': float,
                             'MaxEventTime': float,
-                            'MinEventCPU': int,
+                            'MinEventCPU':  float,
                             'MinEventTime': float,
-                            'TotalEventCPU': int,
+                            'TotalEventCPU': float,
                             'TotalJobCPU': float,
-                            'TotalJobTime': float},
-                    'memory': {'PeakValueRss': int,
-                               'PeakValueVsize': int}
-                    }
+                            'TotalJobTime': float,
+                            'EventThroughput': float,
+                            'TotalLoopCPU': float},
+                    'memory': {'PeakValueRss': float,
+                               'PeakValueVsize': float},
+                    'storage': {'readAveragekB': float,
+                                'readCachePercentageOps': float,
+                                'readMBSec': float,
+                                'readMaxMSec': float,
+                                'readNumOps': float,
+                                'readPercentageOps': float,
+                                'readTotalMB': float,    
+                                'readTotalSecs': float,
+                                'writeTotalMB': float,
+                                'writeTotalSecs': float}}
                                        
 def combineDataset(dataset):
     dataset["outputDataset"] = "/%s/%s/%s" % (dataset["primaryDataset"], dataset["processedDataset"], dataset["dataTier"])
@@ -141,10 +154,13 @@ def createFileArrayRef(fwjr, fArrayRef):
     elif isinstance(fwjr, dict):               
         for key, value in fwjr.items():
             addKeyFlag = False
-            for kw in WMARCHIVE_FILE_REF_KEY:
-                if kw in key.lower():
-                    fArrayRef.add(key)
-                    addKeyFlag = True
+            
+            for fileType, keyList in WMARCHIVE_FILE_REF_KEY.items():
+                for kw in keyList:
+                    if kw in key.lower():
+                        fArrayRef[fileType].add(key)
+                        addKeyFlag = True
+                    
             if not addKeyFlag:
                 createFileArrayRef(value, fArrayRef)
     else:
@@ -155,12 +171,13 @@ def createFileArray(fwjr, fArray, fArrayRef):
     
     if isinstance(fwjr, dict):               
         for key, value in fwjr.items():
-            if key in fArrayRef:
-                if isinstance(value, list):
-                    for fileName in value:
-                        fArray.add(fileName)
-                else: # this should be string
-                    fArray.add(value) 
+            for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+                if key in fArrayRef[fileType]:
+                    if isinstance(value, list):
+                        for fileName in value:
+                            fArray[fileType].add(fileName)
+                    else: # this should be string
+                        fArray[fileType].add(value)                                
             else:
                 createFileArray(value, fArray, fArrayRef)                  
     elif isinstance(fwjr, list):
@@ -173,15 +190,16 @@ def changeToFileRef(fwjr, fArray, fArrayRef):
     
     if isinstance(fwjr, dict):               
         for key, value in fwjr.items():
-            if key in fArrayRef:
-                if isinstance(value, list):
-                    newRef = []
-                    for fileName in value:
-                        index = fArray.index(fileName)
-                        newRef.append(index)
-                else: # this should be string
-                    newRef = fArray.index(value)
-                fwjr[key] = newRef
+            for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+                if key in fArrayRef[fileType]:
+                    if isinstance(value, list):
+                        newRef = []
+                        for fileName in value:
+                            index = fArray[fileType].index(fileName)
+                            newRef.append(index)
+                    else: # this should be string
+                        newRef = fArray[fileType].index(value)
+                    fwjr[key] = newRef
             else:
                 changeToFileRef(value, fArray, fArrayRef)
     elif isinstance(fwjr, list):
@@ -190,24 +208,43 @@ def changeToFileRef(fwjr, fArray, fArrayRef):
     else:
         return
     
-def createArchiverDoc(job_id, fwjr):
+def createArchiverDoc(job_id, fwjr, version=None):
     """
     job_id is jobid + retry count same as couch db _id
     """
     newfwjr = convertToArchiverFormat(fwjr)
     
-    fArrayRef = set()
+    fArrayRef = {}
+    fArray = {}
+    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+        fArrayRef[fileType] = set()
+        fArray[fileType] = set()
+
     createFileArrayRef(newfwjr, fArrayRef)
-    newfwjr["fileArrayRef"] = list(fArrayRef)
     
-    fArray = set()
-    createFileArray(newfwjr, fArray, newfwjr["fileArrayRef"])
-    newfwjr["fileArray"] = list(fArray)
+    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+        fArrayRef[fileType] = list(fArrayRef[fileType])
+
+    createFileArray(newfwjr, fArray, fArrayRef)
     
-    changeToFileRef(newfwjr, newfwjr["fileArray"], newfwjr["fileArrayRef"])
+    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+        fArray[fileType] = list(fArray[fileType])
+        
     
+    changeToFileRef(newfwjr, fArray, fArrayRef)
+    
+    #convert to fwjr format
+    
+    for fileType in WMARCHIVE_FILE_REF_KEY.keys():
+        newfwjr["%sArrayRef" % fileType] = fArrayRef[fileType]
+        newfwjr["%sArray" % fileType] = fArray[fileType]
+    
+    if version == None:
+        # add this trry to remove the dependency on WMCore code.
+        import WMCore
+        version = WMCore.__version__
     # append meta data in fwjr
-    newfwjr['meta_data'] = {'agent_ver': WMCore.__version__,
+    newfwjr['meta_data'] = {'agent_ver': version,
                          'host': socket.gethostname().lower(),
                          'fwjr_id': job_id,
                          'ts': int(time.time())

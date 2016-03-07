@@ -23,6 +23,12 @@ $filter_sort_table
     <nav class="navbar navbar-left">
         <input type="checkbox" name="request-all" id="request-all" onclick="CheckAll(this)"/>
         Select all requests
+        <br/>Teams:&nbsp;
+        <select id="team" name="team">
+        #for team in $teams
+        <option name="$team" value="$team">$team</option>
+        #end for
+        </select>
     </nav>
     <nav class="navbar navbar-right">
         <button class="btn btn-smaller btn-green" onclick="javascript:confirmAssign()">Assign</button>
@@ -205,6 +211,7 @@ function ProcessRequests(new_status) {
         for (var attr in misc_args) { parameters[attr] = misc_args[attr]; }
         parameters.ids = ids;
         parameters.new_status = new_status;
+        parameters.team = \$('#team')
         ajaxRequest('$base/data/request/multi_update', parameters);
     }
 }

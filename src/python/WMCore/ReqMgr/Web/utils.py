@@ -85,13 +85,18 @@ def json2table(jsondata, web_ui_map, visible_attrs=None):
         if  isinstance(val, list) and not val: # empty list replace with input text tag
             val = ""
         if  isinstance(val, list):
-            sel = "<select name=\"%s\">" % key
             values = sorted(val)
             if  key in ['releases', 'software_releases', 'CMSSWVersion', 'ScramArch']:
                 values.reverse()
-            for item in values:
-                sel += "<option value=\"%s\">%s</option>" % (item, item)
-            sel += "</select>"
+            if  visible_attrs:
+                sel = '<textarea class="width-100">'
+                sel += ','.join(values)
+                sel += '</textarea>'
+            else:
+                sel = "<select name=\"%s\">" % key
+                for item in values:
+                    sel += "<option value=\"%s\">%s</option>" % (item, item)
+                sel += "</select>"
             val = sel
         elif isinstance(val, basestring):
             if  val.startswith('REPLACE-'):

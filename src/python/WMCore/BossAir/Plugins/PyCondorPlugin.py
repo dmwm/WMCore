@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W1201
-# W1201: Specify string format arguments as logging function parameters
-
 """
 _PyCondorPlugin_
 
@@ -31,6 +28,7 @@ from WMCore.WMInit                     import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report        import Report
 from WMCore.Algorithms                 import SubprocessAlgos
+from Utils.IterTools import grouper
 
 ##  python-condor stuff
 import htcondor as condor
@@ -938,7 +936,7 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")
 
             ### print all the variables needed for us to rely on condor userlog
-            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0\n")
+            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
 
             jdl.append("Queue 1\n")
 
@@ -1041,57 +1039,56 @@ class PyCondorPlugin(BasePlugin):
         jobInfo = {}
         schedd = condor.Schedd()
         results=[]
-        
+
         try :
             logging.debug("Start: Retrieving classAds using Condor Python XQuery")
             itobj = schedd.xquery('WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == %s' % classad.quote(str(self.agent)),
                                   ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
-                                   "ExtDESIRED_Sites", "MachineAttrGLIDEIN_CMSSite0", "WMAgent_JobID"]
+                                   "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
                                   )
-            results = list(itobj)
             logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
         except :
             msg = "Query to condor schedd failed in PyCondorPlugin"
             logging.debug(msg)
             return None, None
         else:
-            for i in range(0, len(results)):
-                
-                ### This condition ignores jobs that are Removed, but stay in the X state
-                ### For manual condor_rm removal, job wont be in the queue \
-                ### and status of the jobs will be read from condor log
-                if results[i].get("JobStatus",0)==3:
-                    continue
-                else :
-                    ## For some strange race condition, schedd sometimes does not publish StartDate for a Running Job
-                    ## Get the entire classad for such a job
-                    ## Do not crash WMA, wait for next polling cycle to get all the info.
-                    if results[i].get("JobStatus",0)==2 and results[i].get("JobStartDate") is None :
-                        logging.debug("THIS SHOULD NOT HAPPEN. JobStartDate is MISSING from the CLASSAD.")
-                        logging.debug("Could be caused by some race condition. Wait for the next Polling Cycle")
-                        logging.debug("%s" % str(results[i]))
-                
-                    tmpDict={}
-                    tmpDict["JobStatus"]=int(results[i].get("JobStatus",100))
-                    tmpDict["stateTime"]=int(results[i].get("EnteredCurrentStatus",0))
-                    tmpDict["runningTime"]=int(results[i].get("JobStartDate",0))
-                    tmpDict["submitTime"]=int(results[i].get("QDate",0))
-                    tmpDict["DESIRED_Sites"]=results[i].get("DESIRED_Sites")
-                    tmpDict["ExtDESIRED_Sites"]=results[i].get("ExtDESIRED_Sites")
-                    tmpDict["runningCMSSite"]=results[i].get("MachineAttrGLIDEIN_CMSSite0")
-                    tmpDict["WMAgentID"]=int(results[i].get("WMAgent_JobID",0))
-                    _tmpID = tmpDict["WMAgentID"]
-                    jobInfo[_tmpID] = tmpDict
-                
+            for slicedAds in grouper(itobj, 1000):
+                for jobAd in slicedAds:
+                    ### This condition ignores jobs that are Removed, but stay in the X state
+                    ### For manual condor_rm removal, job wont be in the queue \
+                    ### and status of the jobs will be read from condor log
+                    if jobAd["JobStatus"] == 3:
+                        continue
+                    else :
+                        ## For some strange race condition, schedd sometimes does not publish StartDate for a Running Job
+                        ## Get the entire classad for such a job
+                        ## Do not crash WMA, wait for next polling cycle to get all the info.
+                        if jobAd["JobStatus"] == 2 and jobAd["JobStartDate"] is None :
+                            logging.debug("THIS SHOULD NOT HAPPEN. JobStartDate is MISSING from the CLASSAD.")
+                            logging.debug("Could be caused by some race condition. Wait for the next Polling Cycle")
+                            logging.debug("%s" % str(jobAd))
+                            continue
+
+                        tmpDict = {}
+                        tmpDict["JobStatus"] = int(jobAd.get("JobStatus", 100))
+                        tmpDict["stateTime"] = int(jobAd["EnteredCurrentStatus"])
+                        tmpDict["runningTime"] = int(jobAd.get("JobStartDate", 0))
+                        tmpDict["submitTime"] = int(jobAd["QDate"])
+                        tmpDict["DESIRED_Sites"] = jobAd["DESIRED_Sites"]
+                        tmpDict["ExtDESIRED_Sites"] = jobAd["ExtDESIRED_Sites"]
+                        tmpDict["runningCMSSite"] = jobAd.get("MATCH_EXP_JOBGLIDEIN_CMSSite", None)
+                        tmpDict["WMAgentID"] = int(jobAd["WMAgent_JobID"])
+                        jobInfo[tmpDict["WMAgentID"]] = tmpDict
+
             logging.info("Retrieved %i classAds" % len(jobInfo))
-            
+
         return jobInfo, schedd
 
 
     def readCondorLog(self, job):
         """
         __readCondorLog
-        
+
         If schedd fails to give information about a job
         Check the condor log file for this job
         Extract Exit status
@@ -1132,7 +1129,7 @@ class PyCondorPlugin(BasePlugin):
             ulog=list(cres)
             if len(ulog) > 0:
                 if all (key in ulog[-1] for key in ("TriggerEventTypeNumber", "QDate", "JobStartDate",
-                                                    "EnteredCurrentStatus", "MachineAttrGLIDEIN_CMSSite0",
+                                                    "EnteredCurrentStatus", "MATCH_EXP_JOBGLIDEIN_CMSSite",
                                                     "WMAgent_JobID")):
 
                     _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
@@ -1140,7 +1137,7 @@ class PyCondorPlugin(BasePlugin):
                     tmpDict["submitTime"]=int(ulog[-1]["QDate"])
                     tmpDict["runningTime"]=int(ulog[-1]["JobStartDate"])
                     tmpDict["stateTime"]=int(ulog[-1]["EnteredCurrentStatus"])
-                    tmpDict["runningCMSSite"]=ulog[-1]["MachineAttrGLIDEIN_CMSSite0"]
+                    tmpDict["runningCMSSite"]=ulog[-1]["MATCH_EXP_JOBGLIDEIN_CMSSite"]
                     tmpDict["WMAgentID"]=int(ulog[-1]["WMAgent_JobID"])
                     _tmpID = tmpDict["WMAgentID"]
                     jobLogInfo[_tmpID] = tmpDict

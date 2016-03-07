@@ -390,7 +390,7 @@ class Request(RESTEntity):
         req_status = request_args["RequestStatus"]
         
         if not request_args.get('Team', '').strip() and \
-           not request_args.get('Teamd', []) and req_status == "assigned":
+           not request_args.get('Teams', []) and req_status == "assigned":
             raise InvalidSpecParameterValue("Team need to be set when assign the workflow: %s" % 
                                             request_args)
             

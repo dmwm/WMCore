@@ -211,6 +211,27 @@ class ReqMgrService(TemplatedPage):
         identifier = cdict.get("log_reporter", "reqmgr2")
         self.logdb = LogDB(centralurl, identifier)
 
+        # local team cache which will request data from wmstats
+        self.wmstatsurl = config.reqmgr.wmstats_url
+        if  not self.wmstatsurl:
+            raise Exception('ReqMgr2 configuration file does not provide wmstats url')
+        self.team_update_interval = 3600 # interval we update team cache
+        if  hasattr(config.reqmgr, 'team_update_interval'):
+            self.team_update_interval = int(config.reqmgr.team_update_interval)
+        self.team_cache = (time.time(), []) # we keep a tuple of timestamp and teams list
+
+    def getTeams(self):
+        "Helper function to get teams from wmstats or local cache"
+        ts, teams = self.team_cache
+        if  not teams or time.time()-ts > self.team_update_interval:
+            url = '%s/wmstatsserver/data/teams' % self.wmstatsurl
+            params = None
+            headers = {'Content-type':'application/json'}
+            data = getdata(url, params, headers)
+            teams = data.get('result', [])
+            self.team_cache = (time.time(), teams)
+        return teams
+
     def user(self):
         """
         Return user name associated with this instance.
@@ -343,7 +364,7 @@ class ReqMgrService(TemplatedPage):
                      'ProcessingString': '',
                      'MergedLFNBase': lfn_bases(),
                      'UnmergedLFNBase': lfn_unmerged_bases(),
-                     'Team': ''}
+                     'Team': self.getTeams()}
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,

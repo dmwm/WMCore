@@ -345,9 +345,11 @@ class ReqMgrService(TemplatedPage):
                      'UnmergedLFNBase': lfn_unmerged_bases(),
                      'Team': ''}
         filter_sort = self.templatepage('filter_sort')
+        # TODO: get teams from API
+        teams = ["Physics", 'Top', 'Higgs'] # SEANGCHAN WILL PROVIDE API
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,
-                                    sites=sites(),
+                                    sites=sites(), teams=teams,
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
                                     user=self.user(), user_dn=self.user_dn(), requests=docs,

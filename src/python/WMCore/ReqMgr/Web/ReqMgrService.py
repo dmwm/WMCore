@@ -183,7 +183,8 @@ class ReqMgrService(TemplatedPage):
         api = RestApiHub(app, config.reqmgr, mount)
 
         # initialize access to reqmgr2 APIs
-        self.reqmgr = ReqMgr(config.reqmgr.reqmgr2_url)
+        self.reqmgr_url = config.reqmgr.reqmgr2_url
+        self.reqmgr = ReqMgr(self.reqmgr_url)
         # only gets current view (This might cause to reponse time much longer, 
         # If upto date view is not needed overwrite Fale)
         self.reqmgr._noStale = True
@@ -212,24 +213,24 @@ class ReqMgrService(TemplatedPage):
         self.logdb = LogDB(centralurl, identifier)
 
         # local team cache which will request data from wmstats
-        self.wmstatsurl = config.reqmgr.wmstats_url
+        self.wmstatsurl = cdict.get('wmstats_url', \
+                self.reqmgr_url.replace('reqmgr2', 'wmstatsserver'))
         if  not self.wmstatsurl:
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
-        self.team_update_interval = 3600 # interval we update team cache
-        if  hasattr(config.reqmgr, 'team_update_interval'):
-            self.team_update_interval = int(config.reqmgr.team_update_interval)
-        self.team_cache = (time.time(), []) # we keep a tuple of timestamp and teams list
+        self.team_cache = []
 
     def getTeams(self):
         "Helper function to get teams from wmstats or local cache"
-        ts, teams = self.team_cache
-        if  not teams or time.time()-ts > self.team_update_interval:
-            url = '%s/wmstatsserver/data/teams' % self.wmstatsurl
+        teams = self.team_cache
+        try:
+            url = '%s/data/teams' % self.wmstatsurl
             params = None
             headers = {'Content-type':'application/json'}
             data = getdata(url, params, headers)
             teams = data.get('result', [])
-            self.team_cache = (time.time(), teams)
+            self.team_cache = teams
+        except:
+            pass
         return teams
 
     def user(self):

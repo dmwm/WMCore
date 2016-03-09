@@ -1,3 +1,176 @@
+1.0.13 to 1.0.14:
+  - Merge pull request #6682 from ticoann/fix_moving_to_archive_status
+  - Merge pull request #6678 from amaltaro/pileup-cache
+  - Merge pull request #6676 from amaltaro/pycondor-grouper
+  - clean wmbs data only workflow is archived
+  - Pylint cleanup
+  - Merge pull request #6672 from ericvaandering/remove_failing
+  - Merge pull request #6677 from ticoann/archive_format
+  - Merge pull request #6679 from ticoann/fix_typo
+  - fix typo in Teams
+  - Locally update the PNNs location when reusing the pileup cache file
+  - update fwjr format
+  - Don.t expand job classAds into a plain list; remove default values
+  - Add one more unstable test
+  - Remove old list of failing tests, update list of unstable tests
+  - Merge pull request #6660 from ericvaandering/wq_with_mock
+  - Update most WorkQueue tests to work with mock
+  - 1.0.14.pre8
+  - Merge pull request #6668 from ticoann/web_default
+  - send default json with pretty format if Accept header contains many types (text/plane)
+  - Merge pull request #6667 from ticoann/enforce_team
+  - make team setting mendatory in assign
+  - Merge pull request #6666 from ticoann/sitewhite_list_fix
+  - fix overwritting site whitelist and refactor code
+  - Merge pull request #6665 from ticoann/fix_request_status
+  - fix status query
+  - 1.0.14.pre7
+  - Merge pull request #6655 from ticoann/remove_negotiating_status
+  - remove negotiationg status
+  - Merge pull request #6642 from ericvaandering/dbs_unicode3
+  - Merge pull request #6649 from ticoann/reqmgr2_update_fix
+  - Merge pull request #6654 from dmwm/revert-6648-updateArgs-reqmgr2
+  - Revert "Update workflow arguments for requests assigned in reqmgr2."
+  - Merge pull request #6648 from amaltaro/updateArgs-reqmgr2
+  - fix updating request parameters
+  - Merge pull request #6650 from ticoann/remove_special_char
+  - Merge pull request #6614 from ticoann/wmarchive_format
+  - Update workflow arguments for requests assigned in reqmgr2.
+  - remove '@' from request name
+  - convert frwj report for wmarchive
+  - Update the DBS emulator and DBSReader
+  - Merge pull request #6646 from amaltaro/validate-outDsets
+  - Code reformat
+  - Reject assignment if AcqEra is None
+  - Merge pull request #6644 from ticoann/reqmgr2_500_fix
+  - fix type conversion in reqmgr2
+  - Merge pull request #6639 from ticoann/add_originial_priority
+  - Merge pull request #6643 from ericvaandering/mock_phedex
+  - Turn Phedex off by default
+  - Add a rudimentary phedex emulator
+  - Merge pull request #6638 from amaltaro/create-dir-patch1
+  - Add initial priority
+  - Use iterable for job directory creation
+  - Merge pull request #6635 from amaltaro/reqmgr2-client-patch1
+  - Fix request assignment with reqmgr2 client
+  - Update UnstableTests.txt
+  - 1.0.14.pre6
+  - Merge pull request #6629 from ticoann/reqmgr2_opsscript_fix
+  - Merge pull request #6615 from ericvaandering/dbs_unicode
+  - Merge pull request #6618 from hufnagel/runtime-chirp
+  - add schema section on workload. (may ops script depend on that)
+  - Merge pull request #6628 from ericvaandering/fix_assert_under
+  - Merge pull request #6627 from vkuznet/assign-split
+  - assert_ is deprecated
+  - Add splitting for individual requests in assign template
+  - New class to align element on the right
+  - add support to call condor_chirp at runtime
+  - Merge pull request #6620 from vkuznet/issue6619
+  - Change status, fix issue6619
+  - Merge pull request #6616 from amaltaro/create-authz
+  - Merge pull request #6613 from amaltaro/submit-wf-patch2
+  - Allow data-manager role to create requests in reqmgr2; check group membership
+  - Promote block names to unicode to help mock DBS
+  - Force LHE templates to be assigned to CERN
+  - 1.0.14.pre5
+  - Merge pull request #6611 from ticoann/not_allowing_empty_str
+  - disallow empty string from site list
+  - Merge pull request #6610 from ericvaandering/print_remaining2
+  - Merge pull request #6609 from ticoann/add_logcollect_status
+  - Fix the rest of the print statements that are not in the src/python and test/python directories
+  - add REST API to check complete status including log collect and clean up
+  - Merge pull request #6608 from ticoann/cleanup_reqmgr_config
+  - improve pylint score
+  - 1.0.14.pre4
+  - Merge pull request #6607 from ticoann/remove_global_monitor
+  - remove GlobalMonitor from rpm
+  - 1.0.14.pre3
+  - Merge pull request #6577 from ericvaandering/print_in_components
+  - Merge pull request #6579 from ericvaandering/print_in_wmcore_dj
+  - Update print statements in part of WMCore/
+  - Merge pull request #6605 from vkuznet/reqmgr2-tasks
+  - Update print statements from WMComponent/ directory
+  - Add JSON.parse and renamed Tasks button to Splitting
+  - Merge pull request #6580 from ericvaandering/print_in_wmcore_os
+  - Merge pull request #6583 from ericvaandering/print_in_wmcore_tz
+  - Merge pull request #6575 from ericvaandering/print_in_test
+  - Merge pull request #6584 from ericvaandering/print_in_wmcore_wz
+  - Merge pull request #6582 from ericvaandering/print_in_wmcore_abc
+  - Merge pull request #6581 from ericvaandering/print_in_wmcore
+  - Merge pull request #6596 from ticoann/add_spec
+  - Merge pull request #6585 from ticoann/logcollect_cleanup_separation
+  - Merge pull request #6600 from ericvaandering/update_assertequals
+  - Revert changes back since ajaxRequest does JSON.stringify
+  - Parse JSON parameters from the form
+  - add workload config api
+  - Merge pull request #6598 from ericvaandering/fix_assertequals
+  - Changed PUT to POST
+  - Fix splitting call and added getConfig method
+  - Add config method
+  - Add ShowConfig button
+  - New color and add overflow
+  - Merge pull request #6604 from vkuznet/fix-reqmgr2-dropdown
+  - Merge pull request #6601 from ericvaandering/fix_failunless
+  - Merge pull request #6602 from amaltaro/lfn-wl-cache
+  - Fix issue with drop down menu
+  - Changes to display Tasks on reqmgr2 page
+  - Add {un}mergedLFNBase to the workload cache
+  - Merge pull request #6589 from amaltaro/stepchain-intermediate
+  - Merge pull request #6593 from ticoann/clean_up
+  - failUnless is also deprecated now and not preferred for a long time
+  - Change a couple of assertEquals to assertTrue/False
+  - Clean up type() to isinstance() and bare asserts
+  - Fix unit test and pylint issues
+  - Remove most instances of deprecated assertEquals
+  - Allow StepChain to output intermediate samples
+  - remove unused code
+  - Merge pull request #6592 from ticoann/dbs3_unittest_fix
+  - fix dbs3 upload unittest
+  - add unittest
+  - refactor TaskArchiver avoid race condition
+  - Initial patch for state transition (Do not merge)
+  - Remove print statements from test/ directory
+  - 1.0.14.pre2
+  - Merge pull request #6588 from ticoann/add_log_wmstats
+  - add log message for cleanup wmstats
+  - Merge pull request #6567 from alexanderrichards/remove_dbs2
+  - Merge pull request #6586 from ticoann/default_log_level
+  - change the default log level
+  - 1.0.14.pre1
+  - Merge pull request #6569 from amaltaro/trustSite-patch3
+  - Pylint fixes
+  - Merge UseSiteListAsLocation features into TrustSitelists
+  - Update print statements in part of WMCore/
+  - Update print statements in part of WMCore/
+  - Update print statements in part of WMCore/
+  - Update print statements in top level of WMCore/
+  - Update print statements in part of WMCore/
+  - Merge pull request #6578 from ericvaandering/print_in_quality
+  - Merge pull request #6576 from ericvaandering/print_in_pset
+  - Merge pull request #6570 from juztas/proxyEscape
+  - Move imports further up in file
+  - Escape single quote if execute in clean env
+  - Merge pull request #6538 from hufnagel/phedexinjector-refactor
+  - Merge pull request #6440 from ticoann/add_wmarchive
+  - Update print statements from WMQuality/ directory
+  - Update print statements from PSetTweaks/ directory
+  - skeleton stuff for WMArchive (Do not merge!)
+  - refactor phedexinjector, fixes #6451
+  - Merge pull request #6559 from ticoann/workqueue_resource_monitor
+  - add unittest
+  - add methods to support get the higher priority jobs than given workflow
+  - Merge pull request #6555 from ericvaandering/fix_dataset_t
+  - Merge pull request #6557 from amaltaro/phedexGroup-fix
+  - Removing DBSUpload and DBSBuffer
+  - Pylint fixes
+  - Update PhEDEx groups during assignment
+  - Make it actually use the emulator
+  - New data to pass Dataset_t with emulated data
+  - Merge pull request #6552 from ericvaandering/cleanup_datasetT
+  - PEP-8 cleanup from Eric
+  - Few fixes in order to keep pylint silent
+  - Adding mock version of DBS and Using mock for  WMCore_t/WorkQueue_t/Policy_t/Start_t/Dataset_t.py unit-tests
+
 1.0.13 to 1.0.14.pre8:
   - Merge pull request #6668 from ticoann/web_default
   - send default json with pretty format if Accept header contains many types (text/plane)

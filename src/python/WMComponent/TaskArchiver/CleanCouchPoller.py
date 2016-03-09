@@ -257,14 +257,14 @@ class CleanCouchPoller(BaseWorkerThread):
             self.archiveSummaryAndPublishToDashBoard(finishedwfsWithLogCollectAndCleanUp)
             logging.info("%s workload summary is created" % len(finishedwfsWithLogCollectAndCleanUp))
             
+            logging.info("Cleaning up couch db")
+            self.cleanCouchDBAndChangeToArchiveStatus()
+            logging.info("Done: cleaning up couch db")
+            
             logging.info("Cleaning up wmsbs and disk")
             self.deleteWorkflowFromWMBSAndDisk()
             logging.info("Done: cleaning up wmsbs and disk")
             
-            logging.info("Cleaning up couch db")
-            self.cleanCouchDBAndChangeToArchiveStatus()
-            logging.info("Done: cleaning up couch db")
-
         except Exception as ex:
             msg = traceback.format_exc()
             logging.error(msg)
@@ -474,8 +474,7 @@ class CleanCouchPoller(BaseWorkerThread):
         # create updateDBSBufferWorkflowComplete DAO
         if len(deletablewfs) == 0:
             return
-        safeStatesToDelete = ["completed", "aborted-completed", "rejected", "announced",
-                              "normal-archived", "aborted-archived", "rejected-archived"]
+        safeStatesToDelete = ["normal-archived", "aborted-archived", "rejected-archived"]
         wfsToDelete = {}
         for workflow in deletablewfs:
             try:

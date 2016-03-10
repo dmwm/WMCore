@@ -233,7 +233,7 @@ class ReqMgrService(TemplatedPage):
                 print(data)
             teams = data.get('result', [])
             self.team_cache = teams
-        except Exception exp:
+        except Exception as exp:
             print("WARNING: fail to get teams from %s" % url)
             print(str(exp))
             pass

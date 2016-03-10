@@ -82,7 +82,6 @@ class Request(RESTEntity):
         return
 
     def _validateRequestBase(self, param, safe, valFunc, requestName=None):
-
         data = cherrypy.request.body.read()
         if data:
             request_args = JsonWrapper.loads(data)
@@ -371,10 +370,12 @@ class Request(RESTEntity):
         only few values can be updated without state transition involved
         currently 'RequestPriority' and 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'
         """
-        if 'RequestPriority' in request_args: 
-            self.gq_service.updatePriority(workload.name(), int(request_args['RequestPriority']))
+        if 'RequestPriority' in request_args:
+            # must update three places: GQ elements, workload_cache and workload spec
+            self.gq_service.updatePriority(workload.name(), request_args['RequestPriority'])
             report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args)
-
+            workload.setPriority(request_args['RequestPriority'])
+            workload.saveCouchUrl(workload.specUrl())
         elif "total_jobs" in request_args:
             # only GQ update this stats
             # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}

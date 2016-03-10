@@ -14,7 +14,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
 def loadRequestSchema(workload, requestSchema):
@@ -63,7 +63,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     param and safe structure is RESTArgs structure: named tuple
     RESTArgs(args=[], kwargs={})
     
-    validate post request
+    validate post/put request
     1. read data from body
     2. validate the permission (authentication)
     3. validate state transition (against previous state from couchdb)
@@ -100,7 +100,15 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     else:
         args_without_status = request_args
 
-    if len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
+    if len(args_without_status) == 1 and 'RequestPriority' in args_without_status:
+        try:
+            args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
+            if args_without_status['RequestPriority'] < 0 or args_without_status['RequestPriority'] >= 1e6:
+                raise TypeError
+        except TypeError:
+            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
+        return workload, args_without_status
+    elif len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
         # validate the arguments against the spec argumentSpecdefinition
         #TODO: currently only assigned status allows any update other then Status update
         workload.validateArgumentForAssignment(args_without_status)

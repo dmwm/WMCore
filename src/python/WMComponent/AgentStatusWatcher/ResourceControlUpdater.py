@@ -121,7 +121,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         """
         agentsByTeam = {}
         try:
-            agentsByTeam = self.centralCouchDBReader.agentsByTeam()
+            agentsByTeam = self.centralCouchDBReader.agentsByTeam(filterDrain=True)
         except Exception as ex:
             logging.error("WMStats is not available or is unresponsive.")
 

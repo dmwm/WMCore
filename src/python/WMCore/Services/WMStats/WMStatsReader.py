@@ -248,19 +248,19 @@ class WMStatsReader(object):
         
         return result
     
-    def agentsByTeam(self, ignoreDrain = True):
+    def agentsByTeam(self, filterDrain=False):
         """
         return a dictionary like {team:#agents,...}
         """
         result = self._getAgentInfo()
         response = dict()
+
         for agentInfo in result["rows"]:
-            
             teams = agentInfo['value']['agent_team'].split(',')
             for team in teams:
-                if team not in response.keys():
-                    response[team] = 0
-            if ignoreDrain:
+                response.setdefault(team, 0)
+                
+            if filterDrain:
                 if not agentInfo['value']['drain_mode']:
                     for team in teams:
                         response[team] += 1

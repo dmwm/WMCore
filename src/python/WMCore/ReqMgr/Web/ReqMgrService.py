@@ -213,8 +213,9 @@ class ReqMgrService(TemplatedPage):
         self.logdb = LogDB(centralurl, identifier)
 
         # local team cache which will request data from wmstats
-        self.wmstatsurl = cdict.get('wmstats_url', \
-                self.reqmgr_url.replace('reqmgr2', 'wmstatsserver'))
+        base, uri = self.reqmgr_url.split('://')
+        base_url = '%s://%s' % (base, uri.split('/')[0])
+        self.wmstatsurl = cdict.get('wmstats_url', '%s/wmstatsserver' % base_url)
         if  not self.wmstatsurl:
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
         self.team_cache = []
@@ -222,14 +223,19 @@ class ReqMgrService(TemplatedPage):
     def getTeams(self):
         "Helper function to get teams from wmstats or local cache"
         teams = self.team_cache
+        url = '%s/data/teams' % self.wmstatsurl
+        params = {}
+        headers = {'Accept':'application/json'}
         try:
-            url = '%s/data/teams' % self.wmstatsurl
-            params = None
-            headers = {'Content-type':'application/json'}
             data = getdata(url, params, headers)
+            if  'error' in data:
+                print("WARNING: fail to get teams from %s" % url)
+                print(data)
             teams = data.get('result', [])
             self.team_cache = teams
-        except:
+        except Exception exp:
+            print("WARNING: fail to get teams from %s" % url)
+            print(str(exp))
             pass
         return teams
 

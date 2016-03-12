@@ -183,7 +183,8 @@ class ReqMgrService(TemplatedPage):
         api = RestApiHub(app, config.reqmgr, mount)
 
         # initialize access to reqmgr2 APIs
-        self.reqmgr = ReqMgr(config.reqmgr.reqmgr2_url)
+        self.reqmgr_url = config.reqmgr.reqmgr2_url
+        self.reqmgr = ReqMgr(self.reqmgr_url)
         # only gets current view (This might cause to reponse time much longer, 
         # If upto date view is not needed overwrite Fale)
         self.reqmgr._noStale = True
@@ -210,6 +211,33 @@ class ReqMgrService(TemplatedPage):
         centralurl = cdict.get("central_logdb_url", "")
         identifier = cdict.get("log_reporter", "reqmgr2")
         self.logdb = LogDB(centralurl, identifier)
+
+        # local team cache which will request data from wmstats
+        base, uri = self.reqmgr_url.split('://')
+        base_url = '%s://%s' % (base, uri.split('/')[0])
+        self.wmstatsurl = cdict.get('wmstats_url', '%s/wmstatsserver' % base_url)
+        if  not self.wmstatsurl:
+            raise Exception('ReqMgr2 configuration file does not provide wmstats url')
+        self.team_cache = []
+
+    def getTeams(self):
+        "Helper function to get teams from wmstats or local cache"
+        teams = self.team_cache
+        url = '%s/data/teams' % self.wmstatsurl
+        params = {}
+        headers = {'Accept':'application/json'}
+        try:
+            data = getdata(url, params, headers)
+            if  'error' in data:
+                print("WARNING: fail to get teams from %s" % url)
+                print(data)
+            teams = data.get('result', [])
+            self.team_cache = teams
+        except Exception as exp:
+            print("WARNING: fail to get teams from %s" % url)
+            print(str(exp))
+            pass
+        return teams
 
     def user(self):
         """
@@ -343,7 +371,7 @@ class ReqMgrService(TemplatedPage):
                      'ProcessingString': '',
                      'MergedLFNBase': lfn_bases(),
                      'UnmergedLFNBase': lfn_unmerged_bases(),
-                     'Team': ''}
+                     'Team': self.getTeams()}
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,

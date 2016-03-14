@@ -52,7 +52,7 @@ agentName = "WMAgentCommissioning"
 agentNumber = 0
 
 # List of BossAir plugins that this agent will use.
-bossAirPlugins = ["CondorPlugin"]
+bossAirPlugins = ["PyCondorPlugin"]
 
 # Required for global pool accounting
 glideInAcctGroup = "production"

@@ -44,14 +44,14 @@ def main():
     
     (options, args) = parser.parse_args()
     if not options.camp and not options.reqStr:
-        print("Ex.: python inject-test-wfs.py -c Agent105_Validation -r Robot_Alan -t testbed-vocms009 -a DMWM_Test -p TEST_Alan_LoL_v2")  
+        print("Ex.: python inject-test-wfs.py -c Agent105_Validation -r Robot_Alan -t testbed-vocms009 -s T2_US_Nebraska,T2_DE_DESY -a DMWM_Test -p TEST_Alan_LoL_v2")
         parser.error('Campaign and requestString *must* be provided')
         sys.exit(1)
     mode = options.mode if options.mode else "DMWM"
     file = options.file if options.file else None
     url = options.url if options.url else "https://cmsweb-testbed.cern.ch"
     team = options.team if options.team else "testbed-vocms0230"
-    site = options.site if options.site else ["T1_US_FNAL", "T2_CH_CERN"]
+    site = options.site.split(',') if options.site else ["T1_US_FNAL", "T2_CH_CERN"]
     acqEra = options.acqEra if options.acqEra else "DMWM_TEST"
     procStr = options.procStr if options.procStr else "TEST_Alan_LoL"
     cernTemplates = ['MonteCarlo_LHE.json', 'TaskChainZJetsLNu_LHE.json']
@@ -108,7 +108,7 @@ def main():
             tmpProcStr = filename.replace('.json','_') + procStr
             # assignment setup
             assignRequest = {"assignRequest": {}}
-            assignRequest['assignRequest']['SiteWhitelist']    = "T2_CH_CERN" if filename in cernTemplates else site 
+            assignRequest['assignRequest']['SiteWhitelist']    = "T2_CH_CERN" if filename in cernTemplates else site
             assignRequest['assignRequest']['Team']             = team 
             assignRequest['assignRequest']['Dashboard']        = "integration" 
             assignRequest['assignRequest']['AcquisitionEra']   = acqEra 

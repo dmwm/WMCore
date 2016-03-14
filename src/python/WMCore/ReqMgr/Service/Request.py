@@ -16,12 +16,12 @@ from WMCore.REST.Validation import validate_str
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, RESULT_MASK_FOR_DAS
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST,\
+    REQUEST_STATE_TRANSITION, ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
+from WMCore.ReqMgr.Utils.Validation import validate_request_create_args,\
     validate_request_update_args, loadRequestSchema
 
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
@@ -61,7 +61,7 @@ class Request(RESTEntity):
             param.args.pop()
             return
         
-        no_multi_key = ["detail", "_nostale", "date_range"]
+        no_multi_key = ["detail", "_nostale", "date_range", "common_dict"]
         for key, value in param.kwargs.items():
             # convert string to list
             if key not in no_multi_key and isinstance(value, basestring):
@@ -245,7 +245,53 @@ class Request(RESTEntity):
         workload = spec.factoryWorkloadConstruction(clone_args["RequestName"],
                                                     clone_args)
         return (workload, clone_args)
-
+    
+    def _maskTaskStepChain(self, masked_dict, req_dict, chain_name, mask_key):
+        
+        mask_exist = False
+        num_loop = req_dict["%sChain" % chain_name]
+        for i in range(num_loop):
+            if mask_key in req_dict["%s%s" % (chain_name, i+1)]:
+                mask_exist = True
+                break
+        if mask_exist: 
+            defaultValue = masked_dict[mask_key]
+            masked_dict[mask_key] = []
+            # assume mask_key is list if the condition doesn't meet.
+            
+            for i in range(num_loop):
+                chain = req_dict["%s%s" % (chain_name, i+1)]
+                if mask_key in chain:
+                    chain_key = "%sName" % chain_name
+                    masked_dict[mask_key].append({chain_key: chain[chain_key], mask_key: chain[mask_key]})
+                else:
+                    if isinstance(defaultValue, dict):
+                        value = defaultValue.get(chain_key, None)
+                    else:
+                        value = defaultValue
+                    masked_dict[mask_key].append({chain_key: chain[chain_key], mask_key: chain[mask_key]})
+        return
+    
+    def _mask_result(self, mask, result):
+        
+        if len(mask) == 1 and mask[0] == "DAS":
+            mask = RESULT_MASK_FOR_DAS
+        
+        if len(mask) > 0:
+            masked_result = {}
+            for req_name, req_info in result.items():
+                masked_result.setdefault(req_name, {})
+                for mask_key in mask:
+                    masked_result[req_name].update({mask_key: req_info.get(mask_key, None)})
+                    if "TaskChain" in req_info:
+                        self._maskTaskStepChain(masked_result[req_name], req_info, "Task", mask_key)
+                    elif "StepChain" in req_info:
+                        self._maskTaskStepChain(masked_result[req_name], req_info,"Step", mask_key)
+                        
+            return masked_result
+        else:
+            return result
+    
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     def get(self, **kwargs):
         """
@@ -255,7 +301,7 @@ class Request(RESTEntity):
         If jobInfo is True, returns jobInfomation about the request as well.
 
         TODO:
-        stuff like this has to filtered out from result of this call:
+        stuff like this has to masked out from result of this call:
             _attachments: {u'spec': {u'stub': True, u'length': 51712, u'revpos': 2, u'content_type': u'application/json'}}
             _id: maxa_RequestString-OVERRIDE-ME_130621_174227_9225
             _rev: 4-c6ceb2737793aaeac3f1cdf591593da4
@@ -275,7 +321,11 @@ class Request(RESTEntity):
         team = kwargs.get("team", [])
         mc_pileup = kwargs.get("mc_pileup", [])
         data_pileup = kwargs.get("data_pileup", [])
+        mask = kwargs.get("mask", [])
         detail = kwargs.get("detail", True)
+        # set the return format. default format has requset name as a key
+        # if is set to one it returns list of dictionary with RequestName field.
+        common_dict = int(kwargs.get("common_dict", 0))
         if detail in (False, "false", "False"):
             option = {"include_docs": False}
         else:
@@ -286,7 +336,9 @@ class Request(RESTEntity):
             self.reqmgr_db_service._setNoStale()
 
         request_info = []
-
+        
+        if len(status) == 1 and status[0] == "ACTIVE":
+            status = ACTIVE_STATUS
         if status and not team and not request_type:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, status))
         if status and team:
@@ -317,9 +369,20 @@ class Request(RESTEntity):
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bydatapileup", option, data_pileup))
         # get interaction of the request
         result = self._intersection_of_request_info(request_info)
+        
         if len(result) == 0:
             return []
-        return rows([result])
+        
+        result = self._mask_result(mask, result)
+        # If detail is set to False return just list of request name
+        if not option["include_docs"]:
+            return result.keys()
+        
+        if common_dict == 1:
+            response_list = result.values()
+        else:
+            response_list = [result] 
+        return rows(response_list)
 
     def _intersection_of_request_info(self, request_info):
         requests = {}

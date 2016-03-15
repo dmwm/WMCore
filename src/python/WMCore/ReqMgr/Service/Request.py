@@ -411,7 +411,8 @@ class Request(RESTEntity):
         
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)
-        # trailing / is needed for the savecouchUrl function
+        #update OutputDatasets after ProcessingString and AcquisionEra is updated
+        request_args['OutputDatasets'] = workload.listOutputDatasets()
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         return report

@@ -1304,28 +1304,6 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.section_('overrides')
 
-    def getPhEDExInjectionOverride(self):
-        """
-        _getPhEDExInjectionOverride_
-
-        Get the site to where the files from
-        this workload should be registered to (if any)
-        """
-        if hasattr(self.data, 'overrides'):
-            return getattr(self.data.overrides, 'injectionSite', None)
-        return None
-
-    def setPhEDExInjectionOverride(self, site):
-        """
-        _setPhEDExInjectionOverride_
-
-        Set a site where the files from this workload
-        should be registered to in PhEDEx
-        """
-        overrideSection = self.data.section_('overrides')
-        overrideSection.injectionSite = site
-        return
-
     def setBlockCloseSettings(self, blockCloseMaxWaitTime,
                               blockCloseMaxFiles, blockCloseMaxEvents,
                               blockCloseMaxSize):

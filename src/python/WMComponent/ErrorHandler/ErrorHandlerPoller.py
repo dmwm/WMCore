@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
-# W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm
 
@@ -27,13 +25,11 @@ immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
 Note that failureExitCodes has precedence over passExitCodes.
 """
-__all__ = []
-
-
 import os.path
 import threading
 import logging
 import traceback
+from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -45,6 +41,7 @@ from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
 from WMCore.Database.CouchUtils import CouchConnectionError
+
 
 class ErrorHandlerException(WMException):
     """
@@ -73,7 +70,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries     = self.config.ErrorHandler.maxRetries
-        if type(self.maxRetries) != dict:
+        if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default' : self.maxRetries}
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
@@ -90,10 +87,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
                                                     database = config.ACDC.database)
-
-        # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available
-        self.initAlerts(compName = "ErrorHandler")
 
         return
 
@@ -156,7 +149,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 retrydoneJobs.append(job)
                 msg = "Stopping retries for job %d" % job['id']
                 logging.debug(msg)
-                self.sendAlert(4, msg = msg)
                 logging.debug("JobInfo: %s" % job)
 
         if self.readFWJR:
@@ -226,7 +218,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     startTime = times['startTime']
                     stopTime = times['stopTime']
 
-                if startTime == None or stopTime == None:
+                if startTime is None or stopTime is None:
                     # We have no information to make a decision, keep going.
                     logging.debug("No start, stop times for steps for job %i" % job['id'])
                 elif stopTime - startTime > self.maxFailTime:
@@ -238,7 +230,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 if len([x for x in report.getExitCodes() if x in self.exitCodes]):
                     msg = "Job %i exhausted due to a bad exit code (%s)" % (job['id'], str(report.getExitCodes()))
                     logging.error(msg)
-                    self.sendAlert(4, msg = msg)
                     exhaustJobs.append(job)
                     continue
 
@@ -263,7 +254,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         """
         myThread = threading.currentThread()
-        logging.debug("About to process %d retry done jobs" % len(jobList))
+        logging.info("About to process %d retry done jobs" % len(jobList))
         myThread.transaction.begin()
         self.exhaustJobs(jobList)
         myThread.transaction.commit()
@@ -276,7 +267,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         """
         myThread = threading.currentThread()
-        logging.debug("About to process %d failures" % len(jobList))
+        logging.info("About to process %d failures" % len(jobList))
         myThread.transaction.begin()
         self.processRetries(jobList, state)
         myThread.transaction.commit()
@@ -288,9 +279,8 @@ class ErrorHandlerPoller(BaseWorkerThread):
         Queries DB for all watched filesets, if matching filesets become
         available, create the subscriptions
         """
-
         # Run over created, submitted and executed job failures
-        failure_states = [ 'create', 'submit', 'job' ]
+        failure_states = ['create', 'submit', 'job']
         for state in failure_states:
             idList = self.getJobs.execute(state = "%sfailed" % state)
             logging.info("Found %d failed jobs in state %sfailed" % (len(idList), state))
@@ -317,15 +307,13 @@ class ErrorHandlerPoller(BaseWorkerThread):
 
         Load jobs in bulk
         """
-
         binds = []
         for jobID in idList:
             binds.append({"jobid": jobID})
-
         results = self.idLoad.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
@@ -336,7 +324,6 @@ class ErrorHandlerPoller(BaseWorkerThread):
             listOfJobs.append(tmpJob)
 
         return listOfJobs
-
 
     def loadJobsFromListFull(self, idList):
         """
@@ -353,7 +340,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         results = self.loadAction.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
@@ -371,28 +358,16 @@ class ErrorHandlerPoller(BaseWorkerThread):
         And deal with it as desired.
         """
         logging.debug("Running error handling algorithm")
-        myThread = threading.currentThread()
         try:
             self.handleErrors()
-        except WMException as ex:
-            try:
-                myThread.transaction.rollback()
-            except:
-                pass
-            raise
-        except CouchConnectionError as ex:
-            msg = "Caught CouchConnectionError exception in ErrorHandler\n"
+        except (CouchConnectionError, HTTPException) as ex:
+            msg = "Caught CouchConnectionError/HTTPException exception in ErrorHandler\n"
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
         except Exception as ex:
-            msg = "Caught exception in ErrorHandler\n"
+            msg = "Caught unexpected exception in ErrorHandler\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
-            msg += "\n\n"
-            logging.error(msg)
-            self.sendAlert(6, msg = msg)
-            if getattr(myThread, 'transaction', None) != None \
-               and getattr(myThread.transaction, 'transaction', None) != None:
-                myThread.transaction.rollback()
+            logging.exception(msg)
             raise ErrorHandlerException(msg)

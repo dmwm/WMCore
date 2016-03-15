@@ -213,8 +213,10 @@ class WorkQueueElement(dict):
     def passesSiteRestriction(self, site):
         """Takes account of white & black list, and input data to work out
         if site can run the work"""
-        # Don't check anything if useSiteListAsLocation/trusSiteLists is enabled
-        if self['NoLocationUpdate']:
+        # Don't check anything if trustSitelists is enabled and SiteWhitelist is empty or site is 
+        # is site whitelist
+        if self['NoLocationUpdate'] and \
+           (not self['SiteWhitelist'] or site in self['SiteWhitelist']):
             return True
         # data restrictions - all data must be present at site
         for locations in self['Inputs'].values():

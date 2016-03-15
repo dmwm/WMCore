@@ -1150,6 +1150,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialSubType="Replica", nonCustodialSubType="Replica",
                                             custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                             priority="Low", primaryDataset=None,
+                                            useSkim = False, isSkim = False,
                                             dataTier=None, deleteFromSource=False):
         """
         _setSubscriptionInformationWildCards_
@@ -1192,6 +1193,8 @@ class WMWorkloadHelper(PersistencyHelper):
                                         nonCustodialGroup=nonCustodialGroup,
                                         priority=priority,
                                         primaryDataset=primaryDataset,
+                                        useSkim=useSkim,
+                                        isSkim=isSkim,
                                         dataTier=dataTier,
                                         deleteFromSource=deleteFromSource)
 
@@ -1200,6 +1203,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                    custodialSubType="Replica", nonCustodialSubType="Replica",
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
+                                   useSkim = False, isSkim = False,
                                    dataTier=None, deleteFromSource=False):
         """
         _setSubscriptionInformation_
@@ -1226,6 +1230,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialSubType, nonCustodialSubType,
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
+                                            useSkim, isSkim,
                                             dataTier, deleteFromSource)
             self.setSubscriptionInformation(task,
                                             custodialSites, nonCustodialSites,
@@ -1233,6 +1238,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                             custodialSubType, nonCustodialSubType,
                                             custodialGroup, nonCustodialGroup,
                                             priority, primaryDataset,
+                                            useSkim, isSkim,
                                             dataTier, deleteFromSource)
 
         return

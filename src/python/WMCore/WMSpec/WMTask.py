@@ -897,6 +897,7 @@ class WMTaskHelper(TreeHelper):
                                    custodialSubType = "Replica", nonCustodialSubType = "Replica",
                                    custodialGroup = "DataOps", nonCustodialGroup = "DataOps",
                                    priority = "Low", primaryDataset = None,
+                                   useSkim = False, isSkim = False,
                                    dataTier = None, deleteFromSource = False):
         """
         _setSubscriptionsInformation_
@@ -926,9 +927,18 @@ class WMTaskHelper(TreeHelper):
             outputDataset = entry["outputDataset"]
             outputModule = entry["outputModule"]
 
-            primDs = outputDataset.split('/')[1]
-            tier = outputDataset.split('/')[3]
+            dsSplit = outputDataset.split('/')
+
+            primDs = dsSplit[1]
+
+            procDsSplit = dsSplit[2].split('-')
+            skim = ( len(procDsSplit) == 4 )
+
+            tier = dsSplit[3]
+
             if primaryDataset and primDs != primaryDataset:
+                continue
+            if useSkim and isSkim != skim:
                 continue
             if dataTier and tier != dataTier:
                 continue

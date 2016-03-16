@@ -108,6 +108,8 @@ class MonteCarloTestCase(unittest.TestCase):
                     last_lumi += math.ceil(((last_event - first_event + 1) %
                                 SliceSize) / splitArgs['SubSliceSize'])
                     last_lumi += (lumis_per_job * (unit['Jobs'] - 1)) - 1
+                print 'From Unit: %s %s %s' % (unit['Mask']['LastEvent'], unit['Mask']['LastLumi'], unit['Mask']['FirstRun'])
+                print 'Calculated: %s %s %s' % (last_event, last_lumi, first_run)
                 self.assertEqual(unit['Mask']['LastEvent'], last_event)
                 self.assertEqual(unit['Mask']['LastLumi'], last_lumi)
                 self.assertEqual(unit['Mask']['FirstRun'], first_run)

@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W0613, W6501
-# W6501: It doesn't like string formatting in logging messages
 """
 The actual error handler algorithm
 
@@ -27,13 +25,11 @@ immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
 Note that failureExitCodes has precedence over passExitCodes.
 """
-__all__ = []
-
-
 import os.path
 import threading
 import logging
 import traceback
+from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 
@@ -45,6 +41,7 @@ from WMCore.ACDC.DataCollectionService  import DataCollectionService
 from WMCore.WMException                 import WMException
 from WMCore.FwkJobReport.Report         import Report
 from WMCore.Database.CouchUtils import CouchConnectionError
+
 
 class ErrorHandlerException(WMException):
     """
@@ -73,7 +70,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
 
         self.maxRetries     = self.config.ErrorHandler.maxRetries
-        if type(self.maxRetries) != dict:
+        if not isinstance(self.maxRetries, dict):
             self.maxRetries = {'default' : self.maxRetries}
         if 'default' not in self.maxRetries:
             raise ErrorHandlerException('Max retries for the default job type must be specified')
@@ -226,7 +223,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
                     startTime = times['startTime']
                     stopTime = times['stopTime']
 
-                if startTime == None or stopTime == None:
+                if startTime is None or stopTime is None:
                     # We have no information to make a decision, keep going.
                     logging.debug("No start, stop times for steps for job %i" % job['id'])
                 elif stopTime - startTime > self.maxFailTime:
@@ -325,7 +322,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         results = self.idLoad.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
@@ -353,7 +350,7 @@ class ErrorHandlerPoller(BaseWorkerThread):
         results = self.loadAction.execute(jobID = binds)
 
         # You have to have a list
-        if type(results) == dict:
+        if isinstance(results, dict):
             results = [results]
 
         listOfJobs = []
@@ -374,24 +371,18 @@ class ErrorHandlerPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         try:
             self.handleErrors()
-        except WMException as ex:
-            try:
-                myThread.transaction.rollback()
-            except:
-                pass
-            raise
-        except CouchConnectionError as ex:
-            msg = "Caught CouchConnectionError exception in ErrorHandler\n"
+        except (CouchConnectionError, HTTPException) as ex:
+            msg = "Caught CouchConnectionError/HTTPException exception in ErrorHandler\n"
             msg += "transactions postponed until the next polling cycle\n"
             msg += str(ex)
             logging.exception(msg)
+            myThread.transaction.rollback()
         except Exception as ex:
             msg = "Caught exception in ErrorHandler\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             msg += "\n\n"
-            logging.error(msg)
-            self.sendAlert(6, msg = msg)
+            logging.exception(msg)
             if getattr(myThread, 'transaction', None) != None \
                and getattr(myThread.transaction, 'transaction', None) != None:
                 myThread.transaction.rollback()

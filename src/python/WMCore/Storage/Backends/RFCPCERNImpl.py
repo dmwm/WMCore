@@ -35,7 +35,7 @@ class RFCPCERNImpl(StageOutImpl):
          uses pfn
 
         """
-        return "%s" % pfn
+        return pfn
 
 
     def createOutputDirectory(self, targetPFN):
@@ -95,9 +95,11 @@ class RFCPCERNImpl(StageOutImpl):
         _createStageOutCommand_
 
         Build the stageout command: rfcp for castor and xrdcp for eos
-
         If adler32 checksum is provided, use it for the transfer
 
+        xrdcp options used:
+          -f re-creates a file if it's already present
+          -N does not display the progress bar
         """
 
         result = ""
@@ -116,7 +118,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            result += "xrdcp -f -s "
+            result += "xrdcp -f -N "
 
             if useChecksum:
 
@@ -291,28 +293,27 @@ class RFCPCERNImpl(StageOutImpl):
         simpleCastorPath = None
 
         # full castor PFNs
-        if simpleCastorPath == None:
-            regExpParser = re.compile('/+castor/cern.ch/(.*)')
-            match = regExpParser.match(complexCastorPath)
-            if ( match != None ):
-                simpleCastorPath = '/castor/cern.ch/' + match.group(1)
+        regExpParser = re.compile('/+castor/cern.ch/(.*)')
+        match = regExpParser.match(complexCastorPath)
+        if match:
+            simpleCastorPath = '/castor/cern.ch/' + match.group(1)
 
         # rfio style URLs
-        if simpleCastorPath == None:
+        if not simpleCastorPath:
             regExpParser = re.compile('rfio:.*/+castor/cern.ch/([^?]+).*')
             match = regExpParser.match(complexCastorPath)
-            if ( match != None ):
+            if match:
                 simpleCastorPath = '/castor/cern.ch/' + match.group(1)
 
         # xrootd/castor style URLs
-        if simpleCastorPath == None:
+        if not simpleCastorPath:
             regExpParser = re.compile('root:.*/+castor/cern.ch/([^?]+).*')
             match = regExpParser.match(complexCastorPath)
-            if ( match != None ):
+            if match:
                 simpleCastorPath = '/castor/cern.ch/' + match.group(1)
 
         # if that does not work raise an error
-        if simpleCastorPath == None:
+        if not simpleCastorPath:
             raise StageOutError("Can't parse castor path out of URL !")
 
         # remove multi-slashes from path
@@ -367,7 +368,7 @@ class RFCPCERNImpl(StageOutImpl):
                 if element.startswith( 'path=' ):
                     path = element.replace( 'path=','' )
                 else:
-                    buildOpaque += '&' + element
+                    buildingOpaque += '&' + element
             opaque = buildingOpaque
 
         return protocol, host, path, opaque

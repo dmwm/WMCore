@@ -41,7 +41,7 @@ class SRMImpl(StageOutImpl):
         handle both srm and file pfn types
         """
         if pfn.startswith("srm://"):
-            return "srm-advisory-delete %s" % pfn
+            return "srm-advisory-delete -2 -retry_num=0 %s" % pfn
         elif pfn.startswith("file:"):
             return "/bin/rm -f %s" % pfn.replace("file://", "", 1)
         else:
@@ -57,7 +57,7 @@ class SRMImpl(StageOutImpl):
         """
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
-        result += "srmcp -report=$REPORT_FILE -retry_num=0 "
+        result += "srmcp -report=$REPORT_FILE -retry_num=0 -request_lifetime=2400 "
 
         if options != None:
             result += " %s " % options
@@ -88,28 +88,18 @@ class SRMImpl(StageOutImpl):
         result += "echo \"Local File Size is: $FILE_SIZE\"\n"
         metadataCheck = \
         """
-        for ((a=1; a <= 10 ; a++))
-        do
-           SRM_SIZE=`srm-get-metadata -retry_num=0 %s 2>/dev/null | grep 'size :[0-9]' | cut -f2 -d":"`
-           echo "SRM Size is $SRM_SIZE"
-           if [[ $SRM_SIZE > 0 ]]; then
-              if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-                 exit 0
-              else
-                 echo "Error: Size Mismatch between local and SE"
-                 echo "Cleaning up failed file:"
-                 %s
-                 exit 60311
-              fi
-           else
-              sleep 2
-           fi
-        done
-        echo "Cleaning up failed file:"
-        %s
-        exit 60311
-
-        """ % (remotePFN, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
+        SRM_SIZE=`srm-get-metadata -retry_num=0 %s 2>/dev/null | grep 'size :[0-9]' | cut -f2 -d":"`
+        echo "SRM Size is $SRM_SIZE"
+        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+           exit 0
+        else
+           echo "Error: Size Mismatch between local and SE"
+           echo "Cleaning up failed file:"
+           %s
+           exit 60311
+        fi
+        fi
+        """ % (remotePFN, self.createRemoveFileCommand(targetPFN))
         result += metadataCheck
 
         return result
@@ -122,7 +112,7 @@ class SRMImpl(StageOutImpl):
         CleanUp pfn provided
 
         """
-        command = "srm-advisory-delete %s" % pfnToRemove
+        command = "srm-advisory-delete -2 -retry_num=0 %s" % pfnToRemove
         self.executeCommand(command)
 
 

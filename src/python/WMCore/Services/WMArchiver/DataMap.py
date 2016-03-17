@@ -1,7 +1,6 @@
 from __future__ import (division, print_function)
 
 import socket
-import time
 import copy
 
 # From top level
@@ -208,10 +207,16 @@ def changeToFileRef(fwjr, fArray, fArrayRef):
     else:
         return
     
-def createArchiverDoc(job_id, fwjr, version=None):
+def createArchiverDoc(job, version=None):
     """
     job_id is jobid + retry count same as couch db _id
     """
+    
+    job_id = job["id"]
+    fwjr = job['doc']["fwjr"]
+    jobtype = job["jobtype"]
+    jobstate = job['jobstate']
+    create_ts = job['timestamp']
     newfwjr = convertToArchiverFormat(fwjr)
     
     fArrayRef = {}
@@ -247,6 +252,8 @@ def createArchiverDoc(job_id, fwjr, version=None):
     newfwjr['meta_data'] = {'agent_ver': version,
                          'host': socket.gethostname().lower(),
                          'fwjr_id': job_id,
-                         'ts': int(time.time())
+                         'jobtype': jobtype,
+                         'jobstate': jobstate,
+                         'ts': create_ts
                          }
     return newfwjr

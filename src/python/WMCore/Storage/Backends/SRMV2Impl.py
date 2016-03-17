@@ -61,8 +61,8 @@ class SRMV2Impl(StageOutImpl):
                 os.makedirs(targetdir)
             return
 
-        mkdircommand = "srmmkdir -retry_num=%s " % self.numRetries
-        checkdircmd="srmls -recursion_depth=0 -retry_num=%s " % self.numRetries
+        mkdircommand = "srmmkdir -retry_num=0 "
+        checkdircmd="srmls -recursion_depth=0 -retry_num=1 "
 
         #  // Loop from top level checking existence stop when directory exists
         # // assume first 4 slashes are from srm://host:8443/srm/managerv2?SFN=
@@ -70,9 +70,9 @@ class SRMV2Impl(StageOutImpl):
                                         for i in range(targetdir.count("/")-4)]
         dirsToCheck = dirs[:]; dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
-        for count, dir in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
+        for count, folder in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
             try:
-                exitCode, output = self.run(checkdircmd + dir)
+                exitCode, output = self.run(checkdircmd + folder)
                 levelToCreateFrom = count # create dirs from here (at least)
                 if exitCode: # did srmls fail to execute properly?
                     raise RuntimeError("Error checking directory existence, %s" % str(output))
@@ -80,7 +80,7 @@ class SRMV2Impl(StageOutImpl):
                     break
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
-                msg += "%s\n" % checkdircmd + dir
+                msg += "%s\n" % checkdircmd + folder
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
@@ -88,15 +88,15 @@ class SRMV2Impl(StageOutImpl):
 
         #  // Create needed directory levels from end of previous loop
         # //  to end of directory structure
-        for dir in dirs[levelToCreateFrom:]:
-            print("Create directory: %s" % dir)
+        for folder in dirs[levelToCreateFrom:]:
+            print("Create directory: %s" % folder)
             try:
-                exitCode, output = self.run(mkdircommand + dir)
+                exitCode, output = self.run(mkdircommand + folder)
                 if exitCode:
                     raise RuntimeError("Error creating directory, %s" % str(output))
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
-                msg += "%s\n" % mkdircommand + dir
+                msg += "%s\n" % mkdircommand + folder
                 msg += "Exception: %s\n" % str(ex)
                 msg += "Go on anyway..."
                 print(msg)
@@ -107,7 +107,7 @@ class SRMV2Impl(StageOutImpl):
         handle both srm and file pfn types
         """
         if pfn.startswith("srm://"):
-            return "srmrm %s" % pfn
+            return "srmrm -2 -retry_num=0 %s" % pfn
         elif pfn.startswith("file:"):
             return "/bin/rm -f %s" % pfn.replace("file://", "", 1)
         else:
@@ -120,10 +120,15 @@ class SRMV2Impl(StageOutImpl):
 
         Build an srmcp command
 
+        srmcp options used (so hard to find documentation for it...):
+          -2                enables srm protocol version 2
+          -report           path to the report file
+          -retry_num        number of retries before before client gives up
+          -request_lifetime request lifetime in seconds
         """
         result = "#!/bin/sh\n"
         result += "REPORT_FILE=`pwd`/srm.report.$$\n"
-        result += "srmcp -2 -report=$REPORT_FILE -retry_num=0"
+        result += "srmcp -2 -report=$REPORT_FILE -retry_num=0 -request_lifetime=2400"
 
         if options != None:
             result += " %s " % options
@@ -193,28 +198,18 @@ class SRMV2Impl(StageOutImpl):
 
         metadataCheck = \
         """
-        for ((a=1; a <= 10 ; a++))
-        do
-           SRM_SIZE=`srmls -recursion_depth=0 -retry_num=0 %s 2>/dev/null | grep '%s' | grep -v '%s' | awk '{print $1;}'`
-           echo "SRM Size is $SRM_SIZE"
-           if [[ $SRM_SIZE > 0 ]]; then
-              if [[ $SRM_SIZE == $FILE_SIZE ]]; then
-                 exit 0
-              else
-                 echo "Error: Size Mismatch between local and SE"
-                 echo "Cleaning up failed file:"
-                 %s
-                 exit 60311
-              fi
-           else
-              sleep 2
-           fi
-        done
-        echo "Cleaning up failed file:"
-        %s
-        exit 60311
-
-        """ % (remotePFN, remotePath, remoteHost, self.createRemoveFileCommand(targetPFN), self.createRemoveFileCommand(targetPFN))
+        SRM_OUTPUT=`srmls -recursion_depth=0 -retry_num=1 %s 2>/dev/null`
+        SRM_SIZE=`echo $SRM_OUTPUT | grep '%s' | grep -v '%s' | awk '{print $1;}'`
+        echo "SRM Size is $SRM_SIZE"
+        if [[ $SRM_SIZE == $FILE_SIZE ]]; then
+           exit 0
+        else
+           echo $SRM_OUTPUT
+           echo "ERROR: Size Mismatch between local and SE. Cleaning up failed file..."
+           %s
+           exit 60311
+        fi
+        """ % (remotePFN, remotePath, remoteHost, self.createRemoveFileCommand(targetPFN))
         result += metadataCheck
 
         return result
@@ -227,7 +222,7 @@ class SRMV2Impl(StageOutImpl):
         CleanUp pfn provided
 
         """
-        command = "srmrm %s" % pfnToRemove
+        command = "srmrm -2 -retry_num=0 %s" % pfnToRemove
         self.executeCommand(command)
 
 

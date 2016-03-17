@@ -27,6 +27,7 @@ class LCGImpl(StageOutImpl):
         StageOutImpl.__init__(self, stagein)
 
         self.setups = ''
+        self.timeoutOptions = '--srm-timeout 600 --sendreceive-timeout 600 --connect-timeout 300'
         setupScripts = {
             'OSG_GRID':           '/setup.sh',
             'GLITE_WMS_LOCATION': '/etc/profile.d/glite-wmsui.sh',
@@ -39,6 +40,7 @@ class LCGImpl(StageOutImpl):
                 fullScript = os.path.normpath(os.path.join(os.environ[env], script))
                 if os.path.isfile(fullScript):
                     self.setups += 'source %s; ' % fullScript
+        self.setups += 'date "+%Y-%m-%dT%H:%M:%S"; '
 
     def createSourceName(self, protocol, pfn):
         """
@@ -66,9 +68,22 @@ class LCGImpl(StageOutImpl):
     def createRemoveFileCommand(self, pfn):
         """
         handle both srm and file pfn types
+
+        lcg-del options used:
+          -b don't make BDII calls to get SE type. SURLs must be fully provided
+          -l it means that the SURL is not registered in any LFC server, don't connect to the LFC server
+          -D specifies the default SE type we want to use
+          --srm-timeout         Sets  the SRM timeout, define the maximum waiting time for a SRM query.
+                                The request will be aborted if it is still queued after srmtimeout seconds.
+                                Default to 180 seconds.
+          --sendreceive-timeout Sets the send/receive timeout, maximum total time for the operation.
+                                The operation will be aborted if the operation is not finished before X seconds.
+                                Default to 3600 seconds.
+          --connect-timeout     The connection will be aborted if the remote host doesn't
+                                reply before X seconds. Default to 60 seconds.
         """
         if pfn.startswith("srm://"):
-            return "%s lcg-del -b -l -D srmv2 --vo cms %s" % (self.setups, pfn)
+            return "%s lcg-del -b -l -D srmv2 %s --vo cms %s" % (self.setups, self.timeoutOptions, pfn)
         elif pfn.startswith("file:"):
             return "/bin/rm -f %s" % pfn.replace("file:", "", 1)
         else:
@@ -105,7 +120,9 @@ class LCGImpl(StageOutImpl):
             result += "export LD_LIBRARY_PATH=`echo $LD_LIBRARY_PATH | sed -e 's+:*/cvmfs/cms.cern.ch/[^:]*++'g`\n"
 
             result += "echo Sourcing CVMFS UI setup script\n"
-            result += ". /cvmfs/grid.cern.ch/emi-ui-2.9.0-1_sl5v1/etc/profile.d/setup-cvmfs-ui.sh\n"
+            # this version dates back to Aug 2013. So, let's get the symlink to the latest one instead
+            #result += ". /cvmfs/grid.cern.ch/emi-ui-2.9.0-1_sl5v1/etc/profile.d/setup-cvmfs-ui.sh\n"
+            result += ". /cvmfs/grid.cern.ch/emi3ui-latest/etc/profile.d/setup-ui-example.sh\n"
 
             result += copyCommand
         else:
@@ -161,7 +178,7 @@ class LCGImpl(StageOutImpl):
 
         metadataCheck = \
             """
-            LCG_OUTPUT=`lcg-ls -l -b -D srmv2 --srm-timeout 1800 %s 2>/dev/null`
+            LCG_OUTPUT=`lcg-ls -l -b -D srmv2 %s %s 2>/dev/null`
             SRM_SIZE=`echo "$LCG_OUTPUT" | awk 'NR==1{print $5}'`
             SRM_CHECKSUM=`echo "$LCG_OUTPUT" | sed -nr 's/^.*\s([a-f0-9]{8})\s*\([aA][dD][lL][eE][rR]32\)\s*$/\\1/p'`
             echo "Remote File Size is: $SRM_SIZE"
@@ -174,11 +191,7 @@ class LCGImpl(StageOutImpl):
                 %s
                 exit 60311
             fi
-            echo "Cleaning up failed file:"
-            %s
-            exit 60311
-
-            """ % (remotePFN, checksumCommand, removeCommand, removeCommand)
+            """ % (self.timeoutOptions, remotePFN, checksumCommand, removeCommand)
         result += metadataCheck
 
         # close sub-shell for CVMFS use case
@@ -194,7 +207,7 @@ class LCGImpl(StageOutImpl):
         CleanUp pfn provided
 
         """
-        command = "%s lcg-del -b -l -D srmv2 --srm-timeout 1800 --vo cms %s" % (self.setups, pfnToRemove)
+        command = "%s lcg-del -b -l -D srmv2 %s --vo cms %s" % (self.setups, self.timeoutOptions, pfnToRemove)
         self.executeCommand(command)
 
 

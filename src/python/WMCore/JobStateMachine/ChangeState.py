@@ -313,12 +313,19 @@ class ChangeState(WMObject, WMConnectionBase):
                 except:
                     logging.error("Error while trying to strip input files from FWJR.  Ignoring.")
                     pass
-
+                
+                if newstate == "retrydone":
+                    jobState = "jobfailed"
+                else:
+                    jobState = newstate
+                    
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 jsonFWJR = job["fwjr"].__to_json__(None)
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
+                                "jobtype": job["jobType"],
+                                "jobstate": jobState,
                                 "retrycount": job["retry_count"],
                                 "archivestatus": "ready",
                                 "fwjr": jsonFWJR,

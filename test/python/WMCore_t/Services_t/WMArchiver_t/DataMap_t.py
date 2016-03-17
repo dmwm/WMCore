@@ -1,5 +1,6 @@
 from __future__ import (division, print_function) 
 import unittest
+import time
 from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
 
 SAMPLE_FWJR = {'fallbackFiles': [],
@@ -163,9 +164,14 @@ SAMPLE_FWJR = {'fallbackFiles': [],
 class DataMap_t(unittest.TestCase):
 
     def testConvertToArchiverFormat(self):
-
-        jobid = "1-0"
-        newData = createArchiverDoc(jobid, SAMPLE_FWJR)
+        
+        job = {}
+        job["id"] = "1-0" 
+        job['doc'] = {"fwjr": SAMPLE_FWJR}
+        job["jobtype"] = "Processing"
+        job['jobstate'] = "success"
+        job['timestamp'] = int(time.time())
+        newData = createArchiverDoc(job)
         import pprint
         pprint.pprint(newData)
         

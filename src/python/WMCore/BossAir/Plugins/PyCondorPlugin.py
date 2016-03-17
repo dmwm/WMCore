@@ -167,10 +167,21 @@ class PyCondorPlugin(BasePlugin):
                        2: "Running",
                        3: "Removed",
                        4: "Complete",
-                       5: "Held",
-                       6: "Running"}
+                       5: "Held"}
 
         return exitCodeMap
+
+    @staticmethod
+    def logToScheddExitCodeMap(x):
+        """
+        JobStatus shows the last status of the job
+        Get TriggerEventTypeNumber which is the current status of the job
+        Map it back to Schedd Status
+        Mapping done using the exit codes from condor website,
+        https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
+        """
+        logExitCode = {0: 1, 1: 1, 2: 0, 3: 2, 4: 3, 5: 4, 6: 2, 7: 0, 8: 0, 9: 4, 10: 0, 11: 1, 12: 5, 13: 2}
+        return logExitCode.get(x, 100)
 
     def __init__(self, config):
 
@@ -206,6 +217,8 @@ class PyCondorPlugin(BasePlugin):
         self.errorCount = 0
         self.defaultTaskPriority = getattr(config.BossAir, 'defaultTaskPriority', 0)
         self.maxTaskPriority = getattr(config.BossAir, 'maxTaskPriority', 1e7)
+        self.jobsPerWorker = getattr(config.JobSubmitter, 'jobsPerWorker', 200)
+        self.deleteJDLFiles = getattr(config.JobSubmitter, 'deleteJDLFiles', True)
 
         # Required for global pool accounting
         self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
@@ -394,24 +407,20 @@ class PyCondorPlugin(BasePlugin):
         for sandbox in submitDict.keys():
             for numberOfCores in submitDict[sandbox].keys():
                 jobList = submitDict[sandbox][numberOfCores]
-                idList = [x['jobid'] for x in jobList]
                 if queueError:
                     # If the queue has failed, then we must not process
                     # any more jobs this cycle.
-                    continue
-                while len(jobList) > 0:
-                    jobsReady = jobList[:self.config.JobSubmitter.jobsPerWorker]
-                    jobList = jobList[self.config.JobSubmitter.jobsPerWorker:]
+                    break
+                for jobsReady in grouper(jobList, self.jobsPerWorker):
                     idList = [x['id'] for x in jobsReady]
                     jdlList = self.makeSubmit(jobList=jobsReady)
-                    if not jdlList or jdlList == []:
+                    if not jdlList:
                         # Then we got nothing
                         logging.error("No JDL file made!")
                         return {'NoResult': [0]}
                     jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
-                    handle = open(jdlFile, 'w')
-                    handle.writelines(jdlList)
-                    handle.close()
+                    with open(jdlFile, 'w') as handle:
+                        handle.writelines(jdlList)
                     jdlFiles.append(jdlFile)
 
                     # Now submit them
@@ -473,7 +482,7 @@ class PyCondorPlugin(BasePlugin):
                 exitCode = res['exitCode']
             except KeyError as ex:
                 msg = "Error in finding key from result pipe\n"
-                msg += "Something has gone crticially wrong in the worker\n"
+                msg += "Something has gone critically wrong in the worker\n"
                 try:
                     msg += "Result: %s\n" % str(res)
                 except:
@@ -530,7 +539,7 @@ class PyCondorPlugin(BasePlugin):
                     pass
 
         # Remove JDL files unless commanded otherwise
-        if getattr(self.config.JobSubmitter, 'deleteJDLFiles', True):
+        if self.deleteJDLFiles:
             for f in jdlFiles:
                 os.remove(f)
 
@@ -577,13 +586,13 @@ class PyCondorPlugin(BasePlugin):
 
         # Now go over the jobs from WMBS and see what we have
         for job in jobs:
-            if not job['jobid'] in jobInfo.keys():
+            if job['jobid'] not in jobInfo.keys():
                 if noInfoFlag:
                     self.procJobNoInfo(job, changeList, completeList)
                 else:
                     self.procCondorLog(job, changeList, completeList, runningList)
             else:
-                self.procClassAd(job, jobInfo, changeList, completeList, runningList)
+                self.procClassAd(job, jobInfo.get(job['jobid']), changeList, completeList, runningList)
 
         logging.debug("PyCondorPlugin tracking : %i/%i/%i (Executing/Changing/Complete)",
                       len(runningList), len(changeList), len(completeList))
@@ -598,7 +607,7 @@ class PyCondorPlugin(BasePlugin):
         """
 
         for job in jobs:
-            if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+            if job.get('cache_dir') is None or job.get('retry_count') is None:
                 # Then we can't do anything
                 logging.error("Can't find this job's cache_dir in PyCondorPlugin.complete")
                 logging.error("cache_dir: %s", job.get('cache_dir', 'Missing'))
@@ -606,12 +615,10 @@ class PyCondorPlugin(BasePlugin):
                 continue
             reportName = os.path.join(job['cache_dir'], 'Report.%i.pkl' % job['retry_count'])
             if os.path.isfile(reportName) and os.path.getsize(reportName) > 0:
-                # Then we have a real report.
-                # Do nothing
+                # Then we have a real report. Do nothing
                 continue
             if os.path.isdir(reportName):
-                # Then something weird has happened.
-                # File error, do nothing
+                # Then something weird has happened. File error, do nothing
                 logging.error("Went to check on error report for job %i.  Found a directory instead.\n", job['id'])
                 logging.error("Ignoring this, but this is very strange.\n")
 
@@ -619,15 +626,18 @@ class PyCondorPlugin(BasePlugin):
             logOutput = 'Could not find jobReport\n'
             # But we don't know exactly the condor id, so it will append
             # the last lines of the latest condor log in cache_dir
+            # TODO: Alan - how about we look at the .out or .err file instead of the .log?
             genLogPath = os.path.join(job['cache_dir'], 'condor.*.*.log')
             logPaths = glob.glob(genLogPath)
             errLog = None
             if len(logPaths):
                 errLog = max(logPaths, key=lambda path: os.stat(path).st_mtime)
-            if errLog != None and os.path.isfile(errLog):
+            if errLog is not None and os.path.isfile(errLog):
                 logTail = BasicAlgos.tail(errLog, 50)
                 logOutput += 'Adding end of condor.log to error message:\n'
                 logOutput += '\n'.join(logTail)
+
+            condorReport = Report()
             if not os.path.isdir(job['cache_dir']):
                 msg = "Serious Error in Completing condor job with id %s!\n" % job.get('id', 'unknown')
                 msg += "Could not find jobCache directory - directory deleted under job: %s\n" % job['cache_dir']
@@ -635,11 +645,10 @@ class PyCondorPlugin(BasePlugin):
                 logging.error(msg)
                 os.makedirs(job['cache_dir'])
                 logOutput += msg
-                condorReport = Report()
                 condorReport.addError("NoJobReport", 99304, "NoCacheDir", logOutput)
                 condorReport.save(filename=reportName)
                 continue
-            condorReport = Report()
+
             condorReport.addError("NoJobReport", 99303, "NoJobReport", logOutput)
             if os.path.isfile(reportName):
                 # Then we have a file already there.  It should be zero size due
@@ -680,16 +689,15 @@ class PyCondorPlugin(BasePlugin):
             if not jobAd:
                 logging.debug("No jobAd received for jobID %i", jobID)
             else:
-                desiredSites = jobAd.get('DESIRED_Sites').split(', ')
-                extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(', ')
+                desiredSites = jobAd.get('DESIRED_Sites').split(',')
+                extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(',')
                 if excludeSite:
                     # Remove siteName from DESIRED_Sites if job has it
-                    if siteName in desiredSites and siteName in extDesiredSites:
-                        usi = desiredSites
-                        if len(usi) > 1:
-                            usi.remove(siteName)
-                            usi = ','.join(map(str, usi))
-                            sd.edit('WMAgent_JobID == %i' % jobID, "DESIRED_Sites", classad.ExprTree('"%s"' % usi))
+                    if siteName in desiredSites:
+                        if len(desiredSites) > 1:
+                            desiredSites.remove(siteName)
+                            desiredSites = ','.join(desiredSites)
+                            sd.edit('WMAgent_JobID == %i' % jobID, "DESIRED_Sites", classad.ExprTree('"%s"' % desiredSites))
                         else:
                             jobtokill.append(job)
                     else:
@@ -698,10 +706,9 @@ class PyCondorPlugin(BasePlugin):
                 else:
                     # Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
                     if siteName not in desiredSites and siteName in extDesiredSites:
-                        usi = desiredSites
-                        usi.append(siteName)
-                        usi = ','.join(map(str, usi))
-                        sd.edit('WMAgent_JobID == %i' % jobID, "DESIRED_Sites", classad.ExprTree('"%s"' % usi))
+                        desiredSites.append(siteName)
+                        desiredSites = ','.join(desiredSites)
+                        sd.edit('WMAgent_JobID == %i' % jobID, "DESIRED_Sites", classad.ExprTree('"%s"' % desiredSites))
                     else:
                         # If job doesn't have the siteName in the siteList, just ignore it
                         logging.debug("Cannot find siteName %s in the sitelist", siteName)
@@ -885,7 +892,7 @@ class PyCondorPlugin(BasePlugin):
                 task_priority = 0
 
             prio = 0
-            if job.get('priority', None) != None:
+            if job.get('priority'):
                 try:
                     prio = int(job['priority'])
                 except ValueError:
@@ -939,36 +946,36 @@ class PyCondorPlugin(BasePlugin):
         else:
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % (jobCE))
 
-        if job.get('proxyPath', None):
+        if job.get('proxyPath'):
             jdl.append('x509userproxy = %s\n' % job['proxyPath'])
 
-        if job.get('requestName', None):
+        if job.get('requestName'):
             jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
             m = GROUP_NAME_RE.match(job['requestName'])
             if m:
                 jdl.append('+CMSGroups = %s\n' % classad.quote(m.groups()[0]))
 
-        if job.get('taskName', None):
+        if job.get('taskName'):
             jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
 
-        if job.get('taskType', None):
+        if job.get('taskType'):
             jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
 
         # Handling for AWS, cloud and opportunistic resources
         jdl.append('+AllowOpportunistic = %s\n' % job.get('allowOpportunistic', False))
 
         # dataset info
-        if job.get('inputDataset', None):
+        if job.get('inputDataset'):
             jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])
-        if job.get('inputDatasetLocations', None):
+        if job.get('inputDatasetLocations'):
             jdl.append('+DESIRED_CMSDataLocations = "%s"\n' % ','.join(job['inputDatasetLocations']))
 
         # Performance estimates
-        if job.get('estimatedJobTime', None):
+        if job.get('estimatedJobTime'):
             jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime'] / 60.0))
-        if job.get('estimatedMemoryUsage', None):
+        if job.get('estimatedMemoryUsage'):
             jdl.append('request_memory = %d\n' % int(job['estimatedMemoryUsage']))
-        if job.get('estimatedDiskUsage', None):
+        if job.get('estimatedDiskUsage'):
             jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
 
         # Set up JDL for multithreaded jobs
@@ -991,7 +998,7 @@ class PyCondorPlugin(BasePlugin):
         This is how you get the name of a CE for a job
         """
 
-        if not jobSite in self.locationDict.keys():
+        if jobSite not in self.locationDict.keys():
             siteInfo = self.locationAction.execute(siteName=jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
         return self.locationDict[jobSite]
@@ -1033,7 +1040,7 @@ class PyCondorPlugin(BasePlugin):
                         ## For some strange race condition, schedd sometimes does not publish StartDate for a Running Job
                         ## Get the entire classad for such a job
                         ## Do not crash WMA, wait for next polling cycle to get all the info.
-                        if jobAd["JobStatus"] == 2 and jobAd["JobStartDate"] is None:
+                        if jobAd["JobStatus"] == 2 and jobAd.get("JobStartDate") is None:
                             logging.debug("THIS SHOULD NOT HAPPEN. JobStartDate is MISSING from the CLASSAD.")
                             logging.debug("Could be caused by some race condition. Wait for the next Polling Cycle")
                             logging.debug("%s", str(jobAd))
@@ -1063,17 +1070,6 @@ class PyCondorPlugin(BasePlugin):
         Extract Exit status
 
         """
-
-        def LogToScheddExitCodeMap(x):
-            ### JobStatus shows the last status of the job
-            ### Get TriggerEventTypeNumber which is the current status of the job
-            ### Map it back to Schedd Status
-            ### Mapping done using the exit codes from condor website,
-            ### https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
-            LogExitCode = {0: 1, 1: 1, 2: 0, 3: 2, 4: 3, 5: 4, 6: 2, 7: 0, 8: 0, 9: 4, 10: 0, 11: 1, 12: 5, 13: 2}
-            n = LogExitCode.get(x) if LogExitCode.get(x) is not None else 100
-            return n
-
         ### This should select the latest log file in the cache_dir
         fmtime = 0
         logFile = None
@@ -1101,14 +1097,13 @@ class PyCondorPlugin(BasePlugin):
                                                    "WMAgent_JobID")):
 
                     _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
-                    tmpDict["JobStatus"] = LogToScheddExitCodeMap(_tmpStat)
+                    tmpDict["JobStatus"] = PyCondorPlugin.logToScheddExitCodeMap(_tmpStat)
                     tmpDict["submitTime"] = int(ulog[-1]["QDate"])
                     tmpDict["runningTime"] = int(ulog[-1]["JobStartDate"])
                     tmpDict["stateTime"] = int(ulog[-1]["EnteredCurrentStatus"])
                     tmpDict["runningCMSSite"] = ulog[-1]["MATCH_EXP_JOBGLIDEIN_CMSSite"]
                     tmpDict["WMAgentID"] = int(ulog[-1]["WMAgent_JobID"])
-                    _tmpID = tmpDict["WMAgentID"]
-                    jobLogInfo[_tmpID] = tmpDict
+                    jobLogInfo[tmpDict["WMAgentID"]] = tmpDict
                 else:
                     logging.debug('%s is CORRUPT', str(logFile))
             else:
@@ -1122,7 +1117,7 @@ class PyCondorPlugin(BasePlugin):
         """
         Process jobs where No ClassAd info is received from schedd
         """
-        if not job['status'] == 'Removed':
+        if job['status'] != 'Removed':
             logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s", job['jobid'], job['status'])
             # If the job is not in removed, move it to removed
             job['status'] = 'Removed'
@@ -1148,17 +1143,14 @@ class PyCondorPlugin(BasePlugin):
             completeList.append(job)
             return
 
-        jobStatus = int(jobAd.get('JobStatus', 100))
-
-        statName = 'Unknown'
-        if jobStatus in PyCondorPlugin.exitCodeMap().keys():
-            statName = PyCondorPlugin.exitCodeMap()[jobStatus]
+        jobStatus = int(jobAd.get('JobStatus', 0))
+        statName = PyCondorPlugin.exitCodeMap().get(jobStatus, 'Unknown')
 
         if statName == "Unknown":
             logging.info("JobLogInfo: jobid=%i in unknown state %i", job['jobid'], jobStatus)
 
         # Get the global state
-        job['globalState'] = PyCondorPlugin.stateMap()[statName]
+        job['globalState'] = PyCondorPlugin.stateMap().get(statName)
         logging.debug("JobLogInfo: JobStatus for jobid=%i is %s", job['jobid'], job['status'])
         if statName != job['status']:
             job['status'] = statName
@@ -1170,8 +1162,6 @@ class PyCondorPlugin(BasePlugin):
         if not job['status_time']:
             if job['status'] == 'Running':
                 job['status_time'] = int(jobAd.get('runningTime', 0))
-
-                # Check location for THIS running Job
                 job['location'] = jobAd.get('runningCMSSite', None)
                 if job['location'] is None:
                     logging.warning('JobLogInfo: A job (%s) is running with no CMS site', str(jobAd))
@@ -1190,23 +1180,19 @@ class PyCondorPlugin(BasePlugin):
 
         runningList.append(job)
 
-    def procClassAd(self, job, jobInfo, changeList, completeList, runningList):
+    def procClassAd(self, job, jobAd, changeList, completeList, runningList):
         """
         Process jobs that have classAd info from schedd
         """
-        jobAd = jobInfo.get(job['jobid'])
-        jobStatus = int(jobAd.get('JobStatus', 100))
+        jobStatus = int(jobAd.get('JobStatus', 0))
 
-        statName = 'Unknown'
-        if jobStatus in PyCondorPlugin.exitCodeMap().keys():
-            statName = PyCondorPlugin.exitCodeMap()[jobStatus]
+        statName = PyCondorPlugin.exitCodeMap().get(jobStatus, 'Unknown')
 
         if statName == "Unknown":
             logging.info("JobAdInfo: jobid=%i in unknown state %i", job['jobid'], jobStatus)
 
         # Get the global state
-        job['globalState'] = PyCondorPlugin.stateMap()[statName]
-
+        job['globalState'] = PyCondorPlugin.stateMap().get(statName)
         logging.debug("JobAdInfo: JobStatus for jobid=%i is %s", job['jobid'], job['status'])
         if statName != job['status']:
             # Then the status has changed
@@ -1219,8 +1205,6 @@ class PyCondorPlugin(BasePlugin):
         if not job['status_time']:
             if job['status'] == 'Running':
                 job['status_time'] = int(jobAd.get('runningTime', 0))
-
-                # Check location for THIS running Job
                 job['location'] = jobAd.get('runningCMSSite', None)
                 if job['location'] is None:
                     logging.warning('JobAdInfo: A job (%s) is running with no CMS site' % str(jobAd))

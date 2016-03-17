@@ -45,7 +45,7 @@ class ArchiveDataPoller(BaseWorkerThread):
             jobIDs = []
             archiverDocs = []
             for job in data:
-                doc = createArchiverDoc(job["id"], job['doc']["fwjr"])
+                doc = createArchiverDoc(job)
                 archiverDocs.append(doc)
                 jobIDs.append(job["id"])
                 

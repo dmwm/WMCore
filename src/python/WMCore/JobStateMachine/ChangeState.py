@@ -322,12 +322,19 @@ class ChangeState(WMObject, WMConnectionBase):
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 jsonFWJR = job["fwjr"].__to_json__(None)
+                
+                #Don't archive cleanup job report
+                if job["jobType"] == "Cleanup":
+                    archStatus = "skip"
+                else:
+                    archStatus = "ready"
+                    
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "jobtype": job["jobType"],
                                 "jobstate": jobState,
                                 "retrycount": job["retry_count"],
-                                "archivestatus": "ready",
+                                "archivestatus": archStatus,
                                 "fwjr": jsonFWJR,
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)

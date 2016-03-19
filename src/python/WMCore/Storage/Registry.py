@@ -11,7 +11,6 @@ extra runtime dependencies.
 """
 import WMCore.WMFactory
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError
 
 class RegistryError(StageOutError):
@@ -82,10 +81,10 @@ def retrieveStageOutImpl(name, stagein=False, useNewVersion = False):
     else:
         return classRef()
 
-pluginLookup = { 'test-win' : 'TestWinImpl',
-                'test-fail' : 'TestFailImpl',
-                'test-copy' : 'TestLocalCopyImpl',
-                'cp':'CPImpl',
+pluginLookup = {'test-win': 'TestWinImpl',
+                'test-fail': 'TestFailImpl',
+                'test-copy': 'TestLocalCopyImpl',
+                'cp': 'CPImpl',
                 "dccp-fnal": 'DCCPFNALImpl',
                 "dccp-generic": 'DCCPGenericImpl',
                 "hadoop": 'HadoopImpl',
@@ -95,7 +94,7 @@ pluginLookup = { 'test-win' : 'TestWinImpl',
                 "rfcp-2": 'RFCP2Impl',
                 "rfcp-CERN": 'RFCPCERNImpl',
                 "rfcp": 'RFCPImpl',
-                "stageout-fnal": 'FNALImpl',
+                "stageout-xrdcp-fnal": 'FNALImpl',
                 "srm-fnal": 'SRMImpl',
                 "srm": 'SRMImpl',
                 "srmv2": 'SRMV2Impl',

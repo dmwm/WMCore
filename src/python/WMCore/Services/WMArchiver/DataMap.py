@@ -46,6 +46,65 @@ PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                                 'readTotalSecs': float,
                                 'writeTotalMB': float,
                                 'writeTotalSecs': float}}
+
+# only composed value need to bs set default value
+STEP_DEFAULT = { #'name': '',
+             'analysis': {},
+             'cleanup': {},
+             'logs': {},
+             'errors': [],
+             'input': [{#'catalog': '',
+                        #'events': -1,
+                        #'guid': '',
+                        #'input_source_class': '',
+                        #'input_type': '',
+                        #'lfn': -1,
+                        #'module_label': '',
+                        #'pfn': -1,
+                        'runs': []}],
+             'output': [{#'acquisitionEra': '',
+                         #'adler32': '',
+                         #'applicationName': '',
+                         #'applicationVersion': '',
+                         #'async_dest': '',
+                         #'branch_hash': '',
+                         #'catalog': '',
+                         #'cksum': '',
+                         #'configURL': '',
+                         #'events': -1,
+                         #'globalTag': '',
+                         #'guid': '',
+                         #'inputDataset': '',
+                         'inputLFNs': [],
+                         'inputPFNs': [],
+                         #TODO change to empty string from None
+                         #'location': '',
+                         #'merged': False,
+                         #'module_label': '',
+                         #'ouput_module_class': '',
+                         #'outputDataset': '',
+                         'outputLFNs': [],
+                         'outputPFNs': [],
+                         #'prep_id': '',
+                         #'processingStr': '',
+                         #'processingVer': -1,
+                         #'runs': [],
+                         #'size': -1,
+                         #'validStatus': '',
+                         #"SEName": '',
+                         #"PNN": '',
+                         #"GUID": '',
+                         #'StageOutCommand': ''
+                         }],
+              'performance': {'cpu': {},
+                              'memory': {},
+                              'multicore': {},
+                              'storage': {}},
+              #'site': 'T2_CH_CERN',
+              #'start': 1454569735,
+              #'status': 0,
+              #'stop': 1454569736
+              }
                                        
 def combineDataset(dataset):
     dataset["outputDataset"] = "/%s/%s/%s" % (dataset["primaryDataset"], dataset["processedDataset"], dataset["dataTier"])
@@ -55,13 +114,29 @@ def combineDataset(dataset):
     return dataset
     
 def changeRunStruct(runDict):
-    return [{"runNumber": int(run), "lumis": lumis}  for run, lumis in runDict.items() ]
+    return [{"runNumber": int(run), "lumis": lumis}  for run, lumis in runDict.items()]
+
+def _changeToFloat(value):
+    if value in ["-nan", "nan", "inf"]:
+        return -1.0
+    else:
+        return float(value)
     
+def changePerformanceStruct(perfDict):
+    return [{"pName": prop, "value": _changeToFloat(value)}  for prop, value in perfDict.items()]
+
+def changeToList(aDict):
+    return [{"prop": prop, "value": value}  for prop, value in aDict.items()]
 
 def convertInput(inputList):
     for inputDict in inputList:
         if "runs" in inputDict:
             inputDict['runs'] = changeRunStruct(inputDict["runs"])
+    
+    for category in STEP_DEFAULT['input'][0]:
+            if category not in inputDict:
+                inputDict[category] = STEP_DEFAULT['input'][0][category]
+                
     return inputList
 
 def typeCastPerformance(performDict):
@@ -110,21 +185,50 @@ def convertOutput(outputList):
             # set the default value for None to empty string
             if value == None or value == "None":
                 outDict[key] = ""
-            
+                
+        for category in STEP_DEFAULT['output'][0]:
+            if category not in outDict:
+                outDict[category] = STEP_DEFAULT['output'][0][category]
             
     return newOutputList
 
 def convertStepValue(stepValue):
+    input_keys = ['source', 'logArchives']
     if "input" in stepValue:
-        # remove source layer
-        stepValue['input'] = convertInput(stepValue['input'].get('source', {}))
+        if len(stepValue['input']) == 0:
+            #if empty convert to list from {}
+            stepValue['input'] = []
+            
+        elif len(stepValue['input']) > 1:
+            # assume only one input value
+            raise Exception("more than one input value %s" % stepValue['input'].keys())
+        
+        elif stepValue['input'].keys()[0] in input_keys:
+            stepValue['input'] = convertInput(stepValue['input'][stepValue['input'].keys()[0]])
+        
+        else:
+            raise Exception("Unknow iput key %s" % stepValue['input'].keys())
+    
     if "output" in stepValue:
         # remove output module name layer
-        stepValue['output'] = convertOutput(stepValue['output'].values())
+        stepValue['output'] = convertOutput(stepValue['output'].values())        
     
     if "performance" in stepValue:
-        typeCastPerformance(stepValue["performance"])
-        
+        stepValue["performance"] = typeCastPerformance(stepValue["performance"])
+        # If it needs to chnage to list format replace to this
+        #for category in stepValue["performance"]:
+        #    stepValue["performance"][category] = changePerformanceStruct(stepValue["performance"][category])
+
+        # fill up the empty key with default value. This is required with abro format
+        for category in STEP_DEFAULT["performance"]:
+            if category not in stepValue["performance"]:
+                stepValue["performance"][category] = STEP_DEFAULT["performance"][category]
+    
+    # If structure need to be changed with this uncomments 
+    #listConvKeys = ['analysis', 'cleanup', 'logs', 'parameters']
+    #for key in listConvKeys:
+    #    stepValue[key] = changeToList(stepValue[key])
+         
     return stepValue
             
 def convertSteps(steps):
@@ -214,9 +318,9 @@ def createArchiverDoc(job, version=None):
     
     job_id = job["id"]
     fwjr = job['doc']["fwjr"]
-    jobtype = job["jobtype"]
-    jobstate = job['jobstate']
-    create_ts = job['timestamp']
+    jobtype = job['doc']["jobtype"]
+    jobstate = job['doc']['jobstate']
+    create_ts = job['doc']['timestamp']
     newfwjr = convertToArchiverFormat(fwjr)
     
     fArrayRef = {}

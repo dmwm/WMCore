@@ -1,0 +1,59 @@
+{
+   "_id": "3451-0",
+   "_rev": "1-339deb41b6d066549d002ec9fb1d56ca",
+   "timestamp": 1458291472,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc/StepOneProcMergeRAWSIMoutput/StepTwoProc/StepTwoProcMergeAODSIMoutput/StepThreeProc",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "cmsRun1": {
+               "status": "Failed",
+               "logs": {
+               },
+               "stop": null,
+               "site": {
+               },
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "jobReport with no steps: /data/srv/wmagent/v1.0.14.patch1/install/wmagent/JobCreator/JobCache/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc/StepOneProcMergeRAWSIMoutput/StepTwoProc/StepTwoProcMergeAODSIMoutput/StepThreeProc/JobCollection_647_0/job_3451/Report.0.pkl ",
+                       "type": "99997",
+                       "exitCode": 84
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 3451,
+   "type": "fwjr",
+   "jobtype": "Processing"
+}
+

@@ -1,0 +1,443 @@
+{
+   "_id": "4469-0",
+   "_rev": "1-cf6d1eb936f4c263d757bd76d3776c96",
+   "timestamp": 1458298627,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput/skim_2012A_BTag",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458298549,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput/skim_2012A_BTag/0000/0/9cd166ec-ecf6-11e5-b4f2-02163e00efd5-0-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/18/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput/skim_2012A_BTag/0000/0/9cd166ec-ecf6-11e5-b4f2-02163e00efd5-0-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "3677d3c3",
+                               "cksum": "1704082342"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458298547,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458298539,
+               "site": "T2_CH_CERN",
+               "input": {
+                   "source": [
+                       {
+                           "runs": {
+                               "193556": [
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   71,
+                                   72,
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "1AA69CED-F4EC-E511-A547-02163E00B3AE",
+                           "events": 2374
+                       },
+                       {
+                           "runs": {
+                               "193556": [
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   71,
+                                   72,
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "secondaryFiles",
+                           "lfn": "/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "6E105494-D297-E111-923B-001D09F2924F",
+                           "events": 2374
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "SKIMStreamLogErrorMonitor": [
+                       {
+                           "branch_hash": "d0a84c04b883caa06b45342bb7c79692",
+                           "user_dn": null,
+                           "lfn": "/store/unmerged/Integ_Test/BTag/USER/LogErrorMonitor-ReRecoSkim_reqmgr2_test-v1/00000/DC2B1873-F7EC-E511-9B7B-02163E00B25A.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_5_3_7_patch5",
+                               "processedDataset": "Integ_Test-LogErrorMonitor-ReRecoSkim_reqmgr2_test-v1",
+                               "dataTier": "USER",
+                               "primaryDataset": "BTag"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamLogErrorMonitor.root",
+                           "checksums": {
+                               "adler32": "f57363a7",
+                               "cksum": "106755270"
+                           },
+                           "guid": "DC2B1873-F7EC-E511-9B7B-02163E00B25A",
+                           "size": 1354525,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "location": null,
+                           "input": [
+                               "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "events": 127,
+                           "merged": false,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "FT_R_53_V18::All",
+                           "inputpfns": [
+                               "root://eoscms.cern.ch//eos/cms/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "root://eoscms.cern.ch//eos/cms/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "pfn": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamLogErrorMonitor.root",
+                           "catalog": "",
+                           "module_label": "SKIMStreamLogErrorMonitor",
+                           "async_dest": null,
+                           "inputPath": null,
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "193556": [
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   71,
+                                   72,
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/BTag/USER/LogErrorMonitor-ReRecoSkim_reqmgr2_test-v1/00000/DC2B1873-F7EC-E511-9B7B-02163E00B25A.root",
+                           "user_vogroup": "DEFAULT",
+                           "user_vorole": "DEFAULT",
+                           "processingVer": 1,
+                           "processingStr": "ReRecoSkim_reqmgr2_test",
+                           "prep_id": "RERECOTEST-0001"
+                       }
+                   ],
+                   "SKIMStreamHighLumi": [
+                       {
+                           "branch_hash": "a7dc110fee70eacc8c504cb26450b557",
+                           "user_dn": null,
+                           "lfn": "/store/unmerged/Integ_Test/BTag/RAW-RECO/HighLumi-ReRecoSkim_reqmgr2_test-v1/00000/18B6E971-F7EC-E511-9B7B-02163E00B25A.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_5_3_7_patch5",
+                               "processedDataset": "Integ_Test-HighLumi-ReRecoSkim_reqmgr2_test-v1",
+                               "dataTier": "RAW-RECO",
+                               "primaryDataset": "BTag"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamHighLumi.root",
+                           "checksums": {
+                               "adler32": "d08641c3",
+                               "cksum": "341130140"
+                           },
+                           "guid": "18B6E971-F7EC-E511-9B7B-02163E00B25A",
+                           "size": 2611559,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "location": null,
+                           "input": [
+                               "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "events": 0,
+                           "merged": false,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "FT_R_53_V18::All",
+                           "inputpfns": [
+                               "root://eoscms.cern.ch//eos/cms/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "root://eoscms.cern.ch//eos/cms/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "pfn": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamHighLumi.root",
+                           "catalog": "",
+                           "module_label": "SKIMStreamHighLumi",
+                           "async_dest": null,
+                           "inputPath": null,
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "193556": [
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   71,
+                                   72,
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/BTag/RAW-RECO/HighLumi-ReRecoSkim_reqmgr2_test-v1/00000/18B6E971-F7EC-E511-9B7B-02163E00B25A.root",
+                           "user_vogroup": "DEFAULT",
+                           "user_vorole": "DEFAULT",
+                           "processingVer": 1,
+                           "processingStr": "ReRecoSkim_reqmgr2_test",
+                           "prep_id": "RERECOTEST-0001"
+                       }
+                   ],
+                   "analysis": [
+                   ],
+                   "SKIMStreamLogError": [
+                       {
+                           "branch_hash": "a7dc110fee70eacc8c504cb26450b557",
+                           "user_dn": null,
+                           "lfn": "/store/unmerged/Integ_Test/BTag/RAW-RECO/LogError-ReRecoSkim_reqmgr2_test-v1/00000/FECB8D72-F7EC-E511-9B7B-02163E00B25A.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_5_3_7_patch5",
+                               "processedDataset": "Integ_Test-LogError-ReRecoSkim_reqmgr2_test-v1",
+                               "dataTier": "RAW-RECO",
+                               "primaryDataset": "BTag"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamLogError.root",
+                           "checksums": {
+                               "adler32": "0c0b04bd",
+                               "cksum": "3341703261"
+                           },
+                           "guid": "FECB8D72-F7EC-E511-9B7B-02163E00B25A",
+                           "size": 209627491,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;2f7942d681da6a0f0f7cbc8eb21fcec9",
+                           "location": null,
+                           "input": [
+                               "/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "events": 107,
+                           "merged": false,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "FT_R_53_V18::All",
+                           "inputpfns": [
+                               "root://eoscms.cern.ch//eos/cms/store/backfill/1/Integ_Test/BTag/RECO/ReRecoSkim_reqmgr2_test-v1/00000/1AA69CED-F4EC-E511-A547-02163E00B3AE.root",
+                               "root://eoscms.cern.ch//eos/cms/store/data/Run2012A/BTag/RAW/v1/000/193/556/6E105494-D297-E111-923B-001D09F2924F.root"
+                           ],
+                           "pfn": "/pool/grid/cmsplt04/home_cream_911104472/CREAM911104472/glide_uNUoUH/execute/dir_6293/job/WMTaskSpace/cmsRun1/SKIMStreamLogError.root",
+                           "catalog": "",
+                           "module_label": "SKIMStreamLogError",
+                           "async_dest": null,
+                           "inputPath": null,
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "193556": [
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   71,
+                                   72,
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/BTag/RAW-RECO/LogError-ReRecoSkim_reqmgr2_test-v1/00000/FECB8D72-F7EC-E511-9B7B-02163E00B25A.root",
+                           "user_vogroup": "DEFAULT",
+                           "user_vorole": "DEFAULT",
+                           "processingVer": 1,
+                           "processingStr": "ReRecoSkim_reqmgr2_test",
+                           "prep_id": "RERECOTEST-0001"
+                       }
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458298099,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 203.699,
+                       "readPercentageOps": 0.0241135473368,
+                       "readAveragekB": 2012.92962025,
+                       "readTotalMB": 3727.065,
+                       "readNumOps": 78628,
+                       "readCachePercentageOps": 0.978633565651,
+                       "readMBSec": 0.0523419341882,
+                       "readMaxMSec": 2413.92,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 2972230
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "692.926",
+                       "PeakValueVsize": "952.109"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "159.08",
+                       "AvgEventCPU": "0.0543207",
+                       "MaxEventCPU": "2.01969",
+                       "AvgEventTime": "0.0915972",
+                       "MinEventCPU": "0",
+                       "TotalEventCPU": "128.957",
+                       "TotalJobTime": "217.452",
+                       "MinEventTime": "0.000827074",
+                       "MaxEventTime": "3.28857"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458298547,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458298539,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 4469,
+   "type": "fwjr",
+   "jobtype": "Skim"
+}

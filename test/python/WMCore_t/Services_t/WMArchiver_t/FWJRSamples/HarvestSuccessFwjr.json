@@ -1,0 +1,470 @@
+{
+   "_id": "827-0",
+   "_rev": "1-a4ff8f671bf39860008c624dc2c429c3",
+   "timestamp": 1458276069,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458275929,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/0000/0/f7a862f8-ecc1-11e5-b4f2-02163e00efd5-EndOfRun-Harvest-1-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/18/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/0000/0/f7a862f8-ecc1-11e5-b4f2-02163e00efd5-EndOfRun-Harvest-1-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "49f91902",
+                               "cksum": "165963178"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458275926,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458275924,
+               "site": "T2_CH_CERN",
+               "input": {
+                   "source": [
+                       {
+                           "runs": {
+                               "251721": [
+                                   73,
+                                   74,
+                                   75,
+                                   76,
+                                   77,
+                                   78,
+                                   79,
+                                   80,
+                                   81,
+                                   82,
+                                   83,
+                                   84,
+                                   85,
+                                   86,
+                                   87,
+                                   88,
+                                   89,
+                                   90,
+                                   91,
+                                   92,
+                                   93,
+                                   94,
+                                   95,
+                                   96,
+                                   97,
+                                   98,
+                                   99,
+                                   100,
+                                   101,
+                                   102,
+                                   103,
+                                   104,
+                                   105,
+                                   106,
+                                   107,
+                                   108,
+                                   109,
+                                   110,
+                                   111,
+                                   112,
+                                   113,
+                                   114,
+                                   115,
+                                   116,
+                                   117,
+                                   118,
+                                   119,
+                                   120,
+                                   121,
+                                   122,
+                                   123,
+                                   124,
+                                   125,
+                                   126,
+                                   127,
+                                   128,
+                                   129,
+                                   130,
+                                   131,
+                                   132,
+                                   133,
+                                   134,
+                                   135,
+                                   136,
+                                   137,
+                                   138,
+                                   139,
+                                   140,
+                                   141,
+                                   142,
+                                   143,
+                                   144
+                               ]
+                           },
+                           "input_source_class": "DQMRootSource",
+                           "input_type": "",
+                           "lfn": "/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/2AD4A09D-E03C-E511-83D0-0025905A6066.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/2AD4A09D-E03C-E511-83D0-0025905A6066.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "9d9509b0-3ce0-11e5-9717-11bde183beef",
+                           "events": 0
+                       },
+                       {
+                           "runs": {
+                               "251721": [
+                                   1,
+                                   2,
+                                   3,
+                                   4,
+                                   5,
+                                   6,
+                                   7,
+                                   8,
+                                   9,
+                                   10,
+                                   11,
+                                   12,
+                                   13,
+                                   14,
+                                   15,
+                                   16,
+                                   17,
+                                   18,
+                                   19,
+                                   20,
+                                   21,
+                                   22,
+                                   23,
+                                   24,
+                                   25,
+                                   26,
+                                   27,
+                                   28,
+                                   29,
+                                   30,
+                                   31,
+                                   32,
+                                   33,
+                                   34,
+                                   35,
+                                   36,
+                                   37,
+                                   38,
+                                   39,
+                                   40,
+                                   41,
+                                   42,
+                                   43,
+                                   44,
+                                   45,
+                                   46,
+                                   47,
+                                   48,
+                                   49,
+                                   50,
+                                   51,
+                                   52,
+                                   53,
+                                   54,
+                                   55,
+                                   56,
+                                   57,
+                                   58,
+                                   59,
+                                   60,
+                                   61,
+                                   62,
+                                   63,
+                                   64,
+                                   65,
+                                   66,
+                                   67,
+                                   68,
+                                   69,
+                                   70,
+                                   71,
+                                   72
+                               ]
+                           },
+                           "input_source_class": "DQMRootSource",
+                           "input_type": "",
+                           "lfn": "/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/78EDF5FD-BD3D-E511-9CA5-0025905A60CA.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/78EDF5FD-BD3D-E511-9CA5-0025905A60CA.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "fde94b86-3dbd-11e5-9717-4cbce183beef",
+                           "events": 0
+                       },
+                       {
+                           "runs": {
+                               "251721": [
+                                   145,
+                                   146,
+                                   147,
+                                   148,
+                                   149,
+                                   150,
+                                   151,
+                                   152,
+                                   153,
+                                   154,
+                                   155,
+                                   156,
+                                   157,
+                                   158,
+                                   159,
+                                   160,
+                                   161,
+                                   162,
+                                   163,
+                                   164,
+                                   165,
+                                   166,
+                                   167,
+                                   168,
+                                   169,
+                                   170,
+                                   171,
+                                   172,
+                                   173,
+                                   174,
+                                   175,
+                                   176,
+                                   177,
+                                   178,
+                                   179,
+                                   180,
+                                   181,
+                                   182,
+                                   183,
+                                   184,
+                                   185,
+                                   186,
+                                   187,
+                                   188,
+                                   189,
+                                   190,
+                                   191,
+                                   192,
+                                   193,
+                                   194,
+                                   195,
+                                   196,
+                                   197,
+                                   198,
+                                   199,
+                                   200,
+                                   201,
+                                   202,
+                                   203,
+                                   204,
+                                   205,
+                                   206,
+                                   207,
+                                   208,
+                                   209,
+                                   210,
+                                   211,
+                                   212,
+                                   213,
+                                   214,
+                                   215,
+                                   216,
+                                   217,
+                                   218,
+                                   219,
+                                   220,
+                                   221,
+                                   222,
+                                   223,
+                                   224,
+                                   225,
+                                   226,
+                                   227,
+                                   228,
+                                   229,
+                                   230,
+                                   231,
+                                   232,
+                                   233,
+                                   234,
+                                   235,
+                                   236,
+                                   237,
+                                   238,
+                                   239,
+                                   240,
+                                   241,
+                                   242,
+                                   243,
+                                   244,
+                                   245,
+                                   246,
+                                   247,
+                                   248,
+                                   249,
+                                   250,
+                                   251,
+                                   252,
+                                   253,
+                                   254,
+                                   255,
+                                   256,
+                                   257,
+                                   258
+                               ]
+                           },
+                           "input_source_class": "DQMRootSource",
+                           "input_type": "",
+                           "lfn": "/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/E274DCAA-D53C-E511-B23E-00259059391E.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/data/Run2015B/MET/DQMIO/05Aug2015-v1/50000/E274DCAA-D53C-E511-B23E-00259059391E.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "aab859b8-3cd5-11e5-9717-f3bfe183beef",
+                           "events": 0
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                       {
+                           "FileClass": "DQM",
+                           "globalTag": "75X_dataRun2_Prompt_v0",
+                           "lfn": "/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/output/DQM_V0001_R000251721__MET__Run2015B-05Aug2015-v1__DQMIO_0001.root",
+                           "fileName": "./DQM_V0001_R000251721__MET__Run2015B-05Aug2015-v1__DQMIO.root",
+                           "Source": "DQMStore",
+                           "inputPath": "/MET/Run2015B-05Aug2015-v1/DQMIO",
+                           "validate": false,
+                           "pfn": "./DQM_V0001_R000251721__MET__Run2015B-05Aug2015-v1__DQMIO.root",
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;0b256efd770a57fd79772ffc74d4b65b",
+                           "processingVer": 1,
+                           "processingStr": "DQMHarvesting_reqmgr2_test",
+                           "prep_id": null,
+                           "validStatus": "PRODUCTION"
+                       }
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458275535,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 0,
+                       "readPercentageOps": 1,
+                       "readAveragekB": 11.0525318526,
+                       "readTotalMB": 42.7638,
+                       "readNumOps": 29243,
+                       "readCachePercentageOps": 0,
+                       "readMBSec": 0.0018163970913,
+                       "readMaxMSec": 155.948,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 0
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "0",
+                       "PeakValueVsize": "0"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "264.383",
+                       "EventThroughput": "0",
+                       "AvgEventTime": "-nan",
+                       "MaxEventTime": "0",
+                       "TotalJobTime": "301.252",
+                       "TotalLoopCPU": "252.842",
+                       "MinEventTime": "1e+06"
+                   }
+               }
+           },
+           "upload1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458275926,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458275924,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 827,
+   "type": "fwjr",
+   "jobtype": "Harvesting"
+}

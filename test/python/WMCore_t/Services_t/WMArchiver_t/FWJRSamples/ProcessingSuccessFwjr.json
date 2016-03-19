@@ -1,0 +1,283 @@
+{
+   "_id": "1004-0",
+   "_rev": "1-988e67fd55a9859d83bfcfedfac01af0",
+   "timestamp": 1458278919,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458278877,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc/0000/0/f89eb2de-ecc1-11e5-b4f2-02163e00efd5-4-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/18/sryu_ReDigi_3steps_Sryu_reqmgr2_160318_050052_982/StepOneProc/0000/0/f89eb2de-ecc1-11e5-b4f2-02163e00efd5-4-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "337f3330",
+                               "cksum": "3747359541"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458278876,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458278873,
+               "site": "T2_CH_CERN",
+               "input": {
+                   "source": [
+                       {
+                           "runs": {
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "mixingFiles",
+                           "lfn": "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20001/72CF2981-362A-E311-BC5E-485B39144F60.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20001/72CF2981-362A-E311-BC5E-485B39144F60.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "72CF2981-362A-E311-BC5E-485B39144F60",
+                           "events": 0
+                       },
+                       {
+                           "runs": {
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "mixingFiles",
+                           "lfn": "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20000/603A207B-0125-E311-BBD1-003048D43642.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20000/603A207B-0125-E311-BBD1-003048D43642.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "603A207B-0125-E311-BBD1-003048D43642",
+                           "events": 11070
+                       },
+                       {
+                           "runs": {
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "mixingFiles",
+                           "lfn": "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/483CABC6-B21C-E311-982D-0025907DBA06.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/483CABC6-B21C-E311-982D-0025907DBA06.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "483CABC6-B21C-E311-982D-0025907DBA06",
+                           "events": 9963
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   585,
+                                   586,
+                                   587
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/mc/Fall13/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM/POSTLS162_V1-v1/20000/CA435697-9155-E411-B6DB-00266CFFBED8.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM/POSTLS162_V1-v1/20000/CA435697-9155-E411-B6DB-00266CFFBED8.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "CA435697-9155-E411-B6DB-00266CFFBED8",
+                           "events": 86
+                       },
+                       {
+                           "runs": {
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "mixingFiles",
+                           "lfn": "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/1E1E9F81-A91E-E311-A785-002481ACDAA8.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/1E1E9F81-A91E-E311-A785-002481ACDAA8.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "1E1E9F81-A91E-E311-A785-002481ACDAA8",
+                           "events": 6608
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "RAWSIMoutput": [
+                       {
+                           "branch_hash": "5dca77b98c907e897fb581c9c4ed42cc",
+                           "user_dn": null,
+                           "lfn": "/store/unmerged/Integ_Test/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM-RAW/ReDigi_3steps_reqmgr2_test-v1/00000/6820CA85-C6EC-E511-85CC-02163E0149A0.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_7_2_0_patch1",
+                               "processedDataset": "Integ_Test-ReDigi_3steps_reqmgr2_test-v1",
+                               "dataTier": "GEN-SIM-RAW",
+                               "primaryDataset": "BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_472459854/CREAM472459854/glide_oU0b0m/execute/dir_21081/job/WMTaskSpace/cmsRun1/RAWSIMoutput.root",
+                           "checksums": {
+                               "adler32": "f763223d",
+                               "cksum": "1916446457"
+                           },
+                           "guid": "6820CA85-C6EC-E511-85CC-02163E0149A0",
+                           "size": 201730377,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;9bdc3d7b2fc90e0f4ca24e270a45fde6",
+                           "location": null,
+                           "input": [
+                               "/store/mc/Fall13/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM/POSTLS162_V1-v1/20000/CA435697-9155-E411-B6DB-00266CFFBED8.root",
+                               "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20001/72CF2981-362A-E311-BC5E-485B39144F60.root",
+                               "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20000/603A207B-0125-E311-BBD1-003048D43642.root",
+                               "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/483CABC6-B21C-E311-982D-0025907DBA06.root",
+                               "/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/1E1E9F81-A91E-E311-A785-002481ACDAA8.root"
+                           ],
+                           "events": 86,
+                           "merged": false,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "PHYS14_25_V3",
+                           "inputpfns": [
+                               "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM/POSTLS162_V1-v1/20000/CA435697-9155-E411-B6DB-00266CFFBED8.root",
+                               "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20001/72CF2981-362A-E311-BC5E-485B39144F60.root",
+                               "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/20000/603A207B-0125-E311-BBD1-003048D43642.root",
+                               "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/483CABC6-B21C-E311-982D-0025907DBA06.root",
+                               "root://eoscms.cern.ch//eos/cms/store/mc/Fall13/MinBias_TuneA2MB_13TeV-pythia8/GEN-SIM/POSTLS162_V1-v1/10000/1E1E9F81-A91E-E311-A785-002481ACDAA8.root"
+                           ],
+                           "pfn": "/pool/grid/cmsplt04/home_cream_472459854/CREAM472459854/glide_oU0b0m/execute/dir_21081/job/WMTaskSpace/cmsRun1/RAWSIMoutput.root",
+                           "catalog": "",
+                           "module_label": "RAWSIMoutput",
+                           "async_dest": null,
+                           "inputPath": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "1": [
+                                   585,
+                                   586,
+                                   587
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/GEN-SIM-RAW/ReDigi_3steps_reqmgr2_test-v1/00000/6820CA85-C6EC-E511-85CC-02163E0149A0.root",
+                           "user_vogroup": "DEFAULT",
+                           "user_vorole": "DEFAULT",
+                           "processingVer": 1,
+                           "processingStr": "ReDigi_3steps_reqmgr2_test",
+                           "prep_id": "ReDigi-cmsRun3"
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458277212,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 192.385,
+                       "readPercentageOps": 1.00023640176,
+                       "readAveragekB": 59.2670554796,
+                       "readTotalMB": 5632.396,
+                       "readNumOps": 97292,
+                       "readCachePercentageOps": 0,
+                       "readMBSec": 0.0182757248272,
+                       "readMaxMSec": 587.89,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 430608
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "1484.13",
+                       "PeakValueVsize": "1963.69"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "1263.55",
+                       "AvgEventCPU": "14.5131",
+                       "MaxEventCPU": "23.4724",
+                       "AvgEventTime": "18.1536",
+                       "MinEventCPU": "8.70768",
+                       "TotalEventCPU": "1248.13",
+                       "TotalJobTime": "1561.21",
+                       "MinEventTime": "11.081",
+                       "MaxEventTime": "25.9656"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458278876,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458278873,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 1004,
+   "type": "fwjr",
+   "jobtype": "Processing"
+}

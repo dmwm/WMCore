@@ -1,0 +1,173 @@
+{
+   "_id": "1257-0",
+   "_rev": "1-c92fee33ee976db0e5d20acf6a95ca14",
+   "timestamp": 1458283295,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_MonteCarlo_Sryu_reqmgr2_160318_050144_6584/Production",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458283183,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_MonteCarlo_Sryu_reqmgr2_160318_050144_6584/Production/0000/0/41ad3360-ecc2-11e5-b4f2-02163e00efd5-4-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/18/sryu_MonteCarlo_Sryu_reqmgr2_160318_050144_6584/Production/0000/0/41ad3360-ecc2-11e5-b4f2-02163e00efd5-4-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "2793ae12",
+                               "cksum": "2485028195"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458283181,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 8001,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "An exception of category 'ExternalLHEProducer' occurred while\n   [0] Processing run: 1\n   [1] Running path 'lhe_step'\n   [2] Calling beginRun for module ExternalLHEProducer/'externalLHEProducer'\nException Message:\nChild failed with exit code 2.",
+                       "type": "Fatal Exception",
+                       "exitCode": "8001"
+                   },
+                   {
+                       "details": "Exit 8001: CMSExeption Exception from cmsRun\n Adding last ten lines of CMSSW stderr:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n\n Adding last ten lines of CMSSW stdout:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /pool/grid/cmsplt04/home_cream_720422223/CREAM720422223/glide_JrrbYI/execute/dir_9971/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n",
+                       "type": "CMSExeption",
+                       "exitCode": 8001
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "LHEoutput": [
+                       {
+                           "runs": {
+                           },
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "377789ad04112acdb0f63bb42001606d",
+                           "lfn": "/store/unmerged/Integ_Test/TTJets_MSDecays_matchingup_7TeV-madgraph/GEN/MonteCarlo_reqmgr2_test-v1/00000/LHEoutput.root",
+                           "pfn": "LHEoutput.root",
+                           "catalog": "",
+                           "module_label": "LHEoutput",
+                           "guid": "5812542A-D4EC-E511-9A28-02163E017973",
+                           "events": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458283144,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "0",
+                       "PeakValueVsize": "0"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "0.32795",
+                       "AvgEventCPU": "-nan",
+                       "MaxEventCPU": "0",
+                       "AvgEventTime": "inf",
+                       "MinEventCPU": "0",
+                       "TotalEventCPU": "0",
+                       "TotalJobTime": "12.2269",
+                       "MinEventTime": "0",
+                       "MaxEventTime": "0"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "Could not find report file for step stageOut1!",
+                       "type": "ReportManipulatingError",
+                       "exitCode": 99999
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 1257,
+   "type": "fwjr",
+   "jobtype": "Production"
+}

@@ -7,7 +7,7 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 
-from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 class ActiveRequestJobInfo(RESTEntity):
     """
@@ -21,7 +21,7 @@ class ActiveRequestJobInfo(RESTEntity):
         return            
 
     
-    @restcall(formats = [('application/json', JSONFormat())])
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self):
         # This assumes DataCahe is periodically updated. 

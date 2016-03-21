@@ -20,6 +20,9 @@ import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 
+#TODO: this need to be update from DB instead of hard coding for more flexibility
+RESULT_MASK_FOR_DAS = ["RequestName", "PrepID", "CMSSWVersion", "GlobalTag"]
+
 def initialize_request_args(request, config, clone = False):
     """
     Request data class request is a dictionary representing

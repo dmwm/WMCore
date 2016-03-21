@@ -10,16 +10,11 @@ from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
-from WMCore.ReqMgr.Service.Auxiliary import Info
-from WMCore.ReqMgr.Service.Auxiliary import Group
-from WMCore.ReqMgr.Service.Auxiliary import Team
-from WMCore.ReqMgr.Service.Auxiliary import Software
-from WMCore.ReqMgr.Service.RequestAdditionalInfo import RequestSpec
-from WMCore.ReqMgr.Service.RequestAdditionalInfo import WorkloadConfig
-from WMCore.ReqMgr.Service.RequestAdditionalInfo import WorkloadSplitting
-from WMCore.ReqMgr.Service.Request import Request
-from WMCore.ReqMgr.Service.Request import RequestStatus
-from WMCore.ReqMgr.Service.Request import RequestType
+from WMCore.ReqMgr.Service.Auxiliary import Info, \
+        Group, Team, Software
+from WMCore.ReqMgr.Service.RequestAdditionalInfo import RequestSpec, \
+        WorkloadConfig, WorkloadSplitting
+from WMCore.ReqMgr.Service.Request import Request, RequestStatus, RequestType
 from WMCore.ReqMgr.Service.WMStatsInfo import WMStatsInfo
 
 
@@ -54,5 +49,5 @@ class RestApiHub(RESTApi):
                    "spec_template": RequestSpec(self, app, config, mount),
                    "workload_config": WorkloadConfig(self, app, config, mount),
                    "splitting": WorkloadSplitting(self, app, config, mount),
-                   "wmstats_info":WMStatsInfo(self, app, config, mount)
+                   "wmstats_info": WMStatsInfo(self, app, config, mount)
                   })

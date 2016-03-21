@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.12.patch2 -c HG1512c -t production -p "5757 5932" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.12.patch2 -c HG1512e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch2 -c HG1603e -t production -p "5757 5932" -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch2 -c HG1603e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -275,6 +275,7 @@ sed -i "s+pendingSlotsTaskPercent = 30+pendingSlotsTaskPercent = 50+" $MANAGE/co
 if [[ "$TEAMNAME" == relval* ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
+  sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
   sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py

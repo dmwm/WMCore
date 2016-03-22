@@ -71,8 +71,12 @@ class WorkQueueElement(dict):
         self.setdefault('OpenForNewData', False)
         # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
         self.setdefault('TimestampFoundNewData', 0)
-        # Should we check the location of the inputs, or trust the initial values?
-        self.setdefault('NoLocationUpdate', False)
+        # TODO: being deprecated as of 29/03/2016. Trust initial input and pileup location or not
+        #self.setdefault('NoLocationUpdate', False)
+        # Trust initial input dataset location only or not
+        self.setdefault('NoInputUpdate', False)
+        # Trust initial pileup dataset location only or not
+        self.setdefault('NoPileupUpdate', False)
         # set the creation time for wq element, need for sorting
         self.setdefault('CreationTime', 0)
         # set to true when updated from a WorkQueueElementResult
@@ -213,31 +217,33 @@ class WorkQueueElement(dict):
     def passesSiteRestriction(self, site):
         """Takes account of white & black list, and input data to work out
         if site can run the work"""
-        # Don't check anything if trustSitelists is enabled and SiteWhitelist is empty or site is 
-        # is site whitelist
-        if self['NoLocationUpdate'] and \
-           (not self['SiteWhitelist'] or site in self['SiteWhitelist']):
-            return True
-        # data restrictions - all data must be present at site
-        for locations in self['Inputs'].values():
-            if site not in locations:
-                return False
-        # Parent data as well
-        if self['ParentFlag']:
-            for locations in self['ParentData'].values():
-                if site not in locations:
-                    return False
-
-        # Pileup data must be checked
-        for locations in self['PileupData'].values():
-            if site not in locations:
-                return False
-
-        # workflow restrictions
+        # Site list restrictions
         if self['SiteWhitelist'] and site not in self['SiteWhitelist']:
             return False
         if site in self['SiteBlacklist']:
             return False
+        # Trust both input and pileup location (TrustSitelists+TrustPUSiteliss flag)
+        # provided the site whitelist is empty or it's whitelisted
+        if self.get('NoLocationUpdate'):
+            return True
+
+        # input data restrictions (TrustSitelists flag)
+        if self['NoInputUpdate'] is False:
+            for locations in self['Inputs'].values():
+                if site not in locations:
+                    return False
+        # Parent data as well (also consider the TrustSitelists flag)
+        if self['ParentFlag'] and self['NoInputUpdate'] is False:
+            for locations in self['ParentData'].values():
+                if site not in locations:
+                    return False
+
+        # pileup data restrictions (TrustPUSitelists flag)
+        if self['NoPileupUpdate'] is False:
+            for locations in self['PileupData'].values():
+                if site not in locations:
+                    return False
+
         return True
     
     def intersectionWithEmptySet(self, a, b):
@@ -251,7 +257,7 @@ class WorkQueueElement(dict):
 
     def possibleSites(self):
         
-        if self['NoLocationUpdate']:
+        if self.get('NoLocationUpdate'):
             return self['SiteWhitelist']
         
         possibleSites = set()
@@ -259,13 +265,13 @@ class WorkQueueElement(dict):
         if self['SiteWhitelist']:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
         
-        if self['Inputs']:
+        if self['Inputs'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['Inputs'].values() for y in x]))
         
-        if self['PileupData']:
-            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['PileupData'].values() for y in x]))
-            
-        if self['ParentFlag']:
+        if self['ParentFlag'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['ParentData'].values() for y in x]))
-                  
+
+        if self['PileupData'] and self['NoPileupUpdate'] is False:
+            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['PileupData'].values() for y in x]))
+
         return list(possibleSites)

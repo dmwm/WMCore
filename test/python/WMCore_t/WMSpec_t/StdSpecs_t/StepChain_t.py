@@ -297,7 +297,7 @@ class StepChainTests(unittest.TestCase):
         self.assertTrue(splitParams['performance']['sizePerEvent'] > 1233)
         self.assertTrue(splitParams['performance']['memoryRequirement'] == 2400)
 
-        self.assertFalse(task.getTrustSitelists(), "Wrong input location flag")
+        self.assertFalse(task.getTrustSitelists().get('trustlists'), "Wrong input location flag")
         self.assertFalse(task.inputRunWhitelist(), "Wrong run white list")
 
         # test workload step stuff

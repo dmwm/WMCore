@@ -201,6 +201,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
                         continue
+                    if element.get('NoInputUpdate', False):
+                        continue
                     if sorted(locations) != sorted(element['Inputs'][data]):
                         if fullResync:
                             self.logger.info(data + ': Setting locations to: ' + ', '.join(locations))
@@ -229,6 +231,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
+                        continue
+                    if element.get('NoInputUpdate', False):
                         continue
                     for pData in element['ParentData']:
                         if pData == data:
@@ -259,6 +263,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
+                        continue
+                    if element.get('NoPileupUpdate', False):
                         continue
                     for pData in element['PileupData']:
                         if pData == data:

@@ -1844,11 +1844,20 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = self.makeTestWorkload()[0]
 
-        self.assertFalse(testWorkload.getTrustLocationFlag(), "Should be False, I did not set you yet.")
-        testWorkload.setTrustLocationFlag(flag=True)
-        self.assertTrue(testWorkload.getTrustLocationFlag(), "Bad job!! You should be True now")
-        testWorkload.setTrustLocationFlag(flag=False)
-        self.assertFalse(testWorkload.getTrustLocationFlag(), "Bad job!! You should be False again")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Should be False, I did not set you yet.")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Should be False, I did not set you yet.")
+        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True now")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True now")
+        testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=False)
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be False now")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False now")
+        testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=True)
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should still be False")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True once again")
+        testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True once again")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False again")
         return
 
 

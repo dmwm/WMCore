@@ -5,7 +5,6 @@ _PyCondorPlugin_
 Example of Condor plugin
 For glide-in use.
 """
-
 import os
 import re
 import time
@@ -725,8 +724,11 @@ class PyCondorPlugin(BasePlugin):
         sd = condor.Schedd()
         for job in jobs:
             logging.debug("Going to remove jobid=%i from the queue", job['jobid'])
-            sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
-            logging.debug("Removed jobid=%i from the queue", job['jobid'])
+            try:
+                sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
+                logging.debug("Removed jobid=%i from the queue", job['jobid'])
+            except RuntimeError:
+                logging.warn("Error while killing job %i on the schedd", job['jobid'])
 
         return
 
@@ -757,14 +759,12 @@ class PyCondorPlugin(BasePlugin):
             # Do a priority update
             priority = (int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority))
             try:
-                sd.edit(
-                    'WMAgent_JobID =!= "UNDEFINED" && WMAgent_SubTaskName == %s && WMAgent_RequestName == %s && JobPrio != %d' %
-                    (classad.quote(str(task)), classad.quote(str(workflow)), classad.Literal(int(priority))), "JobPrio",
-                    classad.Literal(int(priority)))
+                sd.edit('WMAgent_SubTaskName == %s && WMAgent_RequestName == %s && JobPrio != %d' %
+                        (classad.quote(str(task)), classad.quote(str(workflow)), priority), "JobPrio",
+                        classad.Literal(int(priority)))
             except:
-                msg = "Couldn't edit classAd to change job Priority for WMAgent_SubTaskName=%s, WMAgent_RequestName=%s " % \
-                      (classad.quote(str(task)), classad.quote(str(workflow)))
-                logging.debug(msg)
+                msg = "Failed to update JobPrio for WMAgent_SubTaskName=%s" % task
+                logging.warn(msg)
 
         return
 
@@ -1073,6 +1073,9 @@ class PyCondorPlugin(BasePlugin):
         ### This should select the latest log file in the cache_dir
         fmtime = 0
         logFile = None
+        if not os.path.exists(job['cache_dir']):
+            logging.debug('%s does not EXIST.', job['cache_dir'])
+
         for joblog in os.listdir(job['cache_dir']):
             if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
                 _tmplogFile = os.path.join(job['cache_dir'], joblog)

@@ -143,7 +143,7 @@ class PileupFetcher(FetcherInterface):
     def _updatePileupPNNs(self, stepHelper, fakeSites):
         """
         Update the workflow copy of the cached pileup file with PNNs
-        forced by TrustSitelists flag
+        forced by TrustPUSitelists flag
         """
         fileName = self._getStepFilePath(stepHelper)
         fakePNNs = mapSitetoPNN(fakeSites)
@@ -210,7 +210,7 @@ class PileupFetcher(FetcherInterface):
             fakeSites = []
 
         if self._isCacheValid(helper):
-            # we need to update the new sandbox json file in case TrustSitelists is on
+            # we need to update the new sandbox json file in case TrustPUSitelists is on
             if fakeSites:
                 self._updatePileupPNNs(helper, fakeSites)
 
@@ -243,8 +243,8 @@ class PileupFetcher(FetcherInterface):
         """
         fakeSites = []
 
-        # check whether we need to pretend PU data location
-        if wmTask.getTrustSitelists():
+        # check whether we need to overlook the PU data location
+        if wmTask.getTrustSitelists()[1]:
             fakeSites = makeLocationsList(wmTask.siteWhitelist(), wmTask.siteBlacklist())
 
         for step in wmTask.steps().nodeIterator():

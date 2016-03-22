@@ -1,3 +1,9 @@
+1.0.14 to 1.0.14_crab_2:
+  - Merge pull request #6727 from emaszs/1.0.14_import_fix
+  - Adding Utils to setup_dependencies.py
+  - Merge pull request #6718 from emaszs/1.0.14_crab
+  - Allow pycurl_manager.py to accepd encoded string as data. Fixes #6467
+
 1.0.13 to 1.0.14:
   - Merge pull request #6682 from ticoann/fix_moving_to_archive_status
   - Merge pull request #6678 from amaltaro/pileup-cache

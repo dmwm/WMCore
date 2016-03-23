@@ -43,6 +43,10 @@ function ExpandTask(t) {
 function CollideTask(t) {
     $('[id="'+t+'"]').hide();
 }
+// helper function to collide specific task on task web page
+function CollideTaskSlow(t, v) {
+    $('[id="'+t+'"]').hide(v);
+}
 // extract algorithms for give task name
 function Algs(taskName) {
     var task = FindTask(taskName);
@@ -97,48 +101,47 @@ function AlgInfo(taskName, params) {
     html += '</table></div>\n';
     return html
 }
-// function to freeze task parameters on web UI
-function FreezeTaskParams(taskName) {
-    var tag = '[id="__FORM__'+taskName+'"]';
-    var params = $(tag).serializeArray();
-    var html = '<h3>Submitted parameters:</h3><div class="taskParams">\n';
-    tag = '[id="__ALG__'+taskName+'"]';
-    var alg = $(tag).val();
-    html += '<b>Algorithm:</b> '+alg+'<br/>\n';
-    for(var i=0; i<params.length; i++) {
-        html += '<b>'+params[i]['name']+':</b> '+params[i]['value']+'<br/>\n';
-    }
-    html += '</div>\n';
-    tag = '[id="__TABLE__'+taskName+'"]';
-    $(tag).replaceWith(html);
-    tag = '[id="__ALG__'+taskName+'"]';
-    $(tag).replaceWith("");
+// function to extract request name from task name
+function requestName(taskName) {
+    return taskName.split("/")[1];
 }
 // function to submit task parameters
 function SubmitTask(taskName) {
     var tag = '[id="__FORM__'+taskName+'"]';
     var params = $(tag).serializeArray(); // params = [{"name":key, "value":key_value}, ...]
-    FreezeTaskParams(taskName);
     var adict = {};
+    var alg="";
+    var splitParams = {};
     for(var i=0; i<params.length; i++) {
-	adict[params[i]['name']] = params[i]['value'];
+        var key = params[i]['name'];
+        var val = params[i]['value'];
+        if(key=="algorithm") {
+            alg=val;
+        } else {
+            splitParams[key] = val;
+        }
     }
-    ajaxRequest('/reqmgr2/data/splitting'+taskName, adict, 'POST');
+    adict.splitAlgo = alg;
+    adict.splitParams = splitParams;
+    adict.taskName = taskName;
+    var data = [adict];
+    ajaxRequest('/reqmgr2/data/splitting/'+requestName(taskName), data, 'POST');
+    CollideTaskSlow(taskName, 1000);
 }
 // build task params section on web UI
 function TaskParams(taskName) {
     var algs = Algs(taskName);
     var html = '<div id="'+taskName+'" class="hide" name="taskName">';
-    html += '<form id="__FORM__'+taskName+'">';
+    html += '<div id="__FORM__'+taskName+'">';
     var atag = '__ALG__'+taskName;
-	html += '<select id="'+atag+'" onchange="javascript:SwitchAlg(\''+atag+'\');">';
-        for(var i=0;i<algs.length;i++) {
-            html += '<option value="'+algs[i]+'">'+algs[i]+'</option>';
-        }
+	html += '<select id="'+atag+'" name="algorithm" onchange="javascript:SwitchAlg(\''+atag+'\');">';
+    for(var i=0;i<algs.length;i++) {
+        html += '<option value="'+algs[i]+'">'+algs[i]+'</option>';
+    }
     html += '</select>'
-	var params = FindParams(taskName, algs[0]);
+    var params = FindParams(taskName, algs[0]);
     html += AlgInfo(taskName, params);
-    html += '</div></form>';
+    html += '</div></div>';
     return html;
 }
 // make task entry on web UI for given task name

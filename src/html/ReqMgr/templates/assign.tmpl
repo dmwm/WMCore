@@ -242,11 +242,7 @@ function BuildList(tag, data) {
 }
 function activateSplitting(rname) {
     ShowTag('splitting');
-    ajaxRequestSplitting('$base/data/splitting/'+rname, 'taskParams');
-}
-function UpdateTaskParams(rname) {
-    var parameters = \$('#taskParams').val();
-    ajaxRequest('$base/data/splitting/'+rname, JSON.parse(parameters), 'POST');
+    ajaxRequestSplitting('$base/data/splitting/web_form'+rname, 'taskParams');
 }
 function ajaxRequestSplitting(path, tag) {
     var request = $.ajax({

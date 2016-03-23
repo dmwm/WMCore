@@ -5,8 +5,6 @@ _GetUninjectedFiles_
 Retrieve a list of files that have been injected into DBS but not PhEDEx.
 Format the output so that it can easily be injected into PhEDEx.
 
-The location of a file for PhEDEx can be overridden by the spec with the field
-overrides.phedexInjectionSite = 'T0_CH_CERN_Buffer'
 """
 
 from WMCore.Database.DBFormatter import DBFormatter

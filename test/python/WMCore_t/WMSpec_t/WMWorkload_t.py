@@ -245,22 +245,6 @@ class WMWorkloadTest(unittest.TestCase):
 
         return
 
-    def testF_Overrides(self):
-        """
-        _testF_Overrides_
-
-        Check the values attached to the workload general overrides
-        """
-        name = "ASmartString"
-
-        workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-        workload.setPhEDExInjectionOverride(name)
-
-        self.assertEqual(workload.getPhEDExInjectionOverride(), name)
-        self.assertEqual(workload.getWorkloadOverrides().injectionSite, name)
-
-        return
-
     def testDbsUrl(self):
         """
         _testDbsUrl_

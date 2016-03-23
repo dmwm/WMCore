@@ -327,8 +327,14 @@ class CleanCouchPoller(BaseWorkerThread):
         logging.info("Getting requests in '%s' state for team '%s'", self.deletableState,
                                                                            self.teamName)
         endTime = int(time.time()) - self.archiveDelayHours * 3600
-        wfs = self.centralRequestDBReader.getRequestByTeamAndStatus(self.teamName,
+        
+        if self.useReqMgrForCompletionCheck:
+            wfs = self.centralRequestDBReader.getRequestByTeamAndStatus(self.teamName,
                                                                     self.deletableState)
+        else:
+            #TO doesn't store team name in the requset document since there is only one team.
+            wfs = self.centralRequestDBReader.getRequestByStatus(self.deletableState)
+            
         commonWfs = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
                                                                                False, endTime)
         

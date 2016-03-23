@@ -123,7 +123,7 @@ function SubmitTask(taskName) {
     for(var i=0; i<params.length; i++) {
 	adict[params[i]['name']] = params[i]['value'];
     }
-    ajaxRequest('/data/splitting'+taskName, adict, 'POST');
+    ajaxRequest('/reqmgr2/data/splitting'+taskName, adict, 'POST');
 }
 // build task params section on web UI
 function TaskParams(taskName) {
@@ -144,7 +144,7 @@ function TaskParams(taskName) {
 // make task entry on web UI for given task name
 function MakeTask(taskName) {
     var html = '<div id="task_'+taskName+'">';
-    html += "<b>"+taskName+"</b> "+ActionTag('show', taskName)+" | "+ActionTag('hide', taskName);
+    html += ActionTag('show', taskName)+" | "+ActionTag('hide', taskName)+' &rArr; <b>'+taskName+'</b><br/>';
     html += TaskParams(taskName);
     html += "</div>";
     return html;
@@ -158,7 +158,7 @@ function FindTask(taskName) {
     }
 }
 function PlaceTaskData(tag) {
-    var html = '<div class="tasks" id="_taskSplitting">';
+    var html = '<div class="tasks shadow" id="_taskSplitting">';
     html += '<div align="right"><a href="javascript:HideTag(\'_taskSplitting\')">Close</a></div><hr/>';
     html += "<a href=\"javascript:ExpandAllTasks()\">Show All</a> | ";
     html += "<a href=\"javascript:CollideAllTasks()\">Hide All</a>";

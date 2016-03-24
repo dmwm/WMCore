@@ -67,7 +67,7 @@ class DBSReader:
         self.dataBlocks = DataBlockGenerator()
         args = { "url" : url, "level" : 'ERROR', "version" : 'DBS_2_0_9'}
         self.dbs = _MockDBSApi(args)
-
+        
     def getFileBlocksInfo(self, dataset, onlyClosedBlocks = True,
                           blockName = '*', locations = True):
 

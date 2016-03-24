@@ -58,11 +58,11 @@ class WorkQueueTestCase(EmulatedUnitTest):
         self.testInit.setupCouch(self.logDBName, 'LogDB')
         self.testInit.setupCouch(self.requestDBName, 'ReqMgr')
         
-
-        couchServer = CouchServer(os.environ.get("COUCHURL"))
+        self.couchURL = os.environ.get("COUCHURL")
+        couchServer = CouchServer(self.couchURL)
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
         
-        self.localCouchMonitor = CouchMonitor(os.environ.get("COUCHURL"))
+        self.localCouchMonitor = CouchMonitor(self.couchURL)
         self.localCouchMonitor.deleteReplicatorDocs()
 
         self.workDir = self.testInit.generateWorkDir()

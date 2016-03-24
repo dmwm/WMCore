@@ -34,7 +34,7 @@ class ResultSet:
 
         if resultproxy.closed:
             return
-        else:
+        elif resultproxy.returns_rows:
             for r in resultproxy:
                 if len(self.keys) == 0:
                     self.keys.extend(r.keys())

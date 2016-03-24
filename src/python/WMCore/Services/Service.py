@@ -49,7 +49,6 @@ result          |  cached  |  cached  |  cached  | not cached |
 """
 
 
-
 def isfile(obj):
     # Any better way of identifying if an object is a file?
     return hasattr(obj, 'flush')
@@ -84,9 +83,14 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+try:
+    from httplib2 import HttpLib2Error
+except ImportError:
+    #Mock HttpLib2Error since we don't want that WMCore depend on httplib2 using pycurl
+    class HttpLib2Error(Exception):
+        pass
 
 from httplib import InvalidURL, HTTPException
-from httplib2 import HttpLib2Error
 
 from urlparse import urlparse
 
@@ -265,6 +269,7 @@ class Service(dict):
 
         If cachefile is StringIO append to that
         """
+
         verb = self._verbCheck(verb)
 
         try:

@@ -8,7 +8,7 @@
         <ul>
         <li><button class="btn btn-small btn-active" id="btn-table" onclick="Activate('table', ['json', 'comment'])">Table</button></li>
         <li><button class="btn btn-small" id="btn-json" onclick="Activate('json', ['table', 'comment'])">JSON</button></li>
-        <li><button class="btn btn-small" id="btn-json" onclick="ShowTag('tasks')">Splitting</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="activateSplitting()">Splitting</button></li>
         <li><button class="btn btn-small" id="btn-json" onclick="ShowConfig()">Config</button></li>
         <li><button class="btn btn-small btn-yellow" id="btn-comment" onclick="Activate('comment', ['table', 'json'])">Comment</button></li>
         </ul>
@@ -73,18 +73,16 @@ $jsondata
 </form>
 </div>
 
-<div id="tasks" name="tasks" class="hide">
+<div id="splitting" name="splitting" class="hide">
+#if $status=="new" or $status=="assignment-approved"
+    <div id="splittingTasks"></div>
+#else
 <div class="tasks">
     <div align="right"><a href="javascript:HideTag('tasks')">Close</a></div>
-#if $status=="new" or $status=="assignment-approved"
-    <textarea id="taskParams" name="taskParams" class="editor">$tasks</textarea>
-    <input type="submit" class="btn btn-small btn-green unit-push-right" onclick="javascript:UpdateTaskParams()" value="Update" />
-    <div><a href="javascript:HideTag('tasks')">Close</a></div>
-#else
     <pre><code>$tasks</code></pre>
     <div align="right"><a href="javascript:HideTag('tasks')">Close</a></div>
-#end if
 </div>
+#end if
 </div>
 
 <script>
@@ -114,6 +112,11 @@ function ShowConfig() {
 function loadSpec(tag) {
     var url="$base/create?form="+tag.value;
     load(url);
+}
+function activateSplitting() {
+    ShowTag('splitting');
+    var path = '$base/data/splitting/web_form/$name';
+    ajaxRequestTaskData(path, 'splittingTasks');
 }
 </script>
 <! -- End of doc.tmpl -->

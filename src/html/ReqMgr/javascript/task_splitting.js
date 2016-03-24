@@ -105,8 +105,8 @@ function AlgInfo(taskName, params) {
 function requestName(taskName) {
     return taskName.split("/")[1];
 }
-// function to submit task parameters
-function SubmitTask(taskName) {
+// function to get task parameters from a form
+function getTaskDict(taskName) {
     var tag = '[id="__FORM__'+taskName+'"]';
     var params = $(tag).serializeArray(); // params = [{"name":key, "value":key_value}, ...]
     var adict = {};
@@ -124,15 +124,29 @@ function SubmitTask(taskName) {
     adict.splitAlgo = alg;
     adict.splitParams = splitParams;
     adict.taskName = taskName;
-    var data = [adict];
+    return adict;
+}
+// helper function to submit task parameters to reqmgr2 server
+function SubmitTask(taskName) {
+    var data = [getTaskDict(taskName)];
     ajaxRequest('/reqmgr2/data/splitting/'+requestName(taskName), data, 'POST');
     CollideTaskSlow(taskName, 1000);
+}
+// helper function to submit task parameters for all tasks
+function SubmitAllTasks() {
+    var data = [];
+    for(var i=0; i<TASK.data.length; i++) {
+        var taskName = TASK.data[i].taskName;
+        data.push(getTaskDict(taskName));
+        CollideTaskSlow(taskName, 1000);
+    }
+    ajaxRequest('/reqmgr2/data/splitting/'+requestName(taskName), data, 'POST');
 }
 // build task params section on web UI
 function TaskParams(taskName) {
     var algs = Algs(taskName);
     var html = '<div id="'+taskName+'" class="hide" name="taskName">';
-    html += '<div id="__FORM__'+taskName+'">';
+    html += '<form id="__FORM__'+taskName+'" action="javascript:void(0)">';
     var atag = '__ALG__'+taskName;
 	html += '<select id="'+atag+'" name="algorithm" onchange="javascript:SwitchAlg(\''+atag+'\');">';
     for(var i=0;i<algs.length;i++) {
@@ -141,7 +155,7 @@ function TaskParams(taskName) {
     html += '</select>'
     var params = FindParams(taskName, algs[0]);
     html += AlgInfo(taskName, params);
-    html += '</div></div>';
+    html += '</form></div>';
     return html;
 }
 // make task entry on web UI for given task name
@@ -168,7 +182,8 @@ function PlaceTaskData(tag) {
     for(var i=0; i<TASK.data.length; i++) {
         html += MakeTask(TASK.data[i].taskName);
     }
-    html += '<hr/><div align="right"><a href="javascript:HideTag(\'_taskSplitting\')">Close</a></div>';
+    html += '<hr/><button class="btn btn-small btn-green right bold" onclick="javascript:SubmitAllTasks()">Submit All</button>';
+    html += '<br/><br/><div align="right"><a href="javascript:HideTag(\'_taskSplitting\')">Close</a></div>';
     html += "</div>";
     var id = document.getElementById(tag);
     id.innerHTML = html;

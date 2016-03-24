@@ -12,7 +12,6 @@ The response from the remote server is cached if expires/etags are set.
 import urllib
 import os
 import base64
-import httplib2
 import socket
 import logging
 import urlparse
@@ -96,8 +95,9 @@ class Requests(dict):
         self.setdefault("logger", logging)
 
         check_server_url(self['host'])
-        # and then get the URL opener
-        self.setdefault("conn", self._getURLOpener())
+        if not self.pycurl:
+            # and then get the URL opener
+            self.setdefault("conn", self._getURLOpener())
 
 
     def get(self, uri=None, data={}, incoming_headers={},
@@ -137,6 +137,7 @@ class Requests(dict):
         """
         Wrapper around request helper functions.
         """
+
         if  self.pycurl:
             result = self.makeRequest_pycurl(uri, data, verb, incoming_headers,
                          encoder, decoder, contentType)
@@ -183,6 +184,9 @@ class Requests(dict):
         as a string.
 
         """
+        #do not add a dependency to httplib2 if we are using pycurl
+
+
         #TODO: User agent should be:
         # $client/$client_version (CMS)
         # $http_lib/$http_lib_version $os/$os_version ($arch)
@@ -197,7 +201,7 @@ class Requests(dict):
             headers[key] = self.additionalHeaders[key]
 
         #And now overwrite any headers that have been passed into the call:
-        #WARNING: doesn't work with deplate so only accept gzip 
+        #WARNING: doesn't work with deplate so only accept gzip
         incoming_headers["accept-encoding"] = "gzip,identity"
         headers.update(incoming_headers)
 
@@ -356,6 +360,8 @@ class Requests(dict):
         """
         method getting a secure (HTTPS) connection
         """
+        import httplib2
+
         key, cert = None, None
         if self['endpoint_components'].scheme == 'https':
             # only add certs to https requests

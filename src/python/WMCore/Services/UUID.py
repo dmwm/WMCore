@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import WMCore.Algorithms.External.uuid75421 as uuid
+import uuid
+
 
 def makeUUID():
     """

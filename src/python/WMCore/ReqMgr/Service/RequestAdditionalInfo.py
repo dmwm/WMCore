@@ -6,10 +6,112 @@ from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 
 import WMCore.ReqMgr.Service.RegExp as rx
-from WMCore.REST.Format import JSONFormat
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
+#TODO: need to get algorithm proper way
+ALGO_DICT = {"FileBased": {"files_per_job": ''},
+             "TwoFileBased": {"two_files_per_job": ''},
+             "LumiBased": {"lumis_per_job": '', 
+                          "halt_job_on_file_boundaries": True},
+             "EventAwareLumiBased": {"avg_events_per_job": '',
+                                     "max_events_per_lumi": '',
+                                     "halt_job_on_file_boundaries": True},
+             "EventBased": {"events_per_job": '',
+                            "events_per_lumi": '',
+                            "lheInputFiles": False},
+             "Harvest": {"periodic_harvest_interval": ''},
+             "ParentlessMergeBySize": {"min_merge_size": '',
+                                       "max_merge_size": '',
+                                       "max_merge_events": '',
+                                       "max_wait_time": ''},
+             "WMBSMergeBySize": {"min_merge_size": '',
+                                 "max_merge_size": '',
+                                 "max_merge_events": '',
+                                 "max_wait_time": ''},
+             "MergeBySize": {"min_merge_size": '',
+                             "max_merge_size": '',
+                             "max_merge_events": '',
+                             "max_wait_time": ''}
+             }
+
+ALGO_LIST_BY_TYPES = {"Processing": ["LumiBased", "EventAwareLumiBased", 
+                             "EventBased", "FileBased"],
+              "Production": ["EventBased"],
+              "Skim": ["FileBased", "TwoFileBased"],
+              "Harvesting": ["Harvest"],
+              "Merge": ["ParentlessMergeBySize", 
+                        "WMBSMergeBySize",
+                        "MergeBySize"],
+              "Cleanup": ["FileBased"],
+              "LogCollect": ["FileBased"]
+              }
+
+def format_algo_web_list(task_name, task_type, split_param):
+    fdict = {"taskName": task_name}
+    fdict["taskType"] = task_type
+    default_algo = split_param["algorithm"]
+    algo_list = ALGO_LIST_BY_TYPES[task_type]
+    param_list = []
+    
+    if default_algo in algo_list:
+        new_param = {"algorithm": default_algo}
+        for key, value in split_param.items():
+            if key in ALGO_DICT[default_algo]:
+                new_param[key] = value
+        param_list.append(new_param) 
+    elif default_algo == "":
+        raise cherrypy.HTTPError(400, "Algorithm name is empty: %s" % split_param)
+    else:
+        param_list.append(split_param)
+    
+    # If task type is merge don't allow change the algorithm
+    if fdict["taskType"] != "Merge":
+        for algo in algo_list:
+            if algo != default_algo:
+                param = {"algorithm": algo}
+                param.update(ALGO_DICT[algo])
+                param_list.append(param)
+                
+    fdict["splitParamList"] = param_list
+    return fdict
+
+def create_web_splitting_format(split_info):
+    web_form = []
+    for sp in split_info:
+        # skip Cleanup and LogCollect: don't allow change the param
+        if sp["taskType"] not in ["Cleanup", "LogCollect"]:
+            web_form.append(format_algo_web_list(sp["taskName"], sp["taskType"], 
+                                               sp["splitParams"]))
+    return web_form
+
+def _validate_split_param(split_algo, split_param):
+    """
+    validate param for editing, also returns param type
+    """
+    valid_params = ALGO_DICT[split_algo]
+    if split_param in valid_params:
+        if isinstance(valid_params[split_param], bool):
+            cast_type = bool
+        else:
+            cast_type = int
+        return (True, cast_type)
+    else:
+        return (False, None)
+            
+def _assign_if_key_exsit(key, original_params, return_params, cast_type):
+    if key in original_params:
+        if cast_type == None:
+            return_params[key] = original_params[key]
+        elif cast_type == bool:
+            if str(original_params[key]).lower() == "true":
+                return_params[key] = True
+            else:
+                return_params[key] = False
+        else:
+            return_params[key] = cast_type(original_params[key])
 
 class RequestSpec(RESTEntity):
     
@@ -24,7 +126,7 @@ class RequestSpec(RESTEntity):
         validate_str("name", param, safe, rx.RX_REQUEST_NAME, optional=False)
 
 
-    @restcall(formats = [('application/json', JSONFormat())])
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """
@@ -61,10 +163,11 @@ class WorkloadConfig(RESTEntity):
         are not passed in the method at all.
         
         """
+        
         self._validate_args(param, safe)
 
 
-    @restcall(formats = [('application/json', JSONFormat())])
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self, name):
         """
@@ -79,7 +182,7 @@ class WorkloadConfig(RESTEntity):
         try:
             helper.loadSpecFromCouch(self.reqdb_url, name)
         except Exception:
-            raise cherrypy.HTTPError(404, "Cannot find workload: % "+ name)
+            raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
         
         return str(helper.data)
 
@@ -97,6 +200,11 @@ class WorkloadSplitting(RESTEntity):
         if args_length == 1:
             safe.kwargs["name"] = param.args[0]
             param.args.pop()
+        elif args_length == 2 and  param.args[0] == "web_form":
+            safe.kwargs["web_form"] = True
+            safe.kwargs["name"] = param.args[1]
+            param.args.pop()
+            param.args.pop()
         return
 
         
@@ -111,9 +219,9 @@ class WorkloadSplitting(RESTEntity):
         self._validate_args(param, safe)
 
 
-    @restcall(formats = [('application/json', JSONFormat())])
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
-    def get(self, name):
+    def get(self, name, web_form=False):
         """
         getting job splitting algorithm.
         
@@ -137,6 +245,9 @@ class WorkloadSplitting(RESTEntity):
                               "splitParams": splittingDict[taskName],
                               "taskType": splittingDict[taskName]["type"],
                               "taskName": taskName})
+        if web_form:
+            splitInfo = create_web_splitting_format(splitInfo)
+            
         return splitInfo
     
     @restcall(formats = [('application/json', JSONFormat())])
@@ -156,45 +267,16 @@ class WorkloadSplitting(RESTEntity):
             splittingAlgo = taskInfo["splitAlgo"]
             submittedParams = taskInfo["splitParams"]
             splitParams = {}
-            if splittingAlgo == "FileBased":
-                splitParams["files_per_job"] = int(submittedParams["files_per_job"])
-            elif splittingAlgo == "TwoFileBased":
-                splitParams["files_per_job"] = int(submittedParams["two_files_per_job"])
-            elif splittingAlgo == "LumiBased":
-                splitParams["lumis_per_job"] = int(submittedParams["lumis_per_job"])
-                if "halt_job_on_file_boundaries" in submittedParams:
-                    if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
-                        splitParams["halt_job_on_file_boundaries"] = True
-                    else:
-                        splitParams["halt_job_on_file_boundaries"] = False
-            elif splittingAlgo == "EventAwareLumiBased":
-                splitParams["events_per_job"] = int(submittedParams["events_per_job"])
-                splitParams["max_events_per_lumi"] = int(submittedParams["max_events_per_lumi"])
-                if "halt_job_on_file_boundaries" in submittedParams:
-                    if str(submittedParams["halt_job_on_file_boundaries"]) == "True":
-                        splitParams["halt_job_on_file_boundaries"] = True
-                    else:
-                        splitParams["halt_job_on_file_boundaries"] = False
-            elif splittingAlgo == "EventBased":
-                splitParams["events_per_job"] = int(submittedParams["events_per_job"])
-                if "events_per_lumi" in submittedParams:
-                    splitParams["events_per_lumi"] = int(submittedParams["events_per_lumi"])
-                if "lheInputFiles" in submittedParams:
-                    if str(submittedParams["lheInputFiles"]) == "True":
-                        splitParams["lheInputFiles"] = True
-                    else:
-                        splitParams["lheInputFiles"] = False
-            elif splittingAlgo == "Harvest":
-                splitParams["periodic_harvest_interval"] = int(submittedParams["periodic_harvest_interval"])
-            elif 'Merge' in splittingTask:
-                for field in ['min_merge_size', 'max_merge_size', 'max_merge_events', 'max_wait_time']:
-                    if field in submittedParams:
-                        splitParams[field] = int(submittedParams[field])
-            if "include_parents" in submittedParams.keys():
-                if str(submittedParams["include_parents"]) == "True":
-                    splitParams["include_parents"] = True
+            for param in submittedParams:
+                validFlag, castType = _validate_split_param(splittingAlgo, param)
+                if validFlag:
+                    _assign_if_key_exsit(param, submittedParams, splitParams, castType)
                 else:
-                    splitParams["include_parents"] = False
+                    #TO Maybe raise the error messge
+                    pass
+            
+            #TODO: this is only gets updated through script. Maybe we should disallow it.
+            _assign_if_key_exsit("include_parents", submittedParams, splitParams, bool)
             
             helper = WMWorkloadHelper()
             try:

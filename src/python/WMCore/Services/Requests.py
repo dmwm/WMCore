@@ -183,8 +183,6 @@ class Requests(dict):
         as a string.
 
         """
-        #do not add a dependency to httplib2 if we are using pycurl
-        import httplib2
 
 
         #TODO: User agent should be:
@@ -360,6 +358,7 @@ class Requests(dict):
         """
         method getting a secure (HTTPS) connection
         """
+        import httplib2
         key, cert = None, None
         if self['endpoint_components'].scheme == 'https':
             # only add certs to https requests

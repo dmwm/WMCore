@@ -34,6 +34,10 @@ class ResubmitBlockTest(unittest.TestCase):
 
         Setup couchdb and the test environment
         """
+
+        self.group = 'unknown'
+        self.user = 'unknown'
+
         # Set external test helpers
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
@@ -49,7 +53,7 @@ class ResubmitBlockTest(unittest.TestCase):
         self.workflowName = 'dballest_ReReco_workflow'
         couchServer = CouchServer(dburl = self.couchUrl)
         self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create = False)
-        user = makeUser('unknown', 'sfoulkes@fnal.gov', self.couchUrl, self.acdcDBName)
+        user = makeUser(self.group, 'sfoulkes@fnal.gov', self.couchUrl, self.acdcDBName)
         user.create()
 
         return
@@ -74,6 +78,8 @@ class ResubmitBlockTest(unittest.TestCase):
         factory = ReRecoWorkloadFactory()
         rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        rerecoArgs["Requestor"] = self.user
+        rerecoArgs["Group"] = self.group
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
         Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl,
                                      self.acdcDBName)
@@ -107,8 +113,8 @@ class ResubmitBlockTest(unittest.TestCase):
         and merge
         """
         filesetName = '/%s/DataProcessing' % self.workflowName
-        owner = 'unknown'
-        group = 'unknown'
+        owner = self.user
+        group = self.group
 
 
         for i in range(numFiles):

@@ -14,7 +14,7 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import localQueue
-from .WorkQueueTestCase import WorkQueueTestCase
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
 
 class LocalWorkQueueProfileTest(WorkQueueTestCase):
@@ -28,7 +28,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
 
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
+        EmulatorHelper.setEmulators(phedex = True, dbs = False,
                                     siteDB = True, requestMgr = True)
         WorkQueueTestCase.setUp(self)
 
@@ -41,7 +41,9 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
                                      InboxDbName = self.queueInboxDB,
                                      NegotiationTimeout = 0,
                                      QueueURL = 'global.example.com',
-                                     CacheDir = self.cacheDir)
+                                     CacheDir = self.cacheDir,
+                                     central_logdb_url = "%s/%s" % (self.couchURL, self.logDBName),
+                                     log_reporter = 'lq_profile_test')
 
 
     def tearDown(self):

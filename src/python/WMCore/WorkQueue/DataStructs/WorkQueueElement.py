@@ -72,7 +72,7 @@ class WorkQueueElement(dict):
         # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
         self.setdefault('TimestampFoundNewData', 0)
         # Trust initial input and pileup location or not
-        #self.setdefault('NoLocationUpdate', False)
+        self.setdefault('NoLocationUpdate', False)
         # Trust initial input dataset location only or not
         self.setdefault('NoInputUpdate', False)
         # Trust initial pileup dataset location only or not
@@ -224,23 +224,22 @@ class WorkQueueElement(dict):
             return False
         # Trust both input and pileup location (TrustSitelists+TrustPUSiteliss flag)
         # provided the site whitelist is empty or it's whitelisted
-        if hasattr(self, 'NoLocationUpdate') and self['NoLocationUpdate']:
+        if self['NoLocationUpdate']:
             return True
 
         # input data restrictions (TrustSitelists flag)
-        if hasattr(self, 'NoInputUpdate') and self['NoInputUpdate'] is False:
+        if self['NoInputUpdate'] is False:
             for locations in self['Inputs'].values():
                 if site not in locations:
                     return False
         # Parent data as well (also consider the TrustSitelists flag)
-        if self['ParentFlag'] and hasattr(self, 'NoInputUpdate') and\
-            self['NoInputUpdate'] is False:
+        if self['ParentFlag'] and self['NoInputUpdate'] is False:
             for locations in self['ParentData'].values():
                 if site not in locations:
                     return False
 
         # pileup data restrictions (TrustPUSitelists flag)
-        if hasattr(self, 'NoPileupUpdate') and self['NoPileupUpdate'] is False:
+        if self['NoPileupUpdate'] is False:
             for locations in self['PileupData'].values():
                 if site not in locations:
                     return False
@@ -258,7 +257,7 @@ class WorkQueueElement(dict):
 
     def possibleSites(self):
         
-        if hasattr(self, 'NoLocationUpdate') and self['NoLocationUpdate']:
+        if self['NoLocationUpdate']:
             return self['SiteWhitelist']
         
         possibleSites = set()
@@ -266,13 +265,13 @@ class WorkQueueElement(dict):
         if self['SiteWhitelist']:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
         
-        if self['Inputs'] and hasattr(self, 'NoInputUpdate') and self['NoInputUpdate'] is False:
+        if self['Inputs'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['Inputs'].values() for y in x]))
         
-        if self['ParentFlag'] and hasattr(self, 'NoInputUpdate') and self['NoInputUpdate'] is False:
+        if self['ParentFlag'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['ParentData'].values() for y in x]))
 
-        if self['PileupData'] and hasattr(self, 'NoPileupUpdate') and self['NoPileupUpdate'] is False:
+        if self['PileupData'] and self['NoPileupUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['PileupData'].values() for y in x]))
 
         return list(possibleSites)

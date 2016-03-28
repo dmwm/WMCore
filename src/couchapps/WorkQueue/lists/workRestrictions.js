@@ -67,9 +67,10 @@ function(head, req) {
         }
 
         for (var site in resources) {
-
+			log(site);
+			log(ele);
             // skip if in blacklist
-            if (ele["SiteBlacklist"].indexOf(site) != -1) {
+            if (ele["SiteBlacklist"].indexOf(site) !== -1) {
                 continue;
             }
 
@@ -79,7 +80,7 @@ function(head, req) {
             }
 
             // Don't check anything if trustSitelists AND trustPUSitelists is enabled
-            if ('NoLocationUpdate' in ele && ele['NoLocationUpdate'] && ele["SiteWhitelist"].indexOf(site) !== -1) {
+            if (ele['NoLocationUpdate'] && ele["SiteWhitelist"].indexOf(site) !== -1) {
                 if (first !== true) {
                     send(",");
                 }
@@ -91,7 +92,7 @@ function(head, req) {
             // Input data location restrictions
             // don't check input data location if trustSitelists is enabled
             var noInputSite = false;
-            if ("NoInputUpdate" in ele && ele["NoInputUpdate"] === true) {
+            if (ele["NoInputUpdate"] === true) {
                 noInputSite = false;
             } else if (ele["Inputs"]) {
                 for (block in ele['Inputs']) {
@@ -108,7 +109,7 @@ function(head, req) {
             // Pileup data location restrictions, all pileup datasets must be at the site
             // don't check pileup data location if trustPUSitelists
             var noPileupSite = false;
-            if ("NoPileupUpdate" in ele && ele["NoPileupUpdate"] === true) {
+            if (ele["NoPileupUpdate"] === true) {
                 noPileupSite = false;
             } else if (ele["PileupData"]) {
                 for(dataset in ele["PileupData"]) {
@@ -125,7 +126,7 @@ function(head, req) {
             //skip if parent processing flag is set and parent block is not in the site.
             //all the parent block has to be in the same site
             var noParentSite = false;
-            if ("NoInputUpdate" in ele && ele["NoInputUpdate"] === true) {
+            if (ele["NoInputUpdate"] === true) {
                 noParentSite = false;
             } else if (ele["ParentFlag"]) {
                 for (block in ele["ParentData"]) {

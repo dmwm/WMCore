@@ -10,11 +10,12 @@ import threading
 import time
 import unittest
 
+from retry import retry
+
 from WMCore_t.WMSpec_t.StdSpecs_t.ReDigi_t import injectReDigiConfigs
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Configuration import Configuration
 from WMCore.DAOFactory import DAOFactory
@@ -1076,15 +1077,26 @@ class WorkQueueTest(WorkQueueTestCase):
         self.globalQueue.backend.updateElements(*global_ids, Status = 'Canceled')
         self.localQueue.backend.forceQueueSync()
         time.sleep(2)
+        self.assertForConflicts()
+
+    @retry(AssertionError, tries=3, delay=10)
+    def assertForConflicts(self):
+        """
+        Make the assertions in a separate function so we can use retry
+        """
+
+        global_ids = [x.id for x in self.globalQueue.status()]
+
         self.localQueue.backend.fixConflicts()
         self.localQueue.backend.forceQueueSync()
         time.sleep(2)
-        self.assertEqual([x['Status'] for x in self.globalQueue.status(elementIDs = global_ids)],
+        self.assertEqual([x['Status'] for x in self.globalQueue.status(elementIDs=global_ids)],
                          ['Canceled'])
-        self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(elementIDs = global_ids)],
+        self.assertEqual([x['PercentComplete'] for x in self.globalQueue.status(elementIDs=global_ids)],
                          [69])
         self.assertEqual([x for x in self.localQueue.statusInbox()],
                          [x for x in self.globalQueue.status()])
+
 
     def testDeleteWork(self):
         """Delete finished work

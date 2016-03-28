@@ -28,8 +28,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
 
-        EmulatorHelper.setEmulators(phedex = True, dbs = False,
-                                    siteDB = True, requestMgr = True)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=True)
         WorkQueueTestCase.setUp(self)
 
         self.cacheDir = tempfile.mkdtemp()
@@ -37,13 +36,8 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         self.specs = self.createReRecoSpec(1, "file")
 
         # Create queues
-        self.localQueue = localQueue(DbName = self.queueDB,
-                                     InboxDbName = self.queueInboxDB,
-                                     NegotiationTimeout = 0,
-                                     QueueURL = 'global.example.com',
-                                     CacheDir = self.cacheDir,
-                                     central_logdb_url = "%s/%s" % (self.couchURL, self.logDBName),
-                                     log_reporter = 'lq_profile_test')
+        self.localQueue = localQueue(DbName=self.queueDB, InboxDbName=self.queueInboxDB, \
+                NegotiationTimeout=0, QueueURL='global.example.com', CacheDir=self.cacheDir, central_logdb_url="%s/%s" %(self.couchURL, self.logDBName), log_reporter='lq_profile_test')
 
 
     def tearDown(self):
@@ -56,7 +50,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
             pass
         EmulatorHelper.resetEmulators()
 
-    def createReRecoSpec(self, numOfSpec, type = "spec"):
+    def createReRecoSpec(self, numOfSpec, type="spec"):
         specs = []
         for i in range(numOfSpec):
             specName = "MinBiasProcessingSpec_Test_%s" % (i+1)
@@ -72,14 +66,14 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         p.strip_dirs().sort_stats('cumulative').print_stats(0.1)
         p.strip_dirs().sort_stats('time').print_stats(0.1)
         p.strip_dirs().sort_stats('calls').print_stats(0.1)
-        #p.strip_dirs().sort_stats('name').print_stats(10)
+        p.strip_dirs().sort_stats('name').print_stats(10)
 
     def testGetWorkLocalQueue(self):
         i = 0
         for spec in self.specs:
             i += 1
             specName = "MinBiasProcessingSpec_Test_%s" % i
-            self.localQueue.queueWork(spec, specName, team = "A-team")
+            self.localQueue.queueWork(spec, specName, team="A-team")
         self.localQueue.updateLocationInfo()
         self.createProfile('getWorkProfile.prof', self.localQueueGetWork)
 

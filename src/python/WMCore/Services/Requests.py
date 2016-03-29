@@ -356,6 +356,7 @@ class Requests(dict):
         """
         method getting a secure (HTTPS) connection
         """
+        import httplib2
         key, cert = None, None
         if self['endpoint_components'].scheme == 'https':
             # only add certs to https requests

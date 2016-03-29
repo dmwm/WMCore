@@ -268,6 +268,10 @@ class Scram:
             self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
         if os.environ.get('CMS_PATH', None) != None:
             self.procWriter(proc, 'export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
+        if os.environ.get('_CONDOR_JOB_AD'):
+            self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n'%os.environ['_CONDOR_JOB_AD'])
+        if os.environ.get('_CONDOR_MACHINE_AD'):
+            self.procWriter(proc, 'export _CONDOR_MACHINE_AD=%s\n'%os.environ['_CONDOR_MACHINE_AD'])
 
         if hackLdLibPath:
             self.procWriter(proc, self.library_path)

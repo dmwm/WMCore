@@ -10,6 +10,8 @@ process/config but does not depend on any CMSSW libraries. It needs to stay like
 from __future__ import print_function
 import logging
 import pickle
+import traceback
+import os
 
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.PSetTweak import parameterIterator, psetIterator
@@ -518,3 +520,95 @@ def makeOutputTweak(outMod, job):
     #      output module based on the settings in the section
 
     return result
+
+
+def readAdValues(attrs, adname, castInt=False):
+    """
+    A very simple parser for the ads available at runtime.  Returns
+    a dictionary containing
+    - attrs: A list of string keys to look for.
+    - adname: Which ad to parse; "job" for the $_CONDOR_JOB_AD or
+      "machine" for $_CONDOR_MACHINE_AD
+    - castInt: Set to True to force the values to be integer literals.
+      Otherwise, this will return the values as a string representation
+      of the ClassAd expression.
+
+    Note this is not a ClassAd parser - will not handle new-style ads
+    or any expressions.
+
+    Will return a dictionary containing the key/value pairs that were
+    present in the ad and parseable.
+
+    On error, returns an empty dictionary.
+    """
+    adfile = None
+    if adname == 'job':
+        adfile = os.environ.get("_CONDOR_JOB_AD")
+    elif adname == 'machine':
+        adfile = os.environ.get("_CONDOR_MACHINE_AD")
+    else:
+        print("Invalid ad name requested for parsing: %s" % adname)
+        return {}
+    if not adfile:
+        print("%s adfile is not set in environment." % adname)
+        return {}
+    attrs = [i.lower() for i in attrs]
+    retval = {}
+    try:
+        with open(adfile) as fd:
+            for line in fd:
+                info = line.strip().split("=", 1)
+                if len(info) != 2:
+                    continue
+                attr = info[0].strip().lower()
+                val = info[1].strip()
+                if attr in attrs:
+                    if castInt:
+                        try:
+                            retval[attr] = int(val)
+                        except ValueError:
+                            print("Error parsing %s's %s value: %s", (adname, attr, val))
+                    else:
+                        retval[attr] = val
+    except IOError:
+        print("Error opening %s ad:" % adname)
+        print(traceback.format_exc())
+        return {}
+
+    return retval
+
+
+def resizeResources(resources):
+    """
+    _resizeResources_
+
+    Look at the job runtime environment and determine whether we are allowed
+    to resize the core count.  If so, change the resources dictionary passed
+    to this function according to the information found in $_CONDOR_MACHINE_AD.
+    The following keys are changed:
+     - cores -> uses value of Cpus from the machine ad.
+     - memory -> Memory
+
+    This only works when running under HTCondor, $_CONDOR_MACHINE_AD exists,
+    and WMCore_ResizeJob is true.
+          - WMCore_ResizeJob is 'true'
+
+    No return value - the resources directory is changed in-place.
+    Should not throw an exception - on error, no change is made and a message
+    is printed out.
+    """
+    if readAdValues(['wmcore_resizejob'], 'job').get('wmcore_resizejob', 'false').lower() != "true":
+        print("Not resizing job")
+        return
+
+    print("Resizing job.  Initial resources: %s" % resources)
+    adValues = readAdValues(['memory', 'cpus'], 'machine', castInt=True)
+    machineCpus = adValues.get('cpus')
+    machineMemory = adValues.get('memory')
+    if machineCpus and (machineCpus > 0) and ('cores' in resources):
+        resources['cores'] = machineCpus
+    if machineMemory and (machineMemory > 0) and ('memory' in resources):
+        resources['memory'] = machineMemory
+    print("Resizing job.  Resulting resources: %s" % resources)
+
+

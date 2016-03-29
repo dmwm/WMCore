@@ -16,7 +16,7 @@ import pickle
 from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
 from PSetTweaks.PSetTweak import PSetTweak
-from PSetTweaks.WMTweak import applyTweak
+from PSetTweaks.WMTweak import applyTweak, resizeResources
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Wrappers.JsonWrapper import JSONDecoder
@@ -664,8 +664,13 @@ class SetupCMSSWPset(ScriptInterface):
         self.fixupProcess()
 
         try:
-            if int(self.step.data.application.multicore.numberOfCores) > 1:
-                numCores = int(self.step.data.application.multicore.numberOfCores)
+            origCores = int(self.step.data.application.multicore.numberOfCores)
+            resources = {'cores': origCores}
+            resizeResources(resources)
+            numCores = resources['cores']
+            # When we are using multiple cores - or the pset might have
+            # a default of greater than 1 - we must override the provided pset.
+            if (numCores > 1) or (origCores > 1):
                 options = getattr(self.process, "options", None)
                 if options == None:
                     self.process.options = cms.untracked.PSet()

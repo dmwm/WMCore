@@ -320,6 +320,7 @@ if __name__ == "__main__":
         agent_database = wmagentConfig.CoreDatabase.connectUrl.split('/')[len(wmagentConfig.CoreDatabase.connectUrl.split('/')) - 1 ]
         agent_instance = wmagentConfig.CoreDatabase.connectUrl.split(agent_database)[0]
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "AsyncTransfer", basePath)
+        installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "ftscp", basePath)
         installCouchApp(wmagentConfig.AsyncTransfer.couch_instance, wmagentConfig.AsyncTransfer.files_database, "monitor", basePath)
         installCouchApp(wmagentConfig.Statistics.couch_statinstance, wmagentConfig.Statistics.statitics_database, "stat", basePath)
         installCouchApp(wmagentConfig.DBSPublisher.couch_instance, wmagentConfig.DBSPublisher.files_database, "DBSPublisher", basePath)

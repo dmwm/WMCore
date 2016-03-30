@@ -5,39 +5,32 @@ _WMBSHelper_t_
 Unit tests for the WMBSHelper class.
 """
 
-import unittest
 import os
 import threading
+import unittest
 
+from WMCore.BossAir.BossAirAPI import BossAirAPI
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Mask import Mask
+from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Job import Job
-
-from WMCore.DataStructs.Mask import Mask
-
-from WMCore.DAOFactory import DAOFactory
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
-
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
-
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
-from WMQuality.Emulators.DBSClient.DBSReader import DBSReader as MockDBSReader
-from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON as fakeSiteDB
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-
-from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \
-    import monteCarloWorkload, getMCArgs
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.Emulators import EmulatorSetup
+from WMQuality.Emulators.DBSClient.DBSReader import DBSReader as MockDBSReader
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
+from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON as fakeSiteDB
+from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload import (monteCarloWorkload, getMCArgs)
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-
-from WMCore.BossAir.BossAirAPI              import BossAirAPI
-from WMCore.Configuration                   import loadConfigurationFile
-from WMCore.ResourceControl.ResourceControl import ResourceControl
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 mcArgs = getMCArgs()
@@ -500,10 +493,13 @@ class WMBSHelperTest(unittest.TestCase):
                                           priority = "Low", custodialSubType = "Move")
         return wmspec
 
-    def createMCWMSpec(self, name = 'MonteCarloWorkload'):
+    def createMCWMSpec(self, name='MonteCarloWorkload'):
+        mcArgs['CouchDBName'] = rerecoArgs["CouchDBName"]
+        mcArgs["ConfigCacheID"] = createConfig(mcArgs["CouchDBName"])
+
         wmspec = monteCarloWorkload(name, mcArgs)
         wmspec.setSpecUrl("/path/to/workload")
-        getFirstTask(wmspec).addProduction(totalevents = 10000)
+        getFirstTask(wmspec).addProduction(totalevents=10000)
         return wmspec
 
     def getDBS(self, wmspec):

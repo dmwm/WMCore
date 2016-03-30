@@ -40,12 +40,12 @@ class Block(StartPolicyInterface):
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
                 for dbsBlock in dbs.listBlockParents(block["block"]):
-                    if self.initialTask.getTrustSitelists():
+                    if self.initialTask.getTrustSitelists()[0]:
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
                         parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
 
-            self.newQueueElement(Inputs = {block['block'] : self.data.get(block['block'], [])},
+            self.newQueueElement(Inputs = {block['block']: self.data.get(block['block'], [])},
                                  ParentFlag = parentFlag,
                                  ParentData = parentList,
                                  NumberOfLumis = int(block[self.lumiType]),
@@ -54,7 +54,8 @@ class Block(StartPolicyInterface):
                                  Jobs = ceil(float(block[self.args['SliceType']]) /
                                              float(self.args['SliceSize'])),
                                  OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False,
-                                 NoLocationUpdate = self.initialTask.getTrustSitelists()
+                                 NoInputUpdate = self.initialTask.getTrustSitelists()[0],
+                                 NoPileupUpdate = self.initialTask.getTrustSitelists()[1]
                                  )
 
 
@@ -76,8 +77,7 @@ class Block(StartPolicyInterface):
         runBlackList = task.inputRunBlacklist()
         if task.getLumiMask(): #if we have a lumi mask get only the relevant blocks
             maskedBlocks = self.getMaskedBlocks(task, dbs, datasetPath)
-        if task.getTrustSitelists():
-            # Then get the locations from the site whitelist/blacklist + SiteDB
+        if task.getTrustSitelists()[0]:
             siteWhitelist = task.siteWhitelist()
             siteBlacklist = task.siteBlacklist()
             self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
@@ -181,7 +181,7 @@ class Block(StartPolicyInterface):
                     block['NumberOfFiles'] = acceptedFileCount
                     block['NumberOfEvents'] = acceptedEventCount
             # save locations
-            if task.getTrustSitelists():
+            if task.getTrustSitelists()[0]:
                 self.data[block['block']] = self.sites
             else:
                 self.data[block['block']] = self.siteDB.PNNstoPSNs(dbs.listFileBlockLocation(block['block']))

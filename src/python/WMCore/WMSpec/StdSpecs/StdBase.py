@@ -300,7 +300,7 @@ class StdBase(object):
         if applySiteLists:
             procTask.setSiteWhitelist(self.siteWhitelist)
             procTask.setSiteBlacklist(self.siteBlacklist)
-            procTask.setTrustSitelists(self.trustSitelists)
+            procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
 
         newSplitArgs = {}
         for argName in splitArgs.keys():
@@ -988,6 +988,7 @@ class StdBase(object):
                                    "validate": lambda x: x == "auto" or (int(x) > 0)},
                      # data location management
                      "TrustSitelists": {"default": False, "type": bool},
+                     "TrustPUSitelists": {"default": False, "type": bool},
                      "AllowOpportunistic": {"default": False, "type": bool},
                      # from assignment: performance monitoring data
                      "MaxRSS": {"default": 2411724, "type": int, "validate": lambda x: x > 0},

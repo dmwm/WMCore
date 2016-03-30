@@ -69,7 +69,8 @@ class Dataset(StartPolicyInterface):
                              NumberOfFiles=numFiles,
                              NumberOfEvents=numEvents,
                              Jobs=ceil(float(work) / float(self.args['SliceSize'])),
-                             NoLocationUpdate=self.initialTask.getTrustSitelists()
+                             NoInputUpdate=self.initialTask.getTrustSitelists()[0],
+                             NoPileupUpdate=self.initialTask.getTrustSitelists()[1]
                             )
 
     def validate(self):
@@ -90,7 +91,7 @@ class Dataset(StartPolicyInterface):
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
 
-        if task.getTrustSitelists():
+        if task.getTrustSitelists()[0]:
             siteWhitelist = task.siteWhitelist()
             siteBlacklist = task.siteBlacklist()
             self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
@@ -169,7 +170,7 @@ class Dataset(StartPolicyInterface):
                 locations = locations.intersection(dbs.listFileBlockLocation(block['block']))
 
         # all needed blocks present at these sites
-        if self.wmspec.getTrustLocationFlag():
+        if self.wmspec.getTrustLocationFlag()[0]:
             self.data[datasetPath] = self.sites
         elif locations:
             self.data[datasetPath] = list(set(self.siteDB.PNNstoPSNs(locations)))

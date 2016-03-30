@@ -16,10 +16,11 @@ from WMCore.REST.Validation import validate_str
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, RESULT_MASK_FOR_DAS
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST,\
     REQUEST_STATE_TRANSITION, ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
+from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import validate_request_create_args,\
     validate_request_update_args, loadRequestSchema
@@ -275,7 +276,7 @@ class Request(RESTEntity):
     def _mask_result(self, mask, result):
         
         if len(mask) == 1 and mask[0] == "DAS":
-            mask = RESULT_MASK_FOR_DAS
+            mask = ReqMgrConfigDataCache.getConfig("DAS_RESULT_FILTER")["filter_list"]
         
         if len(mask) > 0:
             masked_result = {}

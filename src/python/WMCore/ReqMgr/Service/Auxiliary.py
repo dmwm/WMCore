@@ -4,10 +4,12 @@ Info class giving information about ReqMgr database.
 Teams, Groups, Software versions handling for ReqMgr.
 
 """
+from __future__ import print_function, division
 
 import logging
 import cherrypy
 import urllib
+import json
 import xml.dom.minidom
 from xml.parsers.expat import ExpatError
 
@@ -18,8 +20,10 @@ from WMCore.Database.CMSCouch import CouchError, CouchNotFoundError
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
     
 class Info(RESTEntity):
     def __init__(self, app, api, config, mount):
@@ -71,6 +75,65 @@ class Info(RESTEntity):
         return rows([result])
     
 
+class ReqMgrConfigData(RESTEntity):
+    
+    def __init__(self, app, api, config, mount):
+        # CouchDB auxiliary database name
+        RESTEntity.__init__(self, app, api, config, mount)
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)    
+        
+    def _validate_args(self, param, safe):
+        # TODO: need proper validation but for now pass everything
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["doc_name"] = param.args[0]
+            param.args.pop()
+    
+        return
+    
+    def _validate_put_args(self, param, safe):
+        
+        args_length = len(param.args)
+        if args_length == 1:
+            safe.kwargs["doc_name"] = param.args[0]
+            param.args.pop()
+    
+        data = cherrypy.request.body.read()
+        
+        if data:
+            config_args = json.loads(data)
+            #TODO need to validate the args depending on the config
+            safe.kwargs["config_dict"] = config_args
+        
+    def validate(self, apiobj, method, api, param, safe):
+        """
+        Validate request input data.
+        Has to be implemented, otherwise the service fails to start.
+        If it's not implemented correctly (e.g. just pass), the arguments
+        are not passed in the method at all.
+        
+        """
+        if method == "GET":
+            self._validate_args(param, safe)
+        elif method == "PUT":
+            self._validate_put_args(param, safe)
+
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    def get(self, doc_name):
+        """
+        """
+        config = ReqMgrConfigDataCache.getConfig(doc_name)
+        return rows([config])
+                                              
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    def put(self, doc_name, config_dict = None):
+        """ 
+        """
+        if doc_name == "DEFAULT":
+            return ReqMgrConfigDataCache.putDefaultConfig()
+        else:
+            return ReqMgrConfigDataCache.replaceConfig(doc_name, config_dict)
+            
 
 class Group(RESTEntity):
     """

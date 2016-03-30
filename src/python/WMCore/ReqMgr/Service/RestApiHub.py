@@ -3,6 +3,7 @@ Module defines REST API methods and their handles.
 Implementation of handles is in corresponding modules, not here.
 
 """
+from __future__ import print_function, division
 
 import cherrypy
 
@@ -11,7 +12,7 @@ from WMCore.REST.Server import RESTApi
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
 from WMCore.ReqMgr.Service.Auxiliary import Info, \
-        Group, Team, Software
+        ReqMgrConfigData, Software
 from WMCore.ReqMgr.Service.RequestAdditionalInfo import RequestSpec, \
         WorkloadConfig, WorkloadSplitting
 from WMCore.ReqMgr.Service.Request import Request, RequestStatus, RequestType
@@ -40,9 +41,8 @@ class RestApiHub(RESTApi):
         #self.formats.insert(0, ('application/raw', RawFormat()))
         self._add({"about": Info(app, self, config, mount),
                    "info": Info(app, self, config, mount),
+                   "app_config": ReqMgrConfigData(app, self, config, mount),
                    "request": Request(app, self, config, mount),
-                   "group": Group(app, self, config, mount),
-                   "team": Team(app, self, config, mount),
                    "software": Software(app, self, config, mount),
                    "status": RequestStatus(app, self, config, mount),
                    "type": RequestType(app, self, config, mount),

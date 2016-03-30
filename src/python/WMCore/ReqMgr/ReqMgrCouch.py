@@ -1,5 +1,6 @@
 import cherrypy
 from WMCore.Database.CMSCouch import Database, CouchError
+from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 
 def couch_request_error(func):
     def wrapperFunc(*args, **kwargs):
@@ -41,6 +42,9 @@ class ReqMgrCouch(object):
                #config.couch_wmstats_db,
         for db in dbs:
             setattr(self, db, self._create_conn(db))
+        
+        aux_db = self.get_db(config.couch_reqmgr_aux_db)
+        ReqMgrConfigDataCache.set_aux_db(aux_db)
     
     def _create_conn(self, db_name):
         cherrypy.log("Creating CouchDB connection to '%s' ... " % db_name)

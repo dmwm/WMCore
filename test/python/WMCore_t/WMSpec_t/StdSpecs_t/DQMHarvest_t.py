@@ -125,7 +125,7 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(task.getPathName(), "/TestWorkload/EndOfRunDQMHarvest")
         self.assertEqual(task.taskType(), "Harvesting", "Wrong task type")
         self.assertEqual(task.jobSplittingAlgorithm(), "Harvest", "Wrong job splitting algo")
-        self.assertFalse(task.getTrustSitelists(), "Wrong input location flag")
+        self.assertFalse(task.getTrustSitelists().get('trustlists'), "Wrong input location flag")
         self.assertEqual(sorted(task.inputRunWhitelist()),
                          [138923, 138924, 138934, 138937, 139788, 139789,
                           139790, 144011, 144083, 144084, 144086])

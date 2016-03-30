@@ -522,7 +522,7 @@ class WMTaskHelper(TreeHelper):
                 del splittingParams['performance']
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
-        splittingParams["trustSitelists"] = self.getTrustSitelists()
+        splittingParams["trustSitelists"] = self.getTrustSitelists().get('trustlists')
 
         if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()
@@ -855,17 +855,19 @@ class WMTaskHelper(TreeHelper):
         """
         _getTrustSitelists_
 
-        Accessor for the 'trust site lists' flag for the task.
+        Get the input and pileup flag for 'trust site lists' in the task.
         """
-        return self.data.constraints.sites.trustlists
+        return {'trustlists': self.data.constraints.sites.trustlists,
+                'trustPUlists': self.data.constraints.sites.trustPUlists}
 
-    def setTrustSitelists(self, trustSitelists):
+    def setTrustSitelists(self, trustSitelists, trustPUSitelists):
         """
         _setTrustSitelists_
 
-        Set the 'trust site lists' flag for the task.
+        Set the input and the pileup flags for 'trust site lists' in the task.
         """
         self.data.constraints.sites.trustlists = trustSitelists
+        self.data.constraints.sites.trustPUlists = trustPUSitelists
         return
 
     def listOutputDatasetsAndModules(self):
@@ -1589,6 +1591,7 @@ class WMTask(ConfigSectionTree):
         self.constraints.sites.whitelist = []
         self.constraints.sites.blacklist = []
         self.constraints.sites.trustlists = False
+        self.constraints.sites.trustPUlists = False
         self.subscriptions.outputModules = []
         self.input.section_("WMBS")
 

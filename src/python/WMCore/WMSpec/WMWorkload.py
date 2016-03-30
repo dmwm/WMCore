@@ -1613,29 +1613,28 @@ class WMWorkloadHelper(PersistencyHelper):
             result.extend(t.getConfigCacheIDs())
         return result
 
-    def setTrustLocationFlag(self, flag=False):
+    def setTrustLocationFlag(self, inputFlag=False, pileupFlag=False):
         """
         _setTrustLocationFlag_
 
-        Set the flag in the top level tasks
-        indicating that site lists should be
-        used as location data
+        Set the input and the pileup flags in the top level tasks
+        indicating that site lists should be used as location data
         """
         for task in self.getTopLevelTask():
-            task.setTrustSitelists(flag)
+            task.setTrustSitelists(inputFlag, pileupFlag)
         return
 
     def getTrustLocationFlag(self):
         """
         _getTrustLocationFlag_
 
-        Get the flag in the top level tasks
-        that indicates whether the site lists
-        should be trusted as the location for data
+        Get a tuple with the inputFlag and the pileupFlag values from
+        the top level tasks that indicates whether the site lists should
+        be trusted as the location for input data or pileup data (or both)
         """
         for task in self.getTopLevelTask():
             return task.getTrustSitelists()
-        return False
+        return {'trustlists': False, 'trustPUlists': False}
 
     def validateArgumentForAssignment(self, schema):
         specClass = loadSpecClassByType(self.requestType())
@@ -1670,7 +1669,7 @@ class WMWorkloadHelper(PersistencyHelper):
         args are validated before update.
         assignment is common for all different types spec.
         """
-        siteParams = ["SiteWhitelist", "SiteBlacklist", "TrustSitelists"]
+        siteParams = ["SiteWhitelist", "SiteBlacklist", "TrustSitelists", "TrustPUSitelists"]
         lfnParams = ["MergedLFNBase", "UnmergedLFNBase"]
         mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
         performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
@@ -1698,7 +1697,8 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setSiteWildcardsLists(siteWhitelist=kwargs["SiteWhitelist"],
                                        siteBlacklist=kwargs["SiteBlacklist"],
                                        wildcardDict=wildcardSites)
-            self.setTrustLocationFlag(flag=strToBool(kwargs["TrustSitelists"]))
+            self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
+                                      pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
 
         # FIXME not validated
         if self._checkKeys(kwargs, lfnParams):

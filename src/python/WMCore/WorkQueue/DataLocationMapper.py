@@ -8,8 +8,8 @@ import logging
 from WMCore.WorkQueue.WorkQueueUtils import get_dbs
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 
-#TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
-#TODO: Known Issue: Can't have same item in multiple dbs's at the same time.
+# TODO: Combine with existing dls so DBSreader can do this kind of thing transparently
+# TODO: Known Issue: Can't have same item in multiple dbs's at the same time.
 
 
 # round update times. Avoid cache misses from too precise time's
@@ -22,7 +22,7 @@ def isGlobalDBS(dbs):
         # try to determine from name - save a trip to server
         # fragile but if this url changes many other things will break also...
         from urlparse import urlparse
-        url = urlparse(dbs.dbs.getServerUrl()) #DBSApi has url not DBSReader
+        url = urlparse(dbs.dbs.getServerUrl())  # DBSApi has url not DBSReader
         if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
             return True
         info = dbs.dbs.getServerInfo()
@@ -32,7 +32,7 @@ def isGlobalDBS(dbs):
     except Exception as ex:
         # determin whether this is dbs3
         dbs.dbs.serverinfo()
-        
+
         # hacky way to check whether it is global or local dbs.
         # issue is created, when it is resolved. use serverinfo() for that.
         # https://github.com/dmwm/DBS/issues/355
@@ -42,7 +42,8 @@ def isGlobalDBS(dbs):
         else:
             return False
 
-def timeFloor(number, interval = UPDATE_INTERVAL_COARSENESS):
+
+def timeFloor(number, interval=UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""
     from math import floor
     return floor(number / interval) * interval
@@ -55,8 +56,9 @@ def isDataset(inputData):
     return True
 
 
-class DataLocationMapper():
+class DataLocationMapper(object):
     """Map data to locations for WorkQueue"""
+
     def __init__(self, **kwargs):
         self.params = kwargs
         self.params.setdefault('locationFrom', 'subscription')
@@ -70,16 +72,16 @@ class DataLocationMapper():
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
-            raise ValueError("Invalid value for locationFrom '%s' valid values %s" % (self.params['locationFrom'], validLocationFrom))
+            msg = "Invalid value for locationFrom '%s' valid values %s" % (self.params['locationFrom'], validLocationFrom)
+            raise ValueError(msg)
 
         if self.params.get('phedex'):
             self.phedex = self.params['phedex']
         if self.params.get('sitedb'):
             self.sitedb = self.params['sitedb']
 
-
-    def __call__(self, dataItems, fullResync = False, dbses = {},
-                 datasetSearch = False):
+    def __call__(self, dataItems, fullResync=False, dbses={},
+                 datasetSearch=False):
         result = {}
 
         # do a full resync every fullRefreshInterval interval
@@ -94,7 +96,7 @@ class DataLocationMapper():
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
                                                               datasetSearch)
-                
+
             else:
                 output, fullResync = self.locationsFromDBS(dbs, dataItems,
                                                            datasetSearch)
@@ -103,9 +105,8 @@ class DataLocationMapper():
             self.lastFullResync = now
 
         return result, fullResync
-    
-    def locationsFromPhEDEx(self, dataItems, fullResync = False,
-                            datasetSearch = False):
+
+    def locationsFromPhEDEx(self, dataItems, fullResync=False, datasetSearch=False):
         """Get data location from phedex"""
         if self.params['locationFrom'] == 'subscription':
             # subscription api doesn't support partial update
@@ -122,9 +123,9 @@ class DataLocationMapper():
             for dataItem in dataItems:
                 try:
                     if datasetSearch or isDataset(dataItem):
-                        response = self.phedex.getReplicaInfoForBlocks(dataset = [dataItem], **args)['phedex']
+                        response = self.phedex.getReplicaInfoForBlocks(dataset=[dataItem], **args)['phedex']
                     else:
-                        response = self.phedex.getReplicaInfoForBlocks(block = [dataItem], **args)['phedex']
+                        response = self.phedex.getReplicaInfoForBlocks(block=[dataItem], **args)['phedex']
                     for block in response['block']:
                         nodes = [replica['node'] for replica in block['replica']]
                         if datasetSearch or isDataset(dataItem):
@@ -145,15 +146,15 @@ class DataLocationMapper():
         return result, fullResync
 
     def locationsFromDBS(self, dbs, dataItems,
-                         datasetSearch = False):
+                         datasetSearch=False):
         """Get data location from dbs"""
         result = defaultdict(set)
         for dataItem in dataItems:
             try:
                 if datasetSearch or isDataset(dataItem):
-                    phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly = True)
+                    phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly=True)
                 else:
-                    phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly = True)
+                    phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly=True)
                 for pnn in phedexNodeNames:
                     result[dataItem].update(pnn)
             except Exception as ex:
@@ -165,8 +166,7 @@ class DataLocationMapper():
             psns.update(self.sitedb.PNNstoPSNs(nodes))
             result[name] = list(psns)
 
-        return result, True # partial dbs updates not supported
-
+        return result, True  # partial dbs updates not supported
 
     def organiseByDbs(self, dataItems):
         """Sort items by dbs instances - return dict with DBSReader as key & data items as values"""
@@ -182,12 +182,13 @@ class DataLocationMapper():
 
 class WorkQueueDataLocationMapper(DataLocationMapper):
     """WorkQueue data location functionality"""
+
     def __init__(self, logger, backend, **kwargs):
         self.backend = backend
         self.logger = logger
         DataLocationMapper.__init__(self, **kwargs)
 
-    def __call__(self, fullResync = False):
+    def __call__(self, fullResync=False):
         dataItems = self.backend.getActiveData()
 
         # fullResync incorrect with multiple dbs's - fix!!!
@@ -200,6 +201,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForData(dbs, data)
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
+                        continue
+                    if element.get('NoInputUpdate', False):
                         continue
                     if sorted(locations) != sorted(element['Inputs'][data]):
                         if fullResync:
@@ -214,9 +217,10 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         numOfParentLocations = self.updateParentLocation(fullResync)
         numOfPileupLocations = self.updatePileupLocation(fullResync)
 
-        return len(dataLocations) + numOfParentLocations + numOfPileupLocations # probably not quite what we want, but will indicate whether some mappings were added or not
+        # probably not quite what we want, but will indicate whether some mappings were added or not
+        return len(dataLocations) + numOfParentLocations + numOfPileupLocations
 
-    def updateParentLocation(self, fullResync = False):
+    def updateParentLocation(self, fullResync=False):
         dataItems = self.backend.getActiveParentData()
 
         # fullResync incorrect with multiple dbs's - fix!!!
@@ -229,6 +233,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
+                        continue
+                    if element.get('NoInputUpdate', False):
                         continue
                     for pData in element['ParentData']:
                         if pData == data:
@@ -245,12 +251,12 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
 
         return len(dataLocations)
 
-    def updatePileupLocation(self, fullResync = False):
+    def updatePileupLocation(self, fullResync=False):
         dataItems = self.backend.getActivePileupData()
 
         # fullResync incorrect with multiple dbs's - fix!!!
         dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync,
-                                                                datasetSearch = True)
+                                                                datasetSearch=True)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
         for dataMapping in dataLocations.values():
@@ -259,6 +265,8 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
                     if element.get('NoLocationUpdate', False):
+                        continue
+                    if element.get('NoPileupUpdate', False):
                         continue
                     for pData in element['PileupData']:
                         if pData == data:

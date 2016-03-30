@@ -6,12 +6,13 @@ A dictionary based object meant to represent a WorkQueue element
 
 from hashlib import md5
 
-
 STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
-            'Done', 'Failed', 'CancelRequested', 'Canceled')
+          'Done', 'Failed', 'CancelRequested', 'Canceled')
+
 
 class WorkQueueElement(dict):
     """Class to represent a WorkQueue element"""
+
     def __init__(self, **kwargs):
         dict.__init__(self)
 
@@ -32,7 +33,7 @@ class WorkQueueElement(dict):
         # Some workflows require additional datasets for PileUp
         # Track their locations
         self.setdefault('PileupData', {})
-        #both ParentData and ParentFlag is needed in case there Dataset split,
+        # both ParentData and ParentFlag is needed in case there Dataset split,
         # even though ParentFlag is True it will have empty ParentData
         self.setdefault('ParentData', {})
         self.setdefault('ParentFlag', False)
@@ -72,7 +73,7 @@ class WorkQueueElement(dict):
         # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
         self.setdefault('TimestampFoundNewData', 0)
         # TODO: being deprecated as of 29/03/2016. Trust initial input and pileup location or not
-        #self.setdefault('NoLocationUpdate', False)
+        # self.setdefault('NoLocationUpdate', False)
         # Trust initial input dataset location only or not
         self.setdefault('NoInputUpdate', False)
         # Trust initial pileup dataset location only or not
@@ -84,18 +85,19 @@ class WorkQueueElement(dict):
 
     def __to_json__(self, thunker):
         """Strip unthunkable"""
-        #result = WorkQueueElement(thunker_encoded_json = True,
-        result = dict(thunker_encoded_json = True,
-                      type = 'WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
+        # result = WorkQueueElement(thunker_encoded_json = True,
+        result = dict(thunker_encoded_json=True,
+                      type='WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement')
         result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'] = {}
         result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].update(self)
-        result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('Subscription', None) # Do we need this or can we not store this at all?
+        # Do we need this 'Subscription' or can we not store this at all?
+        result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('Subscription', None)
         result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('WMSpec', None)
-#        if self.get('Id'):
-#            result['_id'] = result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('Id')
-#        if self.get('_rev'):
-#            result['_rev'] = result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('_rev')
-        #result['Mask'] = thunker._thunk(result['Mask'])
+        #        if self.get('Id'):
+        #            result['_id'] = result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('Id')
+        #        if self.get('_rev'):
+        #            result['_rev'] = result['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'].pop('_rev')
+        # result['Mask'] = thunker._thunk(result['Mask'])
         return result
 
     @property
@@ -122,18 +124,18 @@ class WorkQueueElement(dict):
             return self._id
         # Assume md5 is good enough for now
         hash = md5()
-        spacer = ';' # character not present in any field
+        spacer = ';'  # character not present in any field
         hash.update(self['RequestName'] + spacer)
         # Task will be None in global inbox
         hash.update(repr(self['TaskName']) + spacer)
         hash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
         # Check repr is reproducible - should be
         if self['Mask']:
-            hash.update(",".join(["%s=%s" % (x,y) for x,y in self['Mask'].items()]) + spacer)
+            hash.update(",".join(["%s=%s" % (x, y) for x, y in self['Mask'].items()]) + spacer)
         else:
             hash.update("None" + spacer)
         # Check ACDC is deterministic and all params relevant
-        hash.update(",".join(["%s=%s" % (x,y) for x,y in self['ACDC'].items()]) + spacer)
+        hash.update(",".join(["%s=%s" % (x, y) for x, y in self['ACDC'].items()]) + spacer)
         hash.update(repr(self['Dbs']) + spacer)
         self._id = hash.hexdigest()
         return self._id
@@ -147,16 +149,17 @@ class WorkQueueElement(dict):
         """"""
         self.update(jsondata)
         return self
-#        self.update(jsondata['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'])
-#        self.pop('type', None)
-#        self.pop('thunker_encoded_json', None)
-##        self['Id'] = jsondata['_id']
-#        self['_rev'] = jsondata['_rev'] # what to do here???
-#        return self
+
+    #        self.update(jsondata['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement'])
+    #        self.pop('type', None)
+    #        self.pop('thunker_encoded_json', None)
+    ##        self['Id'] = jsondata['_id']
+    #        self['_rev'] = jsondata['_rev'] # what to do here???
+    #        return self
 
     def inEndState(self):
         """Have we finished processing"""
-        return (self.isComplete() or self.isFailed() or self.isCanceled())
+        return self.isComplete() or self.isFailed() or self.isCanceled()
 
     def isComplete(self):
         return self['Status'] == 'Done'
@@ -181,10 +184,10 @@ class WorkQueueElement(dict):
 
     def updateFromSubscription(self, wmbsStatus):
         """Get subscription status"""
-        mapping = {'EventsWritten' : 'events_written',
-                   'FilesProcessed' : 'files_processed',
-                   'PercentComplete' : 'percent_complete',
-                   'PercentSuccess' : 'percent_success'}
+        mapping = {'EventsWritten': 'events_written',
+                   'FilesProcessed': 'files_processed',
+                   'PercentComplete': 'percent_complete',
+                   'PercentSuccess': 'percent_success'}
         for ourkey, wmbskey in mapping.items():
             if wmbskey in wmbsStatus and self[ourkey] != wmbsStatus[wmbskey]:
                 self['Modified'] = True
@@ -201,7 +204,7 @@ class WorkQueueElement(dict):
             if self[val] == progressReport[val]:
                 continue
             # ignore new state if it is lower than the current state
-            if val == 'Status' and self[val] and not STATES.index(progressReport[val]) > STATES.index(self[val]):
+            if val == 'Status' and self[val] and STATES.index(progressReport[val]) <= STATES.index(self[val]):
                 continue
 
             self[val] = progressReport[val]
@@ -210,9 +213,9 @@ class WorkQueueElement(dict):
 
     def statusMetrics(self):
         """Returns the status & performance metrics"""
-        return dict(Status = self['Status'],
-                    PercentComplete = self['PercentComplete'],
-                    PercentSuccess = self['PercentSuccess'])
+        return dict(Status=self['Status'],
+                    PercentComplete=self['PercentComplete'],
+                    PercentSuccess=self['PercentSuccess'])
 
     def passesSiteRestriction(self, site):
         """Takes account of white & black list, and input data to work out
@@ -245,7 +248,7 @@ class WorkQueueElement(dict):
                     return False
 
         return True
-    
+
     def intersectionWithEmptySet(self, a, b):
         """
         interaction of 2 sets but if one of the set is empty returns union
@@ -256,22 +259,25 @@ class WorkQueueElement(dict):
             return a & b
 
     def possibleSites(self):
-        
+
         if self.get('NoLocationUpdate'):
             return self['SiteWhitelist']
-        
+
         possibleSites = set()
-        
+
         if self['SiteWhitelist']:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
-        
+
         if self['Inputs'] and self['NoInputUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['Inputs'].values() for y in x]))
-        
+            possibleSites = self.intersectionWithEmptySet(possibleSites,
+                                                          set([y for x in self['Inputs'].values() for y in x]))
+
         if self['ParentFlag'] and self['NoInputUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['ParentData'].values() for y in x]))
+            possibleSites = self.intersectionWithEmptySet(possibleSites,
+                                                          set([y for x in self['ParentData'].values() for y in x]))
 
         if self['PileupData'] and self['NoPileupUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites, set([y for x in self['PileupData'].values() for y in x]))
+            possibleSites = self.intersectionWithEmptySet(possibleSites,
+                                                          set([y for x in self['PileupData'].values() for y in x]))
 
         return list(possibleSites)

@@ -22,11 +22,20 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.ResubmitBlock import ResubmitBlock
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
+from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
-class ResubmitBlockTest(unittest.TestCase):
+class ResubmitBlockTest(EmulatedUnitTest):
+    """
+    _ResubmitBlockTest
+    Tests for WorkQueue splitting for Resubmission workflows
+
+    """
+
+    def __init__(self, methodName='runTest'):
+        super(ResubmitBlockTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
 
     def setUp(self):
         """
@@ -34,6 +43,7 @@ class ResubmitBlockTest(unittest.TestCase):
 
         Setup couchdb and the test environment
         """
+        super(ResubmitBlockTest, self).setUp()
 
         self.group = 'unknown'
         self.user = 'unknown'
@@ -42,17 +52,16 @@ class ResubmitBlockTest(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setupCouch("resubmitblock_t", "ACDC", "GroupUser")
-        EmulatorHelper.setEmulators(siteDB = True)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
 
         # Define test environment
         self.couchUrl = os.environ["COUCHURL"]
         self.acdcDBName = 'resubmitblock_t'
-        self.validLocations = ['srm-cms.gridpp.rl.ac.uk', 'cmssrm.fnal.gov', 'srm.unl.edu']
-        self.validLocationsCMSNames = ['T2_US_Nebraska', 'T1_US_FNAL', 'T1_UK_RAL']
+        self.validLocations = ['T2_US_Nebraska', 'T1_US_FNAL', 'T1_UK_RAL']
         self.siteWhitelist = ['T2_XX_SiteA']
         self.workflowName = 'dballest_ReReco_workflow'
-        couchServer = CouchServer(dburl = self.couchUrl)
-        self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create = False)
+        couchServer = CouchServer(dburl=self.couchUrl)
+        self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create=False)
         user = makeUser(self.group, 'sfoulkes@fnal.gov', self.couchUrl, self.acdcDBName)
         user.create()
 
@@ -64,12 +73,13 @@ class ResubmitBlockTest(unittest.TestCase):
 
         Clean couchdb and test environment
         """
+        super(ResubmitBlockTest, self).tearDown()
+
         self.testInit.tearDownCouch()
         EmulatorHelper.resetEmulators()
         return
 
-    def getProcessingACDCSpec(self, splittingAlgo = 'LumiBased', splittingArgs = {'lumis_per_job' : 8},
-                              setLocationFlag = False):
+    def getProcessingACDCSpec(self, splittingAlgo='LumiBased', splittingArgs={'lumis_per_job' : 8}, setLocationFlag=False):
         """
         _getProcessingACDCSpec_
 
@@ -81,15 +91,14 @@ class ResubmitBlockTest(unittest.TestCase):
         rerecoArgs["Requestor"] = self.user
         rerecoArgs["Group"] = self.group
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
-        Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl,
-                                     self.acdcDBName)
+        Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl, self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessing' % self.workflowName, splittingAlgo, splittingArgs)
         if setLocationFlag:
-            Tier1ReRecoWorkload.setTrustLocationFlag()
+            Tier1ReRecoWorkload.setTrustLocationFlag(setLocationFlag)
             Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         return Tier1ReRecoWorkload
 
-    def getMergeACDCSpec(self, splittingAlgo = 'ParentlessMergeBySize', splittingArgs = {}):
+    def getMergeACDCSpec(self, splittingAlgo='ParentlessMergeBySize', splittingArgs={}):
         """
         _getMergeACDCSpec_
 
@@ -98,14 +107,15 @@ class ResubmitBlockTest(unittest.TestCase):
         factory = ReRecoWorkloadFactory()
         rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+        rerecoArgs["Requestor"] = self.user
+        rerecoArgs["Group"] = self.group
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
-        Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing/DataProcessingMergeRECOoutput' % self.workflowName,
-                                     self.couchUrl, self.acdcDBName)
+        Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing/DataProcessingMergeRECOoutput' % self.workflowName, self.couchUrl, self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessingMergeRECOoutput' % self.workflowName,
                                                       splittingAlgo, splittingArgs)
         return Tier1ReRecoWorkload
 
-    def stuffACDCDatabase(self, numFiles = 50, lumisPerFile = 20, lumisPerACDCRecord = 2):
+    def stuffACDCDatabase(self, numFiles=50, lumisPerFile=20, lumisPerACDCRecord=2):
         """
         _stuffACDCDatabase_
 
@@ -120,7 +130,7 @@ class ResubmitBlockTest(unittest.TestCase):
         for i in range(numFiles):
             for j in range(1, lumisPerFile + 1, lumisPerACDCRecord):
                 lfn = '/store/data/a/%d' % i
-                acdcFile = File(lfn = lfn, size = 100, events = 250, locations = self.validLocations, merged = 1)
+                acdcFile = File(lfn=lfn, size=100, events=250, locations=self.validLocations, merged=1)
                 run = Run(i + 1, *range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1)))
                 acdcFile.addRun(run)
                 acdcDoc = {'collection_name' : self.workflowName,
@@ -135,7 +145,7 @@ class ResubmitBlockTest(unittest.TestCase):
         for i in range(numFiles):
             for j in range(1, lumisPerFile + 1, lumisPerACDCRecord):
                 lfn = '/store/unmerged/b/%d' % i
-                acdcFile = File(lfn = lfn, size = 100, events = 250, locations = set([choice(self.validLocations)]), merged = 0)
+                acdcFile = File(lfn=lfn, size=100, events=250, locations=set([choice(self.validLocations)]), merged=0)
                 run = Run(i + 1, *range(j, min(j + lumisPerACDCRecord, lumisPerFile + 1)))
                 acdcFile.addRun(run)
                 acdcDoc = {'collection_name' : self.workflowName,
@@ -202,7 +212,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(50, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -235,7 +245,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -248,16 +258,23 @@ class ResubmitBlockTest(unittest.TestCase):
                                                 'collection' : self.workflowName,
                                                 'server' : self.couchUrl})
 
+    def testMergeACDCSpec(self):
+        """
+        _testMergeACDCSpec
+        Test ACDC spec for the merge task of a ReReco workload
+        """
+        self.stuffACDCDatabase()
         acdcWorkload = self.getMergeACDCSpec('ParentlessMergeBySize', {})
         acdcWorkload.data.request.priority = 10000
         for task in acdcWorkload.taskIterator():
             policy = ResubmitBlock()
             units, _ = policy(acdcWorkload, task)
+
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(500, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -269,7 +286,6 @@ class ResubmitBlockTest(unittest.TestCase):
                                                 'fileset' : '/%s/DataProcessing/DataProcessingMergeRECOoutput' % self.workflowName,
                                                 'collection' : self.workflowName,
                                                 'server' : self.couchUrl})
-
         return
 
     def testLocalQueueACDCSplit(self):
@@ -289,7 +305,7 @@ class ResubmitBlockTest(unittest.TestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -297,18 +313,15 @@ class ResubmitBlockTest(unittest.TestCase):
                 self.assertEqual(1000, unit['NumberOfLumis'])
                 self.assertEqual(500, unit['NumberOfFiles'])
                 self.assertEqual(125000, unit['NumberOfEvents'])
-                self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName,
-                                                'fileset' : '/%s/DataProcessing' % self.workflowName,
-                                                'collection' : self.workflowName,
-                                                'server' : self.couchUrl})
+                self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName, 'fileset' : '/%s/DataProcessing' % self.workflowName, 'collection' : self.workflowName, 'server' : self.couchUrl})
                 globalUnit = unit
             policy = ResubmitBlock()
-            units, _ = policy(acdcWorkload, task, data = globalUnit['Inputs'])
+            units, _ = policy(acdcWorkload, task, data=globalUnit['Inputs'])
             self.assertEqual(len(units), 1)
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocationsCMSNames))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -316,10 +329,7 @@ class ResubmitBlockTest(unittest.TestCase):
                 self.assertEqual(1000, unit['NumberOfLumis'])
                 self.assertEqual(500, unit['NumberOfFiles'])
                 self.assertEqual(125000, unit['NumberOfEvents'])
-                self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName,
-                                                'fileset' : '/%s/DataProcessing' % self.workflowName,
-                                                'collection' : self.workflowName,
-                                                'server' : self.couchUrl})
+                self.assertEqual(unit['ACDC'], {'database' : self.acdcDBName, 'fileset' : '/%s/DataProcessing' % self.workflowName, 'collection' : self.workflowName, 'server' : self.couchUrl})
         return
 
     def testSiteWhitelistsLocation(self):
@@ -331,7 +341,7 @@ class ResubmitBlockTest(unittest.TestCase):
         """
         self.stuffACDCDatabase()
         acdcWorkload = self.getProcessingACDCSpec('FileBased', {'files_per_job' : 5},
-                                                  setLocationFlag = True)
+                                                  setLocationFlag=True)
         acdcWorkload.data.request.priority = 10000
         for task in acdcWorkload.taskIterator():
             policy = ResubmitBlock()
@@ -356,3 +366,4 @@ class ResubmitBlockTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

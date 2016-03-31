@@ -45,6 +45,7 @@ class SiteDBTest(unittest.TestCase):
         """
         target = [u'srm-eoscms.cern.ch', u'srm-eoscms.cern.ch', u'storage01.lcg.cscs.ch', u'eoscmsftp.cern.ch']
         results = self.mySiteDB.cmsNametoSE("%T2_CH")
+        print target, results
         self.assertTrue(sorted(results) == sorted(target))
 
     def testSEtoCmsName(self):
@@ -114,7 +115,7 @@ class SiteDBTest(unittest.TestCase):
     
     def testCMSNametoList(self):
         result = self.mySiteDB.cmsNametoList("T1_US*", "SE")
-        self.assertTrue(result == [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
+        self.assertItemsEqual(result, [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
         
 
 if __name__ == '__main__':

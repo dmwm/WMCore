@@ -117,7 +117,32 @@ class SiteDBTest(unittest.TestCase):
     def testCMSNametoList(self):
         result = self.mySiteDB.cmsNametoList("T1_US*", "SE")
         self.assertItemsEqual(result, [u'cmssrm.fnal.gov', u'cmssrmdisk.fnal.gov'])
-        
+
+    def testCheckAndConvertSENameToPNN(self):
+        """
+        Test the conversion of SE name to PNN for single and multiple sites/PNNs using checkAndConvertSENameToPNN
+        """
+
+        fnalSE = u'cmssrm.fnal.gov'
+        purdueSE = u'srm.rcac.purdue.edu'
+        fnalPNNs = [u'T1_US_FNAL_Buffer', u'T1_US_FNAL_MSS']
+        purduePNN = [u'T2_US_Purdue']
+
+        pnnList = fnalPNNs + purduePNN
+        seList = [fnalSE, purdueSE]
+
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(fnalSE), fnalPNNs)
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN([fnalSE]), fnalPNNs)
+
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(purdueSE), purduePNN)
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN([purdueSE]), purduePNN)
+
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(seList), purduePNN + fnalPNNs)
+
+        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(pnnList), pnnList)
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

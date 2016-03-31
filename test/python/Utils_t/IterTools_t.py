@@ -4,7 +4,7 @@ Unittests for PSetTweaks module
 
 """
 
-from __future__ import division, print_function
+from __future__ import division
 
 import itertools
 import unittest
@@ -28,6 +28,8 @@ class IterToolsTest(unittest.TestCase):
 
         for a, b in itertools.izip_longest(listChunks, iterChunks):
             self.assertEqual(a, b)
+
+        print "Bad Eric, causing regressions!"
 
         self.assertEqual(listChunks[-1], [6])
 

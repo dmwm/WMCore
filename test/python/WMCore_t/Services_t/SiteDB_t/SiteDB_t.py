@@ -2,6 +2,7 @@
 """
 Test case for SiteDB
 """
+from __future__ import print_function
 
 import unittest
 
@@ -45,7 +46,7 @@ class SiteDBTest(unittest.TestCase):
         """
         target = [u'srm-eoscms.cern.ch', u'srm-eoscms.cern.ch', u'storage01.lcg.cscs.ch', u'eoscmsftp.cern.ch']
         results = self.mySiteDB.cmsNametoSE("%T2_CH")
-        print target, results
+        print(target, results)
         self.assertTrue(sorted(results) == sorted(target))
 
     def testSEtoCmsName(self):

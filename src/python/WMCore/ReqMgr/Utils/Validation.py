@@ -100,14 +100,18 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     else:
         args_without_status = request_args
 
-    if len(args_without_status) == 1 and 'RequestPriority' in args_without_status:
-        try:
-            args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
-            if args_without_status['RequestPriority'] < 0 or args_without_status['RequestPriority'] >= 1e6:
-                raise TypeError
-        except TypeError:
-            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
-        return workload, args_without_status
+    if len(args_without_status) == 1:
+        if 'RequestPriority' in args_without_status:
+            try:
+                args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
+                if args_without_status['RequestPriority'] < 0 or args_without_status['RequestPriority'] >= 1e6:
+                    raise TypeError
+            except TypeError:
+                raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
+            return workload, args_without_status
+        elif 'cascade' in args_without_status:
+            # status was already validated
+            return workload, request_args
     elif len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
         # validate the arguments against the spec argumentSpecdefinition
         #TODO: currently only assigned status allows any update other then Status update

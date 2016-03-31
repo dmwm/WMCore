@@ -444,8 +444,7 @@ class Request(RESTEntity):
             # request_args should contain only 4 keys 'total_jobs', 'input_lumis', 'input_events', 'input_num_files'}
             report = self.reqmgr_db_service.updateRequestStats(workload.name(), request_args)
         else:
-            InvalidSpecParameterValue(
-                 "can't update value without state transition: %s" % request_args)
+            raise InvalidSpecParameterValue("can't update value without state transition: %s" % request_args)
         
         return report
 

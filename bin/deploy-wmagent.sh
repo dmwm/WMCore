@@ -220,6 +220,17 @@ elif [ "$FLAVOR" == "mysql" ]; then
   echo "Mysql, nothing to clean up" && echo
 fi
 
+# By default, it will only work for official WMCore patches in the general path
+echo -e "\n*** Applying agent patches ***"
+if [ "x$PATCHES" != "x" ]; then
+  cd $CURRENT
+  for pr in $PATCHES; do
+    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
+  done
+cd -
+fi
+echo "Done!" && echo
+
 ### Enabling couch watchdog:
 echo "*** Enabling couch watchdog ***"
 sed -i "s+RESPAWN_TIMEOUT=0+RESPAWN_TIMEOUT=5+" $CURRENT/sw*/$WMA_ARCH/external/couchdb*/*/bin/couchdb
@@ -234,17 +245,6 @@ echo "*** Initializing the agent ***"
 ./manage init-agent
 echo "Done!" && echo
 sleep 5
-
-# By default, it will only work for official WMCore patches in the general path
-echo -e "\n*** Applying agent patches ***"
-if [ "x$PATCHES" != "x" ]; then
-  cd $CURRENT
-  for pr in $PATCHES; do
-    wget -nv https://github.com/dmwm/WMCore/pull/$pr.patch -O - | patch -d apps/wmagent/lib/python2*/site-packages/ -p 3
-  done
-cd -
-fi
-echo "Done!" && echo
 
 echo "*** Checking if couchdb migration is needed ***"
 echo -e "\n[query_server_config]\nos_process_limit = 50" >> $CURRENT/config/couchdb/local.ini

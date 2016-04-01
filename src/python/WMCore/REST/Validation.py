@@ -267,8 +267,10 @@ def validate_reallist(argname, param, safe, special=False, minval=None, maxval=N
 
 def validate_no_more_input(param):
     """Verifies no more input is left in `param.args` or `param.kwargs`."""
-    if param.args: raise InvalidParameter("Excess path arguments")
-    if param.kwargs: raise InvalidParameter("Excess keyword arguments")
+    if param.args:
+        raise InvalidParameter("Excess path arguments, not validated args='%s'" % param.args)
+    if param.kwargs:
+        raise InvalidParameter("Excess keyword arguments, not validated kwargs='%s'" % param.kwargs)
 
 def validate_lengths(safe, *names):
     """Verifies that all `names` exist in `safe.kwargs`, are lists, and

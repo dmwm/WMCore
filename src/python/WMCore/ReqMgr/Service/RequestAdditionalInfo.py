@@ -6,60 +6,27 @@ from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
+
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
-#TODO: need to get algorithm proper way
-ALGO_DICT = {"FileBased": {"files_per_job": ''},
-             "TwoFileBased": {"two_files_per_job": ''},
-             "LumiBased": {"lumis_per_job": '', 
-                          "halt_job_on_file_boundaries": True},
-             "EventAwareLumiBased": {"avg_events_per_job": '',
-                                     "max_events_per_lumi": '',
-                                     "halt_job_on_file_boundaries": True},
-             "EventBased": {"events_per_job": '',
-                            "events_per_lumi": '',
-                            "lheInputFiles": False},
-             "Harvest": {"periodic_harvest_interval": ''},
-             "ParentlessMergeBySize": {"min_merge_size": '',
-                                       "max_merge_size": '',
-                                       "max_merge_events": '',
-                                       "max_wait_time": ''},
-             "WMBSMergeBySize": {"min_merge_size": '',
-                                 "max_merge_size": '',
-                                 "max_merge_events": '',
-                                 "max_wait_time": ''},
-             "MergeBySize": {"min_merge_size": '',
-                             "max_merge_size": '',
-                             "max_merge_events": '',
-                             "max_wait_time": ''}
-             }
-
-ALGO_LIST_BY_TYPES = {"Processing": ["LumiBased", "EventAwareLumiBased", 
-                             "EventBased", "FileBased"],
-              "Production": ["EventBased"],
-              "Skim": ["FileBased", "TwoFileBased"],
-              "Harvesting": ["Harvest"],
-              "Merge": ["ParentlessMergeBySize", 
-                        "WMBSMergeBySize",
-                        "MergeBySize"],
-              "Cleanup": ["FileBased"],
-              "LogCollect": ["FileBased"]
-              }
-
 def format_algo_web_list(task_name, task_type, split_param):
+    
+    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+    
     fdict = {"taskName": task_name}
     fdict["taskType"] = task_type
     default_algo = split_param["algorithm"]
-    algo_list = ALGO_LIST_BY_TYPES[task_type]
+    algo_list = algo_config["algo_list_by_types"][task_type]
     param_list = []
     
     if default_algo in algo_list:
         new_param = {"algorithm": default_algo}
         for key, value in split_param.items():
-            if key in ALGO_DICT[default_algo]:
+            if key in algo_config["algo_params"][default_algo]:
                 new_param[key] = value
         param_list.append(new_param) 
     elif default_algo == "":
@@ -72,7 +39,7 @@ def format_algo_web_list(task_name, task_type, split_param):
         for algo in algo_list:
             if algo != default_algo:
                 param = {"algorithm": algo}
-                param.update(ALGO_DICT[algo])
+                param.update(algo_config["algo_params"][algo])
                 param_list.append(param)
                 
     fdict["splitParamList"] = param_list
@@ -91,7 +58,9 @@ def _validate_split_param(split_algo, split_param):
     """
     validate param for editing, also returns param type
     """
-    valid_params = ALGO_DICT[split_algo]
+    algo_config = ReqMgrConfigDataCache.getConfig("EDITABLE_SPLITTING_PARAM_CONFIG")
+    
+    valid_params = algo_config["algo_params"][split_algo]
     if split_param in valid_params:
         if isinstance(valid_params[split_param], bool):
             cast_type = bool
@@ -234,7 +203,7 @@ class WorkloadSplitting(RESTEntity):
         try:
             helper.loadSpecFromCouch(self.reqdb_url, name)
         except Exception:
-            raise cherrypy.HTTPError(404, "Cannot find workload: % "+ name)
+            raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
         
         splittingDict = helper.listJobSplittingParametersByTask(performance = False)
         taskNames = sorted(splittingDict.keys())
@@ -282,7 +251,7 @@ class WorkloadSplitting(RESTEntity):
             try:
                 helper.loadSpecFromCouch(self.reqdb_url, name)
             except Exception:
-                raise cherrypy.HTTPError(404, "Cannot find workload: % "+ name)
+                raise cherrypy.HTTPError(404, "Cannot find workload: %s" % name)
             
             helper.setJobSplittingParameters(splittingTask, splittingAlgo, splitParams)
             

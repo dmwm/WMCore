@@ -3,17 +3,28 @@
 from __future__ import print_function
 import os
 import unittest
-import shutil
-import json
 
 #from WMCore_t.ReqMgr_t.Config import Config
 from WMCore_t.ReqMgr_t.TestConfig import config
 from WMCore.Wrappers import JsonWrapper
 from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
-from WMCore.ReqMgr.Auth import ADMIN_PERMISSION, DEFAULT_STATUS_PERMISSION, \
-                               CREATE_PERMISSION, DEFAULT_PERMISSION, ASSIGN_PERMISSION
+from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.REST.Test import fake_authz_headers
+
+req_args = {"RequestType": "ReReco", "RequestStatus": None}
+ADMIN_PERMISSION = getWritePermission(req_args) 
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "completed"}
+DEFAULT_STATUS_PERMISSION = getWritePermission(req_args)
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "new"}
+CREATE_PERMISSION = getWritePermission(req_args)
+
+DEFAULT_PERMISSION = DEFAULT_STATUS_PERMISSION
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "assinged"}
+ASSIGN_PERMISSION = getWritePermission(req_args)
 
 # this needs to move in better location
 def insertDataToCouch(couchUrl, couchDBName, data):

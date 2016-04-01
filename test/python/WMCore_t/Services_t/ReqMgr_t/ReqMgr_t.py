@@ -10,9 +10,23 @@ from WMCore.Wrappers import JsonWrapper
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
-from WMCore.ReqMgr.Auth import ADMIN_PERMISSION, DEFAULT_STATUS_PERMISSION, \
-                               CREATE_PERMISSION, DEFAULT_PERMISSION, ASSIGN_PERMISSION
+from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.REST.Test import fake_authz_headers
+
+req_args = {"RequestType": "ReReco", "RequestStatus": None}
+ADMIN_PERMISSION = getWritePermission(req_args) 
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "completed"}
+DEFAULT_STATUS_PERMISSION = getWritePermission(req_args)
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "new"}
+CREATE_PERMISSION = getWritePermission(req_args)
+
+DEFAULT_PERMISSION = DEFAULT_STATUS_PERMISSION
+
+req_args = {"RequestType": "ReReco", "RequestStatus": "assinged"}
+ASSIGN_PERMISSION = getWritePermission(req_args)
+
 
 # this needs to move in better location
 def insertDataToCouch(couchUrl, couchDBName, data):
@@ -90,8 +104,6 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         
         # test post method
         response = self.reqSvc.insertRequests(self.rerecoCreateArgs)
-        from pprint import pprint
-        pprint(response)
         self.assertEqual(len(response), 1)
         requestName = response[0]['request']
         
@@ -113,6 +125,8 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 1)
         
         self.reqSvc.updateRequestProperty(requestName, {'RequestStatus': 'assigned', 
+                                                        "AcquisitionEra": "TEST_ERA",
+                                                        "Team": "unittest",
                                                         "SiteWhitelist": ["T1_US_CBS"], 
                                                         "SiteBlacklist": ["T1_US_FOX"]})
         response = self.reqSvc.getRequestByStatus('assignment-approved')

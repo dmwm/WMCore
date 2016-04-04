@@ -948,7 +948,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.globalQueue.statusInbox(status='Canceled')), 1)
         syncQueues(self.localQueue)
         # local cancelded
-        print self.localQueue.status()
         #self.assertEqual(len(self.localQueue.status(status='Canceled')), 1)
         # clear global
         self.globalQueue.deleteWorkflows(self.processingSpec.name())

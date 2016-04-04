@@ -604,10 +604,6 @@ class SetupCMSSWPset(ScriptInterface):
                 elif int(result.group(1)) == 7:
                     if int(result.group(2)) >= 6:
                         addCondorStatusService = True
-                    elif int(result.group(2)) == 5 and int(result.group(3)) >= 1:
-                        addCondorStatusService = True
-                    elif int(result.group(2)) == 4 and int(result.group(3)) >= 7:
-                        addCondorStatusService = True
             except ValueError:
                 pass
 

@@ -105,7 +105,7 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
             dbsBlock['ACDC'] = acdcInfo
-            if task.getTrustSitelists():
+            if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
                 # TODO remove this line when all DBS origin_site_name is converted to PNN
@@ -140,7 +140,7 @@ class ResubmitBlock(StartPolicyInterface):
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
-            if task.getTrustSitelists():
+            if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
                 # TODO remove this line when all DBS origin_site_name is converted to PNN
@@ -166,7 +166,7 @@ class ResubmitBlock(StartPolicyInterface):
         dbsBlock['NumberOfFiles'] = acdcBlock['files']
         dbsBlock['NumberOfEvents'] = acdcBlock['events']
         dbsBlock['NumberOfLumis'] = acdcBlock['lumis']
-        if task.getTrustSitelists():
+        if task.getTrustSitelists().get('trustlists'):
             dbsBlock["Sites"] = self.sites
         else:
             # TODO remove this line when all DBS origin_site_name is converted to PNN

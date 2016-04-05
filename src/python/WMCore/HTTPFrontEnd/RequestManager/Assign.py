@@ -370,7 +370,8 @@ class Assign(WebAPI):
                                           kwargs.get("GracePeriod", None))
 
         # Check whether we should check location for the data
-        helper.setTrustLocationFlag(flag=strToBool(kwargs.get("TrustSitelists", False)))
+        helper.setTrustLocationFlag(inputFlag=strToBool(kwargs.get("TrustSitelists", False)),
+                                    pileupFlag=strToBool(kwargs.get("TrustPUSitelists", False)))
         helper.setAllowOpportunistic(allowOpport=strToBool(kwargs.get("AllowOpportunistic", False)))
 
         # Set phedex subscription information
@@ -448,5 +449,6 @@ class Assign(WebAPI):
                                        "UnmergedLFNBase": kwargs["UnmergedLFNBase"],
                                        "Dashboard": kwargs.get("Dashboard", ""),
                                        "TrustSitelists": kwargs.get("TrustSitelists", False),
+                                       "TrustPUSitelists": kwargs.get("TrustPUSitelists", False),
                                        "AllowOpportunistic": kwargs.get("AllowOpportunistic", False)},
                                useBody=True)

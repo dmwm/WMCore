@@ -1,3 +1,107 @@
+1.0.14 to 1.0.15.pre4:
+  - Merge pull request #6775 from ticoann/add_debug_server_error
+  - add debugging message for server error
+  - Merge pull request #6774 from ticoann/putrust_fix
+  - make backward compatible for PUTrustlist
+  - 1.0.15.pre3
+  - Merge pull request #6772 from ticoann/file_permission_buildrelease
+  - change file permission for buildrelease
+  - Merge pull request #6746 from ticoann/patch_before_init
+  - Merge pull request #6770 from vkuznet/invalid-exp
+  - Merge pull request #6762 from ticoann/reqmgr2_cache
+  - Make more informative non-validated parameter exceptions
+  - Merge pull request #6769 from amaltaro/cascade-update
+  - Fix cascade status update on reqmgr2
+  - Merge pull request #6767 from ericvaandering/catchup_print
+  - Fix print regressions
+  - create framework for config which can be controlled in runtime
+  - Merge pull request #6765 from amaltaro/pycondor0-mpatch5
+  - Merge pull request #6756 from juztas/fixgfal2
+  - Fixes job remove; job prio update; job log parsing
+  - Merge pull request #6752 from amaltaro/trustsite-pileup
+  - Code pylint clean up
+  - Merge pull request #6753 from ericvaandering/retry_conflicts
+  - Merge pull request #6760 from dciangot/patch-1
+  - Merge pull request #6759 from ericvaandering/fix_WMBSHelper_configcache
+  - Merge pull request #6754 from jha2/MockLocalQueueProfile_t
+  - Update of wmagent-couchapp-init for ASO
+  - Add CouchDBName to mcArgs, fixes two unit tests
+  - Unittest fix. Sort output from SiteDB
+  - Fix GFAL2 and environment problem
+  - Split trust location flag for input and for pileup data
+  - Using mock
+  - Try wrapping the check in retry with a delay
+  - Update UnstableTests.txt
+  - Merge pull request #6748 from ericvaandering/user_resubmit
+  - Merge pull request #6747 from ticoann/add_logdb_wq_unittest
+  - fix LocalQueueProfile_t
+  - Make username and group consistent among resubmit tests
+  - Merge pull request #6729 from amaltaro/buildrelease-branch
+  - 1.0.15.pre2
+  - Merge pull request #6726 from ticoann/add_algo_api
+  - patch before wmagent-init
+  - Merge pull request #6733 from ticoann/result_proxy_fix
+  - Merge pull request #6734 from vkuznet/issue6720
+  - add algorithm edit list
+  - Merge pull request #6738 from ericvaandering/use_uuid
+  - Changes for submit task forms
+  - Changes wrt Seangchan requirements
+  - Merge pull request #6735 from hufnagel/remove-phedex-inject-override
+  - Merge pull request #6736 from ticoann/tier0_taskarchiver_fix
+  - Remove this old code
+  - Use UUID as supplied in python since 2.5
+  - Adjust task_splitting
+  - Update UnstableTests.txt
+  - Code changes for request parameter splitting
+  - New js file with helper function to tweak request parameters
+  - remove non-functional phedex inject override
+  - fix task archiver for tier0 case
+  - Use /data/splitting/web_form API; remove obsolete UPdateTaskParams
+  - Fixes for issue 6720
+  - fixes This result object does not return rows error
+  - Merge pull request #6728 from emaszs/1.0.14_master_import_fix
+  - Merge pull request #6730 from vkuznet/fix-main-tmpl
+  - Fix missing http:
+  - Update buildreleases script to handle different branches
+  - Adding Utils to setup_dependencies.py
+  - 1.0.15.pre1
+  - Merge pull request #6725 from ticoann/fix_acdc_name
+  - Merge pull request #6723 from hufnagel/skim-subscription
+  - Merge pull request #6700 from ticoann/fix_wmastats_retrun_format
+  - Merge pull request #6724 from amaltaro/deploy-1014
+  - fix acdc name if it contains @
+  - Update a relval tweak and command example
+  - Merge pull request #6695 from amaltaro/stageout-alarm
+  - return list of dictionary with common structure when common_dict=1
+  - Merge pull request #6716 from ticoann/skip_cleanup_job
+  - skip cleanup job report
+  - Merge pull request #6714 from ticoann/add_job_type_fwjr
+  - add WMArchive related views and field
+  - Merge pull request #6696 from amaltaro/pycondor-patch3
+  - Merge pull request #6707 from ticoann/fix_output_dataset
+  - add special subscription support for skims
+  - JobStartDate may be eventually missing in the classAd
+  - update output dataset when request is assigned
+  - Add back some WQ tests that are still not stable
+  - Merge pull request #6698 from mmascher/master
+  - Merge pull request #6656 from ticoann/pycondor
+  - Merge pull request #6697 from amaltaro/inject-multiSite
+  - Add new CRAB3 exit code to WMExceptions
+  - Accept multi sites via command line for test wf injection
+  - Solve the missing files mystery during stage out
+  - Merge pull request #6692 from ticoann/fix_trusted_list_conditionwq
+  - Merge pull request #6681 from vkuznet/assing-team2
+  - fix site restriction checking
+  - Fix typo
+  - Fix issue with fetching teams; add printout in case of failure
+  - Merge pull request #6686 from amaltaro/prio-reqmgr2
+  - Fix priority update in reqmgr2
+  - Merge pull request #6680 from ticoann/add_agent_team_api
+  - add api to get team name
+  - Change getTeams behavior based on discussion with sry
+  - Changes to support team in assign interface
+  - switch to PyCondor plugin
+
 1.0.14 to 1.0.15.pre3:
   - Merge pull request #6772 from ticoann/file_permission_buildrelease
   - change file permission for buildrelease

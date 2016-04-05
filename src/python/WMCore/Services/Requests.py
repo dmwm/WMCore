@@ -21,6 +21,7 @@ import tempfile
 import shutil
 import stat
 import sys
+import traceback
 
 try:
     import cStringIO as StringIO
@@ -258,11 +259,12 @@ class Requests(dict):
             try:
                 response, result = self['conn'].request(uri, method = verb,
                                     body = encoded_data, headers = headers)
-            except AttributeError:
+            except AttributeError as ex:
+                msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
                 self['conn'].connections = {}
-                raise socket.error('Error contacting: %s' \
-                        % self.getDomainName())
+                raise socket.error('Error contacting: %s: %s' \
+                        % (self.getDomainName(), msg))
         if response.status >= 400:
             e = HTTPException()
             setattr(e, 'req_data', encoded_data)

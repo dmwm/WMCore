@@ -8,6 +8,7 @@ Unit tests for the Report class.
 import unittest
 import os
 import time
+from pprint import pprint
 
 from WMCore.Algorithms import BasicAlgos
 from WMCore.Configuration import ConfigSection
@@ -255,7 +256,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
-
+        
         assert hasattr(myReport.data.cmsRun1, "errors"), \
                "Error: Error section missing."
         assert getattr(myReport.data.cmsRun1.errors, "errorCount") == 1, \
@@ -343,7 +344,7 @@ cms::Exception caught in EventProcessor and rethrown
                                "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
         myReport = Report("cmsRun1")
         myReport.parse(xmlPath)
-
+                
         jsonReport = myReport.__to_json__(None)
 
         assert "task" in jsonReport.keys(), \
@@ -440,6 +441,7 @@ cms::Exception caught in EventProcessor and rethrown
             self.assertEqual(d['min'], 100)
             self.assertEqual(d['max'], 800)
             self.assertEqual(d['average'], 244)
+            
         return
 
     def testPerformanceSummary(self):
@@ -876,6 +878,21 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertFalse(badReport.stepSuccessful(stepName="cmsRun1"))
         self.assertEqual(badReport.getExitCode(), 60450)
         return
+    
+    def testReport(self):
+        
+        pathList = [self.xmlPath, 
+                    self.skippedFilesxmlPath,
+                    self.skippedAllFilesxmlPath,
+                    self.fallbackXmlPath,
+                    self.twoFileFallbackXmlPath,
+                    self.pileupXmlPath]
+        for path in pathList:
+            myReport = Report("cmsRun1")
+            myReport.parse(path)
+            pprint(myReport.__to_json__(None, True))
+        
+        
 
 if __name__ == "__main__":
     unittest.main()

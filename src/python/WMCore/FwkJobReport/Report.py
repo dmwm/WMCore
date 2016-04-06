@@ -157,7 +157,7 @@ class Report:
             raise FwkJobReportException(msg)
 
 
-    def jsonizeFiles(self, reportModule):
+    def jsonizeFiles(self, reportModule, newFormat=False):
         """
         _jsonizeFiles_
 
@@ -176,10 +176,18 @@ class Report:
 
             if jsonFile.get('runs', None):
                 cfgSectionRuns = jsonFile["runs"]
-                jsonFile["runs"] = {}
+                
+                if newFormat:
+                    jsonFile["runs"] = []
+                else:
+                    jsonFile["runs"] = {}
                 for runNumber in cfgSectionRuns.listSections_():
-                    jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
-                                                               runNumber)
+                    if newFormat:
+                        jsonFile["runs"].append({'runNumber': runNumber, 
+                                                 'value': getattr(cfgSectionRuns, runNumber)})
+                    else:
+                        jsonFile["runs"][str(runNumber)] = getattr(cfgSectionRuns,
+                                                                runNumber)
             jsonFiles.append(jsonFile)
 
         return jsonFiles
@@ -205,7 +213,7 @@ class Report:
 
         return jsonPerformance
 
-    def __to_json__(self, thunker):
+    def __to_json__(self, thunker, newFormat=False):
         """
         __to_json__
 
@@ -234,19 +242,31 @@ class Report:
 
             jsonStep["performance"] = self.jsonizePerformance(reportStep.performance)
 
-            jsonStep["output"] = {}
+            if newFormat:
+                jsonStep["output"] = []
+            else:
+                jsonStep["output"] = {}
             for outputModule in reportStep.outputModules:
                 reportOutputModule = getattr(reportStep.output, outputModule)
-                jsonStep["output"][outputModule] = self.jsonizeFiles(reportOutputModule)
+                if newFormat:
+                    jsonStep["output"].append({'outputModule': outputModule, 
+                                                'value': self.jsonizeFiles(reportOutputModule, newFormat)})
+                else:
+                    jsonStep["output"][outputModule] = self.jsonizeFiles(reportOutputModule, newFormat)
 
             analysisSection = getattr(reportStep, 'analysis', None)
             if analysisSection:
-                jsonStep["output"]['analysis'] = self.jsonizeFiles(analysisSection)
-
+                if newFormat:
+                    jsonStep["output"].append({'outputModule': 'analysis', 
+                                               'value': self.jsonizeFiles(analysisSection, newFormat)})
+                else:
+                    jsonStep["output"]['analysis'] = self.jsonizeFiles(analysisSection, newFormat)
+            
             jsonStep["input"] = {}
             for inputSource in reportStep.input.listSections_():
                 reportInputSource = getattr(reportStep.input, inputSource)
-                jsonStep["input"][inputSource] = self.jsonizeFiles(reportInputSource)
+                # input source is always "source"
+                jsonStep["input"][inputSource] = self.jsonizeFiles(reportInputSource, newFormat)
 
             jsonStep["errors"] = []
             errorCount = getattr(reportStep.errors, "errorCount", 0)

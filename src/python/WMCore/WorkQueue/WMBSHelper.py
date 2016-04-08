@@ -55,7 +55,7 @@ class WorkQueueWMBSException(WMException):
 
     pass
 
-def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
+def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None, deleteLogCollect = False):
     """
     _killWorkflow_
 
@@ -72,10 +72,10 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
     killFilesAction = daoFactory(classname = "Subscriptions.KillWorkflow")
     killJobsAction = daoFactory(classname = "Jobs.KillWorkflow")
 
-    killFilesAction.execute(workflowName = workflowName,
+    killFilesAction.execute(workflowName = workflowName, deleteLogCollect = deleteLogCollect,
                             conn = myThread.transaction.conn)
 
-    liveJobs = killJobsAction.execute(workflowName = workflowName,
+    liveJobs = killJobsAction.execute(workflowName = workflowName, deleteLogCollect = deleteLogCollect,
                                       conn = myThread.transaction.conn)
 
     changeState = ChangeState(jobCouchConfig)

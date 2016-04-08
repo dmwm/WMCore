@@ -21,7 +21,7 @@ class KillWorkflow(DBFormatter):
                  wmbs_workflow.id = wmbs_subscription.workflow AND
                  wmbs_subscription.subtype IN
                   (SELECT id FROM wmbs_sub_types
-                   WHERE name != 'Cleanup' AND name != 'LogCollect')
+                   WHERE name != 'Cleanup' %s)
                INNER JOIN wmbs_jobgroup ON
                  wmbs_subscription.id = wmbs_jobgroup.subscription
                INNER JOIN wmbs_job ON
@@ -34,7 +34,14 @@ class KillWorkflow(DBFormatter):
                  wmbs_job.state = wmbs_job_state.id
              WHERE wmbs_workflow.name = :workflowname"""
 
-    def execute(self, workflowName, conn = None, transaction = False):
-        results = self.dbi.processData(self.sql, {"workflowname": workflowName},
+    def execute(self, workflowName, deleteLogCollect=False, conn=None, transaction=False):
+        if deleteLogCollect:
+            # need a space in str
+            condition = " AND name != 'LogCollect'"
+        else:
+            condition = ""
+            
+        sql = self.sql % condition
+        results = self.dbi.processData(sql, {"workflowname": workflowName},
                                        conn = conn, transaction = transaction)
         return self.formatDict(results)

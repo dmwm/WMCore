@@ -521,13 +521,16 @@ class WorkQueue(WorkQueueBase):
             badWfsCancel = []
             if self.params['PopulateFilesets']:
                 self.logger.info("Canceling work for workflow(s): %s" % (requestNames))
+                #TODO need to find a way to get workflow is aborted or force-complete
+                deleteLogCollect = False
                 from WMCore.WorkQueue.WMBSHelper import killWorkflow
                 for workflow in requestNames:
                     try:
                         myThread = threading.currentThread()
                         myThread.dbi = self.conn.dbi
                         myThread.logger = self.logger
-                        killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
+                        killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"], 
+                                     deleteLogCollect=deleteLogCollect)
                     except Exception as ex:
                         self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
                         badWfsCancel.append(workflow)

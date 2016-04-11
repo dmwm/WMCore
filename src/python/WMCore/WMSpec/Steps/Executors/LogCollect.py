@@ -63,18 +63,18 @@ class LogCollect(Executor):
 
         # Set wait to over an hour
         waitTime  = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
-        seName    = overrides.get('seName',    "srm-cms.cern.ch")
-        pnn       = overrides.get('pnn',    "T2_CERN_CH")
-        lfnPrefix = overrides.get('lfnPrefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
-        lfnBase   = overrides.get('lfnBase',   "/store/user/jsmith")
+        seName    = overrides.get('se-name', "srm-cms.cern.ch")
+        pnn       = overrides.get('phedex-node', "T2_CH_CERN")
+        lfnPrefix = overrides.get('lfn-prefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
+        lfnBase   = overrides.get('lfnBase',   "/store/user/amaltaro")
         userLogs  = overrides.get('userLogs',  False)
 
         stageOutParams = {"command": "srmv2-lcg",
                           "se-name": seName,  "phedex-node": pnn, "lfn-prefix": lfnPrefix}
 
         # Set EOS stage out params
-        seEOSName    = overrides.get('seName', "srm-eoscms.cern.ch")
-        lfnEOSPrefix = overrides.get('lfnPrefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms") 
+        seEOSName    = "srm-eoscms.cern.ch"
+        lfnEOSPrefix = "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms"
         
         stageEOSOutParams = {"command": "srmv2-lcg",
                              "se-name": seEOSName, "phedex-node": pnn, "lfn-prefix": lfnEOSPrefix}    

@@ -1,13 +1,17 @@
 <site-local-config>
-<site name="T1_US_FNAL">
+<site name="T1_US_FNAL_Disk">
   <event-data>
-    <catalog url="trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap"/>
+    <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=xrd"/>
+    <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=fallbackxrd"/>
   </event-data>
+  <source-config>
+    <statistics-destination name="cms-udpmon-collector.cern.ch:9331" />
+  </source-config>
   <local-stage-out>
+    <se-name value="cmssrmdisk.fnal.gov"/>
+    <command value="stageout-xrdcp-fnal"/>
+    <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd"/>
     <phedex-node value="T1_US_FNAL_Disk"/>
-    <se-name value="cmssrm.fnal.gov"/>
-    <command value="dccp-fnal"/>
-    <catalog url="trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=srmv2"/>
   </local-stage-out>
   <calib-data>
     <frontier-connect>
@@ -16,6 +20,12 @@
       <proxy url="http://cmsfrontier2.fnal.gov:3128"/>
       <proxy url="http://cmsfrontier3.fnal.gov:3128"/>
       <proxy url="http://cmsfrontier4.fnal.gov:3128"/>
+      <backupproxy url="http://cmsbproxy.fnal.gov:3128"/>
+      <backupproxy url="http://cmsbproxy01.fnal.gov:3128"/>
+      <backupproxy url="http://cmsbproxy02.fnal.gov:3128"/>
+      <backupproxy url="http://cmsbpfrontier.cern.ch:3128"/>
+      <backupproxy url="http://cmsbpfrontier1.cern.ch:3128"/>
+      <backupproxy url="http://cmsbpfrontier2.cern.ch:3128"/>
       <server url="http://cmsfrontier.cern.ch:8000/FrontierInt"/>
       <server url="http://cmsfrontier.cern.ch:8000/FrontierInt"/>
       <server url="http://cmsfrontier1.cern.ch:8000/FrontierInt"/>

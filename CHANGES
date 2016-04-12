@@ -1,3 +1,21 @@
+1.0.14 to 1.0.14_crab_6:
+  - Merge pull request #6798 from juztas/1.0.14_crab
+  - Untar with python2.6 for older release
+  - 1.0.14_crab_5
+  - Merge pull request #6773 from emaszs/CondorStatusService_fix
+  - Fix logic for CondorStatusService availability check
+  - 1.0.14_crab_4
+  - Merge pull request #6745 from emaszs/httplib2_fix
+  - Fixing an import
+  - 1.0.14_crab_3
+  - Merge pull request #6741 from mmascher/lightclient
+  - Make sure httplib2 is not required if using pycurl
+  - 1.0.14_crab_2
+  - Merge pull request #6727 from emaszs/1.0.14_import_fix
+  - Adding Utils to setup_dependencies.py
+  - Merge pull request #6718 from emaszs/1.0.14_crab
+  - Allow pycurl_manager.py to accepd encoded string as data. Fixes #6467
+
 1.0.14 to 1.0.14_crab_5:
   - Merge pull request #6773 from emaszs/CondorStatusService_fix
   - Fix logic for CondorStatusService availability check

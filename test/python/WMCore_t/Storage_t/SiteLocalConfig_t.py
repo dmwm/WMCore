@@ -37,12 +37,9 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
 
-        assert mySiteConfig.siteName == "T1_US_FNAL", \
-               "Error: Wrong site name."
-
-        assert len(mySiteConfig.eventData.keys()) == 1, \
-               "Error: Wrong number of event data keys."
-        assert mySiteConfig.eventData["catalog"] == "trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap", \
+        assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
+        assert len(mySiteConfig.eventData.keys()) == 1, "Error: Wrong number of event data keys."
+        assert mySiteConfig.eventData["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=fallbackxrd", \
                "Eroror: Event data catalog is wrong."
 
         goldenServers = ["http://cmsfrontier.cern.ch:8000/FrontierInt",
@@ -71,11 +68,11 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert len(goldenProxies) == 0, \
                 "Error: Missing proxy servers."
 
-        assert mySiteConfig.localStageOut["se-name"] == "cmssrm.fnal.gov", \
+        assert mySiteConfig.localStageOut["se-name"] == "cmssrmdisk.fnal.gov", \
                "Error: Wrong se name from local stageout."
-        assert mySiteConfig.localStageOut["command"] == "dccp-fnal", \
+        assert mySiteConfig.localStageOut["command"] == "stageout-xrdcp-fnal", \
                "Error: Wrong stage out command."
-        assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=srmv2", \
+        assert mySiteConfig.localStageOut["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=writexrd", \
                "Error: TFC catalog is not correct."
 
         assert mySiteConfig.fallbackStageOut == [], \

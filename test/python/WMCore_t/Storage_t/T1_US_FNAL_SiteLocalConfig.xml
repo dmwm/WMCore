@@ -1,5 +1,5 @@
 <site-local-config>
-<site name="T1_US_FNAL_Disk">
+<site name="T1_US_FNAL">
   <event-data>
     <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=xrd"/>
     <catalog url="trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=fallbackxrd"/>

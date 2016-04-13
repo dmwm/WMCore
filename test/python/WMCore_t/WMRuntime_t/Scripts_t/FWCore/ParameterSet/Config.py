@@ -127,7 +127,7 @@ def PSet(**attributes):
 
     return newPSet
 
-def Service(serviceName):
+def Service(serviceName, **kwargs):
     """
     _Service_
 

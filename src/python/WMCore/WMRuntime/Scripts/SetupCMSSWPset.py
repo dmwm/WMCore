@@ -604,15 +604,13 @@ class SetupCMSSWPset(ScriptInterface):
                 elif int(result.group(1)) == 7:
                     if int(result.group(2)) >= 6:
                         addCondorStatusService = True
-                    elif int(result.group(2)) == 5 and int(result.group(3)) >= 1:
-                        addCondorStatusService = True
-                    elif int(result.group(2)) == 4 and int(result.group(3)) >= 7:
-                        addCondorStatusService = True
             except ValueError:
                 pass
 
         if addCondorStatusService:
-            self.process.add_(cms.Service("CondorStatusService"))
+            print("Tag chirp updates from CMSSW with _%s_" % self.step.data._internal_name)
+            self.process.add_(cms.Service("CondorStatusService",
+                                          tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))
 
         return
 

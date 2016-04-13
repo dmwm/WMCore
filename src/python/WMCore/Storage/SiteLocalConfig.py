@@ -10,10 +10,9 @@ into an object with an API for getting info from it.
 
 import os
 import logging
-from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
 
+from WMCore.Algorithms.ParseXMLFile import xmlFileToNode
 from WMCore.Storage.TrivialFileCatalog import tfcFilename, tfcProtocol, readTFC
-
 
 
 def loadSiteLocalConfig():
@@ -35,12 +34,12 @@ def loadSiteLocalConfig():
             config = SiteLocalConfig(overridePath)
             return config
         else:
-            logging.log(logging.ERROR, "%s env. var. provided but not pointing "
-                        "to an existing file, ignoring." % overVarName)
+            msg = "%s env. var. provided but not pointing to an existing file, ignoring." % overVarName
+            logging.log(logging.ERROR, msg)
 
     defaultPath = "$CMS_PATH/SITECONF/local/JobConfig/site-local-config.xml"
     actualPath = os.path.expandvars(defaultPath)
-    if os.environ.get("CMS_PATH", None) == None:
+    if os.environ.get("CMS_PATH", None) is None:
         msg = "Unable to find site local config file:\n"
         msg += "CMS_PATH variable is not defined."
         raise SiteConfigError(msg)
@@ -62,7 +61,7 @@ class SiteConfigError(Exception):
     pass
 
 
-class SiteLocalConfig:
+class SiteLocalConfig(object):
     """
     _SiteLocalConfig_
 
@@ -91,7 +90,7 @@ class SiteLocalConfig:
 
         """
         tfcUrl = self.localStageOut.get('catalog', None)
-        if tfcUrl == None:
+        if tfcUrl is None:
             return None
         try:
             tfcFile = tfcFilename(tfcUrl)
@@ -155,7 +154,7 @@ class SiteLocalConfig:
             msg += str(ex)
             raise SiteConfigError(msg)
 
-        nodeResult =  nodeReader(node)
+        nodeResult = nodeReader(node)
 
         if 'siteName' not in nodeResult:
             msg = "Unable to find site name in SiteConfigFile:\n"
@@ -186,8 +185,8 @@ def coroutine(func):
     Decorator method used to prime coroutines
 
     """
-    def start(*args,**kwargs):
-        cr = func(*args,**kwargs)
+    def start(*args, **kwargs):
+        cr = func(*args, **kwargs)
         next(cr)
         return cr
     return start
@@ -275,18 +274,10 @@ def processLocalStageOut():
         report, node = (yield)
         localReport = {}
         for subnode in node.children:
-            if subnode.name == 'se-name':
-                localReport['se-name'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'phedex-node':
-                localReport['phedex-node'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'command':
-                localReport['command'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'option':
-                localReport['option'] = subnode.attrs.get('value', None)
+            if subnode.name in ['se-name', 'phedex-node', 'command', 'option']:
+                localReport[subnode.name] = subnode.attrs.get('value', None)
             elif subnode.name == 'catalog':
-                localReport['catalog'] = subnode.attrs.get('url', None)
-            elif subnode.name == 'phedex-node':
-                localReport['phedex-node'] = subnode.attrs.get('value', None)
+                localReport[subnode.name] = subnode.attrs.get('url', None)
         report['localStageOut'] = localReport
 
 @coroutine
@@ -300,16 +291,8 @@ def processFallbackStageOut():
         report, node = (yield)
         localReport = {}
         for subnode in node.children:
-            if subnode.name == 'se-name':
-                localReport['se-name'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'phedex-node':
-                localReport['phedex-node'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'command':
-                localReport['command'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'option':
-                localReport['option'] = subnode.attrs.get('value', None)
-            elif subnode.name == 'lfn-prefix':
-                localReport['lfn-prefix'] = subnode.attrs.get('value', None)
+            if subnode.name in ['se-name', 'phedex-node', 'command', 'option', 'lfn-prefix']:
+                localReport[subnode.name] = subnode.attrs.get('value', None)
         report['fallbackStageOut'] = [localReport]
 
 

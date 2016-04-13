@@ -79,7 +79,7 @@ class AccountantWorker(WMConnectionBase):
         self.getJobInfoByID          = self.daofactory(classname = "Jobs.LoadFromID")
         self.getFullJobInfo          = self.daofactory(classname = "Jobs.LoadForErrorHandler")
         self.getJobTaskNameAction    = self.daofactory(classname = "Jobs.GetFWJRTaskName")
-
+        self.pnn_to_psn              = self.daofactory(classname = "Locations.GetPNNtoPSNMapping").execute()
         self.dbsStatusAction       = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
         self.dbsChildrenAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
@@ -89,7 +89,6 @@ class AccountantWorker(WMConnectionBase):
         self.dbsSetChecksum        = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi         = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
         self.dbsGetWorkflow        = self.dbsDaoFactory(classname = "ListWorkflow")
-
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
         self.stateChanger = ChangeState(config)
@@ -794,7 +793,13 @@ class AccountantWorker(WMConnectionBase):
                 runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
 
             if len(wmbsFile.getLocations()) > 0:
-                fileLocations.append({'lfn': lfn, 'location': wmbsFile.getLocations()[0]})
+                outpnn = wmbsFile.getLocations()[0]
+                if self.pnn_to_psn.get(outpnn, None):
+                    fileLocations.append({'lfn': lfn, 'location': outpnn})
+                else:
+                    msg = "PNN doesn't exist in wmbs_location_sename table: %s (investigate)" % outpnn
+                    logging.error(msg)
+                    raise AccountantWorkerException(msg)
 
             if selfChecksums:
                 # If we have checksums we have to create a bind

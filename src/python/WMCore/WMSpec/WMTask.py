@@ -23,7 +23,7 @@ from WMCore.WMSpec.WMStep import WMStep, WMStepHelper
 from WMCore.WMSpec.Steps.ExecuteMaster import ExecuteMaster
 from WMCore.WMSpec.Steps.BuildMaster import BuildMaster
 from WMCore.DataStructs.Workflow import Workflow as DataStructsWorkflow
-from Utils.IterTools import flattenList
+from WMCore.DataStructs.LumiList import LumiList
 
 def getTaskFromStep(stepRef):
     """
@@ -46,7 +46,7 @@ def getTaskFromStep(stepRef):
     return WMTaskHelper(taskNode)
 
 
-def buildLumiMask(runs, lumis, expanded=False):
+def buildLumiMask(runs, lumis):
     """
     Runs are saved in the spec as a list of integers.
     The lumi mask associated to each run is saved as a list of strings
@@ -54,10 +54,6 @@ def buildLumiMask(runs, lumis, expanded=False):
 
     The method convert these parameters in the corresponding lumiMask,
     e.g.:  runs=['3','4'], lumis=['1,4,23,45', '5,84,234,445'] => lumiMask = {'3':[[1,4],[23,45]],'4':[[5,84],[234,445]]}
-
-    if expanded is set to True, then it will return the lumi list in
-    an expanded way instead of ranges, e.g.:
-    runs=['3','4'], lumis=['1,4', '5,10,15,17'] => lumiMask = {3:[1,2,3,4], 4:[5,6,7,8,9,10,15,16,17]}
     """
 
     if len(runs) != len(lumis):
@@ -68,10 +64,6 @@ def buildLumiMask(runs, lumis, expanded=False):
 
     lumiLists = [map(list, list(zip([int(y) for y in x.split(',')][::2], [int(y) for y in x.split(',')][1::2]))) for x in lumis]
     strRuns = [str(run) for run in runs]
-
-    if expanded:
-        nestedLumiList = [[range(int(y[0]), int(y[1]) + 1) for y in x] for x in lumiLists]
-        lumiLists = [flattenList(x) for x in nestedLumiList]
 
     lumiMask = dict(list(zip(strRuns, lumiLists)))
 
@@ -1380,14 +1372,14 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def getLumiMask(self, expanded=False):
+    def getLumiMask(self):
         """
             return the lumi mask
         """
         runs = getattr(self.data.input.splitting, 'runs', None)
         lumis = getattr(self.data.input.splitting, 'lumis', None)
         if runs and lumis:
-            return buildLumiMask(runs, lumis, expanded=expanded)
+            return LumiList(wmagentFormat=(runs, lumis))
 
         return {}
 

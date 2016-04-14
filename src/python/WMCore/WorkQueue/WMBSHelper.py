@@ -9,7 +9,6 @@ _WMBSHelper_
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-import copy
 import logging
 import threading
 import traceback
@@ -713,14 +712,10 @@ class WMBSHelper(WMConnectionBase):
         """
         runWhiteList = self.topLevelTask.inputRunWhitelist()
         runBlackList = self.topLevelTask.inputRunBlacklist()
-        taskLumiMask = self.topLevelTask.getLumiMask()
+        lumiMask = self.topLevelTask.getLumiMask()
 
         blackMask = None
-        if taskLumiMask:  # We have a lumiMask, so use it and modify with run white/black list
-            if isinstance(taskLumiMask, LumiList):  # For a possible future where we use LumiList more prevalently
-                lumiMask = copy.deepcopy(taskLumiMask)
-            else:
-                lumiMask = LumiList(compactList=taskLumiMask)
+        if lumiMask:  # We have a lumiMask, so use it and modify with run white/black list
             if runWhiteList:
                 lumiMask.selectRuns(runWhiteList)
             if runBlackList:

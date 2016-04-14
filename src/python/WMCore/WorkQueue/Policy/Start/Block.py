@@ -122,7 +122,7 @@ class Block(StartPolicyInterface):
 
             #check lumi restrictions
             if task.getLumiMask():
-                accepted_lumis = sum( [ len(maskedBlocks[blockName][lfn].getLumis()) for lfn in maskedBlocks[blockName] ] )
+                accepted_lumis = sum([len(maskedBlocks[blockName][lfn].getLumis()) for lfn in maskedBlocks[blockName]])
                 #use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
                 #ratio =  lumis which are ok in the block / total num lumis
@@ -208,10 +208,9 @@ class Block(StartPolicyInterface):
             }
 
         """
-        # Get mask and convert to LumiList to make operations easier
+        # Get the task mask as a LumiList object to make operations easier
         maskedBlocks = {}
-        lumiMask = task.getLumiMask(expanded=True)
-        taskMask = LumiList(runsAndLumis = lumiMask)
+        taskMask = task.getLumiMask()
 
         # for performance reasons, we first get all the blocknames
         blocks = [x['block_name'] for x in dbs.dbs.listBlocks(dataset=datasetPath)]
@@ -222,12 +221,12 @@ class Block(StartPolicyInterface):
                 lfn = fileLumi['logical_file_name']
                 runNumber = str(fileLumi['run_num'])
                 lumis = fileLumi['lumi_section_num']
-                if lumiMask.get(runNumber, False):
-                    if len(set(lumis) & set(lumiMask[runNumber])) > 0:
-                        maskedBlocks.setdefault(block, {})
-                        maskedBlocks[block].setdefault(lfn, LumiList())
-                        lumiList = LumiList(runsAndLumis = {runNumber: lumis})
-                        maskedBlocks[block][lfn] += (lumiList & taskMask)
+                fileMask = LumiList(runsAndLumis={runNumber: lumis})
+                commonMask = taskMask & fileMask
+                if commonMask:
+                    maskedBlocks.setdefault(block, {})
+                    maskedBlocks[block].setdefault(lfn, LumiList())
+                    maskedBlocks[block][lfn] += commonMask
 
         return maskedBlocks
 

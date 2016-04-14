@@ -1073,8 +1073,10 @@ class PyCondorPlugin(BasePlugin):
         ### This should select the latest log file in the cache_dir
         fmtime = 0
         logFile = None
+        jobLogInfo = {}
         if not os.path.exists(job['cache_dir']):
-            logging.debug('%s does not EXIST.', job['cache_dir'])
+            logging.info('%s does not exist.', job['cache_dir'])
+            return jobLogInfo
 
         for joblog in os.listdir(job['cache_dir']):
             if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
@@ -1084,7 +1086,6 @@ class PyCondorPlugin(BasePlugin):
                     fmtime = _tmpfmtime
                     logFile = _tmplogFile
 
-        jobLogInfo = {}
         try:
             logging.debug("Opening condor job log file: %s", logFile)
             logfileobj = open(logFile, "r")

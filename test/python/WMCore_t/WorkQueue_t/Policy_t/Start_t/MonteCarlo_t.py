@@ -2,7 +2,7 @@
 """
     WorkQueue.Policy.Start.MonteCarlo tests
 """
-
+from __future__ import division
 import unittest
 from WMCore.WorkQueue.Policy.Start.MonteCarlo import MonteCarlo
 from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload \

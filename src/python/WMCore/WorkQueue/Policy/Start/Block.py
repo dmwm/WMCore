@@ -13,8 +13,10 @@ from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore import Lexicon
 
+
 class Block(StartPolicyInterface):
     """Split elements into blocks"""
+
     def __init__(self, **args):
         StartPolicyInterface.__init__(self, **args)
         self.args.setdefault('SliceType', 'NumberOfFiles')
@@ -33,10 +35,10 @@ class Block(StartPolicyInterface):
         """Apply policy to spec"""
         dbs = self.dbs()
         for block in self.validBlocks(self.initialTask, dbs):
-            #set the parent flag for processing only for clarity on the couch doc
+            # set the parent flag for processing only for clarity on the couch doc
             parentList = {}
             parentFlag = False
-            #TODO this is slow process needs to change in DBS3
+            # TODO this is slow process needs to change in DBS3
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
                 for dbsBlock in dbs.listBlockParents(block["block"]):
@@ -45,19 +47,18 @@ class Block(StartPolicyInterface):
                     else:
                         parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
 
-            self.newQueueElement(Inputs = {block['block']: self.data.get(block['block'], [])},
-                                 ParentFlag = parentFlag,
-                                 ParentData = parentList,
-                                 NumberOfLumis = int(block[self.lumiType]),
-                                 NumberOfFiles = int(block['NumberOfFiles']),
-                                 NumberOfEvents = int(block['NumberOfEvents']),
-                                 Jobs = ceil(float(block[self.args['SliceType']]) /
-                                             float(self.args['SliceSize'])),
-                                 OpenForNewData = True if str(block.get('OpenForWriting')) == '1' else False,
-                                 NoInputUpdate = self.initialTask.getTrustSitelists().get('trustlists'),
-                                 NoPileupUpdate = self.initialTask.getTrustSitelists().get('trustPUlists')
-                                 )
-
+            self.newQueueElement(Inputs={block['block']: self.data.get(block['block'], [])},
+                                 ParentFlag=parentFlag,
+                                 ParentData=parentList,
+                                 NumberOfLumis=int(block[self.lumiType]),
+                                 NumberOfFiles=int(block['NumberOfFiles']),
+                                 NumberOfEvents=int(block['NumberOfEvents']),
+                                 Jobs=ceil(float(block[self.args['SliceType']]) /
+                                           float(self.args['SliceSize'])),
+                                 OpenForNewData=True if str(block.get('OpenForWriting')) == '1' else False,
+                                 NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
+                                 NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
+                                )
 
     def validate(self):
         """Check args and spec work with block splitting"""
@@ -75,7 +76,7 @@ class Block(StartPolicyInterface):
         blockBlackList = task.inputBlockBlacklist()
         runWhiteList = task.inputRunWhitelist()
         runBlackList = task.inputRunBlacklist()
-        if task.getLumiMask(): #if we have a lumi mask get only the relevant blocks
+        if task.getLumiMask():  # if we have a lumi mask get only the relevant blocks
             maskedBlocks = self.getMaskedBlocks(task, dbs, datasetPath)
         if task.getTrustSitelists().get('trustlists'):
             siteWhitelist = task.siteWhitelist()
@@ -88,16 +89,16 @@ class Block(StartPolicyInterface):
             if blockWhiteList:
                 self.data = dict((block, []) for block in blockWhiteList)
             else:
-                self.data = {datasetPath : []} # same structure as in WorkQueueElement
+                self.data = {datasetPath: []}  # same structure as in WorkQueueElement
 
         for data in self.data:
             if data.find('#') > -1:
-                Lexicon.block(data) # check block name
+                Lexicon.block(data)  # check block name
                 datasetPath = str(data.split('#')[0])
                 blocks.append(str(data))
             else:
-                Lexicon.dataset(data) # check dataset name
-                for block in dbs.listFileBlocks(data, onlyClosedBlocks = True):
+                Lexicon.dataset(data)  # check dataset name
+                for block in dbs.listFileBlocks(data, onlyClosedBlocks=True):
                     blocks.append(str(block))
 
         for blockName in blocks:
@@ -113,26 +114,26 @@ class Block(StartPolicyInterface):
                 self.rejectedWork.append(blockName)
                 continue
 
-            block = dbs.getDBSSummaryInfo(datasetPath, block = blockName)
+            block = dbs.getDBSSummaryInfo(datasetPath, block=blockName)
             # blocks with 0 valid files should be ignored
             # - ideally they would be deleted but dbs can't delete blocks
             if not block['NumberOfFiles'] or block['NumberOfFiles'] == '0':
                 self.rejectedWork.append(blockName)
                 continue
 
-            #check lumi restrictions
+            # check lumi restrictions
             if task.getLumiMask():
                 accepted_lumis = sum([len(maskedBlocks[blockName][lfn].getLumis()) for lfn in maskedBlocks[blockName]])
-                #use the information given from getMaskedBlocks to compute che size of the block
+                # use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
-                #ratio =  lumis which are ok in the block / total num lumis
+                # ratio =  lumis which are ok in the block / total num lumis
                 ratioAccepted = 1. * accepted_lumis / float(block['NumberOfLumis'])
                 block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratioAccepted
                 block[self.lumiType] = accepted_lumis
             # check run restrictions
             elif runWhiteList or runBlackList:
                 # listRunLumis returns a dictionary with the lumi sections per run
-                runLumis = dbs.listRunLumis(block = block['block'])
+                runLumis = dbs.listRunLumis(block=block['block'])
                 runs = set(runLumis.keys())
                 recalculateLumiCounts = False
                 if len(runs) > 1:
@@ -161,7 +162,7 @@ class Block(StartPolicyInterface):
                     acceptedLumiCount = 0
                     acceptedEventCount = 0
                     acceptedFileCount = 0
-                    fileInfo = dbs.listFilesInBlock(fileBlockName = block['block'])
+                    fileInfo = dbs.listFilesInBlock(fileBlockName=block['block'])
                     for fileEntry in fileInfo:
                         acceptedFile = False
                         acceptedFileLumiCount = 0
@@ -174,7 +175,8 @@ class Block(StartPolicyInterface):
                         if acceptedFile:
                             acceptedFileCount += 1
                             if len(fileEntry['LumiList']) != acceptedFileLumiCount:
-                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents']/len(fileEntry['LumiList'])
+                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents'] \
+                                                      / len(fileEntry['LumiList'])
                             else:
                                 acceptedEventCount += fileEntry['NumberOfEvents']
                     block[self.lumiType] = acceptedLumiCount
@@ -191,7 +193,7 @@ class Block(StartPolicyInterface):
             # or DBS se is not recorded (This will be retried anyway by location mapper)
             if not self.data[block['block']]:
                 self.data[block['block']] = ["NoInitialSite"]
-            #    # No sites for this block, move it to rejected
+            # # No sites for this block, move it to rejected
             #    self.rejectedWork.append(blockName)
             #    continue
 
@@ -216,7 +218,7 @@ class Block(StartPolicyInterface):
         blocks = [x['block_name'] for x in dbs.dbs.listBlocks(dataset=datasetPath)]
 
         for block in blocks:
-            fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly = 1)
+            fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly=1)
             for fileLumi in fileLumis:
                 lfn = fileLumi['logical_file_name']
                 runNumber = str(fileLumi['run_num'])

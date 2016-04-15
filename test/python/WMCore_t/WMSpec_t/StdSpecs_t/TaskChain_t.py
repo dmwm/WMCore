@@ -12,6 +12,7 @@ import os
 import unittest
 
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
+from WMCore.DataStructs.LumiList import LumiList
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
@@ -455,7 +456,6 @@ class TaskChainTests(unittest.TestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         lumiDict = {"1":[[2,4], [8,50]], "2":[[100,200], [210,210]]}
-        lumiDict2 = {"1":[[2,4], [8,40]], "2":[[100,150], [210,210]]}
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
@@ -463,7 +463,6 @@ class TaskChainTests(unittest.TestCase):
             "ScramArch": "slc5_ia32_gcc434",
             "ProcessingVersion": 1,
             "GlobalTag": "DefaultGlobalTag",
-            "LumiList": lumiDict,
             "CouchURL": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
@@ -472,39 +471,38 @@ class TaskChainTests(unittest.TestCase):
             "TaskChain" : 4,
             "Task1" :{
                 "TaskName" : "DigiHLT",
+                "LumiList": lumiDict,
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
-                "SplittingAlgo"  : "FileBased",
+                "SplittingAlgo"  : "EventAwareLumiBased",
             },
             "Task2" : {
                 "TaskName" : "Reco",
                 "InputTask" : "DigiHLT",
                 "InputFromOutputModule" : "writeRAWDIGI",
                 "ConfigCacheID" : processorDocs['Reco'],
-                "SplittingAlgo" : "FileBased",
                 "GlobalTag" : "GlobalTagForReco",
                 "CMSSWVersion" : "CMSSW_3_1_2",
                 "ScramArch" : "CompatibleRECOArch",
                 "PrimaryDataset" : "ZeroBias",
-                "LumiList": lumiDict2,
+                "SplittingAlgo"  : "EventAwareLumiBased",
             },
             "Task3" : {
                 "TaskName" : "ALCAReco",
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "writeALCA",
                 "ConfigCacheID" : processorDocs['ALCAReco'],
-                "SplittingAlgo" : "FileBased",
                 "GlobalTag" : "GlobalTagForALCAReco",
                 "CMSSWVersion" : "CMSSW_3_1_3",
                 "ScramArch" : "CompatibleALCAArch",
-
+                "SplittingAlgo"  : "EventAwareLumiBased",
             },
             "Task4" : {
                 "TaskName" : "Skims",
                 "InputTask" : "Reco",
                 "InputFromOutputModule" : "writeRECO",
                 "ConfigCacheID" : processorDocs['Skims'],
-                "SplittingAlgo" : "FileBased",
+                "SplittingAlgo"  : "EventAwareLumiBased",
             }
         }
         testArguments.update(arguments)
@@ -531,7 +529,8 @@ class TaskChainTests(unittest.TestCase):
                         arguments['Task4'], arguments)
 
         digi = self.workload.getTaskByPath("/YankingTheChain/DigiHLT")
-        self.assertEqual(lumiDict, digi.getLumiMask())
+        lumiMask = LumiList(compactList=lumiDict)
+        self.assertEqual(lumiDict, digi.getLumiMask().getCompactList())
         digiStep = digi.getStepHelper("cmsRun1")
         self.assertEqual(digiStep.getGlobalTag(), arguments['GlobalTag'])
         self.assertEqual(digiStep.getCMSSWVersion(), arguments['CMSSWVersion'])
@@ -539,14 +538,12 @@ class TaskChainTests(unittest.TestCase):
 
         # Make sure this task has a different lumilist than the global one
         reco = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco")
-        self.assertEqual(lumiDict2, reco.getLumiMask())
         recoStep = reco.getStepHelper("cmsRun1")
         self.assertEqual(recoStep.getGlobalTag(), arguments['Task2']['GlobalTag'])
         self.assertEqual(recoStep.getCMSSWVersion(), arguments['Task2']['CMSSWVersion'])
         self.assertEqual(recoStep.getScramArch(), arguments['Task2']['ScramArch'])
 
         alca = self.workload.getTaskByPath("/YankingTheChain/DigiHLT/DigiHLTMergewriteRAWDIGI/Reco/RecoMergewriteALCA/ALCAReco")
-        self.assertEqual(lumiDict, alca.getLumiMask())
         alcaStep = alca.getStepHelper("cmsRun1")
         self.assertEqual(alcaStep.getGlobalTag(), arguments['Task3']['GlobalTag'])
         self.assertEqual(alcaStep.getCMSSWVersion(), arguments['Task3']['CMSSWVersion'])

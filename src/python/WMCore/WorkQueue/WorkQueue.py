@@ -53,9 +53,10 @@ def globalQueue(logger=None, dbi=None, **kwargs):
     defaults = {'PopulateFilesets': False,
                 'LocalQueueFlag': False,
                 'SplittingMapping': {'DatasetBlock':
-                                         {'name': 'Dataset',
+                                         {'name': 'Block',
                                           'args': {}}
                                      },
+                'TrackLocationOrSubscription': 'location'
                 }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
@@ -120,7 +121,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault('QueueDepth', 1)  # when less than this locally
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
-        self.params.setdefault('TrackLocationOrSubscription', 'subscription')
+        self.params.setdefault('TrackLocationOrSubscription', 'location')
         self.params.setdefault('ReleaseIncompleteBlocks', False)
         self.params.setdefault('ReleaseRequireSubscribed', True)
         self.params.setdefault('PhEDExEndpoint', None)

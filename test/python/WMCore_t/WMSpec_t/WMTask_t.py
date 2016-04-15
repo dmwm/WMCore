@@ -439,7 +439,7 @@ class WMTaskTest(unittest.TestCase):
             })
 
         testTask.setLumiMask(lumiMask = lumiMask.getCompactList())
-        outMask =  LumiList(compactList = testTask.getLumiMask())
+        outMask = testTask.getLumiMask()
         self.assertEqual(lumiMask.getCMSSWString(), outMask.getCMSSWString())
 
         return

@@ -1,15 +1,10 @@
 #!/usr/bin/env python
-#pylint: disable=E1103, C0103, W1201
-# E1103: Attach methods to threads
-# C0103: Internal method names start with '_'
-# W1201: Specify string format arguments as logging function parameters
 """
 _WMBSHelper_
 
 Use WMSpecParser to extract information for creating workflow, fileset, and subscription
 """
 
-import copy
 import logging
 import threading
 import traceback
@@ -25,23 +20,22 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
-from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.BossAir.BossAirAPI import (BossAirAPI, BossAirException)
-
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
+from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 
 def wmbsSubscriptionStatus(logger, dbi, conn, transaction):
     """Function to return status of wmbs subscriptions
     """
-    action = DAOFactory(package = 'WMBS',
-                        logger = logger,
-                        dbinterface = dbi)('Monitoring.SubscriptionStatus')
-    return action.execute(conn = conn,
-                          transaction = transaction)
-
+    action = DAOFactory(package='WMBS',
+                        logger=logger,
+                        dbinterface=dbi)('Monitoring.SubscriptionStatus')
+    return action.execute(conn=conn,
+                          transaction=transaction)
 
 
 class WorkQueueWMBSException(WMException):
@@ -55,7 +49,8 @@ class WorkQueueWMBSException(WMException):
 
     pass
 
-def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
+
+def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
     """
     _killWorkflow_
 
@@ -66,35 +61,35 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
     so the state transitions are logged.
     """
     myThread = threading.currentThread()
-    daoFactory = DAOFactory(package = "WMCore.WMBS",
-                            logger = myThread.logger,
-                            dbinterface = myThread.dbi)
-    killFilesAction = daoFactory(classname = "Subscriptions.KillWorkflow")
-    killJobsAction = daoFactory(classname = "Jobs.KillWorkflow")
+    daoFactory = DAOFactory(package="WMCore.WMBS",
+                            logger=myThread.logger,
+                            dbinterface=myThread.dbi)
+    killFilesAction = daoFactory(classname="Subscriptions.KillWorkflow")
+    killJobsAction = daoFactory(classname="Jobs.KillWorkflow")
 
-    killFilesAction.execute(workflowName = workflowName,
-                            conn = myThread.transaction.conn)
+    killFilesAction.execute(workflowName=workflowName,
+                            conn=myThread.transaction.conn)
 
-    liveJobs = killJobsAction.execute(workflowName = workflowName,
-                                      conn = myThread.transaction.conn)
+    liveJobs = killJobsAction.execute(workflowName=workflowName,
+                                      conn=myThread.transaction.conn)
 
     changeState = ChangeState(jobCouchConfig)
 
     # Deal with any jobs that are running in the batch system
     # only works if we can start the API
     if bossAirConfig:
-        bossAir = BossAirAPI(config = bossAirConfig, noSetup = True)
+        bossAir = BossAirAPI(config=bossAirConfig, noSetup=True)
         killableJobs = []
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':
                 # Then we need to kill this on the batch system
-                liveWMBSJob = Job(id = liveJob["id"])
+                liveWMBSJob = Job(id=liveJob["id"])
                 liveWMBSJob.update(liveJob)
                 killableJobs.append(liveJob)
         # Now kill them
         try:
-            logging.info("Killing %d jobs for workflow: %s" % (len(killableJobs), workflowName))
-            bossAir.kill(jobs = killableJobs, workflowName = workflowName)
+            logging.info("Killing %d jobs for workflow: %s", len(killableJobs), workflowName)
+            bossAir.kill(jobs=killableJobs, workflowName=workflowName)
         except BossAirException as ex:
             # Something's gone wrong. Jobs not killed!
             logging.error("Error while trying to kill running jobs in workflow!\n")
@@ -103,16 +98,16 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             logging.error(trace)
             # But continue; we need to kill the jobs in the master
             # the batch system will have to take care of itself.
-    
+
     liveWMBSJobs = defaultdict(list)
     for liveJob in liveJobs:
         if liveJob["state"] == "killed":
             # Then we've killed it already
             continue
-        liveWMBSJob = Job(id = liveJob["id"])
+        liveWMBSJob = Job(id=liveJob["id"])
         liveWMBSJob.update(liveJob)
         liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
-    
+
     for state, jobsByState in liveWMBSJobs.items():
         if len(jobsByState) > 100 and state != "executing":
             # if there are to many jobs skip the couch and dashboard update
@@ -123,32 +118,35 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig = None):
             changeState.propagate(jobsByState, "killed", state)
     return
 
-def freeSlots(multiplier = 1.0, minusRunning = False, allowedStates = ['Normal'], knownCmsSites = None):
+
+def freeSlots(multiplier=1.0, minusRunning=False, allowedStates=['Normal'], knownCmsSites=None):
     """
     Get free resources from wmbs.
 
     Specify multiplier to apply a ratio to the actual numbers.
     minusRunning control if running jobs should be counted
     """
-    from WMCore.ResourceControl.ResourceControl import ResourceControl
     rc_sites = ResourceControl().listThresholdsForCreate()
     thresholds = defaultdict(lambda: 0)
     jobCounts = defaultdict(dict)
     for name, site in rc_sites.items():
         if not site.get('cms_name'):
-            logging.warning("Not fetching work for %s, cms_name not defined" % name)
+            logging.warning("Not fetching work for %s, cms_name not defined", name)
             continue
         if knownCmsSites and site['cms_name'] not in knownCmsSites:
-            logging.warning("%s doesn't appear to be a known cms site, work may fail to be acquired for it" % site['cms_name'])
+            logging.warning(
+                "%s doesn't appear to be a known cms site, work may fail to be acquired for it", site['cms_name'])
         if site['state'] not in allowedStates:
             continue
         slots = site['total_slots']
         thresholds[site['cms_name']] += (slots * multiplier)
         if minusRunning:
-            jobCounts[site['cms_name']] = dict((k, jobCounts[site['cms_name']].get(k, 0) + site['pending_jobs'].get(k, 0))
-                                               for k in site['pending_jobs'])
+            jobCounts[site['cms_name']] = dict(
+                (k, jobCounts[site['cms_name']].get(k, 0) + site['pending_jobs'].get(k, 0))
+                for k in site['pending_jobs'])
 
     return dict(thresholds), dict(jobCounts)
+
 
 class WMBSHelper(WMConnectionBase):
     """
@@ -156,7 +154,8 @@ class WMBSHelper(WMConnectionBase):
 
     Interface between the WorkQueue and WMBS.
     """
-    def __init__(self, wmSpec, taskName, blockName = None, mask = None, cachepath = '.'):
+
+    def __init__(self, wmSpec, taskName, blockName=None, mask=None, cachepath='.'):
         """
         _init_
 
@@ -167,7 +166,7 @@ class WMBSHelper(WMConnectionBase):
         self.wmSpec = wmSpec
         self.topLevelTask = wmSpec.getTask(taskName)
         self.cachepath = cachepath
-        self.isDBS     = True
+        self.isDBS = True
 
         self.topLevelFileset = None
         self.topLevelSubscription = None
@@ -178,31 +177,31 @@ class WMBSHelper(WMConnectionBase):
         # Initiate the pieces you need to run your own DAOs
         WMConnectionBase.__init__(self, "WMCore.WMBS")
         myThread = threading.currentThread()
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                        logger = myThread.logger,
-                                        dbinterface = myThread.dbi)
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
 
         # DAOs from WMBS for file commit
-        self.setParentage            = self.daofactory(classname = "Files.SetParentage")
-        self.setFileRunLumi          = self.daofactory(classname = "Files.AddRunLumi")
-        self.setFileLocation         = self.daofactory(classname = "Files.SetLocationForWorkQueue")
-        self.setFileAddChecksum      = self.daofactory(classname = "Files.AddChecksumByLFN")
-        self.addFileAction           = self.daofactory(classname = "Files.Add")
-        self.addToFileset            = self.daofactory(classname = "Files.AddDupsToFileset")
-        self.getLocations            = self.daofactory(classname = "Locations.ListSites")
-        self.getLocationInfo         = self.daofactory(classname = "Locations.GetSiteInfo")
+        self.setParentage = self.daofactory(classname="Files.SetParentage")
+        self.setFileRunLumi = self.daofactory(classname="Files.AddRunLumi")
+        self.setFileLocation = self.daofactory(classname="Files.SetLocationForWorkQueue")
+        self.setFileAddChecksum = self.daofactory(classname="Files.AddChecksumByLFN")
+        self.addFileAction = self.daofactory(classname="Files.Add")
+        self.addToFileset = self.daofactory(classname="Files.AddDupsToFileset")
+        self.getLocations = self.daofactory(classname="Locations.ListSites")
+        self.getLocationInfo = self.daofactory(classname="Locations.GetSiteInfo")
 
         # DAOs from DBSBuffer
-        self.dbsCreateFiles    = self.dbsDaoFactory(classname = "DBSBufferFiles.Add")
-        self.dbsSetLocation    = self.dbsDaoFactory(classname = "DBSBufferFiles.SetLocationByLFN")
-        self.dbsInsertLocation = self.dbsDaoFactory(classname = "DBSBufferFiles.AddLocation")
-        self.dbsSetChecksum    = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
-        self.dbsInsertWorkflow = self.dbsDaoFactory(classname = "InsertWorkflow")
+        self.dbsCreateFiles = self.dbsDaoFactory(classname="DBSBufferFiles.Add")
+        self.dbsSetLocation = self.dbsDaoFactory(classname="DBSBufferFiles.SetLocationByLFN")
+        self.dbsInsertLocation = self.dbsDaoFactory(classname="DBSBufferFiles.AddLocation")
+        self.dbsSetChecksum = self.dbsDaoFactory(classname="DBSBufferFiles.AddChecksumByLFN")
+        self.dbsInsertWorkflow = self.dbsDaoFactory(classname="InsertWorkflow")
 
         # Added for file creation bookkeeping
-        self.dbsFilesToCreate     = []
-        self.addedLocations       = []
-        self.wmbsFilesToCreate    = []
+        self.dbsFilesToCreate = []
+        self.addedLocations = []
+        self.wmbsFilesToCreate = []
         self.insertedBogusDataset = -1
 
         return
@@ -212,14 +211,14 @@ class WMBSHelper(WMConnectionBase):
         sandboxCreator = SandboxCreator()
         sandboxCreator.makeSandbox(self.cachepath, self.wmSpec)
 
-    def createTopLevelFileset(self, topLevelFilesetName = None):
+    def createTopLevelFileset(self, topLevelFilesetName=None):
         """
         _createTopLevelFileset_
 
         Create the top level fileset for the workflow.  If the name of the top
         level fileset is not given create one.
         """
-        if topLevelFilesetName == None:
+        if topLevelFilesetName is None:
             filesetName = ("%s-%s" % (self.wmSpec.name(),
                                       self.wmSpec.getTopLevelTask()[0].name()))
             if self.block:
@@ -250,7 +249,7 @@ class WMBSHelper(WMConnectionBase):
 
         return outputFilesetName
 
-    def createSubscription(self, task, fileset, alternativeFilesetClose = False):
+    def createSubscription(self, task, fileset, alternativeFilesetClose=False):
         """
         _createSubscription_
 
@@ -266,7 +265,7 @@ class WMBSHelper(WMConnectionBase):
 
         return sub
 
-    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose = False):
+    def _createSubscriptionsInWMBS(self, task, fileset, alternativeFilesetClose=False):
         """
         __createSubscriptionsInWMBS_
 
@@ -276,20 +275,20 @@ class WMBSHelper(WMConnectionBase):
         # create runtime sandbox for workflow
         self.createSandbox()
 
-        #FIXME: Let workflow put in values if spec is missing them
-        workflow = Workflow(spec = self.wmSpec.specUrl(), owner = self.wmSpec.getOwner()["name"],
-                            dn = self.wmSpec.getOwner().get("dn", "unknown"),
-                            group = self.wmSpec.getOwner().get("group", "unknown"),
-                            owner_vogroup = self.wmSpec.getOwner().get("vogroup", "DEFAULT"),
-                            owner_vorole = self.wmSpec.getOwner().get("vorole", "DEFAULT"),
-                            name = self.wmSpec.name(), task = task.getPathName(),
-                            wfType = self.wmSpec.getDashboardActivity(),
-                            alternativeFilesetClose = alternativeFilesetClose,
-                            priority = self.wmSpec.priority())
+        # FIXME: Let workflow put in values if spec is missing them
+        workflow = Workflow(spec=self.wmSpec.specUrl(), owner=self.wmSpec.getOwner()["name"],
+                            dn=self.wmSpec.getOwner().get("dn", "unknown"),
+                            group=self.wmSpec.getOwner().get("group", "unknown"),
+                            owner_vogroup=self.wmSpec.getOwner().get("vogroup", "DEFAULT"),
+                            owner_vorole=self.wmSpec.getOwner().get("vorole", "DEFAULT"),
+                            name=self.wmSpec.name(), task=task.getPathName(),
+                            wfType=self.wmSpec.getDashboardActivity(),
+                            alternativeFilesetClose=alternativeFilesetClose,
+                            priority=self.wmSpec.priority())
         workflow.create()
-        subscription = Subscription(fileset = fileset, workflow = workflow,
-                                    split_algo = task.jobSplittingAlgorithm(),
-                                    type = task.getPrimarySubType())
+        subscription = Subscription(fileset=fileset, workflow=workflow,
+                                    split_algo=task.jobSplittingAlgorithm(),
+                                    type=task.getPrimarySubType())
         if subscription.exists():
             subscription.load()
             msg = "Subscription %s already exists for %s (you may ignore file insertion messages below, existing files wont be duplicated)"
@@ -302,11 +301,11 @@ class WMBSHelper(WMConnectionBase):
         for site in task.siteBlacklist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": False}])
 
-        if self.topLevelSubscription == None:
+        if self.topLevelSubscription is None:
             self.topLevelSubscription = subscription
-            logging.info("Top level subscription created: %s" % subscription["id"])
+            logging.info("Top level subscription created: %s", subscription["id"])
         else:
-            logging.info("Child subscription created: %s" % subscription["id"])
+            logging.info("Child subscription created: %s", subscription["id"])
 
         outputModules = task.getOutputModulesForTask()
         ignoredOutputModules = task.getIgnoredOutputModulesForTask()
@@ -333,7 +332,7 @@ class WMBSHelper(WMConnectionBase):
 
                         self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
 
-                if mergedOutputFileset == None:
+                if mergedOutputFileset is None:
                     workflow.addOutput(outputModuleName, outputFileset,
                                        outputFileset)
                 else:
@@ -350,11 +349,11 @@ class WMBSHelper(WMConnectionBase):
                 msg = 'Invalid value "%s" for %s' % (self.mask.get(key), key)
                 raise WorkQueueWMBSException(msg)
         locations = set()
-        for site in self.getLocations.execute(conn = self.getDBConn(),
-                                              transaction = self.existingTransaction()):
+        for site in self.getLocations.execute(conn=self.getDBConn(),
+                                              transaction=self.existingTransaction()):
             try:
-                siteInfo = self.getLocationInfo.execute(site, conn = self.getDBConn(),
-                                       transaction = self.existingTransaction())
+                siteInfo = self.getLocationInfo.execute(site, conn=self.getDBConn(),
+                                                        transaction=self.existingTransaction())
                 if not siteInfo:
                     self.logger.info('Skipping MonteCarlo injection to site "%s" as unknown to wmbs' % site)
                     continue
@@ -365,30 +364,29 @@ class WMBSHelper(WMConnectionBase):
             msg = 'No locations to inject Monte Carlo work to, unable to proceed'
             raise WorkQueueWMBSException(msg)
         mcFakeFileName = ("MCFakeFile-%s" % self.topLevelFileset.name).encode('ascii', 'ignore')
-        wmbsFile = File(lfn = mcFakeFileName,
-                        first_event = self.mask['FirstEvent'],
-                        last_event = self.mask['LastEvent'],
-                        events = self.mask['LastEvent'] - self.mask['FirstEvent'] + 1, # inclusive range
-                        locations = locations,
-                        merged = False, # merged causes dbs parentage relation
-                        )
+        wmbsFile = File(lfn=mcFakeFileName,
+                        first_event=self.mask['FirstEvent'],
+                        last_event=self.mask['LastEvent'],
+                        events=self.mask['LastEvent'] - self.mask['FirstEvent'] + 1,  # inclusive range
+                        locations=locations,
+                        merged=False,  # merged causes dbs parentage relation
+                       )
 
         if self.mask:
-            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1) # inclusive range
-            wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis)) # assume run number static
+            lumis = range(self.mask['FirstLumi'], self.mask['LastLumi'] + 1)  # inclusive range
+            wmbsFile.addRun(Run(self.mask['FirstRun'], *lumis))  # assume run number static
         else:
             wmbsFile.addRun(Run(1, 1))
 
-        wmbsFile['inFileset'] = True # file is not a parent
+        wmbsFile['inFileset'] = True  # file is not a parent
 
-        logging.info("WMBS File: %s on Location: %s"
-                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
+        logging.info("WMBS File: %s on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
         self.wmbsFilesToCreate.append(wmbsFile)
 
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
-                                                               isDBS = self.isDBS)
+                                                               isDBS=self.isDBS)
 
         self.topLevelFileset.markOpen(False)
         return totalFiles
@@ -410,23 +408,27 @@ class WMBSHelper(WMConnectionBase):
             myThread = threading.currentThread()
             myThread.transaction.rollback()
             msg = traceback.format_exc()
-            logging.error("Failed to create subscription %s" % msg)
+            logging.error("Failed to create subscription %s", msg)
             raise ex
 
         if block != None:
-            logging.info('"%s" Injecting block %s (%d files) into wmbs' % (self.wmSpec.name(),
-                                                                           self.block,
-                                                                           len(block['Files'])))
+            logging.info('"%s" Injecting block %s (%d files) into wmbs', self.wmSpec.name(),
+                                                                         self.block,
+                                                                         len(block['Files']))
             addedFiles = self.addFiles(block)
-        #For MC case
+        # For MC case
         else:
-            logging.info('"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs' % (self.wmSpec.name(),
-                                            self.mask['FirstRun'], self.mask['FirstLumi'], self.mask['FirstEvent'],
-                                            self.mask['LastRun'], self.mask['LastLumi'], self.mask['LastEvent'],
-                                            ))
+            logging.info(
+                '"%s" Injecting production %s:%s:%s - %s:%s:%s (run:lumi:event) into wmbs', self.wmSpec.name(),
+                                                                                            self.mask['FirstRun'],
+                                                                                            self.mask['FirstLumi'],
+                                                                                            self.mask['FirstEvent'],
+                                                                                            self.mask['LastRun'],
+                                                                                            self.mask['LastLumi'],
+                                                                                            self.mask['LastEvent'])
             addedFiles = self.addMCFakeFile()
 
-        self.commitTransaction(existingTransaction = False)
+        self.commitTransaction(existingTransaction=False)
 
         return sub, addedFiles
 
@@ -447,11 +449,10 @@ class WMBSHelper(WMConnectionBase):
             for dbsFile in self.validFiles(block['Files']):
                 self._addDBSFileToWMBSFile(dbsFile, block['PhEDExNodeNames'])
 
-
         # Add files to WMBS
         totalFiles = self.topLevelFileset.addFilesToWMBSInBulk(self.wmbsFilesToCreate,
                                                                self.wmSpec.name(),
-                                                               isDBS = self.isDBS)
+                                                               isDBS=self.isDBS)
         # Add files to DBSBuffer
         self._createFilesInDBSBuffer()
 
@@ -478,9 +479,11 @@ class WMBSHelper(WMConnectionBase):
 
         for task in self.wmSpec.listOutputProducingTasks():
             workflow_id = self.dbsInsertWorkflow.execute(self.wmSpec.name(), task,
-                                                         self.wmSpec.getBlockCloseMaxWaitTime(), self.wmSpec.getBlockCloseMaxFiles(),
-                                                         self.wmSpec.getBlockCloseMaxEvents(), self.wmSpec.getBlockCloseMaxSize(),
-                                                         conn = self.getDBConn(), transaction = self.existingTransaction())
+                                                         self.wmSpec.getBlockCloseMaxWaitTime(),
+                                                         self.wmSpec.getBlockCloseMaxFiles(),
+                                                         self.wmSpec.getBlockCloseMaxEvents(),
+                                                         self.wmSpec.getBlockCloseMaxSize(),
+                                                         conn=self.getDBConn(), transaction=self.existingTransaction())
             if task == self.topLevelTask.getPathName():
                 self.topLevelTaskDBSBufferId = workflow_id
 
@@ -493,7 +496,7 @@ class WMBSHelper(WMConnectionBase):
         """
         subInfo = self.wmSpec.getSubscriptionInformation()
         for dataset in subInfo:
-            dbsDataset = DBSBufferDataset(path = dataset)
+            dbsDataset = DBSBufferDataset(path=dataset)
             dbsDataset.create()
             dbsDataset.addSubscription(subInfo[dataset])
         return
@@ -509,32 +512,30 @@ class WMBSHelper(WMConnectionBase):
             # Whoops, nothing to do!
             return
 
-        dbsFileTuples  = []
-        dbsFileLoc     = []
-        dbsCksumBinds  = []
+        dbsFileTuples = []
+        dbsFileLoc = []
+        dbsCksumBinds = []
         locationsToAdd = []
-        selfChecksums  = None
-
+        selfChecksums = None
 
         # The first thing we need to do is add the datasetAlgo
         # Assume all files in a pass come from one datasetAlgo?
-        if self.insertedBogusDataset  == -1:
+        if self.insertedBogusDataset == -1:
             self.insertedBogusDataset = self.dbsFilesToCreate[0].insertDatasetAlgo()
 
         for dbsFile in self.dbsFilesToCreate:
             # Append a tuple in the format specified by DBSBufferFiles.Add
             # Also run insertDatasetAlgo
 
-            lfn           = dbsFile['lfn']
+            lfn = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
 
             newTuple = (lfn, dbsFile['size'],
                         dbsFile['events'], self.insertedBogusDataset,
                         dbsFile['status'], self.topLevelTaskDBSBufferId)
 
-            if not newTuple in dbsFileTuples:
+            if newTuple not in dbsFileTuples:
                 dbsFileTuples.append(newTuple)
-
 
             if len(dbsFile['newlocations']) < 1:
                 msg = ''
@@ -544,39 +545,37 @@ class WMBSHelper(WMConnectionBase):
                 logging.error(msg)
                 raise WorkQueueWMBSException(msg)
 
-
             for jobLocation in dbsFile['newlocations']:
-                if not jobLocation in self.addedLocations:
+                if jobLocation not in self.addedLocations:
                     # If we don't have it, try and add it
                     locationsToAdd.append(jobLocation)
                     self.addedLocations.append(jobLocation)
-                dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
+                dbsFileLoc.append({'lfn': lfn, 'sename': jobLocation})
 
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
                 for entry in selfChecksums.keys():
-                    dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
-                                          'cktype' : entry})
+                    dbsCksumBinds.append({'lfn': lfn, 'cksum': selfChecksums[entry],
+                                          'cktype': entry})
 
         for jobLocation in locationsToAdd:
-            self.dbsInsertLocation.execute(siteName = jobLocation,
-                                           conn = self.getDBConn(),
-                                           transaction = self.existingTransaction())
+            self.dbsInsertLocation.execute(siteName=jobLocation,
+                                           conn=self.getDBConn(),
+                                           transaction=self.existingTransaction())
 
-        self.dbsCreateFiles.execute(files = dbsFileTuples,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        self.dbsCreateFiles.execute(files=dbsFileTuples,
+                                    conn=self.getDBConn(),
+                                    transaction=self.existingTransaction())
 
-
-        self.dbsSetLocation.execute(binds = dbsFileLoc,
-                                    conn = self.getDBConn(),
-                                    transaction = self.existingTransaction())
+        self.dbsSetLocation.execute(binds=dbsFileLoc,
+                                    conn=self.getDBConn(),
+                                    transaction=self.existingTransaction())
 
         if len(dbsCksumBinds) > 0:
-            self.dbsSetChecksum.execute(bulkList = dbsCksumBinds,
-                                        conn = self.getDBConn(),
-                                        transaction = self.existingTransaction())
+            self.dbsSetChecksum.execute(bulkList=dbsCksumBinds,
+                                        conn=self.getDBConn(),
+                                        transaction=self.existingTransaction())
 
         # Now that we've created those files, clear the list
         self.dbsFilesToCreate = []
@@ -587,23 +586,23 @@ class WMBSHelper(WMConnectionBase):
         This step is just for increase the performance for
         Accountant doesn't neccessary to check the parentage
         """
-        dbsBuffer = DBSBufferFile(lfn = dbsFile["LogicalFileName"],
-                                  size = dbsFile["FileSize"],
-                                  events = dbsFile["NumberOfEvents"],
-                                  checksums = checksums,
-                                  locations = locations,
-                                  status = "GLOBAL")
+        dbsBuffer = DBSBufferFile(lfn=dbsFile["LogicalFileName"],
+                                  size=dbsFile["FileSize"],
+                                  events=dbsFile["NumberOfEvents"],
+                                  checksums=checksums,
+                                  locations=locations,
+                                  status="GLOBAL")
         dbsBuffer.setDatasetPath('bogus')
-        dbsBuffer.setAlgorithm(appName = "cmsRun", appVer = "Unknown",
-                             appFam = "Unknown", psetHash = "Unknown",
-                             configContent = "Unknown")
+        dbsBuffer.setAlgorithm(appName="cmsRun", appVer="Unknown",
+                               appFam="Unknown", psetHash="Unknown",
+                               configContent="Unknown")
 
         if not dbsBuffer.exists():
             self.dbsFilesToCreate.append(dbsBuffer)
-        #dbsBuffer.create()
+        # dbsBuffer.create()
         return
 
-    def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset = True):
+    def _addDBSFileToWMBSFile(self, dbsFile, storageElements, inFileset=True):
         """
         There are two assumptions made to make this method behave properly,
         1. DBS returns only one level of ParentList.
@@ -617,7 +616,7 @@ class WMBSHelper(WMConnectionBase):
         dbsFile.setdefault("ParentList", [])
         for parent in dbsFile["ParentList"]:
             wmbsParents.append(self._addDBSFileToWMBSFile(parent,
-                                            storageElements, inFileset = False))
+                                                          storageElements, inFileset=False))
 
         checksums = {}
         if dbsFile.get('Checksum'):
@@ -625,13 +624,13 @@ class WMBSHelper(WMConnectionBase):
         if dbsFile.get('Adler32'):
             checksums['adler32'] = dbsFile['Adler32']
 
-        wmbsFile = File(lfn = dbsFile["LogicalFileName"],
-                        size = dbsFile["FileSize"],
-                        events = dbsFile["NumberOfEvents"],
-                        checksums = checksums,
-                        #TODO: need to get list of parent lfn
-                        parents = wmbsParents,
-                        locations = set(storageElements))
+        wmbsFile = File(lfn=dbsFile["LogicalFileName"],
+                        size=dbsFile["FileSize"],
+                        events=dbsFile["NumberOfEvents"],
+                        checksums=checksums,
+                        # TODO: need to get list of parent lfn
+                        parents=wmbsParents,
+                        locations=set(storageElements))
 
         for lumi in dbsFile['LumiList']:
             if isinstance(lumi['LumiSectionNumber'], list):
@@ -642,14 +641,9 @@ class WMBSHelper(WMConnectionBase):
 
         self._addToDBSBuffer(dbsFile, checksums, storageElements)
 
-        logging.info("WMBS File: %s\n on Location: %s"
-                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
+        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
-        if inFileset:
-            wmbsFile['inFileset'] = True
-        else:
-            wmbsFile['inFileset'] = False
-
+        wmbsFile['inFileset'] = bool(inFileset)
         self.wmbsFilesToCreate.append(wmbsFile)
 
         return wmbsFile
@@ -664,43 +658,39 @@ class WMBSHelper(WMConnectionBase):
         dbsFile["NumberOfEvents"] = acdcFile["events"]
         return dbsFile
 
-    def _addACDCFileToWMBSFile(self, acdcFile, inFileset = True):
+    def _addACDCFileToWMBSFile(self, acdcFile, inFileset=True):
         """
+        adds the ACDC files into WMBS database
         """
         wmbsParents = []
         for parent in acdcFile["parents"]:
-            parent = self._addACDCFileToWMBSFile(DatastructFile(lfn = parent,
-                                                                locations = acdcFile["locations"]),
-                                                 inFileset = False)
+            parent = self._addACDCFileToWMBSFile(DatastructFile(lfn=parent,
+                                                                locations=acdcFile["locations"]),
+                                                 inFileset=False)
             wmbsParents.append(parent)
 
-        #pass empty check sum since it won't be updated to dbs anyway
+        # pass empty check sum since it won't be updated to dbs anyway
         checksums = {}
-        wmbsFile = File(lfn = str(acdcFile["lfn"]),
-                        size = acdcFile["size"],
-                        events = acdcFile["events"],
-                        first_event = acdcFile.get('first_event', 0),
-                        last_event = acdcFile.get('last_event', 0),
-                        checksums = checksums,
-                        parents = wmbsParents,
-                        locations = acdcFile["locations"],
-                        merged = acdcFile.get('merged', True))
+        wmbsFile = File(lfn=str(acdcFile["lfn"]),
+                        size=acdcFile["size"],
+                        events=acdcFile["events"],
+                        first_event=acdcFile.get('first_event', 0),
+                        last_event=acdcFile.get('last_event', 0),
+                        checksums=checksums,
+                        parents=wmbsParents,
+                        locations=acdcFile["locations"],
+                        merged=acdcFile.get('merged', True))
 
         ## TODO need to get the lumi lists
         for run in acdcFile['runs']:
             wmbsFile.addRun(run)
 
-
         dbsFile = self._convertACDCFileToDBSFile(acdcFile)
         self._addToDBSBuffer(dbsFile, checksums, acdcFile["locations"])
 
-        logging.info("WMBS File: %s\n on Location: %s"
-                     % (wmbsFile['lfn'], wmbsFile['newlocations']))
+        logging.info("WMBS File: %s\n on Location: %s", wmbsFile['lfn'], wmbsFile['newlocations'])
 
-        if inFileset:
-            wmbsFile['inFileset'] = True
-        else:
-            wmbsFile['inFileset'] = False
+        wmbsFile['inFileset'] = bool(inFileset)
 
         self.wmbsFilesToCreate.append(wmbsFile)
 
@@ -713,14 +703,10 @@ class WMBSHelper(WMConnectionBase):
         """
         runWhiteList = self.topLevelTask.inputRunWhitelist()
         runBlackList = self.topLevelTask.inputRunBlacklist()
-        taskLumiMask = self.topLevelTask.getLumiMask()
+        lumiMask = self.topLevelTask.getLumiMask()
 
         blackMask = None
-        if taskLumiMask:  # We have a lumiMask, so use it and modify with run white/black list
-            if isinstance(taskLumiMask, LumiList):  # For a possible future where we use LumiList more prevalently
-                lumiMask = copy.deepcopy(taskLumiMask)
-            else:
-                lumiMask = LumiList(compactList=taskLumiMask)
+        if lumiMask:  # We have a lumiMask, so use it and modify with run white/black list
             if runWhiteList:
                 lumiMask.selectRuns(runWhiteList)
             if runBlackList:

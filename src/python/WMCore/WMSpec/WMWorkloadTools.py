@@ -274,6 +274,14 @@ def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
             arguments[argument] = argumentDefinition[argument]["default"]
     return
 
+def setArgumentsWithDefault(arguments, argumentDefinition):
+    """
+    sets the default value if arguments value is specified as None
+    """
+    for argument in argumentDefinition:
+        if argument not in arguments and "default" in argumentDefinition[argument]:
+            arguments[argument] = argumentDefinition[argument]["default"]
+    return
 
 def loadSpecClassByType(specType):
     factoryName = "%sWorkloadFactory" % specType

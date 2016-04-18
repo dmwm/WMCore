@@ -8,7 +8,7 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl, block
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl, block, procstring
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -939,8 +939,8 @@ class StdBase(object):
                      "ScramArch": {"default": "slc5_amd64_gcc462", "optional": False},
                      "GlobalTag": {"null": True},
                      "GlobalTagConnect": {"null": True},
-                     "ProcessingVersion": {"default": 1, "type": int},
-                     "ProcessingString": {"null": True},
+                     "ProcessingVersion": {"default": 1, "type": int, "assign_optional": False},
+                     "ProcessingString": {"default": "", "validate": procstring, "assign_optional": False},
                      "LumiList": {"default": {}, "type": makeLumiList},
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},

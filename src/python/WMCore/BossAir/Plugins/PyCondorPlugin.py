@@ -6,10 +6,10 @@ Example of Condor plugin
 For glide-in use.
 """
 import os
+import os.path
 import re
 import time
 import Queue
-import os.path
 import logging
 import threading
 import traceback
@@ -143,11 +143,11 @@ class PyCondorPlugin(BasePlugin):
         stateDict = {'New': 'Pending',
                      'Idle': 'Pending',
                      'Running': 'Running',
-                     'Held': 'Error',
+                     'Removed': 'Running',
                      'Complete': 'Complete',
+                     'Held': 'Error',
                      'Error': 'Error',
                      'Timeout': 'Error',
-                     'Removed': 'Running',
                      'Unknown': 'Error'}
 
         # This call is optional but needs to for testing
@@ -725,13 +725,15 @@ class PyCondorPlugin(BasePlugin):
         Kill can happen for schedd running on localhost... TBC.
         """
         sd = condor.Schedd()
-        for job in jobs:
-            logging.debug("Going to remove jobid=%i from the queue", job['jobid'])
-            try:
-                sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
-                logging.debug("Removed jobid=%i from the queue", job['jobid'])
-            except RuntimeError:
-                logging.warn("Error while killing job %i on the schedd", job['jobid'])
+        ad = classad.ClassAd()
+        listJobIds = [job['jobid'] for job in jobs]
+        ad['foo'] = listJobIds
+        logging.info("Killing %i jobs from the queue", len(listJobIds))
+        jobsConstraint = "member(WMAgent_JobID, %s)" % ad.lookup("foo").__repr__()
+        try:
+            sd.act(condor.JobAction.Remove, jobsConstraint)
+        except RuntimeError:
+            logging.warn("Error while killing jobs on the schedd: %s", listJobIds)
 
         return
 

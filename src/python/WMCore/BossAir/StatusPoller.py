@@ -48,7 +48,7 @@ class StatusPoller(BaseWorkerThread):
         # With no timeouts, nothing ever happens
         # Otherwise we expect a dictionary with the keys representing
         # the states and the values the timeouts.
-        self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts', {})
+        self.timeouts = getattr(config.JobStatusLite, 'stateTimeouts')
 
         # init alert system
         self.initAlerts(compName="StatusPoller")
@@ -95,8 +95,8 @@ class StatusPoller(BaseWorkerThread):
             # Then we have no jobs
             return
 
-        if self.timeouts == {}:
-            # Then we've set outself to have no timeouts
+        if not self.timeouts:
+            # Then we've set ourselves to have no timeouts
             # Get out and stay out
             return
 
@@ -111,11 +111,11 @@ class StatusPoller(BaseWorkerThread):
             if statusTime == 0:
                 logging.error("Not killing job %i, the status time was zero", job['id'])
                 continue
-            if timeout != None and statusTime != None:
+            if timeout and statusTime:
                 if time.time() - float(statusTime) > float(timeout):
                     # Then the job needs to be killed.
-                    logging.info("Killing job %i because it has exceeded timeout for status %s", job['id'], globalState)
-                    job['status'] = 'Timeout'
+                    logging.info("Killing job %i because it has exceeded timeout for status '%s'", job['id'], globalState)
+                    job['status'] = globalState
                     jobsToKill.append(job)
 
         # We need to show that the jobs are in state timeout

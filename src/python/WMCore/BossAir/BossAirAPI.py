@@ -683,10 +683,10 @@ class BossAirAPI(WMConnectionBase):
                         # Build a better job message
                         if killMsg:
                             reportedMsg = killMsg
-                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
+                            reportedMsg += '\n Job last known status was: %s' % job.get('status', 'Unknown')
                         else:
                             reportedMsg = WM_JOB_ERROR_CODES[errorCode]
-                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
+                            reportedMsg += '\n Job last known status was: %s' % job.get('status', 'Unknown')
                         errorReport.addError("JobKilled", errorCode, "JobKilled", reportedMsg)
                         try:
                             errorReport.save(filename=reportName)

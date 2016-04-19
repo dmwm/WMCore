@@ -261,7 +261,7 @@ def parseAd():
     return jobad
 
 
-def reportFailureToDashboard(exitCode, ad=None):
+def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     """ Report failure to dashboard (CRAB3) """
     if ad is None:
         try:
@@ -284,10 +284,29 @@ def reportFailureToDashboard(exitCode, ad=None):
         'MonitorJobID': '%d_https://glidein.cern.ch/%d/%s_%d' % (ad['CRAB_Id'], ad['CRAB_Id'], ad['CRAB_ReqName'].replace("_", ":"), ad['CRAB_Retry']),
         'JobExitCode': exitCode
     }
+    if stageOutReport:
+        params['StageOutReport'] = stageOutReport
     print("Dashboard stageout failure parameters: %s" % str(params))
     apmonSend(params['MonitorID'], params['MonitorJobID'], params)
     apmonFree()
     return exitCode
+
+def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageOutExit):
+    """
+    Prepare Dashboard report about stageout policies
+    This dashboard report will be used for reporting to dashboard and visualize local/fallback/direct
+    stageout related issues for prod/analysis jobs.
+    """
+    tempDict = {}
+    tempDict['LFN'] = fileToStage['LFN'] if 'LFN' in fileToStage else None
+    tempDict['SEName'] = seName if seName else fileToStage['SEName'] if 'SEName' in fileToStage else None
+    tempDict['PNN'] = pnn if pnn else fileToStage['PNN'] if 'PNN' in fileToStage else None
+    tempDict['StageOutCommand'] = command if command else fileToStage['command'] if 'command' in fileToStage else None
+    tempDict['StageOutType'] = stageOutType
+    tempDict['StageOutExit'] = stageOutExit
+    fileToStage['StageOutReport'].append(tempDict)
+    return fileToStage
+
 
 if __name__ == '__main__':
     sys.exit(reportFailureToDashboard(int(sys.argv[1])))

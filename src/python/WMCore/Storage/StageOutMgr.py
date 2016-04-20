@@ -17,6 +17,7 @@ from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
+from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
@@ -185,11 +186,12 @@ class StageOutMgr:
         Use call to invoke transfers
 
         """
-        lastException = None
+        lastException = ""
 
         print("==>Working on file: %s" % fileToStage['LFN'])
         lfn = fileToStage['LFN']
 
+        fileToStage['StageOutReport'] = []
         #  //
         # // No override => use local-stage-out from site conf
         #//  invoke for all files and check failures/successes
@@ -204,16 +206,23 @@ class StageOutMgr:
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
                 print("===> Stage Out Successful: %s" % fileToStage)
+                fileToStage = stageoutPolicyReport(fileToStage, None, None, None, 'LOCAL', 0)
                 return fileToStage
             except WMException as ex:
                 lastException = ex
                 print("===> Local Stage Out Failure for file:")
                 print("======>  %s\n" % fileToStage['LFN'])
+                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut['se-name'],
+                                                   self.siteCfg.localStageOut['phedex-node'],
+                                                   self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
             except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
                                                 error = str(ex))
                 print("===> Local Stage Out Failure for file:\n")
                 print("======>  %s\n" % fileToStage['LFN'])
+                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut['se-name'],
+                                                   self.siteCfg.localStageOut['phedex-node'],
+                                                   self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
 
         #  //
         # // Still here => failure, start using the fallback stage outs
@@ -233,8 +242,11 @@ class StageOutMgr:
                     del self.failed[lfn]
 
                 print("===> Stage Out Successful: %s" % fileToStage)
+                fileToStage = stageoutPolicyReport(fileToStage, None, None, None, 'FALLBACK', 0)
                 return fileToStage
             except Exception as ex:
+                fileToStage = stageoutPolicyReport(fileToStage, fallback['se-name'], fallback['PNN'],
+                                                   fallback['command'], 'FALLBACK', 60310)
                 lastException = ex
                 continue
 

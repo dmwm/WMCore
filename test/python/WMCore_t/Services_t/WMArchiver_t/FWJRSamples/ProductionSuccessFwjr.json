@@ -1,0 +1,202 @@
+{
+   "_id": "1-0",
+   "_rev": "1-e2a8149f2456f29522a43e137168be30",
+   "timestamp": 1458243230,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243115,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/17/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production/0000/0/1aa266ea-ec73-11e5-a0d7-02163e00efd5-0-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/17/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production/0000/0/1aa266ea-ec73-11e5-a0d7-02163e00efd5-0-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "907535e6",
+                               "cksum": "3435610233"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458243113,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243110,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "RAWSIMoutput": [
+                       {
+                           "branch_hash": "e5c544fe05085963dcd484bf06dcf308",
+                           "user_dn": null,
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_5_3_16",
+                               "processedDataset": "Integ_Test-MonteCarlo_eff_reqmgr2_test-v1",
+                               "dataTier": "GEN-SIM",
+                               "primaryDataset": "QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_355282186/CREAM355282186/glide_H7m8dV/execute/dir_27205/job/WMTaskSpace/cmsRun1/RAWSIMoutput.root",
+                           "checksums": {
+                               "adler32": "4276d250",
+                               "cksum": "2703102873"
+                           },
+                           "guid": "16A4A65C-73EC-E511-BC4A-02163E00E66E",
+                           "size": 8650159,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "https://cmsweb.cern.ch/couchdb;;reqmgr_config_cache;;a09fa7ea98f8c88bdae47b19ed049d44",
+                           "location": null,
+                           "async_dest": null,
+                           "events": 11,
+                           "merged": false,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "STARTHI53_V28::All",
+                           "pfn": "/pool/grid/cmsplt04/home_cream_355282186/CREAM355282186/glide_H7m8dV/execute/dir_27205/job/WMTaskSpace/cmsRun1/RAWSIMoutput.root",
+                           "catalog": "",
+                           "module_label": "RAWSIMoutput",
+                           "inputPath": null,
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "1": [
+                                   1,
+                                   2
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                           "user_vogroup": "DEFAULT",
+                           "user_vorole": "DEFAULT",
+                           "processingVer": 1,
+                           "processingStr": "MonteCarlo_eff_reqmgr2_test",
+                           "prep_id": "FSQ-ppSpring2014-00007"
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458241509,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 8.24952,
+                       "readPercentageOps": 1,
+                       "readAveragekB": 35.7686557377,
+                       "readTotalMB": 25.569,
+                       "readNumOps": 732,
+                       "readCachePercentageOps": 0,
+                       "readMBSec": 0.00454358063083,
+                       "readMaxMSec": 662.374,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 222624
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "581.73",
+                       "PeakValueVsize": "902.422"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "1497.96",
+                       "AvgEventCPU": "2.75182",
+                       "MaxEventCPU": "201.035",
+                       "AvgEventTime": "3.03261",
+                       "MinEventCPU": "0.005999",
+                       "TotalEventCPU": "1375.91",
+                       "TotalJobTime": "1516.3",
+                       "MinEventTime": "0.00542712",
+                       "MaxEventTime": "201.851"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243113,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458243111,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 1,
+   "type": "fwjr",
+   "jobtype": "Production"
+}
+

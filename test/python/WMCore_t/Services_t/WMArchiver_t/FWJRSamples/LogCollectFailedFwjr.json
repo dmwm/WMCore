@@ -1,0 +1,60 @@
+{
+   "_id": "3754-0",
+   "_rev": "1-aa3657544f1da10d8d8654330f5a55a1",
+   "timestamp": 1458295736,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_MonteCarlo_PhEDEx_Sryu_reqmgr2_160318_050123_7744/Production/ProductionMergeLHEoutput/ProductionLHEoutputMergeLogCollect",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logCollect1": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+                   "logArchives": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_MonteCarlo_PhEDEx_Sryu_reqmgr2_160318_050123_7744/Production/ProductionMergeLHEoutput/0000/0/29392490-ecec-11e5-b4f2-02163e00efd5-1-0-logArchive.tar.gz"
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458294038,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 3754,
+   "type": "fwjr",
+   "jobtype": "LogCollect"
+}
+

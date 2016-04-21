@@ -1,0 +1,606 @@
+{
+   "_id": "21-0",
+   "_rev": "1-5d2dc4194625bf9b5f8eccc667d7636c",
+   "timestamp": 1458244013,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production/ProductionMergeRAWSIMoutput",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243841,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/17/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production/ProductionMergeRAWSIMoutput/0000/0/2414dc8a-ec78-11e5-a0d7-02163e00efd5-0-0-logArchive.tar.gz",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/logs/prod/2016/3/17/sryu_MonteCarlo_eff_Sryu_reqmgr2_160317_161133_1935/Production/ProductionMergeRAWSIMoutput/0000/0/2414dc8a-ec78-11e5-a0d7-02163e00efd5-0-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "3444b060",
+                               "cksum": "2459355229"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458243840,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243837,
+               "site": "T2_CH_CERN",
+               "input": {
+                   "source": [
+                       {
+                           "runs": {
+                               "1": [
+                                   1,
+                                   2
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "16A4A65C-73EC-E511-BC4A-02163E00E66E",
+                           "events": 11
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   3,
+                                   4
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/CA62035B-73EC-E511-A8F9-02163E00C20D.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/CA62035B-73EC-E511-A8F9-02163E00C20D.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "CA62035B-73EC-E511-A8F9-02163E00C20D",
+                           "events": 14
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   5,
+                                   6
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/96D4BB4B-73EC-E511-995D-02163E0164CE.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/96D4BB4B-73EC-E511-995D-02163E0164CE.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "96D4BB4B-73EC-E511-995D-02163E0164CE",
+                           "events": 10
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   7,
+                                   8
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/9A3FE157-73EC-E511-B971-02163E015E96.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/9A3FE157-73EC-E511-B971-02163E015E96.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "9A3FE157-73EC-E511-B971-02163E015E96",
+                           "events": 13
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   9,
+                                   10
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1EB75150-73EC-E511-BA07-02163E00CB1D.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1EB75150-73EC-E511-BA07-02163E00CB1D.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "1EB75150-73EC-E511-BA07-02163E00CB1D",
+                           "events": 11
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   11,
+                                   12
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/18B0D44D-73EC-E511-A686-02163E00C9FF.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/18B0D44D-73EC-E511-A686-02163E00C9FF.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "18B0D44D-73EC-E511-A686-02163E00C9FF",
+                           "events": 16
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   13,
+                                   14
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/A843FE69-73EC-E511-AE33-02163E00CD67.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/A843FE69-73EC-E511-AE33-02163E00CD67.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "A843FE69-73EC-E511-AE33-02163E00CD67",
+                           "events": 11
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   15,
+                                   16
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1AD0F393-73EC-E511-8DA7-02163E00CDAD.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1AD0F393-73EC-E511-8DA7-02163E00CDAD.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "1AD0F393-73EC-E511-8DA7-02163E00CDAD",
+                           "events": 10
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   17,
+                                   18
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/146CD463-73EC-E511-B050-02163E00C7F8.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/146CD463-73EC-E511-B050-02163E00C7F8.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "146CD463-73EC-E511-B050-02163E00C7F8",
+                           "events": 10
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   19,
+                                   20
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/FE575D50-73EC-E511-8FBC-02163E00CDCE.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/FE575D50-73EC-E511-8FBC-02163E00CDCE.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "FE575D50-73EC-E511-8FBC-02163E00CDCE",
+                           "events": 9
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   21,
+                                   22
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6AE5B14D-73EC-E511-81A9-02163E00AD97.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6AE5B14D-73EC-E511-81A9-02163E00AD97.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "6AE5B14D-73EC-E511-81A9-02163E00AD97",
+                           "events": 9
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   23,
+                                   24
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/3E26084C-73EC-E511-8893-02163E01609A.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/3E26084C-73EC-E511-8893-02163E01609A.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "3E26084C-73EC-E511-8893-02163E01609A",
+                           "events": 13
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   25,
+                                   26
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1283F04B-73EC-E511-BB52-02163E01651C.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1283F04B-73EC-E511-BB52-02163E01651C.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "1283F04B-73EC-E511-BB52-02163E01651C",
+                           "events": 5
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   27,
+                                   28
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/C43A3750-73EC-E511-A575-02163E00EABA.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/C43A3750-73EC-E511-A575-02163E00EABA.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "C43A3750-73EC-E511-A575-02163E00EABA",
+                           "events": 17
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   29,
+                                   30
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/52B17792-73EC-E511-ADF4-02163E00CDAD.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/52B17792-73EC-E511-ADF4-02163E00CDAD.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "52B17792-73EC-E511-ADF4-02163E00CDAD",
+                           "events": 11
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   31,
+                                   32
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/DE63F34B-73EC-E511-94F7-02163E00CEBD.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/DE63F34B-73EC-E511-94F7-02163E00CEBD.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "DE63F34B-73EC-E511-94F7-02163E00CEBD",
+                           "events": 14
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   33,
+                                   34
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/26CE7C51-73EC-E511-BAA1-02163E00CD9D.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/26CE7C51-73EC-E511-BAA1-02163E00CD9D.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "26CE7C51-73EC-E511-BAA1-02163E00CD9D",
+                           "events": 20
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   35,
+                                   36
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D695284C-73EC-E511-87B1-02163E016113.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D695284C-73EC-E511-87B1-02163E016113.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "D695284C-73EC-E511-87B1-02163E016113",
+                           "events": 13
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   37,
+                                   38
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6A478833-73EC-E511-B23A-02163E0178D7.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6A478833-73EC-E511-B23A-02163E0178D7.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "6A478833-73EC-E511-B23A-02163E0178D7",
+                           "events": 13
+                       },
+                       {
+                           "runs": {
+                               "1": [
+                                   39,
+                                   40
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D6CCF14B-73EC-E511-8A78-02163E00CE51.root",
+                           "pfn": "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D6CCF14B-73EC-E511-8A78-02163E00CE51.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "D6CCF14B-73EC-E511-8A78-02163E00CE51",
+                           "events": 10
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ],
+                   "Merged": [
+                       {
+                           "branch_hash": "e5c544fe05085963dcd484bf06dcf308",
+                           "user_dn": null,
+                           "lfn": "/store/backfill/1/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/EC481587-78EC-E511-8357-02163E00E66E.root",
+                           "dataset": {
+                               "applicationName": "cmsRun",
+                               "applicationVersion": "CMSSW_5_3_16",
+                               "processedDataset": "Integ_Test-MonteCarlo_eff_reqmgr2_test-v1",
+                               "dataTier": "GEN-SIM",
+                               "primaryDataset": "QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8"
+                           },
+                           "InputPFN": "/pool/grid/cmsplt04/home_cream_355282186/CREAM355282186/glide_H7m8dV/execute/dir_15664/job/WMTaskSpace/cmsRun1/Merged.root",
+                           "checksums": {
+                               "adler32": "613f55ec",
+                               "cksum": "3819028889"
+                           },
+                           "guid": "EC481587-78EC-E511-8357-02163E00E66E",
+                           "size": 170904850,
+                           "acquisitionEra": "Integ_Test",
+                           "configURL": "None;;None;;None",
+                           "location": null,
+                           "input": [
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/CA62035B-73EC-E511-A8F9-02163E00C20D.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/96D4BB4B-73EC-E511-995D-02163E0164CE.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/9A3FE157-73EC-E511-B971-02163E015E96.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1EB75150-73EC-E511-BA07-02163E00CB1D.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/18B0D44D-73EC-E511-A686-02163E00C9FF.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/A843FE69-73EC-E511-AE33-02163E00CD67.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1AD0F393-73EC-E511-8DA7-02163E00CDAD.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/146CD463-73EC-E511-B050-02163E00C7F8.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/FE575D50-73EC-E511-8FBC-02163E00CDCE.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6AE5B14D-73EC-E511-81A9-02163E00AD97.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/3E26084C-73EC-E511-8893-02163E01609A.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1283F04B-73EC-E511-BB52-02163E01651C.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/C43A3750-73EC-E511-A575-02163E00EABA.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/52B17792-73EC-E511-ADF4-02163E00CDAD.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/DE63F34B-73EC-E511-94F7-02163E00CEBD.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/26CE7C51-73EC-E511-BAA1-02163E00CD9D.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D695284C-73EC-E511-87B1-02163E016113.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6A478833-73EC-E511-B23A-02163E0178D7.root",
+                               "/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D6CCF14B-73EC-E511-8A78-02163E00CE51.root"
+                           ],
+                           "events": 240,
+                           "merged": true,
+                           "validStatus": "PRODUCTION",
+                           "ouput_module_class": "PoolOutputModule",
+                           "globalTag": "STARTHI53_V28::All",
+                           "inputpfns": [
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/16A4A65C-73EC-E511-BC4A-02163E00E66E.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/CA62035B-73EC-E511-A8F9-02163E00C20D.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/96D4BB4B-73EC-E511-995D-02163E0164CE.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/9A3FE157-73EC-E511-B971-02163E015E96.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1EB75150-73EC-E511-BA07-02163E00CB1D.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/18B0D44D-73EC-E511-A686-02163E00C9FF.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/A843FE69-73EC-E511-AE33-02163E00CD67.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1AD0F393-73EC-E511-8DA7-02163E00CDAD.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/146CD463-73EC-E511-B050-02163E00C7F8.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/FE575D50-73EC-E511-8FBC-02163E00CDCE.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6AE5B14D-73EC-E511-81A9-02163E00AD97.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/3E26084C-73EC-E511-8893-02163E01609A.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/1283F04B-73EC-E511-BB52-02163E01651C.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/C43A3750-73EC-E511-A575-02163E00EABA.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/52B17792-73EC-E511-ADF4-02163E00CDAD.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/DE63F34B-73EC-E511-94F7-02163E00CEBD.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/26CE7C51-73EC-E511-BAA1-02163E00CD9D.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D695284C-73EC-E511-87B1-02163E016113.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/6A478833-73EC-E511-B23A-02163E0178D7.root",
+                               "root://eoscms.cern.ch//eos/cms/store/unmerged/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/D6CCF14B-73EC-E511-8A78-02163E00CE51.root"
+                           ],
+                           "pfn": "/pool/grid/cmsplt04/home_cream_355282186/CREAM355282186/glide_H7m8dV/execute/dir_15664/job/WMTaskSpace/cmsRun1/Merged.root",
+                           "catalog": "",
+                           "module_label": "Merged",
+                           "async_dest": null,
+                           "inputPath": null,
+                           "StageOutCommand": "rfcp-CERN",
+                           "runs": {
+                               "1": [
+                                   1,
+                                   2,
+                                   3,
+                                   4,
+                                   5,
+                                   6,
+                                   7,
+                                   8,
+                                   9,
+                                   10,
+                                   11,
+                                   12,
+                                   13,
+                                   14,
+                                   15,
+                                   16,
+                                   17,
+                                   18,
+                                   19,
+                                   20,
+                                   21,
+                                   22,
+                                   23,
+                                   24,
+                                   25,
+                                   26,
+                                   27,
+                                   28,
+                                   29,
+                                   30,
+                                   31,
+                                   32,
+                                   33,
+                                   34,
+                                   35,
+                                   36,
+                                   37,
+                                   38,
+                                   39,
+                                   40
+                               ]
+                           },
+                           "OutputPFN": "root://eoscms.cern.ch//eos/cms/store/backfill/1/Integ_Test/QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8/GEN-SIM/MonteCarlo_eff_reqmgr2_test-v1/00000/EC481587-78EC-E511-8357-02163E00E66E.root",
+                           "user_vogroup": "",
+                           "user_vorole": "",
+                           "processingVer": 1,
+                           "processingStr": "MonteCarlo_eff_reqmgr2_test",
+                           "prep_id": "FSQ-ppSpring2014-00007"
+                       }
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458243789,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 162.988,
+                       "readPercentageOps": 1,
+                       "readAveragekB": 8410.4704,
+                       "readTotalMB": 164.267,
+                       "readNumOps": 9157,
+                       "readCachePercentageOps": 0,
+                       "readMBSec": 0.0105379744805,
+                       "readMaxMSec": 3951.32,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 844421
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "173.586",
+                       "PeakValueVsize": "378.664"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "6.31004",
+                       "AvgEventCPU": "0.000404108",
+                       "MaxEventCPU": "0.002",
+                       "AvgEventTime": "0.101846",
+                       "MinEventCPU": "0",
+                       "TotalEventCPU": "0.096986",
+                       "TotalJobTime": "24.4431",
+                       "MinEventTime": "0.000198126",
+                       "MaxEventTime": "0.00150895"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458243840,
+               "site": "T2_CH_CERN",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458243837,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 21,
+   "type": "fwjr",
+   "jobtype": "Merge"
+}
+

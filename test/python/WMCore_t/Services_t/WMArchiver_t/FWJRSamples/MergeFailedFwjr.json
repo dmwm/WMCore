@@ -1,0 +1,58 @@
+{
+   "_id": "3427-0",
+   "_rev": "1-5391444ac05c845adb840af9f5aa1280",
+   "timestamp": 1458291090,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_ReRecoSkim_Sryu_reqmgr2_160318_050217_7302/DataProcessing/DataProcessingMergeRECOoutput",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "JobKilled": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": {
+               },
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "The job was killed by the WMAgent for using too much wallclock time (WMAgent).\n Job last known status was: Unknown",
+                       "type": "JobKilled",
+                       "exitCode": 71304
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 3427,
+   "type": "fwjr",
+   "jobtype": "Merge"
+}

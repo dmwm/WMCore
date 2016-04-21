@@ -1,6 +1,9 @@
 from __future__ import (division, print_function) 
 import unittest
 import time
+import json
+import os
+from WMCore.WMBase import getTestBase
 from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
 
 SAMPLE_FWJR = {'fallbackFiles': [],
@@ -167,13 +170,11 @@ class DataMap_t(unittest.TestCase):
         
         job = {}
         job["id"] = "1-0" 
-        job['doc'] = {"fwjr": SAMPLE_FWJR}
-        job["jobtype"] = "Processing"
-        job['jobstate'] = "success"
-        job['timestamp'] = int(time.time())
+        job['doc'] = {"fwjr": SAMPLE_FWJR, "jobtype": "Processing", 
+                      "jobstate": "success", "timestamp": int(time.time())}
         newData = createArchiverDoc(job)
-        import pprint
-        pprint.pprint(newData)
+        from pprint import pprint
+        pprint(newData)
         
         #outputModules = set([a['outputModule'] for a in newData['steps']['cmsRun1']['output']]) 
         #outModules = set(SAMPLE_FWJR['steps']['cmsRun1']['output'].keys())
@@ -184,6 +185,23 @@ class DataMap_t(unittest.TestCase):
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
         self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
+        fwjrSamples = ["HarvestSuccessFwjr.json", 
+                       "LogCollectFailedFwjr.json", "LogCollectSuccessFwjr.json",
+                       "MergeFailedFwjr.json", "MergeSuccessFwjr.json",
+                       "ProcessingFailedFwjr.json", "ProcessingSuccessFwjr.json",
+                       "ProductionFailedFwjr.json", "ProductionSuccessFwjr.json",
+                       "SkimSuccessFwjr.json"]
+        for sample in fwjrSamples:
+            sPath = os.path.join(getTestBase(),
+                          "WMCore_t/Services_t/WMArchiver_t/FWJRSamples/%s" % sample)
+            with open(sPath, 'r') as infile:
+                fwjr = json.load(infile)
+            job = {}
+            job["id"] = fwjr["_id"] 
+            job['doc'] = {"fwjr": fwjr["fwjr"], "jobtype": fwjr["jobtype"], 
+                      "jobstate": fwjr['jobstate'], "timestamp": fwjr["timestamp"]}
+            newData =createArchiverDoc(job)
+            pprint(newData)
         
 if __name__ == '__main__':
     unittest.main()

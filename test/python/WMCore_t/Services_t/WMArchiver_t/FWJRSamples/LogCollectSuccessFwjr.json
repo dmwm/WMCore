@@ -1,0 +1,77 @@
+{
+   "_id": "1411-0",
+   "_rev": "1-df78ea1d7dc3a9ed784ecf2b0707731d",
+   "timestamp": 1458276675,
+   "archivestatus": "ready",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/EndOfRunDQMHarvestLogCollect",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logCollect1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1458276604,
+               "site": "T2_CH_CERN",
+               "input": {
+                   "logArchives": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/0000/0/f7a862f8-ecc1-11e5-b4f2-02163e00efd5-EndOfRun-Harvest-1-0-logArchive.tar.gz"
+                       },
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/3/18/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/EndOfRunDQMHarvest/0000/0/f7a862f8-ecc1-11e5-b4f2-02163e00efd5-EndOfRun-Harvest-2-0-logArchive.tar.gz"
+                       }
+                   ]
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ],
+                   "LogCollect": [
+                       {
+                           "runs": {
+                           },
+                           "SEName": "srm-cms.cern.ch",
+                           "lfn": "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms/store/logs/prod/2016/03/WMAgent/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405/sryu_DQMHarvesting_Sryu_reqmgr2_160318_050142_4405-EndOfRunDQMHarvestLogCollect-b6d9613445-1-logs.tar",
+                           "location": null,
+                           "PNN": "T2_CH_CERN",
+                           "GUID": null,
+                           "StageOutCommand": "srmv2-lcg"
+                       }
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1458276586,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "success",
+   "jobid": 1411,
+   "type": "fwjr",
+   "jobtype": "LogCollect"
+}
+

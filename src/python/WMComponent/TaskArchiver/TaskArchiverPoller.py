@@ -283,7 +283,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                     #Something didn't go well when notifying the workqueue, abort!!!
                     logging.error("Something bad happened while archiving tasks.")
                     logging.error(str(ex))
-                    self.sendAlert(1, msg = str(ex))
                     continue
                 except Exception as ex:
                     #Something didn't go well on couch, abort!!!
@@ -291,7 +290,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                     msg += "Exception message: %s" % str(ex)
                     msg += "\nTraceback: %s" % traceback.format_exc()
                     logging.error(msg)
-                    self.sendAlert(3, msg = msg)
                     continue
         return
     

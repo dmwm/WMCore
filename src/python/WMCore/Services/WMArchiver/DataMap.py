@@ -133,7 +133,7 @@ def convertInput(inputList):
         if "runs" in inputDict:
             inputDict['runs'] = changeRunStruct(inputDict["runs"])
     
-    for category in STEP_DEFAULT['input'][0]:
+        for category in STEP_DEFAULT['input'][0]:
             if category not in inputDict:
                 inputDict[category] = STEP_DEFAULT['input'][0][category]
                 

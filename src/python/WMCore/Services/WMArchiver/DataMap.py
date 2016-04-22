@@ -117,7 +117,7 @@ def changeRunStruct(runDict):
     return [{"runNumber": int(run), "lumis": lumis}  for run, lumis in runDict.items()]
 
 def _changeToFloat(value):
-    if value in ["-nan", "nan", "inf"]:
+    if value in ["-nan", "nan", "inf", ""]:
         return -1.0
     else:
         return float(value)
@@ -144,10 +144,12 @@ def typeCastPerformance(performDict):
         for param in performDict[key]:
             if key in PERFORMANCE_TYPE:
                 if param in PERFORMANCE_TYPE[key]:
-                    if performDict[key][param] in ["-nan", "nan", "inf"]:
-                        performDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
-                    else:
+                    try:
                         performDict[key][param] = PERFORMANCE_TYPE[key][param](performDict[key][param])
+                    except ValueError as ex:
+                        performDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
+                        print("key: %s, param: %s, value: %s \n%s" % (key, param, 
+                                                    performDict[key][param], str(ex)))
     return performDict
             
     

@@ -29,10 +29,6 @@
  * OBLIGATION TO PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
  * MODIFICATIONS.
 """
-from __future__ import print_function
-from __future__ import division
-from builtins import object
-from builtins import range
 
 import time
 import threading
@@ -40,7 +36,7 @@ import traceback
 
 
 # Simple logging class
-class Logger(object):
+class Logger:
     """ Logging main class """
 
     FATAL = 0		# When something very bad happened and we should quit
@@ -62,7 +58,7 @@ class Logger(object):
         """Print the given message if the level is more serious as the existing one"""
         self.logLock.acquire()
         if level <= self.logLevel:
-            print(time.asctime() + ": ApMon["+Logger.LEVELS[level]+"]: "+message)
+            print time.asctime() + ": ApMon["+Logger.LEVELS[level]+"]: "+message
             if printex:
                 traceback.print_exc()
         self.logLock.release()

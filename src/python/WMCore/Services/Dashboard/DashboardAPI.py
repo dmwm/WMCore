@@ -3,9 +3,6 @@
 """
 This is the Dashboard API Module for the Worker Node
 """
-from __future__ import absolute_import
-from __future__ import print_function
-
 from WMCore.Services.Dashboard import apmon
 import time
 import sys
@@ -56,24 +53,24 @@ def getApmonInstance(logr=None, apmonServer=None):
         APMONINIT = True
         if APMONUSEURL:
             apm = None
-            print("Creating ApMon with dynamic configuration/url")
+            print "Creating ApMon with dynamic configuration/url"
             try:
                 apm = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
             except Exception as ex:
-                print('Got exception %s' % str(ex))
+                print 'Got exception %s' % str(ex)
             if apm is not None and not apm.initializedOK():
-                print("Setting ApMon to static configuration")
+                print "Setting ApMon to static configuration"
                 try:
                     apm.setDestinations(APMONCONF)
                 except Exception:
                     apm = None
             APMONINSTANCE = apm
         if APMONINSTANCE is None:
-            print("Creating ApMon with static configuration")
+            print "Creating ApMon with static configuration"
             try:
                 APMONINSTANCE = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
             except Exception as ex:
-                print('Got exception %s' % str(ex))
+                print 'Got exception %s' % str(ex)
     return APMONINSTANCE
 
 #
@@ -202,7 +199,7 @@ def report(args):
     logger('params : ' + repr(paramArgs))
     apmonSend(taskId, jobId, paramArgs)
     apmonFree()
-    print("Parameters sent to Dashboard.")
+    print "Parameters sent to Dashboard."
 
 #
 # PYTHON BASED JOB WRAPPER
@@ -267,17 +264,17 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
         try:
             ad = parseAd()
         except:
-            print("==== ERROR: Unable to parse job's HTCondor ClassAd ====")
-            print("Will not report failure to Dashboard")
-            print(traceback.format_exc())
+            print "==== ERROR: Unable to parse job's HTCondor ClassAd ===="
+            print "Will not report failure to Dashboard"
+            print traceback.format_exc()
             return exitCode
     missattrs = []
     for attr in ['CRAB_ReqName', 'CRAB_Id', 'CRAB_Retry']:
         if attr not in ad:
             missattrs.append(attr)
     if missattrs:
-        print("==== ERROR: HTCondor ClassAd is missing the following attributes: %s ====" % missattrs)
-        print("Will not report failure to Dashboard")
+        print "==== ERROR: HTCondor ClassAd is missing the following attributes: %s ====" % missattrs
+        print "Will not report failure to Dashboard"
         return exitCode
     params = {
         'MonitorID': ad['CRAB_ReqName'],
@@ -286,7 +283,7 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     }
     if stageOutReport:
         params['StageOutReport'] = stageOutReport
-    print("Dashboard stageout failure parameters: %s" % str(params))
+    print "Dashboard stageout failure parameters: %s" % str(params)
     apmonSend(params['MonitorID'], params['MonitorJobID'], params)
     apmonFree()
     return exitCode

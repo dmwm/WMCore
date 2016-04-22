@@ -67,12 +67,17 @@ class Request(RESTEntity):
             # convert string to list
             if key not in no_multi_key and isinstance(value, basestring):
                 param.kwargs[key] = [value]
-                
-        if "status" in param.kwargs:
+        
+        detail = param.kwargs.get('detail', True)
+        if detail in (False, "false", "False", "FALSE"):
+            detail = False
+            
+        if "status" in param.kwargs and detail:
             for status in param.kwargs["status"]:
                 if status.endswith("-archived"):
                     raise InvalidSpecParameterValue(
-                        "Can't retrieve bulk archived status requests, use other search arguments")
+                        """Can't retrieve bulk archived status requests with detail option True, 
+                           set detail=false or use other search arguments""")
                     
         for prop in param.kwargs:
             safe.kwargs[prop] = param.kwargs[prop]
@@ -272,7 +277,7 @@ class Request(RESTEntity):
                         value = defaultValue
                     masked_dict[mask_key].append({chain_key: chain[chain_key], mask_key: chain[mask_key]})
         return
-    
+                 
     def _mask_result(self, mask, result):
         
         if len(mask) == 1 and mask[0] == "DAS":
@@ -322,12 +327,13 @@ class Request(RESTEntity):
         team = kwargs.get("team", [])
         mc_pileup = kwargs.get("mc_pileup", [])
         data_pileup = kwargs.get("data_pileup", [])
+        requestor = kwargs.get("requestor", [])
         mask = kwargs.get("mask", [])
         detail = kwargs.get("detail", True)
         # set the return format. default format has requset name as a key
         # if is set to one it returns list of dictionary with RequestName field.
         common_dict = int(kwargs.get("common_dict", 0))
-        if detail in (False, "false", "False"):
+        if detail in (False, "false", "False", "FALSE"):
             option = {"include_docs": False}
         else:
             option = {"include_docs": True}
@@ -340,7 +346,7 @@ class Request(RESTEntity):
         
         if len(status) == 1 and status[0] == "ACTIVE":
             status = ACTIVE_STATUS
-        if status and not team and not request_type:
+        if status and not team and not request_type and not requestor:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("bystatus", option, status))
         if status and team:
             query_keys = [[t, s] for t in team for s in status] 
@@ -350,6 +356,11 @@ class Request(RESTEntity):
             query_keys = [[s, rt] for rt in request_type for s in status]
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("requestsbystatusandtype", 
                                                                              option, query_keys))
+        if status and requestor:
+            query_keys = [[s, r] for r in requestor for s in status] 
+            request_info.append(
+                self.reqmgr_db_service.getRequestByCouchView("bystatusandrequestor", option, query_keys))        
+            
         if name:
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
         if prep_id:

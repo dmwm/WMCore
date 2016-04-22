@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# On some sites we know there was some problems with environment cleaning
+# with using 'env -i'. To overcome this issue, whenever we start a job, we have
+# to save full current environment into file, and whenever it is needed we can load
+# it. Be aware, that there are some read-only variables, like: BASHOPTS, BASH_VERSINFO,
+# EUID, PPID, SHELLOPTS, UID, etc.
+set > startup_environment.sh
+sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
+mv tmp_env.sh startup_environment.sh
+
 touch Report.pkl
 
 # should be a bit nicer than before

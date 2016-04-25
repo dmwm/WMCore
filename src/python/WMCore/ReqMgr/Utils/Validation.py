@@ -7,7 +7,7 @@ import time
 import logging
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
+from WMCore.WMSpec.WMWorkloadTools import loadSpecByType, loadSpecClassByType, setArgumentsWithDefault
 from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
 
@@ -135,6 +135,10 @@ def validate_request_create_args(request_args, config, *args, **kwargs):
     #check the permission for creating the request
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
+    
+    # set default values for teh request_args
+    specClass = loadSpecClassByType(request_args["RequestType"])
+    setArgumentsWithDefault(request_args, specClass.getWorkloadArguments())
     
     # get the spec type and validate arguments
     spec = loadSpecByType(request_args["RequestType"])

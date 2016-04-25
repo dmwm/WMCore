@@ -421,6 +421,8 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
                       "SizePerEvent",
                       "PrepID",
                       "RequestNumEvents",
+                      "ProcessingString",
+                      "ProcessingVersion",
                       ]
     
     couchDb = Database(reqDetails["CouchWorkloadDBName"], reqDetails["CouchURL"])
@@ -481,6 +483,8 @@ def requestDetails(requestName):
     schema['UnmergedLFNBase'] = str(helper.getUnmergedLFNBase())
     schema['Campaign']        = str(helper.getCampaign()) 
     schema['AcquisitionEra']  = str(helper.getAcquisitionEra())
+    schema["ProcessingString"] = str(helper.getProcessingString())
+    schema["ProcessingVersion"] = int(helper.getProcessingVersion())
     if schema['SoftwareVersions'] == ['DEPRECATED']:
         schema['SoftwareVersions'] = helper.getCMSSWVersions()
 

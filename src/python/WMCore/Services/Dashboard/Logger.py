@@ -30,17 +30,13 @@
  * MODIFICATIONS.
 """
 from __future__ import print_function
-from __future__ import division
-from builtins import object
-from builtins import range
-
 import time
 import threading
 import traceback
 
 
 # Simple logging class
-class Logger(object):
+class Logger:
     """ Logging main class """
 
     FATAL = 0		# When something very bad happened and we should quit

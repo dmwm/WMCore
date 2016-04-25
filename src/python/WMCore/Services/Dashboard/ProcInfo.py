@@ -32,9 +32,6 @@
 """
 from __future__ import print_function
 from __future__ import division
-from builtins import object
-from builtins import str
-from past.utils import old_div
 from WMCore.Services.Dashboard.Logger import Logger
 import socket
 import os
@@ -42,7 +39,7 @@ import re
 import time
 
 
-class ProcInfo(object):
+class ProcInfo:
     """ ProcInfo extracts infro from the proc/ filesystem
     for system and job monitoring
     """
@@ -168,17 +165,17 @@ class ProcInfo(object):
                 while line != '':
                     elem = re.split(r"\s+", line)
                     if line.startswith("MemFree:"):
-                        self.data['mem_free'] = old_div(float(elem[1]), 1024.0)
+                        self.data['mem_free'] = float(elem[1]) // 1024.0
                     if line.startswith("MemTotal:"):
-                        self.data['total_mem'] = old_div(float(elem[1]), 1024.0)
+                        self.data['total_mem'] = float(elem[1]) // 1024.0
                     if line.startswith("SwapFree:"):
-                        self.data['swap_free'] = old_div(float(elem[1]), 1024.0)
+                        self.data['swap_free'] = float(elem[1]) // 1024.0
                     if line.startswith("SwapTotal:"):
-                        self.data['total_swap'] = old_div(float(elem[1]), 1024.0)
+                        self.data['total_swap'] = float(elem[1]) // 1024.0
                     if line.startswith("Buffers:"):
-                        self.data['mem_buffers'] = old_div(float(elem[1]), 1024.0)
+                        self.data['mem_buffers'] = float(elem[1]) // 1024.0
                     if line.startswith("Cached:"):
-                        self.data['mem_cached'] = old_div(float(elem[1]), 1024.0)
+                        self.data['mem_cached'] = float(elem[1]) // 1024.0
                     line = fd.readline()
             if 'mem_free' in self.data and 'mem_buffers' in self.data and 'mem_cached' in self.data:
                 self.data['mem_actualfree'] = self.data['mem_free'] + self.data['mem_buffers'] + self.data['mem_cached']
@@ -399,7 +396,7 @@ class ProcInfo(object):
                 days = 0.0
             if mins is None:
                 (mins, hour) = (hour, 0.0)
-            uptime = float(days) + old_div(float(hour), 24.0) + old_div(float(mins), 1440.0)
+            uptime = float(days) + float(float(hour) // 24.0) + float(float(mins) // 1440.0)
             self.data['uptime'] = float(uptime)
             self.data['logged_users'] = float(users)  # this is currently not reported
             self.data['load1'] = float(load1)
@@ -643,7 +640,7 @@ class ProcInfo(object):
         try:
             duOutput = os.popen("du -Lsck " + workDir + " | tail -1 | cut -f 1")
             line = duOutput.readline()
-            self.jobs[pid]['DATA']['workdir_size'] = old_div(int(line), 1024.0)
+            self.jobs[pid]['DATA']['workdir_size'] = int(line) // 1024.0
         except IOError as ex:
             del ex
             self.logger.log(Logger.ERROR, "ERROR", "ProcInfo: cannot run du to get job's disk usage for job "+repr(pid))
@@ -652,10 +649,10 @@ class ProcInfo(object):
             line = dfOutput.readline().strip()
             m = re.match(r"\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)%", line)
             if m != None:
-                self.jobs[pid]['DATA']['disk_total'] = old_div(float(m.group(1)), 1024.0)
-                self.jobs[pid]['DATA']['disk_used'] = old_div(float(m.group(2)), 1024.0)
-                self.jobs[pid]['DATA']['disk_free'] = old_div(float(m.group(3)), 1024.0)
-                self.jobs[pid]['DATA']['disk_usage'] = old_div(float(m.group(4)), 1024.0)
+                self.jobs[pid]['DATA']['disk_total'] = float(m.group(1)) // 1024.0
+                self.jobs[pid]['DATA']['disk_used'] = float(m.group(2)) // 1024.0
+                self.jobs[pid]['DATA']['disk_free'] = float(m.group(3)) // 1024.0
+                self.jobs[pid]['DATA']['disk_usage'] = float(m.group(4)) // 1024.0
             dfOutput.close()
         except IOError as ex:
             self.logger.log(Logger.ERROR, "ERROR", "ProcInfo: cannot run df to get job's disk usage for job "+repr(pid))
@@ -698,7 +695,7 @@ class ProcInfo(object):
         for param in ['blocks_in', 'blocks_out', 'swap_in', 'swap_out', 'interrupts', 'context_switches']:
             if (interval != 0) and 'raw_'+param in prevDataRef and 'raw_'+param in dataRef:
                 diff = self.diffWithOverflowCheck(dataRef['raw_'+param], prevDataRef['raw_'+param])
-                dataRef[param+'_R'] = old_div(diff, interval)
+                dataRef[param+'_R'] = diff // interval
             else:
                 del dataRef[param+'_R']
 

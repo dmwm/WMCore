@@ -53,19 +53,12 @@ import copy
 import os
 from WMCore.Services.Dashboard import ProcInfo
 from WMCore.Services.Dashboard.Logger import Logger
-from past.utils import old_div
-from future import standard_library
-from builtins import object
-from past.builtins import basestring
-from builtins import str
-standard_library.install_aliases()
-
 # __all__ = ["ApMon"]
 
 # __debug = False # set this to True to be verbose
 
 
-class ApMon(object):
+class ApMon:
     """
     Main class for sending monitoring data to a MonaLisa module.
     One or more destinations can be chosen for the data. See constructor.
@@ -918,10 +911,10 @@ class ApMon(object):
         doSend = True
 
         # when we should start dropping messages
-        level = self.maxMsgRate - old_div(self.maxMsgRate, 10)
+        level = self.maxMsgRate - float(self.maxMsgRate // 10)
 
         if valSent > (self.maxMsgRate - level):
-            if random.randint(0, old_div(self.maxMsgRate, 10)) >= (self.maxMsgRate - valSent):
+            if random.randint(0, int(self.maxMsgRate // 10)) >= (self.maxMsgRate - valSent):
                 doSend = False
 
         # counting sent and dropped messages
@@ -966,3 +959,4 @@ class ApMon(object):
 
     __defaultPort = 8884
     __version = "2.2.20-py"			# apMon version number
+

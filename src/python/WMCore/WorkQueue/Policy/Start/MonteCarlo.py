@@ -27,7 +27,7 @@ class MonteCarlo(StartPolicyInterface):
         self.args.setdefault('SliceSize', 1000)         # events per job
         self.args.setdefault('SubSliceType', 'NumberOfEventsPerLumi')
         self.args.setdefault('SubSliceSize', self.args['SliceSize']) # events per lumi
-        self.args.setdefault('MaxJobsPerElement', 250)  # jobs per WQE
+        self.args.setdefault('MaxJobsPerElement', 1000)  # jobs per WQE
         self.args.setdefault('blowupFactor', 1.0) # Estimate of additional jobs following tasks.
                                                   # Total WQE tasks will be Jobs*(1+blowupFactor)
 

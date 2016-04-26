@@ -36,7 +36,7 @@ import traceback
 
 
 # Simple logging class
-class Logger:
+class Logger(object):
     """ Logging main class """
 
     FATAL = 0		# When something very bad happened and we should quit

@@ -39,7 +39,7 @@ import re
 import time
 
 
-class ProcInfo:
+class ProcInfo(object):
     """ ProcInfo extracts infro from the proc/ filesystem
     for system and job monitoring
     """

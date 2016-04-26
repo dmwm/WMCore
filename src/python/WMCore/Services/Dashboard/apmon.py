@@ -58,7 +58,7 @@ from WMCore.Services.Dashboard.Logger import Logger
 # __debug = False # set this to True to be verbose
 
 
-class ApMon:
+class ApMon(object):
     """
     Main class for sending monitoring data to a MonaLisa module.
     One or more destinations can be chosen for the data. See constructor.

@@ -362,7 +362,14 @@ class Request(RESTEntity):
                 self.reqmgr_db_service.getRequestByCouchView("bystatusandrequestor", option, query_keys))        
             
         if name:
+            # remove if statement
+            if len(name) == 1 and cherrypy.request.params['name'] != name[0]:
+                print "Request No Match: %s != %s" % (cherrypy.request.params['name'], name)
             request_info.append(self.reqmgr_db_service.getRequestByNames(name))
+            # remvoe if statemane
+            if len(request_info) == 1 and len(request_info[0].keys()) == 1 and name[0] != request_info[0].keys()[0]:
+                print "Response No Match: %s != %s" % (request_info[0].keys()[0], name[0])   
+                
         if prep_id:
             request_info.append(self.reqmgr_db_service.getRequestByCouchView("byprepid", option, prep_id))
         if inputdataset:

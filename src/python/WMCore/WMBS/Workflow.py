@@ -14,7 +14,6 @@ bunch of data).
 
 workflow + fileset = subscription
 """
-
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Workflow import Workflow as WMWorkflow
 from WMCore.WMBS.Fileset import Fileset

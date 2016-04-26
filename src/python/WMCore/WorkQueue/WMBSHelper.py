@@ -11,15 +11,15 @@ import traceback
 from collections import defaultdict
 
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
-from WMCore.WMBS.File import File
-from WMCore.DataStructs.File import File as DatastructFile
-from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Job import Job
 from WMCore.WMException import WMException
 from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.File import File as DatastructFile
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.JobStateMachine.ChangeState import ChangeState
@@ -220,6 +220,7 @@ class WMBSHelper(WMConnectionBase):
         if topLevelFilesetName is None:
             filesetName = ("%s-%s" % (self.wmSpec.name(),
                                       self.wmSpec.getTopLevelTask()[0].name()))
+
             if self.block:
                 filesetName += "-%s" % self.block
             if self.mask:
@@ -233,18 +234,18 @@ class WMBSHelper(WMConnectionBase):
         self.topLevelFileset.create()
         return
 
-    def outputFilesetName(self, task, outputModuleName):
+    def outputFilesetName(self, task, outputModuleName, dataTier=''):
         """
         _outputFilesetName_
 
-        Generate an output fileset name for the given task and output module.
+        Generate an output fileset name for the given task, output module and data tier.
         """
         if task.taskType() == "Merge":
-            outputFilesetName = "%s/merged-%s" % (task.getPathName(),
-                                                  outputModuleName)
+            outputFilesetName = "%s/merged-%s%s" % (task.getPathName(),
+                                                    outputModuleName, dataTier)
         else:
-            outputFilesetName = "%s/unmerged-%s" % (task.getPathName(),
-                                                    outputModuleName)
+            outputFilesetName = "%s/unmerged-%s%s" % (task.getPathName(),
+                                                      outputModuleName, dataTier)
 
         return outputFilesetName
 
@@ -290,13 +291,11 @@ class WMBSHelper(WMConnectionBase):
                                     type=task.getPrimarySubType())
         if subscription.exists():
             subscription.load()
-            msg = "Subscription %s already exists for %s (you may ignore file insertion messages below, existing files wont be duplicated)"
-            self.logger.info(msg % (subscription['id'], task.getPathName()))
         else:
             subscription.create()
+
         for site in task.siteWhitelist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": True}])
-
         for site in task.siteBlacklist():
             subscription.addWhiteBlackList([{"site_name": site, "valid": False}])
 
@@ -313,7 +312,8 @@ class WMBSHelper(WMConnectionBase):
                 if outputModuleName in ignoredOutputModules:
                     logging.info("IgnoredOutputModule set for %s, skipping fileset creation.", outputModuleName)
                     continue
-                outputFileset = Fileset(self.outputFilesetName(task, outputModuleName))
+                dataTier = getattr(getattr(outputModule, outputModuleName), "dataTier", '')
+                outputFileset = Fileset(self.outputFilesetName(task, outputModuleName, dataTier))
                 outputFileset.create()
                 outputFileset.markOpen(True)
                 mergedOutputFileset = None
@@ -321,22 +321,20 @@ class WMBSHelper(WMConnectionBase):
                 for childTask in task.childTaskIterator():
                     if childTask.data.input.outputModule == outputModuleName:
                         if childTask.taskType() == "Merge":
-                            mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged"))
+                            mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged", dataTier))
                             mergedOutputFileset.create()
                             mergedOutputFileset.markOpen(True)
 
                             primaryDataset = getattr(getattr(outputModule, outputModuleName), "primaryDataset", None)
-                            if primaryDataset != None:
+                            if primaryDataset is not None:
                                 self.mergeOutputMapping[mergedOutputFileset.id] = primaryDataset
 
                         self._createSubscriptionsInWMBS(childTask, outputFileset, alternativeFilesetClose)
 
                 if mergedOutputFileset is None:
-                    workflow.addOutput(outputModuleName, outputFileset,
-                                       outputFileset)
+                    workflow.addOutput(outputModuleName+dataTier, outputFileset, outputFileset)
                 else:
-                    workflow.addOutput(outputModuleName, outputFileset,
-                                       mergedOutputFileset)
+                    workflow.addOutput(outputModuleName+dataTier, outputFileset, mergedOutputFileset)
 
         return self.topLevelSubscription
 
@@ -428,7 +426,6 @@ class WMBSHelper(WMConnectionBase):
             addedFiles = self.addMCFakeFile()
 
         self.commitTransaction(existingTransaction=False)
-
         return sub, addedFiles
 
     def addFiles(self, block):

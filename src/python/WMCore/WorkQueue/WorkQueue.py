@@ -29,6 +29,7 @@ from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
@@ -48,6 +49,7 @@ def globalQueue(logger=None, dbi=None, **kwargs):
     """
     defaults = {'PopulateFilesets': False,
                 'LocalQueueFlag': False,
+                'TrackLocationOrSubscription': 'location',
                 'SplittingMapping': {'DatasetBlock':
                                          {'name': 'Block',
                                           'args': {}}
@@ -432,7 +434,6 @@ class WorkQueue(WorkQueueBase):
 
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
         """Inject data into wmbs and create subscription. """
-        from WMCore.WorkQueue.WMBSHelper import WMBSHelper
         self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
 
         mask = match['Mask']

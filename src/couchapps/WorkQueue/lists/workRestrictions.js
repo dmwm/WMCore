@@ -67,8 +67,6 @@ function(head, req) {
         }
 
         for (var site in resources) {
-			log(site);
-			log(ele);
             // skip if in blacklist
             if (ele["SiteBlacklist"].indexOf(site) !== -1) {
                 continue;

@@ -72,7 +72,22 @@
     "from": "_view/requestHistory",
     "to": "../WMStatsErl/_view/requestHistory"
   },
-
+  
+  {
+    "from": "_view/jobsByStatusWorkflow",
+    "to": "../WMStatsErl/_view/jobsByStatusWorkflow"
+  },
+  
+  {
+    "from": "_view/allWorkflows",
+    "to": "../WMStatsErl/_view/allWorkflows"
+  },
+  
+  {
+    "from": "_view/time",
+    "to": "../WMStatsErl/_view/time"
+  },
+  
   {
     "from": "_view/*",
     "to": "_view/*"

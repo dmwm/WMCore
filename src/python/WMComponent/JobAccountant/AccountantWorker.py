@@ -101,6 +101,9 @@ class AccountantWorker(WMConnectionBase):
         # Store location for the specs for DBS
         self.specDir = getattr(config.JobAccountant, 'specDir', None)
 
+        # maximum RAW EDM size for Repack output before data is put into Error dataset and skips PromptReco
+        self.maxAllowedRepackOutputSize = getattr(config.JobAccountant, 'maxAllowedRepackOutputSize', 12 * 1024 * 1024 * 1024)
+
         # ACDC service
         self.dataCollection = DataCollectionService(url = config.ACDC.couchurl,
                                                     database = config.ACDC.database)
@@ -258,7 +261,7 @@ class AccountantWorker(WMConnectionBase):
         # handle merge files separately since parentage need to set 
         # separately to support robust merge
         self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
-        
+
         # Create DBSBufferFiles
         self.createFilesInDBSBuffer()
 
@@ -333,7 +336,7 @@ class AccountantWorker(WMConnectionBase):
 
         return outputFilesets
 
-    def addFileToDBS(self, jobReportFile, task):
+    def addFileToDBS(self, jobReportFile, task, errorDataset = False):
         """
         _addFileToDBS_
 
@@ -352,9 +355,15 @@ class AccountantWorker(WMConnectionBase):
                              psetHash = "GIBBERISH",
                              configContent = jobReportFile.get('configURL'))
 
-        dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
-                                              datasetInfo["processedDataset"],
-                                              datasetInfo["dataTier"]))
+        if errorDataset:
+            dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"] + "-Error",
+                                                  datasetInfo["processedDataset"],
+                                                  datasetInfo["dataTier"]))
+        else:
+            dbsFile.setDatasetPath("/%s/%s/%s" % (datasetInfo["primaryDataset"],
+                                                  datasetInfo["processedDataset"],
+                                                  datasetInfo["dataTier"]))
+
         dbsFile.setValidStatus(validStatus = jobReportFile.get("validStatus", None))
         dbsFile.setProcessingVer(ver = jobReportFile.get('processingVer', None))
         dbsFile.setAcquisitionEra(era = jobReportFile.get('acquisitionEra', None))
@@ -433,7 +442,8 @@ class AccountantWorker(WMConnectionBase):
             self.wmbsFilesToBuild.append(wmbsFile)
             
         if fwjrFile["merged"]:
-            self.addFileToDBS(fwjrFile, task)
+            self.addFileToDBS(fwjrFile, task,
+                              jobType == "Repack" and fwjrFile["size"] > self.maxAllowedRepackOutputSize)
 
         return wmbsFile
 
@@ -555,7 +565,12 @@ class AccountantWorker(WMConnectionBase):
                 self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputID})
 
                 # LogCollect jobs have no output fileset
-                if jobType != "LogCollect":
+                if jobType == "LogCollect":
+                    pass
+                # Repack jobs that wrote too large merged output skip output filesets
+                elif jobType == "Repack" and merged and wmbsFile["size"] > self.maxAllowedRepackOutputSize:
+                    pass
+                else:
                     outputFilesets = self.outputFilesetsForJob(outputMap, merged, moduleLabel)
                     for outputFileset in outputFilesets:
                         self.filesetAssoc.append({"lfn": wmbsFile["lfn"], "fileset": outputFileset})

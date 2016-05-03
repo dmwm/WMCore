@@ -23,6 +23,8 @@ WMARCHIVE_PFN_REF_KEY = ["pfn"]
 WMARCHIVE_FILE_REF_KEY = {"LFN": WMARCHIVE_LFN_REF_KEY, 
                           "PFN": WMARCHIVE_PFN_REF_KEY}
 
+ERROR_TYPE = {'exitCode': int}
+
 PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                             'AvgEventTime': float,
                             'MaxEventCPU': float,
@@ -46,6 +48,15 @@ PERFORMANCE_TYPE = {'cpu': {'AvgEventCPU': float,
                                 'readTotalSecs': float,
                                 'writeTotalMB': float,
                                 'writeTotalSecs': float}}
+
+TOP_LEVEL_STEP_DEFAULT = {'analysis': {},
+                          'cleanup': {},
+                          'logs': {},
+                          'errors': [],
+                          'input': [],
+                          'output': [],
+                          'performance': {}
+                          }
 
 # only composed value need to bs set default value
 STEP_DEFAULT = { #'name': '',
@@ -121,7 +132,19 @@ def _changeToFloat(value):
         return -1.0
     else:
         return float(value)
+
+def _validateTypeAndSetDefault(sourceDict, stepDefault):
     
+    # check primitive time and remvoe if the values is composite type.
+    for key, value in sourceDict.items():
+        if key not in stepDefault and value in [[], {}, None, "None"]:
+            del sourceDict[key]
+            
+    # set missing composite type defaut.
+    for category in stepDefault:
+        if (category not in sourceDict) or (category in sourceDict and not sourceDict[category]):
+            sourceDict[category] = stepDefault[category]
+        
 def changePerformanceStruct(perfDict):
     return [{"pName": prop, "value": _changeToFloat(value)}  for prop, value in perfDict.items()]
 
@@ -133,11 +156,17 @@ def convertInput(inputList):
         if "runs" in inputDict:
             inputDict['runs'] = changeRunStruct(inputDict["runs"])
     
-        for category in STEP_DEFAULT['input'][0]:
-            if category not in inputDict:
-                inputDict[category] = STEP_DEFAULT['input'][0][category]
+        _validateTypeAndSetDefault(inputDict, STEP_DEFAULT['input'][0])       
                 
     return inputList
+
+def typeCastError(errorList):
+    for errorDict in errorList:
+        for key in errorDict:
+            if key in ERROR_TYPE:
+                value = errorDict[key] 
+                errorDict[key] = ERROR_TYPE[key](value)                   
+    return errorList
 
 def typeCastPerformance(performDict):
     for key in performDict:
@@ -145,7 +174,10 @@ def typeCastPerformance(performDict):
             if key in PERFORMANCE_TYPE:
                 if param in PERFORMANCE_TYPE[key]:
                     try:
-                        performDict[key][param] = PERFORMANCE_TYPE[key][param](performDict[key][param])
+                        value = performDict[key][param]
+                        if value in ["-nan", "nan", "inf", ""]:
+                            value = -1
+                        performDict[key][param] = PERFORMANCE_TYPE[key][param](value)
                     except ValueError as ex:
                         performDict[key][param] = PERFORMANCE_TYPE[key][param](-1)
                         print("key: %s, param: %s, value: %s \n%s" % (key, param, 
@@ -182,19 +214,24 @@ def convertOutput(outputList):
         if "dataset" in outDict:
             outDict.update(combineDataset(outDict["dataset"]))
             del outDict["dataset"]
-            
-        for key, value in outDict.items():
-            # set the default value for None to empty string
-            if value == None or value == "None":
-                outDict[key] = ""
-                
-        for category in STEP_DEFAULT['output'][0]:
-            if category not in outDict:
-                outDict[category] = STEP_DEFAULT['output'][0][category]
+        
+        _validateTypeAndSetDefault(outDict, STEP_DEFAULT['output'][0])            
             
     return newOutputList
 
 def convertStepValue(stepValue):
+    if "status" in stepValue:
+        if stepValue["status"] == "Failed":
+            stepValue["status"] = 1
+        else:
+            stepValue["status"] = int(stepValue["status"])
+        
+    if "errors" in stepValue:
+        if len(stepValue['errors']) == 0:
+            stepValue['errors'] = []
+        else:
+            typeCastError(stepValue['errors'])
+    
     input_keys = ['source', 'logArchives']
     if "input" in stepValue:
         if len(stepValue['input']) == 0:
@@ -220,12 +257,9 @@ def convertStepValue(stepValue):
         # If it needs to chnage to list format replace to this
         #for category in stepValue["performance"]:
         #    stepValue["performance"][category] = changePerformanceStruct(stepValue["performance"][category])
+        
+        _validateTypeAndSetDefault(stepValue["performance"], STEP_DEFAULT["performance"])
 
-        # fill up the empty key with default value. This is required with abro format
-        for category in STEP_DEFAULT["performance"]:
-            if category not in stepValue["performance"]:
-                stepValue["performance"][category] = STEP_DEFAULT["performance"][category]
-    
     # If structure need to be changed with this uncomments 
     #listConvKeys = ['analysis', 'cleanup', 'logs', 'parameters']
     #for key in listConvKeys:
@@ -239,6 +273,7 @@ def convertSteps(steps):
         stepItem = {}
         stepItem['name'] = key
         stepItem.update(convertStepValue(value))
+        _validateTypeAndSetDefault(stepItem, TOP_LEVEL_STEP_DEFAULT)
         stepList.append(stepItem)
     return stepList
 

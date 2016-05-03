@@ -1,0 +1,336 @@
+{
+   "_id": "482-0",
+   "_rev": "2-52e06693c630725fb6406b395faf2abc",
+   "timestamp": 1461981633,
+   "archivestatus": "uploaded",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_TaskChain_Task_Multicore_reqmgr1_160430_020832_2190/HLTD/HLTDMergeRAWoutput/RECODreHLT",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "PerformanceError": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "Error in CMSSW step cmsRun1\nJob has exceeded maxRSS: 6072000\nJob has RSS: 6073036.0\n",
+                       "type": "PerformanceKill",
+                       "exitCode": 50660
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+                   "source": [
+                       {
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input_source_class": "PoolSource",
+                           "input_type": "primaryFiles",
+                           "lfn": "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root",
+                           "pfn": "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root",
+                           "catalog": "",
+                           "module_label": "source",
+                           "guid": "8A1A7A03-6F0E-E611-93E6-0CC47A78A33E",
+                           "events": 1900
+                       }
+                   ]
+               },
+               "errors": [
+                   {
+                       "details": "\n Adding last ten lines of CMSSW stdout:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /storage/local/data1/condor/execute/dir_11857/glide_a3pUaS/execute/dir_17634/job/WMTaskSpace/cmsRun1/CMSSW_7_4_0_pre8 area for SCRAM_ARCH slc6_amd64_gcc491.\nCmsRunFailure\nMessage: Error running cmsRun\n{'arguments': ['/bin/bash', '/storage/local/data1/condor/execute/dir_11857/glide_a3pUaS/execute/dir_17634/job/WMTaskSpace/cmsRun1/cmsRun1-main.sh', '', 'slc6_amd64_gcc491', 'scramv1', 'CMSSW', 'CMSSW_7_4_0_pre8', 'FrameworkJobReport.xml', 'cmsRun', 'PSet.py', '', '', '']}\nReturn code: 40\n\n\tModuleName : WMCore.WMSpec.Steps.WMExecutionFailure\n\tMethodName : __init__\n\tClassInstance : None\n\tFileName : /storage/local/data1/condor/execute/dir_11857/glide_a3pUaS/execute/dir_17634/job/WMCore.zip/WMCore/WMSpec/Steps/WMExecutionFailure.py\n\tClassName : None\n\tLineNumber : 18\n\tErrorNr : 40\n\nTraceback: \n\n",
+                       "type": "CMSSWStepFailure",
+                       "exitCode": 40
+                   },
+                   {
+                       "details": "Adding extra error in order to hold error report\n\nAdding last ten lines of CMSSW stderr:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /storage/local/data1/condor/execute/dir_11857/glide_a3pUaS/execute/dir_17634/job/WMTaskSpace/cmsRun1/CMSSW_7_4_0_pre8 area for SCRAM_ARCH slc6_amd64_gcc491.\n",
+                       "type": "ErrorLoggingAddition",
+                       "exitCode": 99999
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "ALCARECOStreamTkAlMinBias": [
+                       {
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "c65dbd3b9f5d4fc4f675154855c66a69",
+                           "inputpfns": [
+                               "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "lfn": "/store/unmerged/CMSSW_7_4_0_pre8/SingleElectron/ALCARECO/TkAlMinBias-RECODreHLT_TaskChain_Task_Multicore_reqmgr1-v1/00000/ALCARECOStreamTkAlMinBias.root",
+                           "pfn": "ALCARECOStreamTkAlMinBias.root",
+                           "catalog": "",
+                           "module_label": "ALCARECOStreamTkAlMinBias",
+                           "guid": "788FF252-710E-E611-A591-0CC47A78A418",
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input": [
+                               "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "events": 1900
+                       }
+                   ],
+                   "analysis": [
+                   ],
+                   "RECOoutput": [
+                       {
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "e46e8dbab674ac468109692832fc9c88",
+                           "inputpfns": [
+                               "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "lfn": "/store/unmerged/CMSSW_7_4_0_pre8/SingleElectron/RECO/RECODreHLT_TaskChain_Task_Multicore_reqmgr1-v1/00000/RECOoutput.root",
+                           "pfn": "RECOoutput.root",
+                           "catalog": "",
+                           "module_label": "RECOoutput",
+                           "guid": "ACB92053-710E-E611-A591-0CC47A78A418",
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input": [
+                               "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "events": 1900
+                       }
+                   ],
+                   "DQMoutput": [
+                       {
+                           "ouput_module_class": "DQMRootOutputModule",
+                           "branch_hash": "d41d8cd98f00b204e9800998ecf8427e",
+                           "inputpfns": [
+                               "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "lfn": "/store/unmerged/CMSSW_7_4_0_pre8/SingleElectron/DQMIO/RECODreHLT_TaskChain_Task_Multicore_reqmgr1-v1/00000/DQMoutput.root",
+                           "pfn": "DQMoutput.root",
+                           "catalog": "",
+                           "module_label": "DQMoutput",
+                           "guid": "EC6FF852-710E-E611-A591-0CC47A78A418",
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input": [
+                               "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "events": 0
+                       }
+                   ],
+                   "ALCARECOStreamSiStripCalMinBias": [
+                       {
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "0a6d9c2269bf8b375d16cf829aaedb31",
+                           "inputpfns": [
+                               "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "lfn": "/store/unmerged/CMSSW_7_4_0_pre8/SingleElectron/ALCARECO/SiStripCalMinBias-RECODreHLT_TaskChain_Task_Multicore_reqmgr1-v1/00000/ALCARECOStreamSiStripCalMinBias.root",
+                           "pfn": "ALCARECOStreamSiStripCalMinBias.root",
+                           "catalog": "",
+                           "module_label": "ALCARECOStreamSiStripCalMinBias",
+                           "guid": "909DE052-710E-E611-A591-0CC47A78A418",
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input": [
+                               "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "events": 1900
+                       }
+                   ],
+                   "ALCARECOStreamSiStripCalZeroBias": [
+                       {
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "c264d765206a3f00ad19b57056e978cb",
+                           "inputpfns": [
+                               "root://cmsxrootd-site.fnal.gov//store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "lfn": "/store/unmerged/CMSSW_7_4_0_pre8/SingleElectron/ALCARECO/SiStripCalZeroBias-RECODreHLT_TaskChain_Task_Multicore_reqmgr1-v1/00000/ALCARECOStreamSiStripCalZeroBias.root",
+                           "pfn": "ALCARECOStreamSiStripCalZeroBias.root",
+                           "catalog": "",
+                           "module_label": "ALCARECOStreamSiStripCalZeroBias",
+                           "guid": "92D1EB52-710E-E611-A591-0CC47A78A418",
+                           "runs": {
+                               "208307": [
+                                   27
+                               ]
+                           },
+                           "input": [
+                               "/store/relval/CMSSW_7_4_0_pre8/SingleElectron/RAW/HLTD_TaskChain_Task_Multicore_reqmgr1-v1/00000/8A1A7A03-6F0E-E611-93E6-0CC47A78A33E.root"
+                           ],
+                           "events": 1683
+                       }
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1461978681,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                       "writeTotalMB": 3758,
+                       "readPercentageOps": 1.05688282139,
+                       "readAveragekB": 869.720335156,
+                       "readTotalMB": 789.03339,
+                       "readNumOps": 879,
+                       "readCachePercentageOps": 0,
+                       "readMBSec": 0.104254815734,
+                       "readMaxMSec": 4272.31,
+                       "readTotalSecs": 0,
+                       "writeTotalSecs": 6513480
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "6018.75",
+                       "PeakValueVsize": "6640.77"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "15242.7",
+                       "EventThroughput": "0.809835",
+                       "AvgEventTime": "8.66257",
+                       "MaxEventTime": "74.3108",
+                       "TotalJobTime": "2355.95",
+                       "TotalLoopCPU": "15233.6",
+                       "MinEventTime": "2.08178"
+                   }
+               }
+           },
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1461981421,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/4/30/sryu_TaskChain_Task_Multicore_reqmgr1_160430_020832_2190/HLTD/HLTDMergeRAWoutput/RECODreHLT/0000/0/50221d64-0e70-11e6-b2c3-02163e00efd5-0-0-logArchive.tar.gz",
+                           "pfn": "root://cmsdcadisk01.fnal.gov//dcache/uscmsdisk/store/unmerged/logs/prod/2016/4/30/sryu_TaskChain_Task_Multicore_reqmgr1_160430_020832_2190/HLTD/HLTDMergeRAWoutput/RECODreHLT/0000/0/50221d64-0e70-11e6-b2c3-02163e00efd5-0-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "8bd8bc05",
+                               "cksum": "999732441"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1461981418,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "Could not find report file for step stageOut1!",
+                       "type": "ReportManipulatingError",
+                       "exitCode": 99999
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 482,
+   "type": "fwjr",
+   "jobtype": "Processing"
+}

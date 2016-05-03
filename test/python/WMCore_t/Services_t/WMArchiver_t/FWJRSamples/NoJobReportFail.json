@@ -1,0 +1,58 @@
+{
+   "_id": "2189-0",
+   "_rev": "2-1ded68528047e6cd941406ae63757c56",
+   "timestamp": 1461989248,
+   "archivestatus": "uploaded",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_TaskChain_Multicore_reqmgr1_160430_052131_7339/HLTD",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "NoJobReport": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": {
+               },
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "Could not find jobReport\nAdding end of condor.log to error message:\n    <a n=\"Proc\"><i>41</i></a>\n\n    <a n=\"Cluster\"><i>13122</i></a>\n\n    <a n=\"EventTime\"><s>2016-04-30T05:56:01</s></a>\n\n    <a n=\"Subproc\"><i>0</i></a>\n\n    <a n=\"EventTypeNumber\"><i>0</i></a>\n\n</c>\n\n<c>\n\n    <a n=\"Proc\"><i>41</i></a>\n\n    <a n=\"TriggerEventTypeName\"><s>ULOG_SUBMIT</s></a>\n\n    <a n=\"EventTime\"><s>2016-04-30T05:56:01</s></a>\n\n    <a n=\"EnteredCurrentStatus\"><i>1461988560</i></a>\n\n    <a n=\"ExtDESIRED_Sites\"><s>T2_CH_CERN,T1_US_FNAL</s></a>\n\n    <a n=\"SubmitHost\"><s>&lt;128.142.132.152:4080?addrs=128.142.132.152-4080&amp;noUDP&amp;sock=6823_bad3_3&gt;</s></a>\n\n    <a n=\"QDate\"><i>1461988560</i></a>\n\n    <a n=\"TriggerEventTypeNumber\"><i>0</i></a>\n\n    <a n=\"WMAgent_JobID\"><i>2189</i></a>\n\n    <a n=\"MyType\"><s>JobAdInformationEvent</s></a>\n\n    <a n=\"Cluster\"><i>13122</i></a>\n\n    <a n=\"JobStatus\"><i>1</i></a>\n\n    <a n=\"Subproc\"><i>0</i></a>\n\n    <a n=\"EventTypeNumber\"><i>28</i></a>\n\n    <a n=\"DESIRED_Sites\"><s>T2_CH_CERN,T1_US_FNAL</s></a>\n\n</c>\n\n<c>\n\n    <a n=\"MyType\"><s>ExecuteEvent</s></a>\n\n    <a n=\"Proc\"><i>41</i></a>\n\n    <a n=\"Cluster\"><i>13122</i></a>\n\n    <a n=\"EventTime\"><s>2016-04-30T06:05:29</s></a>\n\n    <a n=\"ExecuteHost\"><s>&lt;131.225.204.177:52360?CCBID=188.185.163.34:9644%3faddrs%3d188.185.163.34-9644#846&amp;addrs=131.225.204.177-52360&amp;noUDP&gt;</s></a>\n\n    <a n=\"Subproc\"><i>0</i></a>\n\n    <a n=\"EventTypeNumber\"><i>1</i></a>\n\n</c>\n\n<c>\n\n    <a n=\"Proc\"><i>41</i></a>\n\n    <a n=\"EventTime\"><s>2016-04-30T06:05:29</s></a>\n\n    <a n=\"EnteredCurrentStatus\"><i>1461989121</i></a>\n\n    <a n=\"WMAgent_JobID\"><i>2189</i></a>\n\n    <a n=\"QDate\"><i>1461988560</i></a>\n\n    <a n=\"TriggerEventTypeName\"><s>ULOG_EXECUTE</s></a>\n\n    <a n=\"DESIRED_Sites\"><s>T2_CH_CERN,T1_US_FNAL</s></a>\n\n    <a n=\"ExecuteHost\"><s>&lt;131.225.204.177:52360?CCBID=188.185.163.34:9644%3faddrs%3d188.185.163.34-9644#846&amp;addrs=131.225.204.177-52360&amp;noUDP&gt;</s></a>\n\n    <a n=\"JobStartDate\"><i>1461989123</i></a>\n\n    <a n=\"MyType\"><s>JobAdInformationEvent</s></a>\n\n    <a n=\"TriggerEventTypeNumber\"><i>1</i></a>\n\n    <a n=\"Cluster\"><i>13122</i></a>\n\n    <a n=\"JobStatus\"><i>2</i></a>\n\n    <a n=\"Subproc\"><i>0</i></a>\n\n    <a n=\"EventTypeNumber\"><i>28</i></a>\n\n    <a n=\"ExtDESIRED_Sites\"><s>T2_CH_CERN,T1_US_FNAL</s></a>\n\n</c>\n",
+                       "type": "NoJobReport",
+                       "exitCode": 99303
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 2189,
+   "type": "fwjr",
+   "jobtype": "Processing"
+}

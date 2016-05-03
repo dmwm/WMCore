@@ -1,0 +1,173 @@
+{
+   "_id": "2614-0",
+   "_rev": "2-2b53e0b54825b19b736d0508838ec39e",
+   "timestamp": 1461990421,
+   "archivestatus": "uploaded",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_MonteCarlo_reqmgr1_160430_052119_387/Production",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "logArch1": {
+               "status": 0,
+               "logs": {
+               },
+               "stop": 1461989899,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "logArchive": [
+                       {
+                           "runs": {
+                           },
+                           "lfn": "/store/unmerged/logs/prod/2016/4/30/sryu_MonteCarlo_reqmgr1_160430_052119_387/Production/0000/0/329e886e-0e88-11e6-b2c3-02163e00efd5-1-0-logArchive.tar.gz",
+                           "pfn": "root://cmsdcadisk01.fnal.gov//dcache/uscmsdisk/store/unmerged/logs/prod/2016/4/30/sryu_MonteCarlo_reqmgr1_160430_052119_387/Production/0000/0/329e886e-0e88-11e6-b2c3-02163e00efd5-1-0-logArchive.tar.gz",
+                           "module_label": "logArchive",
+                           "location": null,
+                           "checksums": {
+                               "adler32": "738efe55",
+                               "cksum": "982845288"
+                           },
+                           "events": 0,
+                           "merged": false,
+                           "size": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1461989898,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           },
+           "cmsRun1": {
+               "status": 8001,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "An exception of category 'ExternalLHEProducer' occurred while\n   [0] Processing run: 1\n   [1] Running path 'lhe_step'\n   [2] Calling beginRun for module ExternalLHEProducer/'externalLHEProducer'\nException Message:\nChild failed with exit code 2.",
+                       "type": "Fatal Exception",
+                       "exitCode": "8001"
+                   },
+                   {
+                       "details": "Exit 8001: CMSExeption Exception from cmsRun\n Adding last ten lines of CMSSW stderr:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /storage/local/data1/condor/execute/dir_21145/glide_UeeV2O/execute/dir_32183/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n\n Adding last ten lines of CMSSW stdout:\nWARNING: In non-interactive mode release checks e.g. deprecated releases, production architectures are disabled.\nWARNING: There already exists /storage/local/data1/condor/execute/dir_21145/glide_UeeV2O/execute/dir_32183/job/WMTaskSpace/cmsRun1/CMSSW_5_3_19 area for SCRAM_ARCH slc6_amd64_gcc472.\n",
+                       "type": "CMSExeption",
+                       "exitCode": 8001
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "LHEoutput": [
+                       {
+                           "runs": {
+                           },
+                           "ouput_module_class": "PoolOutputModule",
+                           "branch_hash": "377789ad04112acdb0f63bb42001606d",
+                           "lfn": "/store/unmerged/Integ_Test/TTJets_MSDecays_matchingup_7TeV-madgraph/GEN/MonteCarlo_reqmgr1-v1/00000/LHEoutput.root",
+                           "pfn": "LHEoutput.root",
+                           "catalog": "",
+                           "module_label": "LHEoutput",
+                           "guid": "C8568580-8A0E-E611-ACF8-0CC47A78A436",
+                           "events": 0
+                       }
+                   ],
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": 1461989797,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                       "PeakValueRss": "0",
+                       "PeakValueVsize": "0"
+                   },
+                   "cpu": {
+                       "TotalJobCPU": "0.438933",
+                       "AvgEventCPU": "-nan",
+                       "MaxEventCPU": "0",
+                       "AvgEventTime": "inf",
+                       "MinEventCPU": "0",
+                       "TotalEventCPU": "0",
+                       "TotalJobTime": "26.6429",
+                       "MinEventTime": "0",
+                       "MaxEventTime": "0"
+                   }
+               }
+           },
+           "stageOut1": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": "T1_US_FNAL_Disk",
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "Could not find report file for step stageOut1!",
+                       "type": "ReportManipulatingError",
+                       "exitCode": 99999
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 2614,
+   "type": "fwjr",
+   "jobtype": "Production"
+}

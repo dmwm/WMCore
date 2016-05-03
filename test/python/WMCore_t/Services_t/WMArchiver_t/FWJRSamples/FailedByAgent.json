@@ -1,0 +1,58 @@
+{
+   "_id": "1002-0",
+   "_rev": "2-2238c952c027160dfc34829b132cc470",
+   "timestamp": 1461982232,
+   "archivestatus": "uploaded",
+   "retrycount": 0,
+   "fwjr": {
+       "task": "/sryu_TaskChain_Task_Multicore_reqmgr1_160430_020832_2190/HLTD/HLTDMergeRAWoutput/RECODreHLT",
+       "skippedFiles": [
+       ],
+       "fallbackFiles": [
+       ],
+       "steps": {
+           "JobKilled": {
+               "status": 1,
+               "logs": {
+               },
+               "stop": null,
+               "site": {
+               },
+               "input": {
+               },
+               "errors": [
+                   {
+                       "details": "The job was killed by the WMAgent for using too much wallclock time (WMAgent).\n Job last known status was: Unknown",
+                       "type": "JobKilled",
+                       "exitCode": 71304
+                   }
+               ],
+               "parameters": {
+               },
+               "output": {
+                   "analysis": [
+                   ]
+               },
+               "analysis": {
+               },
+               "start": null,
+               "cleanup": {
+               },
+               "performance": {
+                   "storage": {
+                   },
+                   "multicore": {
+                   },
+                   "memory": {
+                   },
+                   "cpu": {
+                   }
+               }
+           }
+       }
+   },
+   "jobstate": "jobfailed",
+   "jobid": 1002,
+   "type": "fwjr",
+   "jobtype": "Processing"
+}

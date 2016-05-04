@@ -12,6 +12,7 @@ import logging
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.Backends.LCGImpl import LCGImpl
+from WMCore.Storage.Backends.RFCPCERNImpl import RFCPCERNImpl
 
 
 _CheckExitCodeOption = True
@@ -36,6 +37,8 @@ class FNALImpl(StageOutImpl):
         
         # Create and hold onto a srm implementation in case we need it
         self.srmImpl = LCGImpl(stagein)
+        # Stealing some of the bits that bust apart the pfn for xrd
+        self.cernImpl = RFCPCERNImpl(stagein)
 
 
     def storageMethod(self, PFN):
@@ -165,10 +168,16 @@ class FNALImpl(StageOutImpl):
 
         method = self.storageMethod(pfnToRemove)
 
-        if method == 'srm':
+        if method == 'xrdcp':
+            (_,host,path,_) = self.cernImpl.splitPFN(pfnToRemove)
+            command = "xrd %s rm %s" % (host,path)
+            print("Executing: %s" % command)
+            self.executeCommand(command)
+        elif method == 'srm':
             return self.srmImpl.removeFile(pfnToRemove)
         else:
             command = "/bin/rm %s" % stripPrefixTOUNIX(pfnToRemove)
+            print("Executing: %s" % command)
             self.executeCommand(command)
 
 registerStageOutImpl("stageout-xrdcp-fnal", FNALImpl)

@@ -8,6 +8,8 @@
 set > startup_environment.sh
 sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
 mv tmp_env.sh startup_environment.sh
+export JOBSTARTDIR=$PWD
+
 
 touch Report.pkl
 

@@ -123,6 +123,7 @@ class Workflow(WMBSBase, WMWorkflow):
                        transaction = self.existingTransaction())
 
         self.id = self.exists()
+        logging.info("ALAN workflow created with id %s and task %s", self.id, self.task)
         self.commitTransaction(existingTransaction)
         return
 

@@ -468,7 +468,7 @@ class AccountantWorker(WMConnectionBase):
 
         if jobSuccess:
             fileList = fwkJobReport.getAllFiles()
-            jobSuccess = self._validateOutputs(fwkJobReport, jobID, jobType, fileList, outputMap)
+            jobSuccess, fileList = self._validateOutputs(fwkJobReport, jobID, jobType, fileList, outputMap)
         else:
             fileList = fwkJobReport.getAllFilesFromStep(step = 'logArch1')
 
@@ -568,15 +568,19 @@ class AccountantWorker(WMConnectionBase):
             outputModules.add(fwjrFile['outputModule'] + fwjrFile['dataset'].get('dataTier', ''))
         if set(outputMap.keys()) == outputModules:
             pass
-        elif jobType == "LogCollect":
+        elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
             pass
-        elif jobType == "Merge" and 'MergedError' in outputMap:
+        elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and\
+                        outputModules == set(['Merged', 'logArchive']):
+            pass
+        elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and\
+                        outputModules == set(['MergedError', 'logArchive']):
             pass
         elif jobType == "Express" and set(outputMap.keys()).difference(outputModules) == set(['write_RAW']):
             pass
         else:
             failJob = True
-            if jobType in [ "Processing", "Production" ]:
+            if jobType in ["Processing", "Production"]:
                 cmsRunSteps = 0
                 for step in fwkJobReport.listSteps():
                     if step.startswith("cmsRun"):
@@ -593,7 +597,7 @@ class AccountantWorker(WMConnectionBase):
             else:
                 logging.warn("Job %d , list of expected outputModules does not match job report, accepted for multi-step CMSSW job", jobID)
 
-        return jobSuccess
+        return jobSuccess, fileList
 
     def associateLogCollectToParentJobsInWMStats(self, fwkJobReport, logAchiveLFN, task):
         """

@@ -319,7 +319,7 @@ class WMBSHelper(WMConnectionBase):
                 mergedOutputFileset = None
 
                 for childTask in task.childTaskIterator():
-                    if childTask.data.input.outputModule == outputModuleName:
+                    if childTask.data.input.outputModule == outputModuleName and getattr(childTask.data.input, 'dataTier', '') == dataTier:
                         if childTask.taskType() == "Merge":
                             mergedOutputFileset = Fileset(self.outputFilesetName(childTask, "Merged", dataTier))
                             mergedOutputFileset.create()

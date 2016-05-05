@@ -10,7 +10,7 @@ from nose.plugins.attrib import attr
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 # a small dataset that should always exist
 DATASET = '/HighPileUp/Run2011A-v1/RAW'
@@ -18,7 +18,7 @@ BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
 FILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root'
 
 
-class DBSReaderTest(EmulatedUnitTest):
+class DBSReaderTest(EmulatedUnitTestCase):
 
     def setUp(self):
         """

@@ -15,12 +15,12 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
 from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 import math
 
 mcArgs = getMCArgs()
 
-class MonteCarloTestCase(EmulatedUnitTest):
+class MonteCarloTestCase(EmulatedUnitTestCase):
     """Test case MonteCarlo Workload"""
 
     splitArgs = dict(SliceType='NumEvents', SliceSize=100, MaxJobsPerElement=1)

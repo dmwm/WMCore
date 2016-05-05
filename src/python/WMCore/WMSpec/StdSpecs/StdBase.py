@@ -139,7 +139,8 @@ class StdBase(object):
                                       'OniaPeripheral': 'RECO',
                                       'SingleTrack': 'AOD',
                                       'MinBias': 'AOD',
-                                      'OniaUPC': 'RAW-RECO'
+                                      'OniaUPC': 'RAW-RECO',
+                                      'HighMET': 'RECO'
                                      }
                     dataTier = skimToDataTier.get(physicsSkim, 'USER')
                     moduleLabel = "SKIMStream%s" % physicsSkim

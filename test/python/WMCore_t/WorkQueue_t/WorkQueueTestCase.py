@@ -9,11 +9,11 @@ import os
 
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Database.CMSCouch import CouchServer
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
-class WorkQueueTestCase(EmulatedUnitTest):
+class WorkQueueTestCase(EmulatedUnitTestCase):
 
     def setSchema(self):
         "this can be override if the schema setting is different"

@@ -17,7 +17,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 rerecoArgs["SplittingAlgo"] = "LumiBased"
@@ -28,7 +28,7 @@ parentProcArgs["SplittingAlgo"] = "LumiBased"
 parentProcArgs["LumisPerJob"] = 8
 
 
-class BlockTestCase(EmulatedUnitTest):
+class BlockTestCase(EmulatedUnitTestCase):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=10)
 
     def setUp(self):

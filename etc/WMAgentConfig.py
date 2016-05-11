@@ -209,7 +209,8 @@ config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
-config.JobSubmitter.cacheRefreshSize =10000 # minimum size of the cache before refresh. prevent frequent cache update
+config.JobSubmitter.cacheRefreshSize = 30000 # set -1 if cache need to refresh all the time.
+config.JobSubmitter.skipRefreshCount = 20 # (If above the threshold meet, cache will updates every 20 polling cycle) 120 * 20 = 40 minutes
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
 
 config.component_("JobTracker")

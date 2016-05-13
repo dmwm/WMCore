@@ -24,9 +24,9 @@ class GFAL2Impl(StageOutImpl):
         # Next commands after separation are executed without env -i and this leads us with 
         # mixed environment with COMP and system python.
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
-        self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY sh -c '%s'"
-        self.removeCommand = self.setups % 'printenv; date; gfal-rm -vvv -t 600 %s '
-        self.copyCommand = self.setups % 'printenv; date; gfal-copy -vvv -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
+        self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
+        self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-rm -vvv -t 600 %s '
+        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-copy -vvv -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
 
     def createSourceName(self, protocol, pfn):
         """
@@ -80,7 +80,7 @@ class GFAL2Impl(StageOutImpl):
           -p   if the destination directory does not exist, create it
           -K   checksum algorithm to use, or algorithm:value
         """
-        result = "#!/bin/sh\n"
+        result = "#!/bin/bash\n"
 
         useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
 

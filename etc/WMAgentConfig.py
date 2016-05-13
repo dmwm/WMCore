@@ -259,11 +259,11 @@ config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 240
 config.JobArchiver.logLevel = globalLogLevel
+config.JobArchiver.numberOfJobsToCluster = 1000
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator
 #config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
-config.JobArchiver.numberOfJobsToCluster = 1000
 
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
@@ -554,8 +554,3 @@ config.ArchiveDataReporter.pollInterval = 300
 config.ArchiveDataReporter.WMArchiverURL = None
 config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000 # number of documents needed to be polled each time
 config.ArchiveDataReporter.numDocsUploadPerCall = 200 # number of documents upload each time in bulk to WMArchive
-# This is now OPTIONAL, it defaults to the componentDir
-# HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
-# disk as the JobCreator
-#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
-config.JobArchiver.numberOfJobsToCluster = 1000

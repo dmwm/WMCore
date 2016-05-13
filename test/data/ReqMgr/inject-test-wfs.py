@@ -54,6 +54,9 @@ def main():
 
     cernTemplates = ['MonteCarlo_LHE.json', 'TaskChainZJetsLNu_LHE.json']
 
+    if isinstance(args.site, basestring):
+        args.site = args.site.split(',')
+
     if os.path.isdir('WMCore'):
         print("WMCore directory found. I'm not going to clone it again.")
         print("You have 5 secs to abort this operation or live with that forever...\n")

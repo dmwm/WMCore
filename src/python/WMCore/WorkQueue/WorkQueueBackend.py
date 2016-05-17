@@ -387,7 +387,7 @@ class WorkQueueBackend(object):
                     siteJobCounts[site] = {}
                 siteJobCounts[site][prio] = siteJobCounts[site].setdefault(prio, 0) + element['Jobs']*element.get('blowupFactor', 1.0)
             else:
-                self.logger.info("No possible site for %s" % element['RequestName'])
+                self.logger.info("No possible site for %s with doc id %s", element['RequestName'], element.id)
         # sort elements to get them in priority first and timestamp order
         elements.sort(key=lambda element: element['CreationTime'])
         elements.sort(key = lambda x: x['Priority'], reverse = True)

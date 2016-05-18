@@ -326,6 +326,7 @@ class WorkQueueBackend(object):
         self.logger.info("Getting available work from %s/%s" %
                          (sanitizeURL(self.server.url)['url'], self.db.name))
         elements = []
+        sortedElements = []
 
         # We used to pre-filter sites, looking to see if there are idle job slots
         # We don't do this anymore, as we may over-allocate
@@ -349,8 +350,6 @@ class WorkQueueBackend(object):
                 options['wfs'] = wfs[i:i + 20]
                 data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
                 result.extend(json.loads(data))
-            # sort final list
-            result.sort(key=lambda x: x['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']['Priority'])
         else:
             result = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
             result = json.loads(result)
@@ -363,6 +362,13 @@ class WorkQueueBackend(object):
         # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
+            sortedElements.append(element)
+            
+        # sort elements to get them in priority first and timestamp order
+        sortedElements.sort(key=lambda element: element['CreationTime'])
+        sortedElements.sort(key = lambda x: x['Priority'], reverse = True)
+         
+        for element in sortedElements:
             prio = element['Priority']
 
             possibleSite = None
@@ -387,9 +393,6 @@ class WorkQueueBackend(object):
                                                     element['Jobs'] * element.get('blowupFactor', 1.0)
             else:
                 self.logger.info("No possible site for %s with doc id %s", element['RequestName'], element.id)
-        # sort elements to get them in priority first and timestamp order
-        elements.sort(key=lambda element: element['CreationTime'])
-        elements.sort(key=lambda x: x['Priority'], reverse=True)
 
         return elements, thresholds, siteJobCounts
 

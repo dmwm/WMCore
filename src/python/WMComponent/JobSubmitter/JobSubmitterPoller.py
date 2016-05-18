@@ -75,7 +75,9 @@ class JobSubmitterPoller(BaseWorkerThread):
         self.changeState = ChangeState(self.config)
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
         self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
-        self.cacheRefreshSize = int(getattr(self.config.JobSubmitter, 'cacheRefreshSize', 10000))
+        self.cacheRefreshSize = int(getattr(self.config.JobSubmitter, 'cacheRefreshSize', 30000))
+        self.skipRefreshCount = int(getattr(self.config.JobSubmitter, 'skipRefreshCount', 20))
+        self.refreshPollingCount = 0
 
         # BossAir
         self.bossAir = BossAirAPI(config=self.config)
@@ -253,10 +255,13 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Querying WMBS for jobs to be submitted...")
         logging.info("cachedJobIDs : %s" % len(self.cachedJobIDs))
-        if len(self.cachedJobIDs) < self.cacheRefreshSize:
+        if self.cacheRefreshSize == -1 or len(self.cachedJobIDs) < self.cacheRefreshSize or \
+           self.refreshPollingCount >= self.skipRefreshCount:
             newJobs = self.listJobsAction.execute()
+            self.refreshPollingCount = 0
             logging.info("Found %s new jobs to be submitted.", len(newJobs))
         else:
+            self.refreshPollingCount += 1
             newJobs = []
             dbJobs = self.cachedJobIDs
             logging.info("Skipping cache update to be submitted. (%s job in cache)" % len(dbJobs))
@@ -425,7 +430,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                             except KeyError:
                                 # Already gone
                                 pass
-
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
 

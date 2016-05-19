@@ -209,7 +209,8 @@ config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
-config.JobSubmitter.cacheRefreshSize =10000 # minimum size of the cache before refresh. prevent frequent cache update
+config.JobSubmitter.cacheRefreshSize = 10000 # minimum size of the cache before refresh. prevent frequent cache update
+config.JobSubmitter.extraMemoryPerCore =  500 # in MB
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
 
 config.component_("JobTracker")
@@ -552,8 +553,3 @@ config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveD
 config.ArchiveDataReporter.componentDir  = config.General.workDir + "/ArchiveDataReporter"
 config.ArchiveDataReporter.pollInterval = 240
 config.ArchiveDataReporter.WMArchiverURL = None
-# This is now OPTIONAL, it defaults to the componentDir
-# HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
-# disk as the JobCreator
-#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
-config.JobArchiver.numberOfJobsToCluster = 1000

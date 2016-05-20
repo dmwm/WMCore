@@ -44,15 +44,17 @@ class MockPhEDExApi(object):
         if dataset:
             return {'%s#1' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
 
-        oneBlock = block[0]
-        if oneBlock.split('#')[0] == PILEUP_DATASET:
-            # Pileup is at a single site
-            sites = ['T2_XX_SiteC']
-            _BLOCK_LOCATIONS[oneBlock] = sites
-        else:
-            sites = self.sitesByBlock(block=oneBlock)
-            _BLOCK_LOCATIONS[oneBlock] = sites
-        return {oneBlock: sites}
+        replicas = {}
+        for oneBlock in block:
+            if oneBlock.split('#')[0] == PILEUP_DATASET:
+                # Pileup is at a single site
+                sites = ['T2_XX_SiteC']
+                _BLOCK_LOCATIONS[oneBlock] = sites
+            else:
+                sites = self.sitesByBlock(block=oneBlock)
+                _BLOCK_LOCATIONS[oneBlock] = sites
+            replicas.update({oneBlock: sites})
+        return replicas
 
     def getReplicaInfoForBlocks(self, **args):
         """

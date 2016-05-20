@@ -1,3 +1,42 @@
+1.0.14 to 1.0.14.patch4:
+  - Merge pull request #6867 from amaltaro/resizeCpus_1014
+  - Merge pull request #6866 from amaltaro/resizeJob_1014
+  - 1.0.14 version of Allow runtime environment to resize the cores in the job
+  - 1.0.14 version of Change PyCondorPlugin to be able to dynamically resize jobs
+  - Merge pull request #6853 from ticoann/1.0.14_wmagent_storage
+  - Merge pull request #6816 from ticoann/fix_alert_1.0.14
+  - Changing to xrd rm for the delete method, since there is no NFS mount to rm from anymore. Introduces a dependency on RFCPCERNImpl to steal splitPFN. Functionally tested successfully.
+  - remove send alert
+  - 1.0.14.patch3
+  - Merge pull request #6780 from amaltaro/pileupFlag-1014
+  - Merge pull request #6790 from amaltaro/pycondor-redlog1014
+  - Merge pull request #6784 from amaltaro/tagchirp-1014
+  - Merge pull request #6801 from amaltaro/logCollectPNN-1014
+  - Merge pull request #6800 from amaltaro/validateLocation-1014
+  - Fix PNN for LogCollect jobs - 1.0.14 version
+  - validate location from fwrj - 1.0.14 version
+  - Read only existent logs in PyCondor plugin - 1.0.14 version
+  - tag chirp updates from CMSSW - 1.0.14 version
+  - Split trust location flag for input and for pileup data - 1.0.14 version
+  - Merge pull request #6731 from amaltaro/pycondor-patch5
+  - Merge pull request #6763 from amaltaro/fixgfal2-1014
+  - 1.0.14 version of Fix GFAL2 and environment problem
+  - Verify directory exist before reading logs
+  - Merge pull request #6717 from ticoann/1.0.14_wmagent_skip_cleanup
+  - skip cleanup job report
+  - Merge pull request #6715 from ticoann/1.0.14_wmagent_archive
+  - add WMArchive related views and field
+  - Merge pull request #6711 from amaltaro/pycondor-patch1014
+  - Merge pull request #6712 from amaltaro/stageout-alarm1014
+  - Backporting Solve the missing files mystery during stage out
+  - Backport JobStartDate may be eventually missing in the classAd
+  - Merge pull request #6706 from amaltaro/errorhandler-nocrash1014
+  - 1.0.14 version of Avoid crashing ErrorHandler in case of Couch/HTTP issues
+  - Merge pull request #6699 from ticoann/1.0.14_wmagent
+  - switch to PyCondor plugin
+  - Merge pull request #6694 from ticoann/1.0.14_wmagent
+  - fix site restriction checking
+
 1.0.14 to 1.0.14.patch3:
   - Merge pull request #6780 from amaltaro/pileupFlag-1014
   - Merge pull request #6790 from amaltaro/pycondor-redlog1014

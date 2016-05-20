@@ -60,6 +60,8 @@ def createOptionParser():
     myOptParser.add_option("--add-all-sites", dest = "addAllSites", default = False,
                            action = "store_true",
                            help = "Add all of the CMS sites to resource control.")
+    myOptParser.add_option("--add-one-site", dest = "addOneSite", 
+                           help = "Specify site name you want to add")
     myOptParser.add_option("--site-name", dest = "siteName",
                            help = "Specify the unique name of the location")
     myOptParser.add_option("--pending-slots", dest = "pendingSlots",
@@ -314,6 +316,10 @@ else:
     elif options.addAllSites == True:
         allSites = getCMSSiteInfo("*")
         addSites(myResourceControl, allSites, options.ceName, options.plugin,
+                 options.pendingSlots, options.runningSlots, state=options.state)
+    elif options.addOneSite:
+        oneSite = getCMSSiteInfo(options.addOneSite)
+        addSites(myResourceControl, oneSite, options.ceName, options.plugin,
                  options.pendingSlots, options.runningSlots, state=options.state)
     elif options.siteName is None:
         print "You must specify a site name."

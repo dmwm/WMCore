@@ -24,7 +24,7 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch2 -c HG1603e -t production -p "5757 5932" -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch4 -c HG1605c -t production -p "6719 6811" -n 2
 ### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch2 -c HG1603e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
@@ -270,12 +270,13 @@ echo "*** Tweaking configuration ***"
 sed -i "s+team1,team2,cmsdataops+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
 sed -i "s+config.AgentStatusWatcher.onlySSB = True+config.AgentStatusWatcher.onlySSB = False+" $MANAGE/config.py
-sed -i "s+pendingSlotsSitePercent = 40+pendingSlotsSitePercent = 60+" $MANAGE/config.py
-sed -i "s+pendingSlotsTaskPercent = 30+pendingSlotsTaskPercent = 50+" $MANAGE/config.py
+sed -i "s+pendingSlotsSitePercent = 40+pendingSlotsSitePercent = 100+" $MANAGE/config.py
+sed -i "s+pendingSlotsTaskPercent = 30+pendingSlotsTaskPercent = 90+" $MANAGE/config.py
 if [[ "$TEAMNAME" == relval* ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
   sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
+  sed -i "s+MinWallTimeSecs': 3600, 'MaxWallTimeSecs': 162000+MinWallTimeSecs': 132000, 'MaxWallTimeSecs': 132000+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == *testbed* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
   sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py
@@ -313,20 +314,22 @@ echo "Done!" && echo
 # set scripts and specific cronjobs
 ###
 echo "*** Downloading utilitarian scripts ***"
-cd $CURRENT
-rm -f rmOldJobs.sh checkProxy.py
+cd /data/admin/wmagent
+rm -f rmOldJobs.sh checkProxy.py restartComponent.sh
 wget -q --no-check-certificate https://raw.githubusercontent.com/CMSCompOps/WmAgentScripts/master/rmOldJobs.sh
 wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/scripts/master/checkProxy.py
-mv -f checkProxy.py /data/admin/wmagent/
+wget -q --no-check-certificate https://raw.githubusercontent.com/amaltaro/ProductionTools/master/restartComponent.sh
 echo "Done!" && echo
 
 ### Populating cronjob with utilitarian scripts
 echo "*** Creating cronjobs for them ***"
 ( crontab -l 2>/dev/null | grep -Fv ntpdate
 echo "#remove old jobs script"
-echo "10 */4 * * * source /data/srv/wmagent/current/rmOldJobs.sh &> /tmp/rmJobs.log"
+echo "10 */4 * * * source /data/admin/wmagent/rmOldJobs.sh &> /tmp/rmJobs.log"
 echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
 echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 96 --send-mail True --mail alanmalta@gmail.com,alan.malta@cern.ch"
+echo "#workaround for the ErrorHandler silence issue"
+echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
 ) | crontab -
 echo "Done!" && echo
 

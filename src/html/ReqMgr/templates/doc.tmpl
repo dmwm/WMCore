@@ -21,6 +21,7 @@
 <li>
 Status: <b>$status</b> to
 <select id="RequestStatus" name="RequestStatus">
+<option value="$status">$status</option>
 #for val in $transitions
 <option value="$val">$val</option>
 #end for
@@ -88,6 +89,15 @@ $jsondata
 <script>
 function ChangeRequestStatus() {
     var parameters = {'RequestStatus':\$('#RequestStatus').val()};
+    if(parameters["RequestStatus"] == '$status' || parameters["status"] == 'no-change') {
+        delete parameters["RequestStatus"];
+    }
+    // look-up all visible inputs
+    var inputs = \$('.visible_input');
+    for(var i=0; i<inputs.length; i++) {
+        var elem = inputs[i];
+        parameters[elem.name] = elem.value;
+    }
     ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }
 function Activate(tag, hidetags) {

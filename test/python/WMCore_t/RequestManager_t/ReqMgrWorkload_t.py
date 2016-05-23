@@ -196,43 +196,6 @@ class ReqMgrWorkloadTest(RESTBaseUnitTest):
         self.assertEqual(request['Requestor'], userName)
  
     @attr('integration')
-    def testB_Analysis(self):
-        """
-        _Analysis_
-  
-        Test Analysis workflows
-          
-        """
-        userName     = 'Taizong'
-        groupName    = 'Li'
-        teamName     = 'Tang'
-        schema = utils.getAndSetupSchema(self,
-                                         userName = userName,
-                                         groupName = groupName,
-                                         teamName = teamName)
-        schema['RequestType'] = "Analysis"
-        try:
-            raises = False
-            result = self.jsonSender.put('request', schema)
-        except HTTPException as ex:
-            raises = True
-            self.assertEqual(ex.status, 400)
-        self.assertTrue(raises)
-  
-        # Put the right things in the schema
-        # And watch it fail, because we can't open a secure connection to CERN
-        # in a unittest well
-        schema['RequestorDN'] = 'SomeDN'
-        #result = self.jsonSender.put('request/testRequest', schema)
-        #requestName = result[0]['RequestName']
-  
-        #result = self.jsonSender.get('request/%s' % requestName)
-        #request = result[0]
-        #self.assertEqual(request['CMSSWVersion'], CMSSWVersion)
-        #self.assertEqual(request['Group'], groupName)
-        #self.assertEqual(request['Requestor'], userName)
-  
-    @attr('integration')
     def testD_ReDigi(self):
         """
         _ReDigi_

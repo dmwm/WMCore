@@ -12,12 +12,10 @@ TypesList = [
     "MonteCarlo",
     "ReReco",
     "StoreResults",
-    "Analysis",
     "Resubmission",
     "ReDigi",
     "MonteCarloFromGEN",
     "TaskChain",
-    "PrivateMC",
     "DQMHarvest",
     "StepChain"
     ]

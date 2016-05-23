@@ -744,7 +744,7 @@ class TestChangeState(unittest.TestCase):
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "cinquo"
         testJobA["group"] = "DMWM"
-        testJobA["taskType"] = "Analysis"
+        testJobA["taskType"] = "Production"
 
         change.propagate([testJobA], 'created', 'new')
         myReport = Report()

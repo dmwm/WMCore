@@ -863,7 +863,7 @@ class JobTest(unittest.TestCase):
         """
         testJobA = self.createTestJob(subscriptionType = "Merge")
         testJobB = self.createTestJob(subscriptionType = "Processing")
-        testJobC = self.createTestJob(subscriptionType = "Analysis")
+        testJobC = self.createTestJob(subscriptionType = "Production")
         testJobD = self.createTestJob(subscriptionType = "Merge")
         testJobE = self.createTestJob(subscriptionType = "Skim")
 
@@ -885,7 +885,7 @@ class JobTest(unittest.TestCase):
                "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobB["id"]] == "Processing", \
                "Error: GetJobType DAO returned the wrong job type."
-        assert entryMap[testJobC["id"]] == "Analysis", \
+        assert entryMap[testJobC["id"]] == "Production", \
                "Error: GetJobType DAO returned the wrong job type."
         assert entryMap[testJobD["id"]] == "Merge", \
                "Error: GetJobType DAO returned the wrong job type."

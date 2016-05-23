@@ -10,4 +10,3 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 GenericCollection = "ACDC.CollectionTypes.GenericCollection"
 DataCollection = "ACDC.CollectionTypes.DataCollection"
-AnalysisCollection = "ACDC.CollectionTypes.AnalysisCollection"

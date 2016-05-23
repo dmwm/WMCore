@@ -141,6 +141,17 @@ class WorkQueueReqMgrInterface():
             self.logger.info("%s element(s) obtained from RequestManager" % work)
         return work
 
+    def _handleAbortedAndForceCompleted(self, queue, ele, state):
+        if state == 'aborted':
+            nextState = 'aborted-completed'
+        elif state == "force-complete":
+            nextState = 'completed' 
+        
+        if ele['Status'] in ['Canceled', 'Done']:
+            self.reportRequestStatus(ele['RequestName'], nextState)
+        else:
+            queue.cancelWork(WorkflowName=ele['RequestName'])
+        return
 
     def report(self, queue):
         """Report queue status to ReqMgr."""
@@ -161,8 +172,8 @@ class WorkQueueReqMgrInterface():
                     self.logger.warning(msg)
                     continue
                 request = request[ele['RequestName']]
-                if request['RequestStatus'] in ('failed', 'completed', 'announced',
-                                                'epic-FAILED', 'closed-out', 'rejected'):
+                
+                if request['RequestStatus'] in ('failed', 'completed', 'announced', 'closed-out', 'rejected'):
                     # requests can be done in reqmgr but running in workqueue
                     # if request has been closed but agent cleanup actions
                     # haven't been run (or agent has been retired)
@@ -179,8 +190,8 @@ class WorkQueueReqMgrInterface():
                                     continue
                     else:
                         pass # assume workqueue status will catch up later
-                elif request['RequestStatus'] == 'aborted' or request['RequestStatus'] == 'force-complete':
-                    queue.cancelWork(WorkflowName=request['RequestName'])
+                elif request['RequestStatus'] in ['aborted', 'force-complete']:
+                    self._handleAbortedAndForceCompleted(queue, ele, request['RequestStatus'])
                 # Check consistency of running-open/closed and the element closure status
                 elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):
                     self.reportRequestStatus(ele['RequestName'], 'running-closed')
@@ -310,6 +321,7 @@ class WorkQueueReqMgrInterface():
                          'failed': ['Failed'],
                          'aborted': ['Canceled', 'CancelRequested'],
                          'force-complete': ['Canceled', 'CancelRequested'],
+                         'aborted-completed': ['Canceled', 'CancelRequested', 'Done'],
                          'completed': ['Done']}
         if status in statusMapping:
             return statusMapping[status]

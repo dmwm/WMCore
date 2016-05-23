@@ -210,87 +210,36 @@ class TaskArchiverPoller(BaseWorkerThread):
             return
         
         completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
-        
-        centralCouchAlive = True
-        try:
-            #TODO: need to enable when reqmgr2 -wmstats is ready
-            #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
-            abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
-            logging.info("There are %d requests in 'aborted' status in central couch." % len(abortedWorkflows))
-            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"])
-            logging.info("List of 'force-complete' workflows in central couch: %s" % forceCompleteWorkflows)
-            
-        except Exception as ex:
-            centralCouchAlive = False
-            logging.error("we will try again when remote couch server comes back\n%s" % str(ex))
-        
-        if centralCouchAlive:
-            for workflow in finishedwfs:
-                try:
-                    #Notify the WorkQueue, if there is one
-                    if self.workQueue != None:
-                        subList = []
-                        logging.info("Marking subscriptions as Done ...")
-                        for l in finishedwfs[workflow]["workflows"].values():
-                            subList.extend(l)
-                        self.notifyWorkQueue(subList)
-                    
-                    #Now we know the workflow as a whole is gone, we can delete the information from couch
-                    if not self.useReqMgrForCompletionCheck:
-                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
-                        logging.info("status updated to completed %s" % workflow)
+                
+        for workflow in finishedwfs:
+            try:
+                #Notify the WorkQueue, if there is one
+                if self.workQueue != None:
+                    subList = []
+                    logging.info("Marking subscriptions as Done ...")
+                    for l in finishedwfs[workflow]["workflows"].values():
+                        subList.extend(l)
+                    self.notifyWorkQueue(subList)
+                # if WQ is not exist check this is Tier0 agent
+                elif not self.useReqMgrForCompletionCheck:
+                    self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
+                    logging.info("status updated to completed %s" % workflow)
+                                     
+                completedWorkflowsDAO.execute([workflow])
     
-                    if workflow in abortedWorkflows:
-                        #TODO: remove when reqmgr2-wmstats deployed
-                        newState = "aborted-completed"
-                    elif workflow in forceCompleteWorkflows:
-                        newState = "completed"
-                    else:
-                        newState = None
-                        
-                    if newState != None:
-                        # update reqmgr workload document only request mgr is installed
-                        if not self.useReqMgrForCompletionCheck:
-                            # commented out untill all the agent is updated so every request have new state
-                            # TODO: agent should be able to write reqmgr db diretly add the right group in
-                            # reqmgr
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
-                        else:
-                            try:
-                                #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
-                                logging.info("Updating status to '%s' in both oracle and couchdb ..." % newState)
-                                self.reqmgrSvc.updateRequestStatus(workflow, newState)
-                                #And replace with this - remove all the excption
-                                #self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                            except httplib.HTTPException as ex:
-                                # If we get an HTTPException of 404 means reqmgr2 request
-                                if ex.status == 404:
-                                    # try reqmgr2 call
-                                    msg = "%s : reqmgr2 request: %s" % (workflow, str(ex))
-                                    logging.warning(msg)
-                                    self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                                else:
-                                    msg = "%s : fail to update status %s  with HTTP error: %s" % (workflow, newState, str(ex))
-                                    logging.error(msg)
-                                    raise ex
-                            
-                        logging.info("status updated to '%s' : %s" % (newState, workflow))
-                    
-                    completedWorkflowsDAO.execute([workflow])
-        
-                except TaskArchiverPollerException as ex:
+            except TaskArchiverPollerException as ex:
 
-                    #Something didn't go well when notifying the workqueue, abort!!!
-                    logging.error("Something bad happened while archiving tasks.")
-                    logging.error(str(ex))
-                    continue
-                except Exception as ex:
-                    #Something didn't go well on couch, abort!!!
-                    msg = "Problem while archiving tasks for workflow %s\n" % workflow
-                    msg += "Exception message: %s" % str(ex)
-                    msg += "\nTraceback: %s" % traceback.format_exc()
-                    logging.error(msg)
-                    continue
+                #Something didn't go well when notifying the workqueue, abort!!!
+                logging.error("Something bad happened while archiving tasks.")
+                logging.error(str(ex))
+                continue
+            except Exception as ex:
+                #Something didn't go well on couch, abort!!!
+                msg = "Problem while archiving tasks for workflow %s\n" % workflow
+                msg += "Exception message: %s" % str(ex)
+                msg += "\nTraceback: %s" % traceback.format_exc()
+                logging.error(msg)
+                continue
         return
     
     def notifyWorkQueue(self, subList):

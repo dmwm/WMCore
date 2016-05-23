@@ -217,8 +217,6 @@ class TaskArchiverPoller(BaseWorkerThread):
             #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
             logging.info("There are %d requests in 'aborted' status in central couch." % len(abortedWorkflows))
-            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"])
-            logging.info("List of 'force-complete' workflows in central couch: %s" % forceCompleteWorkflows)
             
         except Exception as ex:
             centralCouchAlive = False
@@ -243,8 +241,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
                         newState = "aborted-completed"
-                    elif workflow in forceCompleteWorkflows:
-                        newState = "completed"
                     else:
                         newState = None
                         

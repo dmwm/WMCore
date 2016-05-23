@@ -202,9 +202,8 @@ class WorkQueueReqMgrInterface():
         """Delete work from queue that is finished in ReqMgr"""
         finished = []
         for element in elements:
-            if self._workQueueToReqMgrStatus(element['Status']) in ('aborted', 'failed', 'completed', 'announced',
-                                                         'epic-FAILED', 'closed-out', 'rejected') \
-                                                         and element.inEndState():
+            if self._workQueueToReqMgrStatus(element['Status']) in ('failed', 'completed', 
+                                                'announced', 'closed-out', 'rejected') and element.inEndState():
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
     

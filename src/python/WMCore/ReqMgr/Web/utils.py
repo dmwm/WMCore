@@ -108,14 +108,14 @@ def json2table(jsondata, web_ui_map, visible_attrs=None):
         else:
             kname = key.capitalize().replace('_', ' ')
         cells[key] = (kname, val)
-    if  visible_attrs:
+    if  visible_attrs and isinstance(visible_attrs, list):
         for attr in visible_attrs:
             kname, val = cells.pop(attr)
             val = val.replace('width-100', 'width-100 visible_input')
             table += "<tr><td>%s</td><td class=\"visible\">%s</td></tr>\n" % (kname, val)
     for key, pair in cells.items():
         kname, val = pair
-        if  visible_attrs:
+        if  not visible_attrs:
             val = val.replace('<input', '<input readonly')
             val = val.replace('<textarea', '<textarea readonly')
             val = val.replace('<select', '<select disabled')

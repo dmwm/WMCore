@@ -63,6 +63,8 @@ def formatNative(value):
         return value
     if type(value) == dict:
         return dict
+    if callable(value):
+        return value
     else:
         return format(value)
 
@@ -97,7 +99,7 @@ class ConfigSection(object):
 
     def _complexTypeCheck(self, name, value):
         
-        if type(value) in _SimpleTypes:
+        if type(value) in _SimpleTypes or callable(value):
             return
         elif type(value) in _ComplexTypes:
             vallist = value

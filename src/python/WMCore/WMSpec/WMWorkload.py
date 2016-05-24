@@ -5,7 +5,6 @@ _WMWorkload_
 Request level processing specification, acts as a container of a set
 of related tasks.
 """
-
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
@@ -451,12 +450,10 @@ class WMWorkloadHelper(PersistencyHelper):
         for site in newWhiteList:
             if '*' in site:
                 msg = "Invalid wildcard site %s in site whitelist!" % site
-                # logging.error(msg)
                 raise WMWorkloadException(msg)
         for site in newBlackList:
             if '*' in site:
                 msg = "Invalid wildcard site %s in site blacklist!" % site
-                # logging.error(msg)
                 raise WMWorkloadException(msg)
 
         self.setSiteWhitelist(siteWhitelist=newWhiteList)
@@ -636,6 +633,17 @@ class WMWorkloadHelper(PersistencyHelper):
                         cmsswHelper = stepHelper.getTypeHelper()
                         cmsswHelper.setDatasetName(datasetName)
 
+        return
+
+    def setMemoryAndCores(self, memory=None, cores=None):
+        """
+        _setMemoryAndCores_
+
+        Update memory requirements and number of cores for all tasks in the spec
+        """
+        for task in self.taskIterator():
+            task.setNumberOfCores(cores)
+            task.setJobResourceInformation(memoryReq=memory)
         return
 
     def setAcquisitionEra(self, acquisitionEras):
@@ -1751,6 +1759,8 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if self._checkKeys(kwargs, "Dashboard"):
             self.setDashboardActivity(kwargs["Dashboard"])
+
+        self.setMemoryAndCores(kwargs.get("Memory"), kwargs.get("Multicore"))
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

@@ -1,3 +1,42 @@
+1.0.16 to 1.0.17.pre4:
+  - Merge pull request #6877 from ticoann/add_one_site
+  - Merge pull request #6879 from amaltaro/multicore-assign
+  - Merge pull request #6880 from amaltaro/remove-multiTasks
+  - Merge pull request #6863 from ticoann/resource_monitor_5_13
+  - Merge pull request #6876 from ticoann/remove-failed-transition
+  - Cleanup the last pieces of multi tasks
+  - Update memory and cores requirements during assignment
+  - Merge pull request #6878 from vkuznet/issue6874
+  - Fix issue 6874
+  - add one site (useful for testing)
+  - clean up status transition
+  - Merge pull request #6811 from amaltaro/kill-held
+  - Merge pull request #6861 from amaltaro/deploy-relval-patcha
+  - Add glidein restrictions tweak for the relval agent
+  - Merge pull request #6865 from ticoann/wmarchive_log
+  - WQ diagonis script
+  - add more logging message
+  - 1.0.17.pre3
+  - Merge pull request #6856 from ticoann/fix_priority
+  - priority sorting
+  - alway refresh job submitter cache
+  - Merge pull request #6862 from amaltaro/docid-inbox
+  - Pylint fixes
+  - Print the workqueue doc id when no possible site
+  - Make condor removal more efficient; improve error message
+  - 1.0.17.pre2
+  - Merge pull request #6368 from hufnagel/highio-jobs
+  - Merge pull request #6860 from amaltaro/injecttest-patcha
+  - Fix site whitelist when provided in the command line
+  - 1.0.17.pre1
+  - Merge pull request #6808 from juztas/gfalCleanEnv
+  - Merge pull request #6843 from ticoann/fix_wmstats_unittest
+  - Merge pull request #6848 from hufnagel/repack-error-dataset
+  - implement repack output straight to error dataset
+  - add capability for highio jobs
+  - fix wmstats unittest
+  - Use system environment for gfal2 stageout
+
 1.0.16 to 1.0.17.pre3:
   - Merge pull request #6856 from ticoann/fix_priority
   - priority sorting

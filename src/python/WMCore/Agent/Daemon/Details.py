@@ -75,10 +75,9 @@ class Details(dict):
         _isAlive_
 
         Is the process still running?
-
-        Dumb check on /proc/pid existing. Anyone know a better way?
-
         """
+        # FIXME ps -T -p 1946167 -o euser,pid,ppid,lwp,nlwp,stat,start
+        # it prints the user, process and its threads, number of threads, etc
         se, so, rc = run('ps -p %s' % self['ProcessID'])
         if rc != 0:
             return False

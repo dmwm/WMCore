@@ -9,6 +9,4 @@ from WMCore.WMBS.MySQL.Locations.GetJobSlotsByCMSName \
     import GetJobSlotsByCMSName as MySQLGetJobSlotsByCMSName
 
 class GetJobSlotsByCMSName(MySQLGetJobSlotsByCMSName):
-    """
-    Identical to MySQL version
-    """
+    pass

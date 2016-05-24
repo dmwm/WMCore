@@ -11,12 +11,13 @@ Retrieve information about a job from couch and format it nicely.
 import os
 import time
 import subprocess
-from WMCore.Configuration import loadConfigurationFile
 import logging
+
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
+from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
 @emulatorHook
@@ -142,6 +143,7 @@ class LocalCouchDBData():
 class WMAgentDBData():
 
     def __init__(self, summaryLevel, dbi, logger):
+        self.summaryLevel = summaryLevel
         # interface to WMBS/BossAir db
         bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
                                        logger = logger, dbinterface = dbi)
@@ -150,16 +152,37 @@ class WMAgentDBData():
         wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database",
                                      logger = logger, dbinterface = dbi)
 
-        self.summaryLevel = summaryLevel
         if self.summaryLevel == "task":
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
         else:
             self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
+
         self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
         self.finishedTaskAndJobType = wmbsDAOFactory(classname = "Subscriptions.CountFinishedSubscriptionsByTask")
+        self.jobCountByStatus = wmbsDAOFactory(classname = "Monitoring.JobCountByState")
+        self.jobTypeCountByStatus = wmbsDAOFactory(classname = "Monitoring.JobTypeCountByState")
+        self.runJobByStatus = wmbsDAOFactory(classname = "Monitoring.RunJobByStatus")
         self.componentStatusAction = wmAgentDAOFactory(classname = "GetAllHeartbeatInfo")
         self.components = None
 
+    def getAgentMonitoring(self):
+        """
+        Return a list of dicts with all information we can gather from the databases.
+        """
+        monitoring = {}
+        monitoring['wmbsCreatedTypeCount'] = self.jobTypeCountByStatus.execute('created')
+        monitoring['wmbsExecutingTypeCount'] = self.jobTypeCountByStatus.execute('executing')
+        monitoring['wmbsCountByState'] = self.jobCountByStatus.execute()
+        monitoring['activeRunJobByStatus'] = self.runJobByStatus.execute(active=True)
+        monitoring['completeRunJobByStatus'] = self.runJobByStatus.execute(active=False)
+
+        # get thresholds for job creation (GQ to LQ), only for sites in Normal state
+        # also get the number of pending jobs and their priority per site
+        thresholdsForCreate, pendingCountByPrio = freeSlots(minusRunning=True)
+        monitoring['thresholdsGQ2LQ'] = thresholdsForCreate
+        monitoring['sitePendCountByPrio'] = pendingCountByPrio
+        return monitoring
+        
     def getHeartbeatWarning(self):
 
         results = self.componentStatusAction.execute()
@@ -186,7 +209,6 @@ class WMAgentDBData():
         # check the component status
         for component in components:
             compDir = config.section_(component).componentDir
-            compDir = config.section_(component).componentDir
             compDir = os.path.expandvars(compDir)
             daemonXml = os.path.join(compDir, "Daemon.xml")
             downFlag = False;
@@ -203,7 +225,7 @@ class WMAgentDBData():
         # check the thread status
         results = self.componentStatusAction.execute()
         for componentInfo in results:
-            if (componentInfo["state"] == "Error"):
+            if componentInfo["state"] == "Error":
                 agentInfo['down_components'].add(componentInfo['name'])
                 agentInfo['status'] = 'down'
                 agentInfo['down_component_detail'].append(componentInfo)

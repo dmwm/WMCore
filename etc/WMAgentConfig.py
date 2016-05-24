@@ -117,7 +117,6 @@ config.section_("BossAir")
 config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
-config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
 config.BossAir.submitWMSMode = True
 config.BossAir.acctGroup = glideInAcctGroup
 config.BossAir.acctGroupUser = glideInAcctGroupUser

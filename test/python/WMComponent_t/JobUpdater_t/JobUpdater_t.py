@@ -96,7 +96,6 @@ class JobUpdaterTest(unittest.TestCase):
         config.section_('BossAir')
         config.BossAir.pluginNames = ['MockPlugin']
         config.BossAir.pluginDir = 'WMCore.BossAir.Plugins'
-        config.BossAir.multicoreTaskTypes = ['MultiProcessing', 'MultiProduction']
         config.BossAir.nCondorProcesses = 1
         config.BossAir.section_('MockPlugin')
         config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),

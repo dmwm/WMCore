@@ -246,7 +246,6 @@ class JobSubmitterTest(unittest.TestCase):
         #Here Test the CondorPlugin instead of MockPlugin
         #config.BossAir.pluginNames = ['CondorPlugin']
         config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
-        config.BossAir.multicoreTaskTypes = ['MultiProcessing', 'MultiProduction']
         config.BossAir.nCondorProcesses = 1
         config.BossAir.section_("MockPlugin")
         config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),

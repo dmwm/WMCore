@@ -32,22 +32,22 @@ class WorkQueueElementsSummaryTest(unittest.TestCase):
         
         gqSummary = WorkQueueElementsSummary(self.gqElements)
         testReq = "riahi_TEST_HELIX_0911-T1_UK_RALBackfill_151119_190209_6101"
-        filteredElements = gqSummary.elementsWithHigherPriorityInSameSites(testReq)
+        filteredElements = gqSummary.elementsWithHigherPriorityInSameSites(testReq, returnFormat="list")
         
         wqSummary = WorkQueueElementsSummary(filteredElements)
-        wqElements = wqSummary.getWQElementResultsByReauest()
+        wqElements = wqSummary.getWQElementResultsByRequest()
         
         self.assertEqual(gqSummary.getPossibleSitesByRequest(testReq), set(['T1_UK_RAL']))
-        priority = gqSummary.getWQElementResultsByReauest(testReq)['Priority']
+        priority = gqSummary.getWQElementResultsByRequest(testReq)['Priority']
         self.assertEqual(priority, 50000)
         
-        self.assertEqual(len(wqElements), 27)
+        self.assertEqual(len(wqElements), 2)
         
         jobs = 0
         for req in wqElements:
             jobs += wqElements[req]['Jobs']
             self.assertTrue(wqElements[req]['Priority'] >= priority)
-        self.assertEqual(jobs, 222669)
+        self.assertEqual(jobs, 1942)
 
 if __name__ == '__main__':
     unittest.main()

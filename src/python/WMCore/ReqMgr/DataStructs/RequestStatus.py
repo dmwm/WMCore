@@ -23,17 +23,14 @@ REQUEST_STATE_TRANSITION = {
                  "aborted"],
                              
     "running": ["completed",
-                "aborted", # manual transition
-                "failed"],
+                "aborted"], # manual transition
                              
     "running-open": ["running-closed",
-                     "aborted", # manual transition
-                     "failed"],
+                     "aborted"], # manual transition
                              
     "running-closed": ["force-complete", # manual transition
                        "completed",
-                       "aborted", # manual transition
-                       "failed"],
+                       "aborted"], # manual transition
     
     "force-complete" : ["completed"],
                              
@@ -119,5 +116,3 @@ def get_modifiable_properties(status = None):
         return ALLOWED_ACTIONS_FOR_STATUS.get(status, None)
     else:
         return ALLOWED_ACTIONS_FOR_STATUS
-    
-    

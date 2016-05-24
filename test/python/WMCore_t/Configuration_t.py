@@ -7,10 +7,50 @@ import os
 
 from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
+from WMCore.Configuration import ConfigurationEx
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.Configuration import saveConfigurationFile
 
-from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
+from WMQuality.TestInit import TestInit
+
+
+class ConfigurationExTest(unittest.TestCase):
+    """
+    test case for Configuration object
+
+    """
+    def setUp(self):
+        """set up"""
+        self.testInit = TestInit(__file__)
+        self.testDir  = self.testInit.generateWorkDir()
+        self.functionSave = "%s/WMCore_Agent_Configuration_t_function.py" % self.testDir
+
+
+    def tearDown(self):
+        """clean up"""
+        self.testInit.delWorkDir()
+
+
+    def testCallableConfigParams(self):
+        """ctor"""
+        def f():
+            return True
+
+        config = Configuration()
+        config.section_("SectionF")
+        #creating field for the following test
+        config.SectionF.aFunction = ''
+        #Cannot set a function for plain Configuration objects
+        #config.SectionF.__setattr__('aFunction', f)
+        self.assertRaises(RuntimeError, config.SectionF.__setattr__, config.SectionF.aFunction, f)
+
+        config = ConfigurationEx()
+        config.section_("SectionF")
+        #No failures with configurationEx
+        config.SectionF.aFunction = f
+
+        #However ConfigurationEx instances cannot be saved
+        self.assertRaises(RuntimeError, saveConfigurationFile, config, self.functionSave)
 
 
 class ConfigurationTest(unittest.TestCase):
@@ -119,7 +159,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertRaises(
             RuntimeError, setattr,
             config.Section2, "BadDict", badDict)
-        
+
         goodDict = { "dict" : {}, "list": [], "tuple" : () }
         config.Section2.GoodDict = goodDict
 

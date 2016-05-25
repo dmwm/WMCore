@@ -113,6 +113,6 @@ def get_modifiable_properties(status = None):
     TODO: Currently gets the result from hardcoded list. change to get from configuration or db
     """
     if status:
-        return ALLOWED_ACTIONS_FOR_STATUS.get(status, None)
+        return ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all')
     else:
         return ALLOWED_ACTIONS_FOR_STATUS

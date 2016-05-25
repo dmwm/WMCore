@@ -17,8 +17,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
     """
     Class that can be imported to switch to 'mock'ed versions of
     services.
-
-    FIXME: For now only DBS is mocked
     """
 
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True):

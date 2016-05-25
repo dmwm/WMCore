@@ -11,6 +11,7 @@ import json
 import os
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
+
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.WMBase import getTestBase
 from WMQuality.Emulators.DBSClient.MockedDBSGlobalCalls import calls as calls00
@@ -20,10 +21,10 @@ from WMQuality.Emulators.DBSClient.MockedDBSphys03Calls import calls as calls03
 from WMQuality.Emulators.DBSClient.MockedDBSphys03Calls import datasets as datasets03
 from WMQuality.Emulators.DBSClient.MockedDBSphys03Calls import endpoint as endpoint03
 
-instances = ((endpoint00, 'DBSMockData.json', calls00, datasets00),
+INSTANCES = ((endpoint00, 'DBSMockData.json', calls00, datasets00),
              (endpoint03, 'DBSMockData03.json', calls03, datasets03))
 
-for endpoint, outFile, calls, datasets in instances:
+for endpoint, outFile, calls, datasets in INSTANCES:
     lookup = {}
     outFilename = os.path.join(getTestBase(), '..', 'data', 'Mock', outFile)
     try:
@@ -64,12 +65,12 @@ for endpoint, outFile, calls, datasets in instances:
     nCalls = len(calls)
     print("Need to issue %d calls to DBS" % nCalls)
     callsDone = 0
-    progress = [2, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.03, 0.02, 0.01]
+    progress = [2.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05, 0.03, 0.02, 0.01]
     for call in calls:
         callsDone += 1
         if callsDone / nCalls > progress[-1]:
-            percentDone = progress.pop()*100
-            print (" Fetching call list %d%% done." % percentDone)
+            percentDone = progress.pop() * 100
+            print(" Fetching call list %d%% done." % percentDone)
         func = getattr(realDBS, call[0])
         if len(call) > 1:
             signature = '%s:%s' % (call[0], sorted(call[1].iteritems()))

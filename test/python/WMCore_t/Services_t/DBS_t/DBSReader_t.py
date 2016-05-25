@@ -6,7 +6,6 @@ Unit test for the DBS helper class.
 """
 
 import unittest
-from nose.plugins.attrib import attr
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError

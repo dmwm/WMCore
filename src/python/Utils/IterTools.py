@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 from __future__ import division, print_function
 
+import collections
 from itertools import islice
 from itertools import chain
 
@@ -23,3 +24,16 @@ def flattenList(doubleList):
     Make flat a list of lists.
     """
     return list(chain.from_iterable(doubleList))
+
+def nestedDictUpdate(d, u):
+    """
+    Code from Alex Matelli
+    http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
+    """
+    for k, v in u.iteritems():
+        if isinstance(v, collections.Mapping):
+            r = nestedDictUpdate(d.get(k, {}), v)
+            d[k] = r
+        else:
+            d[k] = u[k]
+    return d

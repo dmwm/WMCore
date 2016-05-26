@@ -55,8 +55,19 @@ class ArchiveDataPoller(BaseWorkerThread):
             
                 # Partial success is not allowed either all the insert is successful of none is successful.
                 if response[0]['status'] == "ok" and len(response[0]['ids']) == len(jobIDs):
+                    archiveIDs = response[0]['ids']
                     for docID in jobIDs:
                         self.fwjrAPI.updateArchiveUploadedStatus(docID)
+                    logging.info("...successfully uploaded %d docs", len(jobIDs))
+                    logging.debug("JobIDs uploaded: %s", jobIDs)
+                    logging.debug("Archive IDs returned: %s", response[0]['ids'])
+                    
+                    if len(set(archiveIDs)) == len(archiveIDs):
+                        duplicateIDs = set([x for x in archiveIDs if archiveIDs.count(x) > 1])
+                        logging.info("There are duplicate entry %s", duplicateIDs) 
+                else:
+                    logging.warning("Upload failed: %s: %s", response[0]['status'], response[0]['reason'])
+                    logging.debug("failed JobIds %s", jobIDs)
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))

@@ -1,3 +1,6 @@
+from __future__ import division, print_function
+
+from Utils.IterTools import nestedDictUpdate
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
@@ -364,5 +367,53 @@ class WMStatsReader(object):
         requestInfo = self.getRequestSummaryWithJobInfo(requestName)
         reqInfoInstance = RequestInfo(requestInfo[requestName])
         return reqInfoInstance.isWorkflowFinished()
+    
+    def getTaskJobSummaryByRequest(self, requestName, sampleSize=1):
         
+        options = {'reduce': True, 'group_level': 5, 'startkey':[requestName], 
+                   'endkey':[requestName, {}]}
+        results = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options = options)
+        jobDetails = {}
+        for row in results['rows']:
+            # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']   
+            startKey = row["key"][:4]
+            endKey = []
+            site = row["key"][4]
+            if site:
+                startKey.append(site)
+                
+            endKey.extend(startKey)
+            endKey.append({})
+            numOfError = row["value"]
+            
+            jobInfo = self.jobDetailByTasks(startKey, endKey, numOfError, sampleSize)
+            jobDetails = nestedDictUpdate(jobDetails, jobInfo)
+        return jobDetails
+        
+    def jobDetailByTasks(self, startKey, endKey,  numOfError, limit=1):
+        options= {'include_docs': True, 'reduce': False, 
+                  'startkey': startKey,'endkey': endKey,
+                  'limit': limit}
+        result = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options = options)
+        jobInfoDoc = {}
+        for row in result['rows']:
+            keys = row['key']
+            workflow = keys[0]
+            task = keys[1]
+            jobStatus = keys[2]
+            exitCode = keys[3]
+            site = keys[4]
+            
+            jobInfoDoc.setdefault(workflow, {})
+            jobInfoDoc[workflow].setdefault(task, {})
+            jobInfoDoc[workflow][task].setdefault(jobStatus, {})
+            jobInfoDoc[workflow][task][jobStatus].setdefault(exitCode, {})
+            jobInfoDoc[workflow][task][jobStatus][exitCode].setdefault(site, {})
+            finalStruct = jobInfoDoc[workflow][task][jobStatus][exitCode][site]
+            finalStruct["errorCount"] =  numOfError
+            finalStruct.setdefault("samples", [])
+            finalStruct["samples"].append(row["doc"])
+            
+            
+        return jobInfoDoc
     

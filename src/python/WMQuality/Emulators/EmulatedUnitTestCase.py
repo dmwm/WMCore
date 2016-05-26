@@ -13,7 +13,7 @@ from WMQuality.Emulators.DBSClient.MockDbsApi import MockDbsApi
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import MockPhEDExApi
 
 
-class EmulatedUnitTest(unittest.TestCase):
+class EmulatedUnitTestCase(unittest.TestCase):
     """
     Class that can be imported to switch to 'mock'ed versions of
     services.
@@ -24,7 +24,7 @@ class EmulatedUnitTest(unittest.TestCase):
     def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=False):  # FIXME: Default to False for both?
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
-        super(EmulatedUnitTest, self).__init__(methodName)
+        super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
         """

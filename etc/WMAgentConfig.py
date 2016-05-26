@@ -117,7 +117,6 @@ config.section_("BossAir")
 config.BossAir.pluginDir = "WMCore.BossAir.Plugins"
 config.BossAir.pluginNames = bossAirPlugins
 config.BossAir.nCondorProcesses = 1
-config.BossAir.multicoreTaskTypes = ["MultiProcessing", "MultiProduction"]
 config.BossAir.submitWMSMode = True
 config.BossAir.acctGroup = glideInAcctGroup
 config.BossAir.acctGroupUser = glideInAcctGroupUser
@@ -209,7 +208,8 @@ config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
-config.JobSubmitter.cacheRefreshSize = 10000 # minimum size of the cache before refresh. prevent frequent cache update
+config.JobSubmitter.cacheRefreshSize = 30000 # set -1 if cache need to refresh all the time.
+config.JobSubmitter.skipRefreshCount = 20 # (If above the threshold meet, cache will updates every 20 polling cycle) 120 * 20 = 40 minutes
 config.JobSubmitter.extraMemoryPerCore =  500 # in MB
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
 
@@ -260,11 +260,11 @@ config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
 config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 240
 config.JobArchiver.logLevel = globalLogLevel
+config.JobArchiver.numberOfJobsToCluster = 1000
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator
 #config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
-config.JobArchiver.numberOfJobsToCluster = 1000
 
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
@@ -555,8 +555,3 @@ config.ArchiveDataReporter.pollInterval = 300
 config.ArchiveDataReporter.WMArchiverURL = None
 config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000 # number of documents needed to be polled each time
 config.ArchiveDataReporter.numDocsUploadPerCall = 200 # number of documents upload each time in bulk to WMArchive
-# This is now OPTIONAL, it defaults to the componentDir
-# HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
-# disk as the JobCreator
-#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
-config.JobArchiver.numberOfJobsToCluster = 1000

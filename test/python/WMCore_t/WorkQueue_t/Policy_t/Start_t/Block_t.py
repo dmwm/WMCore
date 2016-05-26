@@ -17,6 +17,7 @@ from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 rerecoArgs["SplittingAlgo"] = "LumiBased"
@@ -27,13 +28,12 @@ parentProcArgs["SplittingAlgo"] = "LumiBased"
 parentProcArgs["LumisPerJob"] = 8
 
 
-class BlockTestCase(unittest.TestCase):
+class BlockTestCase(EmulatedUnitTestCase):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=10)
 
     def setUp(self):
         self.fakeDBS = False
-        EmulatorHelper.setEmulators(phedex=False, dbs=self.fakeDBS,
-                                    siteDB=True, requestMgr=False)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
         Globals.GlobalParams.resetParams()
 
     def tearDown(self):
@@ -213,8 +213,7 @@ class BlockTestCase(unittest.TestCase):
         dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
         for task in Tier1ReRecoWorkload.taskIterator():
             # Take dataset and force to run over only 1 block
-            units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task,
-                                               {dataset + '#28315b28-0c5c-11e1-b764-003048caaace': []})
+            units, _ = Block(**self.splitArgs)(Tier1ReRecoWorkload, task, {dataset + '#28315b28-0c5c-11e1-b764-003048caaace': []})
             self.assertEqual(1, len(units))
             for unit in units:
                 self.assertEqual(1, unit['Jobs'])
@@ -269,11 +268,13 @@ class BlockTestCase(unittest.TestCase):
             wq_jobs = 0
             for unit in units:
                 wq_jobs += unit['Jobs']
-                # This fails. listRunLumis does not work correctly with DBS3, returning None for the # of lumis in a run
+                # This fails. listRunLumis does not work correctly with DBS3,
+                # returning None for the # of lumis in a run
                 runLumis = dbs[inputDataset.dbsurl].listRunLumis(block=unit['Inputs'].keys()[0])
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
-                        self.assertEqual(runLumis[run], None)  # This is what it is with DBS3 unless we calculate it
+                        # This is what it is with DBS3 unless we calculate it
+                        self.assertEqual(runLumis[run], None) 
             self.assertEqual(2, int(wq_jobs))
 
     def testInvalidSpecs(self):
@@ -451,8 +452,7 @@ class BlockTestCase(unittest.TestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
-            outputs = policyInstance.getDatasetLocations({'https://cmsweb.cern.ch/dbs/prod/global/DBSReader':
-                                                              Tier1ReRecoWorkload.listOutputDatasets()})
+            outputs = policyInstance.getDatasetLocations({'https://cmsweb.cern.ch/dbs/prod/global/DBSReader':Tier1ReRecoWorkload.listOutputDatasets()})
             for dataset in outputs:
                 self.assertEqual(sorted(outputs[dataset]), [])
         return
@@ -492,7 +492,7 @@ class BlockTestCase(unittest.TestCase):
 
         task.data.input.splitting.runs = [181061, 180899]
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
-        lumiMask = LumiList(compactList={'181061': [[1, 50], [60, 70]], '180899': [[1, 1]], })
+        lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                  inputDataset.processed,

@@ -8,6 +8,7 @@ and released when a suitable resource is found to execute them.
 
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
+from __future__ import (print_function, division)
 
 from collections import defaultdict
 import os
@@ -713,26 +714,45 @@ class WorkQueue(WorkQueueBase):
         result = self.dataLocationMapper()
         self.backend.recordTaskActivity('location_refresh')
         return result
-
-    def pullWork(self, resources=None):
-        """
-        Pull work from another WorkQueue to be processed
-
-        If resources passed in get work for them, if not available resources
-        from get from wmbs.
-        """
-
+    
+    def _printLog(self, msg, printFlag, logLevel):
+        if printFlag:
+            print(msg)
+        else:
+            getattr(self.logger, logLevel)(msg)
+            
+    def pullWorkConditionCheck(self, printFlag = False):
+        
         if not self.params['ParentQueueCouchUrl']:
             msg = 'Unable to pull work from parent, ParentQueueCouchUrl not provided'
-            self.logger.warning(msg)
-            return 0
+            self._printLog(msg, printFlag, "warning")
+            return False
         if not self.backend.isAvailable() or not self.parent_queue.isAvailable():
-            self.logger.info('Backend busy or down: skipping work pull')
-            return 0
+            msg = 'Backend busy or down: skipping work pull'
+            self._printLog(msg, printFlag, "warning")
+            return False
         if self.params['DrainMode']:
-            self.logger.info('Draining queue: skipping work pull')
-            return 0
+            msg = 'Draining queue: skipping work pull'
+            self._printLog(msg, printFlag, "warning")
+            return False
+        
+        left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
+                                                  ChildQueueUrl=self.params['QueueURL'])
+        if left_over:
+            msg = 'Not pulling more work. Still replicating %d previous units, ids:\n%s' % (len(left_over), left_over)
+            self._printLog(msg, printFlag, "warning")
+            return False
 
+        still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly=True)
+        if still_processing:
+            msg = 'Not pulling more work. Still processing %d previous units' % len(still_processing)
+            self._printLog(msg, printFlag, "warning")
+            return False
+        
+        return True
+    
+    def freeResouceCheck(self, resources=None, printFlag=False):    
+        
         jobCounts = {}
         if not resources:
             # find out available resources from wmbs
@@ -742,29 +762,42 @@ class WorkQueue(WorkQueueBase):
             _, resources, jobCounts = self.backend.availableWork(thresholds, jobCounts)
 
         if not resources:
-            self.logger.info('Not pulling more work. No free slots.')
-            return 0
+            msg = 'Not pulling more work. No free slots.'
+            self._printLog(msg, printFlag, "warning")
+            return (False, False)
+        
+        return (resources, jobCounts)
 
-        left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
-                                                  ChildQueueUrl=self.params['QueueURL'])
-        if left_over:
-            self.logger.info('Not pulling more work. Still replicating %d previous units, ids:\n%s' % (
-                len(left_over), left_over))
-
-            return 0
-
-        still_processing = self.backend.getInboxElements('Negotiating', returnIdOnly=True)
-        if still_processing:
-            self.logger.info('Not pulling more work. Still processing %d previous units' % len(still_processing))
-            return 0
-
-        self.logger.info("Pull work for sites %s: " % str(resources))
-
+        
+    def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
+        
         work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Teams'])
 
         if not work:
-            self.logger.info('No available work in parent queue.')
+            msg = 'No available work in parent queue.'
+            self._printLog(msg, printFlag, "warning")
+        return work
+    
+
+    def pullWork(self, resources=None):
+        """
+        Pull work from another WorkQueue to be processed
+
+        If resources passed in get work for them, if not available resources
+        from get from wmbs.
+        """
+        if self.pullWorkConditionCheck() == False:
             return 0
+        
+        (resources, jobCounts) = self.freeResouceCheck(resources)
+        if (resources, jobCounts) == (False, False):
+            return 0
+        
+        self.logger.info("Pull work for sites %s: " % str(resources))
+        work = self.getAvailableWorkfromParent(resources, jobCounts)
+        if not work:
+            return 0
+        
         work = self._assignToChildQueue(self.params['QueueURL'], *work)
 
         return len(work)

@@ -22,12 +22,12 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.ResubmitBlock import ResubmitBlock
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
-class ResubmitBlockTest(EmulatedUnitTest):
+class ResubmitBlockTest(EmulatedUnitTestCase):
     """
     _ResubmitBlockTest
     Tests for WorkQueue splitting for Resubmission workflows

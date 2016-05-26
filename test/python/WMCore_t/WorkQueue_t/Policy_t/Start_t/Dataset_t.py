@@ -15,7 +15,7 @@ from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
 from WMCore.WorkQueue.WorkQueueExceptions import *
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.EmulatedUnitTest import EmulatedUnitTest
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -23,7 +23,7 @@ parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
 parentProcArgs.update(IncludeParents="True")
 
 
-class DatasetTestCase(EmulatedUnitTest):
+class DatasetTestCase(EmulatedUnitTestCase):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=5)
 
     def setUp(self):

@@ -520,8 +520,7 @@ class WMTaskHelper(TreeHelper):
 
         return splittingParams
 
-    def setJobResourceInformation(self, timePerEvent=None,
-                                  memoryReq=None, sizePerEvent=None):
+    def setJobResourceInformation(self, timePerEvent=None, sizePerEvent=None, memoryReq=None):
         """
         _setJobResourceInformation_
 
@@ -530,14 +529,23 @@ class WMTaskHelper(TreeHelper):
         disk usage per processing unit (e.g. size per event).
         """
         performanceParams = getattr(self.data.input.splitting, "performance")
-        performanceParams.timePerEvent = timePerEvent \
-                                         or getattr(performanceParams, "timePerEvent", None)
-        if memoryReq:
-            memoryReq = int(memoryReq)
-        performanceParams.memoryRequirement = memoryReq \
-                                              or getattr(performanceParams, "memoryRequirement", None)
-        performanceParams.sizePerEvent = sizePerEvent \
-                                         or getattr(performanceParams, "sizePerEvent", None)
+        if timePerEvent or getattr(performanceParams, "timePerEvent", None):
+            performanceParams.timePerEvent = timePerEvent or getattr(performanceParams, "timePerEvent")
+        if sizePerEvent or getattr(performanceParams, "sizePerEvent", None):
+            performanceParams.sizePerEvent = sizePerEvent or getattr(performanceParams, "sizePerEvent")
+
+        # special handling for memory overwrite during assignment
+        if isinstance(memoryReq, dict):
+            taskMemory = memoryReq.get(self.name())
+        else:
+            taskMemory = memoryReq
+        if taskMemory or getattr(performanceParams, "memoryRequirement", None):
+            performanceParams.memoryRequirement = taskMemory or getattr(performanceParams, "memoryRequirement")
+
+        for task in self.childTaskIterator():
+            task.setJobResourceInformation(memoryReq=memoryReq)
+
+        return
 
     def addGenerator(self, generatorName, **settings):
         """
@@ -1309,6 +1317,29 @@ class WMTaskHelper(TreeHelper):
         Get the task processing string
         """
         return getattr(self.data.parameters, 'processingString', None)
+
+    def setNumberOfCores(self, cores):
+        """
+        _setNumberOfCores_
+
+        Set number of cores for each CMSSW step in this task and its children
+        """
+        if self.taskType() in ['Processing', 'Production', 'Skim']:
+            if isinstance(cores, dict):
+                taskCores = cores.get(self.name())
+            else:
+                taskCores = cores
+
+            if taskCores:
+                for stepName in self.listAllStepNames():
+                    stepHelper = self.getStepHelper(stepName)
+                    if stepHelper.stepType() == "CMSSW":
+                        stepHelper.setNumberOfCores(taskCores)
+
+        for task in self.childTaskIterator():
+            task.setNumberOfCores(cores)
+
+        return
 
     def setAcquisitionEra(self, era, parentAcquisitionEra=None):
         """

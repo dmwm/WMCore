@@ -413,13 +413,11 @@ class Assign(WebAPI):
         blockCloseMaxFiles = int(kwargs.get("BlockCloseMaxFiles", helper.getBlockCloseMaxFiles()))
         blockCloseMaxEvents = int(kwargs.get("BlockCloseMaxEvents", helper.getBlockCloseMaxEvents()))
         blockCloseMaxSize = int(kwargs.get("BlockCloseMaxSize", helper.getBlockCloseMaxSize()))
-
         helper.setBlockCloseSettings(blockCloseMaxWaitTime, blockCloseMaxFiles,
                                      blockCloseMaxEvents, blockCloseMaxSize)
 
+        helper.setMemoryAndCores(kwargs.get("Memory"), kwargs.get("Multicore"))
         helper.setDashboardActivity(kwargs.get("Dashboard", ""))
-        # set Task properties if they are exist
-        # TODO: need to define the task format (maybe kwargs["tasks"]?)
         helper.setTaskProperties(kwargs)
 
         Utilities.saveWorkload(helper, request['RequestWorkflow'], self.wmstatWriteURL)

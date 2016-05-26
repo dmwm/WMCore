@@ -185,10 +185,13 @@ class DataMap_t(unittest.TestCase):
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
         self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
-        fwjrSamples = ["HarvestSuccessFwjr.json", 
+        fwjrSamples = ["ErrorCodeFail.json",
+                       "FailedByAgent.json", 
+                       "HarvestSuccessFwjr.json", 
                        "LogCollectFailedFwjr.json", "LogCollectSuccessFwjr.json",
                        "MergeFailedFwjr.json", "MergeSuccessFwjr.json",
-                       "ProcessingFailedFwjr.json", "ProcessingSuccessFwjr.json",
+                       "NoJobReportFail.json",
+                       "ProcessingFailedFwjr.json", "ProcessingPerformanceFailed.json", "ProcessingSuccessFwjr.json",
                        "ProductionFailedFwjr.json", "ProductionSuccessFwjr.json",
                        "SkimSuccessFwjr.json"]
         for sample in fwjrSamples:
@@ -201,6 +204,7 @@ class DataMap_t(unittest.TestCase):
             job['doc'] = {"fwjr": fwjr["fwjr"], "jobtype": fwjr["jobtype"], 
                       "jobstate": fwjr['jobstate'], "timestamp": fwjr["timestamp"]}
             newData =createArchiverDoc(job)
+            print("\n\n==========\n%s" % sPath)
             pprint(newData)
         
 if __name__ == '__main__':

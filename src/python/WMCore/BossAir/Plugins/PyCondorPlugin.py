@@ -8,10 +8,10 @@ For glide-in use.
 from __future__ import division
 
 import os
+import os.path
 import re
 import time
 import Queue
-import os.path
 import logging
 import threading
 import traceback
@@ -145,11 +145,11 @@ class PyCondorPlugin(BasePlugin):
         stateDict = {'New': 'Pending',
                      'Idle': 'Pending',
                      'Running': 'Running',
-                     'Held': 'Error',
+                     'Removed': 'Running',
                      'Complete': 'Complete',
+                     'Held': 'Error',
                      'Error': 'Error',
                      'Timeout': 'Error',
-                     'Removed': 'Running',
                      'Unknown': 'Error'}
 
         # This call is optional but needs to for testing
@@ -388,72 +388,75 @@ class PyCondorPlugin(BasePlugin):
         # unordered list of jobs with random sandboxes.
         # We intend to sort them by sandbox.
 
-        # We also need to do a secondary sort by number of cores
-        # because we can have jobs with different number of cores
-        # and the same sandbox and they cannot be submitted together.
+        # Do a secondary sort for numberOfCores and also for
+        # highIO jobs, they need to be submitted separately.
 
         submitDict = {}
         nSubmits = 0
         for job in jobs:
             sandbox = job['sandbox']
-            numberOfCores = job.get('numberOfCores', 1)
-            if not sandbox in submitDict.keys():
+            numberOfCores = job['numberOfCores']
+            highIOjob = job['highIOjob']
+            if sandbox not in submitDict.keys():
                 submitDict[sandbox] = {}
-            if not numberOfCores in submitDict[sandbox]:
-                submitDict[sandbox][numberOfCores] = []
-            submitDict[sandbox][numberOfCores].append(job)
+            if numberOfCores not in submitDict[sandbox]:
+                submitDict[sandbox][numberOfCores] = {}
+            if highIOjob not in submitDict[sandbox][numberOfCores]:
+                submitDict[sandbox][numberOfCores][highIOjob] = []
+
+            submitDict[sandbox][numberOfCores][highIOjob].append(job)
 
 
         # Now submit the bastards
         queueError = False
         for sandbox in submitDict.keys():
             for numberOfCores in submitDict[sandbox].keys():
-                jobList = submitDict[sandbox][numberOfCores]
-                if queueError:
-                    # If the queue has failed, then we must not process
-                    # any more jobs this cycle.
-                    break
-                for jobsReady in grouper(jobList, self.jobsPerWorker):
-                    idList = [x['id'] for x in jobsReady]
-                    jdlList = self.makeSubmit(jobList=jobsReady)
-                    if not jdlList:
-                        # Then we got nothing
-                        logging.error("No JDL file made!")
-                        return {'NoResult': [0]}
-                    jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
-                    with open(jdlFile, 'w') as handle:
-                        handle.writelines(jdlList)
-                    jdlFiles.append(jdlFile)
-
-                    # Now submit them
-                    logging.info("About to submit %i jobs", len(jobsReady))
-                    if self.glexecPath:
-                        command = 'CS=`which condor_submit`; '
-                        if self.glexecWrapScript:
-                            command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
-                        command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
-                        command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
-                        command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
-                        command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
-                        if self.glexecUnwrapScript:
-                            command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
-                        else:
-                            command += '%s $CS %s' % (self.glexecPath, jdlFile)
-                    else:
-                        command = "condor_submit %s" % jdlFile
-
-                    try:
-                        self.inputQueue.put({'command': command, 'idList': idList})
-                    except AssertionError as ex:
-                        msg = "Critical error: input pipeline probably closed.\n"
-                        msg += str(ex)
-                        msg += "Error Procedure: Something critical has happened in the worker process\n"
-                        msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
-                        msg += "Then refresh the worker pool\n"
-                        logging.error(msg)
-                        queueError = True
+                for jobList in submitDict[sandbox][numberOfCores].values():
+                    if queueError:
+                        # If the queue has failed, then we must not process
+                        # any more jobs this cycle.
                         break
-                    nSubmits += 1
+                    for jobsReady in grouper(jobList, self.jobsPerWorker):
+                        idList = [x['id'] for x in jobsReady]
+                        jdlList = self.makeSubmit(jobList=jobsReady)
+                        if not jdlList:
+                            # Then we got nothing
+                            logging.error("No JDL file made!")
+                            return {'NoResult': [0]}
+                        jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
+                        with open(jdlFile, 'w') as handle:
+                            handle.writelines(jdlList)
+                        jdlFiles.append(jdlFile)
+
+                        # Now submit them
+                        logging.info("About to submit %i jobs", len(jobsReady))
+                        if self.glexecPath:
+                            command = 'CS=`which condor_submit`; '
+                            if self.glexecWrapScript:
+                                command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
+                            command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
+                            command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
+                            command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
+                            command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
+                            if self.glexecUnwrapScript:
+                                command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                            else:
+                                command += '%s $CS %s' % (self.glexecPath, jdlFile)
+                        else:
+                            command = "condor_submit %s" % jdlFile
+
+                        try:
+                            self.inputQueue.put({'command': command, 'idList': idList})
+                        except AssertionError as ex:
+                            msg = "Critical error: input pipeline probably closed.\n"
+                            msg += str(ex)
+                            msg += "Error Procedure: Something critical has happened in the worker process\n"
+                            msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
+                            msg += "Then refresh the worker pool\n"
+                            logging.error(msg)
+                            queueError = True
+                            break
+                        nSubmits += 1
 
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
@@ -725,13 +728,15 @@ class PyCondorPlugin(BasePlugin):
         Kill can happen for schedd running on localhost... TBC.
         """
         sd = condor.Schedd()
-        for job in jobs:
-            logging.debug("Going to remove jobid=%i from the queue", job['jobid'])
-            try:
-                sd.act(condor.JobAction.Remove, 'WMAgent_JobID == %i' % job['jobid'])
-                logging.debug("Removed jobid=%i from the queue", job['jobid'])
-            except RuntimeError:
-                logging.warn("Error while killing job %i on the schedd", job['jobid'])
+        ad = classad.ClassAd()
+        listJobIds = [job['jobid'] for job in jobs]
+        ad['foo'] = listJobIds
+        logging.info("Killing %i jobs from the queue", len(listJobIds))
+        jobsConstraint = "member(WMAgent_JobID, %s)" % ad.lookup("foo").__repr__()
+        try:
+            sd.act(condor.JobAction.Remove, jobsConstraint)
+        except RuntimeError:
+            logging.warn("Error while killing jobs on the schedd: %s", listJobIds)
 
         return
 
@@ -972,6 +977,11 @@ class PyCondorPlugin(BasePlugin):
             jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])
         if job.get('inputDatasetLocations'):
             jdl.append('+DESIRED_CMSDataLocations = "%s"\n' % ','.join(job['inputDatasetLocations']))
+
+        # HighIO jobs
+        highIOjob = job.get('highIOjob')
+        if highIOjob:
+            jdl.append('+Requestioslots = 1\n')
 
         # Performance estimates
         if job.get('estimatedJobTime'):

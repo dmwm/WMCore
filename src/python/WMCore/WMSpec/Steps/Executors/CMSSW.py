@@ -378,7 +378,13 @@ if [ -n "$USER_TARBALL" ] ; then
     EXIT_STATUS=$?
     if [ $EXIT_STATUS -ne 0 ]; then
        echo "***\nCouldn't untar sandbox with python2: $EXIT_STATUS\n";
-       exit 74;
+       echo "***\nWill try with python2.6 as it might be an old CMSSW release!"
+       python2.6 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
+       EXIT_STATUS=$?
+       if [ $EXIT_STATUS -ne 0 ]; then
+          echo "***\nCouldn't untar sandbox with python2.6: $EXIT_STATUS\n";
+          exit 74;
+       fi
     fi
 fi
 echo "Completed SCRAM project"

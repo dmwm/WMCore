@@ -329,21 +329,14 @@ class ResourceControlUpdater(BaseWorkerThread):
         
         Translates SSB states into resource control state
         """
-        ssb2agent = {'on':    'Normal',
+        ssb2agent = {'enabled':    'Normal',
                      'drain': 'Draining',
-                     'down': 'Down',
-                     'skip': 'Down'}
+                     'disabled': 'Down',
+                     'test': 'Draining'}
+        # 'test' state behaviour varies between production and tier0 agents
+        ssb2agent['test'] = 'Normal' if self.tier0Mode else "Draining"
 
-        if stateSSB in ssb2agent:
-            return ssb2agent[stateSSB]
-        elif stateSSB == "tier0":
-            logging.debug('There is a site in tier0 status (Tier0Mode is %s)' % self.tier0Mode )
-            if self.tier0Mode: 
-                return "Normal"
-            else:
-                return "Draining"
-        else:
-            return None
+        return ssb2agent.get(stateSSB)
 
     def updateSiteState(self, siteName, state):
         """

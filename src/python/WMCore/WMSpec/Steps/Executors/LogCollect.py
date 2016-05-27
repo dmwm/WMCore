@@ -2,11 +2,12 @@
 """
 _Step.Executor.LogCollect_
 
-Implementation of an Executor for a StageOut step.
+Implementation of an Executor for a LogCollect step.
 """
 from __future__ import print_function
 
 import os
+import re
 import logging
 import signal
 import tarfile
@@ -24,6 +25,10 @@ from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.StageOutError import StageOutFailure
 
 from WMCore.Algorithms.Alarm import Alarm, alarmHandler
+
+from WMCore.WMRuntime.Tools.Scram import Scram
+
+from Utils.IterTools import grouper
 
 
 class LogCollect(Executor):
@@ -53,6 +58,10 @@ class LogCollect(Executor):
         _execute_
 
         """
+        scramCommand = self.step.application.setup.scramCommand
+        scramArch = self.step.application.setup.scramArch
+        cmsswVersion = self.step.application.setup.cmsswVersion
+
         # Are we using emulators again?
         if (emulator != None):
             return emulator.emulate( self.step, self.job )
@@ -62,38 +71,39 @@ class LogCollect(Executor):
             overrides = self.step.override.dictionary_()
 
         # Set wait to over an hour
-        waitTime  = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
-        seName    = overrides.get('se-name', "srm-cms.cern.ch")
-        pnn       = overrides.get('phedex-node', "T2_CH_CERN")
-        lfnPrefix = overrides.get('lfn-prefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
-        lfnBase   = overrides.get('lfnBase',   "/store/user/amaltaro")
-        userLogs  = overrides.get('userLogs',  False)
+        waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
-        stageOutParams = {"command": "srmv2-lcg",
-                          "se-name": seName,  "phedex-node": pnn, "lfn-prefix": lfnPrefix}
+        # Pull out StageOutMgr Overrides
+        # switch between old stageOut behavior and new, fancy stage out behavior
+        useNewStageOutCode = False
+        if 'newStageOut' in overrides and overrides.get('newStageOut'):
+            useNewStageOutCode = True
 
-        # Set EOS stage out params
-        seEOSName    = "srm-eoscms.cern.ch"
-        lfnEOSPrefix = "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms"
-        
-        stageEOSOutParams = {"command": "srmv2-lcg",
-                             "se-name": seEOSName, "phedex-node": pnn, "lfn-prefix": lfnEOSPrefix}    
+        # hardcode CERN Castor T0_CH_CERN_MSS stageout parameters
+        castorStageOutParams = {}
+        castorStageOutParams['command'] = overrides.get('command', "srmv2-lcg")
+        castorStageOutParams['option'] = overrides.get('option', "")
+        castorStageOutParams['se-name'] = overrides.get('se-name', "srm-cms.cern.ch")
+        castorStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
+        castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
 
-        # Okay, we need a stageOut Manager
+        # hardcode CERN EOS T2_CH_CERN stageout parameters
+        eosStageOutParams = {}
+        eosStageOutParams['command'] = overrides.get('command', "srmv2-lcg")
+        eosStageOutParams['option'] = overrides.get('option', "")
+        eosStageOutParams['se-name'] = overrides.get('se-name', "srm-eoscms.cern.ch")
+        eosStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
+        eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms")
+
+        # are we using the new stageout method ?
         useNewStageOutCode = False
         if getattr(self.step, 'newStageout', False) or \
             ('newStageOut' in overrides and overrides.get('newStageOut')):
             useNewStageOutCode = True
 
         try:
-            if not useNewStageOutCode:
-                # old style
-                stageOutMgr = StageOutMgr(**stageOutParams)
-                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
-                stageInMgr = StageInMgr()
-                deleteMgr = DeleteMgr()
-            else:
-                # new style (is even working ???)
+            if useNewStageOutCode:
+                # is this even working ???
                 #logging.info("LOGCOLLECT IS USING NEW STAGEOUT CODE")
                 #stageOutMgr = StageOutMgr(retryPauseTime  = self.step.retryDelay,
                 #                          numberOfRetries = self.step.retryCount,
@@ -102,139 +112,210 @@ class LogCollect(Executor):
                 #                        numberOfRetries = 0)
                 #deleteMgr = DeleteMgr(retryPauseTime  = 0,
                 #                      numberOfRetries = 0)
-                stageOutMgr = StageOutMgr(**stageOutParams)
-                stageOutEOSMgr = StageOutMgr(**stageEOSOutParams)
+                castorStageOutMgr = StageOutMgr(**castorStageOutParams)
+                eosStageOutMgr = StageOutMgr(**eosStageOutParams)
+                stageInMgr = StageInMgr()
+                deleteMgr = DeleteMgr()
+            else:
+                castorStageOutMgr = StageOutMgr(**castorStageOutParams)
+                eosStageOutMgr = StageOutMgr(**eosStageOutParams)
                 stageInMgr = StageInMgr()
                 deleteMgr = DeleteMgr()
         except Exception as ex:
-            msg = "Unable to load StageIn/Out/Delete Impl: %s" % str(ex)
+            msg = "Unable to load StageOut/Delete Impl: %s" % str(ex)
             logging.error(msg)
             raise WMExecutionFailure(60312, "MgrImplementationError", msg)
 
-        # Now we need the logs
-        logs = []
-        for log in self.job["input_files"]:
-            logs.append({"LFN": log["lfn"]})
-
-        # create output tar file
+        # prepare output tar file
         taskName = self.report.getTaskName().split('/')[-1]
         host = socket.gethostname().split('.')[0]
         tarName = '%s-%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, host , self.job["counter"])
         tarLocation = os.path.join(self.stepSpace.location, tarName)
-        tarFile = tarfile.open(tarLocation, 'w:')
 
-        addedFilesToTar = 0
-        for log in logs:
-
-            # stage in logArchive from mass storage
-            # give up after timeout of 10 minutes
-            signal.signal(signal.SIGALRM, alarmHandler)
-            signal.alarm(600)
-            logArchive = None
+        # check if the cmsswVersion supports edmCopyUtil (min CMSSW_8_X)
+        result = re.match("CMSSW_([0-9]+)_([0-9]+)_([0-9]+).*", cmsswVersion)
+        useEdmCopyUtil = False
+        if result:
             try:
-                logArchive = stageInMgr(**log)
-                self.report.addInputFile(sourceName = "logArchives", lfn = log['LFN'])
+                if int(result.group(1)) >= 8:
+                    useEdmCopyUtil = True
+            except ValueError:
+                pass
+
+        # setup Scram needed to run edmCopyUtil
+        if useEdmCopyUtil:
+            scram = Scram(
+                command=scramCommand,
+                version=cmsswVersion,
+                initialise=self.step.application.setup.softwareEnvironment,
+                directory=self.step.builder.workingDir,
+                architecture=scramArch,
+                )
+            logging.info("Running scram")
+            try:
+                projectOutcome = scram.project()
+            except Exception as ex:
+                msg = "Exception raised while running scram.\n"
+                msg += str(ex)
+                logging.critical("Error running SCRAM")
+                logging.critical(msg)
+                raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
+
+            if projectOutcome > 0:
+                msg = scram.diagnostic()
+                logging.critical("Error running SCRAM")
+                logging.critical(msg)
+                raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
+            runtimeOutcome = scram.runtime()
+            if runtimeOutcome > 0:
+                msg = scram.diagnostic()
+                logging.critical("Error running SCRAM")
+                logging.critical(msg)
+                raise WMExecutionFailure(50513, "ScramSetupFailure", msg)
+
+        # iterate through input files
+        localLogs = []
+        deleteLogArchives = []
+        if useEdmCopyUtil:
+            numberOfFilesPerCopy = 10
+        else:
+            numberOfFilesPerCopy = 1
+        for logs in grouper(self.job["input_files"], numberOfFilesPerCopy):
+
+            copyCommand = "env X509_USER_PROXY=%s edmCopyUtil" % os.environ.get('X509_USER_PROXY', None)
+            for log in logs:
+                copyCommand += " %s" % log['lfn']
+            copyCommand += " %s" % self.step.builder.workingDir
+
+            # give up after timeout of 1 minute per input file
+            signal.signal(signal.SIGALRM, alarmHandler)
+            signal.alarm(60 * numberOfFilesPerCopy)
+
+            filesCopied = False
+            try:
+                if useEdmCopyUtil:
+                    logging.info("Running edmCopyUtil")
+                    retval = scram(copyCommand)
+                    if retval == 0:
+                        filesCopied = True
+                else:
+                    logging.info("Running stageIn")
+                    for log in logs:
+                        fileInfo = {"LFN": log['lfn']}
+                        logArchive = stageInMgr(**fileInfo)
+                        if logArchive:
+                            filesCopied = True
             except Alarm:
-                msg = "Indefinite hang during stageIn of LogCollect"
-                logging.error(msg)
-                self.report.addError(self.stepName, 60407, "LogCollectTimeout", msg)
-                self.report.persist("Report.pkl")
-            except StageOutFailure as ex:
-                msg = "Unable to StageIn %s" % log['LFN']
-                logging.error(msg)
-                # Don't do anything other then record it
-                self.report.addSkippedFile(log.get('PFN', None), log['LFN'])
+                logging.error("Indefinite hang during edmCopyUtil/stageIn of logArchives")
+            except StageOutFailure:
+                logging.error("Unable to stageIn logArchives")
             except Exception:
                 raise
+
             signal.alarm(0)
 
-            if logArchive:
-                addedFilesToTar =+ 1
-                path = logArchive['PFN'].split('/')
-                tarFile.add(name = logArchive["PFN"],
+            if filesCopied:
+                for log in logs:
+                    localLogs.append(os.path.join(self.step.builder.workingDir, os.path.basename(log['lfn'])))
+                    deleteLogArchives.append(log)
+                    self.report.addInputFile(sourceName = "logArchives", lfn = log['lfn'])
+            else:
+                logging.error("Unable to copy logArchives to local disk")
+                if useEdmCopyUtil:
+                    with open('scramOutput.log', 'r') as f:
+                        logging.error("Scram output: %s", f.read())
+                for log in logs:
+                    self.report.addSkippedFile(log['lfn'], None)
+
+        # create tarfile if any logArchive copied in
+        if localLogs:
+            tarFile = tarfile.open(tarLocation, 'w:')
+            for log in localLogs:
+                path = log.split('/')
+                tarFile.add(name = log,
                             arcname = os.path.join(path[-3],
                                                    path[-2],
-                                                   os.path.basename(logArchive['PFN'])))
-
-                # delete logArchive from local disk
-                os.remove(logArchive["PFN"])
-
-        tarFile.close()
-
-        if addedFilesToTar == 0:
-            # Then we have no output, all the files failed => fail job
-            msg = "No logs staged in during LogCollect step"
+                                                   path[-1]))
+                os.remove(log)
+            tarFile.close()
+        else:
+            msg = "Unable to copy any logArchives to local disk"
             logging.error(msg)
             raise WMExecutionFailure(60312, "LogCollectError", msg)
 
-        # we got this far, delete input
-        for log in logs:
 
-            # delete logArchive from mass storage
-            # give up after timeout of 5 minutes
-            signal.signal(signal.SIGALRM, alarmHandler)
-            signal.alarm(300)
-            try:
-                fileToDelete = {"LFN": log["lfn"],
-                                "PFN": None,
-                                "SEName": None,
-                                "PNN": None,
-                                "StageOutCommand": None}
-                deleteMgr(fileToDelete = fileToDelete)
-            except Alarm:
-                msg = "Indefinite hang during delete of LogCollect"
-                logging.error(msg)
-            except Exception as ex:
-                msg = "Unable to delete files:\n"
-                msg += str(ex)
-                logging.error(msg)
-            signal.alarm(0)
-
+        # now staging out the LogCollect tarfile
+        logging.info("Staging out LogCollect tarfile to Castor and EOS")
         now = datetime.datetime.now()
-        if userLogs:
-            lfn = "%s/%s/logs/%s" % (lfnBase, self.report.data.workload, os.path.basename(tarLocation))
-        else:
-            lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
-                                                         self.report.data.workload,
-                                                         os.path.basename(tarLocation))
+        lfn = "/store/logs/prod/%i/%.2i/%s/%s/%s" % (now.year, now.month, "WMAgent",
+                                                     self.report.data.workload,
+                                                     os.path.basename(tarLocation))
 
         tarInfo = {'LFN'    : lfn,
                    'PFN'    : tarLocation,
                    'SEName' : None,
                    'PNN'    : None,
                    'GUID'   : None}
-        tarInfoEOS = tarInfo.copy()
 
         # perform mandatory stage out to CERN Castor
         signal.signal(signal.SIGALRM, alarmHandler)
         signal.alarm(waitTime)
         try:
-            stageOutMgr(tarInfo)
-            self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
+            castorStageOutMgr(tarInfo)
         except Alarm:
-            msg = "Indefinite hang during stageOut of LogCollect"
+            msg = "Indefinite hang during stageOut of LogCollect to Castor"
             logging.error(msg)
             raise WMExecutionFailure(60409, "LogCollectTimeout", msg)
         except Exception as ex:
-            msg = "Unable to stage out log archive:\n"
+            msg = "Unable to stageOut LogCollect to Castor:\n"
             msg += str(ex)
-            print("MSG: %s" % msg)
+            logging.error(msg)
             raise WMExecutionFailure(60408, "LogCollectStageOutError", msg)
         signal.alarm(0)
 
-        # then, perform best effort stage out to CERN EOS
-        try:
-            stageOutEOSMgr(tarInfoEOS)
-        except Exception as ex:
-            msg = "Unable to stage out log archive to EOS:\n"
-            msg += str(ex)
-            print("WARNING: %s" % msg)
-            
-        # Add to report
+        # add to job report
+        self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']
         outputRef.output.location = tarInfo['PNN']
         outputRef.output.lfn = tarInfo['LFN']
+
+
+        tarInfo = {'LFN'    : lfn,
+                   'PFN'    : tarLocation,
+                   'SEName' : None,
+                   'PNN'    : None,
+                   'GUID'   : None}
+
+        # then, perform best effort stage out to CERN EOS
+        signal.signal(signal.SIGALRM, alarmHandler)
+        signal.alarm(waitTime)
+        try:
+            eosStageOutMgr(tarInfo)
+        except Alarm:
+            logging.error("Indefinite hang during stageOut of LogCollect to EOS")
+        except Exception as ex:
+            logging.error("Unable to stageOut LogCollect to EOS:\n", ex)
+        signal.alarm(0)
+
+        # we got this far, delete input
+        for log in deleteLogArchives:
+
+            # give up after timeout of 1 minutes
+            signal.signal(signal.SIGALRM, alarmHandler)
+            signal.alarm(60)
+            try:
+                fileToDelete = {'LFN': log['lfn'],
+                                'PFN': None,
+                                'SEName': None,
+                                'PNN': None,
+                                'StageOutCommand': None}
+                deleteMgr(fileToDelete = fileToDelete)
+            except Alarm:
+                logging.error("Indefinite hang during delete of logArchive")
+            except Exception as ex:
+                logging.error("Unable to delete logArchive: %s", ex)
+            signal.alarm(0)
 
         return
 

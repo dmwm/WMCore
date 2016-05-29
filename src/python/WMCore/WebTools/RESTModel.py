@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # I'm afraid *args, **kwargs magic is needed here
-# pylint: disable=W0142
 #-*- coding: ISO-8859-1 -*-
 """
 Rest Model abstract implementation
@@ -235,13 +234,26 @@ class RESTModel(WebAPI):
             raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         input_data = {}
 
+        # VK, we must read input kwargs/args as string types
+        # rather then unicode one. This is important for cx_Oracle
+        # driver which will place parameters into binded queries
+        # due to mixmatch (string vs unicode) between python and Oracle
+        # we must pass string parameters.
         for a in self.methods[verb][method]['args']:
             if a in input_kwargs.keys():
-                input_data[a] = input_kwargs[a]
+                v = input_kwargs[a]
+                if isinstance(v, basestring):
+                    input_data[a] = str(v)
+                else:
+                    input_data[a] = v
                 input_kwargs.pop(a)
             else:
                 if len(input_args):
-                    input_data[a] = input_args.pop(0)
+                    v = input_args.pop(0)
+                    if isinstance(v, basestring):
+                        input_data[a] = str(v)
+                    else:
+                        input_data[a] = v
         if input_kwargs:
             raise HTTPError(400, 'Invalid input: Input arguments failed sanitation.')
         self.debug('%s raw data: %s' % (method, {'args': input_args, 'kwargs': input_kwargs}))

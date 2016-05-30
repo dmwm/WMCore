@@ -1,3 +1,54 @@
+1.0.16 to 1.0.16.crab3:
+  - Merge pull request #6898 from emaszs/1.0.16_crab
+  - Merge Justas' patch for untarring with python 2.6 for older releases
+  - Merge pull request #6891 from emaszs/1.0.16_crab
+  - Add Dashboard dir to crabtaskworker dependencies
+  - 1.0.16.crab2
+  - Merge pull request #6884 from mmascher/callable_config
+  - Allow to use callables as configuration params
+  - 1.0.16.crab1
+  - Merge pull request #6873 from emaszs/1.0.16_crab_pr3
+  - Merge pull request #6872 from emaszs/1.0.16_crab_pr2
+  - Merge pull request #6869 from emaszs/1.0.16_crab
+  - Use system environment for gfal2 stageout
+  - Make sure httplib2 is not required if using pycurl
+  - Allow pycurl_manager.py to accepd encoded string as data. Fixes #6467
+  - 1.0.16.pre3
+  - Merge pull request #6842 from ticoann/rewrite_view
+  - Merge pull request #6839 from BrunoCoimbra/master
+  - Merge pull request #6836 from amaltaro/wmstatserl-moreviews
+  - Merge pull request #6834 from amaltaro/remove-wmstatsviews2
+  - add rewrite rule for erlang view
+  - Merge pull request #6841 from amaltaro/stupid-log
+  - Remove logging lines hitting couch
+  - Include WMStats allWorkflows view in erlang
+  - Merge pull request #6833 from dmwm/revert-6832-temp_debug_reqmgr2_error
+  - Translated two more WMStats views to Erlang
+  - Remove WMStats js views that are available in erlang already
+  - 1.0.16.pre2
+  - Revert "temp debug patch - need to be reverted later"
+  - Merge pull request #6832 from ticoann/temp_debug_reqmgr2_error
+  - temp debug patch - need to be reverted later
+  - Merge pull request #6831 from ticoann/add_new_class_def
+  - add new class def
+  - Merge pull request #6825 from juztas/depsRemove
+  - Merge pull request #6828 from amaltaro/bump-wqe-size
+  - Merge pull request #6809 from ticoann/ad_processing_option
+  - Merge pull request #6826 from ticoann/handle_unexpected_format
+  - Increase the WQE size for MC policy
+  - handle unexpected fwjr performance value
+  - Merge pull request #6815 from ticoann/fix_alert_error
+  - Merge pull request #6820 from ticoann/add_requestor_filter
+  - add requestor view
+  - No need these deps in apmon
+  - Merge pull request #6819 from jha2/fix_testSingleChunksSplit
+  - Merge pull request #6818 from ticoann/fix_indentaion
+  - Starting point for ResubmitBlockTest
+  - fix indentaiton of converting fwjr
+  - remove send alert
+  - 1.0.16.pre1
+  - add defualt ProcessingString(Version)
+
 1.0.16 to 1.0.16.crab2:
   - Merge pull request #6884 from mmascher/callable_config
   - Allow to use callables as configuration params

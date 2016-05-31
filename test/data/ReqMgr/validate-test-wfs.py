@@ -197,9 +197,12 @@ def compareLists(d1, d2, d3=[], key=None):
     elif isinstance(d1, dict):
         if len(d1) != len(d2) or len(d1) != len(d3):
             return outcome
-        for dset in d1:
-            if d1[dset][key] != d2[dset][key] or d1[dset][key] != d3[dset][key]:
-                return outcome
+        try:
+            for dset in d1:
+                if d1[dset][key] != d2[dset][key] or d1[dset][key] != d3[dset][key]:
+                    return outcome
+        except KeyError:
+            return outcome
     else:
         print("Data type is neither a list nor dict: %s" % type(d1))
         return outcome
@@ -215,18 +218,20 @@ def compareSpecial(d1, d2, d3=[], key=None):
         print("You must provide a dict data type!")
 
     outcome = 'NOPE'
-    if key == 'lumis':
-        for dset in d2:
-            if d1[key] != d2[dset][key]:
-                return outcome
+    try:
+        if key == 'lumis':
+            for dset in d2:
+                if d1[key] != d2[dset][key]:
+                    return outcome
 
-    if key == 'PNN':
-        for dset in d2:
-            for block, value in d2[dset].iteritems():
-                if isinstance(value, dict):
-                    if d1[dset][block][key] != d2[dset][block][key]:
-                        return outcome
-
+        if key == 'PNN':
+            for dset in d2:
+                for block, value in d2[dset].iteritems():
+                    if isinstance(value, dict):
+                        if d1[dset][block][key] != d2[dset][block][key]:
+                            return outcome
+    except KeyError:
+        return outcome
     return 'ok'
 
 
@@ -347,6 +352,9 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
         dbsOutput = getDbsInfo(dset, cmswebUrl)
         dbsInfo.setdefault(dset, {})
         for item in dbsOutput[dset]['filesummaries']:
+            # hack while https://github.com/dmwm/DBS/issues/513 is not fixed
+            if item is None:
+                continue
             dbsInfo[dset].setdefault('dsetSize', item['file_size'])
             dbsInfo[dset].setdefault('numBlocks', item['num_block'])
             dbsInfo[dset].setdefault('numFiles', item['num_file'])

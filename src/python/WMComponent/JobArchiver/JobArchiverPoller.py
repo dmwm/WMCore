@@ -74,7 +74,6 @@ class JobArchiverPoller(BaseWorkerThread):
             msg = "Unhandled exception while setting up logDir and/or uploadPublishDir!\n"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             try:
                 logging.debug("Directory: %s", self.logDir)
                 logging.debug("Config: %s", config)
@@ -247,7 +246,6 @@ class JobArchiverPoller(BaseWorkerThread):
         if not cacheDir or not os.path.isdir(cacheDir):
             msg = "Could not find jobCacheDir %s" % (cacheDir)
             logging.error(msg)
-            self.sendAlert(1, msg=msg)
             return
 
         cacheDirList = os.listdir(cacheDir)
@@ -273,7 +271,6 @@ class JobArchiverPoller(BaseWorkerThread):
             msg += str("logDir: %s\n" % (logDir))
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             raise JobArchiverPollerException(msg)
 
         # Otherwise we have something in there
@@ -294,7 +291,6 @@ class JobArchiverPoller(BaseWorkerThread):
             msg += "Tarfile: %s\n" % os.path.join(logDir, tarName)
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             logging.debug("cacheDirList: %s", cacheDirList)
             raise JobArchiverPollerException(msg)
 
@@ -305,7 +301,6 @@ class JobArchiverPoller(BaseWorkerThread):
             msg += "CacheDir: %s\n" % cacheDir
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             raise JobArchiverPollerException(msg)
 
         return

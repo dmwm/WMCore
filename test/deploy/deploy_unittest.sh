@@ -78,6 +78,5 @@ else
     source ./env_unittest.sh
     $manage start-services
 
-    echo "--- when prompted type 'passwd' (without ')"
-    mysql -u unittestagent -p --sock $INSTALL_DIR/current/install/mysql/logs/mysql.sock --exec "create database wmcore_unittest"
+    mysql -u unittestagent --password=passwd --sock $INSTALL_DIR/current/install/mysql/logs/mysql.sock --exec "create database wmcore_unittest"
 fi

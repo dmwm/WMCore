@@ -82,7 +82,6 @@ def apmonFree():
     global APMONINSTANCE
     global APMONINIT
     if APMONINSTANCE is not None:
-        time.sleep(1)
         try:
             APMONINSTANCE.free()
         except Exception:

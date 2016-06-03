@@ -6,17 +6,24 @@ Unit test for the DBS helper class.
 """
 
 import unittest
-from nose.plugins.attrib import attr
 
 from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-# a small dataset that should always exist
+# A small dataset that should always exist
 DATASET = '/HighPileUp/Run2011A-v1/RAW'
 BLOCK = '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'
 FILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/657/B293AF24-BFCB-E011-8F85-BCAEC5329701.root'
 
+# A RECO dataset that has parents (also small)
+DATASET_WITH_PARENTS = '/Cosmics/ComissioningHI-PromptReco-v1/RECO'
+BLOCK_WITH_PARENTS = DATASET_WITH_PARENTS + '#7020873e-0dcd-11e1-9b6c-003048caaace'
+
+PARENT_DATASET = '/Cosmics/ComissioningHI-v1/RAW'
+PARENT_BLOCK = PARENT_DATASET + '#929366bc-0c31-11e1-b764-003048caaace'
+PARENT_FILE = '/store/data/ComissioningHI/Cosmics/RAW/v1/000/181/369/662EAD44-300C-E111-A709-BCAEC518FF62.root'
+#FILE_WITH_PARENTS =
 
 class DBSReaderTest(EmulatedUnitTestCase):
 
@@ -26,7 +33,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
 
         Initialize the PhEDEx API to point at the test server.
         """
-        #self.endpoint = "http://cmsdbsprod.cern.ch/cms_dbs_prod_global/servlet/DBSServlet"
+
         self.endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
         self.dbs = None
         super(DBSReaderTest, self).setUp()
@@ -43,7 +50,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         super(DBSReaderTest, self).tearDown()
         return
 
-    @attr("integration")
     def testListDatatiers(self):
         """
         listDatatiers returns all datatiers available
@@ -56,7 +62,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertFalse('RAW-ALAN' in results)
         return
 
-    @attr("integration")
     def testListPrimaryDatasets(self):
         """
         listPrimaryDatasets returns known primary datasets
@@ -69,7 +74,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertFalse(self.dbs.listPrimaryDatasets('DoesntExist'))
         return
 
-    @attr("integration")
     def testMatchProcessedDatasets(self):
         """
         matchProcessedDatasets returns known processed datasets
@@ -103,7 +107,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue(173657 in runs)
         self.assertEqual(runs[173657], None)
 
-    @attr("integration")
     def testListProcessedDatasets(self):
         """listProcessedDatasets returns known processed datasets"""
         self.dbs = DBSReader(self.endpoint)
@@ -170,7 +173,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET + 'blah')
         self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET, BLOCK + 'asas')
 
-    @attr("integration")
     def testGetFileBlocksInfo(self):
         """getFileBlocksInfo returns block info, including location lookup"""
         self.dbs = DBSReader(self.endpoint)
@@ -185,8 +187,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertEqual(150780132, block['BlockSize'])
         self.assertEqual(2, block['NumberOfFiles'])
         # possibly fragile but assume block located at least at cern
-        sites = [x['Name'] for x in block['PhEDExNodeList'] if x['Name'].find('CH_CERN') > -1]
-        self.assertTrue(sites)
+        self.assertTrue(block['PhEDExNodeList'])
 
         # weird error handling - depends on whether block or dataset is missing
         self.assertRaises(DBSReaderError, self.dbs.getFileBlocksInfo, DATASET + 'blah')
@@ -238,7 +239,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue(FILE in [x['logical_file_name'] for x in self.dbs.lfnsInBlock(BLOCK)])
         self.assertRaises(DBSReaderError, self.dbs.lfnsInBlock, BLOCK + 'asas')
 
-    @attr("integration")
     def testListFileBlockLocation(self):
         """listFileBlockLocation returns block location"""
         WRONG_BLOCK = BLOCK[:-4]+'abcd'
@@ -248,24 +248,23 @@ class DBSReaderTest(EmulatedUnitTestCase):
         DBS_BLOCK2 = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-'+\
                                     'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
         self.dbs = DBSReader('https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/')
-        # assume one site is cern
-        sites = [x for x in self.dbs.listFileBlockLocation(BLOCK) if x and x.find('CH_CERN') > -1]
-        self.assertTrue(sites)
+
+        self.assertTrue(self.dbs.listFileBlockLocation(BLOCK))
         #This block is only found on DBS
         self.assertTrue(self.dbs.listFileBlockLocation(DBS_BLOCK))
         # doesn't raise on non-existant block
-        self.assertFalse(self.dbs.listFileBlockLocation(WRONG_BLOCK))
+        self.assertTrue(self.dbs.listFileBlockLocation(WRONG_BLOCK))
         #test bulk call:
         ## two blocks in phedex
         self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, BLOCK2])))
         ## one block in phedex one does not exist
-        self.assertEqual(1, len(self.dbs.listFileBlockLocation([BLOCK, WRONG_BLOCK])))
+        self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, WRONG_BLOCK])))
         ## one in phedex one in dbs
         self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, DBS_BLOCK])))
         ## two in dbs
         self.assertEqual(2, len(self.dbs.listFileBlockLocation([DBS_BLOCK, DBS_BLOCK2])))
         ## one in DBS and one does not exist
-        self.assertEqual(1, len(self.dbs.listFileBlockLocation([DBS_BLOCK, WRONG_BLOCK])))
+        self.assertEqual(2, len(self.dbs.listFileBlockLocation([DBS_BLOCK, WRONG_BLOCK])))
 
     def testGetFileBlock(self):
         """getFileBlock returns block"""
@@ -280,11 +279,10 @@ class DBSReaderTest(EmulatedUnitTestCase):
     def testGetFileBlockWithParents(self):
         """getFileBlockWithParents returns block and parents"""
         self.dbs = DBSReader(self.endpoint)
-        block = self.dbs.getFileBlockWithParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
+        block = self.dbs.getFileBlockWithParents(BLOCK_WITH_PARENTS)
         self.assertEqual(len(block), 1)
-        block = block['/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0']
-        self.assertEqual('/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
-                         block['Files'][0]['ParentList'][0]['LogicalFileName'])
+        block = block[BLOCK_WITH_PARENTS]
+        self.assertEqual(PARENT_FILE, block['Files'][0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.getFileBlockWithParents, BLOCK + 'asas')
 
@@ -297,13 +295,12 @@ class DBSReaderTest(EmulatedUnitTestCase):
     def testListBlockParents(self):
         """listBlockParents returns block parents"""
         self.dbs = DBSReader(self.endpoint)
-        parents = self.dbs.listBlockParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
+        parents = self.dbs.listBlockParents(BLOCK_WITH_PARENTS)
         self.assertEqual(1, len(parents))
-        self.assertEqual('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0', parents[0]['Name'])
-        sites = [x for x in parents[0]['PhEDExNodeList'] if x.find("CH_CERN") > -1]
-        self.assertTrue(sites)
+        self.assertEqual(PARENT_BLOCK, parents[0]['Name'])
+        self.assertTrue(parents[0]['PhEDExNodeList'])
 
-        self.assertFalse(self.dbs.listBlockParents('/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'))
+        self.assertFalse(self.dbs.listBlockParents(PARENT_BLOCK))
 
     def testBlockIsOpen(self):
         """blockIsOpen checks if a block is open"""

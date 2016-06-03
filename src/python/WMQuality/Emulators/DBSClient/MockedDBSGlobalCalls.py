@@ -6,7 +6,8 @@ endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
 # Datasets to get all blocks, array, and lumis from
 datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW', '/Cosmics/ComissioningHI-v1/RAW',
-            '/Cosmics/ComissioningHI-PromptReco-v1/RECO', '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO']
+            '/Cosmics/ComissioningHI-PromptReco-v1/RECO', '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO',
+           ]
 
 calls = [['listDataTiers'],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace'}],
@@ -36,9 +37,15 @@ calls = [['listDataTiers'],
           {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace', 'detail': True,
            'validFileOnly': 1}],
          ['listFileArray', {'logical_file_name': [
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root',
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/04FBE4D8-2DCF-E411-B827-02163E0124D5.root',
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root'],
+             'detail': True}],
+         ['listFileArray', {'logical_file_name': [
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/04FBE4D8-2DCF-E411-B827-02163E0124D5.root'],
+             'detail': True}],
+         ['listFileArray', {'logical_file_name': [
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root'],
+             'detail': True}],
+         ['listFileArray', {'logical_file_name': [
              u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/FA4E40C0-2DCF-E411-AD1A-02163E012186.root'],
              'detail': True}],
          ['listDatasets', {'primary_ds_name': 'Jet', 'data_tier_name': 'RAW'}],
@@ -46,9 +53,12 @@ calls = [['listDataTiers'],
          ['listDatasets', {'primary_ds_name': 'Jet', 'data_tier_name': 'blah'}],
          ['listDatasets', {'primary_ds_name': 'blah', 'data_tier_name': 'RAW'}],
          ['listFileLumiArray', {'logical_file_name': [
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root',
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/04FBE4D8-2DCF-E411-B827-02163E0124D5.root',
-             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root']}],
+         ['listFileLumiArray', {'logical_file_name': [
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/04FBE4D8-2DCF-E411-B827-02163E0124D5.root']}],
+         ['listFileLumiArray', {'logical_file_name': [
+             u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root']}],
+         ['listFileLumiArray', {'logical_file_name': [
              u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/FA4E40C0-2DCF-E411-AD1A-02163E012186.root']}],
          ['listFileLumis',
           {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaace', 'validFileOnly': 1}],
@@ -83,4 +93,4 @@ calls = [['listDataTiers'],
            'dataset': '/HighPileUp/Run2011A-v1/RAW'}],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#blah'}],
          ['listBlocks', {'detail': True, 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
-        ]
+         ]

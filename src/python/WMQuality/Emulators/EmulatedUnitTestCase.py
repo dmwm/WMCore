@@ -17,11 +17,9 @@ class EmulatedUnitTestCase(unittest.TestCase):
     """
     Class that can be imported to switch to 'mock'ed versions of
     services.
-
-    FIXME: For now only DBS is mocked
     """
 
-    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=False):  # FIXME: Default to False for both?
+    def __init__(self, methodName='runTest', mockDBS=True, mockPhEDEx=True):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         super(EmulatedUnitTestCase, self).__init__(methodName)
@@ -41,9 +39,12 @@ class EmulatedUnitTestCase(unittest.TestCase):
         if self.mockPhEDEx:
             self.phedexPatcher = mock.patch('WMCore.Services.PhEDEx.PhEDEx.PhEDEx', new=MockPhEDExApi)
             self.phedexPatcher2 = mock.patch('WMCore.WorkQueue.WorkQueue.PhEDEx', new=MockPhEDExApi)
-            self.inUsePhEDExApi = self.phedexPatcher.start()
+            self.phedexPatcher3 = mock.patch('WMCore.Services.DBS.DBS3Reader.PhEDEx', new=MockPhEDExApi)
+            self.phedexPatcher.start()
             self.phedexPatcher2.start()
+            self.phedexPatcher3.start()
             self.addCleanup(self.phedexPatcher.stop)
             self.addCleanup(self.phedexPatcher2.stop)
+            self.addCleanup(self.phedexPatcher3.stop)
 
         return

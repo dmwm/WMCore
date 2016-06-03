@@ -17,6 +17,10 @@ mockData = {}
 
 
 class MockPhEDExApi(object):
+    """
+    Version of Services/PhEDEx intended to be used with mock or unittest.mock
+    """
+
     def __init__(self, responseType="json"):
         pass
 
@@ -28,8 +32,10 @@ class MockPhEDExApi(object):
             block: the name of the block
 
         Returns:
+            sites: a fake list of sites where the data is
 
         """
+
         if hash(block) % 3 == 0:
             sites = ['T2_XX_SiteA']
         elif hash(block) % 3 == 1:
@@ -40,24 +46,37 @@ class MockPhEDExApi(object):
         return sites
 
     def getReplicaPhEDExNodesForBlocks(self, block=None, dataset=None, complete='y'):
+        """
+
+        Args:
+            block: the name of the block
+            dataset: the name of the dataset
+            complete: ??
+
+        Returns:
+            a fake list of blocks and the fakes sites they are at
+        """
 
         if dataset:
             return {'%s#1' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
 
-        oneBlock = block[0]
-        if oneBlock.split('#')[0] == PILEUP_DATASET:
-            # Pileup is at a single site
-            sites = ['T2_XX_SiteC']
-            _BLOCK_LOCATIONS[oneBlock] = sites
-        else:
-            sites = self.sitesByBlock(block=oneBlock)
-            _BLOCK_LOCATIONS[oneBlock] = sites
-        return {oneBlock: sites}
+        replicas = {}
+        for oneBlock in block:
+            if oneBlock.split('#')[0] == PILEUP_DATASET:
+                # Pileup is at a single site
+                sites = ['T2_XX_SiteC']
+                _BLOCK_LOCATIONS[oneBlock] = sites
+            else:
+                sites = self.sitesByBlock(block=oneBlock)
+                _BLOCK_LOCATIONS[oneBlock] = sites
+            replicas.update({oneBlock: sites})
+        return replicas
 
     def getReplicaInfoForBlocks(self, **args):
         """
         Where are blocks located
         """
+
         data = {"phedex": {"request_timestamp": 1254762796.13538, "block": []}}
 
         for block in args['block']:
@@ -69,6 +88,10 @@ class MockPhEDExApi(object):
         return data
 
     def getSubscriptionMapping(self, *dataItems, **kwargs):
+        """
+        Fake version of the existing PhEDEx method
+        """
+
         dataItems = list(set(dataItems))  # force unique items
         locationMap = {}
 
@@ -95,6 +118,7 @@ class MockPhEDExApi(object):
             :param kwargs: named arguments it was called with
             :return: the dictionary that DBS would have returned
             """
+
             if kwargs:
                 signature = '%s:%s' % (item, sorted(kwargs.iteritems()))
             else:

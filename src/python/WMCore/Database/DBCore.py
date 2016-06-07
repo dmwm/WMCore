@@ -14,6 +14,20 @@ from WMCore.Database.ResultSet import ResultSet
 from copy import copy
 import WMCore.WMLogging
 
+from sqlalchemy.dialects.oracle.cx_oracle import OracleDialect_cx_oracle
+
+# OracleHandler is required to convert input unicode values
+# into byte strings since Oracle DB expects them
+# The issue was discovered in https://github.com/dmwm/WMCore/pull/6896
+# and elegant solution found in sam-web
+# https://cdcvs.fnal.gov/redmine/projects/sam-web/repository/revisions/oracle/entry/python/samdb/database.py
+def OracleInputTypeHandler(cursor, value, numElements):
+    """ Convert unicode objects to byte strings before sending them to Oracle """
+    if isinstance(value, unicode):
+	encoding = cursor.connection.encoding
+	# the lambda below must not capture the cursor as it creates a circular reference
+	return cursor.var(str, arraysize = numElements, inconverter = lambda x: x.encode(encoding))
+
 class DBInterface(WMObject):
     """
     Base class for doing SQL operations using a SQLAlchemy engine, or
@@ -120,7 +134,6 @@ class DBInterface(WMObject):
         """
         return self.engine.connect()
 
-
     def processData(self, sqlstmt, binds={}, conn=None,
                     transaction=False, returnCursor=False):
         """
@@ -134,6 +147,8 @@ class DBInterface(WMObject):
                 connection = self.connection()
             else:
                 connection = conn
+            if isinstance(self.engine.dialect, OracleDialect_cx_oracle):
+                connection.inputtypehandler = OracleInputTypeHandler
 
             result = []
             # Can take either a single statement or a list of statements and binds

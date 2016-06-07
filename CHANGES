@@ -1,3 +1,74 @@
+1.0.16 to 1.0.17:
+  - Merge pull request #6889 from amaltaro/ssb-newStatusMetric
+  - Merge pull request #6812 from ericvaandering/default_mock_phedex
+  - Merge pull request #6909 from hufnagel/dashboard-report-nosleep
+  - remove the dashboard reporting sleep call, fix #6899
+  - Merge pull request #6905 from ericvaandering/noprompt_unittests
+  - Remove the need for a prompt when setting up unit tests
+  - Merge pull request #6901 from amaltaro/jobArchiver-sendAlert
+  - Merge pull request #6900 from amaltaro/try-validate-script
+  - Remove sendAlert from JobArchiver
+  - Added some error handling in case of missing datasets
+  - 1.0.17.pre6
+  - Merge pull request #6896 from vkuznet/sanitize_cx_oracle
+  - Fix DBS3+CherryPy5 issue which is an issue of type mismatch between python and Oracle
+  - 1.0.17.pre5
+  - Merge pull request #6892 from vkuznet/ext-drop-down
+  - Fix drop-down issue 6657, 6674
+  - Merge pull request #6890 from emaszs/master
+  - Add Dashboard dir to crabtaskworker dependencies
+  - Fix pylint complaints
+  - Update the SSB site status metric number and states
+  - Clean up the code
+  - Break up a list of files for two calls. Add progress to fetcher Sort the JSON file, hopefully keep future differences smaller
+  - Make EmulatedUnitTestCase use PhEDEx emulator by default Fix the Phedex emulator for multiple blocks and to run from DBS Fix up the DBSReader_t tests
+  - Merge pull request #6888 from ticoann/new_rest_api_for_job
+  - Merge pull request #6705 from amaltaro/errorhandler-nocrash
+  - Merge pull request #6887 from vkuznet/visible_attrs
+  - Merge pull request #6886 from ericvaandering/add_tracing
+  - add job detail REST api
+  - Fix visible attributes assignment on web UI for reqmgr2
+  - Add Tracing to utils to aid in debugging
+  - 1.0.17.pre4
+  - Merge pull request #6877 from ticoann/add_one_site
+  - Merge pull request #6879 from amaltaro/multicore-assign
+  - Merge pull request #6880 from amaltaro/remove-multiTasks
+  - Merge pull request #6863 from ticoann/resource_monitor_5_13
+  - Merge pull request #6876 from ticoann/remove-failed-transition
+  - Avoid crashing ErrorHandler in case of Couch/HTTP issues
+  - Cleanup the last pieces of multi tasks
+  - Update memory and cores requirements during assignment
+  - Merge pull request #6878 from vkuznet/issue6874
+  - Fix issue 6874
+  - add one site (useful for testing)
+  - clean up status transition
+  - Merge pull request #6811 from amaltaro/kill-held
+  - Merge pull request #6861 from amaltaro/deploy-relval-patcha
+  - Add glidein restrictions tweak for the relval agent
+  - Merge pull request #6865 from ticoann/wmarchive_log
+  - WQ diagonis script
+  - add more logging message
+  - 1.0.17.pre3
+  - Merge pull request #6856 from ticoann/fix_priority
+  - priority sorting
+  - alway refresh job submitter cache
+  - Merge pull request #6862 from amaltaro/docid-inbox
+  - Pylint fixes
+  - Print the workqueue doc id when no possible site
+  - Make condor removal more efficient; improve error message
+  - 1.0.17.pre2
+  - Merge pull request #6368 from hufnagel/highio-jobs
+  - Merge pull request #6860 from amaltaro/injecttest-patcha
+  - Fix site whitelist when provided in the command line
+  - 1.0.17.pre1
+  - Merge pull request #6808 from juztas/gfalCleanEnv
+  - Merge pull request #6843 from ticoann/fix_wmstats_unittest
+  - Merge pull request #6848 from hufnagel/repack-error-dataset
+  - implement repack output straight to error dataset
+  - add capability for highio jobs
+  - fix wmstats unittest
+  - Use system environment for gfal2 stageout
+
 1.0.16 to 1.0.17.pre6:
   - Merge pull request #6896 from vkuznet/sanitize_cx_oracle
   - Fix DBS3+CherryPy5 issue which is an issue of type mismatch between python and Oracle

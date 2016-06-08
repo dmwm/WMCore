@@ -7,10 +7,8 @@ Implementation of StageOutImpl interface for FNAL
 """
 from __future__ import print_function
 import os
-import commands
-import logging
 from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl, splitPFN
 from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 
@@ -21,6 +19,7 @@ def stripPrefixTOUNIX(filePath):
     if ".fnal.gov/" not in filePath:
         return filePath
     return filePath.split(".fnal.gov/", 1)[1]
+
 
 class FNALImpl(StageOutImpl):
     """
@@ -36,7 +35,6 @@ class FNALImpl(StageOutImpl):
         
         # Create and hold onto a srm implementation in case we need it
         self.srmImpl = LCGImpl(stagein)
-
 
     def storageMethod(self, PFN):
         """
@@ -116,8 +114,7 @@ class FNALImpl(StageOutImpl):
         if method == 'xrdcp' or sourceMethod == 'xrdcp':
             original_size = os.stat(sourcePFN)[6]
             print("Local File Size is: %s" % original_size)
-            pfnWithoutChecksum = stripPrefixTOUNIX(targetPFN)
-            
+
             useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
             if useChecksum:
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
@@ -165,10 +162,16 @@ class FNALImpl(StageOutImpl):
 
         method = self.storageMethod(pfnToRemove)
 
-        if method == 'srm':
+        if method == 'xrdcp':
+            (_,host,path,_) = splitPFN(pfnToRemove)
+            command = "xrd %s rm %s" % (host,path)
+            print("Executing: %s" % command)
+            self.executeCommand(command)
+        elif method == 'srm':
             return self.srmImpl.removeFile(pfnToRemove)
         else:
             command = "/bin/rm %s" % stripPrefixTOUNIX(pfnToRemove)
+            print("Executing: %s" % command)
             self.executeCommand(command)
 
 registerStageOutImpl("stageout-xrdcp-fnal", FNALImpl)

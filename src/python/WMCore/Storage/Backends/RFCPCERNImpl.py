@@ -17,6 +17,7 @@ from WMCore.Storage.StageOutError import StageOutError
 from WMCore.Storage.Execute import execute
 from WMCore.Storage.Execute import runCommandWithOutput
 
+
 class RFCPCERNImpl(StageOutImpl):
     """
     _RFCPCERNImpl_
@@ -28,7 +29,6 @@ class RFCPCERNImpl(StageOutImpl):
         self.numRetries = 5
         self.retryPause = 300
 
-
     def createSourceName(self, protocol, pfn):
         """
         _createSourceName_
@@ -37,7 +37,6 @@ class RFCPCERNImpl(StageOutImpl):
 
         """
         return pfn
-
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -69,7 +68,7 @@ class RFCPCERNImpl(StageOutImpl):
                 # check for correct naming convention in PFN
                 regExpParser = re.compile('/castor/cern.ch/cms/store/([^/]*data)/([^/]+)/([^/]+)/([^/]+)/')
                 match = regExpParser.match(targetDir)
-                if ( match != None ):
+                if match is not None:
 
                     # RAW data files use cms_raw, all others cms_production
                     if match.group(4) == 'RAW':
@@ -77,21 +76,20 @@ class RFCPCERNImpl(StageOutImpl):
                     else:
                         fileclass = 'cms_production'
 
-                    fileclassDir = '/castor/cern.ch/cms/store/%s/%s/%s/%s' % match.group(1,2,3,4)
+                    fileclassDir = '/castor/cern.ch/cms/store/%s/%s/%s/%s' % match.group(1, 2, 3, 4)
 
                     # fileclassDir does not exist => create it
                     if not self.checkDirExists(fileclassDir):
                         self.createDir(fileclassDir)
-                        if ( fileclass != None ):
-                            self.setFileClass(fileclassDir,fileclass)
+                        if fileclass is not None:
+                            self.setFileClass(fileclassDir, fileclass)
 
             # now create targetDir
             self.createDir(targetDir)
 
         return
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -114,7 +112,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         isRemoteEOS = self.isEOS(remotePFN)
 
-        useChecksum = ( checksums != None and 'adler32' in checksums and not self.stageIn )
+        useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
         removeCommand = self.createRemoveFileCommand(targetPFN)
 
         if isRemoteEOS:
@@ -122,11 +120,10 @@ class RFCPCERNImpl(StageOutImpl):
             result += "xrdcp -f -N "
 
             if useChecksum:
-
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
 
                 # non-functional in 3.3.1 xrootd clients due to bug
-                #result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+                # result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
 
                 # therefor embed information into target URL
                 targetPFN += "?eos.targetsize=$LOCAL_SIZE&eos.checksum=%s" % checksums['adler32']
@@ -134,7 +131,6 @@ class RFCPCERNImpl(StageOutImpl):
         else:
 
             if useChecksum:
-
                 targetFile = self.parseCastorPath(targetPFN)
 
                 result += "nstouch %s\n" % targetFile
@@ -153,7 +149,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            (_,host,path,_) = splitPFN(remotePFN)
+            (_, host, path, _) = splitPFN(remotePFN)
 
             result += "REMOTE_SIZE=`xrd '%s' stat '%s' | sed -r 's/.* Size: ([0-9]+) .*/\\1/'`\n" % (host, path)
             result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
@@ -164,7 +160,8 @@ class RFCPCERNImpl(StageOutImpl):
                 result += "REMOTE_XS=`xrd '%s' getchecksum '%s' | sed -r 's/.* adler32 ([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
                 result += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
-                result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
+                result += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % \
+                          checksums['adler32']
                 result += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
 
             else:
@@ -181,7 +178,6 @@ class RFCPCERNImpl(StageOutImpl):
 
         return result
 
-
     def createRemoveFileCommand(self, pfn):
         """
         _createRemoveFileCommand_
@@ -189,11 +185,11 @@ class RFCPCERNImpl(StageOutImpl):
         Alternate between EOS, CASTOR and local.
         """
         if self.isEOS(pfn):
-            (_,host,path,_) = splitPFN(pfn)
+            (_, host, path, _) = splitPFN(pfn)
             return "xrd %s rm %s" % (host, path)
         try:
             simplePFN = self.parseCastorPath(pfn)
-            return  "stager_rm -a -M %s ; nsrm %s" % (simplePFN, simplePFN)
+            return "stager_rm -a -M %s ; nsrm %s" % (simplePFN, simplePFN)
         except StageOutError:
             # Not castor
             pass
@@ -207,7 +203,7 @@ class RFCPCERNImpl(StageOutImpl):
         """
         if self.isEOS(pfnToRemove):
 
-            (_,host,path,_) = splitPFN(pfnToRemove)
+            (_, host, path, _) = splitPFN(pfnToRemove)
             command = "xrd %s rm %s" % (host, path)
 
         else:
@@ -218,7 +214,6 @@ class RFCPCERNImpl(StageOutImpl):
 
         execute(command)
         return
-
 
     def checkDirExists(self, directory):
         """
@@ -244,11 +239,10 @@ class RFCPCERNImpl(StageOutImpl):
             return False
         else:
             regExpParser = re.compile('^Protection[ ]+: d')
-            if ( regExpParser.match(output) == None):
+            if regExpParser.match(output) is None:
                 raise StageOutError("Output path is not a directory !")
             else:
                 return True
-
 
     def createDir(self, directory):
         """
@@ -264,7 +258,6 @@ class RFCPCERNImpl(StageOutImpl):
         execute(command)
         return
 
-
     def setFileClass(self, directory, fileclass):
         """
         _setFileClass_
@@ -278,7 +271,6 @@ class RFCPCERNImpl(StageOutImpl):
         execute(cmd)
         return
 
-
     def parseCastorPath(self, complexCastorPath):
         """
         _parseCastorPath_
@@ -289,7 +281,6 @@ class RFCPCERNImpl(StageOutImpl):
         Some other castor command line tools do not understand
         that syntax, so we need to retrieve the path and other
         parameters from the URL
-        
         """
         simpleCastorPath = None
 
@@ -318,11 +309,10 @@ class RFCPCERNImpl(StageOutImpl):
             raise StageOutError("Can't parse castor path out of URL !")
 
         # remove multi-slashes from path
-        while ( simpleCastorPath.find('//') > -1 ):
-            simpleCastorPath = simpleCastorPath.replace('//','/')
+        while simpleCastorPath.find('//') > -1:
+            simpleCastorPath = simpleCastorPath.replace('//', '/')
 
         return simpleCastorPath
-
 
     def isEOS(self, pfn):
         """
@@ -331,7 +321,7 @@ class RFCPCERNImpl(StageOutImpl):
         Check if the PFN is for EOS
 
         """
-        ( protocol,host,_,_) = splitPFN(pfn)
+        (protocol, host, _, _) = splitPFN(pfn)
         if protocol == "root" and not host.startswith("castor"):
             return True
         else:

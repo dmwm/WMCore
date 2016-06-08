@@ -50,7 +50,7 @@ def splitPFN(pfn):
     return protocol, host, path, opaque
 
 
-class StageOutImpl:
+class StageOutImpl(object):
     """
     _StageOutImpl_
 

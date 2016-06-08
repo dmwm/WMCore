@@ -11,7 +11,6 @@ from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl, splitPFN
 from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
-
 _CheckExitCodeOption = True
 
 
@@ -32,7 +31,7 @@ class FNALImpl(StageOutImpl):
     def __init__(self, stagein=False):
 
         StageOutImpl.__init__(self, stagein)
-        
+
         # Create and hold onto a srm implementation in case we need it
         self.srmImpl = LCGImpl(stagein)
 
@@ -41,7 +40,7 @@ class FNALImpl(StageOutImpl):
         Return xrdcp or srm
         """
 
-        method = 'local' # default
+        method = 'local'  # default
         if PFN.startswith("root://"):
             method = 'xrdcp'
         if PFN.startswith("srm://"):
@@ -49,23 +48,22 @@ class FNALImpl(StageOutImpl):
         print("Using method %s for PFN %s" % (method, PFN))
         return method
 
-
     def createOutputDirectory(self, targetPFN):
         """
         _createOutputDirectory_
 
         Create a dir for the target pfn by translating it to
         a /dcache or /lustre name and calling mkdir
-        we don't need to convert it, just mkdir.       
+        we don't need to convert it, just mkdir.
         """
         method = self.storageMethod(targetPFN)
 
-        if method == 'xrdcp': # xrdcp autocreates parent directories
+        if method == 'xrdcp':  # xrdcp autocreates parent directories
             return
         elif method == 'srm':
             self.srmImpl.createOutputDirectory(targetPFN)
         elif method == 'local':
-            targetdir= os.path.dirname(targetPFN)
+            targetdir = os.path.dirname(targetPFN)
             command = "#!/bin/sh\n"
             command += "if [ ! -e \"%s\" ]; then\n" % targetdir
             command += " mkdir -p %s\n" % targetdir
@@ -74,10 +72,9 @@ class FNALImpl(StageOutImpl):
 
     def createSourceName(self, protocol, pfn):
         """
-        createTargetName
-        
+        _createSourceName_
+
         generate the target PFN
-        
         """
         method = self.storageMethod(pfn)
 
@@ -85,14 +82,11 @@ class FNALImpl(StageOutImpl):
             return self.srmImpl.createSourceName(protocol, pfn)
         return pfn
 
-
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
-        
+
         Build a mkdir to generate the directory
-        
         """
 
         if getattr(self, 'stageIn', False):
@@ -102,7 +96,7 @@ class FNALImpl(StageOutImpl):
         sourceMethod = self.storageMethod(sourcePFN)
 
         if ((method == 'srm' and sourceMethod == 'xrdcp') or
-            (method == 'xrdcp' and sourceMethod == 'srm')):
+                (method == 'xrdcp' and sourceMethod == 'srm')):
             print("Incompatible methods for source and target")
             print("\tSource: method %s for PFN %s" % (sourceMethod, sourcePFN))
             print("\tTarget: method %s for PFN %s" % (method, targetPFN))
@@ -119,12 +113,12 @@ class FNALImpl(StageOutImpl):
             if useChecksum:
                 checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
                 # non-functional in 3.3.1 xrootd clients due to bug
-                #result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
+                # result += "-ODeos.targetsize=$LOCAL_SIZE\&eos.checksum=%s " % checksums['adler32']
 
                 # therefor embed information into target URL
                 targetPFN += "\?eos.targetsize=%s\&eos.checksum=%s" % (original_size, checksums['adler32'])
                 print("Local File Checksum is: %s\"\n" % checksums['adler32'])
-            
+
             # always overwrite the output
 
             result = "/usr/bin/xrdcp-old -d 0 -f "
@@ -135,15 +129,12 @@ class FNALImpl(StageOutImpl):
             result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
             return result
 
-
-
-    def buildStageInCommand(self, sourcePFN, targetPFN, options = None):
+    def buildStageInCommand(self, sourcePFN, targetPFN, options=None):
         """
         _buildStageInCommand_
-        
+
         Create normal xrdcp commad for staging in files.
         """
-
         result = "/usr/bin/xrdcp -d 0 "
         if options != None:
             result += " %s " % options
@@ -151,7 +142,6 @@ class FNALImpl(StageOutImpl):
         result += " %s " % targetPFN
         result += "; if [ $? -eq 0 ] ; then exit 0; else echo \"Error: xrdcp exited with $?\"; exit 60311 ; fi "
         return result
-
 
     def removeFile(self, pfnToRemove):
         """
@@ -163,8 +153,8 @@ class FNALImpl(StageOutImpl):
         method = self.storageMethod(pfnToRemove)
 
         if method == 'xrdcp':
-            (_,host,path,_) = splitPFN(pfnToRemove)
-            command = "xrd %s rm %s" % (host,path)
+            (_, host, path, _) = splitPFN(pfnToRemove)
+            command = "xrd %s rm %s" % (host, path)
             print("Executing: %s" % command)
             self.executeCommand(command)
         elif method == 'srm':
@@ -173,5 +163,6 @@ class FNALImpl(StageOutImpl):
             command = "/bin/rm %s" % stripPrefixTOUNIX(pfnToRemove)
             print("Executing: %s" % command)
             self.executeCommand(command)
+
 
 registerStageOutImpl("stageout-xrdcp-fnal", FNALImpl)

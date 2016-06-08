@@ -23,7 +23,7 @@ import sys
 
 try:
     import cStringIO as StringIO
-except:
+except ImportError:
     import StringIO
 
 from WMCore.Algorithms import Permissions
@@ -219,7 +219,7 @@ class Requests(dict):
             pass
 
         if verb != 'GET' and data:
-            if type(encoder) == type(self.get) or type(encoder) == type(f):
+            if isinstance(encoder, type(self.get)) or isinstance(encoder, type(f)):
                 encoded_data = encoder(data)
             elif encoder == False:
                 # Don't encode the data more than we have to
@@ -239,7 +239,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert type(encoded_data) == type('string'), \
+        assert isinstance(encoded_data, type('string')), \
             "Data in makeRequest is %s and not encoded to a string" \
                 % type(encoded_data)
 
@@ -256,7 +256,8 @@ class Requests(dict):
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
-            [conn.close() for conn in self['conn'].connections.values()]
+            for conn in self['conn'].connections.values():
+                conn.close()
             self['conn'] = self._getURLOpener()
             # ... try again... if this fails propagate error to client
             try:
@@ -278,7 +279,7 @@ class Requests(dict):
             setattr(e, 'headers', response)
             raise e
 
-        if type(decoder) == type(self.makeRequest) or type(decoder) == type(f):
+        if isinstance(decoder, type(self.makeRequest)) or isinstance(decoder, type(f)):
             result = decoder(result)
         elif decoder != False:
             result = self.decode(result)
@@ -369,7 +370,7 @@ class Requests(dict):
             # if not proceed as not all https connections require them
             try:
                 key, cert = self.getKeyCert()
-            except Exception as ex:
+            except Exception as ex: #pylint: disable=broad-except
                 msg = 'No certificate or key found, authentication may fail'
                 self['logger'].info(msg)
                 self['logger'].debug(str(ex))

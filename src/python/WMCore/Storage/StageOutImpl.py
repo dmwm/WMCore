@@ -13,6 +13,43 @@ from WMCore.Storage.Execute import runCommand
 from WMCore.Storage.StageOutError import StageOutError
 
 
+def splitPFN(pfn):
+    """
+     _splitPFN_
+
+    Generic function to split the PFN in smaller pieces, such as:
+    { <protocol>, <host>, <path>, <opaque> }
+    """
+    protocol = pfn.split(':')[0]
+    host = pfn.split('/')[2]
+    thisList = pfn.replace('%s://%s/' % (protocol, host), '').split('?')
+    path = thisList[0]
+    opaque = ""
+    # If we have any opaque info keep it
+    if len(thisList) == 2:
+        opaque = "?%s" % thisList[1]
+
+    # check for the path to actually be in the opaque information
+    if opaque.startswith("?path="):
+        elements = opaque.split('&')
+        path = elements[0].replace('?path=', '')
+        buildingOpaque = '?'
+        for element in elements[1:]:
+            buildingOpaque += element
+            buildingOpaque += '&'
+        opaque = buildingOpaque.rstrip('&')
+    elif opaque.find("&path=") != -1:
+        elements = opaque.split('&')
+        buildingOpaque = elements[0]
+        for element in elements[1:]:
+            if element.startswith('path='):
+                path = element.replace('path=', '')
+            else:
+                buildingOpaque += '&' + element
+        opaque = buildingOpaque
+    return protocol, host, path, opaque
+
+
 class StageOutImpl:
     """
     _StageOutImpl_

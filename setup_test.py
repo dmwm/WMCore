@@ -283,16 +283,18 @@ if can_nose:
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMQuality'), 'WMQuality'))
                 moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
+                excludeAttributes = '!workerNodeTest,!integration,!performance,!lifecycle,!singledocker,' + \
+                                    '!__integration__,!__performance__,!__lifecycle__'
                 if not quickTestArg:
-                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
-                                             '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)',
+                                            '-a', excludeAttributes,
 #                                             '--with-coverage','--cover-html','--cover-html-dir=coverageHtml','--cover-erase',
 #                                             '--cover-package=' + moduleList, '--cover-inclusive',
                                              testPath],
                                              paths = testPath)
                 else:
-                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)','-a',
-                         '!workerNodeTest,!integration,!performance,!lifecycle,!__integration__,!__performance__,!__lifecycle__',
+                    retval = self.callNose([__file__,'--with-xunit', '-m', '(_t.py$)|(_t$)|(^test)',
+                                            '-a', excludeAttributes,
                          '--stop', testPath],
                          paths = testPath)
                     

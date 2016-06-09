@@ -9,6 +9,8 @@ from WMCore.REST.Test import setup_test_server, fake_authz_headers
 from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Tools import tools
 
+from nose.plugins.attrib import attr
+
 FAKE_FILE = fake_authz_key_file()
 PORT = 8888
 
@@ -25,6 +27,7 @@ class Root:
     def global_admin(self):
         return "ok"
 
+@attr('singledocker')
 class SimpleTest(webtest.WebCase):
 
     def setUp(self):

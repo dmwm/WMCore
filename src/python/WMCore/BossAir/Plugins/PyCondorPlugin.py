@@ -210,7 +210,6 @@ class PyCondorPlugin(BasePlugin):
         self.scriptFile = None
         self.submitDir = None
         self.removeTime = getattr(config.BossAir, 'removeTime', 60)
-        self.useGSite = getattr(config.BossAir, 'useGLIDEINSites', False)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold = getattr(config.BossAir, 'submitErrorThreshold', 10)
         self.errorCount = 0
@@ -380,80 +379,56 @@ class PyCondorPlugin(BasePlugin):
         if not os.path.exists(self.submitDir):
             os.makedirs(self.submitDir)
 
-
-        # Now assume that what we get is the following; a mostly
-        # unordered list of jobs with random sandboxes.
-        # We intend to sort them by sandbox.
-
-        # Do a secondary sort for numberOfCores and also for
-        # highIO jobs, they need to be submitted separately.
-
-        submitDict = {}
+        # Submit the jobs
         nSubmits = 0
-        for job in jobs:
-            sandbox = job['sandbox']
-            numberOfCores = job['numberOfCores']
-            highIOjob = job['highIOjob']
-            if sandbox not in submitDict.keys():
-                submitDict[sandbox] = {}
-            if numberOfCores not in submitDict[sandbox]:
-                submitDict[sandbox][numberOfCores] = {}
-            if highIOjob not in submitDict[sandbox][numberOfCores]:
-                submitDict[sandbox][numberOfCores][highIOjob] = []
-
-            submitDict[sandbox][numberOfCores][highIOjob].append(job)
-
-
-        # Now submit the bastards
         queueError = False
-        for sandbox in submitDict.keys():
-            for numberOfCores in submitDict[sandbox].keys():
-                for jobList in submitDict[sandbox][numberOfCores].values():
-                    if queueError:
-                        # If the queue has failed, then we must not process
-                        # any more jobs this cycle.
-                        break
-                    for jobsReady in grouper(jobList, self.jobsPerWorker):
-                        idList = [x['id'] for x in jobsReady]
-                        jdlList = self.makeSubmit(jobList=jobsReady)
-                        if not jdlList:
-                            # Then we got nothing
-                            logging.error("No JDL file made!")
-                            return {'NoResult': [0]}
-                        jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
-                        with open(jdlFile, 'w') as handle:
-                            handle.writelines(jdlList)
-                        jdlFiles.append(jdlFile)
+        for jobsReady in grouper(jobs, self.jobsPerWorker):
 
-                        # Now submit them
-                        logging.info("About to submit %i jobs", len(jobsReady))
-                        if self.glexecPath:
-                            command = 'CS=`which condor_submit`; '
-                            if self.glexecWrapScript:
-                                command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
-                            command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
-                            command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
-                            command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
-                            command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
-                            if self.glexecUnwrapScript:
-                                command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
-                            else:
-                                command += '%s $CS %s' % (self.glexecPath, jdlFile)
-                        else:
-                            command = "condor_submit %s" % jdlFile
+            if queueError:
+                # If the queue has failed, then we must not process any more jobs this cycle.
+                break
 
-                        try:
-                            self.inputQueue.put({'command': command, 'idList': idList})
-                        except AssertionError as ex:
-                            msg = "Critical error: input pipeline probably closed.\n"
-                            msg += str(ex)
-                            msg += "Error Procedure: Something critical has happened in the worker process\n"
-                            msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
-                            msg += "Then refresh the worker pool\n"
-                            logging.error(msg)
-                            queueError = True
-                            break
-                        nSubmits += 1
+            idList = [x['id'] for x in jobsReady]
+            jdlList = self.makeSubmit(jobList=jobsReady)
+            if not jdlList:
+                # Then we got nothing
+                logging.error("No JDL file made!")
+                return {'NoResult': [0]}
+            jdlFile = "%s/submit_%i_%i.jdl" % (self.submitDir, os.getpid(), idList[0])
+
+            with open(jdlFile, 'w') as handle:
+                handle.writelines(jdlList)
+            jdlFiles.append(jdlFile)
+
+            # Now submit them
+            logging.info("About to submit %i jobs", len(jobsReady))
+            if self.glexecPath:
+                command = 'CS=`which condor_submit`; '
+                if self.glexecWrapScript:
+                    command += 'export GLEXEC_ENV=`%s 2>/dev/null`; ' % self.glexecWrapScript
+                command += 'export GLEXEC_CLIENT_CERT=%s; ' % self.glexecProxyFile
+                command += 'export GLEXEC_SOURCE_PROXY=%s; ' % self.glexecProxyFile
+                command += 'export X509_USER_PROXY=%s; ' % self.glexecProxyFile
+                command += 'export GLEXEC_TARGET_PROXY=%s; ' % self.jdlProxyFile
+                if self.glexecUnwrapScript:
+                    command += '%s %s -- $CS %s' % (self.glexecPath, self.glexecUnwrapScript, jdlFile)
+                else:
+                    command += '%s $CS %s' % (self.glexecPath, jdlFile)
+            else:
+                command = "condor_submit %s" % jdlFile
+
+            try:
+                self.inputQueue.put({'command': command, 'idList': idList})
+            except AssertionError as ex:
+                msg = "Critical error: input pipeline probably closed.\n"
+                msg += str(ex)
+                msg += "Error Procedure: Something critical has happened in the worker process\n"
+                msg += "We will now proceed to pull all useful data from the queue (if it exists)\n"
+                msg += "Then refresh the worker pool\n"
+                logging.error(msg)
+                queueError = True
+                break
+            nSubmits += 1
 
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
@@ -559,7 +534,7 @@ class PyCondorPlugin(BasePlugin):
         logging.info("Done submitting jobs for this cycle in PyCondorPlugin")
         return successfulJobs, failedJobs
 
-    def track(self, jobs, info=None):
+    def track(self, jobs):
         """
         _track_
 
@@ -663,7 +638,7 @@ class PyCondorPlugin(BasePlugin):
                     try:
                         os.remove(reportName)
                         condorReport.save(filename=reportName)
-                    except Exception as ex:
+                    except:
                         logging.error("Cannot remove and replace empty report %s", reportName)
                         logging.error("Report continuing without error!")
             else:
@@ -717,7 +692,7 @@ class PyCondorPlugin(BasePlugin):
 
         return jobtokill
 
-    def kill(self, jobs, info=None):
+    def kill(self, jobs):
         """
         _kill_
 
@@ -801,8 +776,7 @@ class PyCondorPlugin(BasePlugin):
         jdl.append("Log = condor.$(Cluster).$(Process).log\n")
 
         jdl.append("+WMAgent_AgentName = \"%s\"\n" % (self.agent))
-        jdl.append(
-            "+JOBGLIDEIN_CMSSite= \"$$([ifThenElse(GLIDEIN_CMSSite is undefined, \\\"Unknown\\\", GLIDEIN_CMSSite)])\"\n")
+        jdl.append("+JOBGLIDEIN_CMSSite= \"$$([ifThenElse(GLIDEIN_CMSSite is undefined, \\\"Unknown\\\", GLIDEIN_CMSSite)])\"\n")
 
         # Required for global pool accounting
         jdl.append("+AcctGroup = \"%s\"\n" % (self.acctGroup))
@@ -893,7 +867,7 @@ class PyCondorPlugin(BasePlugin):
             except:
                 logging.error("Priority for task not castable to an int")
                 logging.error("Not setting priority")
-                logging.debug("Priority: %s" % task_priority)
+                logging.debug("Priority: %s", task_priority)
                 task_priority = 0
 
             prio = 0
@@ -918,8 +892,7 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")
 
             ### print all the variables needed for us to rely on condor userlog
-            jdl.append(
-                "job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
+            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
 
             jdl.append("Queue 1\n")
 
@@ -937,8 +910,6 @@ class PyCondorPlugin(BasePlugin):
             logging.error("Job for non-existant site %s", job['location'])
             return jdl
 
-        if self.useGSite:
-            jdl.append('+GLIDEIN_CMSSite = \"%s\"\n' % (jobCE))
         if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
             strg = ','.join(map(str, job.get('possibleSites')))
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
@@ -954,17 +925,15 @@ class PyCondorPlugin(BasePlugin):
         if job.get('proxyPath'):
             jdl.append('x509userproxy = %s\n' % job['proxyPath'])
 
-        if job.get('requestName'):
-            jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
-            m = GROUP_NAME_RE.match(job['requestName'])
-            if m:
-                jdl.append('+CMSGroups = %s\n' % classad.quote(m.groups()[0]))
+        jdl.append('+WMAgent_RequestName = "%s"\n' % job['requestName'])
+        match = GROUP_NAME_RE.match(job['requestName'])
+        if match:
+            jdl.append('+CMSGroups = %s\n' % classad.quote(match.groups()[0]))
+        else:
+            jdl.append('+CMSGroups = undefined\n')
 
-        if job.get('taskName'):
-            jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
-
-        if job.get('taskType'):
-            jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
+        jdl.append('+WMAgent_SubTaskName = "%s"\n' % job['taskName'])
+        jdl.append('+CMS_JobType = "%s"\n' % job['taskType'])
 
         # Handling for AWS, cloud and opportunistic resources
         jdl.append('+AllowOpportunistic = %s\n' % job.get('allowOpportunistic', False))
@@ -972,26 +941,28 @@ class PyCondorPlugin(BasePlugin):
         # dataset info
         if job.get('inputDataset'):
             jdl.append('+DESIRED_CMSDataset = "%s"\n' % job['inputDataset'])
+        else:
+            jdl.append('+DESIRED_CMSDataset = undefined\n')
         if job.get('inputDatasetLocations'):
             jdl.append('+DESIRED_CMSDataLocations = "%s"\n' % ','.join(job['inputDatasetLocations']))
+        else:
+            jdl.append('+DESIRED_CMSDataLocations = undefined\n')
 
         # HighIO jobs
-        highIOjob = job.get('highIOjob')
-        if highIOjob:
-            jdl.append('+Requestioslots = 1\n')
+        jdl.append('+Requestioslots = %d\n' % job.get('highIOjob', 0))
 
-        # Performance estimates
-        if job.get('estimatedJobTime'):
-            jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime'] / 60.0))
-        if job.get('estimatedMemoryUsage'):
-            jdl.append('request_memory = %d\n' % int(job['estimatedMemoryUsage']))
-        if job.get('estimatedDiskUsage'):
-            jdl.append('request_disk = %d\n' % int(job['estimatedDiskUsage']))
+        # Performance and resource estimates
+        numberOfCores = job.get('numberOfCores', 1)
+        requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
+        requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20*1000*1000*numberOfCores
+        maxWallTimeMins = int(job['estimatedJobTime'])/60.0 if job.get('estimatedJobTime', None) else 12*60
+        jdl.append('request_memory = %d\n' % requestMemory)
+        jdl.append('request_disk = %d\n' % requestDisk)
+        jdl.append('+MaxWallTimeMins = %d\n' % maxWallTimeMins)
 
-        # Set up JDL for multithreaded jobs
-        if job.get('numberOfCores', 1) > 1:
-            jdl.append('machine_count = 1\n')
-            jdl.append('request_cpus = %s\n' % job.get('numberOfCores', 1))
+        # How many cores job is using
+        jdl.append('machine_count = 1\n')
+        jdl.append('request_cpus = %s\n' % numberOfCores)
 
         # Add OS requirements for jobs
         if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):
@@ -1221,7 +1192,7 @@ class PyCondorPlugin(BasePlugin):
                 job['status_time'] = int(jobAd.get('runningTime', 0))
                 job['location'] = jobAd.get('runningCMSSite', None)
                 if job['location'] is None:
-                    logging.warning('JobAdInfo: A job (%s) is running with no CMS site' % str(jobAd))
+                    logging.warning('JobAdInfo: A job (%s) is running with no CMS site', str(jobAd))
 
             elif job['status'] == 'Idle':
                 job['status_time'] = int(jobAd.get('submitTime', 0))

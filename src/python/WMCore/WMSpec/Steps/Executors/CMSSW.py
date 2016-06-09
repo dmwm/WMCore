@@ -218,11 +218,18 @@ class CMSSW(Executor):
                 cmsswArguments]
         logging.info("Executing CMSSW. args: %s", args)
 
-        # at CERN override the environment to work around problem with GSI authentication plugin and EOS
+        # possibly needed environment overrides for CMSSW call go here
+        envOverride = {}
+        # work around problem with GSI authentication plugin and EOS at CERN
         if socket.getfqdn().endswith("cern.ch"):
-            returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle, env=dict(os.environ, XRD_LOADBALANCERTTL='86400'))
-        else:
-            returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
+            envOverride['XRD_LOADBALANCERTTL'] = "86400"
+        # some libraries linked with CMSSW need HOME in the environment
+        if 'HOME' not in os.environ:
+            envOverride['HOME'] = os.environ.get('PWD', "/")
+
+        os.environ.update(envOverride)
+
+        returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
 
         self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
         self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
@@ -371,7 +378,13 @@ if [ -n "$USER_TARBALL" ] ; then
     EXIT_STATUS=$?
     if [ $EXIT_STATUS -ne 0 ]; then
        echo "***\nCouldn't untar sandbox with python2: $EXIT_STATUS\n";
-       exit 74;
+       echo "***\nWill try with python2.6 as it might be an old CMSSW release!"
+       python2.6 -m WMCore.WMRuntime.Scripts.UnpackUserTarball $USER_TARBALL $USER_FILES
+       EXIT_STATUS=$?
+       if [ $EXIT_STATUS -ne 0 ]; then
+          echo "***\nCouldn't untar sandbox with python2.6: $EXIT_STATUS\n";
+          exit 74;
+       fi
     fi
 fi
 echo "Completed SCRAM project"

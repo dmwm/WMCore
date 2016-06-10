@@ -1,18 +1,18 @@
 from __future__ import print_function
-from distutils.core import Command
-from unittest import TextTestRunner, TestLoader, TestSuite
-from setup_build import get_path_to_wmcore_root
 
-from glob import glob
-from os.path import splitext, basename, join as pjoin, walk
-from ConfigParser import ConfigParser, NoOptionError
-import os, sys, os.path
-import atexit, signal
-import unittest
-import time
-import pickle
-import threading
+import atexit
 import hashlib
+import os
+import os.path
+import pickle
+import signal
+import sys
+import threading
+import time
+from ConfigParser import ConfigParser
+from distutils.core import Command
+
+from setup_build import get_path_to_wmcore_root
 
 # pylint and coverage aren't standard, but aren't strictly necessary
 # you should get them though
@@ -37,10 +37,9 @@ except:
 can_coverage = False
 try:
     import nose
-    from nose.plugins import Plugin, PluginTester
-    from nose.plugins.attrib import AttributeSelector
-    import nose.failure
     import nose.case
+    import nose.failure
+    from nose.plugins import Plugin
     can_nose = True
 except:
     pass
@@ -60,10 +59,9 @@ def generate_filelist(basepath=None, recurse=True, ignore=False):
         if ignore and walkpath.endswith(ignore):
             files.append(walkpath)
     else:
-        for dirpath, dirnames, filenames in os.walk(walkpath):
+        for dirpath, dummyDirnames, filenames in os.walk(walkpath):
             # skipping CVS directories and their contents
             pathelements = dirpath.split('/')
-            result = []
             if not 'CVS' in pathelements:
                 # to build up a list of file names which contain tests
                 for file in filenames:
@@ -252,7 +250,7 @@ if can_nose:
                 print("Using the tests below: %s" % self.testCertainPath)
                 testPath = self.testCertainPath
             else:
-				print("Nose is scanning all tests")
+                print("Nose is scanning all tests")
                 
             if self.quickTestMode:
                 quickTestArg = ['--stop']
@@ -281,7 +279,6 @@ if can_nose:
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMCore'), 'WMCore'))
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMComponent'), 'WMComponent'))
                 modulesToCover.extend(get_subpackages(os.path.join(srcRoot,'WMQuality'), 'WMQuality'))
-                moduleList = ",".join(modulesToCover)
                 sys.stdout.flush()
                 excludeAttributes = '!workerNodeTest,!integration,!performance,!lifecycle,!singledocker,' + \
                                     '!__integration__,!__performance__,!__lifecycle__'
@@ -300,7 +297,7 @@ if can_nose:
                     
             threadCount = len(threading.enumerate())
             # Set the signal handler and a 20-second alarm
-            def signal_handler( foo, bar ):
+            def signal_handler(dummy1, dummy2):
                 sys.stderr.write("Timeout reached trying to shut down. Force killing...\n")
                 sys.stderr.flush()
                 if retval:
@@ -526,202 +523,202 @@ def lint_files(files, reports=False):
     return results, lntr.linter.config.evaluation
 
 class LintCommand(Command):
-   description = "Lint all files in the src tree"
-   """
-   TODO: better format the test results, get some global result, make output
-   more buildbot friendly.
-   """
+    description = "Lint all files in the src tree"
+    """
+    TODO: better format the test results, get some global result, make output
+    more buildbot friendly.
+    """
 
-   user_options = [ ('package=', 'p', 'package to lint, default to None'),
-               ('report', 'r', 'return a detailed lint report, default False')]
+    user_options = [ ('package=', 'p', 'package to lint, default to None'),
+                     ('report', 'r', 'return a detailed lint report, default False')]
 
-   def initialize_options(self):
-       self._dir = get_path_to_wmcore_root()
-       self.package = None
-       self.report = False
+    def initialize_options(self):
+        self._dir = get_path_to_wmcore_root()
+        self.package = None
+        self.report = False
 
-   def finalize_options(self):
-       if self.report:
-           self.report = True
+    def finalize_options(self):
+        if self.report:
+            self.report = True
 
-   def run(self):
-       '''
-       Find the code and run lint on it
-       '''
-       if can_lint:
-           srcpypath = os.path.join(self._dir, 'src/python/')
+    def run(self):
+        '''
+        Find the code and run lint on it
+        '''
+        if can_lint:
+            srcpypath = os.path.join(self._dir, 'src/python/')
 
-           sys.path.append(srcpypath)
+            sys.path.append(srcpypath)
 
-           files_to_lint = []
+            files_to_lint = []
 
-           if self.package:
-               if self.package.endswith('.py'):
-                   cnt = self.package.count('.') - 1
-                   files_to_lint = generate_filelist(self.package.replace('.', '/', cnt), 'DeafultConfig.py')
-               else:
-                   files_to_lint = generate_filelist(self.package.replace('.', '/'), 'DeafultConfig.py')
-           else:
-               files_to_lint = generate_filelist(ignore='DeafultConfig.py')
+            if self.package:
+                if self.package.endswith('.py'):
+                    cnt = self.package.count('.') - 1
+                    files_to_lint = generate_filelist(self.package.replace('.', '/', cnt), 'DeafultConfig.py')
+                else:
+                    files_to_lint = generate_filelist(self.package.replace('.', '/'), 'DeafultConfig.py')
+            else:
+                files_to_lint = generate_filelist(ignore='DeafultConfig.py')
 
-           results, evaluation = lint_files(files_to_lint, self.report)
-           ln = len(results)
-           scr = 0
-           print()
-           for k, v in results.items():
-               print("%s: %.2f/10" % (k.replace('src/python/', ''), v['score']))
-               scr += v['score']
-           if ln > 1:
-               print('--------------------------------------------------------')
-               print('Average pylint score for %s is: %.2f/10' % (self.package,
-                                                                 scr/ln))
+            results, dummyEvaluation = lint_files(files_to_lint, self.report)
+            ln = len(results)
+            scr = 0
+            print()
+            for k, v in results.items():
+                print("%s: %.2f/10" % (k.replace('src/python/', ''), v['score']))
+                scr += v['score']
+            if ln > 1:
+                print('--------------------------------------------------------')
+                print('Average pylint score for %s is: %.2f/10' % (self.package,
+                                                                   scr/ln))
 
-       else:
-           print('You need to install pylint before using the lint command')
+        else:
+            print('You need to install pylint before using the lint command')
 
 class ReportCommand(Command):
-   description = "Generate a simple html report for ease of viewing in buildbot"
-   """
-   To contain:
-       average lint score
-       % code coverage
-       list of classes missing tests
-       etc.
-   """
+    description = "Generate a simple html report for ease of viewing in buildbot"
+    """
+    To contain:
+        average lint score
+        % code coverage
+        list of classes missing tests
+        etc.
+    """
 
-   user_options = [ ]
+    user_options = [ ]
 
-   def initialize_options(self):
-       pass
+    def initialize_options(self):
+        pass
 
-   def finalize_options(self):
-       pass
+    def finalize_options(self):
+        pass
 
-   def run(self):
-       """
-       run all the tests needed to generate the report and make an
-       html table
-       """
-       files = generate_filelist()
+    def run(self):
+        """
+        run all the tests needed to generate the report and make an
+        html table
+        """
+        files = generate_filelist()
 
-       error = 0
-       warning = 0
-       refactor = 0
-       convention = 0
-       statement = 0
+        error = 0
+        warning = 0
+        refactor = 0
+        convention = 0
+        statement = 0
 
-       srcpypath = '/'.join([get_path_to_wmcore_root(), 'src/python/'])
-       sys.path.append(srcpypath)
+        srcpypath = '/'.join([get_path_to_wmcore_root(), 'src/python/'])
+        sys.path.append(srcpypath)
 
-       cfg = ConfigParser()
-       cfg.read('standards/.pylintrc')
+        cfg = ConfigParser()
+        cfg.read('standards/.pylintrc')
 
-       # Supress stdout/stderr
-       sys.stderr = open('/dev/null', 'w')
-       sys.stdout = open('/dev/null', 'w')
-       # wrap it in an exception handler, otherwise we can't see why it fails
-       try:
-           # lint the code
-           for stats in lint_files(files):
-               error += stats['error']
-               warning += stats['warning']
-               refactor += stats['refactor']
-               convention += stats['convention']
-               statement += stats['statement']
-       except Exception as e:
-           # and restore the stdout/stderr
-           sys.stderr = sys.__stderr__
-           sys.stdout = sys.__stderr__
-           raise e
+        # Supress stdout/stderr
+        sys.stderr = open('/dev/null', 'w')
+        sys.stdout = open('/dev/null', 'w')
+        # wrap it in an exception handler, otherwise we can't see why it fails
+        try:
+            # lint the code
+            for stats in lint_files(files):
+                error += stats['error']
+                warning += stats['warning']
+                refactor += stats['refactor']
+                convention += stats['convention']
+                statement += stats['statement']
+        except Exception as e:
+            # and restore the stdout/stderr
+            sys.stderr = sys.__stderr__
+            sys.stdout = sys.__stderr__
+            raise e
 
-       # and restore the stdout/stderr
-       sys.stderr = sys.__stderr__
-       sys.stdout = sys.__stderr__
+        # and restore the stdout/stderr
+        sys.stderr = sys.__stderr__
+        sys.stdout = sys.__stderr__
 
-       stats = {'error': error,
-           'warning': warning,
-           'refactor': refactor,
-           'convention': convention,
-           'statement': statement}
+        stats = {'error': error,
+                 'warning': warning,
+                 'refactor': refactor,
+                 'convention': convention,
+                 'statement': statement}
 
-       lint_score = eval(cfg.get('MASTER', 'evaluation'), {}, stats)
-       coverage = 0 # TODO: calculate this
-       testless_classes = [] # TODO: generate this
+        lint_score = eval(cfg.get('MASTER', 'evaluation'), {}, stats)
+        coverage = 0 # TODO: calculate this
+        testless_classes = [] # TODO: generate this
 
-       print("<table>")
-       print("<tr>")
-       print("<td colspan=2><h1>WMCore test report</h1></td>")
-       print("</tr>")
-       print("<tr>")
-       print("<td>Average lint score</td>")
-       print("<td>%.2f</td>" % lint_score)
-       print("</tr>")
-       print("<tr>")
-       print("<td>% code coverage</td>")
-       print("<td>%s</td>" % coverage)
-       print("</tr>")
-       print("<tr>")
-       print("<td>Classes missing tests</td>")
-       print("<td>")
-       if len(testless_classes) == 0:
-           print("None")
-       else:
-           print("<ul>")
-           for c in testless_classes:
-               print("<li>%c</li>" % c)
-           print("</ul>")
-       print("</td>")
-       print("</tr>")
-       print("</table>")
+        print("<table>")
+        print("<tr>")
+        print("<td colspan=2><h1>WMCore test report</h1></td>")
+        print("</tr>")
+        print("<tr>")
+        print("<td>Average lint score</td>")
+        print("<td>%.2f</td>" % lint_score)
+        print("</tr>")
+        print("<tr>")
+        print("<td>% code coverage</td>")
+        print("<td>%s</td>" % coverage)
+        print("</tr>")
+        print("<tr>")
+        print("<td>Classes missing tests</td>")
+        print("<td>")
+        if len(testless_classes) == 0:
+            print("None")
+        else:
+            print("<ul>")
+            for c in testless_classes:
+                print("<li>%c</li>" % c)
+            print("</ul>")
+        print("</td>")
+        print("</tr>")
+        print("</table>")
 
 class CoverageCommand(Command):
-   description = "Run code coverage tests"
-   """
-   To do this, we need to run all the unittests within the coverage
-   framework to record all the lines(and branches) executed
-   unfortunately, we have multiple code paths per database schema, so
-   we need to find a way to merge them.
+    description = "Run code coverage tests"
+    """
+    To do this, we need to run all the unittests within the coverage
+    framework to record all the lines(and branches) executed
+    unfortunately, we have multiple code paths per database schema, so
+    we need to find a way to merge them.
 
-   TODO: modify the test command to have a flag to record code coverage
-         the file thats used can then be used here, saving us from running
-         our tests twice
-   """
+    TODO: modify the test command to have a flag to record code coverage
+          the file thats used can then be used here, saving us from running
+          our tests twice
+    """
 
-   user_options = [ ]
+    user_options = [ ]
 
-   def initialize_options(self):
-       pass
+    def initialize_options(self):
+        pass
 
-   def finalize_options(self):
-       pass
+    def finalize_options(self):
+        pass
 
-   def run(self):
-       """
-       Determine the code's test coverage and return that as a float
+    def run(self):
+        """
+        Determine the code's test coverage and return that as a float
 
-       http://nedbatchelder.com/code/coverage/
-       """
-       if can_coverage:
-           files = generate_filelist()
-           dataFile = None
-           cov = None
+        http://nedbatchelder.com/code/coverage/
+        """
+        if can_coverage:
+            files = generate_filelist()
+            dataFile = None
+            cov = None
 
-           # attempt to load previously cached coverage information if it exists
-           try:
-               dataFile = open("wmcore-coverage.dat","r")
-               cov = coverage.coverage(branch = True, data_file='wmcore-coverage.dat')
-               cov.load()
-           except:
-               cov = coverage.coverage(branch = True, )
-               cov.start()
-               runUnitTests()
-               cov.stop()
-               cov.save()
+            # attempt to load previously cached coverage information if it exists
+            try:
+                dataFile = open("wmcore-coverage.dat","r")
+                cov = coverage.coverage(branch = True, data_file='wmcore-coverage.dat')
+                cov.load()
+            except:
+                cov = coverage.coverage(branch = True, )
+                cov.start()
+                runUnitTests()
+                cov.stop()
+                cov.save()
 
-           # we have our coverage information, now let's do something with it
-           # get a list of modules
-           cov.report(morfs = files, file=sys.stdout)
-           return 0
-       else:
-           print('You need the coverage module installed before running the' +\
-                           ' coverage command')
+            # we have our coverage information, now let's do something with it
+            # get a list of modules
+            cov.report(morfs = files, file=sys.stdout)
+            return 0
+        else:
+            print('You need the coverage module installed before running the' + \
+                  ' coverage command')

@@ -10,7 +10,6 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 from __future__ import print_function
-import time
 import pycurl
 import urllib
 import httplib
@@ -94,7 +93,7 @@ class RequestHandler(object):
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
         """Set options for given curl object, params should be a dictionary"""
-        if  not (isinstance(params, dict) or isinstance(params, basestring) or params==None):
+        if not (isinstance(params, (dict, basestring)) or params is None):
             raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
@@ -247,8 +246,8 @@ class RequestHandler(object):
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
-            _numq, response, _err = multi.info_read()
-            for _cobj in response:
+            _dummyNumq, response, _dummyErr = multi.info_read()
+            for _dummyCobj in response:
                 data = json.loads(bbuf.getvalue())
                 if  isinstance(data, dict):
                     data.update(params)

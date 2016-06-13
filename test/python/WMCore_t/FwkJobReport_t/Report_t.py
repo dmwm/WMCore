@@ -680,7 +680,7 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path1)
         info = BasicAlgos.getFileInfo(filename=path1)
-        self.assertEqual(info['Size'], 7101)
+        sizeBefore = info['Size']
 
         inputFiles = myReport.getAllInputFiles()
         self.assertEqual(len(inputFiles), 1)
@@ -689,7 +689,9 @@ cms::Exception caught in EventProcessor and rethrown
 
         myReport.save(path2)
         info = BasicAlgos.getFileInfo(filename=path2)
-        self.assertEqual(info['Size'], 6210)
+        sizeAfter = info['Size']
+
+        self.assertGreater(sizeBefore, sizeAfter)
 
         return
 

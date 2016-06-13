@@ -246,8 +246,8 @@ class RequestHandler(object):
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
-            _dummyNumq, response, _dummyErr = multi.info_read()
-            for _dummyCobj in response:
+            dummyNumq, response, dummyErr = multi.info_read()
+            for dummyCobj in response:
                 data = json.loads(bbuf.getvalue())
                 if  isinstance(data, dict):
                     data.update(params)

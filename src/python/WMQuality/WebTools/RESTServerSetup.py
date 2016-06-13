@@ -1,10 +1,9 @@
-import os
-import cherrypy
 import logging
 from functools import wraps
 
-from WMCore.WebTools.Root import Root
 from WMCore.Configuration import Configuration
+from WMCore.WebTools.Root import Root
+
 
 #this function will be used for cherrypy set up for test
 def cherrypySetup(config = None):
@@ -52,10 +51,8 @@ class DefaultConfig(Configuration):
         active.section_('rest')
         active.rest.application = 'UnitTestRESTApp'
         active.rest.object = 'WMCore.WebTools.RESTApi'
-        #active.rest.templates = '/tmp'
         active.rest.section_('database')
         active.rest.database.connectUrl = 'sqlite://'
-        #active.rest.database = 'sqlite:////tmp/resttest.db'
         active.rest.section_('model')
         active.rest.model.object = model or 'WMCore.WebTools.RESTModel'
         active.rest.section_('formatter')
@@ -71,42 +68,14 @@ class DefaultConfig(Configuration):
     def getDBUrl(self):
         return self.UnitTests.views.active.rest.database.connectUrl
 
-    def getDBSocket(self):
-        return self.UnitTests.views.active.rest.database.socket
-
     def setDBUrl(self, dbUrl):
         self.UnitTests.views.active.rest.database.connectUrl = dbUrl
-
-    def setDBSocket(self, socket):
-        self.UnitTests.views.active.rest.database.socket = socket
-
-    def setModel(self, model):
-        self.UnitTests.views.active.rest.model.object = model
-
-    def setHost(self, host):
-        self.Webtools.host = host
 
     def setPort(self, port):
         self.Webtools.port = port
 
     def setFormatter(self, formatter):
         self.UnitTests.views.active.rest.formatter.object = formatter
-
-    def setWorkQueueLevel(self, queueLevel):
-        """only set this for workqueue restmodel test
-           queueLevel should be 'GlobalQueue' or 'LocalQueue'
-        """
-
-        self.UnitTests.views.active.rest.level = queueLevel
-
-    def setWorkQueueCouchConfig(self):
-        """only set this for workqueue restmodel test
-           queueLevel should be 'GlobalQueue' or 'LocalQueue'
-        """
-        self.UnitTests.views.active.rest.section_('couchConfig')
-        self.UnitTests.views.active.rest.couchConfig.couchURL = "http://blah.blah"
-        self.UnitTests.views.active.rest.couchConfig.acdcDBName = "TestACDC"
-        self.UnitTests.views.active.rest.couchConfig.jobDumpDBName = "TestJobDB"
 
     def getModelConfig(self):
         return self.UnitTests.views.active.rest

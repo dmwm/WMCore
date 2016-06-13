@@ -10,11 +10,19 @@ sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
 mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
 
-
-touch Report.pkl
-
 # should be a bit nicer than before
 echo "WMAgent bootstrap : `date -u` : starting..."
+
+# We need to create the expected output file in advance just in case
+# some problem happens during the job bootstrap
+outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl"
+if [ -n "$_CONDOR_JOB_AD" ]; then
+    outputFile=`grep ^TransferOutput $_CONDOR_JOB_AD | awk -F'=' '{print $2}' | sed 's/\"//g'`
+fi
+if [ -z $outputFile ]; then
+    outputFile="Report.0.pkl Report.1.pkl Report.2.pkl Report.3.pkl"
+fi
+touch $outputFile
 
 # validate arguments
 if [ -z "$1" ]

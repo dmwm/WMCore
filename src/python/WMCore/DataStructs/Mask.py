@@ -10,8 +10,6 @@ job in two ways:
 
 """
 
-import logging
-
 from WMCore.DataStructs.Run import Run
 
 class Mask(dict):
@@ -224,26 +222,3 @@ class Mask(dict):
                 newRuns.add(Run(runNumber, *list(filteredLumis)))
 
         return newRuns
-
-
-class InclusiveMask(Mask):
-    """
-    _InclusiveMask_
-
-    Mask with Inclusive flag set
-
-    """
-    def __init__(self):
-        Mask.__init__(self)
-        self['inclusive'] = True
-
-class ExclusiveMask(Mask):
-    """
-    _ExclusiveMask_
-
-    Mask with Inclusive flag set to false
-
-    """
-    def __init__(self):
-        Mask.__init__(self)
-        self['inclusive'] = False

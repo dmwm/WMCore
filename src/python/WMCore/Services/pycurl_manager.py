@@ -11,17 +11,13 @@ underlying data-services.
 """
 from __future__ import print_function
 
+import cStringIO as StringIO
 import httplib
 import json
 import logging
 import urllib
 
 import pycurl
-
-try:
-    import cStringIO as StringIO
-except:
-    import StringIO
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""

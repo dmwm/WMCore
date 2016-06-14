@@ -10,6 +10,7 @@ The response from the remote server is cached if expires/etags are set.
 """
 
 import base64
+import cStringIO as StringIO
 import logging
 import os
 import shutil
@@ -23,15 +24,10 @@ import urlparse
 from httplib import HTTPException
 from json import JSONEncoder, JSONDecoder
 
-try:
-    import cStringIO as StringIO
-except ImportError:
-    import StringIO
-
 from WMCore.Algorithms import Permissions
-
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+
 try:
     from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader
 except ImportError:

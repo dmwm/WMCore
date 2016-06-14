@@ -49,7 +49,6 @@ result          |  cached  |  cached  |  cached  | not cached |
 """
 
 
-
 def isfile(obj):
     # Any better way of identifying if an object is a file?
     return hasattr(obj, 'flush')
@@ -77,18 +76,20 @@ def cache_expired(cache, delta = 0):
 import datetime
 import os
 import time
-import types
 import logging
 try:
     from cStringIO import cStringIO as StringIO
 except ImportError:
     from StringIO import StringIO
 
+try:
+    from httplib2 import HttpLib2Error
+except ImportError:
+    #Mock HttpLib2Error since we don't want that WMCore depend on httplib2 using pycurl
+    class HttpLib2Error(Exception):
+        pass
 
-from httplib import InvalidURL, HTTPException
-from httplib2 import HttpLib2Error
-
-from urlparse import urlparse
+from httplib import HTTPException
 
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
@@ -97,23 +98,16 @@ from WMCore.Wrappers import JsonWrapper as json
 
 class Service(dict):
 
-    def __init__(self, cfg_dict = {}):
+    def __init__(self, cfg_dict = None):
+        super(Service, self).__init__()
+        cfg_dict = cfg_dict or {}
         #The following should read the configuration class
         for a in ['endpoint']:
             assert a in cfg_dict.keys(), "Can't have a service without a %s" % a
 
-        scheme = ''
-        netloc = ''
-        path = ''
-
         #if end point ends without '/', add that
         if not cfg_dict['endpoint'].endswith('/'):
             cfg_dict['endpoint'] = cfg_dict['endpoint'].strip() + '/'
-
-        # then split the endpoint into netloc and basepath
-        endpoint_components = urlparse(cfg_dict['endpoint'])
-
-        scheme = endpoint_components.scheme
 
         #set up defaults
         self.setdefault("inputdata", {})
@@ -134,7 +128,7 @@ class Service(dict):
 
         # Get the request class, to instantiate later
         # either passed as param to __init__, determine via scheme or default
-        if type(self.get('requests')) == type:
+        if isinstance(self.get('requests'), type):
             requests = self['requests']
         elif (self.get('accept_type') == "application/json" and self.get('content_type') == "application/json"):
             requests = JSONRequests
@@ -171,7 +165,7 @@ class Service(dict):
                    self["cacheduration"], self["maxcachereuse"]))
 
 
-    def _makeHash(self, inputdata, hash):
+    def _makeHash(self, inputdata, hash_):
         """
         Turn the input data into json and hash the string. This is simple and
         means that the input data must be json-serialisable, which is good.
@@ -187,25 +181,26 @@ class Service(dict):
         if not self['cachepath'] or not cachefile:
             return StringIO()
 
-        hash = 0
+        hash_ = 0
         if inputdata:
-            hash = self._makeHash(inputdata, hash)
+            hash_ = self._makeHash(inputdata, hash_)
         else:
-            hash = self._makeHash(self['inputdata'], hash)
-        cachefile = "%s/%s_%s_%s" % (self["cachepath"], hash, verb, cachefile)
+            hash_ = self._makeHash(self['inputdata'], hash_)
+        cachefile = "%s/%s_%s_%s" % (self["cachepath"], hash_, verb, cachefile)
 
         return cachefile
 
-    def refreshCache(self, cachefile, url='', inputdata = {}, openfile=True,
-                     encoder = True, decoder = True, verb = 'GET', contentType = None, incoming_headers={}):
+    def refreshCache(self, cachefile, url='', inputdata = None, openfile=True,
+                     encoder = True, decoder = True, verb = 'GET', contentType = None, incoming_headers=None):
         """
         See if the cache has expired. If it has make a new request to the
         service for the input data. Return the cachefile as an open file object.
         If cachefile is None returns StringIO.
         """
+        inputdata = inputdata or {}
+        incoming_headers = incoming_headers or {}
         verb = self._verbCheck(verb)
 
-        t = datetime.datetime.now() - datetime.timedelta(hours = self['cacheduration'])
         cachefile = self.cacheFileName(cachefile, verb, inputdata)
 
         if cache_expired(cachefile):
@@ -265,6 +260,7 @@ class Service(dict):
 
         If cachefile is StringIO append to that
         """
+
         verb = self._verbCheck(verb)
 
         try:
@@ -273,7 +269,7 @@ class Service(dict):
                 inputdata = self["inputdata"]
             self['logger'].debug('getData: \n\turl: %s\n\tdata: %s' % \
                                  (url, inputdata))
-            data, status, reason, from_cache = self["requests"].makeRequest(uri = url,
+            data, dummyStatus, dummyReason, from_cache = self["requests"].makeRequest(uri = url,
                                                     verb = verb,
                                                     data = inputdata,
                                                     incoming_headers = incoming_headers,

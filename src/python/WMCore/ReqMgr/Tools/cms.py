@@ -127,7 +127,7 @@ def lfn_bases():
 
 def lfn_unmerged_bases():
     "Return list of LFN unmerged bases"
-    out = ["/store/data", "/store/temp"]
+    out = ["/store/unmerged", "/store/data", "/store/temp"]
     return out
 
 def web_ui_names():

@@ -941,7 +941,7 @@ class StdBase(object):
                      "ValidStatus": {"default": "PRODUCTION"},
                      "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
-                     "DashboardHost": {"default": "cms-wmagent-job.cern.ch"},
+                     "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,
                                        "validate": lambda x: x > 0},
                      "OverrideCatalog": {"null": True},

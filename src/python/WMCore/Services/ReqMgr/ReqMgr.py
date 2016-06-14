@@ -1,4 +1,5 @@
-from WMCore.Wrappers import JsonWrapper
+import json
+
 from WMCore.Services.Service import Service
 
 class ReqMgr(Service):
@@ -23,16 +24,15 @@ class ReqMgr(Service):
         httpDict.setdefault('cacheduration', 0)
         httpDict.setdefault("accept_type", "application/json")
         httpDict.update(header)
-        self.encoder = JsonWrapper.dumps
+        self.encoder = json.dumps
         Service.__init__(self, httpDict)
         # This is only for the unittest: never set it true unless it is unittest
         self._noStale = False
 
-        
-    def _getResult(self, callname, clearCache = True,
-                   args = None, verb = "GET", encoder = JsonWrapper.loads, 
-                   decoder = JsonWrapper.loads,
-                   contentType = None):
+    def _getResult(self, callname, clearCache=True,
+                   args=None, verb="GET", encoder=json.loads,
+                   decoder=json.loads,
+                   contentType=None):
         """
         _getResult_
         

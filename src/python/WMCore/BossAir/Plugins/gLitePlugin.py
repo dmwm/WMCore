@@ -7,25 +7,24 @@ gLite Plugin
 """
 from __future__ import print_function
 
+import Queue
+import json
 import logging
-import subprocess
-import threading
-import multiprocessing, Queue
-import socket
-import tempfile
+import multiprocessing
 import os
+import socket
+import subprocess
+import tempfile
+import threading
 import time
-import types
 from copy import copy
 
-from WMCore.Wrappers import JsonWrapper as json
-from WMCore.Credential.Proxy           import Proxy
-from WMCore.FwkJobReport.Report        import Report
-from WMCore.DAOFactory                 import DAOFactory
 import WMCore.WMInit
-
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.BossAir.Plugins.GLiteLIParser import LoggingInfoParser
+from WMCore.Credential.Proxy           import Proxy
+from WMCore.DAOFactory                 import DAOFactory
+from WMCore.FwkJobReport.Report        import Report
 
 def processWorker(input, results):
     """

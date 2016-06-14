@@ -11,8 +11,10 @@ A REST formatter that appends the DAS headers to the result data
 # I want dasjson and plist to be methods instead of functions
 # pylint: disable=R0201
 
-from WMCore.WebTools.RESTFormatter import RESTFormatter
+import json
 import plistlib
+
+from WMCore.WebTools.RESTFormatter import RESTFormatter
 
 class DASRESTFormatter(RESTFormatter):
     """
@@ -58,7 +60,7 @@ class DASRESTFormatter(RESTFormatter):
         data = runDas(self, func, data, expires)
         thunker = JSONThunker()
         data = thunker.thunk(data)
-        return JsonWrapper.dumps(data)
+        return json.dumps(data)
 
     def xml(self, data):
         "Return DAS compliant xml"

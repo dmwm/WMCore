@@ -1,8 +1,10 @@
-from xml.dom.minidom import parseString
+import json
 import logging
-from WMCore.Services.Service import Service
-from WMCore.Wrappers import JsonWrapper
+from xml.dom.minidom import parseString
+
 from WMCore.Services.EmulatorSwitch import emulatorHook
+from WMCore.Services.Service import Service
+
 
 # emulator hook is used to swap the class instance
 # when emulator values are set.
@@ -54,7 +56,7 @@ class PhEDEx(Service):
         f.close()
 
         if self.responseType == "json":
-            return JsonWrapper.loads(result)
+            return json.loads(result)
 
         return result
 

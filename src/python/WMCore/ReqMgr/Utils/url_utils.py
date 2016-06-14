@@ -11,11 +11,10 @@ from __future__ import print_function
 # system modules
 import os
 import sys
-import time
 import urllib
 import urllib2
 import httplib
-import WMCore.ReqMgr.Utils.jsonwrapper as json
+import json
 
 def get_key_cert():
     """

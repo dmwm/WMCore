@@ -7,21 +7,21 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 from __future__ import print_function
 
 import os
-import re
+import pickle
 import random
+import re
 import socket
 import traceback
-import pickle
+from json import JSONDecoder
 
-from WMCore.WMRuntime.ScriptInterface import ScriptInterface
-from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
+import FWCore.ParameterSet.Config as cms
+
 from PSetTweaks.PSetTweak import PSetTweak
 from PSetTweaks.WMTweak import applyTweak
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-from WMCore.Wrappers.JsonWrapper import JSONDecoder
-
-import FWCore.ParameterSet.Config as cms
+from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
+from WMCore.WMRuntime.ScriptInterface import ScriptInterface
 
 
 def fixupGlobalTag(process):

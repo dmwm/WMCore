@@ -9,35 +9,32 @@ DB interfaces they execute.
 https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign
 """
 
-import sys
-import math
-import cherrypy
 import json
+import math
+import sys
 import threading
-import urllib
 import traceback
+import urllib
 
-import WMCore.Lexicon
-from WMCore.Wrappers import JsonWrapper
-from WMCore.WebTools.RESTModel import RESTModel
+import cherrypy
+
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.WMException import WMException
-
+import WMCore.Lexicon
+import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement      as GroupManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement       as ProdManagement
+import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement    as RequestAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement   as SoftwareAdmin
+import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement       as UserManagement
+import WMCore.RequestManager.RequestDB.Interface.Group.Information          as GroupInfo
+import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
+import WMCore.RequestManager.RequestDB.Interface.Request.Campaign           as Campaign
+import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState        as ChangeState
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest         as GetRequest
+import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests       as ListRequests
 import WMCore.RequestManager.RequestDB.Interface.User.Registration          as Registration
 import WMCore.RequestManager.RequestDB.Interface.User.Requests              as UserRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests       as ListRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest         as GetRequest
-import WMCore.RequestManager.RequestDB.Interface.Admin.RequestManagement    as RequestAdmin
-import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement       as ProdManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.GroupManagement      as GroupManagement
-import WMCore.RequestManager.RequestDB.Interface.Admin.UserManagement       as UserManagement
-import WMCore.RequestManager.RequestDB.Interface.ProdSystem.ProdMgrRetrieve as ProdMgrRetrieve
-import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement   as SoftwareAdmin
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState        as ChangeState
-import WMCore.RequestManager.RequestDB.Interface.Group.Information          as GroupInfo
-import WMCore.RequestManager.RequestDB.Interface.Request.Campaign           as Campaign
-
-
+from WMCore.WMException import WMException
+from WMCore.WebTools.RESTModel import RESTModel
 
 # request arguments which are deprecated at injection (2013-03-26)
 # 'RequestWorkflow' is an exception that is it deprecated at injection
@@ -454,7 +451,7 @@ class ReqMgrRESTModel(RESTModel):
             # Create a new request, with a JSON-encoded schema that is
             # sent in the body of the HTTP request
             body = cherrypy.request.body.read()
-            reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
+            reqInputArgs = Utilities.unidecode(json.loads(body))
             # check for forbidden input arguments:
             for deprec in deprecatedRequestArgs:
                 if deprec in reqInputArgs:
@@ -611,7 +608,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def putMessage(self, request):
         """ Attaches a message to this request """
-        message = JsonWrapper.loads( cherrypy.request.body.read() )
+        message = json.loads(cherrypy.request.body.read())
         result = ChangeState.putMessage(request, message)
         return result
 
@@ -699,7 +696,7 @@ class ReqMgrRESTModel(RESTModel):
 
         if 'stats' not in index:
             return index
-        index['stats'] = Utilities.unidecode(JsonWrapper.loads(index['stats']))
+        index['stats'] = Utilities.unidecode(json.loads(index['stats']))
         for k in ['input_lumis', 'input_num_files',
                   'input_events', 'total_jobs']:
             if k in index['stats']:

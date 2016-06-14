@@ -10,11 +10,12 @@ __author__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"
 
 # system modules
+import json
+import logging
 import os
 import types
-import logging
-
 from datetime import datetime, timedelta
+from json import JSONEncoder
 from time import mktime
 from wsgiref.handlers import format_date_time
 
@@ -23,12 +24,9 @@ import cherrypy
 from cherrypy import log as cplog
 from cherrypy import expose
 
-# cheetag modules
+# cheetah modules
 from Cheetah.Template import Template
 from Cheetah import Version
-
-import WMCore.ReqMgr.Utils.jsonwrapper as json
-from json import JSONEncoder
 
 class Page(object):
     """

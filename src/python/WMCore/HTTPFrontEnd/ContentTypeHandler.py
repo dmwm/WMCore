@@ -1,5 +1,9 @@
+import json
+
 from cherrypy import request
+
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+
 
 class ContentTypeHandler:
 
@@ -24,10 +28,9 @@ class ContentTypeHandler:
         #if get verb doesn't have request.boby
         #TODO: maybe this should filtered on upper level
         if request.body != None:
-            from WMCore.Wrappers import JsonWrapper
             params = request.body.read()
             if params:
-                kw = JsonWrapper.loads(params)
+                kw = json.loads(params)
                 kwargs.update(kw)
         return args, kwargs
 

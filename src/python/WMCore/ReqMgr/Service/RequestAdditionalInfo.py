@@ -1,17 +1,18 @@
 from __future__ import (print_function, division)
+
+import json
+
 import cherrypy
+
+import WMCore.ReqMgr.Service.RegExp as rx
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 from WMCore.REST.Validation import validate_str
-from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-
-import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
-
-from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-
-from WMCore.Wrappers import JsonWrapper
+from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
 
 def format_algo_web_list(task_name, task_type, split_param):
     
@@ -229,7 +230,7 @@ class WorkloadSplitting(RESTEntity):
         """
         
         data = cherrypy.request.body.read()
-        splittingInfo = JsonWrapper.loads(data)
+        splittingInfo = json.loads(data)
         
         for taskInfo in splittingInfo:
             splittingTask = taskInfo["taskName"]

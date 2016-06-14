@@ -1,6 +1,8 @@
 import time
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
+from json import JSONEncoder
+
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+
 
 def monitorDocFromRequestSchema(schema):
     """

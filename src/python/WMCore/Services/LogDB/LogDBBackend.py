@@ -6,13 +6,12 @@ Interface to LogDB persistent storage
 """
 
 # syste modules
-import time
 import datetime
 import hashlib
+import time
 
 # WMCore modules
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, CouchConflictError
-from WMCore.Wrappers import JsonWrapper as json
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
 # define full list of supported LogDB types

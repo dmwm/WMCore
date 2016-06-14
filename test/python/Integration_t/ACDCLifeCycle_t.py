@@ -1,6 +1,6 @@
 from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t, recordException
 
-from WMCore.ACDC.AnalysisCollectionService import AnalysisCollectionService
+from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.Wrappers.JsonWrapper import loads
 from WMCore.WMBase import getTestBase
 from WMCore.Database.CMSCouch import Database
@@ -41,7 +41,7 @@ class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):
         self.__class__.requestParams['ACDCServer'] = self.__class__.endpoint + '/couchdb'
 
         # create and upload acdc
-        service = AnalysisCollectionService(url=self.__class__.endpoint + '/couchdb', database = 'wmagent_acdc')
+        service = DataCollectionService(url=self.__class__.endpoint + '/couchdb', database = 'wmagent_acdc')
         service.createCollection(self.__class__.requestParams['OriginalRequestName'], 'integration', 'DMWM')
         with open(os.path.join(getTestBase(), '..', 'data', 'ACDC', 'linacre_ACDC_ReReco13JulCosmics_120809_130020_117_120823_200309_5735.json')) as infile:
             acdc_json = infile.read().replace('linacre_ACDC_ReReco13JulCosmics_120809_130020_117_120823_200309_5735',

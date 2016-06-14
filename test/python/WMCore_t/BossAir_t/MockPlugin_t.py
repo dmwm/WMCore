@@ -17,7 +17,7 @@ config.BossAir.MockPlugin.fakeReport = os.path.join(os.path.dirname(__file__), '
 config.BossAir.MockPlugin.fakeReport = os.path.join(os.path.dirname(__file__), 'LogCollectFakeReport.pkl')
 
 
-jobList = [{'status': 'Done', 'bulkid': None, 'cms_site_name': None, 'cache_dir': '/data/wmagent/osb/JobCache/mmascher_crab_MyAnalysis_110609_114309/Analysis/JobCollection_23_0/job_46', 'taskType': None, 'id': 1, 'plugin': 'MockPlugin', 'gridid': None, 'userdn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni', 'jobid': 46, 'priority': None, 'retry_count': 0, 'sandbox': None, 'globalState': 'Running', 'location': None, 'packageDir': None, 'status_time': None}]
+jobList = [{'status': 'Done', 'bulkid': None, 'cms_site_name': None, 'cache_dir': '/data/wmagent/osb/JobCache/amaltaro_whatever_110609_114309/Production/JobCollection_23_0/job_46', 'taskType': None, 'id': 1, 'plugin': 'MockPlugin', 'gridid': None, 'userdn': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=mmascher/CN=720897/CN=Marco Mascheroni', 'jobid': 46, 'priority': None, 'retry_count': 0, 'sandbox': None, 'globalState': 'Running', 'location': None, 'packageDir': None, 'status_time': None}]
 
 
 

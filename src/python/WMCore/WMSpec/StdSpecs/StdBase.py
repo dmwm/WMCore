@@ -14,8 +14,6 @@ from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSURL, validateArgumentsCreate
 
-analysisTaskTypes = ['Analysis', 'PrivateMC']
-
 
 class StdBase(object):
     """
@@ -443,47 +441,26 @@ class StdBase(object):
             runSections = [stringRunNumber[i:i + 3] for i in range(0, 9, 3)]
             runLFN = "/".join(runSections)
 
-        if parentTask.name() in analysisTaskTypes:
+        unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase,
+                                       self.acquisitionEra,
+                                       primaryDataset, dataTier)
+        mergedLFN = "%s/%s/%s/%s" % (self.mergedLFNBase,
+                                     self.acquisitionEra,
+                                     primaryDataset, dataTier)
 
-            # dataTier for user data is always USER
-            dataTier = "USER"
-
-            # output for user data is always unmerged
-            forceUnmerged = True
-
-            unmergedLFN = "%s/%s" % (self.unmergedLFNBase, primaryDataset)
-
-            if haveFilterName:
-                unmergedLFN += "/%s-%s" % (self.acquisitionEra, filterName)
-            else:
-                unmergedLFN += "/%s" % self.acquisitionEra
-
-            unmergedLFN += "/%s" % processingLFN
-
-            lfnBase(unmergedLFN)
-
+        if haveFilterName:
+            unmergedLFN += "/%s-%s" % (filterName, processingLFN)
+            mergedLFN += "/%s-%s" % (filterName, processingLFN)
         else:
+            unmergedLFN += "/%s" % processingLFN
+            mergedLFN += "/%s" % processingLFN
 
-            unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase,
-                                           self.acquisitionEra,
-                                           primaryDataset, dataTier)
-            mergedLFN = "%s/%s/%s/%s" % (self.mergedLFNBase,
-                                         self.acquisitionEra,
-                                         primaryDataset, dataTier)
+        if haveRunNumber:
+            unmergedLFN += "/%s" % runLFN
+            mergedLFN += "/%s" % runLFN
 
-            if haveFilterName:
-                unmergedLFN += "/%s-%s" % (filterName, processingLFN)
-                mergedLFN += "/%s-%s" % (filterName, processingLFN)
-            else:
-                unmergedLFN += "/%s" % processingLFN
-                mergedLFN += "/%s" % processingLFN
-
-            if haveRunNumber:
-                unmergedLFN += "/%s" % runLFN
-                mergedLFN += "/%s" % runLFN
-
-            lfnBase(unmergedLFN)
-            lfnBase(mergedLFN)
+        lfnBase(unmergedLFN)
+        lfnBase(mergedLFN)
 
         isTransient = True
 

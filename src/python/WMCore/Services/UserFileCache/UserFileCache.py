@@ -141,9 +141,9 @@ class UserFileCache(Service):
         if excludeList==None: #pylint says [] is a dangerous default value
             excludeList = []
 
-        #The parameter newchecksum tells the crabcace to use the new algorithm. It's there
-        #for guarantee backward compatibility
-        params = [('hashkey', calculateChecksum(fileName, excludeList)), ('newchecksum', '1')]
+        #The parameter newchecksum tells the crabcache to use the new algorithm. It's there
+        #to guarantee backward compatibility.
+        params = [('hashkey', calculateChecksum(fileName, excludeList)), ('newchecksum', '2')]
 
         resString = self["requests"].uploadFile(fileName=fileName, fieldName='inputfile',
                                                 url=self['endpoint'] + 'file',

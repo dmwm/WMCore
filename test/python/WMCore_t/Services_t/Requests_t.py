@@ -6,45 +6,28 @@ Created on Aug 6, 2009
 @author: meloam
 '''
 from __future__ import print_function
-import unittest
-import WMCore.Services.Requests as Requests
+
 import os
-import time
-import tempfile
 import shutil
-import nose
+import tempfile
+import time
+import unittest
 from httplib import HTTPException
-from WMCore.DataStructs.Run import Run
-from WMCore.DataStructs.Mask import Mask
+
+import nose
+
+import WMCore.Services.Requests as Requests
 from WMCore.DataStructs.Job import Job
-from WMCore.Services.Requests import JSONRequests
 from WMCore.DataStructs.Job import Job as DataStructsJob
-from WMQuality.TestInit import TestInit
+from WMCore.DataStructs.Mask import Mask
+from WMCore.DataStructs.Run import Run
+from WMCore.Services.Requests import JSONRequests
+from WMCore.WMInit import getWMBASE
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
+from WMQuality.TestInit import TestInit
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
-from WMCore.WMInit import getWMBASE
-from functools import wraps
 
-def runboth(testcase):
-    """
-    Decorator to make it easy to run for both json implementations, if available
-    """
-    implementations = ['json']
-    try:
-        import cjson
-        implementations.append('cjson')
-    except:
-        print("No cjson module is found, only testing with json")
-
-    @wraps(testcase)
-    def decorated_test(self):
-        import WMCore.Wrappers.JsonWrapper as json_wrap
-        for impl in implementations:
-            json_wrap._module = impl
-            testcase(self)
-            ##print testcase.__name__, ' passed using ', impl
-    return decorated_test
 
 class testThunking(unittest.TestCase):
     """
@@ -58,20 +41,16 @@ class testThunking(unittest.TestCase):
         decoded = self.thunker.unthunk(encoded)
         self.assertEqual( data, decoded )
 
-    @runboth
     def testStr(self):
         self.roundTrip('hello')
 
-    @runboth
     def testList(self):
         self.roundTrip([123, 456])
 
-    @runboth
     def testDict(self):
         self.roundTrip({'abc':123, 'def':456})
         self.roundTrip({'abc':123, 456:'def'})
 
-    @runboth
     def testSet(self):
         self.roundTrip(set([]))
         self.roundTrip(set([123, 'abc']))
@@ -194,7 +173,6 @@ class testRepeatCalls(RESTBaseUnitTest):
 
     def testRecoveryFromConnRefused_with_pycurl(self):
         """Connections succeed after server down"""
-        import socket
         import pycurl
         self.rt.stop()
         idict = {'req_cache_path': self.cache_path, 'pycurl':1}
@@ -233,46 +211,36 @@ class testJSONRequests(unittest.TestCase):
             datakeys.pop(datakeys.index(k))
         #print 'the following keys were dropped\n\t',datakeys
 
-    @runboth
     def testSet1(self):
         self.roundTrip(set([]))
 
-    @runboth
     def testSet2(self):
         self.roundTrip(set([1, 2, 3, 4, Run(1)]))
 
-    @runboth
     def testSet3(self):
         self.roundTrip(set(['a', 'b', 'c', 'd']))
 
-    @runboth
     def testSet4(self):
         self.roundTrip(set([1, 2, 3, 4, 'a', 'b']))
 
-    @runboth
     def testRun1(self):
         self.roundTrip(Run(1))
 
-    @runboth
     def testRun2(self):
         self.roundTrip(Run(1, 1))
 
-    @runboth
     def testRun3(self):
         self.roundTrip(Run(1, 2, 3))
 
-    @runboth
     def testMask1(self):
         self.roundTrip(Mask())
 
-    @runboth
     def testMask2(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
         mymask['LastEvent'] = 999
         self.roundTrip(mymask)
 
-    @runboth
     def testMask3(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
@@ -281,12 +249,10 @@ class testJSONRequests(unittest.TestCase):
         myjob["mask"] = mymask
         self.roundTrip(myjob)
 
-    @runboth
     def testMask4(self):
         self.roundTrip({'LastRun': None, 'FirstRun': None, 'LastEvent': None,
         'FirstEvent': None, 'LastLumi': None, 'FirstLumi': None})
 
-    @runboth
     def testMask5(self):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
@@ -295,7 +261,6 @@ class testJSONRequests(unittest.TestCase):
         myjob["mask"] = mymask
         self.roundTripLax(myjob)
 
-    @runboth
     def testMask6(self):
         mymask = Mask()
         myjob = DataStructsJob()

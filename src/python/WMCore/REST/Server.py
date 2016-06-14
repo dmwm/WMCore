@@ -1,13 +1,20 @@
-import os, re, hashlib, signal, cherrypy, traceback, random, string, inspect, time
-from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
-from threading import Thread, Condition, Lock
-from rfc822 import formatdate as rfc822_date
+import cherrypy
+import inspect
+import os
+import re
+import signal
+import string
+import time
 from collections import namedtuple
-from traceback import format_exc
 from functools import wraps
+from threading import Thread, Condition
+
+from cherrypy import engine, expose, request, response, HTTPError, HTTPRedirect, tools
+
 from WMCore.REST.Error import *
 from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
+
 try:
   from cherrypy.lib import httputil
 except:
@@ -177,7 +184,7 @@ class RESTFrontPage:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
                          for k, v in instances().iteritems()]
             instances.sort(lambda a, b: a["order"] - b["order"])
-            self._preamble += (", REST_INSTANCES = %s" % cjson.encode(instances))
+            self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
         self._preamble += ";\n%s" % (preamble or "")
 
@@ -762,7 +769,7 @@ class MiniRESTApi:
             formats = apiobj.get('formats', self.formats)
             format = cherrypy.lib.cptools.accept([f[0] for f in formats])
             fmthandler = [f[1] for f in formats if f[0] == format][0]
-        except HTTPError as e:
+        except HTTPError:
             format_names = ', '.join(f[0] for f in formats)
             raise NotAcceptable('Available types: %s' % format_names)
 
@@ -1439,7 +1446,7 @@ class DBConnectionPool(Thread):
                                 len(self.inuse), len(self.idle)))
 
         # Attempt to connect max_tries times.
-        for i in xrange(0, self.max_tries):
+        for _ in xrange(0, self.max_tries):
             try:
                 # Take next idle connection, or make a new one if none exist.
                 # Then test and prepare that connection, linking it in trace

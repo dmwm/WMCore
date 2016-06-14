@@ -1,9 +1,12 @@
 # system modules
-import cjson, re, zlib
-import cherrypy
-from cherrypy.test import webtest
-from cherrypy import response
+import json
+import re
+import zlib
 from multiprocessing import Process
+
+import cherrypy
+from cherrypy import response
+from cherrypy.test import webtest
 
 # WMCore modules
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
@@ -13,7 +16,6 @@ from WMCore.REST.Validation import validate_num, validate_str
 from WMCore.REST.Error import InvalidObject
 from WMCore.REST.Format import RawFormat
 from WMCore.REST.Tools import tools
-import WMCore.REST.Test as T
 
 gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
              '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
@@ -145,7 +147,7 @@ class Tester(webtest.WebCase):
         h.append(("Accept", "application/json"))
         self.getPage("/test/simple", headers = h)
         self.assertStatus("200 OK")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -161,7 +163,7 @@ class Tester(webtest.WebCase):
         self.assertStatus("200 OK")
         self.assertHeader("Content-Length")
         self.assertHeader("Content-Encoding", "deflate")
-        b = cjson.decode(zlib.decompress(self.body, -zlib.MAX_WBITS))
+        b = json.loads(zlib.decompress(self.body, -zlib.MAX_WBITS))
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -175,7 +177,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -203,7 +205,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi?lim=5&etag=x", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b
@@ -231,7 +233,7 @@ class Tester(webtest.WebCase):
         self.getPage("/test/multi?lim=10&etag=x", headers = h)
         self.assertStatus("200 OK")
         self.assertHeader("X-REST-Status", "100")
-        b = cjson.decode(self.body)
+        b = json.loads(self.body)
         assert isinstance(b, dict)
         assert "desc" not in b
         assert "result" in b

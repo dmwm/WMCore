@@ -7,18 +7,13 @@ independent python structure
 
 """
 
-import inspect
-import pickle
 import StringIO
 import imp
+import inspect
+import json
+import pickle
 import sys
 from functools import reduce
-
-#py2.6 compatibility
-try:
-    import json
-except ImportError as ex:
-    import simplejson as json
 
 
 class PSetHolder(object):
@@ -145,7 +140,7 @@ class JSONiser:
         for param in params:
             self.parameters["%s.%s" % (queue, param)]  = dictionary[param]
         for key, value in dictionary.items():
-            if type(value) == type(dict()):
+            if isinstance(value, dict):
                 self.queue.append(key)
                 self.dejson(dictionary[key])
                 self.queue.pop(-1)
@@ -180,7 +175,7 @@ class PSetTweak:
         """
         currentPSet = None
         paramList = attrName.split(".")
-        for i in range(0, len(paramList)):
+        for _ in range(0, len(paramList)):
             param = paramList.pop(0)
             if param == "process":
                 currentPSet = self.process
@@ -261,7 +256,7 @@ class PSetTweak:
         current = None
         last = None
         psets = psetPath.split(".")
-        for i in range(0, len(psets)):
+        for _ in range(0, len(psets)):
             pset = psets.pop(0)
             last = current
             if current == None:
@@ -293,8 +288,7 @@ class PSetTweak:
         setattrCalls = {}
         for pset in self.psets():
             setattrCalls.update(self.setattrCalls(pset))
-        order = setattrCalls.keys()
-        order.sort()
+        order = sorted(setattrCalls.keys())
         for call in order:
             if call == "process": continue
             result += "%s\n" % setattrCalls[call]
@@ -303,7 +297,7 @@ class PSetTweak:
         for param, value in self:
             psetName = param.rsplit(".", 1)[0]
             paramName = param.rsplit(".", 1)[1]
-            if type(value) == type("string"):
+            if isinstance(value, basestring):
                 value = "\"%s\"" % value
             result += "setattr(%s, \"%s\", %s)\n" % (
                 psetName, paramName, value)
@@ -336,33 +330,33 @@ class PSetTweak:
         return jsoniser.json
 
 
-    def persist(self, filename, format = "python"):
+    def persist(self, filename, formatting="python"):
         """
         _persist_
 
         Save this object as either python, json or pickle
 
         """
-        if format not in ("python", "json", "pickle"):
-            msg = "Unsupported Format: %s" % format
+        if formatting not in ("python", "json", "pickle"):
+            msg = "Unsupported Format: %s" % formatting
             raise RuntimeError(msg)
 
-        if format == "python":
+        if formatting == "python":
             handle = open(filename, 'w')
             handle.write(self.pythonise())
             handle.close()
 
-        if format == "json":
+        if formatting == "json":
             handle = open(filename, "w")
             handle.write(self.jsonise())
             handle.close()
-        if format == "pickle":
+        if formatting == "pickle":
             handle = open(filename, "w")
             pickle.dump(self, handle)
             handle.close()
         return
 
-    def unpersist(self, filename, format = None):
+    def unpersist(self, filename, formatting=None):
         """
         _unpersist_
 
@@ -370,26 +364,26 @@ class PSetTweak:
         it based on file extension
 
         """
-        if format == None:
+        if formatting == None:
             fileSuffix = filename.rsplit(".", 1)[1]
             if fileSuffix == "py":
-                format = "python"
+                formatting = "python"
             if fileSuffix == "pkl":
-                format = "pickle"
+                formatting = "pickle"
             if fileSuffix == "json":
-                format = "json"
+                formatting = "json"
 
-        if format not in ("python", "json", "pickle"):
-            msg = "Unsupported Format: %s" % format
+        if formatting not in ("python", "json", "pickle"):
+            msg = "Unsupported Format: %s" % formatting
             raise RuntimeError(msg)
 
-        if format == "pickle":
+        if formatting == "pickle":
             handle = open(filename, 'r')
             unpickle = pickle.load(handle)
             handle.close()
             self.process.__dict__.update(unpickle.__dict__)
 
-        if format == "python":
+        if formatting == "python":
             modRef = imp.load_source('tempTweak', filename)
             lister = PSetLister()
             lister(modRef.process)
@@ -399,7 +393,7 @@ class PSetTweak:
             del modRef, sys.modules['tempTweak']
 
 
-        if format == "json":
+        if formatting == "json":
             handle = open(filename, 'r')
             jsonContent = handle.read()
             handle.close()

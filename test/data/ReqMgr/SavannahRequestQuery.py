@@ -9,16 +9,17 @@ providing information for the bookeeping database
 
 """
 from __future__ import print_function
-import os, re, traceback
-from dbs.apis.dbsClient import DbsApi
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx 
-from mechanize import Browser
-from bs4 import BeautifulSoup
 
-try:
-    import json
-except:
-    import simplejson as json
+import json
+import os
+import re
+import traceback
+
+from bs4 import BeautifulSoup
+from dbs.apis.dbsClient import DbsApi
+from mechanize import Browser
+
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 
 dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
 #dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"

@@ -10,7 +10,6 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 from __future__ import print_function
-import time
 import pycurl
 import urllib
 import httplib
@@ -67,23 +66,43 @@ class RequestHandler(object):
         self.maxredirs = config.get('maxredirs', 5)
         self.logger = logger if logger else logging.getLogger()
 
+    def encode_params(self, params, verb, doseq):
+        """ Encode request parameters for usage with the 4 verbs.
+            Assume params is alrady encoded if it is a string and
+            uses a different encoding depending on the HTTP verb
+            (either json.dumps or urllib.urlencode)
+        """
+        #data is already encoded, just return it
+        if isinstance(params, basestring):
+            return params
+
+        #data is not encoded, we need to do that
+        if verb in ['GET', 'HEAD']:
+            if params:
+                encoded_data = urllib.urlencode(params, doseq=doseq)
+            else:
+                return ''
+        else:
+            if params:
+                encoded_data = json.dumps(params)
+            else:
+                return {}
+
+        return encoded_data
+
     def set_opts(self, curl, url, params, headers,
                  ckey=None, cert=None, capath=None, verbose=None, verb='GET', doseq=True, cainfo=None):
         """Set options for given curl object, params should be a dictionary"""
-        if  params == None:
-            params = {}
-        if  not isinstance(params, dict):
-            raise TypeError("pycurl parameters should be passed as dictionary")
+        if not (isinstance(params, (dict, basestring)) or params is None):
+            raise TypeError("pycurl parameters should be passed as dictionary or an (encoded) string")
         curl.setopt(pycurl.NOSIGNAL, self.nosignal)
         curl.setopt(pycurl.TIMEOUT, self.timeout)
         curl.setopt(pycurl.CONNECTTIMEOUT, self.connecttimeout)
         curl.setopt(pycurl.FOLLOWLOCATION, self.followlocation)
         curl.setopt(pycurl.MAXREDIRS, self.maxredirs)
 
-        if  params:
-            encoded_data = urllib.urlencode(params, doseq=doseq)
-        else:
-            encoded_data = ''
+        encoded_data = self.encode_params(params, verb, doseq)
+
         if  verb == 'GET':
             if  encoded_data:
                 url = url + '?' + encoded_data
@@ -95,13 +114,13 @@ class RequestHandler(object):
             curl.setopt(pycurl.NOBODY, True)
         elif verb == 'POST':
             curl.setopt(pycurl.POST, 1)
-            if params:
-                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+            if encoded_data:
+                curl.setopt(pycurl.POSTFIELDS, encoded_data)
         elif verb == 'DELETE' or verb == 'PUT':
             curl.setopt(pycurl.CUSTOMREQUEST, verb)
             curl.setopt(pycurl.HTTPHEADER, ['Transfer-Encoding: chunked'])
-            if params:
-                curl.setopt(pycurl.POSTFIELDS, json.dumps(params))
+            if encoded_data:
+                curl.setopt(pycurl.POSTFIELDS, encoded_data)
         else:
             raise Exception('Unsupported HTTP method "%s"' % verb)
 
@@ -227,8 +246,8 @@ class RequestHandler(object):
                     ret, num_handles = multi.perform()
                     if  ret != pycurl.E_CALL_MULTI_PERFORM:
                         break
-            _numq, response, _err = multi.info_read()
-            for _cobj in response:
+            dummyNumq, response, dummyErr = multi.info_read()
+            for dummyCobj in response:
                 data = json.loads(bbuf.getvalue())
                 if  isinstance(data, dict):
                     data.update(params)

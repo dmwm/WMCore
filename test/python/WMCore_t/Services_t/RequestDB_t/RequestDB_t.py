@@ -1,16 +1,14 @@
 #!/usr/bin/env python
-import os
-import unittest
-import shutil
 import time
+import unittest
 
-from WMCore.Wrappers import JsonWrapper
+from WMCore_t.Services_t.WMStats_t.WMStatsDocGenerator import generate_reqmgr_schema
+
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore_t.Services_t.WMStats_t.WMStatsDocGenerator import generate_reqmgr_schema
-from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
+
+
 class RequestDBTest(unittest.TestCase):
     """
     """

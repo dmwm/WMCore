@@ -6,42 +6,32 @@ Tests the functions of the REST API
 """
 from __future__ import print_function
 
-
-import os
 import json
-import shutil
-import urllib
-import tempfile
-import unittest
-import threading
+import os
 import random
+import shutil
+import tempfile
+import threading
+import unittest
+import urllib
 from httplib import HTTPException
 
+from WMCore_t.RequestManager_t import utils
 from nose.plugins.attrib import attr
 
-from WMCore.Services.Requests   import JSONRequests
-from WMCore.Wrappers            import JsonWrapper as json
-from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
-
-from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
-
-# RequestDB Interfaces
-from WMCore.RequestManager.RequestDB.Interface.Request import GetRequest
-from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
-
-#decorator import for RESTServer setup
-from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
-from WMQuality.WebTools.RESTServerSetup  import DefaultConfig
-
-# ACDC service
-from WMCore.ACDC.CouchService import CouchService
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
+from WMCore.ACDC.CouchService import CouchService
+from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.DataStructs.File import File
-from WMCore.Services.UUID import makeUUID
+from WMCore.RequestManager.RequestDB.Interface.Admin   import SoftwareManagement
+from WMCore.RequestManager.RequestDB.Interface.Request import GetRequest
 from WMCore.Services.RequestManager.RequestManager import RequestManager
-
-from WMCore_t.RequestManager_t import utils
+from WMCore.Services.Requests   import JSONRequests
+from WMCore.Services.UUID import makeUUID
+from WMCore.WMSpec.WMWorkload   import WMWorkloadHelper
+from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
+from WMQuality.WebTools.RESTServerSetup  import DefaultConfig
 
 
 

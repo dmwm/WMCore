@@ -2,76 +2,26 @@
 """
 _SiteDB_
 
-API for dealing with retrieving information from SiteDB
+API for dealing with interpreting information from SiteDB
 
 """
-from WMCore.Services.Service import Service
+from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMCore.Services.EmulatorSwitch import emulatorHook
 
-import json
 import re
 
 #TODO remove this when all DBS origin_site_name is converted to PNN
 pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
 
-def row2dict(columns, row):
-    """Convert rows to dictionaries with column keys from description"""
-    robj = {}
-    for k,v in zip(columns, row):
-        robj.setdefault(k,v)
-    return robj
-
-def unflattenJSON(data):
-    """Tranform input to unflatten JSON format"""
-    columns = data['desc']['columns']
-    return [row2dict(columns, row) for row in data['result']]
-
 # emulator hook is used to swap the class instance
 # when emulator values are set.
 # Look WMCore.Services.EmulatorSwitch module for the values
 @emulatorHook
-class SiteDBJSON(Service):
+class SiteDBJSON(SiteDBAPI):
 
     """
-    API for dealing with retrieving information from SiteDB
+    API for dealing with interpreting information from SiteDB
     """
-    def __init__(self, config={}):
-        config = dict(config)
-        config['endpoint'] = "https://cmsweb.cern.ch/sitedb/data/prod/"
-        Service.__init__(self, config)
-
-    def getJSON(self, callname, filename = 'result.json', clearCache = False, verb = 'GET', data={}):
-        """
-        _getJSON_
-
-        retrieve JSON formatted information given the service name and the
-        argument dictionaries
-
-        TODO: Probably want to move this up into Service
-        """
-        result = ''
-        if clearCache:
-            self.clearCache(cachefile=filename, inputdata=data, verb = verb)
-        try:
-            #Set content_type and accept_type to application/json to get json returned from siteDB.
-            #Default is text/html which will return xml instead
-            #Add accept-encoding to gzip,identity to overwrite httplib default gzip,deflate,
-            #which is not working properly with cmsweb
-            f = self.refreshCache(cachefile=filename, url=callname, inputdata=data,
-                                  verb = verb, contentType='application/json',
-                                  incoming_headers={'Accept' : 'application/json',
-                                                    'accept-encoding' : 'gzip,identity'})
-            result = f.read()
-            f.close()
-        except IOError:
-            raise RuntimeError("URL not available: %s" % callname )
-        try:
-            results = json.loads(result)
-            results = unflattenJSON(results)
-            return results
-        except SyntaxError:
-            self.clearCache(filename, inputdata=data, verb=verb)
-            raise SyntaxError("Problem parsing data. Cachefile cleared. Retrying may work")
 
     def _people(self, username=None, clearCache=False):
         if username:

@@ -1,3 +1,4 @@
+import time
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 
@@ -96,7 +97,17 @@ class RequestDBReader():
         keys = statusList
         return self._getCouchView("bystatus", options, keys)
     
-    def _getRequestByStatusAndStartTime(self, status, detail, endTime):
+    def _getRequestByStatusAndStartTime(self, status, detail, startTime):
+        timeNow = int(time.time())
+        options = {}
+        options["include_docs"] = detail
+        options["startkey"] = [status, startTime]
+        options["endkey"] = [status, timeNow]
+        options["descending"] = False
+
+        return self._getCouchView("bystatusandtime", options)
+
+    def _getRequestByStatusAndEndTime(self, status, detail, endTime):
         """
         'status': is the status of the workflow
         'startTime': unix timestamp for start time
@@ -108,6 +119,7 @@ class RequestDBReader():
         options["descending"] = False
 
         return self._getCouchView("bystatusandtime", options)
+
 
     def _getRequestByTeamAndStatus(self, team, status, limit):
         """
@@ -157,16 +169,37 @@ class RequestDBReader():
         requestInfo = self._formatCouchData(data, detail = detail)
 
         return requestInfo
-    
-    def getRequestByStatusAndStartTime(self, status, detail = False, endTime = 0):
-        
+
+    def getRequestByStatusAndStartTime(self, status, detail=False, startTime=0):
+        """
+        Query for requests that are in a specific status since startTime.
+        :param status: string with the workflow status
+        :param detail: boolean flag used to return doc content or not
+        :param startTime: unix start timestamp for your query
+        :return: a list of request names
+        """
+        if startTime == 0:
+            data = self._getRequestByStatus([status], detail, limit = None, skip = None)
+        else:
+            data = self._getRequestByStatusAndStartTime(status, detail, startTime)
+
+        requestInfo = self._formatCouchData(data, detail=detail)
+        return requestInfo
+
+    def getRequestByStatusAndEndTime(self, status, detail=False, endTime=0):
+        """
+        Query for requests that are in a specific status until endTime.
+        :param status: string with the workflow status
+        :param detail: boolean flag used to return doc content or not
+        :param endTime: unix end timestamp for your query
+        :return: a list of request names
+        """
         if endTime == 0:
             data = self._getRequestByStatus([status], detail, limit = None, skip = None)
         else:
-            data = self._getRequestByStatusAndStartTime(status, detail, endTime)
+            data = self._getRequestByStatusAndEndTime(status, detail, endTime)
             
         requestInfo = self._formatCouchData(data, detail = detail)
-
         return requestInfo
 
     def getRequestByTeamAndStatus(self, team, status, detail=False, limit=None):

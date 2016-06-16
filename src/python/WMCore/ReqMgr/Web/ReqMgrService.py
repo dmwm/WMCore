@@ -30,7 +30,6 @@ from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
 # WMCore modules
-from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties
@@ -88,7 +87,7 @@ def minify(content):
 
 def menus():
     "Return dict of menus"
-    items = ['home', 'admin', 'create', 'approve', 'assign', 'batches']
+    items = ['home', 'create', 'approve', 'assign', 'batches']
     return items
 
 
@@ -176,23 +175,12 @@ class ReqMgrService(TemplatedPage):
                            })
         self._cache = {}
 
-        # initialize rest API
-        statedir = '/tmp'
-        app = RESTMain(config, statedir)  # REST application
-        mount = '/rest'  # mount point for cherrypy service
-        api = RestApiHub(app, config.reqmgr, mount)
-
         # initialize access to reqmgr2 APIs
         self.reqmgr_url = config.reqmgr.reqmgr2_url
         self.reqmgr = ReqMgr(self.reqmgr_url)
         # only gets current view (This might cause to reponse time much longer, 
         # If upto date view is not needed overwrite Fale)
         self.reqmgr._noStale = True
-
-        # admin helpers
-        self.admin_info = Info(app, api, config.reqmgr, mount=mount + '/info')
-        self.admin_group = Group(app, api, config.reqmgr, mount=mount + '/group')
-        self.admin_team = Team(app, api, config.reqmgr, mount=mount + '/team')
 
         # get fields which we'll use in templates
         cdict = config.reqmgr.dictionary_()
@@ -291,47 +279,6 @@ class ReqMgrService(TemplatedPage):
     def home(self, **kwds):
         """Main page"""
         return self.index(**kwds)
-
-    ### Admin actions ###
-
-    @expose
-    def admin(self, **kwds):
-        """admin page"""
-        print("\n### ADMIN PAGE")
-        rows = self.admin_info.get()
-        print("rows", [r for r in rows])
-
-        content = self.templatepage('admin')
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_user(self, **kwds):
-        """add_user action"""
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_group(self, **kwds):
-        """add_group action"""
-        rows = self.admin_group.get()
-        print("\n### GROUPS", [r for r in rows])
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_team(self, **kwds):
-        """add_team action"""
-        rows = self.admin_team.get()
-        print("\n### TEAMS", kwds, [r for r in rows])
-        print("request to add", kwds)
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
 
     ### Request actions ###
 

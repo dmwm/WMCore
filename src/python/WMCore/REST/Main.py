@@ -180,7 +180,7 @@ class RESTMain:
         cpconfig.update({'tools.proxy.on': True})
         cpconfig.update({'tools.proxy.base': local_base})
         cpconfig.update({'tools.time.on': True})
-        cpconfig.update({'engine.autoreload_on': False})
+        cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
         thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))

@@ -202,7 +202,7 @@ class Root(Harness):
         if cherrypy.config["server.environment"] == "production":
             # If we're production these should be set regardless
             cherrypy.config["request.show_tracebacks"] = False
-            cherrypy.config["engine.autoreload_on"] = False
+            cherrypy.config["engine.autoreload.on"] = False
             # In production mode only allow errors at WARNING or greater to the log
             err_lvl = max((configDict.get("error_log_level", logging.WARNING), logging.WARNING))
             acc_lvl = max((configDict.get("access_log_level", logging.INFO), logging.INFO))
@@ -213,7 +213,7 @@ class Root(Harness):
             print('THIS BETTER NOT BE A PRODUCTION SERVER')
             print()
             cherrypy.config["request.show_tracebacks"] = configDict.get("show_tracebacks", False)
-            cherrypy.config["engine.autoreload_on"] = configDict.get("autoreload", False)
+            cherrypy.config["engine.autoreload.on"] = configDict.get("autoreload", False)
             # Allow debug output
             cherrypy.log.error_log.setLevel(configDict.get("error_log_level", logging.DEBUG))
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))

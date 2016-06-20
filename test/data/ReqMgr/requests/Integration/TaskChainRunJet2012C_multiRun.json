@@ -22,8 +22,6 @@
     "SizePerEvent": 1234,
     "TimePerEvent": 0.8,
     "TaskChain": 2,
-    "mergedLFNBase": "/store/mc",
-    "unmergedLFNBase": "/store/unmerged",
     "Task1": {"AcquisitionEra": "CMSSW_7_2_0",
         "InputDataset": "/JetHT/Run2012C-v1/RAW",
         "RunWhitelist": [202205, 202209],

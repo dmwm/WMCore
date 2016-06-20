@@ -22,8 +22,6 @@
     "Memory": 2200,
     "SizePerEvent": 1600,
     "TimePerEvent": 1,
-    "mergedLFNBase": "/store/data",
-    "unmergedLFNBase": "/store/unmerged",
     "ProcessingString": "TEST_05Aug2015"
 },
 "assignRequest":

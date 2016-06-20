@@ -18,8 +18,6 @@
     "SizePerEvent": 1234,
     "TimePerEvent": 4.8,
     "PrepID": "Step-00",
-    "mergedLFNBase": "/store/relval",
-    "unmergedLFNBase": "/store/unmerged",
     "Step1": {
         "ConfigCacheID": "564b9ff125f090d3385206a0b460a55d",
         "CMSSWVersion": "CMSSW_7_0_0_pre12",
@@ -56,7 +54,7 @@
     "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
-    "MergedLFNBase": "/store/relval",
+    "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
     "MinMergeSize": 2147483648,
     "MaxMergeSize": 4294967296,

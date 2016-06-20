@@ -3,12 +3,14 @@
     WorkQueueElement unit tests
 """
 from __future__ import (print_function, division)
-import unittest
+
+import json
 import os
+import unittest
+
 from WMCore.WMBase import getTestBase
-from WMCore.Wrappers import JsonWrapper
-from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import WorkQueueElementsSummary
 from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import WorkQueueElementsSummary
 
 
 class WorkQueueElementsSummaryTest(unittest.TestCase):
@@ -19,7 +21,7 @@ class WorkQueueElementsSummaryTest(unittest.TestCase):
         filePath = os.path.join(getTestBase(),
                                     "WMCore_t/WorkQueue_t/DataStructs_t/wq_available_elements.json")
         with open(filePath, "r") as f:
-            gqData = JsonWrapper.load(f)
+            gqData = json.load(f)
         
         self.gqElements = []
         for ele in gqData:

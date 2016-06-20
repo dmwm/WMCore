@@ -3,19 +3,21 @@ Main Module for browsing and modifying requests.
 
 """
 
-
-import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
-import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.Cache.WMConfigCache import ConfigCache
-from WMCore.Wrappers import JsonWrapper
-import WMCore.Lexicon
-import logging
-import cherrypy
-import threading
-from WMCore.WebTools.WebAPI import WebAPI
 import cgi
+import json
+import logging
+import threading
+
+import cherrypy
+
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+import WMCore.Lexicon
+import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
+import WMCore.RequestManager.RequestDB.Settings.RequestStatus as RequestStatus
+from WMCore.Cache.WMConfigCache import ConfigCache
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WebTools.WebAPI import WebAPI
+
 
 def detailsBackLink(requestName):
     """ HTML to return to the details of this request """
@@ -132,7 +134,7 @@ class ReqMgrBrowser(WebAPI):
 
         splitInfo = []
         for taskName in taskNames:
-            jsonSplittingParams = JsonWrapper.dumps(splittingDict[taskName])
+            jsonSplittingParams = json.dumps(splittingDict[taskName])
             splitInfo.append({"splitAlgo": splittingDict[taskName]["algorithm"],
                               "splitParams": jsonSplittingParams,
                               "taskType": splittingDict[taskName]["type"],

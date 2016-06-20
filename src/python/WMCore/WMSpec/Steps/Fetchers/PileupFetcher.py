@@ -4,14 +4,14 @@ of pileup files in the job sandbox for the dataset.
 
 """
 
-import os
 import datetime
-import time
+import json
+import os
 import shutil
+import time
+from json import JSONEncoder
 
 import WMCore.WMSpec.WMStep as WMStep
-from WMCore.Wrappers import JsonWrapper as json
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface

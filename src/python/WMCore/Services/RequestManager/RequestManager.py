@@ -1,7 +1,8 @@
-from WMCore.Wrappers import JsonWrapper
-from WMCore.Services.Service import Service
+import json
 
 from WMCore.Services.EmulatorSwitch import emulatorHook
+from WMCore.Services.Service import Service
+
 
 # emulator hook is used to swap the class instance
 # when emulator values are set.
@@ -33,12 +34,12 @@ class RequestManager(Service):
         # cherrypy converts request.body to params when content type is set
         # application/x-www-form-urlencoded
         dict.setdefault("content_type", 'application/x-www-form-urlencoded')
-        self.encoder = JsonWrapper.dumps
+        self.encoder = json.dumps
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, clearCache = True,
-                   args = None, verb = "GET", encoder = None, decoder = JsonWrapper.loads,
-                   contentType = None):
+    def _getResult(self, callname, clearCache=True,
+                   args=None, verb="GET", encoder=None, decoder=json.loads,
+                   contentType=None):
         """
         _getResult_
 
@@ -151,7 +152,7 @@ class RequestManager(Service):
         args['requestName'] = request
         args['msg'] = msg
         return self._getResult(callname, args = msg, verb = "PUT",
-                               encoder = JsonWrapper.dumps,
+                               encoder = json.dumps,
                                contentType = 'application/json')
 
     def makeRequest(self, ScramArch = 'slc5_amd64_gcc434',
@@ -167,7 +168,7 @@ class RequestManager(Service):
                        'TimePerEvent' : TimePerEvent, 'Memory' : Memory,
                        'SizePerEvent' : SizePerEvent})
         return self._getResult('request', args = kwargs, verb = 'PUT',
-                               encoder = JsonWrapper.dumps,
+                               encoder = json.dumps,
                                contentType = 'application/json')
 
     def assign(self, request, team, acquisitionEra = None, processingVersion = None,
@@ -188,7 +189,7 @@ class RequestManager(Service):
         return self._getResult(callname, args = args, verb = "PUT")
     
     def putRequestStats(self, request, stats):
-        args = {'requestName': request, 'stats': JsonWrapper.dumps(stats)}
+        args = {'requestName': request, 'stats': json.dumps(stats)}
         callname = 'request'
         return self._getResult(callname, args = args, verb = "PUT")
         

@@ -1,8 +1,7 @@
-import os
-import pwd
-import logging
+import json
+
 from WMCore.Services.Service import Service
-from WMCore.Wrappers import JsonWrapper
+
 
 class WMBS(Service):
 
@@ -17,8 +16,8 @@ class WMBS(Service):
 
         dict.setdefault("accept_type", "application/json")
         dict.setdefault("content_type", "application/json")
-        self.encoder = JsonWrapper.dumps
-        self.decoder = JsonWrapper.loads
+        self.encoder = json.dumps
+        self.decoder = json.loads
 
         Service.__init__(self, dict)
 

@@ -1,11 +1,11 @@
-import cherrypy
-import urllib
-import hmac
 import hashlib
-from urlparse import urlparse
+import hmac
+import urllib
 from httplib import HTTPConnection
+from urlparse import urlparse
+
 from WMCore.WebTools.Page import make_rfc_timestamp
-from WMCore.Wrappers import JsonWrapper
+
 
 def makeRequest(url, values=None, verb='GET', accept="text/plain",
                 contentType = None, secure = False, secureParam = {}):

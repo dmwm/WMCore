@@ -3,26 +3,24 @@
 Some generic base classes for building web pages with.
 """
 
-import urllib
+import hashlib
+import json
+import logging
+import os
+import time
+from datetime import datetime, timedelta
+from time import mktime
+from wsgiref.handlers import format_date_time
+
 import cherrypy
+from Cheetah import Version
+from Cheetah.Template import Template
 from cherrypy import log as cplog
 from cherrypy import request
-from Cheetah.Template import Template
-from Cheetah import Version
-
-import hashlib
-import logging, os, types
-import traceback
 
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.WMFactory import WMFactory
-from WMCore.Wrappers import JsonWrapper
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-
-from wsgiref.handlers import format_date_time
-from datetime import datetime, timedelta
-from time import mktime
-import time
 
 DEFAULT_EXPIRE = 5*60
 
@@ -231,7 +229,7 @@ def exposejson (func):
         data = func (self, data)
         try:
 #            jsondata = encoder.iterencode(data)
-            jsondata = JsonWrapper.dumps(data)
+            jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
@@ -252,7 +250,7 @@ def exposejsonthunker (func):
         try:
             thunker = JSONThunker()
             data = thunker.thunk(data)
-            jsondata = JsonWrapper.dumps(data)
+            jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:
@@ -280,8 +278,7 @@ def exposedasjson (func):
         data = runDas(self, func, data, expires)
 
         try:
-#            jsondata = encoder.iterencode(data)
-            jsondata = JsonWrapper.dumps(data)
+            jsondata = json.dumps(data)
             _setCherryPyHeaders(jsondata, contentType, expires)
             return jsondata
         except:

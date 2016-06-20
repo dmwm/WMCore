@@ -1,16 +1,18 @@
 """ Pages for the creation of requests """
-import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
+import json
+import os.path
+import threading
+
+import cherrypy
+
+import WMCore.Database.CMSCouch
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
 import WMCore.RequestManager.RequestDB.Interface.Admin.SoftwareManagement as SoftwareAdmin
 import WMCore.RequestManager.RequestDB.Interface.Group.Information as GroupInfo
 import WMCore.RequestManager.RequestDB.Interface.Request.Campaign as Campaign
-import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.Wrappers import JsonWrapper
-import cherrypy
-from WMCore.WebTools.WebAPI import WebAPI
-import WMCore.Database.CMSCouch
-import threading
-import os.path
+import WMCore.RequestManager.RequestDB.Interface.User.Registration as Registration
 from WMCore.Database.CMSCouch import CouchUnauthorisedError
+from WMCore.WebTools.WebAPI import WebAPI
 
 
 class WebRequestSchema(WebAPI):
@@ -113,7 +115,7 @@ class WebRequestSchema(WebAPI):
         decodedSchema = {}
         for key in schema.keys():
             try:
-                decodedSchema[key] = JsonWrapper.loads(schema[key])
+                decodedSchema[key] = json.loads(schema[key])
             except:
                 # We don't know what kind of exception we'll get, so ignore them all
                 # If it does except, it probably wasn't in JSON to begin with.

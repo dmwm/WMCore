@@ -10,11 +10,14 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 from __future__ import print_function
-import pycurl
-import urllib
+
 import httplib
+import json
 import logging
-from WMCore.Wrappers import JsonWrapper as json
+import urllib
+
+import pycurl
+
 try:
     import cStringIO as StringIO
 except:

@@ -9,10 +9,13 @@ Note that a schema is retrieved via its corresponding maker.
 
 """
 from __future__ import print_function
+
+import json
 import logging
 import time
-from WMCore.Wrappers import JsonWrapper
+
 from WMCore.RequestManager.DataStructs.Request import Request
+
 
 class _Registry:
     """
@@ -133,7 +136,7 @@ def loadRequestSchema(workload, requestSchema):
     schema = workload.data.request.section_('schema')
     for key, value in requestSchema.iteritems():
         if type(value) == dict and key == 'LumiList': 
-            value = JsonWrapper.dumps(value)
+            value = json.dumps(value)
         try:            
             setattr(schema, key, value)
         except Exception as ex:
@@ -142,7 +145,7 @@ def loadRequestSchema(workload, requestSchema):
                 newSec = schema.section_(key)
                 for k, v in requestSchema[key].iteritems():
                     if type(value) == dict and key == 'LumiList': 
-                        value = JsonWrapper.dumps(value)
+                        value = json.dumps(value)
                     try:
                         setattr(newSec, k, v)
                     except Exception as ex:

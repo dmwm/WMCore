@@ -1,6 +1,6 @@
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
-from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Database.CMSCouch import Document
+from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
+
 
 class RequestDBWriter(RequestDBReader):
 

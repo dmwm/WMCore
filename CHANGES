@@ -1,3 +1,44 @@
+1.0.17 to 1.0.18.pre2:
+  - Merge pull request #6937 from ericvaandering/fix_cstringio
+  - Merge pull request #6934 from ericvaandering/remove_jsonwrapper
+  - Use cStringIO without try/except
+  - Actually remove the wrapper
+  - Remove references to JsonWrapper in WMCore test code
+  - Remove references to JsonWrapper in WMCore code
+  - 1.0.18.pre1
+  - Merge pull request #6742 from mmascher/lightclientmaster
+  - Take care of pylint suggestion for Service and Request
+  - Merge pull request #6916 from mmascher/pycurl_encoded
+  - Merge pull request #6929 from ericvaandering/cleanup_restserver
+  - Merge pull request #6927 from ericvaandering/axe_dead_code
+  - Merge pull request #6882 from amaltaro/remove-analysis
+  - Merge pull request #6531 from ericvaandering/standard_json
+  - Merge pull request #6920 from vkuznet/reqmgr2-fixes
+  - Remove unused code from RestServerSetup
+  - Remove Inclusive and Exclusive mask since they are not used, clean up imports
+  - Remove Downloader since it is unused
+  - Remove Action since it is unused
+  - More pylint for pycurl_manager
+  - pycurlmanager pylint plus review
+  - Merge pull request #6924 from amaltaro/createOutputFile
+  - Create the output file expected by condor to be transferred back
+  - Add /store/unmerged
+  - Merge pull request #6915 from amaltaro/fnal-deletion
+  - Merge pull request #6897 from emaszs/master_untar_patch
+  - Merge pull request #6904 from hufnagel/cmssw-home
+  - Allow pycurl_manager.py to accepd encoded string as data. Fixes #6467
+  - Pylint fixes
+  - Change file deletion from srm to xrd for FNAL plugin
+  - make sure CMSSW always finds HOME in environment
+  - Merge Justas' patch for untarring with python 2.6 for older releases
+  - Delete Analysis and PrivateMC spec, task etc
+  - Make sure httplib2 is not required if using pycurl
+  - Fixup pylint
+  - Get rid of cjson
+  - json in python 2.7 is simplejson
+  - Remove the other JSON wrapper options
+  - Remove possibility of cjson and simplejson from json wrapper and cleanup the tests and remove cjson from the tests
+
 1.0.17 to 1.0.18.pre1:
   - Merge pull request #6742 from mmascher/lightclientmaster
   - Take care of pylint suggestion for Service and Request

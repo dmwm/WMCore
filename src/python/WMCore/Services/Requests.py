@@ -21,18 +21,18 @@ import tempfile
 import traceback
 import urllib
 import urlparse
+import types
 from httplib import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from WMCore.Algorithms import Permissions
+from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-
 try:
     from WMCore.Services.pycurl_manager import RequestHandler, ResponseHeader
 except ImportError:
     pass
-from WMCore.Lexicon import sanitizeURL
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -134,7 +134,6 @@ class Requests(dict):
         """
         Wrapper around request helper functions.
         """
-
         if  self.pycurl:
             result = self.makeRequest_pycurl(uri, data, verb, incoming_headers,
                          encoder, decoder, contentType)
@@ -181,9 +180,6 @@ class Requests(dict):
         as a string.
 
         """
-        #do not add a dependency to httplib2 if we are using pycurl
-
-
         #TODO: User agent should be:
         # $client/$client_version (CMS)
         # $http_lib/$http_lib_version $os/$os_version ($arch)
@@ -198,7 +194,7 @@ class Requests(dict):
             headers[key] = self.additionalHeaders[key]
 
         #And now overwrite any headers that have been passed into the call:
-        #WARNING: doesn't work with deplate so only accept gzip
+        #WARNING: doesn't work with deplate so only accept gzip 
         incoming_headers["accept-encoding"] = "gzip,identity"
         headers.update(incoming_headers)
 
@@ -210,13 +206,8 @@ class Requests(dict):
         #assert type(data) == type({}), \
         #        "makeRequest input data must be a dict (key/value pairs)"
 
-        # There must be a better way to do this...
-        def f():
-            """Dummy function"""
-            pass
-
         if verb != 'GET' and data:
-            if isinstance(encoder, type(self.get)) or isinstance(encoder, type(f)):
+            if isinstance(encoder, (types.MethodType, types.FunctionType)):
                 encoded_data = encoder(data)
             elif encoder == False:
                 # Don't encode the data more than we have to
@@ -236,7 +227,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert isinstance(encoded_data, type('string')), \
+        assert isinstance(encoded_data, str), \
             "Data in makeRequest is %s and not encoded to a string" \
                 % type(encoded_data)
 
@@ -246,9 +237,9 @@ class Requests(dict):
             response, result = self['conn'].request(uri, method = verb,
                                     body = encoded_data, headers = headers)
             if response.status == 408: # timeout can indicate a socket error
-                response, result = self['conn'].request(uri, method = verb,
-                                    body = encoded_data, headers = headers)
+                raise socket.error
         except (socket.error, AttributeError):
+            self['logger'].warn("Http request failed, retrying once again..")
             # AttributeError implies initial connection error - need to close
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
@@ -277,7 +268,7 @@ class Requests(dict):
             setattr(e, 'headers', response)
             raise e
 
-        if isinstance(decoder, type(self.makeRequest)) or isinstance(decoder, type(f)):
+        if isinstance(decoder, (types.MethodType, types.FunctionType)):
             result = decoder(result)
         elif decoder != False:
             result = self.decode(result)
@@ -360,7 +351,6 @@ class Requests(dict):
         method getting a secure (HTTPS) connection
         """
         import httplib2
-
         key, cert = None, None
         if self['endpoint_components'].scheme == 'https':
             # only add certs to https requests
@@ -368,7 +358,7 @@ class Requests(dict):
             # if not proceed as not all https connections require them
             try:
                 key, cert = self.getKeyCert()
-            except Exception as ex: #pylint: disable=broad-except
+            except Exception as ex:
                 msg = 'No certificate or key found, authentication may fail'
                 self['logger'].info(msg)
                 self['logger'].debug(str(ex))

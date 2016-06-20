@@ -1,6 +1,7 @@
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 
+
 class RequestDBReader():
 
     def __init__(self, couchURL, couchapp="ReqMgr"):
@@ -72,7 +73,17 @@ class RequestDBReader():
             return result
         else:
             return result.keys()
-            
+
+    def _getRequestByName(self, requestName, detail):
+        result = self.couchDB.getDoc(requestName)
+        if detail:
+            result.pop('_attachments', None)
+            result.pop('_rev', None)
+            result = {result['RequestName']: result}
+        else:
+            result = [result['RequestName']]
+        return result
+  
     def _getRequestByNames(self, requestNames, detail):
         """
         'status': list of the status
@@ -142,13 +153,16 @@ class RequestDBReader():
         return self.couchDB
     
     def getRequestByNames(self, requestNames, detail = True):
-        if isinstance(requestNames, basestring):
-            requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}
-        data = self._getRequestByNames(requestNames, detail = detail)
+        if isinstance(requestNames, list) and len(requestNames) == 1:
+            requestNames = requestNames[0]
 
-        requestInfo = self._formatCouchData(data, detail = detail)
+        if isinstance(requestNames, basestring):
+            requestInfo = self._getRequestByName(requestNames, detail = detail)
+        else:
+            requestInfo = self._getRequestByNames(requestNames, detail = detail)
+            requestInfo = self._formatCouchData(requestInfo, detail = detail)
         return requestInfo
     
     def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):

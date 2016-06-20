@@ -515,6 +515,18 @@ class Database(CouchDBRequests):
 
         return retval
 
+    def getDoc(self, docName):
+        """
+        Return a single document from the database.
+        """
+        try:
+            return self.get('/%s/%s' % (self.name, docName))
+        except CouchError as e:
+            # if empty dict, then doc does not exist in the db
+            if getattr(e, "data", None) == {}:
+                return {}
+            self.checkForCouchError(getattr(e, "status", None), getattr(e, "reason", None))
+
     def allDocs(self, options = {}, keys = []):
         """
         Return all the documents in the database

@@ -53,15 +53,11 @@ import json
 import logging
 import os
 import time
+from cStringIO import StringIO
 from httplib import HTTPException
 
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
-
-try:
-    from cStringIO import cStringIO as StringIO
-except ImportError:
-    from StringIO import StringIO
 
 try:
     from httplib2 import HttpLib2Error

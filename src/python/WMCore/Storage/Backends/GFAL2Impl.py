@@ -4,6 +4,9 @@ _GFAL2Impl_
 Implementation of StageOutImpl interface for gfal-copy
 """
 import os
+import argparse
+import logging
+
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
@@ -82,13 +85,20 @@ class GFAL2Impl(StageOutImpl):
         """
         result = "#!/bin/bash\n"
 
-        useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
-
         copyCommandDict = {'checksum': '', 'options': '', 'source': '', 'destination': ''}
-        if useChecksum:
+
+        if not options:
+            options = ''
+
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--nochecksum', action='store_true')
+        args, unknown = parser.parse_known_args(options.split())
+
+        if not args.nochecksum:
             copyCommandDict['checksum'] = "-K adler32"
-        if options != None:
-            copyCommandDict['options'] = options
+
+        copyCommandDict['options'] = ' '.join(unknown)
+
         copyCommandDict['source'] = sourcePFN
         copyCommandDict['destination'] = targetPFN
 

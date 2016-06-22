@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch4 -c HG1605c -t production -p "6719 6811" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.14.patch2 -c HG1603e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.17.patch1 -c HG1606e -t production -p "111 222" -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.18.pre2 -c HG1606e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -34,7 +34,7 @@ ENV_FILE=/data/admin/wmagent/env.sh
 CURRENT=/data/srv/wmagent/current
 MANAGE=/data/srv/wmagent/current/config/wmagent/ 
 OP_EMAIL=cms-comp-ops-workflow-team@cern.ch
-HOSTNAME=`hostname`
+HOSTNAME=`hostname -f`
 
 # These values may be overwritten by the arguments provided in the command line
 WMA_ARCH=slc6_amd64_gcc493
@@ -282,7 +282,11 @@ elif [[ "$TEAMNAME" == *testbed* ]]; then
   sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
+elif [[ "$TEAMNAME" == hlt ]]; then
+  sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
+  sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py
 fi
+
 if [[ "$HOSTNAME" == *fnal.gov ]]; then
   sed -i "s+forceSiteDown = \[\]+forceSiteDown = \[$FORCEDOWN\]+" $MANAGE/config.py
 else
@@ -329,7 +333,7 @@ echo "10 */4 * * * source /data/admin/wmagent/rmOldJobs.sh &> /tmp/rmJobs.log"
 echo "55 */12 * * * (export X509_USER_CERT=/data/certs/servicecert.pem; export X509_USER_KEY=/data/certs/servicekey.pem; myproxy-get-delegation -v -l amaltaro -t 168 -s 'myproxy.cern.ch' -k $MYPROXY_CREDNAME -n -o /data/certs/mynewproxy.pem && voms-proxy-init -rfc -voms cms:/cms/Role=production -valid 168:00 -noregen -cert /data/certs/mynewproxy.pem -key /data/certs/mynewproxy.pem -out /data/certs/myproxy.pem)"
 echo "58 */12 * * * python /data/admin/wmagent/checkProxy.py --proxy /data/certs/myproxy.pem --time 96 --send-mail True --mail alanmalta@gmail.com,alan.malta@cern.ch"
 echo "#workaround for the ErrorHandler silence issue"
-echo "*/15 * * * *  /data/admin/wmagent/restartComponent.sh > /dev/null"
+echo "*/15 * * * *  source /data/admin/wmagent/restartComponent.sh > /dev/null"
 ) | crontab -
 echo "Done!" && echo
 

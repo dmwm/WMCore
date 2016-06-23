@@ -27,7 +27,7 @@ def initialize_request_args(request, config, clone = False):
     a being injected / created request. This method initializes
     various request fields. This should be the ONLY method to
     manipulate request arguments upon injection so that various
-    levels or arguments manipulation does not occur accros several
+    levels or arguments manipulation does not occur accross several
     modules and across about 7 various methods like in ReqMgr1.
     
     request is changed here.
@@ -37,7 +37,9 @@ def initialize_request_args(request, config, clone = False):
     #user information for cert. (which is converted to cherry py log in)
     request["Requestor"] = cherrypy.request.user["login"]
     request["RequestorDN"] = cherrypy.request.user.get("dn", "unknown")
-    
+    # service certificates carry @hostname, let us remove it
+    request["Requestor"] = request["Requestor"].split('@')[0]
+
     # assign first starting status, should be 'new'
     request["RequestStatus"] = REQUEST_START_STATE 
     request["RequestTransition"] = [{"Status": request["RequestStatus"], 
@@ -69,7 +71,7 @@ def initialize_request_args(request, config, clone = False):
 
 def generateRequestName(request):
     
-    current_time = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
+    currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
     seconds = int(10000 * (time.time() % 1.0))
     
     if "RequestString" not in request:
@@ -79,8 +81,6 @@ def generateRequestName(request):
     if '@' in request["RequestString"]:
         raise InvalidSpecParameterValue("RequestString cannot contain @: %s" % request["RequestString"])
     
-    prefix = request["Requestor"].split('@')[0]
-    request["RequestName"] = "%s_%s" % (prefix, request["RequestString"])
-    # addd time info
-    request["RequestName"] += "_%s_%s" % (current_time, seconds)
-    
+    request["RequestName"] = "%s_%s" % (request["Requestor"], request["RequestString"])
+    # add time info
+    request["RequestName"] += "_%s_%s" % (currentTime, seconds)

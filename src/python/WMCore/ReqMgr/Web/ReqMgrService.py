@@ -31,9 +31,7 @@ from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
 # WMCore modules
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties
-from WMCore.REST.Main import RESTMain
 from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
 import WMCore

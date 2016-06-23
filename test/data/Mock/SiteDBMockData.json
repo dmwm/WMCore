@@ -1,0 +1,4300 @@
+{
+ "[('callname', 'people'), ('clearCache', False), ('data', {}), ('filename', 'people.json'), ('verb', 'GET')]": [
+  {
+   "username": "liviof",
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
+   "surname": "Fano'",
+   "phone2": null,
+   "phone1": null,
+   "forename": "Livio",
+   "im_handle": null,
+   "email": "livio.fano@cern.ch"
+  },
+  {
+   "username": "jha",
+   "dn": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jha/CN=618566/CN=Manoj Jha",
+   "surname": "Jha",
+   "phone2": null,
+   "phone1": null,
+   "forename": "Manoj",
+   "im_handle": null,
+   "email": "Manoj.Jha@cern.ch"
+  }
+ ],
+ "[('callname', 'data-processing'), ('clearCache', False), ('data', {}), ('filename', 'data-processing.json'), ('verb', 'GET')]": [
+  {
+   "phedex_name": "T1_DE_KIT_Disk",
+   "psn_name": "T1_DE_KIT"
+  },
+  {
+   "phedex_name": "T1_ES_PIC_Disk",
+   "psn_name": "T1_ES_PIC"
+  },
+  {
+   "phedex_name": "T1_FR_CCIN2P3_Disk",
+   "psn_name": "T1_FR_CCIN2P3"
+  },
+  {
+   "phedex_name": "T1_IT_CNAF_Disk",
+   "psn_name": "T1_IT_CNAF"
+  },
+  {
+   "phedex_name": "T1_RU_JINR_Disk",
+   "psn_name": "T1_RU_JINR"
+  },
+  {
+   "phedex_name": "T1_UK_RAL_Disk",
+   "psn_name": "T1_UK_RAL"
+  },
+  {
+   "phedex_name": "T1_US_FNAL_Disk",
+   "psn_name": "T1_US_FNAL"
+  },
+  {
+   "phedex_name": "T3_US_FNALLPC",
+   "psn_name": "T1_US_FNAL"
+  },
+  {
+   "phedex_name": "T2_BE_IIHE",
+   "psn_name": "T2_BE_IIHE"
+  },
+  {
+   "phedex_name": "T2_CH_CERNBOX",
+   "psn_name": "T2_CH_CERN"
+  },
+  {
+   "phedex_name": "T2_CH_CERN",
+   "psn_name": "T2_CH_CERN"
+  },
+  {
+   "phedex_name": "T2_CH_CSCS",
+   "psn_name": "T2_CH_CSCS"
+  },
+  {
+   "phedex_name": "T2_PL_Warsaw",
+   "psn_name": "T2_PL_Warsaw"
+  },
+  {
+   "phedex_name": "T2_PT_NCG_Lisbon",
+   "psn_name": "T2_PT_NCG_Lisbon"
+  },
+  {
+   "phedex_name": "T2_RU_IHEP",
+   "psn_name": "T2_RU_IHEP"
+  },
+  {
+   "phedex_name": "T2_RU_INR",
+   "psn_name": "T2_RU_INR"
+  },
+  {
+   "phedex_name": "T2_RU_JINR",
+   "psn_name": "T2_RU_JINR"
+  },
+  {
+   "phedex_name": "T2_RU_PNPI",
+   "psn_name": "T2_RU_PNPI"
+  },
+  {
+   "phedex_name": "T2_RU_SINP",
+   "psn_name": "T2_RU_SINP"
+  },
+  {
+   "phedex_name": "T3_CH_PSI",
+   "psn_name": "T3_CH_PSI"
+  },
+  {
+   "phedex_name": "T2_AT_Vienna",
+   "psn_name": "T2_AT_Vienna"
+  },
+  {
+   "phedex_name": "T2_BE_UCL",
+   "psn_name": "T2_BE_UCL"
+  },
+  {
+   "phedex_name": "T2_BR_SPRACE",
+   "psn_name": "T2_BR_SPRACE"
+  },
+  {
+   "phedex_name": "T2_BR_UERJ",
+   "psn_name": "T2_BR_UERJ"
+  },
+  {
+   "phedex_name": "T2_CN_Beijing",
+   "psn_name": "T2_CN_Beijing"
+  },
+  {
+   "phedex_name": "T2_DE_DESY",
+   "psn_name": "T2_DE_DESY"
+  },
+  {
+   "phedex_name": "T2_ES_CIEMAT",
+   "psn_name": "T2_ES_CIEMAT"
+  },
+  {
+   "phedex_name": "T2_FI_HIP",
+   "psn_name": "T2_FI_HIP"
+  },
+  {
+   "phedex_name": "T2_FR_CCIN2P3",
+   "psn_name": "T2_FR_CCIN2P3"
+  },
+  {
+   "phedex_name": "T2_FR_GRIF_LLR",
+   "psn_name": "T2_FR_GRIF_LLR"
+  },
+  {
+   "phedex_name": "T2_HU_Budapest",
+   "psn_name": "T2_HU_Budapest"
+  },
+  {
+   "phedex_name": "T2_IN_TIFR",
+   "psn_name": "T2_IN_TIFR"
+  },
+  {
+   "phedex_name": "T2_IT_Bari",
+   "psn_name": "T2_IT_Bari"
+  },
+  {
+   "phedex_name": "T2_IT_Pisa",
+   "psn_name": "T2_IT_Pisa"
+  },
+  {
+   "phedex_name": "T2_IT_Rome",
+   "psn_name": "T2_IT_Rome"
+  },
+  {
+   "phedex_name": "T2_KR_KNU",
+   "psn_name": "T2_KR_KNU"
+  },
+  {
+   "phedex_name": "T2_MY_UPM_BIRUNI",
+   "psn_name": "T2_MY_UPM_BIRUNI"
+  },
+  {
+   "phedex_name": "T2_PK_NCP",
+   "psn_name": "T2_PK_NCP"
+  },
+  {
+   "phedex_name": "T2_RU_ITEP",
+   "psn_name": "T2_RU_ITEP"
+  },
+  {
+   "phedex_name": "T2_DE_RWTH",
+   "psn_name": "T2_DE_RWTH"
+  },
+  {
+   "phedex_name": "T2_EE_Estonia",
+   "psn_name": "T2_EE_Estonia"
+  },
+  {
+   "phedex_name": "T2_ES_IFCA",
+   "psn_name": "T2_ES_IFCA"
+  },
+  {
+   "phedex_name": "T2_FR_GRIF_IRFU",
+   "psn_name": "T2_FR_GRIF_IRFU"
+  },
+  {
+   "phedex_name": "T2_FR_IPHC",
+   "psn_name": "T2_FR_IPHC"
+  },
+  {
+   "phedex_name": "T2_GR_Ioannina",
+   "psn_name": "T2_GR_Ioannina"
+  },
+  {
+   "phedex_name": "T2_IT_Legnaro",
+   "psn_name": "T2_IT_Legnaro"
+  },
+  {
+   "phedex_name": "T3_IT_Bologna",
+   "psn_name": "T3_IT_Bologna"
+  },
+  {
+   "phedex_name": "T3_IT_Trieste",
+   "psn_name": "T3_IT_Trieste"
+  },
+  {
+   "phedex_name": "T3_RU_FIAN",
+   "psn_name": "T3_RU_FIAN"
+  },
+  {
+   "phedex_name": "T3_US_OSU",
+   "psn_name": "T3_US_OSU"
+  },
+  {
+   "phedex_name": "T3_US_Omaha",
+   "psn_name": "T3_US_Omaha"
+  },
+  {
+   "phedex_name": "T3_US_Princeton_ICSE",
+   "psn_name": "T3_US_Princeton_ICSE"
+  },
+  {
+   "phedex_name": "T3_US_PuertoRico",
+   "psn_name": "T3_US_PuertoRico"
+  },
+  {
+   "phedex_name": "T3_US_Rice",
+   "psn_name": "T3_US_Rice"
+  },
+  {
+   "phedex_name": "T3_US_Rutgers",
+   "psn_name": "T3_US_Rutgers"
+  },
+  {
+   "phedex_name": "T2_TH_CUNSTDA",
+   "psn_name": "T2_TH_CUNSTDA"
+  },
+  {
+   "phedex_name": "T2_TR_METU",
+   "psn_name": "T2_TR_METU"
+  },
+  {
+   "phedex_name": "T2_UA_KIPT",
+   "psn_name": "T2_UA_KIPT"
+  },
+  {
+   "phedex_name": "T2_UK_London_Brunel",
+   "psn_name": "T2_UK_London_Brunel"
+  },
+  {
+   "phedex_name": "T2_UK_London_IC",
+   "psn_name": "T2_UK_London_IC"
+  },
+  {
+   "phedex_name": "T2_UK_SGrid_Bristol",
+   "psn_name": "T2_UK_SGrid_Bristol"
+  },
+  {
+   "phedex_name": "T2_UK_SGrid_RALPP",
+   "psn_name": "T2_UK_SGrid_RALPP"
+  },
+  {
+   "phedex_name": "T2_US_Caltech",
+   "psn_name": "T2_US_Caltech"
+  },
+  {
+   "phedex_name": "T2_US_Florida",
+   "psn_name": "T2_US_Florida"
+  },
+  {
+   "phedex_name": "T2_US_MIT",
+   "psn_name": "T2_US_MIT"
+  },
+  {
+   "phedex_name": "T2_US_Nebraska",
+   "psn_name": "T2_US_Nebraska"
+  },
+  {
+   "phedex_name": "T2_US_Purdue",
+   "psn_name": "T2_US_Purdue"
+  },
+  {
+   "phedex_name": "T2_US_UCSD",
+   "psn_name": "T2_US_UCSD"
+  },
+  {
+   "phedex_name": "T3_US_Vanderbilt_EC2",
+   "psn_name": "T2_US_Vanderbilt"
+  },
+  {
+   "phedex_name": "T2_US_Vanderbilt",
+   "psn_name": "T2_US_Vanderbilt"
+  },
+  {
+   "phedex_name": "T2_US_Wisconsin",
+   "psn_name": "T2_US_Wisconsin"
+  },
+  {
+   "phedex_name": "T3_BY_NCPHEP",
+   "psn_name": "T3_BY_NCPHEP"
+  },
+  {
+   "phedex_name": "T3_CN_PKU",
+   "psn_name": "T3_CN_PKU"
+  },
+  {
+   "phedex_name": "T3_ES_Oviedo",
+   "psn_name": "T3_ES_Oviedo"
+  },
+  {
+   "phedex_name": "T3_CO_Uniandes",
+   "psn_name": "T3_CO_Uniandes"
+  },
+  {
+   "phedex_name": "T3_FR_IPNL",
+   "psn_name": "T3_FR_IPNL"
+  },
+  {
+   "phedex_name": "T3_GR_IASA_HG",
+   "psn_name": "T3_GR_IASA"
+  },
+  {
+   "phedex_name": "T3_GR_IASA_GR",
+   "psn_name": "T3_GR_IASA"
+  },
+  {
+   "phedex_name": "T3_TW_NTU_HEP",
+   "psn_name": "T3_TW_NTU_HEP"
+  },
+  {
+   "phedex_name": "T3_UK_London_QMUL",
+   "psn_name": "T3_UK_London_QMUL"
+  },
+  {
+   "phedex_name": "T3_UK_London_UCL",
+   "psn_name": "T3_UK_London_UCL"
+  },
+  {
+   "phedex_name": "T3_UK_SGrid_Oxford",
+   "psn_name": "T3_UK_SGrid_Oxford"
+  },
+  {
+   "phedex_name": "T3_UK_ScotGrid_GLA",
+   "psn_name": "T3_UK_ScotGrid_GLA"
+  },
+  {
+   "phedex_name": "T3_US_Baylor",
+   "psn_name": "T3_US_Baylor"
+  },
+  {
+   "phedex_name": "T3_US_Colorado",
+   "psn_name": "T3_US_Colorado"
+  },
+  {
+   "phedex_name": "T3_US_Cornell",
+   "psn_name": "T3_US_Cornell"
+  },
+  {
+   "phedex_name": "T3_US_FIT",
+   "psn_name": "T3_US_FIT"
+  },
+  {
+   "phedex_name": "T3_US_FIU",
+   "psn_name": "T3_US_FIU"
+  },
+  {
+   "phedex_name": "T3_US_FSU",
+   "psn_name": "T3_US_FSU"
+  },
+  {
+   "phedex_name": "T3_US_JHU",
+   "psn_name": "T3_US_JHU"
+  },
+  {
+   "phedex_name": "T3_IN_PUHEP",
+   "psn_name": "T3_IN_PUHEP"
+  },
+  {
+   "phedex_name": "T3_IT_Napoli",
+   "psn_name": "T3_IT_Napoli"
+  },
+  {
+   "phedex_name": "T3_IT_Perugia",
+   "psn_name": "T3_IT_Perugia"
+  },
+  {
+   "phedex_name": "T3_KR_KNU",
+   "psn_name": "T3_KR_KNU"
+  },
+  {
+   "phedex_name": "T3_KR_UOS",
+   "psn_name": "T3_KR_UOS"
+  },
+  {
+   "phedex_name": "T3_MX_Cinvestav",
+   "psn_name": "T3_MX_Cinvestav"
+  },
+  {
+   "phedex_name": "T3_TW_NCU",
+   "psn_name": "T3_TW_NCU"
+  },
+  {
+   "phedex_name": "T3_US_Kansas",
+   "psn_name": "T3_US_Kansas"
+  },
+  {
+   "phedex_name": "T3_US_MIT",
+   "psn_name": "T3_US_MIT"
+  },
+  {
+   "phedex_name": "T3_US_NU",
+   "psn_name": "T3_US_NU"
+  },
+  {
+   "phedex_name": "T3_US_NotreDame",
+   "psn_name": "T3_US_NotreDame"
+  },
+  {
+   "phedex_name": "T3_US_SDSC",
+   "psn_name": "T3_US_SDSC"
+  },
+  {
+   "phedex_name": "T3_US_TAMU",
+   "psn_name": "T3_US_TAMU"
+  },
+  {
+   "phedex_name": "T3_US_TTU",
+   "psn_name": "T3_US_TTU"
+  },
+  {
+   "phedex_name": "T3_US_UCD",
+   "psn_name": "T3_US_UCD"
+  },
+  {
+   "phedex_name": "T3_US_UCR",
+   "psn_name": "T3_US_UCR"
+  },
+  {
+   "phedex_name": "T3_US_UMD",
+   "psn_name": "T3_US_UMD"
+  },
+  {
+   "phedex_name": "T3_US_UMiss",
+   "psn_name": "T3_US_UMiss"
+  },
+  {
+   "phedex_name": "T2_PL_Swierk",
+   "psn_name": "T2_PL_Swierk"
+  },
+  {
+   "phedex_name": "T3_US_NERSC",
+   "psn_name": "T3_US_NERSC"
+  },
+  {
+   "phedex_name": "T3_US_UCSB",
+   "psn_name": "T3_US_UCSB"
+  },
+  {
+   "phedex_name": "T3_HU_Debrecen",
+   "psn_name": "T3_HU_Debrecen"
+  },
+  {
+   "phedex_name": "T2_CH_CERN",
+   "psn_name": "T2_CH_CERN_HLT"
+  },
+  {
+   "phedex_name": "T3_BG_UNI_SOFIA",
+   "psn_name": "T3_BG_UNI_SOFIA"
+  },
+  {
+   "phedex_name": "T2_TW_NCHC",
+   "psn_name": "T2_TW_NCHC"
+  },
+  {
+   "phedex_name": "T0_CH_CERN_Disk",
+   "psn_name": "T0_CH_CERN"
+  }
+ ],
+ "[('callname', 'site-resources'), ('clearCache', False), ('data', {}), ('filename', 'site-resources.json'), ('verb', 'GET')]": [
+  {
+   "type": "SE",
+   "site_name": "BY-NCPHEP",
+   "fqdn": "grid02.hep.by",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Bari",
+   "fqdn": "storm-se-01.ba.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Baylor University Tier3",
+   "fqdn": "kodiak-se.baylor.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Beijing",
+   "fqdn": "srm.ihep.ac.cn",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Bologna-T3",
+   "fqdn": "sebo-t3-01.cr.cnaf.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Bristol",
+   "fqdn": "lcgse01.phy.bris.ac.uk",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Brown-CMS",
+   "fqdn": "srm.hep.brown.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Brunel",
+   "fqdn": "dc2-grid-64.brunel.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CC-IN2P3",
+   "fqdn": "ccsrm.in2p3.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CC-IN2P3 AF",
+   "fqdn": "ccsrmt2.in2p3.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CERN",
+   "fqdn": "srm-cms.cern.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CERN Tier-0",
+   "fqdn": "srm-cms.cern.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CERN Tier-2",
+   "fqdn": "srm-eoscms.cern.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CERN Tier-2 AI",
+   "fqdn": "eoscmsftp.cern.ch",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "CERN Tier-2 HLT",
+   "fqdn": "srm-eoscms.cern.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CIEMAT",
+   "fqdn": "srm.ciemat.es",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CNAF",
+   "fqdn": "storm-fe-cms.cr.cnaf.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CN_PKU",
+   "fqdn": "grid09.phy.pku.edu.cn",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CN_PKU",
+   "fqdn": "grid07.phy.pku.edu.cn",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CSCS",
+   "fqdn": "storage01.lcg.cscs.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "CUNSTDA",
+   "fqdn": "terbium.lsr.nectec.or.th",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Caltech",
+   "fqdn": "cit-se.ultralight.org",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Colorado",
+   "fqdn": "hepse01.colorado.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Cornell",
+   "fqdn": "osg-se.cac.cornell.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "DESY",
+   "fqdn": "dcache-se-cms.desy.de",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Estonia",
+   "fqdn": "srm2.hep.kbfi.ee",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Estonia",
+   "fqdn": "srm1.hep.kbfi.ee",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Estonia",
+   "fqdn": "ganymede.hep.kbfi.ee",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "FIAN",
+   "fqdn": "se2.grid.lebedev.ru",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "FLTECH",
+   "fqdn": "uscms1-se.fltech-grid3.fit.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "FNAL",
+   "fqdn": "cmsdcadisk01.fnal.gov",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "FNALDISK",
+   "fqdn": "cmsdcadisk01.fnal.gov",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "FNALLPC",
+   "fqdn": "cmseos.fnal.gov",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Firenze",
+   "fqdn": "grid002.fi.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Florida",
+   "fqdn": "srm.ihepa.ufl.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "GRIF_IRFU",
+   "fqdn": "node12.datagrid.cea.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "GRIF_LLR",
+   "fqdn": "polgrid4.in2p3.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "HEPGRID_UERJ",
+   "fqdn": "se.hepgrid.uerj.br",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "HelixNebula",
+   "fqdn": "fakese.cern.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Helsinki Institute of Physics",
+   "fqdn": "madhatter.csc.fi",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Hephy-Vienna",
+   "fqdn": "hephyse.oeaw.ac.at",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Hungary",
+   "fqdn": "grid143.kfki.hu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IASA",
+   "fqdn": "se02.marie.hellasgrid.gr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IASA",
+   "fqdn": "se01.marie.hellasgrid.gr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IC",
+   "fqdn": "gfe02.grid.hep.ph.ic.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IFCA",
+   "fqdn": "storm.ifca.es",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IFCA",
+   "fqdn": "srm01.ifca.es",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IHEP",
+   "fqdn": "dp0015.m45.ihep.su",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IIHE",
+   "fqdn": "maite.iihe.ac.be",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IN2P3-IPNL",
+   "fqdn": "lyogrid06.in2p3.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "INFN-MIB",
+   "fqdn": "storm.mib.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "INFN-NAPOLI-CMS",
+   "fqdn": "cmsse02.na.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "INR",
+   "fqdn": "grse001.inr.troitsk.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IPHC",
+   "fqdn": "sbgse1.in2p3.fr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IPM",
+   "fqdn": "se1.particles.ipm.ac.ir",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "IRB",
+   "fqdn": "lorienmaster.irb.hr",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "ITEP",
+   "fqdn": "se3.itep.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Ioannina",
+   "fqdn": "grid02.physics.uoi.gr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "JHU",
+   "fqdn": "hep.pha.jhu.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "JINR",
+   "fqdn": "lcgsedc01.jinr.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "JINR-T1",
+   "fqdn": "srm-cms.jinr-t1.ru",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "JINR-T1",
+   "fqdn": "srm-cms-mss.jinr-t1.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "JINR-T1DISK",
+   "fqdn": "srm-cms.jinr-t1.ru",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "KIPT",
+   "fqdn": "cms-se0.kipt.kharkov.ua",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "KISTI T3",
+   "fqdn": "cms-se.sdfarm.kr",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "KIT",
+   "fqdn": "cmssrm-kit.gridka.de",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "KNU",
+   "fqdn": "cluster142.knu.ac.kr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Legnaro",
+   "fqdn": "t2-srm-02.lnl.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Louvain",
+   "fqdn": "ingrid-se02.cism.ucl.ac.be",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "METU",
+   "fqdn": "eymir.grid.metu.edu.tr",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "MIT",
+   "fqdn": "se01.cmsaf.mit.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Minnesota",
+   "fqdn": "gc1-se.spa.umn.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "NCG-INGRID-PT",
+   "fqdn": "srm01.ncg.ingrid.pt",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "NCP-LCG2",
+   "fqdn": "pcncp22.ncp.edu.pk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "NCU",
+   "fqdn": "grid71.phy.ncu.edu.tw",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "NTU_HEP",
+   "fqdn": "ntugrid4.phys.ntu.edu.tw",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "NTU_HEP",
+   "fqdn": "ntugrid6.phys.ntu.edu.tw",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "NWICG_NDCMS",
+   "fqdn": "deepthought.crc.nd.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "NZ-UOA",
+   "fqdn": "glite-se.ceres.auckland.ac.nz",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Nat Center High Perf Comp NCHC",
+   "fqdn": "se01.grid.nchc.org.tw",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Nebraska",
+   "fqdn": "dcache07.unl.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Nebraska",
+   "fqdn": "srm.unl.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Nebraska",
+   "fqdn": "red-srm1.unl.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Northwestern",
+   "fqdn": "ttgrid04.ci.northwestern.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "OSU",
+   "fqdn": "cms-0.mps.ohio-state.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Oviedo",
+   "fqdn": "gae010.ciencias.uniovi.es",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Oxford",
+   "fqdn": "t2se01.physics.ox.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "PIC",
+   "fqdn": "srmcms.pic.es",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "PNPI",
+   "fqdn": "cluster.pnpi.nw.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "PSI",
+   "fqdn": "t3se01.psi.ch",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Perugia",
+   "fqdn": "gridse2.pg.infn.it",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Pisa",
+   "fqdn": "stormfe1.pi.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Princeton ICSE ",
+   "fqdn": "cmssw.princeton.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Purdue",
+   "fqdn": "srm.rcac.purdue.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "QMUL",
+   "fqdn": "se03.esc.qmul.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "RAL",
+   "fqdn": "srm-cms-disk.gridpp.rl.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "RAL",
+   "fqdn": "srm-cms.gridpp.rl.ac.uk",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "RALDISK",
+   "fqdn": "srm-cms-disk.gridpp.rl.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "RHUL",
+   "fqdn": "se2.ppgrid1.rhul.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "RWTH",
+   "fqdn": "grid-srm.physik.rwth-aachen.de",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Rice",
+   "fqdn": "bonner04.rice.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Rome",
+   "fqdn": "cmsrm-se01.roma1.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Rutgers",
+   "fqdn": "ruhex-osgce.rutgers.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Rutherford PPD",
+   "fqdn": "heplnx204.pp.rl.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "SINP",
+   "fqdn": "lcg58.sinp.msu.ru",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "SPRACE",
+   "fqdn": "osg-se.sprace.org.br",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "SUNY_BUFFALO",
+   "fqdn": "u2-grid.ccr.buffalo.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T2_PL_Swierk",
+   "fqdn": "se.cis.gov.pl",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 AS Parrot",
+   "fqdn": "fakese.parrot.as",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 EU Parrot",
+   "fqdn": "fakese.parrot.eu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 US MIT",
+   "fqdn": "t3serv006.mit.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 US NERSC",
+   "fqdn": "fakese.nersc.us",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 US Parrot",
+   "fqdn": "fakese.parrot.us",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 US ParrotTest",
+   "fqdn": "fakese.parrottest.us",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3 US SDSC",
+   "fqdn": "oasis-dm.sdsc.xsede.org",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_HU_Debrecen",
+   "fqdn": "dpm.grid.atomki.hu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_IN_VBU",
+   "fqdn": "storage.vb-ehep.in",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_TH_CHULA",
+   "fqdn": "cms-se.sc.chula.ac.th",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_US_FIU",
+   "fqdn": "srm.hep.fiu.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_US_FSU",
+   "fqdn": "se.hep.fsu.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "T3_US_HEPCloud",
+   "fqdn": "cmssrv98.fnal.gov",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "TAMU",
+   "fqdn": "srm.brazos.tamu.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "TIFR",
+   "fqdn": "se01.indiacms.res.in",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "TTU",
+   "fqdn": "sigmorgh.hpcc.ttu.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Trieste",
+   "fqdn": "gridsrm.ts.infn.it",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UC Riverside",
+   "fqdn": "charm.ucr.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UCD",
+   "fqdn": "se.tier3.ucdavis.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UCSB",
+   "fqdn": "cms25.physics.ucsb.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UCSD",
+   "fqdn": "bsrm-3.t2.ucsd.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UIowa",
+   "fqdn": "grow-grid.its.uiowa.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UKI-SCOTGRID-GLASGOW",
+   "fqdn": "svr018.gla.scotgrid.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UMD",
+   "fqdn": "hepcms-0.umd.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UMissHEP",
+   "fqdn": "umiss005.hep.olemiss.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UNIANDES",
+   "fqdn": "moboro.uniandes.edu.co",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "UOS",
+   "fqdn": "uosaf0007.sscc.uos.ac.kr",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "UPRM",
+   "fqdn": "cms-se.hep.uprm.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UTenn",
+   "fqdn": "cms213.phys.utk.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "UVA",
+   "fqdn": "osg-hep.phys.virginia.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Uni Sofia",
+   "fqdn": "dcache.grid.uni-sofia.bg",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "University College London",
+   "fqdn": "lcg-dpm01.hep.ucl.ac.uk",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Vanderbilt",
+   "fqdn": "se1.accre.vanderbilt.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Vanderbilt_EC2",
+   "fqdn": "brazil.accre.vanderbilt.edu",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Warsaw",
+   "fqdn": "se.polgrid.pl",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "Warsaw",
+   "fqdn": "se.grid.icm.edu.pl",
+   "is_primary": "y"
+  },
+  {
+   "type": "SE",
+   "site_name": "Wisconsin",
+   "fqdn": "cmssrm.hep.wisc.edu",
+   "is_primary": "n"
+  },
+  {
+   "type": "SE",
+   "site_name": "cinvestav",
+   "fqdn": "meson.fis.cinvestav.mx",
+   "is_primary": "n"
+  }
+ ],
+ "[('callname', 'site-names'), ('clearCache', False), ('data', {}), ('filename', 'site-names.json'), ('verb', 'GET')]": [
+  {
+   "site_name": "Argonne",
+   "type": "cms",
+   "alias": "T3_US_ANL"
+  },
+  {
+   "site_name": "BY-NCPHEP",
+   "type": "cms",
+   "alias": "T3_BY_NCPHEP"
+  },
+  {
+   "site_name": "Bari",
+   "type": "cms",
+   "alias": "T2_IT_Bari"
+  },
+  {
+   "site_name": "Baylor University Tier3",
+   "type": "cms",
+   "alias": "T3_US_Baylor"
+  },
+  {
+   "site_name": "Beijing",
+   "type": "cms",
+   "alias": "T2_CN_Beijing"
+  },
+  {
+   "site_name": "Bologna-T3",
+   "type": "cms",
+   "alias": "T3_IT_Bologna"
+  },
+  {
+   "site_name": "Bristol",
+   "type": "cms",
+   "alias": "T2_UK_SGrid_Bristol"
+  },
+  {
+   "site_name": "Brown-CMS",
+   "type": "cms",
+   "alias": "T3_US_Brown"
+  },
+  {
+   "site_name": "Brunel",
+   "type": "cms",
+   "alias": "T2_UK_London_Brunel"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "cms",
+   "alias": "T1_FR_CCIN2P3"
+  },
+  {
+   "site_name": "CC-IN2P3 AF",
+   "type": "cms",
+   "alias": "T2_FR_CCIN2P3"
+  },
+  {
+   "site_name": "CERN",
+   "type": "cms",
+   "alias": "T1_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "cms",
+   "alias": "T0_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-2",
+   "type": "cms",
+   "alias": "T2_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-2 AI",
+   "type": "cms",
+   "alias": "T2_CH_CERN_AI"
+  },
+  {
+   "site_name": "CERN Tier-2 HLT",
+   "type": "cms",
+   "alias": "T2_CH_CERN_HLT"
+  },
+  {
+   "site_name": "CERN Tier-2 Wigner",
+   "type": "cms",
+   "alias": "T2_CH_CERN_Wigner"
+  },
+  {
+   "site_name": "CIEMAT",
+   "type": "cms",
+   "alias": "T2_ES_CIEMAT"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "cms",
+   "alias": "T1_IT_CNAF"
+  },
+  {
+   "site_name": "CN_PKU",
+   "type": "cms",
+   "alias": "T3_CN_PKU"
+  },
+  {
+   "site_name": "CSCS",
+   "type": "cms",
+   "alias": "T2_CH_CSCS"
+  },
+  {
+   "site_name": "CUNSTDA",
+   "type": "cms",
+   "alias": "T2_TH_CUNSTDA"
+  },
+  {
+   "site_name": "Caltech",
+   "type": "cms",
+   "alias": "T2_US_Caltech"
+  },
+  {
+   "site_name": "Colorado",
+   "type": "cms",
+   "alias": "T3_US_Colorado"
+  },
+  {
+   "site_name": "Cornell",
+   "type": "cms",
+   "alias": "T3_US_Cornell"
+  },
+  {
+   "site_name": "DESY",
+   "type": "cms",
+   "alias": "T2_DE_DESY"
+  },
+  {
+   "site_name": "Demokritos",
+   "type": "cms",
+   "alias": "T3_GR_Demokritos"
+  },
+  {
+   "site_name": "ECDF",
+   "type": "cms",
+   "alias": "T3_UK_ScotGrid_ECDF"
+  },
+  {
+   "site_name": "Estonia",
+   "type": "cms",
+   "alias": "T2_EE_Estonia"
+  },
+  {
+   "site_name": "FIAN",
+   "type": "cms",
+   "alias": "T3_RU_FIAN"
+  },
+  {
+   "site_name": "FLTECH",
+   "type": "cms",
+   "alias": "T3_US_FIT"
+  },
+  {
+   "site_name": "FNAL",
+   "type": "cms",
+   "alias": "T1_US_FNAL"
+  },
+  {
+   "site_name": "FNALDISK",
+   "type": "cms",
+   "alias": "T1_US_FNAL_Disk"
+  },
+  {
+   "site_name": "FNALLPC",
+   "type": "cms",
+   "alias": "T3_US_FNALLPC"
+  },
+  {
+   "site_name": "Firefly",
+   "type": "cms",
+   "alias": "T3_US_Omaha"
+  },
+  {
+   "site_name": "Firenze",
+   "type": "cms",
+   "alias": "T3_IT_Firenze"
+  },
+  {
+   "site_name": "Florida",
+   "type": "cms",
+   "alias": "T2_US_Florida"
+  },
+  {
+   "site_name": "GRIF_IRFU",
+   "type": "cms",
+   "alias": "T2_FR_GRIF_IRFU"
+  },
+  {
+   "site_name": "GRIF_LLR",
+   "type": "cms",
+   "alias": "T2_FR_GRIF_LLR"
+  },
+  {
+   "site_name": "GridPP Cloud",
+   "type": "cms",
+   "alias": "T3_UK_GridPP_Cloud"
+  },
+  {
+   "site_name": "HEPGRID_UERJ",
+   "type": "cms",
+   "alias": "T2_BR_UERJ"
+  },
+  {
+   "site_name": "HelixNebula",
+   "type": "cms",
+   "alias": "T3_CH_CERN_HelixNebula"
+  },
+  {
+   "site_name": "Helsinki Institute of Physics",
+   "type": "cms",
+   "alias": "T2_FI_HIP"
+  },
+  {
+   "site_name": "Hephy-Vienna",
+   "type": "cms",
+   "alias": "T2_AT_Vienna"
+  },
+  {
+   "site_name": "Hungary",
+   "type": "cms",
+   "alias": "T2_HU_Budapest"
+  },
+  {
+   "site_name": "IASA",
+   "type": "cms",
+   "alias": "T3_GR_IASA"
+  },
+  {
+   "site_name": "IC",
+   "type": "cms",
+   "alias": "T2_UK_London_IC"
+  },
+  {
+   "site_name": "IFCA",
+   "type": "cms",
+   "alias": "T2_ES_IFCA"
+  },
+  {
+   "site_name": "IHEP",
+   "type": "cms",
+   "alias": "T2_RU_IHEP"
+  },
+  {
+   "site_name": "IIHE",
+   "type": "cms",
+   "alias": "T2_BE_IIHE"
+  },
+  {
+   "site_name": "IN2P3-IPNL",
+   "type": "cms",
+   "alias": "T3_FR_IPNL"
+  },
+  {
+   "site_name": "INFN-MIB",
+   "type": "cms",
+   "alias": "T3_IT_MIB"
+  },
+  {
+   "site_name": "INFN-NAPOLI-CMS",
+   "type": "cms",
+   "alias": "T3_IT_Napoli"
+  },
+  {
+   "site_name": "INR",
+   "type": "cms",
+   "alias": "T2_RU_INR"
+  },
+  {
+   "site_name": "IPHC",
+   "type": "cms",
+   "alias": "T2_FR_IPHC"
+  },
+  {
+   "site_name": "IPM",
+   "type": "cms",
+   "alias": "T3_IR_IPM"
+  },
+  {
+   "site_name": "IRB",
+   "type": "cms",
+   "alias": "T3_HR_IRB"
+  },
+  {
+   "site_name": "ITEP",
+   "type": "cms",
+   "alias": "T2_RU_ITEP"
+  },
+  {
+   "site_name": "Ioannina",
+   "type": "cms",
+   "alias": "T2_GR_Ioannina"
+  },
+  {
+   "site_name": "JHU",
+   "type": "cms",
+   "alias": "T3_US_JHU"
+  },
+  {
+   "site_name": "JINR",
+   "type": "cms",
+   "alias": "T2_RU_JINR"
+  },
+  {
+   "site_name": "JINR-T1",
+   "type": "cms",
+   "alias": "T1_RU_JINR"
+  },
+  {
+   "site_name": "JINR-T1DISK",
+   "type": "cms",
+   "alias": "T1_RU_JINR_Disk"
+  },
+  {
+   "site_name": "KIPT",
+   "type": "cms",
+   "alias": "T2_UA_KIPT"
+  },
+  {
+   "site_name": "KISTI T3",
+   "type": "cms",
+   "alias": "T3_KR_KISTI"
+  },
+  {
+   "site_name": "KIT",
+   "type": "cms",
+   "alias": "T1_DE_KIT"
+  },
+  {
+   "site_name": "KNU",
+   "type": "cms",
+   "alias": "T2_KR_KNU"
+  },
+  {
+   "site_name": "KR_KNU",
+   "type": "cms",
+   "alias": "T3_KR_KNU"
+  },
+  {
+   "site_name": "Kansas",
+   "type": "cms",
+   "alias": "T3_US_Kansas"
+  },
+  {
+   "site_name": "Legnaro",
+   "type": "cms",
+   "alias": "T2_IT_Legnaro"
+  },
+  {
+   "site_name": "Louvain",
+   "type": "cms",
+   "alias": "T2_BE_UCL"
+  },
+  {
+   "site_name": "MEPhI",
+   "type": "cms",
+   "alias": "T3_RU_MEPhI"
+  },
+  {
+   "site_name": "METU",
+   "type": "cms",
+   "alias": "T2_TR_METU"
+  },
+  {
+   "site_name": "MIT",
+   "type": "cms",
+   "alias": "T2_US_MIT"
+  },
+  {
+   "site_name": "Minnesota",
+   "type": "cms",
+   "alias": "T3_US_Minnesota"
+  },
+  {
+   "site_name": "NCG-INGRID-PT",
+   "type": "cms",
+   "alias": "T2_PT_NCG_Lisbon"
+  },
+  {
+   "site_name": "NCP-LCG2",
+   "type": "cms",
+   "alias": "T2_PK_NCP"
+  },
+  {
+   "site_name": "NCU",
+   "type": "cms",
+   "alias": "T3_TW_NCU"
+  },
+  {
+   "site_name": "NTU_HEP",
+   "type": "cms",
+   "alias": "T3_TW_NTU_HEP"
+  },
+  {
+   "site_name": "NWICG_NDCMS",
+   "type": "cms",
+   "alias": "T3_US_NotreDame"
+  },
+  {
+   "site_name": "NZ-UOA",
+   "type": "cms",
+   "alias": "T3_NZ_UOA"
+  },
+  {
+   "site_name": "Nat Center High Perf Comp NCHC",
+   "type": "cms",
+   "alias": "T2_TW_NCHC"
+  },
+  {
+   "site_name": "Nebraska",
+   "type": "cms",
+   "alias": "T2_US_Nebraska"
+  },
+  {
+   "site_name": "Northeastern",
+   "type": "cms",
+   "alias": "T3_US_NEU"
+  },
+  {
+   "site_name": "Northwestern",
+   "type": "cms",
+   "alias": "T3_US_NU"
+  },
+  {
+   "site_name": "OSU",
+   "type": "cms",
+   "alias": "T3_US_OSU"
+  },
+  {
+   "site_name": "Oviedo",
+   "type": "cms",
+   "alias": "T3_ES_Oviedo"
+  },
+  {
+   "site_name": "Oxford",
+   "type": "cms",
+   "alias": "T3_UK_SGrid_Oxford"
+  },
+  {
+   "site_name": "PIC",
+   "type": "cms",
+   "alias": "T1_ES_PIC"
+  },
+  {
+   "site_name": "PNPI",
+   "type": "cms",
+   "alias": "T2_RU_PNPI"
+  },
+  {
+   "site_name": "PSI",
+   "type": "cms",
+   "alias": "T3_CH_PSI"
+  },
+  {
+   "site_name": "PUHEP",
+   "type": "cms",
+   "alias": "T3_IN_PUHEP"
+  },
+  {
+   "site_name": "Perugia",
+   "type": "cms",
+   "alias": "T3_IT_Perugia"
+  },
+  {
+   "site_name": "Pisa",
+   "type": "cms",
+   "alias": "T2_IT_Pisa"
+  },
+  {
+   "site_name": "Princeton ARM",
+   "type": "cms",
+   "alias": "T3_US_Princeton_ARM"
+  },
+  {
+   "site_name": "Princeton ICSE ",
+   "type": "cms",
+   "alias": "T3_US_Princeton_ICSE"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "cms",
+   "alias": "T2_US_Purdue"
+  },
+  {
+   "site_name": "QMUL",
+   "type": "cms",
+   "alias": "T3_UK_London_QMUL"
+  },
+  {
+   "site_name": "RAL",
+   "type": "cms",
+   "alias": "T1_UK_RAL"
+  },
+  {
+   "site_name": "RALDISK",
+   "type": "cms",
+   "alias": "T1_UK_RAL_Disk"
+  },
+  {
+   "site_name": "RHUL",
+   "type": "cms",
+   "alias": "T3_UK_London_RHUL"
+  },
+  {
+   "site_name": "RWTH",
+   "type": "cms",
+   "alias": "T2_DE_RWTH"
+  },
+  {
+   "site_name": "Rice",
+   "type": "cms",
+   "alias": "T3_US_Rice"
+  },
+  {
+   "site_name": "Rome",
+   "type": "cms",
+   "alias": "T2_IT_Rome"
+  },
+  {
+   "site_name": "Rutgers",
+   "type": "cms",
+   "alias": "T3_US_Rutgers"
+  },
+  {
+   "site_name": "Rutherford PPD",
+   "type": "cms",
+   "alias": "T2_UK_SGrid_RALPP"
+  },
+  {
+   "site_name": "SINP",
+   "type": "cms",
+   "alias": "T2_RU_SINP"
+  },
+  {
+   "site_name": "SPRACE",
+   "type": "cms",
+   "alias": "T2_BR_SPRACE"
+  },
+  {
+   "site_name": "SUNY_BUFFALO",
+   "type": "cms",
+   "alias": "T3_US_UB"
+  },
+  {
+   "site_name": "T2_PL_Swierk",
+   "type": "cms",
+   "alias": "T2_PL_Swierk"
+  },
+  {
+   "site_name": "T3 AS Parrot",
+   "type": "cms",
+   "alias": "T3_AS_Parrot"
+  },
+  {
+   "site_name": "T3 EU Parrot",
+   "type": "cms",
+   "alias": "T3_EU_Parrot"
+  },
+  {
+   "site_name": "T3 US MIT",
+   "type": "cms",
+   "alias": "T3_US_MIT"
+  },
+  {
+   "site_name": "T3 US NERSC",
+   "type": "cms",
+   "alias": "T3_US_NERSC"
+  },
+  {
+   "site_name": "T3 US Parrot",
+   "type": "cms",
+   "alias": "T3_US_Parrot"
+  },
+  {
+   "site_name": "T3 US ParrotTest",
+   "type": "cms",
+   "alias": "T3_US_ParrotTest"
+  },
+  {
+   "site_name": "T3 US SDSC",
+   "type": "cms",
+   "alias": "T3_US_SDSC"
+  },
+  {
+   "site_name": "T3 US Wisconsin",
+   "type": "cms",
+   "alias": "T3_US_Wisconsin"
+  },
+  {
+   "site_name": "T3_CH_CERN_CAF",
+   "type": "cms",
+   "alias": "T3_CH_CERN_CAF"
+  },
+  {
+   "site_name": "T3_HU_Debrecen",
+   "type": "cms",
+   "alias": "T3_HU_Debrecen"
+  },
+  {
+   "site_name": "T3_IN_VBU",
+   "type": "cms",
+   "alias": "T3_IN_VBU"
+  },
+  {
+   "site_name": "T3_IT_Opportunistic",
+   "type": "cms",
+   "alias": "T3_IT_Opportunistic"
+  },
+  {
+   "site_name": "T3_TH_CHULA",
+   "type": "cms",
+   "alias": "T3_TH_CHULA"
+  },
+  {
+   "site_name": "T3_US_BU",
+   "type": "cms",
+   "alias": "T3_US_BU"
+  },
+  {
+   "site_name": "T3_US_FIU",
+   "type": "cms",
+   "alias": "T3_US_FIU"
+  },
+  {
+   "site_name": "T3_US_FSU",
+   "type": "cms",
+   "alias": "T3_US_FSU"
+  },
+  {
+   "site_name": "T3_US_HEPCloud",
+   "type": "cms",
+   "alias": "T3_US_HEPCloud"
+  },
+  {
+   "site_name": "T3_US_OSG",
+   "type": "cms",
+   "alias": "T3_US_OSG"
+  },
+  {
+   "site_name": "T3_US_TACC",
+   "type": "cms",
+   "alias": "T3_US_TACC"
+  },
+  {
+   "site_name": "TAMU",
+   "type": "cms",
+   "alias": "T3_US_TAMU"
+  },
+  {
+   "site_name": "TIFR",
+   "type": "cms",
+   "alias": "T2_IN_TIFR"
+  },
+  {
+   "site_name": "TTU",
+   "type": "cms",
+   "alias": "T3_US_TTU"
+  },
+  {
+   "site_name": "Trieste",
+   "type": "cms",
+   "alias": "T3_IT_Trieste"
+  },
+  {
+   "site_name": "UC Riverside",
+   "type": "cms",
+   "alias": "T3_US_UCR"
+  },
+  {
+   "site_name": "UCD",
+   "type": "cms",
+   "alias": "T3_US_UCD"
+  },
+  {
+   "site_name": "UCSB",
+   "type": "cms",
+   "alias": "T3_US_UCSB"
+  },
+  {
+   "site_name": "UCSD",
+   "type": "cms",
+   "alias": "T2_US_UCSD"
+  },
+  {
+   "site_name": "UIowa",
+   "type": "cms",
+   "alias": "T3_US_UIowa"
+  },
+  {
+   "site_name": "UKI-SCOTGRID-GLASGOW",
+   "type": "cms",
+   "alias": "T3_UK_ScotGrid_GLA"
+  },
+  {
+   "site_name": "UMD",
+   "type": "cms",
+   "alias": "T3_US_UMD"
+  },
+  {
+   "site_name": "UMissHEP",
+   "type": "cms",
+   "alias": "T3_US_UMiss"
+  },
+  {
+   "site_name": "UNIANDES",
+   "type": "cms",
+   "alias": "T3_CO_Uniandes"
+  },
+  {
+   "site_name": "UOS",
+   "type": "cms",
+   "alias": "T3_KR_UOS"
+  },
+  {
+   "site_name": "UPM Biruni",
+   "type": "cms",
+   "alias": "T2_MY_UPM_BIRUNI"
+  },
+  {
+   "site_name": "UPRM",
+   "type": "cms",
+   "alias": "T3_US_PuertoRico"
+  },
+  {
+   "site_name": "UTenn",
+   "type": "cms",
+   "alias": "T3_US_UTENN"
+  },
+  {
+   "site_name": "UVA",
+   "type": "cms",
+   "alias": "T3_US_UVA"
+  },
+  {
+   "site_name": "Uni Sofia",
+   "type": "cms",
+   "alias": "T3_BG_UNI_SOFIA"
+  },
+  {
+   "site_name": "University College London",
+   "type": "cms",
+   "alias": "T3_UK_London_UCL"
+  },
+  {
+   "site_name": "University of Malaya",
+   "type": "cms",
+   "alias": "T2_MY_SIFIR"
+  },
+  {
+   "site_name": "Vanderbilt",
+   "type": "cms",
+   "alias": "T2_US_Vanderbilt"
+  },
+  {
+   "site_name": "Vanderbilt_EC2",
+   "type": "cms",
+   "alias": "T3_US_Vanderbilt_EC2"
+  },
+  {
+   "site_name": "Volunteer",
+   "type": "cms",
+   "alias": "T3_CH_Volunteer"
+  },
+  {
+   "site_name": "Warsaw",
+   "type": "cms",
+   "alias": "T2_PL_Warsaw"
+  },
+  {
+   "site_name": "Wisconsin",
+   "type": "cms",
+   "alias": "T2_US_Wisconsin"
+  },
+  {
+   "site_name": "cinvestav",
+   "type": "cms",
+   "alias": "T3_MX_Cinvestav"
+  },
+  {
+   "site_name": "Argonne",
+   "type": "lcg",
+   "alias": "Argonne"
+  },
+  {
+   "site_name": "BY-NCPHEP",
+   "type": "lcg",
+   "alias": "BY-NCPHEP"
+  },
+  {
+   "site_name": "Bari",
+   "type": "lcg",
+   "alias": "INFN-BARI"
+  },
+  {
+   "site_name": "Baylor University Tier3",
+   "type": "lcg",
+   "alias": "Baylor-Tier3"
+  },
+  {
+   "site_name": "Beijing",
+   "type": "lcg",
+   "alias": "BEIJING-LCG2"
+  },
+  {
+   "site_name": "Bologna-T3",
+   "type": "lcg",
+   "alias": "INFN-BOLOGNA-T3"
+  },
+  {
+   "site_name": "Bristol",
+   "type": "lcg",
+   "alias": "UKI-SOUTHGRID-BRIS-HEP"
+  },
+  {
+   "site_name": "Brown-CMS",
+   "type": "lcg",
+   "alias": "brown-cms-new"
+  },
+  {
+   "site_name": "Brunel",
+   "type": "lcg",
+   "alias": "UKI-LT2-Brunel"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "lcg",
+   "alias": "IN2P3-CC"
+  },
+  {
+   "site_name": "CC-IN2P3 AF",
+   "type": "lcg",
+   "alias": "IN2P3-CC-T2"
+  },
+  {
+   "site_name": "CERN",
+   "type": "lcg",
+   "alias": "CERN-PROD"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "lcg",
+   "alias": "CERN-PROD"
+  },
+  {
+   "site_name": "CERN Tier-2",
+   "type": "lcg",
+   "alias": "CERN-PROD"
+  },
+  {
+   "site_name": "CERN Tier-2 AI",
+   "type": "lcg",
+   "alias": "CERN-PROD-AI"
+  },
+  {
+   "site_name": "CERN Tier-2 HLT",
+   "type": "lcg",
+   "alias": "CERN-PROD-HLT"
+  },
+  {
+   "site_name": "CERN Tier-2 Wigner",
+   "type": "lcg",
+   "alias": "CERN-PROD-WIGNER"
+  },
+  {
+   "site_name": "CIEMAT",
+   "type": "lcg",
+   "alias": "CIEMAT-LCG2"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "lcg",
+   "alias": "INFN-T1"
+  },
+  {
+   "site_name": "CN_PKU",
+   "type": "lcg",
+   "alias": "CN-BEIJING-PKU"
+  },
+  {
+   "site_name": "CSCS",
+   "type": "lcg",
+   "alias": "CSCS-LCG2"
+  },
+  {
+   "site_name": "CUNSTDA",
+   "type": "lcg",
+   "alias": "T2-TH-CUNSTDA"
+  },
+  {
+   "site_name": "Caltech",
+   "type": "lcg",
+   "alias": "CIT_CMS_T2"
+  },
+  {
+   "site_name": "Colorado",
+   "type": "lcg",
+   "alias": "UColorado_HEP"
+  },
+  {
+   "site_name": "Cornell",
+   "type": "lcg",
+   "alias": "NYSGRID_CORNELL_NYS1"
+  },
+  {
+   "site_name": "DESY",
+   "type": "lcg",
+   "alias": "DESY-HH"
+  },
+  {
+   "site_name": "Demokritos",
+   "type": "lcg",
+   "alias": "GR-05-DEMOKRITOS"
+  },
+  {
+   "site_name": "ECDF",
+   "type": "lcg",
+   "alias": "UKI-SCOTGRID-ECDF"
+  },
+  {
+   "site_name": "Estonia",
+   "type": "lcg",
+   "alias": "T2_Estonia"
+  },
+  {
+   "site_name": "FIAN",
+   "type": "lcg",
+   "alias": "ru-Moscow-FIAN-LCG2"
+  },
+  {
+   "site_name": "FLTECH",
+   "type": "lcg",
+   "alias": "FLTECH"
+  },
+  {
+   "site_name": "FNAL",
+   "type": "lcg",
+   "alias": "USCMS-FNAL-WC1"
+  },
+  {
+   "site_name": "FNALDISK",
+   "type": "lcg",
+   "alias": "USCMS-FNAL-WC1-DISK"
+  },
+  {
+   "site_name": "FNALLPC",
+   "type": "lcg",
+   "alias": "USCMS-FNAL-LPC"
+  },
+  {
+   "site_name": "Firefly",
+   "type": "lcg",
+   "alias": "Firefly"
+  },
+  {
+   "site_name": "Firenze",
+   "type": "lcg",
+   "alias": "INFN-FIRENZE"
+  },
+  {
+   "site_name": "Florida",
+   "type": "lcg",
+   "alias": "UFlorida-HPC"
+  },
+  {
+   "site_name": "GRIF_IRFU",
+   "type": "lcg",
+   "alias": "IRFU"
+  },
+  {
+   "site_name": "GRIF_LLR",
+   "type": "lcg",
+   "alias": "GRIF"
+  },
+  {
+   "site_name": "GridPP Cloud",
+   "type": "lcg",
+   "alias": "UKI-GridPP-Cloud"
+  },
+  {
+   "site_name": "HEPGRID_UERJ",
+   "type": "lcg",
+   "alias": "UERJ"
+  },
+  {
+   "site_name": "HelixNebula",
+   "type": "lcg",
+   "alias": "CERN_HelixNebula_CMS"
+  },
+  {
+   "site_name": "Helsinki Institute of Physics",
+   "type": "lcg",
+   "alias": "FI_HIP_T2"
+  },
+  {
+   "site_name": "Hephy-Vienna",
+   "type": "lcg",
+   "alias": "Hephy-Vienna"
+  },
+  {
+   "site_name": "Hungary",
+   "type": "lcg",
+   "alias": "BUDAPEST"
+  },
+  {
+   "site_name": "IASA",
+   "type": "lcg",
+   "alias": "GR-06-IASA"
+  },
+  {
+   "site_name": "IASA",
+   "type": "lcg",
+   "alias": "HG-02-IASA"
+  },
+  {
+   "site_name": "IC",
+   "type": "lcg",
+   "alias": "UKI-LT2-IC-HEP"
+  },
+  {
+   "site_name": "IFCA",
+   "type": "lcg",
+   "alias": "IFCA-LCG2"
+  },
+  {
+   "site_name": "IHEP",
+   "type": "lcg",
+   "alias": "RU-Protvino-IHEP"
+  },
+  {
+   "site_name": "IIHE",
+   "type": "lcg",
+   "alias": "BEgrid-ULB-VUB"
+  },
+  {
+   "site_name": "IN2P3-IPNL",
+   "type": "lcg",
+   "alias": "IN2P3-IPNL"
+  },
+  {
+   "site_name": "INFN-MIB",
+   "type": "lcg",
+   "alias": "INFN-MIB"
+  },
+  {
+   "site_name": "INFN-NAPOLI-CMS",
+   "type": "lcg",
+   "alias": "INFN-NAPOLI-CMS"
+  },
+  {
+   "site_name": "INR",
+   "type": "lcg",
+   "alias": "Ru-Troitsk-INR-LCG2"
+  },
+  {
+   "site_name": "IPHC",
+   "type": "lcg",
+   "alias": "IN2P3-IRES"
+  },
+  {
+   "site_name": "IPM",
+   "type": "lcg",
+   "alias": "IR-IPM-HEP"
+  },
+  {
+   "site_name": "IRB",
+   "type": "lcg",
+   "alias": "egee.irb.hr"
+  },
+  {
+   "site_name": "ITEP",
+   "type": "lcg",
+   "alias": "ITEP"
+  },
+  {
+   "site_name": "Ioannina",
+   "type": "lcg",
+   "alias": "GR-07-UOI-HEPLAB"
+  },
+  {
+   "site_name": "JHU",
+   "type": "lcg",
+   "alias": "T3_US_JHU"
+  },
+  {
+   "site_name": "JINR",
+   "type": "lcg",
+   "alias": "JINR-LCG2"
+  },
+  {
+   "site_name": "JINR-T1",
+   "type": "lcg",
+   "alias": "JINR-T1"
+  },
+  {
+   "site_name": "JINR-T1DISK",
+   "type": "lcg",
+   "alias": "JINR-T1-DISK"
+  },
+  {
+   "site_name": "KIPT",
+   "type": "lcg",
+   "alias": "Kharkov-KIPT-LCG2"
+  },
+  {
+   "site_name": "KISTI T3",
+   "type": "lcg",
+   "alias": "T3_KR_KISTI"
+  },
+  {
+   "site_name": "KIT",
+   "type": "lcg",
+   "alias": "FZK-LCG2"
+  },
+  {
+   "site_name": "KNU",
+   "type": "lcg",
+   "alias": "LCG_KNU"
+  },
+  {
+   "site_name": "KR_KNU",
+   "type": "lcg",
+   "alias": "KR-KNU-T3"
+  },
+  {
+   "site_name": "Kansas",
+   "type": "lcg",
+   "alias": "T3_US_Kansas"
+  },
+  {
+   "site_name": "Legnaro",
+   "type": "lcg",
+   "alias": "INFN-LNL-2"
+  },
+  {
+   "site_name": "Louvain",
+   "type": "lcg",
+   "alias": "BelGrid-UCL"
+  },
+  {
+   "site_name": "MEPhI",
+   "type": "lcg",
+   "alias": "None"
+  },
+  {
+   "site_name": "METU",
+   "type": "lcg",
+   "alias": "TR-03-METU"
+  },
+  {
+   "site_name": "MIT",
+   "type": "lcg",
+   "alias": "MIT_CMS"
+  },
+  {
+   "site_name": "Minnesota",
+   "type": "lcg",
+   "alias": "UMN-CMS"
+  },
+  {
+   "site_name": "NCG-INGRID-PT",
+   "type": "lcg",
+   "alias": "NCG-INGRID-PT"
+  },
+  {
+   "site_name": "NCP-LCG2",
+   "type": "lcg",
+   "alias": "NCP-LCG2"
+  },
+  {
+   "site_name": "NCU",
+   "type": "lcg",
+   "alias": "TW-NCUHEP"
+  },
+  {
+   "site_name": "NTU_HEP",
+   "type": "lcg",
+   "alias": "TW-NTU-HEP"
+  },
+  {
+   "site_name": "NWICG_NDCMS",
+   "type": "lcg",
+   "alias": "NWICG_NDCMS"
+  },
+  {
+   "site_name": "NZ-UOA",
+   "type": "lcg",
+   "alias": "NZ-UOA"
+  },
+  {
+   "site_name": "Nat Center High Perf Comp NCHC",
+   "type": "lcg",
+   "alias": "TW-NCHC"
+  },
+  {
+   "site_name": "Nebraska",
+   "type": "lcg",
+   "alias": "Nebraska"
+  },
+  {
+   "site_name": "Northeastern",
+   "type": "lcg",
+   "alias": "Northeastern"
+  },
+  {
+   "site_name": "Northwestern",
+   "type": "lcg",
+   "alias": "NU Tier3"
+  },
+  {
+   "site_name": "OSU",
+   "type": "lcg",
+   "alias": "osu-cms"
+  },
+  {
+   "site_name": "Oviedo",
+   "type": "lcg",
+   "alias": "UOGRID"
+  },
+  {
+   "site_name": "Oxford",
+   "type": "lcg",
+   "alias": "UKI-SOUTHGRID-OX-HEP"
+  },
+  {
+   "site_name": "PIC",
+   "type": "lcg",
+   "alias": "pic"
+  },
+  {
+   "site_name": "PNPI",
+   "type": "lcg",
+   "alias": "ru-PNPI"
+  },
+  {
+   "site_name": "PSI",
+   "type": "lcg",
+   "alias": "T3_CH_PSI"
+  },
+  {
+   "site_name": "PUHEP",
+   "type": "lcg",
+   "alias": "grid.puhep.res.in"
+  },
+  {
+   "site_name": "Perugia",
+   "type": "lcg",
+   "alias": "INFN-PERUGIA"
+  },
+  {
+   "site_name": "Pisa",
+   "type": "lcg",
+   "alias": "INFN-PISA"
+  },
+  {
+   "site_name": "Princeton ARM",
+   "type": "lcg",
+   "alias": "T3_US_Princeton_ARM"
+  },
+  {
+   "site_name": "Princeton ICSE ",
+   "type": "lcg",
+   "alias": "T3_US_Princeton_ICSE"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Carter"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Conte"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Hadoop"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Hammer"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Hansen"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "lcg",
+   "alias": "Purdue-Rice"
+  },
+  {
+   "site_name": "QMUL",
+   "type": "lcg",
+   "alias": "UKI-LT2-QMUL"
+  },
+  {
+   "site_name": "RAL",
+   "type": "lcg",
+   "alias": "RAL-LCG2"
+  },
+  {
+   "site_name": "RALDISK",
+   "type": "lcg",
+   "alias": "RAL-LCG2-DISK"
+  },
+  {
+   "site_name": "RHUL",
+   "type": "lcg",
+   "alias": "UKI-LT2-RHUL"
+  },
+  {
+   "site_name": "RWTH",
+   "type": "lcg",
+   "alias": "RWTH-Aachen"
+  },
+  {
+   "site_name": "Rice",
+   "type": "lcg",
+   "alias": "Rice"
+  },
+  {
+   "site_name": "Rome",
+   "type": "lcg",
+   "alias": "INFN-ROMA1-CMS"
+  },
+  {
+   "site_name": "Rutgers",
+   "type": "lcg",
+   "alias": "rutgers-cms"
+  },
+  {
+   "site_name": "Rutherford PPD",
+   "type": "lcg",
+   "alias": "UKI-SOUTHGRID-RALPP"
+  },
+  {
+   "site_name": "SINP",
+   "type": "lcg",
+   "alias": "ru-Moscow-SINP-LCG2"
+  },
+  {
+   "site_name": "SPRACE",
+   "type": "lcg",
+   "alias": "SPRACE"
+  },
+  {
+   "site_name": "SUNY_BUFFALO",
+   "type": "lcg",
+   "alias": "NYSGRID-CCR-U2"
+  },
+  {
+   "site_name": "T2_PL_Swierk",
+   "type": "lcg",
+   "alias": "NCBJ-CIS"
+  },
+  {
+   "site_name": "T3 AS Parrot",
+   "type": "lcg",
+   "alias": "t3asparrot"
+  },
+  {
+   "site_name": "T3 EU Parrot",
+   "type": "lcg",
+   "alias": "t3euparrot"
+  },
+  {
+   "site_name": "T3 US MIT",
+   "type": "lcg",
+   "alias": "MIT_CMS_T3"
+  },
+  {
+   "site_name": "T3 US NERSC",
+   "type": "lcg",
+   "alias": "t3usnersc"
+  },
+  {
+   "site_name": "T3 US Parrot",
+   "type": "lcg",
+   "alias": "t3usparrot"
+  },
+  {
+   "site_name": "T3 US ParrotTest",
+   "type": "lcg",
+   "alias": "t3usparrottest"
+  },
+  {
+   "site_name": "T3 US SDSC",
+   "type": "lcg",
+   "alias": "t3ussdsc"
+  },
+  {
+   "site_name": "T3 US Wisconsin",
+   "type": "lcg",
+   "alias": "t3uswisconsin"
+  },
+  {
+   "site_name": "T3_CH_CERN_CAF",
+   "type": "lcg",
+   "alias": "CERN-PROD-CAF"
+  },
+  {
+   "site_name": "T3_HU_Debrecen",
+   "type": "lcg",
+   "alias": "T3_HU_Debrecen"
+  },
+  {
+   "site_name": "T3_IN_VBU",
+   "type": "lcg",
+   "alias": "VBU_CMS"
+  },
+  {
+   "site_name": "T3_IT_Opportunistic",
+   "type": "lcg",
+   "alias": "INFN-IT_OPPORTUNISTIC"
+  },
+  {
+   "site_name": "T3_TH_CHULA",
+   "type": "lcg",
+   "alias": "T3-TH-CHULA"
+  },
+  {
+   "site_name": "T3_US_BU",
+   "type": "lcg",
+   "alias": "T3_US_BU"
+  },
+  {
+   "site_name": "T3_US_FIU",
+   "type": "lcg",
+   "alias": "FIUPG"
+  },
+  {
+   "site_name": "T3_US_FSU",
+   "type": "lcg",
+   "alias": "FSU-HEP"
+  },
+  {
+   "site_name": "T3_US_HEPCloud",
+   "type": "lcg",
+   "alias": "T3USHEPCLOUD"
+  },
+  {
+   "site_name": "T3_US_OSG",
+   "type": "lcg",
+   "alias": "T3USOSG"
+  },
+  {
+   "site_name": "T3_US_TACC",
+   "type": "lcg",
+   "alias": "t3ustacc"
+  },
+  {
+   "site_name": "TAMU",
+   "type": "lcg",
+   "alias": "TAMU_BRAZOS"
+  },
+  {
+   "site_name": "TIFR",
+   "type": "lcg",
+   "alias": "INDIACMS-TIFR"
+  },
+  {
+   "site_name": "TTU",
+   "type": "lcg",
+   "alias": "TTU-ANTAEUS"
+  },
+  {
+   "site_name": "Trieste",
+   "type": "lcg",
+   "alias": "INFN-TRIESTE"
+  },
+  {
+   "site_name": "UC Riverside",
+   "type": "lcg",
+   "alias": "UCR-HEP"
+  },
+  {
+   "site_name": "UCD",
+   "type": "lcg",
+   "alias": "UCD"
+  },
+  {
+   "site_name": "UCSB",
+   "type": "lcg",
+   "alias": "ucsb-cms"
+  },
+  {
+   "site_name": "UCSD",
+   "type": "lcg",
+   "alias": "UCSDT2"
+  },
+  {
+   "site_name": "UCSD",
+   "type": "lcg",
+   "alias": "UCSDT2-B"
+  },
+  {
+   "site_name": "UIowa",
+   "type": "lcg",
+   "alias": "GROW-PROD"
+  },
+  {
+   "site_name": "UKI-SCOTGRID-GLASGOW",
+   "type": "lcg",
+   "alias": "UKI-SCOTGRID-GLASGOW"
+  },
+  {
+   "site_name": "UMD",
+   "type": "lcg",
+   "alias": "umd-cms"
+  },
+  {
+   "site_name": "UMissHEP",
+   "type": "lcg",
+   "alias": "UMissHEP"
+  },
+  {
+   "site_name": "UNIANDES",
+   "type": "lcg",
+   "alias": "UNIANDES"
+  },
+  {
+   "site_name": "UOS",
+   "type": "lcg",
+   "alias": "KR-UOS-SSCC"
+  },
+  {
+   "site_name": "UPM Biruni",
+   "type": "lcg",
+   "alias": "MY-UPM-BIRUNI-01"
+  },
+  {
+   "site_name": "UPRM",
+   "type": "lcg",
+   "alias": "uprm-cms"
+  },
+  {
+   "site_name": "UTenn",
+   "type": "lcg",
+   "alias": "T3_US_UTENN"
+  },
+  {
+   "site_name": "UVA",
+   "type": "lcg",
+   "alias": "UVA-HEP"
+  },
+  {
+   "site_name": "Uni Sofia",
+   "type": "lcg",
+   "alias": "BG05-SUGrid"
+  },
+  {
+   "site_name": "University College London",
+   "type": "lcg",
+   "alias": "UKI-LT2-UCL-HEP"
+  },
+  {
+   "site_name": "University of Malaya",
+   "type": "lcg",
+   "alias": "T2-MY-UMSIFIR"
+  },
+  {
+   "site_name": "Vanderbilt",
+   "type": "lcg",
+   "alias": "Vanderbilt"
+  },
+  {
+   "site_name": "Vanderbilt_EC2",
+   "type": "lcg",
+   "alias": "Vanderbilt_EC2"
+  },
+  {
+   "site_name": "Volunteer",
+   "type": "lcg",
+   "alias": "Volunteer_CMS"
+  },
+  {
+   "site_name": "Warsaw",
+   "type": "lcg",
+   "alias": "ICM"
+  },
+  {
+   "site_name": "Wisconsin",
+   "type": "lcg",
+   "alias": "GLOW"
+  },
+  {
+   "site_name": "cinvestav",
+   "type": "lcg",
+   "alias": "cinvestav"
+  },
+  {
+   "site_name": "BY-NCPHEP",
+   "type": "phedex",
+   "alias": "T3_BY_NCPHEP"
+  },
+  {
+   "site_name": "Bari",
+   "type": "phedex",
+   "alias": "T2_IT_Bari"
+  },
+  {
+   "site_name": "Baylor University Tier3",
+   "type": "phedex",
+   "alias": "T3_US_Baylor"
+  },
+  {
+   "site_name": "Beijing",
+   "type": "phedex",
+   "alias": "T2_CN_Beijing"
+  },
+  {
+   "site_name": "Bologna-T3",
+   "type": "phedex",
+   "alias": "T3_IT_Bologna"
+  },
+  {
+   "site_name": "Bristol",
+   "type": "phedex",
+   "alias": "T2_UK_SGrid_Bristol"
+  },
+  {
+   "site_name": "Brown-CMS",
+   "type": "phedex",
+   "alias": "T3_US_Brown"
+  },
+  {
+   "site_name": "Brunel",
+   "type": "phedex",
+   "alias": "T2_UK_London_Brunel"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "phedex",
+   "alias": "T1_FR_CCIN2P3_Buffer"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "phedex",
+   "alias": "T1_FR_CCIN2P3_Disk"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "phedex",
+   "alias": "T1_FR_CCIN2P3_MSS"
+  },
+  {
+   "site_name": "CC-IN2P3 AF",
+   "type": "phedex",
+   "alias": "T2_FR_CCIN2P3"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "phedex",
+   "alias": "T0_CH_CERN_Disk"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "phedex",
+   "alias": "T0_CH_CERN_Export"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "phedex",
+   "alias": "T0_CH_CERN_MSS"
+  },
+  {
+   "site_name": "CERN Tier-2",
+   "type": "phedex",
+   "alias": "T2_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-2",
+   "type": "phedex",
+   "alias": "T2_CH_CERNBOX"
+  },
+  {
+   "site_name": "CIEMAT",
+   "type": "phedex",
+   "alias": "T2_ES_CIEMAT"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "phedex",
+   "alias": "T1_IT_CNAF_Buffer"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "phedex",
+   "alias": "T1_IT_CNAF_Disk"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "phedex",
+   "alias": "T1_IT_CNAF_MSS"
+  },
+  {
+   "site_name": "CN_PKU",
+   "type": "phedex",
+   "alias": "T3_CN_PKU"
+  },
+  {
+   "site_name": "CSCS",
+   "type": "phedex",
+   "alias": "T2_CH_CSCS"
+  },
+  {
+   "site_name": "CUNSTDA",
+   "type": "phedex",
+   "alias": "T2_TH_CUNSTDA"
+  },
+  {
+   "site_name": "Caltech",
+   "type": "phedex",
+   "alias": "T2_US_Caltech"
+  },
+  {
+   "site_name": "Colorado",
+   "type": "phedex",
+   "alias": "T3_US_Colorado"
+  },
+  {
+   "site_name": "Cornell",
+   "type": "phedex",
+   "alias": "T3_US_Cornell"
+  },
+  {
+   "site_name": "DESY",
+   "type": "phedex",
+   "alias": "T2_DE_DESY"
+  },
+  {
+   "site_name": "Demokritos",
+   "type": "phedex",
+   "alias": "T3_GR_Demokritos"
+  },
+  {
+   "site_name": "ECDF",
+   "type": "phedex",
+   "alias": "T3_UK_ScotGrid_ECDF"
+  },
+  {
+   "site_name": "Estonia",
+   "type": "phedex",
+   "alias": "T2_EE_Estonia"
+  },
+  {
+   "site_name": "FIAN",
+   "type": "phedex",
+   "alias": "T3_RU_FIAN"
+  },
+  {
+   "site_name": "FLTECH",
+   "type": "phedex",
+   "alias": "T3_US_FIT"
+  },
+  {
+   "site_name": "FNAL",
+   "type": "phedex",
+   "alias": "T1_US_FNAL_Buffer"
+  },
+  {
+   "site_name": "FNAL",
+   "type": "phedex",
+   "alias": "T1_US_FNAL_MSS"
+  },
+  {
+   "site_name": "FNALDISK",
+   "type": "phedex",
+   "alias": "T1_US_FNAL_Disk"
+  },
+  {
+   "site_name": "FNALLPC",
+   "type": "phedex",
+   "alias": "T3_US_FNALLPC"
+  },
+  {
+   "site_name": "Firefly",
+   "type": "phedex",
+   "alias": "T3_US_Omaha"
+  },
+  {
+   "site_name": "Firenze",
+   "type": "phedex",
+   "alias": "T3_IT_Firenze"
+  },
+  {
+   "site_name": "Florida",
+   "type": "phedex",
+   "alias": "T2_US_Florida"
+  },
+  {
+   "site_name": "GRIF_IRFU",
+   "type": "phedex",
+   "alias": "T2_FR_GRIF_IRFU"
+  },
+  {
+   "site_name": "GRIF_LLR",
+   "type": "phedex",
+   "alias": "T2_FR_GRIF_LLR"
+  },
+  {
+   "site_name": "HEPGRID_UERJ",
+   "type": "phedex",
+   "alias": "T2_BR_UERJ"
+  },
+  {
+   "site_name": "HelixNebula",
+   "type": "phedex",
+   "alias": "T3_CH_CERN_HelixNebula"
+  },
+  {
+   "site_name": "Helsinki Institute of Physics",
+   "type": "phedex",
+   "alias": "T2_FI_HIP"
+  },
+  {
+   "site_name": "Hephy-Vienna",
+   "type": "phedex",
+   "alias": "T2_AT_Vienna"
+  },
+  {
+   "site_name": "Hungary",
+   "type": "phedex",
+   "alias": "T2_HU_Budapest"
+  },
+  {
+   "site_name": "IASA",
+   "type": "phedex",
+   "alias": "T3_GR_IASA_GR"
+  },
+  {
+   "site_name": "IASA",
+   "type": "phedex",
+   "alias": "T3_GR_IASA_HG"
+  },
+  {
+   "site_name": "IC",
+   "type": "phedex",
+   "alias": "T2_UK_London_IC"
+  },
+  {
+   "site_name": "IFCA",
+   "type": "phedex",
+   "alias": "T2_ES_IFCA"
+  },
+  {
+   "site_name": "IHEP",
+   "type": "phedex",
+   "alias": "T2_RU_IHEP"
+  },
+  {
+   "site_name": "IIHE",
+   "type": "phedex",
+   "alias": "T2_BE_IIHE"
+  },
+  {
+   "site_name": "IN2P3-IPNL",
+   "type": "phedex",
+   "alias": "T3_FR_IPNL"
+  },
+  {
+   "site_name": "INFN-MIB",
+   "type": "phedex",
+   "alias": "T3_IT_MIB"
+  },
+  {
+   "site_name": "INFN-NAPOLI-CMS",
+   "type": "phedex",
+   "alias": "T3_IT_Napoli"
+  },
+  {
+   "site_name": "INR",
+   "type": "phedex",
+   "alias": "T2_RU_INR"
+  },
+  {
+   "site_name": "IPHC",
+   "type": "phedex",
+   "alias": "T2_FR_IPHC"
+  },
+  {
+   "site_name": "IPM",
+   "type": "phedex",
+   "alias": "T3_IR_IPM"
+  },
+  {
+   "site_name": "IRB",
+   "type": "phedex",
+   "alias": "T3_HR_IRB"
+  },
+  {
+   "site_name": "ITEP",
+   "type": "phedex",
+   "alias": "T2_RU_ITEP"
+  },
+  {
+   "site_name": "Ioannina",
+   "type": "phedex",
+   "alias": "T2_GR_Ioannina"
+  },
+  {
+   "site_name": "JHU",
+   "type": "phedex",
+   "alias": "T3_US_JHU"
+  },
+  {
+   "site_name": "JINR",
+   "type": "phedex",
+   "alias": "T2_RU_JINR"
+  },
+  {
+   "site_name": "JINR-T1",
+   "type": "phedex",
+   "alias": "T1_RU_JINR_Buffer"
+  },
+  {
+   "site_name": "JINR-T1",
+   "type": "phedex",
+   "alias": "T1_RU_JINR_MSS"
+  },
+  {
+   "site_name": "JINR-T1DISK",
+   "type": "phedex",
+   "alias": "T1_RU_JINR_Disk"
+  },
+  {
+   "site_name": "KIPT",
+   "type": "phedex",
+   "alias": "T2_UA_KIPT"
+  },
+  {
+   "site_name": "KISTI T3",
+   "type": "phedex",
+   "alias": "T3_KR_KISTI"
+  },
+  {
+   "site_name": "KIT",
+   "type": "phedex",
+   "alias": "T1_DE_KIT_Buffer"
+  },
+  {
+   "site_name": "KIT",
+   "type": "phedex",
+   "alias": "T1_DE_KIT_Disk"
+  },
+  {
+   "site_name": "KIT",
+   "type": "phedex",
+   "alias": "T1_DE_KIT_MSS"
+  },
+  {
+   "site_name": "KNU",
+   "type": "phedex",
+   "alias": "T2_KR_KNU"
+  },
+  {
+   "site_name": "KR_KNU",
+   "type": "phedex",
+   "alias": "T3_KR_KNU"
+  },
+  {
+   "site_name": "Kansas",
+   "type": "phedex",
+   "alias": "T3_US_Kansas"
+  },
+  {
+   "site_name": "Legnaro",
+   "type": "phedex",
+   "alias": "T2_IT_Legnaro"
+  },
+  {
+   "site_name": "Louvain",
+   "type": "phedex",
+   "alias": "T2_BE_UCL"
+  },
+  {
+   "site_name": "METU",
+   "type": "phedex",
+   "alias": "T2_TR_METU"
+  },
+  {
+   "site_name": "MIT",
+   "type": "phedex",
+   "alias": "T2_US_MIT"
+  },
+  {
+   "site_name": "Minnesota",
+   "type": "phedex",
+   "alias": "T3_US_Minnesota"
+  },
+  {
+   "site_name": "NCG-INGRID-PT",
+   "type": "phedex",
+   "alias": "T2_PT_NCG_Lisbon"
+  },
+  {
+   "site_name": "NCP-LCG2",
+   "type": "phedex",
+   "alias": "T2_PK_NCP"
+  },
+  {
+   "site_name": "NCU",
+   "type": "phedex",
+   "alias": "T3_TW_NCU"
+  },
+  {
+   "site_name": "NTU_HEP",
+   "type": "phedex",
+   "alias": "T3_TW_NTU_HEP"
+  },
+  {
+   "site_name": "NWICG_NDCMS",
+   "type": "phedex",
+   "alias": "T3_US_NotreDame"
+  },
+  {
+   "site_name": "NZ-UOA",
+   "type": "phedex",
+   "alias": "T3_NZ_UOA"
+  },
+  {
+   "site_name": "Nat Center High Perf Comp NCHC",
+   "type": "phedex",
+   "alias": "T2_TW_NCHC"
+  },
+  {
+   "site_name": "Nebraska",
+   "type": "phedex",
+   "alias": "T2_US_Nebraska"
+  },
+  {
+   "site_name": "Northwestern",
+   "type": "phedex",
+   "alias": "T3_US_NU"
+  },
+  {
+   "site_name": "OSU",
+   "type": "phedex",
+   "alias": "T3_US_OSU"
+  },
+  {
+   "site_name": "Oviedo",
+   "type": "phedex",
+   "alias": "T3_ES_Oviedo"
+  },
+  {
+   "site_name": "Oxford",
+   "type": "phedex",
+   "alias": "T3_UK_SGrid_Oxford"
+  },
+  {
+   "site_name": "PIC",
+   "type": "phedex",
+   "alias": "T1_ES_PIC_Buffer"
+  },
+  {
+   "site_name": "PIC",
+   "type": "phedex",
+   "alias": "T1_ES_PIC_Disk"
+  },
+  {
+   "site_name": "PIC",
+   "type": "phedex",
+   "alias": "T1_ES_PIC_MSS"
+  },
+  {
+   "site_name": "PNPI",
+   "type": "phedex",
+   "alias": "T2_RU_PNPI"
+  },
+  {
+   "site_name": "PSI",
+   "type": "phedex",
+   "alias": "T3_CH_PSI"
+  },
+  {
+   "site_name": "PUHEP",
+   "type": "phedex",
+   "alias": "T3_IN_PUHEP"
+  },
+  {
+   "site_name": "Perugia",
+   "type": "phedex",
+   "alias": "T3_IT_Perugia"
+  },
+  {
+   "site_name": "Pisa",
+   "type": "phedex",
+   "alias": "T2_IT_Pisa"
+  },
+  {
+   "site_name": "Princeton ARM",
+   "type": "phedex",
+   "alias": "T3_US_Princeton_ARM"
+  },
+  {
+   "site_name": "Princeton ICSE ",
+   "type": "phedex",
+   "alias": "T3_US_Princeton_ICSE"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "phedex",
+   "alias": "T2_US_Purdue"
+  },
+  {
+   "site_name": "QMUL",
+   "type": "phedex",
+   "alias": "T3_UK_London_QMUL"
+  },
+  {
+   "site_name": "RAL",
+   "type": "phedex",
+   "alias": "T1_UK_RAL_Buffer"
+  },
+  {
+   "site_name": "RAL",
+   "type": "phedex",
+   "alias": "T1_UK_RAL_MSS"
+  },
+  {
+   "site_name": "RALDISK",
+   "type": "phedex",
+   "alias": "T1_UK_RAL_Disk"
+  },
+  {
+   "site_name": "RHUL",
+   "type": "phedex",
+   "alias": "T3_UK_London_RHUL"
+  },
+  {
+   "site_name": "RWTH",
+   "type": "phedex",
+   "alias": "T2_DE_RWTH"
+  },
+  {
+   "site_name": "Rice",
+   "type": "phedex",
+   "alias": "T3_US_Rice"
+  },
+  {
+   "site_name": "Rome",
+   "type": "phedex",
+   "alias": "T2_IT_Rome"
+  },
+  {
+   "site_name": "Rutgers",
+   "type": "phedex",
+   "alias": "T3_US_Rutgers"
+  },
+  {
+   "site_name": "Rutherford PPD",
+   "type": "phedex",
+   "alias": "T2_UK_SGrid_RALPP"
+  },
+  {
+   "site_name": "SINP",
+   "type": "phedex",
+   "alias": "T2_RU_SINP"
+  },
+  {
+   "site_name": "SPRACE",
+   "type": "phedex",
+   "alias": "T2_BR_SPRACE"
+  },
+  {
+   "site_name": "T2_PL_Swierk",
+   "type": "phedex",
+   "alias": "T2_PL_Swierk"
+  },
+  {
+   "site_name": "T3 US MIT",
+   "type": "phedex",
+   "alias": "T3_US_MIT"
+  },
+  {
+   "site_name": "T3 US NERSC",
+   "type": "phedex",
+   "alias": "T3_US_NERSC"
+  },
+  {
+   "site_name": "T3 US SDSC",
+   "type": "phedex",
+   "alias": "T3_US_SDSC"
+  },
+  {
+   "site_name": "T3_HU_Debrecen",
+   "type": "phedex",
+   "alias": "T3_HU_Debrecen"
+  },
+  {
+   "site_name": "T3_IN_VBU",
+   "type": "phedex",
+   "alias": "T3_IN_VBU"
+  },
+  {
+   "site_name": "T3_TH_CHULA",
+   "type": "phedex",
+   "alias": "T3_TH_CHULA"
+  },
+  {
+   "site_name": "T3_US_FIU",
+   "type": "phedex",
+   "alias": "T3_US_FIU"
+  },
+  {
+   "site_name": "T3_US_FSU",
+   "type": "phedex",
+   "alias": "T3_US_FSU"
+  },
+  {
+   "site_name": "T3_US_HEPCloud",
+   "type": "phedex",
+   "alias": "T3_US_HEPCloud"
+  },
+  {
+   "site_name": "TAMU",
+   "type": "phedex",
+   "alias": "T3_US_TAMU"
+  },
+  {
+   "site_name": "TIFR",
+   "type": "phedex",
+   "alias": "T2_IN_TIFR"
+  },
+  {
+   "site_name": "TTU",
+   "type": "phedex",
+   "alias": "T3_US_TTU"
+  },
+  {
+   "site_name": "Trieste",
+   "type": "phedex",
+   "alias": "T3_IT_Trieste"
+  },
+  {
+   "site_name": "UC Riverside",
+   "type": "phedex",
+   "alias": "T3_US_UCR"
+  },
+  {
+   "site_name": "UCD",
+   "type": "phedex",
+   "alias": "T3_US_UCD"
+  },
+  {
+   "site_name": "UCSB",
+   "type": "phedex",
+   "alias": "T3_US_UCSB"
+  },
+  {
+   "site_name": "UCSD",
+   "type": "phedex",
+   "alias": "T2_US_UCSD"
+  },
+  {
+   "site_name": "UIowa",
+   "type": "phedex",
+   "alias": "T3_US_UIowa"
+  },
+  {
+   "site_name": "UKI-SCOTGRID-GLASGOW",
+   "type": "phedex",
+   "alias": "T3_UK_ScotGrid_GLA"
+  },
+  {
+   "site_name": "UMD",
+   "type": "phedex",
+   "alias": "T3_US_UMD"
+  },
+  {
+   "site_name": "UMissHEP",
+   "type": "phedex",
+   "alias": "T3_US_UMiss"
+  },
+  {
+   "site_name": "UNIANDES",
+   "type": "phedex",
+   "alias": "T3_CO_Uniandes"
+  },
+  {
+   "site_name": "UOS",
+   "type": "phedex",
+   "alias": "T3_KR_UOS"
+  },
+  {
+   "site_name": "UPM Biruni",
+   "type": "phedex",
+   "alias": "T2_MY_UPM_BIRUNI"
+  },
+  {
+   "site_name": "UPRM",
+   "type": "phedex",
+   "alias": "T3_US_PuertoRico"
+  },
+  {
+   "site_name": "UTenn",
+   "type": "phedex",
+   "alias": "T3_US_UTENN"
+  },
+  {
+   "site_name": "UVA",
+   "type": "phedex",
+   "alias": "T3_US_UVA"
+  },
+  {
+   "site_name": "Uni Sofia",
+   "type": "phedex",
+   "alias": "T3_BG_UNI_SOFIA"
+  },
+  {
+   "site_name": "University College London",
+   "type": "phedex",
+   "alias": "T3_UK_London_UCL"
+  },
+  {
+   "site_name": "Vanderbilt",
+   "type": "phedex",
+   "alias": "T2_US_Vanderbilt"
+  },
+  {
+   "site_name": "Vanderbilt_EC2",
+   "type": "phedex",
+   "alias": "T3_US_Vanderbilt_EC2"
+  },
+  {
+   "site_name": "Volunteer",
+   "type": "phedex",
+   "alias": "T3_CH_Volunteer"
+  },
+  {
+   "site_name": "Warsaw",
+   "type": "phedex",
+   "alias": "T2_PL_Warsaw"
+  },
+  {
+   "site_name": "Wisconsin",
+   "type": "phedex",
+   "alias": "T2_US_Wisconsin"
+  },
+  {
+   "site_name": "cinvestav",
+   "type": "phedex",
+   "alias": "T3_MX_Cinvestav"
+  },
+  {
+   "site_name": "BY-NCPHEP",
+   "type": "psn",
+   "alias": "T3_BY_NCPHEP"
+  },
+  {
+   "site_name": "Bari",
+   "type": "psn",
+   "alias": "T2_IT_Bari"
+  },
+  {
+   "site_name": "Baylor University Tier3",
+   "type": "psn",
+   "alias": "T3_US_Baylor"
+  },
+  {
+   "site_name": "Beijing",
+   "type": "psn",
+   "alias": "T2_CN_Beijing"
+  },
+  {
+   "site_name": "Bologna-T3",
+   "type": "psn",
+   "alias": "T3_IT_Bologna"
+  },
+  {
+   "site_name": "Bristol",
+   "type": "psn",
+   "alias": "T2_UK_SGrid_Bristol"
+  },
+  {
+   "site_name": "Brunel",
+   "type": "psn",
+   "alias": "T2_UK_London_Brunel"
+  },
+  {
+   "site_name": "CC-IN2P3",
+   "type": "psn",
+   "alias": "T1_FR_CCIN2P3"
+  },
+  {
+   "site_name": "CC-IN2P3 AF",
+   "type": "psn",
+   "alias": "T2_FR_CCIN2P3"
+  },
+  {
+   "site_name": "CERN Tier-0",
+   "type": "psn",
+   "alias": "T0_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-2",
+   "type": "psn",
+   "alias": "T2_CH_CERN"
+  },
+  {
+   "site_name": "CERN Tier-2 AI",
+   "type": "psn",
+   "alias": "T2_CH_CERN_AI"
+  },
+  {
+   "site_name": "CERN Tier-2 HLT",
+   "type": "psn",
+   "alias": "T2_CH_CERN_HLT"
+  },
+  {
+   "site_name": "CIEMAT",
+   "type": "psn",
+   "alias": "T2_ES_CIEMAT"
+  },
+  {
+   "site_name": "CNAF",
+   "type": "psn",
+   "alias": "T1_IT_CNAF"
+  },
+  {
+   "site_name": "CN_PKU",
+   "type": "psn",
+   "alias": "T3_CN_PKU"
+  },
+  {
+   "site_name": "CSCS",
+   "type": "psn",
+   "alias": "T2_CH_CSCS"
+  },
+  {
+   "site_name": "CUNSTDA",
+   "type": "psn",
+   "alias": "T2_TH_CUNSTDA"
+  },
+  {
+   "site_name": "Caltech",
+   "type": "psn",
+   "alias": "T2_US_Caltech"
+  },
+  {
+   "site_name": "Colorado",
+   "type": "psn",
+   "alias": "T3_US_Colorado"
+  },
+  {
+   "site_name": "Cornell",
+   "type": "psn",
+   "alias": "T3_US_Cornell"
+  },
+  {
+   "site_name": "DESY",
+   "type": "psn",
+   "alias": "T2_DE_DESY"
+  },
+  {
+   "site_name": "Estonia",
+   "type": "psn",
+   "alias": "T2_EE_Estonia"
+  },
+  {
+   "site_name": "FIAN",
+   "type": "psn",
+   "alias": "T3_RU_FIAN"
+  },
+  {
+   "site_name": "FLTECH",
+   "type": "psn",
+   "alias": "T3_US_FIT"
+  },
+  {
+   "site_name": "FNAL",
+   "type": "psn",
+   "alias": "T1_US_FNAL"
+  },
+  {
+   "site_name": "FNALLPC",
+   "type": "psn",
+   "alias": "T3_US_FNALLPC"
+  },
+  {
+   "site_name": "Firefly",
+   "type": "psn",
+   "alias": "T3_US_Omaha"
+  },
+  {
+   "site_name": "Florida",
+   "type": "psn",
+   "alias": "T2_US_Florida"
+  },
+  {
+   "site_name": "GRIF_IRFU",
+   "type": "psn",
+   "alias": "T2_FR_GRIF_IRFU"
+  },
+  {
+   "site_name": "GRIF_LLR",
+   "type": "psn",
+   "alias": "T2_FR_GRIF_LLR"
+  },
+  {
+   "site_name": "HEPGRID_UERJ",
+   "type": "psn",
+   "alias": "T2_BR_UERJ"
+  },
+  {
+   "site_name": "Helsinki Institute of Physics",
+   "type": "psn",
+   "alias": "T2_FI_HIP"
+  },
+  {
+   "site_name": "Hephy-Vienna",
+   "type": "psn",
+   "alias": "T2_AT_Vienna"
+  },
+  {
+   "site_name": "Hungary",
+   "type": "psn",
+   "alias": "T2_HU_Budapest"
+  },
+  {
+   "site_name": "IASA",
+   "type": "psn",
+   "alias": "T3_GR_IASA"
+  },
+  {
+   "site_name": "IC",
+   "type": "psn",
+   "alias": "T2_UK_London_IC"
+  },
+  {
+   "site_name": "IFCA",
+   "type": "psn",
+   "alias": "T2_ES_IFCA"
+  },
+  {
+   "site_name": "IHEP",
+   "type": "psn",
+   "alias": "T2_RU_IHEP"
+  },
+  {
+   "site_name": "IIHE",
+   "type": "psn",
+   "alias": "T2_BE_IIHE"
+  },
+  {
+   "site_name": "IN2P3-IPNL",
+   "type": "psn",
+   "alias": "T3_FR_IPNL"
+  },
+  {
+   "site_name": "INFN-NAPOLI-CMS",
+   "type": "psn",
+   "alias": "T3_IT_Napoli"
+  },
+  {
+   "site_name": "INR",
+   "type": "psn",
+   "alias": "T2_RU_INR"
+  },
+  {
+   "site_name": "IPHC",
+   "type": "psn",
+   "alias": "T2_FR_IPHC"
+  },
+  {
+   "site_name": "ITEP",
+   "type": "psn",
+   "alias": "T2_RU_ITEP"
+  },
+  {
+   "site_name": "Ioannina",
+   "type": "psn",
+   "alias": "T2_GR_Ioannina"
+  },
+  {
+   "site_name": "JHU",
+   "type": "psn",
+   "alias": "T3_US_JHU"
+  },
+  {
+   "site_name": "JINR",
+   "type": "psn",
+   "alias": "T2_RU_JINR"
+  },
+  {
+   "site_name": "JINR-T1",
+   "type": "psn",
+   "alias": "T1_RU_JINR"
+  },
+  {
+   "site_name": "KIPT",
+   "type": "psn",
+   "alias": "T2_UA_KIPT"
+  },
+  {
+   "site_name": "KIT",
+   "type": "psn",
+   "alias": "T1_DE_KIT"
+  },
+  {
+   "site_name": "KNU",
+   "type": "psn",
+   "alias": "T2_KR_KNU"
+  },
+  {
+   "site_name": "KR_KNU",
+   "type": "psn",
+   "alias": "T3_KR_KNU"
+  },
+  {
+   "site_name": "Kansas",
+   "type": "psn",
+   "alias": "T3_US_Kansas"
+  },
+  {
+   "site_name": "Legnaro",
+   "type": "psn",
+   "alias": "T2_IT_Legnaro"
+  },
+  {
+   "site_name": "Louvain",
+   "type": "psn",
+   "alias": "T2_BE_UCL"
+  },
+  {
+   "site_name": "METU",
+   "type": "psn",
+   "alias": "T2_TR_METU"
+  },
+  {
+   "site_name": "MIT",
+   "type": "psn",
+   "alias": "T2_US_MIT"
+  },
+  {
+   "site_name": "NCG-INGRID-PT",
+   "type": "psn",
+   "alias": "T2_PT_NCG_Lisbon"
+  },
+  {
+   "site_name": "NCP-LCG2",
+   "type": "psn",
+   "alias": "T2_PK_NCP"
+  },
+  {
+   "site_name": "NCU",
+   "type": "psn",
+   "alias": "T3_TW_NCU"
+  },
+  {
+   "site_name": "NTU_HEP",
+   "type": "psn",
+   "alias": "T3_TW_NTU_HEP"
+  },
+  {
+   "site_name": "NWICG_NDCMS",
+   "type": "psn",
+   "alias": "T3_US_NotreDame"
+  },
+  {
+   "site_name": "Nat Center High Perf Comp NCHC",
+   "type": "psn",
+   "alias": "T2_TW_NCHC"
+  },
+  {
+   "site_name": "Nebraska",
+   "type": "psn",
+   "alias": "T2_US_Nebraska"
+  },
+  {
+   "site_name": "Northwestern",
+   "type": "psn",
+   "alias": "T3_US_NU"
+  },
+  {
+   "site_name": "OSU",
+   "type": "psn",
+   "alias": "T3_US_OSU"
+  },
+  {
+   "site_name": "Oviedo",
+   "type": "psn",
+   "alias": "T3_ES_Oviedo"
+  },
+  {
+   "site_name": "Oxford",
+   "type": "psn",
+   "alias": "T3_UK_SGrid_Oxford"
+  },
+  {
+   "site_name": "PIC",
+   "type": "psn",
+   "alias": "T1_ES_PIC"
+  },
+  {
+   "site_name": "PNPI",
+   "type": "psn",
+   "alias": "T2_RU_PNPI"
+  },
+  {
+   "site_name": "PSI",
+   "type": "psn",
+   "alias": "T3_CH_PSI"
+  },
+  {
+   "site_name": "PUHEP",
+   "type": "psn",
+   "alias": "T3_IN_PUHEP"
+  },
+  {
+   "site_name": "Perugia",
+   "type": "psn",
+   "alias": "T3_IT_Perugia"
+  },
+  {
+   "site_name": "Pisa",
+   "type": "psn",
+   "alias": "T2_IT_Pisa"
+  },
+  {
+   "site_name": "Princeton ICSE ",
+   "type": "psn",
+   "alias": "T3_US_Princeton_ICSE"
+  },
+  {
+   "site_name": "Purdue",
+   "type": "psn",
+   "alias": "T2_US_Purdue"
+  },
+  {
+   "site_name": "QMUL",
+   "type": "psn",
+   "alias": "T3_UK_London_QMUL"
+  },
+  {
+   "site_name": "RAL",
+   "type": "psn",
+   "alias": "T1_UK_RAL"
+  },
+  {
+   "site_name": "RWTH",
+   "type": "psn",
+   "alias": "T2_DE_RWTH"
+  },
+  {
+   "site_name": "Rice",
+   "type": "psn",
+   "alias": "T3_US_Rice"
+  },
+  {
+   "site_name": "Rome",
+   "type": "psn",
+   "alias": "T2_IT_Rome"
+  },
+  {
+   "site_name": "Rutgers",
+   "type": "psn",
+   "alias": "T3_US_Rutgers"
+  },
+  {
+   "site_name": "Rutherford PPD",
+   "type": "psn",
+   "alias": "T2_UK_SGrid_RALPP"
+  },
+  {
+   "site_name": "SINP",
+   "type": "psn",
+   "alias": "T2_RU_SINP"
+  },
+  {
+   "site_name": "SPRACE",
+   "type": "psn",
+   "alias": "T2_BR_SPRACE"
+  },
+  {
+   "site_name": "T2_PL_Swierk",
+   "type": "psn",
+   "alias": "T2_PL_Swierk"
+  },
+  {
+   "site_name": "T3 US MIT",
+   "type": "psn",
+   "alias": "T3_US_MIT"
+  },
+  {
+   "site_name": "T3 US NERSC",
+   "type": "psn",
+   "alias": "T3_US_NERSC"
+  },
+  {
+   "site_name": "T3 US SDSC",
+   "type": "psn",
+   "alias": "T3_US_SDSC"
+  },
+  {
+   "site_name": "T3_CH_CERN_CAF",
+   "type": "psn",
+   "alias": "T3_CH_CERN_CAF"
+  },
+  {
+   "site_name": "T3_HU_Debrecen",
+   "type": "psn",
+   "alias": "T3_HU_Debrecen"
+  },
+  {
+   "site_name": "T3_US_FIU",
+   "type": "psn",
+   "alias": "T3_US_FIU"
+  },
+  {
+   "site_name": "T3_US_FSU",
+   "type": "psn",
+   "alias": "T3_US_FSU"
+  },
+  {
+   "site_name": "T3_US_OSG",
+   "type": "psn",
+   "alias": "T3_US_OSG"
+  },
+  {
+   "site_name": "TAMU",
+   "type": "psn",
+   "alias": "T3_US_TAMU"
+  },
+  {
+   "site_name": "TIFR",
+   "type": "psn",
+   "alias": "T2_IN_TIFR"
+  },
+  {
+   "site_name": "TTU",
+   "type": "psn",
+   "alias": "T3_US_TTU"
+  },
+  {
+   "site_name": "Trieste",
+   "type": "psn",
+   "alias": "T3_IT_Trieste"
+  },
+  {
+   "site_name": "UC Riverside",
+   "type": "psn",
+   "alias": "T3_US_UCR"
+  },
+  {
+   "site_name": "UCD",
+   "type": "psn",
+   "alias": "T3_US_UCD"
+  },
+  {
+   "site_name": "UCSB",
+   "type": "psn",
+   "alias": "T3_US_UCSB"
+  },
+  {
+   "site_name": "UCSD",
+   "type": "psn",
+   "alias": "T2_US_UCSD"
+  },
+  {
+   "site_name": "UKI-SCOTGRID-GLASGOW",
+   "type": "psn",
+   "alias": "T3_UK_ScotGrid_GLA"
+  },
+  {
+   "site_name": "UMD",
+   "type": "psn",
+   "alias": "T3_US_UMD"
+  },
+  {
+   "site_name": "UMissHEP",
+   "type": "psn",
+   "alias": "T3_US_UMiss"
+  },
+  {
+   "site_name": "UNIANDES",
+   "type": "psn",
+   "alias": "T3_CO_Uniandes"
+  },
+  {
+   "site_name": "UOS",
+   "type": "psn",
+   "alias": "T3_KR_UOS"
+  },
+  {
+   "site_name": "UPM Biruni",
+   "type": "psn",
+   "alias": "T2_MY_UPM_BIRUNI"
+  },
+  {
+   "site_name": "UPRM",
+   "type": "psn",
+   "alias": "T3_US_PuertoRico"
+  },
+  {
+   "site_name": "Uni Sofia",
+   "type": "psn",
+   "alias": "T3_BG_UNI_SOFIA"
+  },
+  {
+   "site_name": "University College London",
+   "type": "psn",
+   "alias": "T3_UK_London_UCL"
+  },
+  {
+   "site_name": "Vanderbilt",
+   "type": "psn",
+   "alias": "T2_US_Vanderbilt"
+  },
+  {
+   "site_name": "Warsaw",
+   "type": "psn",
+   "alias": "T2_PL_Warsaw"
+  },
+  {
+   "site_name": "Wisconsin",
+   "type": "psn",
+   "alias": "T2_US_Wisconsin"
+  },
+  {
+   "site_name": "cinvestav",
+   "type": "psn",
+   "alias": "T3_MX_Cinvestav"
+  }
+ ]
+}

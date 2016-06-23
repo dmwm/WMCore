@@ -159,12 +159,12 @@ class Create(CreateWMBSBase):
           """CREATE TABLE wmbs_location (
                id          INTEGER      NOT NULL,
                site_name   VARCHAR(255) NOT NULL,
+               state       INTEGER      NOT NULL,
                cms_name    VARCHAR(255),
                ce_name     VARCHAR(255),
                running_slots   INTEGER,
                pending_slots   INTEGER,
-               plugin      VARCHAR(255),
-               state       INTEGER NOT NULL
+               plugin      VARCHAR(255)
                ) %s""" % tablespaceTable
 
         self.indexes["01_pk_wmbs_location"] = \
@@ -683,5 +683,5 @@ class Create(CreateWMBSBase):
         for i in self.sequence_tables:
             seqname = '%s_SEQ' % i
             self.create["%s%s" % (j, seqname)] = \
-      "CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100" \
-                    % seqname
+                """CREATE SEQUENCE %s start with 1 increment by 1 nomaxvalue cache 100""" \
+                % seqname

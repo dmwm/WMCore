@@ -9,7 +9,6 @@ import threading
 from WMCore.Database.DBCreator import DBCreator
 
 from WMCore.WMException import WMException
-from WMCore.WMExceptions import WMEXCEPTION
 from WMCore.JobStateMachine.Transitions import Transitions
 
 class CreateWMBSBase(DBCreator):
@@ -26,11 +25,8 @@ class CreateWMBSBase(DBCreator):
         if dbi == None:
             dbi = myThread.dbi
 
-        tablespaceTable = ""
         tablespaceIndex = ""
         if params:
-            if "tablespace_table" in params:
-                tablespaceTable = "TABLESPACE %s" % params["tablespace_table"]
             if "tablespace_index" in params:
                 tablespaceIndex = "USING INDEX TABLESPACE %s" % params["tablespace_index"]
 
@@ -115,12 +111,12 @@ class CreateWMBSBase(DBCreator):
           """CREATE TABLE wmbs_location (
              id          INTEGER      PRIMARY KEY AUTO_INCREMENT,
              site_name   VARCHAR(255) NOT NULL,
+             state       INTEGER NOT NULL,
              cms_name    VARCHAR(255),
              ce_name     VARCHAR(255),
              running_slots   INTEGER,
              pending_slots   INTEGER,
              plugin      VARCHAR(255),
-             state       INTEGER NOT NULL,
              UNIQUE(site_name),
              FOREIGN KEY (state) REFERENCES wmbs_location_state(id))"""
 

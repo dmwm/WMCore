@@ -373,7 +373,8 @@ class StdBase(object):
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
 
-        procTaskCmsswHelper.cmsswSetup(cmsswVersion, softwareEnvironment="",
+        procTaskCmsswHelper.cmsswSetup(cmsswVersion,
+                                       softwareEnvironment="",
                                        scramArch=scramArch)
 
         if "events_per_lumi" in newSplitArgs:
@@ -504,6 +505,12 @@ class StdBase(object):
 
         parentTaskLogArch = parentTask.getStep("logArch1")
         logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
+
+        logCollectStepHelper = logCollectStep.getTypeHelper()
+        logCollectStepHelper.cmsswSetup(self.frameworkVersion,
+                                        softwareEnvironment="",
+                                        scramArch=self.scramArch)
+
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
@@ -552,7 +559,8 @@ class StdBase(object):
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+                                        softwareEnvironment="",
                                         scramArch=self.scramArch)
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
@@ -649,7 +657,8 @@ class StdBase(object):
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+                                          softwareEnvironment="",
                                           scramArch=self.scramArch)
 
         harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())

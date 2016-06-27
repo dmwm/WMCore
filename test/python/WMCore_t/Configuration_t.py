@@ -3,7 +3,6 @@
 
 
 import unittest
-import os
 
 from WMCore.Configuration import ConfigSection
 from WMCore.Configuration import Configuration
@@ -75,7 +74,7 @@ class ConfigurationTest(unittest.TestCase):
     def testA(self):
         """ctor"""
         try:
-            config = Configuration()
+            dummyConfig = Configuration()
         except Exception as ex:
             msg = "Failed to instantiate Configuration\n"
             msg += str(ex)
@@ -246,19 +245,19 @@ class ConfigurationTest(unittest.TestCase):
                 sect.document_("This is Parameter%s" %i,
                                "Parameter%s" %i)
 
-        stringSave = str(config)
-        documentSave = config.documentedString_()
-        commentSave = config.commentedString_()
+        dummyStringSave = str(config)
+        dummyDocumentSave = config.documentedString_()
+        dummyCommentSave = config.commentedString_()
 
         saveConfigurationFile(config, self.normalSave)
         saveConfigurationFile(config, self.docSave, document = True)
         saveConfigurationFile(config, self.commentSave, comment = True)
 
-        plainConfig = loadConfigurationFile(self.normalSave)
+        dummyPlainConfig = loadConfigurationFile(self.normalSave)
 
-        docConfig = loadConfigurationFile(self.docSave)
+        dummyDocConfig = loadConfigurationFile(self.docSave)
 
-        commentConfig = loadConfigurationFile(self.commentSave)
+        dummyCommentConfig = loadConfigurationFile(self.commentSave)
 
         #print commentConfig.commentedString_()
         #print docConfig.documentedString_()

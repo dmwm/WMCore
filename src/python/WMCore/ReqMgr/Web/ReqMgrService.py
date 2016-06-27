@@ -30,11 +30,8 @@ from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
 # WMCore modules
-from WMCore.ReqMgr.Service.Auxiliary import Info, Group, Team
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.Service.RestApiHub import RestApiHub
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties
-from WMCore.REST.Main import RESTMain
 from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
 import WMCore
@@ -88,7 +85,7 @@ def minify(content):
 
 def menus():
     "Return dict of menus"
-    items = ['home', 'admin', 'create', 'approve', 'assign', 'batches']
+    items = ['home', 'create', 'approve', 'assign', 'batches']
     return items
 
 
@@ -115,7 +112,7 @@ def request_attr(doc, attrs=None):
     return rdict
 
 
-def spec_list(root, spec_path):
+def spec_list(root):
     "Return list of specs from given root directory"
     specs = []
     for fname in os.listdir(root):
@@ -127,6 +124,34 @@ def spec_list(root, spec_path):
             specs.append(sname)
     return specs
 
+
+def user():
+    """
+    Return user name associated with this instance.
+    """
+    try:
+        return cherrypy.request.user['login']
+    except:
+        return 'testuser'
+
+def user_dn():
+    "Return user DN"
+    try:
+        return cherrypy.request.user['dn']
+    except:
+        return '/CN/bla/foo'
+
+def check_scripts(scripts, resource, path):
+    """
+    Check a script is known to the resource map
+    and that the script actually exists
+    """
+    for script in scripts:
+        if script not in resource.keys():
+            spath = os.path.normpath(os.path.join(path, script))
+            if os.path.isfile(spath):
+                resource.update({script: spath})
+    return scripts
 
 class ReqMgrService(TemplatedPage):
     """
@@ -163,7 +188,7 @@ class ReqMgrService(TemplatedPage):
         self.yuimap = {}
 
         std_specs_dir = os.path.join(self.rootdir, 'WMSpec/StdSpecs')
-        self.std_specs = spec_list(std_specs_dir, 'WMSpec.StdSpecs')
+        self.std_specs = spec_list(std_specs_dir)
         self.std_specs.sort()
 
         # Update CherryPy configuration
@@ -176,23 +201,12 @@ class ReqMgrService(TemplatedPage):
                            })
         self._cache = {}
 
-        # initialize rest API
-        statedir = '/tmp'
-        app = RESTMain(config, statedir)  # REST application
-        mount = '/rest'  # mount point for cherrypy service
-        api = RestApiHub(app, config.reqmgr, mount)
-
         # initialize access to reqmgr2 APIs
         self.reqmgr_url = config.reqmgr.reqmgr2_url
         self.reqmgr = ReqMgr(self.reqmgr_url)
         # only gets current view (This might cause to reponse time much longer, 
         # If upto date view is not needed overwrite Fale)
         self.reqmgr._noStale = True
-
-        # admin helpers
-        self.admin_info = Info(app, api, config.reqmgr, mount=mount + '/info')
-        self.admin_group = Group(app, api, config.reqmgr, mount=mount + '/group')
-        self.admin_team = Team(app, api, config.reqmgr, mount=mount + '/team')
 
         # get fields which we'll use in templates
         cdict = config.reqmgr.dictionary_()
@@ -236,24 +250,7 @@ class ReqMgrService(TemplatedPage):
         except Exception as exp:
             print("WARNING: fail to get teams from %s" % url)
             print(str(exp))
-            pass
         return teams
-
-    def user(self):
-        """
-        Return user name associated with this instance.
-        """
-        try:
-            return cherrypy.request.user['login']
-        except:
-            return 'testuser'
-
-    def user_dn(self):
-        "Return user DN"
-        try:
-            return cherrypy.request.user['dn']
-        except:
-            return '/CN/bla/foo'
 
     def update_scripts(self, force=False):
         "Update scripts dict"
@@ -267,7 +264,7 @@ class ReqMgrService(TemplatedPage):
         """generate abstract page"""
         menu = self.templatepage('menu', menus=menus(), tmpl=tmpl)
         body = self.templatepage('generic', menu=menu, content=content)
-        page = self.templatepage('main', content=body, user=self.user())
+        page = self.templatepage('main', content=body, user=user())
         return page
 
     def page(self, content):
@@ -282,7 +279,7 @@ class ReqMgrService(TemplatedPage):
         return self.abs_page('error', content)
 
     @expose
-    def index(self, **kwds):
+    def index(self):
         """Main page"""
         content = self.templatepage('index', requests=ACTIVE_STATUS, rdict=REQUEST_STATE_TRANSITION)
         return self.abs_page('main', content)
@@ -291,47 +288,6 @@ class ReqMgrService(TemplatedPage):
     def home(self, **kwds):
         """Main page"""
         return self.index(**kwds)
-
-    ### Admin actions ###
-
-    @expose
-    def admin(self, **kwds):
-        """admin page"""
-        print("\n### ADMIN PAGE")
-        rows = self.admin_info.get()
-        print("rows", [r for r in rows])
-
-        content = self.templatepage('admin')
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_user(self, **kwds):
-        """add_user action"""
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_group(self, **kwds):
-        """add_group action"""
-        rows = self.admin_group.get()
-        print("\n### GROUPS", [r for r in rows])
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
-
-    @expose
-    def add_team(self, **kwds):
-        """add_team action"""
-        rows = self.admin_team.get()
-        print("\n### TEAMS", kwds, [r for r in rows])
-        print("request to add", kwds)
-        rid = genid(kwds)
-        status = "ok"  # chagne to whatever it would be
-        content = self.templatepage('confirm', ticket=rid, user=self.user(), status=status)
-        return self.abs_page('admin', content)
 
     ### Request actions ###
 
@@ -346,7 +302,7 @@ class ReqMgrService(TemplatedPage):
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for key, val in data.items():
+        for val in data.values():
             docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -378,7 +334,7 @@ class ReqMgrService(TemplatedPage):
                                     sites=sites(),
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
-                                    user=self.user(), user_dn=self.user_dn(), requests=docs,
+                                    user=user(), user_dn=user_dn(), requests=docs,
                                     misc_table=json2table(misc_json, web_ui_names()),
                                     misc_json=json2form(misc_json, indent=2, keep_first_value=True))
         return self.abs_page('assign', content)
@@ -399,7 +355,7 @@ class ReqMgrService(TemplatedPage):
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
         data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for key, val in data.items():
+        for val in data.values():
             docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -444,17 +400,17 @@ class ReqMgrService(TemplatedPage):
         return [r for r in genobjs(jsondict)]
 
     @expose
-    def config(self, name, **kwds):
+    def config(self, name):
         "Fetch config for given request name"
         return self.reqmgr.getConfig(name).replace('\n', '<br/>')
 
     @expose
-    def fetch(self, rid, **kwds):
+    def fetch(self, rid):
         "Fetch document for given id"
         rid = rid.replace('request-', '')
         doc = self.reqmgr.getRequestByNames(rid)
         transitions = []
-        tstamp = time.time()
+        tst = time.time()
         # get request tasks
         tasks = self.reqmgr.getRequestTasks(rid)
         if len(doc) == 1:
@@ -473,12 +429,12 @@ class ReqMgrService(TemplatedPage):
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(doc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
-                                        transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
+                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
                                         table="", jsondata=jsondata,
-                                        transitions=transitions, ts=tstamp, user=self.user(), userdn=self.user_dn())
+                                        transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid
         return self.abs_page('request', content)
@@ -502,7 +458,7 @@ class ReqMgrService(TemplatedPage):
             kwds.update({'status': 'acquired'})
         results = self.reqmgr.getRequestByStatus(kwds['status'])
         docs = []
-        for key, doc in results.items():
+        for doc in results.values():
             docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
@@ -519,7 +475,6 @@ class ReqMgrService(TemplatedPage):
             return {'error': 'no input dataset'}
         url = 'https://cmsweb.cern.ch/reqmgr/rest/outputdataset/%s' % dataset
         params = {}
-        headers = {'Accept': 'application/json;text/json'}
         wdata = getdata(url, params)
         wdict = dict(date=time.ctime(), team='Team-A', status='Running', ID=genid(wdata))
         winfo = self.templatepage('workflow', wdict=wdict,
@@ -542,7 +497,7 @@ class ReqMgrService(TemplatedPage):
         attributes = batch.get('Attributes', {})
         workflows = batch.get('Workflows', [])
         description = batch.get('Description', '')
-        creator = batch.get('Creator', self.user_dn())
+        creator = batch.get('Creator', user_dn())
         content = self.templatepage('batch', name=name,
                                     attributes=json2table(attributes, web_ui_names()),
                                     workflows=workflows, creator=creator,
@@ -577,7 +532,7 @@ class ReqMgrService(TemplatedPage):
     ### Aux methods ###
 
     @expose
-    def put_request(self, *args, **kwds):
+    def put_request(self, **kwds):
         "PUT request callback to reqmgr server, should be used in AJAX"
         reqname = kwds.get('RequestName', '')
         status = kwds.get('RequestStatus', '')
@@ -590,12 +545,12 @@ class ReqMgrService(TemplatedPage):
         return self.reqmgr.updateRequestStatus(reqname, status)
 
     @expose
-    def images(self, *args, **kwargs):
+    def images(self, *args):
         """
         Serve static images.
         """
         args = list(args)
-        self.check_scripts(args, self.imgmap, self.imgdir)
+        check_scripts(args, self.imgmap, self.imgdir)
         mime_types = ['*/*', 'image/gif', 'image/png',
                       'image/jpg', 'image/jpeg']
         accepts = cherrypy.request.headers.elements('Accept')
@@ -617,7 +572,7 @@ class ReqMgrService(TemplatedPage):
                     args += val
                 else:
                     args.append(val)
-        scripts = self.check_scripts(args, imap, idir)
+        scripts = check_scripts(args, imap, idir)
         return self.serve_files(args, scripts, imap, datatype, minimize)
 
     @exposecss
@@ -666,15 +621,3 @@ class ReqMgrService(TemplatedPage):
             else:
                 self._cache[idx] = data
         return self._cache[idx]
-
-    def check_scripts(self, scripts, resource, path):
-        """
-        Check a script is known to the resource map
-        and that the script actually exists
-        """
-        for script in scripts:
-            if script not in resource.keys():
-                spath = os.path.normpath(os.path.join(path, script))
-                if os.path.isfile(spath):
-                    resource.update({script: spath})
-        return scripts

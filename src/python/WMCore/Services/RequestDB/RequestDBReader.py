@@ -2,13 +2,12 @@ from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 
 
-class RequestDBReader():
-
+class RequestDBReader(object):
     def __init__(self, couchURL, couchapp="ReqMgr"):
         couchURL = sanitizeURL(couchURL)['url']
         # set the connection for local couchDB call
         self._commonInit(couchURL, couchapp)
-        
+
     def _commonInit(self, couchURL, couchapp):
         """
         setting up comon variables for inherited class.
@@ -19,46 +18,42 @@ class RequestDBReader():
             self.couchURL = self.couchDB['host']
             self.dbName = self.couchDB.name
             self.couchServer = CouchServer(self.couchURL)
-        else:    
+        else:
             self.couchURL, self.dbName = splitCouchServiceURL(couchURL)
             self.couchServer = CouchServer(self.couchURL)
             self.couchDB = self.couchServer.connectDatabase(self.dbName, False)
         self.couchapp = couchapp
         self.defaultStale = {"stale": "update_after"}
-        
-    
+
     def setDefaultStaleOptions(self, options):
         if not options:
-            options = {}  
+            options = {}
         if 'stale' not in options:
             options.update(self.defaultStale)
         return options
-    
+
     def _setNoStale(self):
         """
         Use this only for the unittest
-        """        
+        """
         self.defaultStale = {}
-        
-    def _getCouchView(self, view, options, keys = []):
-        
+
+    def _getCouchView(self, view, options, keys=[]):
+
         options = self.setDefaultStaleOptions(options)
-            
+
         if keys and isinstance(keys, basestring):
             keys = [keys]
         return self.couchDB.loadView(self.couchapp, view, options, keys)
-    
-    
+
     def _filterCouchInfo(self, couchInfo):
         # remove the couch specific information
         for key in ['_rev', '_attachments']:
-            if  key in couchInfo:
+            if key in couchInfo:
                 del couchInfo[key]
         return
-    
-                
-    def _formatCouchData(self, data, key = "id", detail = True, filterCouch = True, 
-                         returnDict = False):
+
+    def _formatCouchData(self, data, key="id", detail=True, filterCouch=True, returnDict=False):
         result = {}
         for row in data['rows']:
             if 'error' in row:
@@ -83,7 +78,7 @@ class RequestDBReader():
         else:
             result = [result['RequestName']]
         return result
-  
+
     def _getRequestByNames(self, requestNames, detail):
         """
         'status': list of the status
@@ -92,7 +87,7 @@ class RequestDBReader():
         options["include_docs"] = detail
         result = self.couchDB.allDocs(options, requestNames)
         return result
-        
+
     def _getRequestByStatus(self, statusList, detail, limit, skip):
         """
         'status': list of the status
@@ -106,7 +101,7 @@ class RequestDBReader():
             options["skip"] = skip
         keys = statusList
         return self._getCouchView("bystatus", options, keys)
-    
+
     def _getRequestByStatusAndStartTime(self, status, detail, endTime):
         """
         'status': is the status of the workflow
@@ -132,11 +127,11 @@ class RequestDBReader():
             options["key"] = [team, status]
         elif team and not status:
             options["startkey"] = [team]
-            options["endkey"] = [team, status]   # status = {}
+            options["endkey"] = [team, status]  # status = {}
 
         return self._getCouchView("byteamandstatus", options)
 
-    def _getAllDocsByIDs(self, ids, include_docs = True):
+    def _getAllDocsByIDs(self, ids, include_docs=True):
         """
         keys is [id, ....]
         returns document
@@ -144,42 +139,42 @@ class RequestDBReader():
         if len(ids) == 0:
             return []
         options = {}
-        options["include_docs"] =  include_docs
+        options["include_docs"] = include_docs
         result = self.couchDB.allDocs(options, ids)
-        
+
         return result
-    
+
     def getDBInstance(self):
         return self.couchDB
-    
-    def getRequestByNames(self, requestNames, detail = True):
+
+    def getRequestByNames(self, requestNames, detail=True):
         if len(requestNames) == 0:
             return {}
         if isinstance(requestNames, list) and len(requestNames) == 1:
             requestNames = requestNames[0]
 
         if isinstance(requestNames, basestring):
-            requestInfo = self._getRequestByName(requestNames, detail = detail)
+            requestInfo = self._getRequestByName(requestNames, detail=detail)
         else:
-            requestInfo = self._getRequestByNames(requestNames, detail = detail)
-            requestInfo = self._formatCouchData(requestInfo, detail = detail)
+            requestInfo = self._getRequestByNames(requestNames, detail=detail)
+            requestInfo = self._formatCouchData(requestInfo, detail=detail)
         return requestInfo
-    
-    def getRequestByStatus(self, statusList, detail = False, limit = None, skip = None):
-        
+
+    def getRequestByStatus(self, statusList, detail=False, limit=None, skip=None):
+
         data = self._getRequestByStatus(statusList, detail, limit, skip)
-        requestInfo = self._formatCouchData(data, detail = detail)
+        requestInfo = self._formatCouchData(data, detail=detail)
 
         return requestInfo
-    
-    def getRequestByStatusAndStartTime(self, status, detail = False, endTime = 0):
-        
+
+    def getRequestByStatusAndStartTime(self, status, detail=False, endTime=0):
+
         if endTime == 0:
-            data = self._getRequestByStatus([status], detail, limit = None, skip = None)
+            data = self._getRequestByStatus([status], detail, limit=None, skip=None)
         else:
             data = self._getRequestByStatusAndStartTime(status, detail, endTime)
-            
-        requestInfo = self._formatCouchData(data, detail = detail)
+
+        requestInfo = self._formatCouchData(data, detail=detail)
 
         return requestInfo
 
@@ -195,23 +190,23 @@ class RequestDBReader():
         elif not team and not status:
             data = self._getRequestByTeamAndStatus(team={}, status={}, limit=limit)
         else:
-            # nothing we can do with status only 
+            # nothing we can do with status only
             return
 
         requestInfo = self._formatCouchData(data, detail=detail)
         return requestInfo
-    
-    def getRequestByCouchView(self, view, options, keys = [], returnDict = True):
+
+    def getRequestByCouchView(self, view, options, keys=[], returnDict=True):
         options.setdefault("include_docs", True)
         data = self._getCouchView(view, options, keys)
-        requestInfo = self._formatCouchData(data, returnDict = returnDict)
+        requestInfo = self._formatCouchData(data, returnDict=returnDict)
         return requestInfo
-    
+
     def getStatusAndTypeByRequest(self, requestNames):
         if isinstance(requestNames, basestring):
             requestNames = [requestNames]
         if len(requestNames) == 0:
             return {}
         data = self._getCouchView("byrequest", {}, requestNames)
-        requestInfo = self._formatCouchData(data, returnDict = True)
+        requestInfo = self._formatCouchData(data, returnDict=True)
         return requestInfo

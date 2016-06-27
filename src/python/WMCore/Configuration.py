@@ -13,7 +13,6 @@ Module dealing with Configuration file in python format
 
 import os
 import imp
-import types
 import traceback
 
 _SimpleTypes = [
@@ -44,7 +43,7 @@ def format(value):
     format a value as python
     keep parameters simple, trust python...
     """
-    if type(value) == str:
+    if isinstance(value, str):
         value = "\'%s\'" % value
     return str(value)
 
@@ -55,24 +54,24 @@ def formatNative(value):
     Like the format function, but allowing passing of ints, floats, etc.
     """
 
-    if type(value) == int:
+    if isinstance(value, int):
         return value
-    if type(value) == float:
+    if isinstance(value, float):
         return value
-    if type(value) == list:
+    if isinstance(value, list):
         return value
-    if type(value) == dict:
+    if isinstance(value, dict):
         return dict
     else:
         return format(value)
 
 
 class ConfigSection(object):
+    #pylint: disable=protected-access
     """
     _ConfigSection_
 
     Chunk of configuration information
-
     """
     def __init__(self, name = None):
         object.__init__(self)
@@ -82,6 +81,10 @@ class ConfigSection(object):
         self._internal_docstrings = {}
         self._internal_children = set()
         self._internal_parent_ref = None
+        #The flag skipChecks controls weather each parameter added to the configuration
+        #should be a primitive or complex type that can be "jsonized"
+        #By default it is false, but ConfigurationEx instances set it to True
+        self._internal_skipChecks = False
 
     def __eq__(self, other):
         if (isinstance(other, type(self))):
@@ -96,12 +99,12 @@ class ConfigSection(object):
             return (id(self) == id(other))
 
     def _complexTypeCheck(self, name, value):
-        
+
         if type(value) in _SimpleTypes:
             return
         elif type(value) in _ComplexTypes:
             vallist = value
-            if type(value) == dict:
+            if isinstance(value, dict):
                 vallist = value.values()
             for val in vallist:
                 self._complexTypeCheck(name, val)
@@ -109,9 +112,10 @@ class ConfigSection(object):
             msg = "Not supported type in sequence:"
             msg += "%s\n" % type(value)
             msg += "for name: %s and value: %s\n" % (name, value)
-            msg += "Added to WMAgent Configuration"
+            msg += "Added to WMAgent Configuration."
+            msg += "Use ConfigurationEx to skip checks on config params"
             raise RuntimeError(msg)
-                
+
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -127,11 +131,14 @@ class ConfigSection(object):
             object.__setattr__(self, name, value)
             return
 
-        if type(value) == unicode:
+        if isinstance(value, unicode):
             value = str(value)
-        
-        self._complexTypeCheck(name, value)
-        
+
+        #for backward compatibility use getattr and sure to work if the
+        #_internal_skipChecks flag is not set
+        if not getattr(self, '_internal_skipChecks', False):
+            self._complexTypeCheck(name, value)
+
         object.__setattr__(self, name, value)
         self._internal_settings.add(name)
         return
@@ -165,7 +172,7 @@ class ConfigSection(object):
             settingInstance = getattr(otherSection, setting)
             if setting in self._internal_settings:
                 currentSetting = getattr(self, setting)
-                if type(currentSetting) != type(settingInstance) and currentSetting != None and settingInstance != None:
+                if not isinstance(currentSetting, type(settingInstance)) and currentSetting != None and settingInstance != None:
                     msg = "Trying to overwrite a setting with mismatched types"
                     msg += "%s.%s is not the same type as %s.%s" % (
                         self._internal_name, setting,
@@ -264,8 +271,8 @@ class ConfigSection(object):
 
         """
         result = {}
-        [ result.__setitem__(x, getattr(self, x))
-          for x in self._internal_settings ]
+        for x in self._internal_settings:
+            result.__setitem__(x, getattr(self, x))
         return result
 
 
@@ -349,8 +356,8 @@ class ConfigSection(object):
         return list(comps)
 
 
-
 class Configuration(object):
+    #pylint: disable=protected-access
     """
     _Configuration_
 
@@ -379,7 +386,7 @@ class Configuration(object):
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
-            # skip test for internal settinsg
+            # skip test for internal settings
             object.__setattr__(self, name, value)
             return
         if not isinstance(value, ConfigSection):
@@ -525,13 +532,11 @@ class Configuration(object):
         """
         return self.pythonise_()
 
-
     def documentedString_(self):
         """
         python format with document_ calls
         """
         return self.pythonise_(document = True)
-
 
     def commentedString_(self):
         """
@@ -539,6 +544,33 @@ class Configuration(object):
         """
         return self.pythonise_(comment = True)
 
+
+class ConfigurationEx(Configuration):
+    """
+    _Configuration_
+
+    Top level extended configuration object
+
+    Allows to freely set parameters of the configuration. Things like callables
+    can be used as configuration parameters now. Drawback is that the configuration
+    cannot be saved and passed around using the code.
+    """
+    def __init__(self):
+        #super(ConfigurationEx, self).__init__()
+        Configuration.__init__(self)
+
+    def section_(self, sectionName):
+        """
+        _section_
+
+        Get a section by name, create it if not present,
+        and set the skipChecks flag
+        returns a ConfigSection instance
+
+        """
+        section = Configuration.section_(self, sectionName)
+        section._internal_skipChecks = True #pylint: disable=protected-access
+        return section
 
 
 def loadConfigurationFile(filename):
@@ -578,8 +610,6 @@ def loadConfigurationFile(filename):
     raise RuntimeError(msg)
 
 
-
-
 def saveConfigurationFile(configInstance, filename, **options):
     """
     _saveConfigurationFile_
@@ -592,6 +622,8 @@ def saveConfigurationFile(configInstance, filename, **options):
 
 
     """
+    if isinstance(configInstance, ConfigurationEx):
+        raise NotImplementedError("ConfigurationEx instances cannot be saved. Use Configuration instead.")
     comment = options.get("comment", False)
     document = options.get("document", False)
     if document: comment = False

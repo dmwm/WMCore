@@ -10,8 +10,6 @@ NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
 
-
-
 import time
 import urllib
 import re
@@ -19,10 +17,11 @@ import hashlib
 import base64
 import logging
 from httplib import HTTPException
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from WMCore.Services.Requests import JSONRequests
 from WMCore.Lexicon import replaceToSantizeURL
+
 
 def check_name(dbname):
     match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
@@ -30,16 +29,19 @@ def check_name(dbname):
         msg = '%s is not a valid database name'
         raise ValueError(msg % urllib.unquote_plus(dbname))
 
+
 def check_server_url(srvurl):
     good_name = srvurl.startswith('http://') or srvurl.startswith('https://')
     if not good_name:
         raise ValueError('You must include http(s):// in your servers address')
 
+
 class Document(dict):
     """
     Document class is the instantiation of one document in the CouchDB
     """
-    def __init__(self, id=None, inputDict = {}):
+
+    def __init__(self, id=None, inputDict={}):
         """
         Initialise our Document object - a dictionary which has an id field
         inputDict - input dictionary to initialise this instance
@@ -54,7 +56,7 @@ class Document(dict):
         Mark the document as deleted
         """
         # https://issues.apache.org/jira/browse/COUCHDB-1141
-        deletedDict = { '_id' : self['_id'], '_rev' : self['_rev'], '_deleted' : True }
+        deletedDict = {'_id': self['_id'], '_rev': self['_rev'], '_deleted': True}
         self.update(deletedDict)
         for key in self.keys():
             if key not in deletedDict:
@@ -73,16 +75,19 @@ class Document(dict):
 
         return jsonDict
 
+
 class CouchDBRequests(JSONRequests):
     """
     CouchDB has two non-standard HTTP calls, implement them here for
     completeness, and talks to the CouchDB port
     """
-    def __init__(self, url = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
+
+    def __init__(self, url='http://localhost:5984', usePYCurl=False, ckey=None, cert=None, capath=None):
         """
         Initialise requests
         """
-        JSONRequests.__init__(self, url, {"cachepath" : None, "pycurl" : usePYCurl, "key" : ckey, "cert" : cert, "capath" : capath})
+        JSONRequests.__init__(self, url,
+                              {"cachepath": None, "pycurl": usePYCurl, "key": ckey, "cert": cert, "capath": capath})
         self.accept_type = "application/json"
         self["timeout"] = 600
 
@@ -98,8 +103,8 @@ class CouchDBRequests(JSONRequests):
         """
         return self.makeRequest(uri, data, 'COPY')
 
-    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers = {},
-                     encode=True, decode=True, contentType=None, cache=False):
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers={},
+                    encode=True, decode=True, contentType=None, cache=False):
         """
         Make the request, handle any failed status, return just the data (for
         compatibility). By default do not cache the response.
@@ -108,17 +113,17 @@ class CouchDBRequests(JSONRequests):
         """
         try:
             if not cache:
-                incoming_headers.update({'Cache-Control':'no-cache'})
+                incoming_headers.update({'Cache-Control': 'no-cache'})
             result, status, reason, cached = JSONRequests.makeRequest(
-                                        self, uri, data, type, incoming_headers,
-                                        encode, decode,contentType)
+                self, uri, data, type, incoming_headers,
+                encode, decode, contentType)
         except HTTPException as e:
             self.checkForCouchError(getattr(e, "status", None),
                                     getattr(e, "reason", None), data)
 
         return result
 
-    def checkForCouchError(self, status, reason, data = None, result = None):
+    def checkForCouchError(self, status, reason, data=None, result=None):
         """
         _checkForCouchError_
 
@@ -150,13 +155,15 @@ class CouchDBRequests(JSONRequests):
 
         return
 
+
 class Database(CouchDBRequests):
     """
     Object representing a connection to a CouchDB Database instance.
     TODO: implement COPY and MOVE calls.
     TODO: remove leading whitespace when committing a view
     """
-    def __init__(self, dbname = 'database', url = 'http://localhost:5984', size = 1000, ckey = None, cert = None):
+
+    def __init__(self, dbname='database', url='http://localhost:5984', size=1000, ckey=None, cert=None):
         """
         A set of queries against a CouchDB database
         """
@@ -164,7 +171,7 @@ class Database(CouchDBRequests):
 
         self.name = urllib.quote_plus(dbname)
 
-        CouchDBRequests.__init__(self, url = url, ckey = ckey, cert = cert)
+        CouchDBRequests.__init__(self, url=url, ckey=ckey, cert=cert)
         self._reset_queue()
 
         self._queue_size = size
@@ -192,7 +199,7 @@ class Database(CouchDBRequests):
                     doc[label] = int(time.time())
         return data
 
-    def queue(self, doc, timestamp = False, viewlist=[], callback = None):
+    def queue(self, doc, timestamp=False, viewlist=[], callback=None):
         """
         Queue up a doc for bulk insert. If timestamp = True add a timestamp
         field if one doesn't exist. Use this over commit(timestamp=True) if you
@@ -203,10 +210,10 @@ class Database(CouchDBRequests):
         """
         if timestamp:
             self.timestamp(doc, timestamp)
-        #TODO: Thread this off so that it's non blocking...
+        # TODO: Thread this off so that it's non blocking...
         if len(self._queue) >= self._queue_size:
             print('queue larger than %s records, committing' % self._queue_size)
-            self.commit(viewlist=viewlist, callback = callback)
+            self.commit(viewlist=viewlist, callback=callback)
         self._queue.append(doc)
 
     def queueDelete(self, doc, viewlist=[]):
@@ -215,28 +222,28 @@ class Database(CouchDBRequests):
         """
         assert isinstance(doc, type({})), "document not a dictionary"
         # https://issues.apache.org/jira/browse/COUCHDB-1141
-        doc = { '_id' : doc['_id'], '_rev' : doc['_rev'], '_deleted' : True }
+        doc = {'_id': doc['_id'], '_rev': doc['_rev'], '_deleted': True}
         self.queue(doc)
 
-    def commitOne(self, doc, returndocs=False, timestamp = False, viewlist=[]):
+    def commitOne(self, doc, returndocs=False, timestamp=False, viewlist=[]):
         """
         Helper function for when you know you only want to insert one doc
         additionally keeps from having to rewrite ConfigCache to handle the
         new commit function's semantics
         """
-        uri  = '/%s/_bulk_docs/' % self.name
+        uri = '/%s/_bulk_docs/' % self.name
         if timestamp:
             self.timestamp(doc, timestamp)
 
         data = {'docs': [doc]}
-        retval = self.post(uri , data)
+        retval = self.post(uri, data)
         for v in viewlist:
             design, view = v.split('/')
             self.loadView(design, view, {'limit': 0})
         return retval
 
-    def commit(self, doc=None, returndocs = False, timestamp = False,
-               viewlist=[], callback = None, **data):
+    def commit(self, doc=None, returndocs=False, timestamp=False,
+               viewlist=[], callback=None, **data):
         """
         Add doc and/or the contents of self._queue to the database. If
         returndocs is true, return document objects representing what has been
@@ -259,7 +266,7 @@ class Database(CouchDBRequests):
         Returns a list of good documents
             throws an exception otherwise
         """
-        if (doc):
+        if doc:
             self.queue(doc, timestamp, viewlist)
 
         if len(self._queue) == 0:
@@ -268,10 +275,10 @@ class Database(CouchDBRequests):
         if timestamp:
             self.timestamp(self._queue, timestamp)
         # TODO: commit in thread to avoid blocking others
-        uri  = '/%s/_bulk_docs/' % self.name
+        uri = '/%s/_bulk_docs/' % self.name
 
         data['docs'] = list(self._queue)
-        retval = self.post(uri , data)
+        retval = self.post(uri, data)
         self._reset_queue()
         for v in viewlist:
             design, view = v.split('/')
@@ -283,7 +290,7 @@ class Database(CouchDBRequests):
 
         return retval
 
-    def document(self, id, rev = None):
+    def document(self, id, rev=None):
         """
         Load a document identified by id. You can specify a rev to see an older revision
         of the document. This **should only** be used when resolving conflicts, relying
@@ -292,22 +299,20 @@ class Database(CouchDBRequests):
         """
         uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev' : rev})
-        return Document(id = id, inputDict = self.get(uri))
+            uri += '?' + urllib.urlencode({'rev': rev})
+        return Document(id=id, inputDict=self.get(uri))
 
-    def getPrevisousRevision(self, doc_id, numberBefore = 1):
+    def getPrevisousRevision(self, doc_id, numberBefore=1):
         """
         :param: doc_id, couch document id
         :param: numberBefore: previous revision, 1 means one previous revision, 2 means 2 doucments eariler.
-                       special case 0 means the first revision.
-        
+                              special case 0 means the first revision.
         :return: previous revision document specified by numberBefore
-          
         """
         uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.quote_plus(doc_id))
         revisionRecord = self.get(uri)
         rev = revisionRecord[0]['ok']['_revisions']
-        
+
         if numberBefore == 0:
             revNum = 1
             revID = rev['start'] - 1
@@ -315,12 +320,12 @@ class Database(CouchDBRequests):
             revNum = rev['start'] - numberBefore
             revID = rev['ids'][numberBefore]
         preRev = "%s-%s" % (revNum, revID)
-        
+
         if doc_id != revisionRecord[0]['ok']['_id']:
             raise CouchError("revision record doesn match", revisionRecord[0]['ok']['_id'], doc_id)
-        
+
         return self.document(doc_id, preRev)
-    
+
     def updateDocument(self, doc_id, design, update_func, fields={}, useBody=False):
         """
         Call the update function update_func defined in the design document
@@ -330,17 +335,17 @@ class Database(CouchDBRequests):
         """
         # Clean up /'s in the name etc.
         doc_id = urllib.quote_plus(doc_id)
-        
+
         if not useBody:
             updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
-                (self.name, design, update_func, doc_id, urllib.urlencode(fields))
-    
-            return self.put(uri = updateUri, decode=False)
+                        (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+
+            return self.put(uri=updateUri, decode=False)
         else:
             updateUri = '/%s/_design/%s/_update/%s/%s' % \
-                (self.name, design, update_func, doc_id)
+                        (self.name, design, update_func, doc_id)
             return self.put(uri=updateUri, data=fields, decode=False)
-    
+
     def putDocument(self, doc_id, fields):
         """
         Call the update function update_func defined in the design document
@@ -350,24 +355,24 @@ class Database(CouchDBRequests):
         """
         # Clean up /'s in the name etc.
         doc_id = urllib.quote_plus(doc_id)
-        
+
         updateUri = '/%s/%s' % (self.name, doc_id)
         return self.put(uri=updateUri, data=fields, decode=False)
 
-    def documentExists(self, id, rev = None):
+    def documentExists(self, id, rev=None):
         """
         Check if a document exists by ID. If specified check that the revision rev exists.
         """
         uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev' : rev})
+            uri += '?' + urllib.urlencode({'rev': rev})
         try:
             self.makeRequest(uri, {}, 'HEAD')
             return True
         except CouchNotFoundError:
             return False
 
-    def delete_doc(self, id, rev = None):
+    def delete_doc(self, id, rev=None):
         """
         Immediately delete a document identified by id and rev.
         """
@@ -398,7 +403,7 @@ class Database(CouchDBRequests):
         if len(views) > 0:
             for view in views:
                 response[view] = self.post('/%s/_compact/%s' % (self.name, view))
-                response['view_cleanup' ] = self.post('/%s/_view_cleanup' % (self.name))
+                response['view_cleanup'] = self.post('/%s/_view_cleanup' % (self.name))
 
         if blocking:
             while self.info()['compact_running']:
@@ -431,11 +436,11 @@ class Database(CouchDBRequests):
         data = self.get('/%s/_changes?limit=%s&since=%s&filter=%s' % (self.name, limit, since, filter))
         self.last_seq = data['last_seq']
         return data
-    
+
     def purge(self, data):
         return self.post('/%s/_purge' % self.name, data)
-        
-    def loadView(self, design, view, options = {}, keys = []):
+
+    def loadView(self, design, view, options={}, keys=[]):
         """
         Load a view by getting, for example:
         http://localhost:5984/tester/_view/viewtest/age_name?count=10&group=true
@@ -462,7 +467,7 @@ class Database(CouchDBRequests):
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
         encodedOptions = {}
-        for k,v in options.iteritems():
+        for k, v in options.iteritems():
             # We can't encode the stale option, as it will be converted to '"ok"'
             # which couch barfs on.
             if k == "stale":
@@ -471,23 +476,23 @@ class Database(CouchDBRequests):
                 encodedOptions[k] = self.encode(v)
 
         if len(keys):
-            if (encodedOptions):
+            if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_view/%s?%s' % \
-                            (self.name, design, view, data), {'keys':keys})
+                                   (self.name, design, view, data), {'keys': keys})
             else:
                 retval = self.post('/%s/_design/%s/_view/%s' % \
-                            (self.name, design, view), {'keys':keys})
+                                   (self.name, design, view), {'keys': keys})
         else:
             retval = self.get('/%s/_design/%s/_view/%s' % \
-                            (self.name, design, view), encodedOptions)
-        if ('error' in retval):
-            raise RuntimeError("Error in CouchDB: viewError '%s' reason '%s'" %\
-                        (retval['error'], retval['reason']))
+                              (self.name, design, view), encodedOptions)
+        if 'error' in retval:
+            raise RuntimeError("Error in CouchDB: viewError '%s' reason '%s'" % \
+                               (retval['error'], retval['reason']))
         else:
             return retval
 
-    def loadList(self, design, list, view, options = {}, keys = []):
+    def loadList(self, design, list, view, options={}, keys=[]):
         """
         Load data from a list function. This returns data that hasn't been
         decoded, since a list can return data in any format. It is expected that
@@ -495,27 +500,39 @@ class Database(CouchDBRequests):
         deal with it appropriately.
         """
         encodedOptions = {}
-        for k,v in options.iteritems():
+        for k, v in options.iteritems():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):
-            if (encodedOptions):
+            if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
-                        (self.name, design, list, view, data), {'keys':keys},
-                        decode=False)
+                                   (self.name, design, list, view, data), {'keys': keys},
+                                   decode=False)
             else:
                 retval = self.post('/%s/_design/%s/_list/%s/%s' % \
-                        (self.name, design, list, view), {'keys':keys},
-                        decode=False)
+                                   (self.name, design, list, view), {'keys': keys},
+                                   decode=False)
         else:
             retval = self.get('/%s/_design/%s/_list/%s/%s' % \
-                        (self.name, design, list, view), encodedOptions,
-                        decode=False)
+                              (self.name, design, list, view), encodedOptions,
+                              decode=False)
 
         return retval
 
-    def allDocs(self, options = {}, keys = []):
+    def getDoc(self, docName):
+        """
+        Return a single document from the database.
+        """
+        try:
+            return self.get('/%s/%s' % (self.name, docName))
+        except CouchError as e:
+            # if empty dict, then doc does not exist in the db
+            if getattr(e, "data", None) == {}:
+                return {}
+            self.checkForCouchError(getattr(e, "status", None), getattr(e, "reason", None))
+
+    def allDocs(self, options={}, keys=[]):
         """
         Return all the documents in the database
         options is a dict type parameter which can be passed to _all_docs
@@ -523,17 +540,17 @@ class Database(CouchDBRequests):
         keys is the list of key (ids) for doc to be returned
         """
         encodedOptions = {}
-        for k,v in options.iteritems():
+        for k, v in options.iteritems():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):
-            if (encodedOptions):
+            if encodedOptions:
                 data = urllib.urlencode(encodedOptions)
                 return self.post('/%s/_all_docs?%s' % (self.name, data),
-                                 {'keys':keys})
+                                 {'keys': keys})
             else:
                 return self.post('/%s/_all_docs' % self.name,
-                                 {'keys':keys})
+                                 {'keys': keys})
         else:
             return self.get('/%s/_all_docs' % self.name, encodedOptions)
 
@@ -556,30 +573,30 @@ class Database(CouchDBRequests):
         the attachment and pass that into CouchDB for validation. The checksum should be the
         base64 encoded binary md5 (as returned by hashlib.md5().digest())
         """
-        if (name == None):
+        if name is None:
             name = "attachment"
         req_headers = {}
 
         if add_checksum:
-            #calculate base64 encoded MD5
+            # calculate base64 encoded MD5
             keyhash = hashlib.md5()
             keyhash.update(str(value))
             req_headers['Content-MD5'] = base64.b64encode(keyhash.digest())
         elif checksum:
             req_headers['Content-MD5'] = checksum
         return self.put('/%s/%s/%s?rev=%s' % (self.name, id, name, rev),
-                         value, encode = False,
-                         contentType=contentType,
-                         incoming_headers = req_headers)
+                        value, encode=False,
+                        contentType=contentType,
+                        incoming_headers=req_headers)
 
-    def getAttachment(self, id, name = "attachment"):
+    def getAttachment(self, id, name="attachment"):
         """
         _getAttachment_
 
         Retrieve an attachment for a couch document.
         """
         url = "/%s/%s/%s" % (self.name, id, name)
-        attachment = self.get(url, None, encode = False, decode = False)
+        attachment = self.get(url, None, encode=False, decode=False)
 
         # there has to be a better way to do this but if we're not de-jsoning
         # the return values, then this is all I can do for error checking,
@@ -587,27 +604,28 @@ class Database(CouchDBRequests):
         # TODO: MAKE BETTER ERROR HANDLING
         if (attachment.find('{"error":"not_found","reason":"deleted"}') != -1):
             raise RuntimeError("File not found, deleted")
-        if (id == "nonexistantid"):
+        if id == "nonexistantid":
             print(attachment)
         return attachment
-    
+
     def bulkDeleteByIDs(self, ids):
         """
         delete bulk documents
         """
-        # do the safty check other wise it will delete whole db.
-        if type(ids) != list:
+        # do the safety check other wise it will delete whole db.
+        if not isinstance(ids, list):
             raise
         if len(ids) == 0:
             return None
-        
+
         docs = self.allDocs(keys=ids)['rows']
         for j in docs:
             doc = {}
-            doc["_id"]  = j['id']
+            doc["_id"] = j['id']
             doc["_rev"] = j['value']['rev']
             self.queueDelete(doc)
         return self.commit()
+
 
 class RotatingDatabase(Database):
     """
@@ -644,9 +662,10 @@ class RotatingDatabase(Database):
     database created, views are copied to the archive database as necessary and
     the inactive databases queued for removal.
     """
-    def __init__(self, dbname = 'database', url = 'http://localhost:5984',
-                        size = 1000, archivename=None, seedname=None,
-                        timing=None, views=[]):
+
+    def __init__(self, dbname='database', url='http://localhost:5984',
+                 size=1000, archivename=None, seedname=None,
+                 timing=None, views=[]):
         """
         dbaname:     base name for databases, active databases will have
                      timestamp appended
@@ -677,7 +696,7 @@ class RotatingDatabase(Database):
         # Set up the databases for the seed
         if not seedname:
             seedname = '%s_seedcfg' % (self.basename)
-        self.seed_db =  self.server.connectDatabase(seedname, url, size)
+        self.seed_db = self.server.connectDatabase(seedname, url, size)
 
         # TODO: load a rotating DB from the seed db
 
@@ -747,7 +766,6 @@ class RotatingDatabase(Database):
             state_doc['rotate_state'] = 'archived'
         self.seed_db.commitOne(state_doc, timestamp=True)
 
-
     def _archive(self):
         """
         Archive inactive databases
@@ -759,7 +777,7 @@ class RotatingDatabase(Database):
                 for view_to_archive in self.views:
                     # TODO: improve handling views and options here
                     design, view = view_to_archive.split('/')
-                    for data in archiving_db.loadView(design, view, options={'group':True})['rows']:
+                    for data in archiving_db.loadView(design, view, options={'group': True})['rows']:
                         self.archive_db.queue(data)
                 self.archive_db.commit()
                 # Now set the inactive view to archived
@@ -774,7 +792,7 @@ class RotatingDatabase(Database):
         now = datetime.now()
         then = now - self.timing['expire']
 
-        options = {'startkey':0, 'endkey':time.mktime(then.timetuple())}
+        options = {'startkey': 0, 'endkey': time.mktime(then.timetuple())}
         expired = self._find_dbs_in_state('archived', options)
         for db in expired:
             try:
@@ -786,9 +804,9 @@ class RotatingDatabase(Database):
             self.seed_db.queueDelete(db_state)
         self.seed_db.commit()
 
-    def _find_dbs_in_state(self, state, options = {}):
+    def _find_dbs_in_state(self, state, options={}):
         # TODO: couchapp this, how to make sure that the app is deployed?
-        find = {'map':"function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
+        find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
         uri = '/%s/_temp_view' % self.seed_db.name
         if options:
             uri += '?%s' % urllib.urlencode(options)
@@ -811,9 +829,9 @@ class RotatingDatabase(Database):
         # might need this after all....
         pass
 
-    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers = {},
-                     encode=True, decode=True, contentType=None,
-                     cache=False, rotate=True):
+    def makeRequest(self, uri=None, data=None, type='GET', incoming_headers={},
+                    encode=True, decode=True, contentType=None,
+                    cache=False, rotate=True):
         """
         Intercept the request, determine if I need to rotate, then carry out the
         request as normal.
@@ -829,11 +847,11 @@ class RotatingDatabase(Database):
                 if len(self._queue) > 0:
                     # data I've got queued up should go to the old database
                     # can't call self.commit() due to recursion
-                    uri  = '/%s/_bulk_docs/' % self.name
+                    uri = '/%s/_bulk_docs/' % self.name
                     data['docs'] = list(self._queue)
                     self.makeRequest(uri, data, 'POST', rotate=False)
                     self._reset_queue()
-                self._rotate() # make the new database
+                self._rotate()  # make the new database
                 # The uri passed in will be wrong, and the db may no longer exist if it has expired
                 # so replacte the old name with the new
                 uri.replace(old_db, self.name, 1)
@@ -843,6 +861,7 @@ class RotatingDatabase(Database):
         self._archive()
         self._expire()
 
+
 class CouchServer(CouchDBRequests):
     """
     An object representing the CouchDB server, use it to list, create, delete
@@ -851,12 +870,12 @@ class CouchServer(CouchDBRequests):
     More info http://wiki.apache.org/couchdb/HTTP_database_API
     """
 
-    def __init__(self, dburl = 'http://localhost:5984', usePYCurl = False, ckey = None, cert = None, capath = None):
+    def __init__(self, dburl='http://localhost:5984', usePYCurl=False, ckey=None, cert=None, capath=None):
         """
         Set up a connection to the CouchDB server
         """
         check_server_url(dburl)
-        CouchDBRequests.__init__(self, url = dburl, usePYCurl = usePYCurl, ckey = ckey, cert = cert, capath = capath)
+        CouchDBRequests.__init__(self, url=dburl, usePYCurl=usePYCurl, ckey=ckey, cert=cert, capath=capath)
         self.url = dburl
         self.ckey = ckey
         self.cert = cert
@@ -865,7 +884,7 @@ class CouchServer(CouchDBRequests):
         "List all the databases the server hosts"
         return self.get('/_all_dbs')
 
-    def createDatabase(self, dbname, size = 1000):
+    def createDatabase(self, dbname, size=1000):
         """
         A database must be named with all lowercase characters (a-z),
         digits (0-9), or any of the _$()+-/ characters and must end with a slash
@@ -876,7 +895,7 @@ class CouchServer(CouchDBRequests):
         self.put("/%s" % urllib.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
-        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
+        return Database(dbname=dbname, url=self.url, size=size, ckey=self.ckey, cert=self.cert)
 
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
@@ -884,7 +903,7 @@ class CouchServer(CouchDBRequests):
         dbname = urllib.quote_plus(dbname)
         return self.delete("/%s" % dbname)
 
-    def connectDatabase(self, dbname = 'database', create = True, size = 1000):
+    def connectDatabase(self, dbname='database', create=True, size=1000):
         """
         Return a Database instance, pointing to a database in the server. If the
         database doesn't exist create it if create is True.
@@ -892,11 +911,11 @@ class CouchServer(CouchDBRequests):
         check_name(dbname)
         if create and dbname not in self.listDatabases():
             return self.createDatabase(dbname)
-        return Database(dbname = dbname, url = self.url, size = size, ckey = self.ckey, cert = self.cert)
+        return Database(dbname=dbname, url=self.url, size=size, ckey=self.ckey, cert=self.cert)
 
-    def replicate(self, source, destination, continuous = False,
-                  create_target = False, cancel = False, doc_ids=False,
-                  filter = False, query_params = False):
+    def replicate(self, source, destination, continuous=False,
+                  create_target=False, cancel=False, doc_ids=False,
+                  filter=False, query_params=False):
         """Trigger replication between source and destination. Options are as
         described in http://wiki.apache.org/couchdb/Replication, in summary:
             continuous = bool, trigger continuous replication
@@ -927,8 +946,8 @@ class CouchServer(CouchDBRequests):
             destination = '%s/%s' % (self.url, destination)
         if not source.startswith("http"):
             source = '%s/%s' % (self.url, source)
-        data={"source":source,"target":destination}
-        #There must be a nicer way to do this, but I've not had coffee yet...
+        data = {"source": source, "target": destination}
+        # There must be a nicer way to do this, but I've not had coffee yet...
         if continuous: data["continuous"] = continuous
         if create_target: data["create_target"] = create_target
         if cancel: data["cancel"] = cancel
@@ -953,13 +972,15 @@ class CouchServer(CouchDBRequests):
         """
         return self.listDatabases().__str__()
 
+
 # define some standard couch error classes
 # from:
 #  http://wiki.apache.org/couchdb/HTTP_status_list
 
 class CouchError(Exception):
     "An error thrown by CouchDB"
-    def __init__(self, reason, data, result, status = None):
+
+    def __init__(self, reason, data, result, status=None):
         Exception.__init__(self)
         self.reason = reason
         self.data = data
@@ -974,44 +995,52 @@ class CouchError(Exception):
         else:
             errorMsg = ""
         return errorMsg + "%s - reason: %s, data: %s result: %s" % (self.type,
-                                             self.reason,
-                                             repr(self.data),
-                                             self.result)
+                                                                    self.reason,
+                                                                    repr(self.data),
+                                                                    self.result)
+
 
 class CouchBadRequestError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchBadRequestError"
 
+
 class CouchUnauthorisedError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchUnauthorisedError"
+
 
 class CouchNotFoundError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotFoundError"
 
+
 class CouchNotAllowedError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchNotAllowedError"
+
 
 class CouchConflictError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchConflictError"
 
+
 class CouchPreconditionFailedError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchPreconditionFailedError"
 
+
 class CouchInternalServerError(CouchError):
     def __init__(self, reason, data, result):
         CouchError.__init__(self, reason, data, result)
         self.type = "CouchInternalServerError"
+
 
 class CouchForbidden(CouchError):
     def __init__(self, reason, data, result):
@@ -1020,123 +1049,121 @@ class CouchForbidden(CouchError):
 
 
 class CouchMonitor(object):
-    
     def __init__(self, couchURL):
         if isinstance(couchURL, CouchServer):
             self.couchServer = couchURL
         else:
             self.couchServer = CouchServer(couchURL)
-            
+
         self.replicatorDB = self.couchServer.connectDatabase('_replicator', False)
         # this is set {source: {taget: update_sequence}}
-        self.previousUpdateSequence  = {}
-    
-    def deleteReplicatorDocs(self, source = None, target = None, repDocs = None):
+        self.previousUpdateSequence = {}
+
+    def deleteReplicatorDocs(self, source=None, target=None, repDocs=None):
         if repDocs == None:
             repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
-        
+
         filteredDocs = self._filterReplicationDocs(repDocs, source, target)
         if len(filteredDocs) == 0:
-            return 
+            return
         for doc in filteredDocs:
             self.replicatorDB.queueDelete(doc)
         return self.replicatorDB.commit()
-    
+
     def _filterReplicationDocs(self, repDocs, source, target):
         filteredDocs = []
         for j in repDocs:
             if not j['id'].startswith('_'):
                 if (source == None and target == None) or \
-                   (j['doc']['source'] == source and j['doc']['target'] == target):
+                        (j['doc']['source'] == source and j['doc']['target'] == target):
                     doc = {}
-                    doc["_id"]  = j['id']
+                    doc["_id"] = j['id']
                     doc["_rev"] = j['value']['rev']
                     if "_replication_state" in j["doc"]:
                         doc["_replication_state"] = j["doc"]["_replication_state"]
                     else:
                         logging.error("""replication failed from %s to %s 
-                                         couch server manually need to be restarted""" % (
-                                         replaceToSantizeURL(source), 
-                                         replaceToSantizeURL(target)))
+                                         couch server needs to be manually restarted""" % (
+                                      replaceToSantizeURL(source),
+                                      replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
-    
+
     def getPreviousUpdateSequence(self, source, target):
         targetDict = self.previousUpdateSequence.setdefault(source, {})
         return targetDict.setdefault(target, 0)
-    
+
     def setPreviousUpdateSequence(self, source, target, updateSeq):
         self.previousUpdateSequence[source][target] = updateSeq
-        
-    def recoverReplicationErrors(self, source, target, filter = False, 
-                                 query_params = False,
-                                 checkUpdateSeq = True,
-                                 continuous = True):
-        
+
+    def recoverReplicationErrors(self, source, target, filter=False,
+                                 query_params=False,
+                                 checkUpdateSeq=True,
+                                 continuous=True):
+
         couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
 
-        if (couchInfo['status'] == 'error'):
+        if couchInfo['status'] == 'error':
             logging.info("Deleting the replicator documents from %s..." % source)
             self.deleteReplicatorDocs(source, target)
             logging.info("Setting the replication from %s ..." % source)
-            self.couchServer.replicate(source, target, filter = filter, 
-                                           query_params = query_params,
-                                           continuous = continuous)
-            
+            self.couchServer.replicate(source, target, filter=filter,
+                                       query_params=query_params,
+                                       continuous=continuous)
+
             couchInfo = self.checkCouchServerStatus(source, target, checkUpdateSeq)
-        #if (couchInfo['status'] != 'down'):
+        # if (couchInfo['status'] != 'down'):
         #    restart couch server
         return couchInfo
 
-    
     def checkCouchServerStatus(self, source, target, checkUpdateSeq):
         try:
             if checkUpdateSeq:
-                dbInfo =  self.couchServer.get("/%s" % source)
+                dbInfo = self.couchServer.get("/%s" % source)
             else:
                 dbInfo = None
             activeTasks = self.couchServer.get("/_active_tasks")
             replicationFlag = False
             passwdStrippedURL = target.split("@")[-1]
-            
+
             for activeStatus in activeTasks:
                 if activeStatus["type"].lower() == "replication":
                     if passwdStrippedURL in activeStatus.get("target", ""):
-                        replicationFlag = self.checkReplicationStatus(activeStatus, 
-                                                    dbInfo, source, target, checkUpdateSeq)
+                        replicationFlag = self.checkReplicationStatus(activeStatus,
+                                                                      dbInfo, source, target, checkUpdateSeq)
                         break
-            
+
             if replicationFlag:
                 return {'status': 'ok'}
             else:
-                return {'status':'error', 'error_message': "replication stopped"}
+                return {'status': 'error', 'error_message': "replication stopped"}
         except Exception as ex:
             import traceback
-            msg = traceback.format_exc() 
+            msg = traceback.format_exc()
             logging.error(msg)
-            return {'status':'down', 'error_message': str(ex)}
-        
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, 
-                                      checkUpdateSeq):
+            return {'status': 'down', 'error_message': str(ex)}
+
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target,
+                               checkUpdateSeq):
         """
         adhog way to check the replication
         """
-        
+
         logging.info("checking the replication status")
-        #if activeStatus["started_on"]:
+        # if activeStatus["started_on"]:
         #   logging.info("Starting status: ok")
         #    return True
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)
-        
+
         if activeStatus["updated_on"]:
             updateNum = int(activeStatus["source_seq"])
             self.setPreviousUpdateSequence(source, target, updateNum)
             if not checkUpdateSeq:
-                logging.warning("Need to check replication from %s to %s" % (
-                                replaceToSantizeURL(source), replaceToSantizeURL(target)))
+                logging.warning("Need to check replication from %s to %s", replaceToSantizeURL(source),
+                                                                           replaceToSantizeURL(target))
                 return True
             elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
-                logging.info("update upto date: ok")
+                logging.info("update up-to-date: ok")
                 return True
             else:
                 return False

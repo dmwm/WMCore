@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=W0142
-# W0142: Some people like ** magic
 """
 The actual taskArchiver algorithm
 
@@ -51,6 +49,7 @@ class TaskArchiverPollerException(WMException):
 
     As if you couldn't tell that already
     """
+    pass
 
 class TaskArchiverPoller(BaseWorkerThread):
     """

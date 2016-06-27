@@ -36,6 +36,7 @@ from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
+from WMCore.WMException                          import WMException
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 
@@ -130,6 +131,16 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     # If this doesn't work, exception will propogate up and block archiving the task
     logging.info('Uploaded with name %s and hashkey %s' % (result['name'], result['hashkey']))
     return
+
+
+class CleanCouchPollerException(WMException):
+    """
+    _CleanCouchPollerException_
+
+    Customized exception for the CleanCouchPoller
+    """
+    pass
+
 
 class CleanCouchPoller(BaseWorkerThread):
     """
@@ -260,11 +271,15 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.info("Cleaning up couch db")
             self.cleanCouchDBAndChangeToArchiveStatus()
             logging.info("Done: cleaning up couch db")
-            
+        except Exception as ex:
+            msg = traceback.format_exc()
+            logging.error(msg)
+            logging.error("Error occurred, will try again next cycle")
+
+        try:
             logging.info("Cleaning up wmsbs and disk")
             self.deleteWorkflowFromWMBSAndDisk()
             logging.info("Done: cleaning up wmsbs and disk")
-            
         except Exception as ex:
             msg = traceback.format_exc()
             logging.error(msg)
@@ -335,8 +350,8 @@ class CleanCouchPoller(BaseWorkerThread):
             #TO doesn't store team name in the requset document since there is only one team.
             wfs = self.centralRequestDBReader.getRequestByStatus(self.deletableState)
             
-        commonWfs = self.centralRequestDBReader.getRequestByStatusAndStartTime(self.deletableState, 
-                                                                               False, endTime)
+        commonWfs = self.centralRequestDBReader.getRequestByStatusAndEndTime(self.deletableState,
+                                                                             False, endTime)
         
         finishedWfs = set(DataCache.getFinishedWorkflows().keys())
         deletableWorkflows = list(set(wfs) & set(commonWfs) & finishedWfs)
@@ -550,7 +565,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         #should be gone by now
                         msg = "Workflow %s, Task %s was not deleted completely" % (wmbsWorkflow.name,
                                                                                    wmbsWorkflow.task)
-                        raise TaskArchiverPollerException(msg)
+                        raise CleanCouchPollerException(msg)
 
                     #Now delete directories
                     _, taskDir = getMasterName(startDir = self.jobCacheDir,
@@ -564,7 +579,7 @@ class CleanCouchPoller(BaseWorkerThread):
                             # This should never happen and there is no way we can recover
                             # from this here. Bail out now and have someone look at things.
                             msg = "Work directory is not a directory, this should never happen: %s" % taskDir
-                            raise TaskArchiverPollerException(msg)
+                            raise CleanCouchPollerException(msg)
                     else:
                         msg = "Attempted to delete work directory but it was already gone: %s" % taskDir
                         logging.debug(msg)

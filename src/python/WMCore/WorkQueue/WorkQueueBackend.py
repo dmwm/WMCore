@@ -5,16 +5,16 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+import json
 import random
 import time
 import urllib
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
-from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
-from WMCore.Wrappers import JsonWrapper as json
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.Lexicon import sanitizeURL
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
+from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 
 
 def formatReply(answer, *items):

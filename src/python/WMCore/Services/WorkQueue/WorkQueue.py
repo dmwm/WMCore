@@ -1,7 +1,9 @@
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
-from WMCore.Wrappers import JsonWrapper as json
+import json
+
+from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+
 
 # TODO: this could be derived from the Service class to use client side caching
 class WorkQueue(object):

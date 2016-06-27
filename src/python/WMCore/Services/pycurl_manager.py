@@ -10,15 +10,14 @@ from a single resource or submit mutliple requests to
 underlying data-services.
 """
 from __future__ import print_function
-import pycurl
-import urllib
+
+import cStringIO as StringIO
 import httplib
+import json
 import logging
-from WMCore.Wrappers import JsonWrapper as json
-try:
-    import cStringIO as StringIO
-except:
-    import StringIO
+import urllib
+
+import pycurl
 
 class ResponseHeader(object):
     """ResponseHeader parses HTTP response header"""

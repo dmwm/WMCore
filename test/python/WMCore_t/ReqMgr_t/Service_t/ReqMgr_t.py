@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+
+import json
 import os
 import unittest
 
-#from WMCore_t.ReqMgr_t.Config import Config
 from WMCore_t.ReqMgr_t.TestConfig import config
-from WMCore.Wrappers import JsonWrapper
+
+from WMCore.REST.Test import fake_authz_headers
+from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.WMBase import getWMBASE
 from WMQuality.REST.RESTBaseUnitTestWithDBBackend import RESTBaseUnitTestWithDBBackend
-from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.REST.Test import fake_authz_headers
 
 req_args = {"RequestType": "ReReco", "RequestStatus": None}
 ADMIN_PERMISSION = getWritePermission(req_args) 
@@ -79,7 +80,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
         rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
         
-        rerecoArgs = JsonWrapper.load(rerecoFile)
+        rerecoArgs = json.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
         self.rerecoCreateArgs["PrepID"] = "test_prepid"
         self.rerecoCreateArgs["MCPileup"] = "/MCdata/pileup/RAW"
@@ -89,7 +90,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.rerecoAssignArgs["AcquisitionEra"] = "test_aqc"
         
         lheFile = open(os.path.join(requestPath, "TaskChain_Data.json"), 'r')
-        lheArgs = JsonWrapper.load(lheFile)
+        lheArgs = json.load(lheFile)
         self.lheStep0CreateArgs = lheArgs["createRequest"]
         self.lheStep0AssignArgs = lheArgs["assignRequest"]
         self.lheStep0AssignArgs["AcquisitionEra"] = "test_aqc"

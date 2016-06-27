@@ -1,15 +1,14 @@
+import os
+import unittest
+from json import loads
+
+import nose
 from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t, recordException
+from nose.plugins.attrib import attr
 
 from WMCore.ACDC.DataCollectionService import DataCollectionService
-from WMCore.Wrappers.JsonWrapper import loads
-from WMCore.WMBase import getTestBase
 from WMCore.Database.CMSCouch import Database
-
-import os
-import time
-import unittest
-import nose
-from nose.plugins.attrib import attr
+from WMCore.WMBase import getTestBase
 
 
 class ACDCLifeCycle_t(RequestLifeCycleBase_t, unittest.TestCase):

@@ -25,8 +25,6 @@
     "Memory": 2200,
     "SizePerEvent": 1234,
     "TimePerEvent": 0.5,
-    "mergedLFNBase": "/store/relval",
-    "unmergedLFNBase": "/store/unmerged",
     "ProcessingString": "GR_R_73_V0A_TEST_RelVal_jetHT2012c"
 },
 "assignRequest":
@@ -38,7 +36,7 @@
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "ProcessingVersion": 1,
     "SiteBlacklist": [],
-    "MergedLFNBase": "/store/relval",
+    "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
     "MinMergeSize": 2147483648,
     "MaxMergeEvents": 100000,

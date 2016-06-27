@@ -3,31 +3,30 @@ ReqMgr request handling.
 
 """
 
-import cherrypy
+import json
 import traceback
 
-from WMCore.Lexicon import sanitizeURL
-from WMCore.Database.CMSCouch import CouchError
-from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
-from WMCore.Wrappers import JsonWrapper
-
-from WMCore.REST.Server import RESTEntity, restcall, rows
-from WMCore.REST.Validation import validate_str
-from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
+import cherrypy
 
 import WMCore.ReqMgr.Service.RegExp as rx
+from WMCore.Database.CMSCouch import CouchError
+from WMCore.Lexicon import sanitizeURL
+from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
+from WMCore.REST.Server import RESTEntity, restcall, rows
+from WMCore.REST.Validation import validate_str
+from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST,\
     REQUEST_STATE_TRANSITION, ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
-from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.ReqMgr.Utils.Validation import validate_request_create_args,\
     validate_request_update_args, loadRequestSchema
-
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
-    
+from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
+
+
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
@@ -90,7 +89,7 @@ class Request(RESTEntity):
     def _validateRequestBase(self, param, safe, valFunc, requestName=None):
         data = cherrypy.request.body.read()
         if data:
-            request_args = JsonWrapper.loads(data)
+            request_args = json.loads(data)
             if requestName:
                 request_args["RequestName"] = requestName
             if isinstance(request_args, dict):
@@ -153,7 +152,7 @@ class Request(RESTEntity):
 
         data = cherrypy.request.body.read()
         if data:
-            request_names, request_args = self._getMultiRequestArgs(JsonWrapper.loads(data))
+            request_names, request_args = self._getMultiRequestArgs(json.loads(data))
         else:
             # actually this is error case
             # cherrypy.log(str(param.kwargs))
@@ -185,7 +184,7 @@ class Request(RESTEntity):
 
     def _getRequestNamesFromBody(self, param, safe, valFunc):
 
-        request_names = JsonWrapper.loads(cherrypy.request.body.read())
+        request_names = json.loads(cherrypy.request.body.read())
         safe.kwargs['workload_pair_list'] = request_names
         safe.kwargs["multi_names_flag"] = True
 
@@ -610,7 +609,7 @@ class Request(RESTEntity):
         NOTES:
         1) do not strip spaces, #4705 will fails upon injection with spaces;
             currently the chain relies on a number of things coming in #4705
-        2) reqInputArgs = Utilities.unidecode(JsonWrapper.loads(body))
+        2) reqInputArgs = Utilities.unidecode(json.loads(body))
             (from ReqMgrRESTModel.putRequest)
         """
 

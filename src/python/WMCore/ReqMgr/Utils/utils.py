@@ -8,11 +8,9 @@ Description: Set of utilities for RequestManager code
 """
 
 # system modules
+import cStringIO as StringIO
 import xml.etree.cElementTree as ET
-try:
-    import cStringIO as StringIO
-except:
-    import StringIO
+
 
 def xml_parser(data, prim_key, tags=None):
     "Generic XML parser"

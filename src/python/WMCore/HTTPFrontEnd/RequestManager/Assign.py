@@ -7,21 +7,22 @@ Handles site whitelist/blacklist info as well.
 
 """
 
-import cherrypy
+import json
 import threading
 
+import cherrypy
+
+import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
+import WMCore.Lexicon
 import WMCore.RequestManager.RequestDB.Interface.Admin.ProdManagement as ProdManagement
 import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
-import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
-from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 from WMCore.Database.CMSCouch import Database
-import WMCore.Lexicon
-from WMCore.Wrappers import JsonWrapper
-from WMCore.WebTools.WebAPI import WebAPI
+from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMSpec.WMWorkloadTools import strToBool
-from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.WebTools.WebAPI import WebAPI
 
 
 class Assign(WebAPI):
@@ -269,7 +270,7 @@ class Assign(WebAPI):
         decodedArgs = {}
         for key in kwargs.keys():
             try:
-                decodedArgs[key] = JsonWrapper.loads(kwargs[key])
+                decodedArgs[key] = json.loads(kwargs[key])
             except Exception:
                 # Probably wasn't JSON
                 decodedArgs[key] = kwargs[key]

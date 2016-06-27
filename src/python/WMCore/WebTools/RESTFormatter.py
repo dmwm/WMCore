@@ -8,12 +8,12 @@ appropriate format and sets the CherryPy header appropriately.
 Could add YAML via http://pyyaml.org/
 """
 import json
+from types import GeneratorType
+
+from cherrypy import response, HTTPError, request
 
 from WMCore.WebTools.Page import TemplatedPage, _setCherryPyHeaders
-from cherrypy import response, HTTPError, request
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
-from WMCore.Wrappers import JsonWrapper
-from types import GeneratorType
 
 class RESTFormatter(TemplatedPage):
     def __init__(self, config):
@@ -45,7 +45,7 @@ class RESTFormatter(TemplatedPage):
             return out
         thunker = JSONThunker()
         data = thunker.thunk(data)
-        return JsonWrapper.dumps(data)
+        return json.dumps(data)
 
     def xml(self, data):
         if isinstance(data, GeneratorType):

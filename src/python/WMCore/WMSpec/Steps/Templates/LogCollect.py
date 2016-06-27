@@ -40,6 +40,23 @@ class LogCollectStepHelper(CoreHelper):
         Adds an out location to put a tarball of all logs
         """
 
+    def cmsswSetup(self, cmsswVersion, **options):
+        """
+        _cmsswSetup_
+        Provide setup details for CMSSW.
+        cmsswVersion - required - version of CMSSW to use
+        Optional:
+        scramCommand - defaults to scramv1
+        scramProject - defaults to CMSSW
+        scramArch    - optional scram architecture, defaults to None
+        buildArch    - optional scram build architecture, defaults to None
+        softwareEnvironment - setup command to bootstrap scram,defaults to None
+        """
+        self.data.application.setup.cmsswVersion = cmsswVersion
+        for k,v in options.items():
+            setattr(self.data.application.setup, k, v)
+        return
+
 
 class LogCollect(Template):
     """
@@ -56,7 +73,13 @@ class LogCollect(Template):
         step.logcount = 0
         step.retryCount = 3
         step.retryDelay = 300
-
+        step.application.section_("setup")
+        step.application.setup.scramCommand = "scramv1"
+        step.application.setup.scramProject = "CMSSW"
+        step.application.setup.cmsswVersion = None
+        step.application.setup.scramArch = None
+        step.application.setup.buildArch = None
+        step.application.setup.softwareEnvironment = None
 
     def helper(self, step):
         """

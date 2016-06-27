@@ -5,13 +5,13 @@ _outputmodules-from-config_
 Pull output module metadata from a CMSSW config.
 """
 
+import imp
+import os
 import sys
 import tempfile
-import os
 import urllib
-import imp
+from json import JSONEncoder, JSONDecoder
 
-from WMCore.Wrappers.JsonWrapper import JSONEncoder, JSONDecoder
 
 def loadConfig(configPath):
     """

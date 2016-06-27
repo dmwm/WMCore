@@ -8,18 +8,16 @@ from __future__ import print_function
 
 import os
 import unittest
+from json import JSONDecoder
 
 import WMCore.WMSpec.WMStep as WMStep
 import WMCore.WMSpec.WMTask as WMTask
-
-from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Database.CMSCouch import CouchServer, Document
+from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
-from WMCore.Wrappers.JsonWrapper import JSONDecoder
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 class PileupFetcherTest(unittest.TestCase):

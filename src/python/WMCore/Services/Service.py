@@ -48,6 +48,23 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
+import datetime
+import json
+import logging
+import os
+import time
+from cStringIO import StringIO
+from httplib import HTTPException
+
+from WMCore.Services.Requests import Requests, JSONRequests
+from WMCore.WMException import WMException
+
+try:
+    from httplib2 import HttpLib2Error
+except ImportError:
+    #Mock HttpLib2Error since we don't want that WMCore depend on httplib2 using pycurl
+    class HttpLib2Error(Exception):
+        pass
 
 def isfile(obj):
     # Any better way of identifying if an object is a file?
@@ -71,29 +88,6 @@ def cache_expired(cache, delta = 0):
             return True
 
     return False
-
-
-import datetime
-import os
-import time
-import logging
-try:
-    from cStringIO import cStringIO as StringIO
-except ImportError:
-    from StringIO import StringIO
-
-try:
-    from httplib2 import HttpLib2Error
-except ImportError:
-    #Mock HttpLib2Error since we don't want that WMCore depend on httplib2 using pycurl
-    class HttpLib2Error(Exception):
-        pass
-
-from httplib import HTTPException
-
-from WMCore.Services.Requests import Requests, JSONRequests
-from WMCore.WMException import WMException
-from WMCore.Wrappers import JsonWrapper as json
 
 
 class Service(dict):

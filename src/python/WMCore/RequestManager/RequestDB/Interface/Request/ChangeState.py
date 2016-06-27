@@ -6,13 +6,11 @@ State Change API methods
 
 
 """
-import logging
 from cherrypy import HTTPError
 
-from WMCore.Wrappers.JsonWrapper import JSONEncoder
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
-from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Database.CMSCouch import Database
+from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 # TODO: Merge with getRequest.requestID
 def getRequestID(factory, requestName):

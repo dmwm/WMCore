@@ -1,8 +1,10 @@
 from __future__ import (division, print_function)
 
-from WMCore.Wrappers import JsonWrapper
+import json
+
 from WMCore.Services.Service import Service
-    
+
+
 class WMArchiver(Service):
     """
     This is skelton class which need be implemented.
@@ -22,7 +24,7 @@ class WMArchiver(Service):
         httpDict.setdefault('cacheduration', 0)
         httpDict.setdefault("accept_type", "application/json")
         httpDict.update(header)
-        self.encoder = JsonWrapper.dumps
+        self.encoder = json.dumps
         Service.__init__(self, httpDict)        
     
 

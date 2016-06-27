@@ -38,9 +38,6 @@ except :
     print("Your default python is %s \n" % sys.version)
     sys.exit(1)
 
-# manage json library using the appropriate WMCore wrapper
-#from WMCore.Wrappers import JsonWrapper as json
-
 ##########################################################################
 
 class MyJSONEncoder:

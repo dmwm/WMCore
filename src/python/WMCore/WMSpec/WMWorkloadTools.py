@@ -8,17 +8,17 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+import json
 import logging
 
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.Wrappers import JsonWrapper
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 
 def makeLumiList(lumiDict):
     try:
         if isinstance(lumiDict, basestring):
-            lumiDict = JsonWrapper.loads(lumiDict)
+            lumiDict = json.loads(lumiDict)
         ll = LumiList(compactList=lumiDict)
         return ll.getCompactList()
     except:

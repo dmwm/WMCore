@@ -126,7 +126,7 @@ config.CoreDatabase.connectUrl = databaseUrl
 #config.CoreDatabase.socket = databaseSocket
 
 config.section_("DashboardReporter")
-config.DashboardReporter.dashboardHost = "cms-wmagent-job.cern.ch"
+config.DashboardReporter.dashboardHost = "cms-jobmon.cern.ch"
 config.DashboardReporter.dashboardPort = 8884
 
 config.component_('WorkQueueManager')

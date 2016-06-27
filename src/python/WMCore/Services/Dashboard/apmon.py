@@ -423,12 +423,7 @@ class ApMon(object):
                 self.configRecheck = True
                 self.configRecheckInterval = 600
                 self.__reloadAddresses()
-            elif isinstance(initValue, list):
-                self.configAddresses = initValue
-                self.configRecheck = True
-                self.configRecheckInterval = 600
-                self.__reloadAddresses()
-            elif isinstance(initValue, tuple):
+            elif isinstance(initValue, (list, tuple)):
                 self.configAddresses = []
                 for dest in initValue:
                     self.__addDestination(dest, self.destinations)
@@ -831,7 +826,7 @@ class ApMon(object):
                         crtParamsBuffer = buf
                         crtParamsBuffSize = bufLen
         else:
-            self.logger.log(Logger.WARNING, "Unsupported params type in sendParameters: " + str(type(params)))
+            self.logger.log(Logger.ERROR, "Unsupported params type in sendParameters: " + str(type(params)))
 
         paramBlocks.append((crtParamsCount, crtParamsBuffer)) # update last params block
         paramPacker.reset()
@@ -871,6 +866,10 @@ class ApMon(object):
         if value is None:
             self.logger.log(Logger.WARNING, "Ignore " + str(name)+ " parameter because of None value")
             return False
+        if isinstance(name, unicode):
+            name = str(name)
+        if isinstance(value, unicode):
+            value = str(value)
         try:
             typeValue = self.__valueTypes[type(value)]
             xdrPacker.pack_string(name)
@@ -930,16 +929,18 @@ class ApMon(object):
         """
         Try to generate a more random instance id. It takes the process ID and
         combines it with the last digit from the IP addess and a random number
+
+	Notice the random number generated must be represented by a signed int
+	of 32 bits, otherwise it breaks xdr library.
         """
         pid = os.getpid()
-        ip = random.randint(0, 255)
         try:
             sip = socket.gethostbyname(socket.gethostname())
             ip = int(sip[1+sip.rfind('.'):])
         except socket.error:
-            pass
+            ip = random.randint(0, 255)
         rnd = random.randint(0, 255)
-        return(pid << 16) | (ip << 8) | rnd
+        return ((pid << 8) | (ip << 16) | rnd) & 2**31 - 1
 
 
     ################################################################################################
@@ -949,7 +950,7 @@ class ApMon(object):
     __valueTypes = {
         type("string"): 0,  # XDR_STRING(see ApMon.h from C/C++ ApMon version)
         type(1): 2, 		# XDR_INT32
-        type(1): 5,		    # send longs as doubles
+        type(1L): 5,		    # send longs as doubles
         type(1.0): 5}		# XDR_REAL64
 
     __packFunctions = {

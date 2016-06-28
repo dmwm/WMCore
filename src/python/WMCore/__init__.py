@@ -6,5 +6,5 @@ Core libraries for Workload Management Packages
 
 """
 
-__version__ = '1.0.16.crab3'
+__version__ = '1.0.16.crab4'
 __all__ = []

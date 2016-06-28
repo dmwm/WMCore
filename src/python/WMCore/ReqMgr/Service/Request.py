@@ -92,8 +92,6 @@ class Request(RESTEntity):
             request_args = json.loads(data)
             if requestName:
                 request_args["RequestName"] = requestName
-            if isinstance(request_args, dict):
-                request_args = [request_args]
 
         else:
             # actually this is error case
@@ -194,7 +192,7 @@ class Request(RESTEntity):
         # make param empty
         # other wise raise the error
         try:
-            if method in ['GET']:
+            if method == 'GET':
                 self._validateGET(param, safe)
 
             if method == 'PUT':
@@ -462,11 +460,8 @@ class Request(RESTEntity):
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         
         req_status = request_args["RequestStatus"]
-        
-        if not request_args.get('Team', '').strip() and \
-           not request_args.get('Teams', []) and req_status == "assigned":
-            raise InvalidSpecParameterValue("Team need to be set when assign the workflow: %s" % 
-                                            request_args)
+        if req_status == "assigned" and not request_args.get('Team', '').strip():
+            raise InvalidSpecParameterValue("Team must be set during workflow assignment: %s" % request_args)
             
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
             request_args['SoftTimeout'] = int(request_args['SoftTimeout'])
@@ -506,14 +501,11 @@ class Request(RESTEntity):
         return report
     
     def _handleOnlyStateTransition(self, workload, req_status, dn):
-        
         """
-        only handles state transition, when aborted and force completed.
-        GQ elements need to be cancelled.
-        Allows assigned and assigned approved transition without args update
+        It handles only the state transition. Special handling needed if a
+        request is aborted or force completed.
         """
-        # incase only the state transition happens
-        if req_status == "aborted" or req_status == "force-complete":
+        if req_status in ["aborted", "force-complete"]:
             # cancel the workflow first
             self.gq_service.cancelWorkflow(workload.name())
         #update the request status in couchdb   
@@ -521,22 +513,19 @@ class Request(RESTEntity):
         return report
     
     def _updateRequest(self, workload, request_args):
+        dn = cherrypy.request.user.get("dn", "unknown")
 
-        if workload == None:
+        if workload is None:
             (workload, request_args) = self.initialize_clone(request_args["OriginalRequestName"])
             return self.post([workload, request_args])
 
-        dn = cherrypy.request.user.get("dn", "unknown")
-   
         if "RequestStatus" not in request_args:
             report = self._handleNoStatusUpdate(workload, request_args)
             
         else:
             req_status = request_args["RequestStatus"]
-            
-            if len(request_args) > 1 and req_status in ["assigned", "assignment-approved"]:
+            if len(request_args) > 1 and req_status == "assigned":
                 report = self._handleAssignmentStateTransition(workload, request_args, dn)
-            
             elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
                 "cascade" in request_args:
                 report = self._handleCascadeUpdate(workload, request_args, dn)
@@ -554,7 +543,7 @@ class Request(RESTEntity):
 
     @restcall(formats=[('application/json', JSONFormat())])
     def put(self, workload_pair_list):
-        "workloadPairList is a list of tuple containing (workload, requeat_args)"
+        """workloadPairList is a list of tuple containing (workload, requeat_args)"""
         report = []
         for workload, request_args in workload_pair_list:
             result = self._updateRequest(workload, request_args)

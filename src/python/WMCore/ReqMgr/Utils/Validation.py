@@ -72,17 +72,14 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     
     TODO: rasie right kind of error with clear message 
     """
-
-    request_name = request_args["RequestName"]
-    # this need to be deleted for validation
-    del request_args["RequestName"]
+    # this needs to be deleted for validation
+    request_name = request_args.pop("RequestName")
     couchurl =  '%s/%s' % (config.couch_host, config.couch_reqmgr_db)
     workload = WMWorkloadHelper()
-    # param structure is RESTArgs structure.
     workload.loadSpecFromCouch(couchurl, request_name)
     
     # first validate the permission by status and request type.
-    # if the status is not set only ReqMgr Admin can change the the values
+    # if the status is not set only ReqMgr Admin can change the values
     # TODO for each step, assigned, approved, announce find out what other values
     # can be set
     request_args["RequestType"] = workload.requestType()
@@ -93,7 +90,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     #validate the status
     if "RequestStatus" in request_args:
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
-        # delete request_args since it is not part of spec argument sand validation
+        # delete request_args since it is not part of spec argument and validation
         args_without_status = {}
         args_without_status.update(request_args)
         del args_without_status["RequestStatus"]
@@ -102,11 +99,8 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
 
     if len(args_without_status) == 1:
         if 'RequestPriority' in args_without_status:
-            try:
-                args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
-                if args_without_status['RequestPriority'] < 0 or args_without_status['RequestPriority'] >= 1e6:
-                    raise TypeError
-            except TypeError:
+            args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
+            if (lambda x: (x >= 0 and x < 1e6))(args_without_status['RequestPriority']) is False:
                 raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
             return workload, args_without_status
         elif 'cascade' in args_without_status:

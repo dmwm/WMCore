@@ -14,6 +14,7 @@ import sys
 import json
 import time
 import pprint
+import collections
 
 # cherrypy modules
 import cherrypy
@@ -153,6 +154,19 @@ def check_scripts(scripts, resource, path):
             if os.path.isfile(spath):
                 resource.update({script: spath})
     return scripts
+
+# code taken from
+# http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
+def toString(data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(toString, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(toString, data))
+    else:
+        return data
+
 
 class ReqMgrService(TemplatedPage):
     """
@@ -335,7 +349,7 @@ class ReqMgrService(TemplatedPage):
                                     sites=sites(),
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
-                                    user=user(), user_dn=user_dn(), requests=docs,
+                                    user=user(), user_dn=user_dn(), requests=toString(docs),
                                     misc_table=json2table(misc_json, web_ui_names()),
                                     misc_json=json2form(misc_json, indent=2, keep_first_value=True))
         return self.abs_page('assign', content)
@@ -361,7 +375,7 @@ class ReqMgrService(TemplatedPage):
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
-        content = self.templatepage('approve', requests=docs, date=tstamp(),
+        content = self.templatepage('approve', requests=toString(docs), date=tstamp(),
                                     sort=sortby, filter_sort_table=filter_sort)
         return self.abs_page('approve', content)
 
@@ -465,7 +479,7 @@ class ReqMgrService(TemplatedPage):
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
-        content = self.templatepage('requests', requests=docs, sort=sortby,
+        content = self.templatepage('requests', requests=toString(docs), sort=sortby,
                                     status=kwds['status'], filter_sort_table=filter_sort)
         return self.abs_page('requests', content)
 

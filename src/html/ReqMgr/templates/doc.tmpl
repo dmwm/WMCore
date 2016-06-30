@@ -88,6 +88,7 @@ $jsondata
 
 <script>
 function ChangeRequestStatus() {
+    var doc=$doc;
     var parameters = {'RequestStatus':\$('#RequestStatus').val()};
     if(parameters["RequestStatus"] == '$status' || parameters["status"] == 'no-change') {
         delete parameters["RequestStatus"];
@@ -96,7 +97,9 @@ function ChangeRequestStatus() {
     var inputs = \$('.visible_input');
     for(var i=0; i<inputs.length; i++) {
         var elem = inputs[i];
-        parameters[elem.name] = elem.value;
+        if(elem.value != doc[elem.name]) {
+            parameters[elem.name] = elem.value;
+        }
     }
     ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }

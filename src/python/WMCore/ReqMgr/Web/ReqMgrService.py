@@ -11,6 +11,7 @@ __author__ = "Valentin Kuznetsov"
 # system modules
 import os
 import sys
+import json
 import time
 import pprint
 
@@ -429,6 +430,7 @@ class ReqMgrService(TemplatedPage):
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(doc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
+                                        doc=json.dumps(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]

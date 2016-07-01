@@ -26,10 +26,12 @@ APMONINIT = False
 #APMONCONF = {'dashb-ai-584.cern.ch:8884': {'sys_monitoring' : 0, \
 #                                    'general_info'   : 0, \
 #                                    'job_monitoring' : 0} }
-APMONCONF = {'cms-jobmon.cern.ch:8884': {'sys_monitoring': 0,
-                                         'general_info': 0,
-                                         'job_monitoring': 0}}
-
+# Export default params to it's own variable, as WMAgent might want
+# to report to diff endhost.
+DEFAULT_PARAMS = {'sys_monitoring': 0,
+                  'general_info': 0,
+                 'job_monitoring': 0}
+APMONCONF = {'cms-jobmon.cern.ch:8884': DEFAULT_PARAMS}
 
 
 APMONLOGGINGLEVEL = apmon.Logger.ERROR

@@ -110,7 +110,7 @@ class RequestDBReader():
     def _getRequestByStatusAndEndTime(self, status, detail, endTime):
         """
         'status': is the status of the workflow
-        'startTime': unix timestamp for start time
+	'endTime': unix timestamp for end time
         """
         options = {}
         options["include_docs"] = detail
@@ -195,7 +195,7 @@ class RequestDBReader():
         :return: a list of request names
         """
         if endTime == 0:
-            data = self._getRequestByStatus([status], detail, limit = None, skip = None)
+            data = self._getRequestByStatus([status], detail, limit=None, skip=None)
         else:
             data = self._getRequestByStatusAndEndTime(status, detail, endTime)
             

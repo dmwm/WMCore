@@ -131,11 +131,11 @@ def gatherWMDataMiningStats(wmstatsUrl, reqmgrUrl, wmMiningUrl,
                             (exc_type, prepID))
 
             # Basic parameters of the workflow
-            priority = requests[wf]['priority']
-            requestType = requests[wf]['request_type']
+            priority = requests[wf].get('priority', 0)
+            requestType = requests[wf].get('request_type', 'Unknown')
             targetLumis = requests[wf].get('input_lumis', 0)
             targetEvents = requests[wf].get('input_events', 0)
-            campaign = requests[wf]['campaign']
+            campaign = requests[wf].get('campaign', 'Unknown')
             prep_id = requests[wf].get('prep_id', None)
             outputdatasets = requests[wf].get('outputdatasets', [])
             statuses = requests[wf].get('request_status', [])

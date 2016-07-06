@@ -18,6 +18,8 @@ if __name__ == '__main__':
              {'callname': 'data-processing', 'filename': 'data-processing.json', 'clearCache': False, 'verb': 'GET', 'data':{}}
             ]
 
+    extraSitenames = { 'site-names':[{"site_name": "T2_XX_SiteA", "type": "psn","alias": "T2_XX_SiteA"}]   }
+
     dns = ["/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
            "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jha/CN=618566/CN=Manoj Jha"]
     lookup = {}
@@ -29,13 +31,20 @@ if __name__ == '__main__':
     siteDB = SiteDBAPI()
     for call in calls:
         signature = str(sorted(call.iteritems()))
+        callname = call['callname']
         try:
             result = siteDB.getJSON(**call)
         except HTTPError:
             result = 'Raises HTTPError'
 
-        if call['callname'] == 'people':
+        if callname == 'people':
             result = [res  for res in result for dn in dns if res['dn'] == dn]
+        elif callname == 'site-names':
+            for extraSitename in extraSitenames[callname]:
+                result.append(extraSitename)
+        else:
+            result = result
+
         lookup.update({signature:result})
     with open(outFilename, 'w') as mockData:
-        json.dump(lookup, mockData, indent=1, separators=(',', ': '))
+        json.dump(lookup, mockData, indent=1, separators=(',', ': '), sort_keys=True)

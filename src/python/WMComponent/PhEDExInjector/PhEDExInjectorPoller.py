@@ -71,6 +71,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
     Poll the DBSBuffer database and inject files as they are created.
     """
+
     def __init__(self, config):
         """
         ___init___
@@ -85,7 +86,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if getattr(config.PhEDExInjector, "subscribeDatasets", False):
             pollInterval = config.PhEDExInjector.pollInterval
             subInterval = config.PhEDExInjector.subscribeInterval
-            self.subFrequency = max(1, int(round(subInterval/pollInterval)))
+            self.subFrequency = max(1, int(round(subInterval / pollInterval)))
             logging.info("SubscribeDataset and deleteBlocks will run every %d polling cycles", self.subFrequency)
             # subscribe on first cycle
             self.pollCounter = self.subFrequency - 1
@@ -122,7 +123,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         # initialize the alert framework (if available - config.Alert present)
         #    self.sendAlert will be then be available
-        self.initAlerts(compName = "PhEDExInjector")
+        self.initAlerts(compName="PhEDExInjector")
 
         self.blocksToRecover = []
 
@@ -135,23 +136,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         Create DAO Factory and setup some DAO.
         """
         myThread = threading.currentThread()
-        daofactory = DAOFactory(package = "WMComponent.PhEDExInjector.Database",
-                                logger = self.logger,
-                                dbinterface = myThread.dbi)
+        daofactory = DAOFactory(package="WMComponent.PhEDExInjector.Database",
+                                logger=self.logger, dbinterface=myThread.dbi)
 
-        self.getUninjected = daofactory(classname = "GetUninjectedFiles")
-        self.getMigrated = daofactory(classname = "GetMigratedBlocks")
+        self.getUninjected = daofactory(classname="GetUninjectedFiles")
+        self.getMigrated = daofactory(classname="GetMigratedBlocks")
 
-        self.findDeletableBlocks = daofactory(classname = "GetDeletableBlocks")
-        self.markBlocksDeleted = daofactory(classname = "MarkBlocksDeleted")
-        self.getUnsubscribed = daofactory(classname = "GetUnsubscribedDatasets")
-        self.markSubscribed = daofactory(classname = "MarkDatasetSubscribed")
+        self.findDeletableBlocks = daofactory(classname="GetDeletableBlocks")
+        self.markBlocksDeleted = daofactory(classname="MarkBlocksDeleted")
+        self.getUnsubscribed = daofactory(classname="GetUnsubscribedDatasets")
+        self.markSubscribed = daofactory(classname="MarkDatasetSubscribed")
 
-        daofactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                logger = self.logger,
-                                dbinterface = myThread.dbi)
-        self.setStatus = daofactory(classname = "DBSBufferFiles.SetPhEDExStatus")
-        self.setBlockClosed = daofactory(classname = "SetBlockClosed")
+        daofactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                logger=self.logger, dbinterface=myThread.dbi)
+        self.setStatus = daofactory(classname="DBSBufferFiles.SetPhEDExStatus")
+        self.setBlockClosed = daofactory(classname="SetBlockClosed")
 
         return
 
@@ -219,14 +218,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         Transform the data structure returned from database in to the dict format
         for the PhEDEx Data Service.  The injectionData parameter must be
-        a dictionary keyed by dataset path.  
-        
+        a dictionary keyed by dataset path.
+
         unInjectedData format
         {"dataset1":
           {"block1": {"is-open": "y", "files":
             [{"lfn": "lfn1", "size": 10, "checksum": {"cksum": "1234"}},
              {"lfn": "lfn2", "size": 20, "checksum": {"cksum": "4321"}}]}}}
-        
+
         returns
         [{"block1": set(["lfn1", "lfn2"])}, {"block2": set(["lfn3", "lfn4"])]
         """
@@ -235,7 +234,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
             for blockName, fileBlock in unInjectedData[datasetPath].items():
 
-                newBlock = { blockName: set() }
+                newBlock = {blockName: set()}
 
                 for fileDict in fileBlock["files"]:
                     newBlock[blockName].add(fileDict["lfn"])
@@ -243,7 +242,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 blocks.append(newBlock)
 
         return blocks
-    
+
     def injectFiles(self):
         """
         _injectFiles_
@@ -273,7 +272,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if location == None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
-                self.sendAlert(7, msg = msg)
+                self.sendAlert(7, msg=msg)
                 continue
 
             maxDataset = 20
@@ -296,7 +295,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         lfnList.append(fileInfo['lfn'])
 
                 if numberDatasets >= maxDataset or numberBlocks >= maxBlocks or numberFiles >= maxFiles:
-
                     self.injectFilesPhEDExCall(location, injectData, lfnList)
                     numberDatasets = 0
                     numberBlocks = 0
@@ -324,7 +322,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             # HTTPException with status 400 assumed to be duplicate injection
             # trigger later block recovery (investgation needed if not the case)
             if ex.status == 400:
-                self.blocksToRecover.extend( self.createRecoveryFileFormat(injectData) )
+                self.blocksToRecover.extend(self.createRecoveryFileFormat(injectData))
             logging.error("PhEDEx file injection failed with HTTPException: %s %s", ex.status, ex.result)
         except Exception as ex:
             logging.error("PhEDEx file injection failed with Exception: %s", str(ex))
@@ -335,7 +333,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if "error" in injectRes:
                 msg = "Error injecting data %s: %s" % (injectData, injectRes["error"])
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(6, msg=msg)
             else:
                 try:
                     self.setStatus.execute(lfnList, 1)
@@ -379,7 +377,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if location == None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
-                self.sendAlert(6, msg = msg)
+                self.sendAlert(6, msg=msg)
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
@@ -403,14 +401,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 else:
                     msg = "Error injecting data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
                     logging.error(msg)
-                    self.sendAlert(6, msg = msg)
+                    self.sendAlert(6, msg=msg)
 
         return
 
     def recoverInjectedFiles(self):
         """
         When PhEDEx inject call timed out, run this function.
-        Since there are 3 min reponse time out in cmsweb, some times 
+        Since there are 3 min reponse time out in cmsweb, some times
         PhEDEx injection call times out even though the call succeeded
         In that case run the recovery mode
         1. first check whether files which injection status = 0 are in the PhEDEx.
@@ -430,7 +428,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         self.blocksToRecover = []
         return
-        
+
     def deleteBlocks(self):
         """
         _deleteBlocks_
@@ -444,7 +442,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         """
         logging.info("Starting deleteBlocks method")
 
-        blockDict = self.findDeletableBlocks.execute(transaction = False)
+        blockDict = self.findDeletableBlocks.execute(transaction=False)
 
         if not blockDict:
             return
@@ -471,14 +469,13 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             sites = blockDict[blockName]['sites']
 
             if blockName in subscriptions and location in subscriptions[blockName]:
-                logging.debug("Block %s subscribed to %s, skip deletion",  blockName, location)
-                binds = { 'DELETED': 2,
-                          'BLOCKNAME': blockName }
+                logging.debug("Block %s subscribed to %s, skip deletion", blockName, location)
+                binds = {'DELETED': 2, 'BLOCKNAME': blockName}
                 self.markBlocksDeleted.execute(binds)
             else:
                 blockInfo = []
                 try:
-                    blockInfo = self.phedex.getReplicaInfoForBlocks(block = blockName, complete = 'y')['phedex']['block']
+                    blockInfo = self.phedex.getReplicaInfoForBlocks(block=blockName, complete='y')['phedex']['block']
                 except:
                     logging.error("Couldn't get block info from PhEDEx, retry next cycle")
                 else:
@@ -487,8 +484,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                             nodes = set([x['node'] for x in entry['replica']])
                             if location not in nodes:
                                 logging.debug("Block %s not present on %s, mark as deleted", blockName, location)
-                                binds = { 'DELETED': 1,
-                                          'BLOCKNAME': blockName }
+                                binds = {'DELETED': 1, 'BLOCKNAME': blockName}
                                 self.markBlocksDeleted.execute(binds)
                             elif sites.issubset(nodes):
                                 logging.debug("Deleting block %s from %s since it is fully transfered", blockName, location)
@@ -498,11 +494,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                                     deletableEntries[location][dataset] = set()
                                     deletableEntries[location][dataset].add(blockName)
 
-
         binds = []
         for blockName in skippableBlocks:
-            binds.append( { 'DELETED': 2,
-                            'BLOCKNAME': blockName } )
+            binds.append({'DELETED': 2, 'BLOCKNAME': blockName})
         if binds:
             self.markBlocksDeleted.execute(binds)
 
@@ -517,7 +511,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 numberOfBlocks += len(blocksToDelete[dataset])
 
                 if numberOfBlocks > chunkSize:
-
                     self.deleteBlocksPhEDExCalls(location, blocksToDelete)
                     numberOfBlocks = 0
                     blocksToDelete = {}
@@ -532,9 +525,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         actual PhEDEx calls for block deletion
         """
         deletion = PhEDExDeletion(blocksToDelete.keys(), location,
-                                  level = 'block',
-                                  comments = "WMAgent blocks auto-delete from %s" % location,
-                                  blocks = blocksToDelete)
+                                  level='block',
+                                  comments="WMAgent blocks auto-delete from %s" % location,
+                                  blocks=blocksToDelete)
 
         xmlData = XMLDrop.makePhEDExXMLForBlocks(self.dbsUrl,
                                                  deletion.getDatasetsAndBlocks())
@@ -554,8 +547,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             binds = []
             for dataset in blocksToDelete:
                 for blockName in blocksToDelete[dataset]:
-                    binds.append( { 'DELETED': 1,
-                                    'BLOCKNAME': blockName } )
+                    binds.append({'DELETED': 1,
+                                  'BLOCKNAME': blockName})
             self.markBlocksDeleted.execute(binds)
 
         return
@@ -585,26 +578,26 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
                 msg += "skipping subscription: %s" % subInfo['id']
                 logging.error(msg)
-                self.sendAlert(7, msg = msg)
+                self.sendAlert(7, msg=msg)
                 continue
 
             # Avoid custodial subscriptions to disk nodes
-            if site not in self.phedexNodes['MSS']: 
+            if site not in self.phedexNodes['MSS']:
                 subInfo['custodial'] = 'n'
             # Avoid auto approval in T1 sites
             elif site.startswith("T1"):
                 subInfo['request_only'] = 'y'
 
             phedexSub = PhEDExSubscription(subInfo['path'], site, subInfo['phedex_group'],
-                                           priority = subInfo['priority'],
-                                           move = subInfo['move'],
-                                           custodial = subInfo['custodial'],
-                                           request_only = subInfo['request_only'],
-                                           subscriptionId = subInfo['id'])
+                                           priority=subInfo['priority'],
+                                           move=subInfo['move'],
+                                           custodial=subInfo['custodial'],
+                                           request_only=subInfo['request_only'],
+                                           subscriptionId=subInfo['id'])
 
             # Check if the subscription is a duplicate
             if phedexSub.matchesExistingSubscription(self.phedex) or \
-                phedexSub.matchesExistingTransferRequest(self.phedex):
+                    phedexSub.matchesExistingTransferRequest(self.phedex):
                 subscriptionsMade.append(subInfo['id'])
                 continue
 
@@ -617,7 +610,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         for subscription in subs.getSubscriptionList():
 
             xmlData = XMLDrop.makePhEDExXMLForDatasets(self.dbsUrl, subscription.getDatasetPaths())
-            logging.debug("subscribeDatasets XMLData: %s" , xmlData)
+            logging.debug("subscribeDatasets XMLData: %s", xmlData)
 
             logging.info("Subscribing: %s to %s, with options: Move: %s, Custodial: %s, Request Only: %s",
                          subscription.getDatasetPaths(),

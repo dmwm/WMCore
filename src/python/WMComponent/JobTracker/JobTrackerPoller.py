@@ -118,28 +118,23 @@ class JobTrackerPoller(BaseWorkerThread):
         Finds a list of running jobs and the sites that they're running at,
         and passes that off to tracking.
         """
-
         passedJobs = []
         failedJobs = []
 
+        jobList = self.jobListAction.execute(state = "executing")
+        logging.info("Have list of %i executing jobs in WMBS", len(jobList))
 
-        # Get all jobs WMBS thinks are running
-        jobList = self.jobListAction.execute(state = "Executing")
-
-        if jobList == []:
-            # No jobs: do nothing
+        if not jobList:
             return
 
-        logging.info("Have list of %i executing jobs" % len(jobList))
-
-        # Now get all jobs that BossAir thinks are complete
+        # retrieve completed jobs from BossAir that are 'executing' in WMBS
         completeJobs = self.bossAir.getComplete()
-
-        logging.info("%i jobs are complete in BossAir" % (len(completeJobs)))
+        logging.info("Have list of %i jobs complete in BossAir but executing in WMBS", len(completeJobs))
         logging.debug(completeJobs)
 
         for job in completeJobs:
-            if not job['id'] in jobList:
+            if job['id'] not in jobList:
+                logging.error("Found a complete job in BossAir without a correspondent in WMBS!")
                 continue
             if job['status'].lower() == 'timeout':
                 failedJobs.append(job)

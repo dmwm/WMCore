@@ -48,13 +48,21 @@ import time
 from httplib import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-
+from WMCore.WMException import WMException
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx import XMLDrop
 from WMCore.Services.PhEDEx.DataStructs.PhEDExDeletion import PhEDExDeletion
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription, SubscriptionList
 
 from WMCore.DAOFactory import DAOFactory
+
+
+class PhEDExInjectorException(WMException):
+    """
+    _PhEDExInjectorException_
+
+    Specific PhEDExInjectorPoller exception handling.
+    """
 
 
 class PhEDExInjectorPoller(BaseWorkerThread):
@@ -331,11 +339,14 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             else:
                 try:
                     self.setStatus.execute(lfnList, 1)
-                except:
-                    # possible deadlock with DBS3Upload, retry once after 5s
-                    logging.warning("Oracle exception during file status update, possible deadlock due to race condition, retry after 5s sleep")
-                    time.sleep(5)
-                    self.setStatus.execute(lfnList, 1)
+                except Exception as ex:
+                    if 'Deadlock found when trying to get lock' in str(ex):
+                        logging.error("Database deadlock during file status update. Retrying again in the next cycle.")
+                        self.blocksToRecover.extend(self.createRecoveryFileFormat(injectData))
+                    else:
+                        msg = "Failed to update file status in the database, reason: %s" % str(ex)
+                        logging.error(msg)
+                        raise PhEDExInjectorException(msg)
 
         return
 

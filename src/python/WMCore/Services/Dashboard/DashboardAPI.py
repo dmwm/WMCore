@@ -1,15 +1,13 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 """
 This is the Dashboard API Module for the Worker Node
 """
 from __future__ import print_function
 from WMCore.Services.Dashboard import apmon
-import time
 import sys
 import os
 import traceback
-from types import DictType, StringTypes, ListType
 
 #
 # Methods for manipulating the apmon instance
@@ -26,10 +24,13 @@ APMONINIT = False
 #APMONCONF = {'dashb-ai-584.cern.ch:8884': {'sys_monitoring' : 0, \
 #                                    'general_info'   : 0, \
 #                                    'job_monitoring' : 0} }
-APMONCONF = {'cms-jobmon.cern.ch:8884': {'sys_monitoring': 0,
-                                         'general_info': 0,
-                                         'job_monitoring': 0}}
 
+# Export default params to it's own variable, as WMAgent might want
+# to report to diff endhost.
+DEFAULT_PARAMS = {'sys_monitoring': 0,
+                  'general_info': 0,
+                  'job_monitoring': 0}
+APMONCONF = {'cms-jobmon.cern.ch:8884': DEFAULT_PARAMS}
 
 
 APMONLOGGINGLEVEL = apmon.Logger.ERROR
@@ -96,18 +97,27 @@ def apmonSend(taskid, jobid, params, logr=None, apmonServer=None):
     """ Send multiple parameters to apmon server """
     apm = getApmonInstance(logr, apmonServer)
     if apm is not None:
-        if not isinstance(params, DictType) and not isinstance(params, ListType):
+        if not isinstance(params, (dict, list)):
             params = {'unknown' : '0'}
-        if not isinstance(taskid, StringTypes):
-            taskid = 'unknown'
-        if not isinstance(jobid, StringTypes):
-            jobid = 'unknown'
+        taskid = __checkAndConvertToStr(taskid)
+        jobid = __checkAndConvertToStr(jobid)
         try:
             apm.sendParameters(taskid, jobid, params)
             return 0
         except Exception:
             pass
     return 1
+
+
+# private function converting unitcode to str
+def __checkAndConvertToStr(value):
+    if not isinstance(value, basestring):
+        return 'unknown'
+    try:
+        return str(value)
+    except UnicodeEncodeError:
+        #This contains some unicode outside ascii range
+        return 'unknown'
 
 
 def logger(msg):
@@ -134,7 +144,7 @@ contextConf = {'MonitorID'    : ('MonitorID', 'unknown'),
 # Method to return the context
 #
 def getContext(overload={}):
-    if not isinstance(overload, DictType):
+    if not isinstance(overload, dict):
         overload = {}
     context = {}
     for paramName in contextConf.keys():
@@ -205,7 +215,7 @@ def report(args):
 # PYTHON BASED JOB WRAPPER
 # Main class for Dashboard reporting
 #
-class DashboardAPI:
+class DashboardAPI(object):
     def __init__(self, monitorId=None, jobMonitorId=None, lookupUrl=None):
         self.defaultContext = {}
         self.defaultContext['MonitorID'] = monitorId

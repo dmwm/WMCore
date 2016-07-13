@@ -10,7 +10,7 @@ import logging
 from WMCore import __version__
 from WMCore.WMException                     import WMException
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
+from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree, DEFAULT_PARAMS
 
 class DashboardReporterException(WMException):
     """
@@ -43,7 +43,7 @@ class DashboardReporter(WMObject):
             self.destHost = '127.0.0.1'
             self.destPort = 8884
 
-        self.serverreport = [self.destHost + ':' + str(self.destPort)]
+        self.serverreport = {str(self.destHost + ':' + str(self.destPort)) : DEFAULT_PARAMS}
 
         self.taskPrefix = 'wmagent_'
         self.tsFormat = '%Y-%m-%d %H:%M:%S'
@@ -223,7 +223,7 @@ class DashboardReporter(WMObject):
                 logging.debug("Host info: host %s, port %s" \
                               % (self.destHost,
                                  self.destPort))
-        apmonFree()
+            apmonFree()
 
         return
 

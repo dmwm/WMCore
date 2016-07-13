@@ -375,7 +375,8 @@ class StdBase(object):
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
 
-        procTaskCmsswHelper.cmsswSetup(cmsswVersion, softwareEnvironment="",
+        procTaskCmsswHelper.cmsswSetup(cmsswVersion,
+                                       softwareEnvironment="",
                                        scramArch=scramArch)
 
         if "events_per_lumi" in newSplitArgs:
@@ -527,6 +528,12 @@ class StdBase(object):
 
         parentTaskLogArch = parentTask.getStep("logArch1")
         logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
+
+        logCollectStepHelper = logCollectStep.getTypeHelper()
+        logCollectStepHelper.cmsswSetup(self.frameworkVersion,
+                                        softwareEnvironment="",
+                                        scramArch=self.scramArch)
+
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
@@ -575,7 +582,8 @@ class StdBase(object):
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+                                        softwareEnvironment="",
                                         scramArch=self.scramArch)
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
@@ -672,7 +680,8 @@ class StdBase(object):
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment="",
+        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+                                          softwareEnvironment="",
                                           scramArch=self.scramArch)
 
         harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())
@@ -964,7 +973,7 @@ class StdBase(object):
                      "ValidStatus": {"default": "PRODUCTION"},
                      "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
-                     "DashboardHost": {"default": "cms-wmagent-job.cern.ch"},
+                     "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,
                                        "validate": lambda x: x > 0},
                      "OverrideCatalog": {"null": True},

@@ -71,10 +71,10 @@ class RequestDBTest(unittest.TestCase):
         time.sleep(2)
         result =  self.requestWriter.insertGenericRequest(schema[2])
         endTime = int(time.time()) - 1
-        result = self.requestReader.getRequestByStatusAndStartTime("new", False, endTime)
+        result = self.requestReader.getRequestByStatusAndEndTime("new", False, endTime)
         self.assertEqual(len(result), 1, "should be 1")
         endTime = int(time.time()) + 1
-        result = self.requestReader.getRequestByStatusAndStartTime("new", False, endTime)
+        result = self.requestReader.getRequestByStatusAndEndTime("new", False, endTime)
         self.assertEqual(len(result), 2, "should be 2")
       
 

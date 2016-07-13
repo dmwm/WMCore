@@ -1,3 +1,22 @@
+1.0.17 to 1.0.17.patch2:
+  - Merge pull request #6979 from amaltaro/tracking-jobs1017
+  - Set jobs killed by JobStatusLite to Timeout status
+  - Merge pull request #6976 from amaltaro/phedex-immortal1017
+  - Handle db deadlock when setting lfn status
+  - Merge pull request #6962 from amaltaro/1017-bundle1
+  - Fix metadata and job reporting to dashboard
+  - Fixed docstring and a pylint
+  - Reqmgr couch api to retrieve requests by status and start time
+  - switch logcollect stagein to use edmCopyUtil, fixes #6740
+  - Merge pull request #6926 from amaltaro/createOutFile-1017
+  - Create the output file expected by condor to be transferred back
+  - 1.0.17.patch1
+  - Merge pull request #6918 from amaltaro/backport-patches1
+  - Merge Justas' patch for untarring with python 2.6 for older releases
+  - make sure CMSSW always finds HOME in environment
+  - Pylint fixes
+  - Change file deletion from srm to xrd for FNAL plugin
+
 1.0.17 to 1.0.17.patch1:
   - Merge pull request #6918 from amaltaro/backport-patches1
   - Merge Justas' patch for untarring with python 2.6 for older releases

@@ -185,20 +185,19 @@ class BossAirAPI(WMConnectionBase):
         """
 
         existingTransaction = self.beginTransaction()
-
         if active:
             runJobDicts = self.runningJobDAO.execute(conn=self.getDBConn(),
                                                      transaction=self.existingTransaction())
         else:
             runJobDicts = self.completeJobDAO.execute(conn=self.getDBConn(),
                                                       transaction=self.existingTransaction())
+        self.commitTransaction(existingTransaction)
+
         runJobs = []
         for jDict in runJobDicts:
             rj = RunJob()
             rj.update(jDict)
             runJobs.append(rj)
-
-        self.commitTransaction(existingTransaction)
 
         return runJobs
 
@@ -683,10 +682,10 @@ class BossAirAPI(WMConnectionBase):
                         # Build a better job message
                         if killMsg:
                             reportedMsg = killMsg
-                            reportedMsg += '\n Job last known status was: %s' % job.get('status', 'Unknown')
+                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                         else:
                             reportedMsg = WM_JOB_ERROR_CODES[errorCode]
-                            reportedMsg += '\n Job last known status was: %s' % job.get('status', 'Unknown')
+                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                         errorReport.addError("JobKilled", errorCode, "JobKilled", reportedMsg)
                         try:
                             errorReport.save(filename=reportName)

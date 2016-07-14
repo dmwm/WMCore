@@ -113,9 +113,9 @@ class StatusPoller(BaseWorkerThread):
                 continue
             if timeout and statusTime:
                 if time.time() - float(statusTime) > float(timeout):
-                    # Then the job needs to be killed.
+                    # Timeout status is used by JobTracker to fail jobs in WMBS database
                     logging.info("Killing job %i because it has exceeded timeout for status '%s'", job['id'], globalState)
-                    job['status'] = globalState
+                    job['status'] = 'Timeout'
                     jobsToKill.append(job)
 
         # We need to show that the jobs are in state timeout

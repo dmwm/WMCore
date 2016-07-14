@@ -245,7 +245,7 @@ class StageOutMgr:
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, None, 'FALLBACK', 0)
                 return fileToStage
             except Exception as ex:
-                fileToStage = stageoutPolicyReport(fileToStage, fallback['se-name'], fallback['PNN'],
+                fileToStage = stageoutPolicyReport(fileToStage, fallback['se-name'], fallback['phedex-node'],
                                                    fallback['command'], 'FALLBACK', 60310)
                 lastException = ex
                 continue

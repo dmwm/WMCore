@@ -43,7 +43,6 @@ class JobTrackerPoller(BaseWorkerThread):
         self.config = config
 
         myThread = threading.currentThread()
-
         self.changeState = ChangeState(self.config)
         self.bossAir = BossAirAPI(config=config)
         self.daoFactory = DAOFactory(package="WMCore.WMBS",
@@ -51,9 +50,7 @@ class JobTrackerPoller(BaseWorkerThread):
                                      dbinterface=myThread.dbi)
 
         self.jobListAction = self.daoFactory(classname="Jobs.GetAllJobs")
-
-        # initialize the alert framework (if available)
-        self.initAlerts(compName="JobTracker")
+        self.setFWJRAction = self.daoFactory(classname="Jobs.SetFWJRPath")
 
     def setup(self, parameters=None):
         """
@@ -81,17 +78,15 @@ class JobTrackerPoller(BaseWorkerThread):
         myThread = threading.currentThread()
         try:
             self.trackJobs()
-        except WMException as ex:
+        except WMException:
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollback()
-            self.sendAlert(6, msg=str(ex))
             raise
         except Exception as ex:
             msg = "Unknown exception in JobTracker!\n"
             msg += str(ex)
             if getattr(myThread, 'transaction', None):
                 myThread.transaction.rollback()
-            self.sendAlert(6, msg=msg)
             logging.error(msg)
             raise JobTrackerException(msg)
 
@@ -139,25 +134,14 @@ class JobTrackerPoller(BaseWorkerThread):
 
         Dump those jobs that have failed due to timeout
         """
-
-        myThread = threading.currentThread()
-
         if len(failedJobs) == 0:
             return
 
-        myThread = threading.currentThread()
-
-        # Load DAOs
-        setFWJRAction = self.daoFactory(classname="Jobs.SetFWJRPath")
-
         jrBinds = []
-
         for job in failedJobs:
-            jrPath = os.path.join(job.getCache(),
-                                  'Report.%i.pkl' % (job['retry_count']))
+            # Make sure the job object goes packed with fwjr_path to be persisted in couch
+            jrPath = os.path.join(job.getCache(), 'Report.%i.pkl' % (job['retry_count']))
             jrBinds.append({'jobid': job['id'], 'fwjrpath': jrPath})
-            # Make sure the job object goes packed with fwjr_path so it
-            # can be persisted in couch
 
             fwjr = Report()
             try:
@@ -171,10 +155,9 @@ class JobTrackerPoller(BaseWorkerThread):
                 fwjr.save(jrPath)
             job["fwjr"] = fwjr
 
-        # Set all paths at once
+        myThread = threading.currentThread()
         myThread.transaction.begin()
-        setFWJRAction.execute(binds=jrBinds)
-
+        self.setFWJRAction.execute(binds=jrBinds, conn=myThread.transaction.conn, transaction=True)
         self.changeState.propagate(failedJobs, 'jobfailed', 'executing')
         logging.info("Failed %i jobs", len(failedJobs))
         myThread.transaction.commit()
@@ -187,12 +170,8 @@ class JobTrackerPoller(BaseWorkerThread):
 
         Pass jobs and move their stuff?
         """
-
         if len(passedJobs) == 0:
             return
-
-        # Mark 'em as complete
-        setFWJRAction = self.daoFactory(classname="Jobs.SetFWJRPath")
 
         jrBinds = []
         for job in passedJobs:
@@ -202,11 +181,10 @@ class JobTrackerPoller(BaseWorkerThread):
 
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        setFWJRAction.execute(binds=jrBinds, conn=myThread.transaction.conn,
-                              transaction=True)
+        self.setFWJRAction.execute(binds=jrBinds, conn=myThread.transaction.conn, transaction=True)
+        self.changeState.propagate(passedJobs, 'complete', 'executing')
         myThread.transaction.commit()
 
-        self.changeState.propagate(passedJobs, 'complete', 'executing')
-        logging.debug("Propagating jobs in jobTracker")
         logging.info("Passed %i jobs", len(passedJobs))
+
         return

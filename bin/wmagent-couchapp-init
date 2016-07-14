@@ -366,5 +366,6 @@ if __name__ == "__main__":
     
     if hasattr(wmagentConfig, "Tier0Feeder"):
         installCouchApp(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName, "T0Request")
-
+        if options.cron:
+            setupCronCompaction(wmagentConfig.JobStateMachine.couchurl, wmagentConfig.Tier0Feeder.requestDBName)
     sys.exit(0)

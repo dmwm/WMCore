@@ -338,7 +338,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 try:
                     self.setStatus.execute(lfnList, 1)
                 except Exception as ex:
-                    if 'Deadlock found when trying to get lock' in str(ex):
+                    if 'Deadlock found' or 'deadlock detected' in str(ex):
                         logging.error("Database deadlock during file status update. Retrying again in the next cycle.")
                         self.blocksToRecover.extend(self.createRecoveryFileFormat(injectData))
                     else:

@@ -6,7 +6,7 @@ Core Database APIs
 
 
 """
-
+import traceback
 from WMCore.DataStructs.WMObject import WMObject
 from WMCore.Database.ResultSet import ResultSet
 from copy import copy
@@ -57,13 +57,19 @@ class DBInterface(WMObject):
 
         returns a list of sqlalchemy.engine.base.ResultProxy objects
         """
-        if b == None:
-            resultProxy = connection.execute(s)
-        else:
-            resultProxy = connection.execute(s, b)
-        yield resultProxy
+        try:
+            if b == None:
+                resultProxy = connection.execute(s)
+            else:
+                resultProxy = connection.execute(s, b)
+        except:
+            traceback.print_exc()
+            resultProxy = None
+        if resultProxy:
+            yield resultProxy
         if not returnCursor:
-            resultProxy.close()
+            if resultProxy and hasattr(resultProxy, "close"):
+                resultProxy.close()
 
     def executemanybinds(self, s=None, b=None, connection=None,
                          returnCursor=False):
@@ -96,8 +102,13 @@ class DBInterface(WMObject):
                     yield resultproxy
                     resultproxy.close()
             return
-        result = connection.execute(s, b)
-        yield result
+        try:
+            result = connection.execute(s, b)
+        except:
+            traceback.print_exc()
+            result = None
+        if result:
+            yield result
 
     def connection(self):
         """

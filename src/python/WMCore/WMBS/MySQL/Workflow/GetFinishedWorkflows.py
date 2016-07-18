@@ -24,7 +24,7 @@ class GetFinishedWorkflows(DBFormatter):
                                       INNER JOIN wmbs_sub_types ON
                                          wmbs_sub_types.id = wmbs_subscription.subtype
                                   WHERE wmbs_subscription.finished = 0 
-                                       AND wmbs_sub_types.name %(include)s IN ('LogCollect', 'CleanUp')
+                                       AND wmbs_sub_types.name %(include)s IN ('LogCollect', 'Cleanup')
                                   GROUP BY wmbs_workflow.name """
     
     sql = """ SELECT wmbs_workflow.name, wmbs_workflow.spec,
@@ -34,15 +34,15 @@ class GetFinishedWorkflows(DBFormatter):
                          wmbs_workflow.id = wmbs_subscription.workflow
                     INNER JOIN wmbs_sub_types ON
                          wmbs_sub_types.id = wmbs_subscription.subtype
-                    WHERE wmbs_sub_types.name %(include)s IN ('LogCollect', 'CleanUp')  AND 
+                    WHERE wmbs_sub_types.name %(include)s IN ('LogCollect', 'Cleanup')  AND 
                             wmbs_workflow.name NOT IN (""" + incompleteWf + """ )"""
             
     def execute(self, onlySecondary=False, conn=None, transaction=False):
         """
         _execute_
         
-        onlySecondary if set it True gets the complete subscription for the only LogCollect and CleanUp type.
-        if False, gets the finished subscription excluding LogCollect and CleanUp tasks
+        onlySecondary if set it True gets the complete subscription for the only LogCollect and Cleanup type.
+        if False, gets the finished subscription excluding LogCollect and Cleanup tasks
         This DAO is a nested dictionary with the following structure:
         {<workflowName? : {spec : <specURL>,
                            workflows : {<workflowID> : [<subId1>, <subId2>]}

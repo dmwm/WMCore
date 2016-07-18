@@ -135,6 +135,18 @@ class SiteDBTest(EmulatedUnitTestCase):
         self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(pnnList), pnnList)
         return
 
+    def testPNNstoPSNs(self):
+        """
+        _testPNNstoPSNs_
+
+        Test converting PhEDEx Node Names to Processing Site Names
+        """
+
+        result = self.mySiteDB.PNNstoPSNs(['T1_US_FNAL_Disk', 'T1_US_FNAL_Buffer', 'T1_US_FNAL_MSS'])
+        self.assertTrue(result == ['T1_US_FNAL'])
+        result = self.mySiteDB.PNNstoPSNs(['T2_UK_London_IC', 'T2_US_Purdue'])
+        self.assertItemsEqual(result, ['T2_UK_London_IC', 'T2_US_Purdue'])
+        return
 
 if __name__ == '__main__':
     unittest.main()

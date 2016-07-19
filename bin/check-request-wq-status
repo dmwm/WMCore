@@ -1,0 +1,171 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+import os
+from optparse import OptionParser
+from pprint import pprint
+from WMCore.Configuration import loadConfigurationFile
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import WorkQueueElementsSummary
+from WMCore.WorkQueue.WMBSHelper import freeSlots
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
+from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
+from WMCore.WorkQueue.WorkQueue import globalQueue
+
+def getOptions():
+    parser = OptionParser()
+    parser.set_usage("check-request-wq-status -r [request_name] -s [status]")
+    
+    parser.add_option("-r", "--request", dest = "request",
+                      help = "resquest name")
+    
+    parser.add_option("-s", "--status", dest = "status", default="Available",
+                      help = "set to new status")
+    
+    (options, args) = parser.parse_args()
+    
+    return options.request, options.status
+
+def getAcceptableSites(ele):
+    
+    if ele['SiteWhitelist']:
+        commonSites = set(ele['SiteWhitelist'])
+    else:
+        commonSites = set()
+    
+    if ele['Inputs']:
+        if commonSites:
+            commonSites = commonSites & set([y for x in ele['Inputs'].values() for y in x])
+        else:
+            commonSites = set([y for x in ele['Inputs'].values() for y in x])
+    if ele['PileupData']:
+        if commonSites:
+            commonSites = commonSites & set([y for x in ele['PileupData'].values() for y in x])
+        else:
+            commonSites = set([y for x in ele['PileupData'].values() for y in x])
+
+    return commonSites
+
+def createWorkQueue(config):
+    """Create a workqueue from wmagent config"""
+    # if config has a db sction instantiate a dbi
+    if hasattr(config, "CoreDatabase"):
+        from WMCore.WMInit import WMInit
+        wmInit = WMInit()
+        (dialect, junk) = config.CoreDatabase.connectUrl.split(":", 1)
+        socket = getattr(config.CoreDatabase, "socket", None)
+        wmInit.setDatabaseConnection(dbConfig = config.CoreDatabase.connectUrl,
+                                     dialect = dialect,
+                                     socketLoc = socket)
+    return queueFromConfig(config)
+
+
+def jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="LQ"):
+    
+    # filter resource and job_count by request
+    filteredResources = {}
+    filteredJobCounts = {}
+    for site in possibleSites:
+        filteredResources[site] = resources[site]
+        filteredJobCounts[site] = jobCounts[site]
+         
+        
+    siteSummary = {}
+    for res in filteredResources:
+        siteSummary.setdefault(res, {})
+        siteSummary[res] = {'slots': resources[res]}
+    
+    for res in filteredJobCounts:
+        siteSummary.setdefault(res, {})
+        countByPriority = jobCounts[res]
+        siteSummary[res].update({'priority': countByPriority, 
+                            'total jobs created': sum(countByPriority.values())})
+    
+    print("Possible sites for the request %s" % request)
+    for site in possibleSites:
+        print("%s: %s" % (site, siteSummary.get(site)))
+    
+    if flag == "LQ":
+        work = localQ.getAvailableWorkfromParent(filteredResources, filteredJobCounts)
+        print("Get available work from GQ")
+    else:
+        work, _, _ = localQ.backend.availableWork(resources, jobCounts)
+        print("Get available work from LQ for job creation")
+    
+    eleCount = 0
+    jobCount = 0
+    highJobs = 0
+    if len(work) > 0:
+        for wqe in work:
+            if wqe["RequestName"] == request:
+                eleCount += 1
+                jobCount += wqe["Jobs"]
+            else:
+                highJobs += wqe["Jobs"]
+                print("%s" % wqe["RequestName"], wqe["Jobs"])
+        
+        if eleCount > 0:
+            print("% , elements %s, total jobs %s will be pull to LQ" % (request, eleCount, jobCount))
+        else:
+            print("There are other works with higher priority : Jobs: %s" % highJobs)
+    else:
+        if flag == "LQ":
+            print("Resource is full no work will be pulled to LQ")
+        else:
+            print("Resource is full no jobs will be created by this WMAgent")
+
+def checkLQPullStatusFromGQ(localQ, request, possibleSites):
+    
+    # check pre condition
+    if localQ.pullWorkConditionCheck(printFlag = True):
+        print("All pre condition checks are passed to pullWork to LQ")
+    else:
+        exit(1)
+           
+    resources, jobCounts = localQ.freeResouceCheck(printFlag=True) 
+    jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="LQ")
+    
+def checkCreateWorkStatusFromLQ(localQ, request, possibleSites):
+    
+    ### get Work check
+    if not localQ.backend.isAvailable():
+        print('LocalQueue Backend busy or down: skipping try later')
+        return
+    
+    resources, jobCounts = freeSlots(minusRunning = True, allowedStates = ['Normal', 'Draining'],
+                              knownCmsSites = cmsSiteNames())
+    jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="WMBS")
+    
+def main():
+    
+    cfgObject = loadConfigurationFile(os.environ.get("WMAGENT_CONFIG", None))
+    request, eleStatus = getOptions()
+    #request = "jen_a_ACDC_task_BPH-RunIIFall15DR76-00044__v1_T_160513_043933_6676"
+    #eleStatus = "Available"
+    ### get available Work from GQ
+    teams = cfgObject.Agent.teamName.split(",")
+    
+    if len(teams) != 1:
+        print("No team of multiple teams are set %s" % teams)
+        exit(1)
+    team = teams[0].strip()
+    
+    localQ = createWorkQueue(cfgObject)
+    
+    # change the filter only filters TeamNam
+    gqElements = localQ.parent_queue.getElements(status=eleStatus, TeamName=team)
+
+    print("GQ: There are total %s elements in %s" % (len(gqElements), eleStatus))
+         
+    wqSummary = WorkQueueElementsSummary(gqElements)
+    wqSummary.printSummary(request)
+    possibleSites = wqSummary.getPossibleSitesByRequest(request)
+    
+    #### Local queue pullWork status (only checks when gq status is Available)
+    ### for Acquired state skip this
+    if eleStatus == "Available":
+        checkLQPullStatusFromGQ(localQ, request, possibleSites)
+    elif eleStatus == "Acquired":
+        ### get Work check
+        checkCreateWorkStatusFromLQ(localQ, request, possibleSites)
+        
+if __name__ == '__main__':
+    main()

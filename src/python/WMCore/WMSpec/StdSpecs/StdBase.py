@@ -379,12 +379,14 @@ class StdBase(object):
         procTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
         procTaskCmsswHelper.setErrorDestinationStep(stepName=procTaskLogArch.name())
 
-        if forceMerged:
+        if forceMerged and isinstance(forceMerged, bool):
             procTaskStageHelper.setMinMergeSize(0, 0)
-        elif forceUnmerged:
+        elif forceUnmerged and isinstance(forceUnmerged, bool):
             procTaskStageHelper.disableStraightToMerge()
         else:
             procTaskStageHelper.setMinMergeSize(self.minMergeSize, self.maxMergeEvents)
+            if forceUnmerged and isinstance(forceUnmerged, list):
+                procTaskStageHelper.disableStraightToMergeForOutputModules(forceUnmerged)
 
         procTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                        softwareEnvironment="",

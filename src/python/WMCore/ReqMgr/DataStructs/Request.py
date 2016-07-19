@@ -2,10 +2,10 @@
 Unlike ReqMgr1 defining Request and RequestSchema classes,
 define just 1 class. Derived from Python dict and implementing
 necessary conversion and validation extra methods possibly needed.
-    
+
 TODO/NOTE:
     'inputMode' should be removed by now (2013-07)
-    
+
     since arguments validation #4705, arguments which are later
         validated during spec instantiation and which are not
         present in the request injection request, can't be defined
@@ -13,13 +13,14 @@ TODO/NOTE:
         This is the case for e.g. DbsUrl, AcquisitionEra
         This module should probably define only absolutely
         necessary request parameters and not any optional ones.
-    
+
 """
 from __future__ import print_function, division
 import time
 import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
+from WMCore.Lexicon import identifier
 
 
 def initialize_request_args(request, config, clone=False):
@@ -30,9 +31,8 @@ def initialize_request_args(request, config, clone=False):
     manipulate request arguments upon injection so that various
     levels or arguments manipulation does not occur across several
     modules and across about 7 various methods like in ReqMgr1.
-    
+
     request is changed here.
-    
     """
 
     # user information for cert. (which is converted to cherry py log in)
@@ -78,10 +78,8 @@ def generateRequestName(request):
     if "RequestString" not in request:
         raise InvalidSpecParameterValue("RequestString need to be specified")
 
-    # TODO change to lexicon when we have exact format of RequestString
-    if '@' in request["RequestString"]:
-        raise InvalidSpecParameterValue("RequestString cannot contain @: %s" % request["RequestString"])
-
     request["RequestName"] = "%s_%s" % (request["Requestor"], request["RequestString"])
     # add time info
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
+    # then validate the final request name
+    identifier(request["RequestName"])

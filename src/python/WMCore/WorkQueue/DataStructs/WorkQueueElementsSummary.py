@@ -79,28 +79,39 @@ class WorkQueueElementsSummary(object):
         else:
             return self.wqResultsByRequest
     
-    def printSummary(self, request):
+    def printSummary(self, request, detail=False):
         
         wqResult = self.getWQElementResultsByRequest(request)
+        
+        if wqResult is None:
+            print("No WQ element exist for the status given")
+            return
         #pprint(elements)
-        print("%s prioty: %s, available elements: %s " % (request, wqResult["Priority"], len(wqResult['Elements'])))
+        print("### summary for %s ###" % request )
+        print("  Prioty: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
         
         sites = self.getPossibleSitesByRequest(request)
-        print("possble sites for %s:" % request)
-        pprint(list(sites))
+        print("  Possble sites to run: %s" % list(sites))
         
         higher = self.elementsWithHigherPriorityInSameSites(request)
         total = 0
+        totalJobs = 0
         for request in higher:
             wqResult = higher[request]
-            availableEle = len(wqResult.availableItems())
-            total += availableEle
-            maxJobEle = wqResult.getMaxJobElement()
-            minJobEle = wqResult.getMinJobElement()
-            print("""%s: Priority: %s, available elements: %s, total jobs: %s,
-                    max jobs: %s (element_id: %s), min jobs: %s (element_id: %s)""" % (
-                   request, wqResult["Priority"], availableEle, wqResult['Jobs'],
-                   maxJobEle["Jobs"], maxJobEle.id,
-                   minJobEle["Jobs"], minJobEle.id))
-        print("higher priority elements %s"  % total)
+            availableEle = wqResult.availableItems()
+            if not availableEle:
+                continue
+            total += len(availableEle)
+            wqAvailResult = WorkQueueElementResult(Elements=availableEle)
+            totalJobs += wqAvailResult['Jobs']
+            maxJobEle = wqAvailResult.getMaxJobElement()
+            minJobEle = wqAvailResult.getMinJobElement()
+            if detail:
+                print("  Higher priority elements by request:")
+                print("""%s: Priority: %s, available elements: %s, total jobs: %s,
+                        max jobs: %s (element_id: %s), min jobs: %s (element_id: %s)""" % (
+                        request, wqAvailResult["Priority"], availableEle, wqAvailResult['Jobs'],
+                        maxJobEle["Jobs"], maxJobEle.id,
+                        minJobEle["Jobs"], minJobEle.id))
+        print("  Higher priority elements: %s, total available jobs: %s"  % (total, totalJobs))
 

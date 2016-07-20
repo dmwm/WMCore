@@ -11,7 +11,7 @@ import os
 import re
 
 from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl, splitPFN
+from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.StageOutError import StageOutError
 
 from WMCore.Storage.Execute import execute
@@ -149,7 +149,7 @@ class RFCPCERNImpl(StageOutImpl):
 
         if isRemoteEOS:
 
-            (_, host, path, _) = splitPFN(remotePFN)
+            (_, host, path, _) = self.splitPFN(remotePFN)
 
             result += "REMOTE_SIZE=`xrd '%s' stat '%s' | sed -r 's/.* Size: ([0-9]+) .*/\\1/'`\n" % (host, path)
             result += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
@@ -185,7 +185,7 @@ class RFCPCERNImpl(StageOutImpl):
         Alternate between EOS, CASTOR and local.
         """
         if self.isEOS(pfn):
-            (_, host, path, _) = splitPFN(pfn)
+            (_, host, path, _) = self.splitPFN(pfn)
             return "xrd %s rm %s" % (host, path)
         try:
             simplePFN = self.parseCastorPath(pfn)
@@ -203,7 +203,7 @@ class RFCPCERNImpl(StageOutImpl):
         """
         if self.isEOS(pfnToRemove):
 
-            (_, host, path, _) = splitPFN(pfnToRemove)
+            (_, host, path, _) = self.splitPFN(pfnToRemove)
             command = "xrd %s rm %s" % (host, path)
 
         else:
@@ -321,7 +321,7 @@ class RFCPCERNImpl(StageOutImpl):
         Check if the PFN is for EOS
 
         """
-        (protocol, host, _, _) = splitPFN(pfn)
+        (protocol, host, _, _) = self.splitPFN(pfn)
         if protocol == "root" and not host.startswith("castor"):
             return True
         else:

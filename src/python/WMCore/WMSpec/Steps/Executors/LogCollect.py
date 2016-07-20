@@ -73,27 +73,21 @@ class LogCollect(Executor):
         # Set wait to over an hour
         waitTime = overrides.get('waitTime', 3600 + (self.step.retryDelay * self.step.retryCount))
 
-        # Pull out StageOutMgr Overrides
-        # switch between old stageOut behavior and new, fancy stage out behavior
-        useNewStageOutCode = False
-        if 'newStageOut' in overrides and overrides.get('newStageOut'):
-            useNewStageOutCode = True
-
         # hardcode CERN Castor T0_CH_CERN_MSS stageout parameters
         castorStageOutParams = {}
-        castorStageOutParams['command'] = overrides.get('command', "srmv2-lcg")
-        castorStageOutParams['option'] = overrides.get('option', "")
+        castorStageOutParams['command'] = overrides.get('command', "xrdcp")
+        castorStageOutParams['option'] = overrides.get('option', "--cerncastor")
         castorStageOutParams['se-name'] = overrides.get('se-name', "srm-cms.cern.ch")
         castorStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
-        castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "srm://srm-cms.cern.ch:8443/srm/managerv2?SFN=/castor/cern.ch/cms")
+        castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://castorcms.cern.ch//castor/cern.ch/cms")
 
         # hardcode CERN EOS T2_CH_CERN stageout parameters
         eosStageOutParams = {}
-        eosStageOutParams['command'] = overrides.get('command', "srmv2-lcg")
+        eosStageOutParams['command'] = overrides.get('command', "xrdcp")
         eosStageOutParams['option'] = overrides.get('option', "")
         eosStageOutParams['se-name'] = overrides.get('se-name', "srm-eoscms.cern.ch")
         eosStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
-        eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "srm://srm-eoscms.cern.ch:8443/srm/v2/server?SFN=/eos/cms")
+        eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://eoscms.cern.ch//eos/cms")
 
         # are we using the new stageout method ?
         useNewStageOutCode = False
@@ -102,25 +96,10 @@ class LogCollect(Executor):
             useNewStageOutCode = True
 
         try:
-            if useNewStageOutCode:
-                # is this even working ???
-                #logging.info("LOGCOLLECT IS USING NEW STAGEOUT CODE")
-                #stageOutMgr = StageOutMgr(retryPauseTime  = self.step.retryDelay,
-                #                          numberOfRetries = self.step.retryCount,
-                #                          **overrides)
-                #stageInMgr = StageInMgr(retryPauseTime  = 0,
-                #                        numberOfRetries = 0)
-                #deleteMgr = DeleteMgr(retryPauseTime  = 0,
-                #                      numberOfRetries = 0)
-                castorStageOutMgr = StageOutMgr(**castorStageOutParams)
-                eosStageOutMgr = StageOutMgr(**eosStageOutParams)
-                stageInMgr = StageInMgr()
-                deleteMgr = DeleteMgr()
-            else:
-                castorStageOutMgr = StageOutMgr(**castorStageOutParams)
-                eosStageOutMgr = StageOutMgr(**eosStageOutParams)
-                stageInMgr = StageInMgr()
-                deleteMgr = DeleteMgr()
+            castorStageOutMgr = StageOutMgr(**castorStageOutParams)
+            eosStageOutMgr = StageOutMgr(**eosStageOutParams)
+            stageInMgr = StageInMgr()
+            deleteMgr = DeleteMgr()
         except Exception as ex:
             msg = "Unable to load StageOut/Delete Impl: %s" % str(ex)
             logging.error(msg)

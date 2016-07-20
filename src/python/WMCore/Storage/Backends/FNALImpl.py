@@ -8,7 +8,7 @@ Implementation of StageOutImpl interface for FNAL
 from __future__ import print_function
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl, splitPFN
+from WMCore.Storage.StageOutImpl import StageOutImpl
 from WMCore.Storage.Backends.LCGImpl import LCGImpl
 
 _CheckExitCodeOption = True
@@ -153,7 +153,7 @@ class FNALImpl(StageOutImpl):
         method = self.storageMethod(pfnToRemove)
 
         if method == 'xrdcp':
-            (_, host, path, _) = splitPFN(pfnToRemove)
+            (_, host, path, _) = self.splitPFN(pfnToRemove)
             command = "xrd %s rm %s" % (host, path)
             print("Executing: %s" % command)
             self.executeCommand(command)

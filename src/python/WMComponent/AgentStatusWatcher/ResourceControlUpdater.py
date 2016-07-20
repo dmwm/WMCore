@@ -162,25 +162,24 @@ class ResourceControlUpdater(BaseWorkerThread):
         ioBound = urllib2.urlopen(urlIoBound).read()
 
         # parse from json format to dictionary, get only 'csvdata'
-        siteState = json.loads(sites)['csvdata']
-        cpuSlots = json.loads(cpuBound)['csvdata']
-        ioSlots = json.loads(ioBound)['csvdata']
+        ssbSiteState = json.loads(sites)['csvdata']
+        ssbCpuSlots = json.loads(cpuBound)['csvdata']
+        ssbIoSlots = json.loads(ioBound)['csvdata']
 
-        # dictionaries with status/thresholds info by VOName
-        stateBySite = self.siteStatusByVOName(siteState)
-        slotsCPU = self.thresholdsByVOName(cpuSlots)
-        slotsIO = self.thresholdsByVOName(ioSlots)
+        # dict updated by these methods with status/thresholds info keyed by the site name
+        ssbSiteSlots = {}
+        self.siteStatusByVOName(ssbSiteState, ssbSiteSlots)
+        self.thresholdsByVOName(ssbCpuSlots, ssbSiteSlots, slotsType='slotsCPU')
+        self.thresholdsByVOName(ssbIoSlots, ssbSiteSlots, slotsType='slotsIO')
 
-        sitesSSB = {}
-        if not stateBySite or not slotsCPU or not slotsIO:
+        # Now remove sites with state only, such that no updates are applied to them
+        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.iteritems() if len(v) == 3}
+
+        if not ssbSiteSlots:
             logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")
-            return sitesSSB
+            return ssbSiteSlots
 
-        for k, v in stateBySite.iteritems():
-            sitesSSB[k] = {'state': v}
-            sitesSSB[k]['slotsCPU'] = slotsCPU[k] if k in slotsCPU else None
-            sitesSSB[k]['slotsIO'] = slotsIO[k] if k in slotsIO else None
-        return sitesSSB
+        return ssbSiteSlots
 
     def checkStatusChanges(self, infoRC, infoSSB):
         """
@@ -254,7 +253,7 @@ class ResourceControlUpdater(BaseWorkerThread):
 
             if infoRC[site]['running_slots'] != CPUBound or infoRC[site]['pending_slots'] != sitePending:
                 # Update site running and pending slots
-                logging.debug("Updating %s site thresholds for pend/runn: %d/%d", site, sitePending, CPUBound)
+                logging.info("Updating %s site thresholds for pend/runn: %d/%d", site, sitePending, CPUBound)
                 self.resourceControl.setJobSlotsForSite(site, pendingJobSlots=sitePending,
                                                         runningJobSlots=CPUBound)
                 # Update site CPU tasks running and pending slots (large running slots)
@@ -281,48 +280,45 @@ class ResourceControlUpdater(BaseWorkerThread):
                 pendingRepack = int(repackSlots * self.pendingSlotsTaskPercent / 100)
                 self.resourceControl.insertThreshold(site, 'Repack', repackSlots, pendingRepack)
 
-    def thresholdsByVOName(self, sites):
+    def thresholdsByVOName(self, sites, ssbSiteSlots, slotsType):
         """
         _thresholdsByVOName_
 
-        Creates a dictionary with keys->VOName and values->threshold:
+        Updates the dict with CPU and IO slots, only for sites with a valid state
         """
-        thresholdbyVOName = {}
         for site in sites:
             voname = site['VOName']
             value = site['Value']
-            if voname not in thresholdbyVOName:
+            if voname in ssbSiteSlots:
                 if value is None:
-                    logging.warn('Site %s does not have thresholds in SSB, assuming 0', voname)
-                    thresholdbyVOName[voname] = 0
+                    logging.warn('Site %s does not have thresholds in SSB. Taking no action', voname)
+                    # then we better remove this site from our final dict
+                    ssbSiteSlots.pop(voname)
                 else:
-                    thresholdbyVOName[voname] = int(value)
+                    ssbSiteSlots[voname][slotsType] = int(value)
             else:
-                logging.error('I have a duplicated threshold entry in SSB for %s', voname)
-        return thresholdbyVOName
+                logging.warn('Found %s thresholds for site %s which has no state in SSB', slotsType, voname)
+        return
 
-    def siteStatusByVOName(self, sites):
+    def siteStatusByVOName(self, sites, ssbSiteSlots):
         """
         _siteStatusByVOName_
 
-        Creates a dictionary with keys->VOName and values->status:
+        Creates an inner dictionary for each site that will contain
+        the site state and the number of slots
         """
-        statusBySite = {}
         for site in sites:
             voname = site['VOName']
             status = site['Status']
-            if not status:
-                logging.error('Site %s does not have status in SSB', voname)
-                continue
-            if voname not in statusBySite:
+            if voname not in ssbSiteSlots:
                 statusAgent = self.getState(str(status))
                 if not statusAgent:
                     logging.error("Unkwown status '%s' for site %s, please check SSB", status, voname)
-                    continue
-                statusBySite[voname] = statusAgent
+                else:
+                    ssbSiteSlots[voname] = {'state': statusAgent}
             else:
                 logging.error('I have a duplicated status entry in SSB for %s', voname)
-        return statusBySite
+        return
 
     def getState(self, stateSSB):
         """

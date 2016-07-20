@@ -51,6 +51,9 @@ import time
 import random
 import copy
 import os
+
+from types import LongType
+
 from WMCore.Services.Dashboard import ProcInfo
 from WMCore.Services.Dashboard.Logger import Logger
 # __all__ = ["ApMon"]
@@ -950,7 +953,7 @@ class ApMon(object):
     __valueTypes = {
         type("string"): 0,  # XDR_STRING(see ApMon.h from C/C++ ApMon version)
         type(1): 2, 		# XDR_INT32
-        type(1L): 5,		    # send longs as doubles
+        LongType: 5,		# send longs as doubles (Problem with Python 3 since long is same as int)
         type(1.0): 5}		# XDR_REAL64
 
     __packFunctions = {

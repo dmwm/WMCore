@@ -28,17 +28,35 @@ class GFAL2Impl(StageOutImpl):
         self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-rm -vvv -t 600 %s '
         self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-copy -vvv -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
 
-    def createSourceName(self, protocol, pfn):
+
+    def createFinalPFN(self, protocol, pfn):
         """
-        _createSourceName_
-        GFAL2 uses file:/// urls
+        _createFinalPFN_
+        GFAL2 requires file:/// for any direction transfers
         """
         if pfn.startswith('file:'):
             return pfn
         elif os.path.isfile(pfn):
             return "file://%s" % os.path.abspath(pfn)
-        else:
-            return pfn
+        elif pfn.startswith('/'):
+            return "file://%s" % os.path.abspath(pfn)
+        return pfn
+
+
+    def createSourceName(self, protocol, pfn):
+        """
+        _createSourceName_
+        GFAL2 uses file:/// urls
+        """
+        return self.createFinalPFN(protocol, pfn)
+
+
+    def createTargetName(self, protocol, pfn):
+        """
+        _createTargetName_
+        GFAL2 uses file:// urls
+        """
+        return self.createFinalPFN(protocol, pfn)
 
 
     def createOutputDirectory(self, targetPFN):
@@ -60,12 +78,10 @@ class GFAL2Impl(StageOutImpl):
           -t   global timeout for the execution of the command.
                Command is interrupted if time expires before it finishes
         """
-        if pfn.startswith("file:"):
-            return self.removeCommand % pfn
-        elif os.path.isfile(pfn):
+        if os.path.isfile(pfn):
             return "/bin/rm -f %s" % os.path.abspath(pfn)
         else:
-            return self.removeCommand % pfn
+            return self.removeCommand % self.createFinalPFN(None, pfn)
 
 
     def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
@@ -89,8 +105,8 @@ class GFAL2Impl(StageOutImpl):
             copyCommandDict['checksum'] = "-K adler32"
         if options != None:
             copyCommandDict['options'] = options
-        copyCommandDict['source'] = sourcePFN
-        copyCommandDict['destination'] = targetPFN
+        copyCommandDict['source'] = self.createFinalPFN(None, sourcePFN)
+        copyCommandDict['destination'] = self.createFinalPFN(None, targetPFN)
 
         copyCommand = self.copyCommand % copyCommandDict
         result += copyCommand
@@ -119,10 +135,8 @@ class GFAL2Impl(StageOutImpl):
         command = ""
         if os.path.isfile(pfnToRemove):
             command = "/bin/rm -f %s" % os.path.abspath(pfnToRemove)
-        if pfnToRemove.startswith("file:"):
-            command = self.removeCommand % pfnToRemove
         else:
-            command = self.removeCommand % pfnToRemove
+            command = self.removeCommand % self.createFinalPFN(None, pfnToRemove)
         self.executeCommand(command)
 
 

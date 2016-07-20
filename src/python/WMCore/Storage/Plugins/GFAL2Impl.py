@@ -3,7 +3,9 @@
 _GFAL2Impl_
 Implementation of StageOutImpl interface for gfal-copy
 """
-import os, logging
+import os
+import argparse
+import logging
 
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
@@ -39,13 +41,21 @@ class GFAL2Impl(StageOutImpl2):
             localDir = os.path.dirname(localFileName)
 
         if not options:
-            options = ""
+            options = ''
 
-        transferCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY gfal-copy -t 2400 -T 2400 -p -K adler32 -vvv %s %s %s " %\
-                            (options, fromPfn2, toPfn2)
+        # parse the options
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--nochecksum', action='store_true')
+        args, unknown = parser.parse_known_args(options.split())
+
+        baseTransferCommand = "env -i X509_USER_PROXY=$X509_USER_PROXY gfal-copy -t 2400 -T 2400 -p "
+        if args.nochecksum:
+            transferCommand = "%s -vvv %s %s %s " % (baseTransferCommand, ' '.join(unknown), fromPfn2, toPfn2)
+        else:
+            transferCommand = "%s -K adler32 -vvv %s %s %s " % (baseTransferCommand, ' '.join(unknown), fromPfn2, toPfn2)
 
         logging.info("Staging out with gfal-copy")
-        logging.info("  commandline: %s" % transferCommand)
+        logging.info("  commandline: %s", transferCommand)
         commandExec = self.runCommandFailOnNonZero(transferCommand)
 
         if commandExec[0] != 0:

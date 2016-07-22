@@ -217,7 +217,7 @@ class Database(CouchDBRequests):
             self.commit(viewlist=viewlist, callback=callback)
         self._queue.append(doc)
 
-    def queueDelete(self, doc, viewlist=[]):
+    def queueDelete(self, doc):
         """
         Queue up a document for deletion
         """
@@ -226,7 +226,7 @@ class Database(CouchDBRequests):
         doc = {'_id': doc['_id'], '_rev': doc['_rev'], '_deleted': True}
         self.queue(doc)
 
-    def commitOne(self, doc, returndocs=False, timestamp=False, viewlist=[]):
+    def commitOne(self, doc, timestamp=False, viewlist=[]):
         """
         Helper function for when you know you only want to insert one doc
         additionally keeps from having to rewrite ConfigCache to handle the
@@ -246,9 +246,8 @@ class Database(CouchDBRequests):
     def commit(self, doc=None, returndocs=False, timestamp=False,
                viewlist=[], callback=None, **data):
         """
-        Add doc and/or the contents of self._queue to the database. If
-        returndocs is true, return document objects representing what has been
-        committed. If timestamp is true timestamp all documents with a unix style
+        Add doc and/or the contents of self._queue to the database.
+        If timestamp is true timestamp all documents with a unix style
         timestamp - this will be the timestamp of when the commit was called, it
         will not override an existing timestamp field.  If timestamp is a string
         that string will be used as the label for the timestamp.
@@ -1085,8 +1084,8 @@ class CouchMonitor(object):
                     else:
                         logging.error("""replication failed from %s to %s 
                                          couch server needs to be manually restarted""" % (
-                                      replaceToSantizeURL(source),
-                                      replaceToSantizeURL(target)))
+                            replaceToSantizeURL(source),
+                            replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
 
@@ -1147,13 +1146,12 @@ class CouchMonitor(object):
             logging.error(msg)
             return {'status': 'down', 'error_message': str(ex)}
 
-        
     def checkReplicationStatus(self, activeStatus, dbInfo, source, target, checkUpdateSeq):
         """
         adhoc way to check the replication
         """
         # monitor the last update on replications according to 5 min + checkpoint_interval
-        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval']/1000
+        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval'] / 1000
         lastUpdate = activeStatus["updated_on"]
         updateNum = int(activeStatus["source_seq"])
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)
@@ -1170,7 +1168,7 @@ class CouchMonitor(object):
                 return True
             else:
                 logging.warning("Replication from %s to %s has not been updated for more than %d minutes", source,
-                                                                                                           target,
-                                                                                                           secsUpdateOn)
+                                target,
+                                secsUpdateOn)
                 return False
         return False

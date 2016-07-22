@@ -3,7 +3,6 @@
 _GetJobSlotsByCMSName_
 """
 
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 
@@ -33,7 +32,6 @@ class GetJobSlotsByCMSName(DBFormatter):
 
         return dictResult
 
-    def execute(self, conn=None, transaction=False):
-
+    def execute(self, conn=None, transaction=False, returnCursor=False):
         results = self.dbi.processData(self.sql, conn=conn, transaction=transaction)
         return self.formatDict(results)

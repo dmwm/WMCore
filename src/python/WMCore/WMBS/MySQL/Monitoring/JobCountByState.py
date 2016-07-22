@@ -28,12 +28,12 @@ class JobCountByState(DBFormatter):
 
         return dictResult
 
-    def execute(self, conn=None, transaction=False):
+    def execute(self, conn=None, transaction=False, returnCursor=False):
         """
         _execute_
 
         Execute the SQL.
         """
-        result = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
+        result = self.dbi.processData(self.sql, conn=conn, transaction=transaction)
 
         return self.formatDict(result)

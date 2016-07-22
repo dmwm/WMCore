@@ -3,7 +3,7 @@ _JobTypeCountByState_
 
 Monitoring DAO classes for Jobs in WMBS
 """
-
+from __future__ import print_function, division
 
 from WMCore.Database.DBFormatter import DBFormatter
 

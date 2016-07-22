@@ -3,7 +3,7 @@ _RunJobByStatus_
 
 Monitoring DAO classes for Jobs in BossAir database
 """
-
+from __future__ import print_function, division
 
 from WMCore.Database.DBFormatter import DBFormatter
 

@@ -182,7 +182,7 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo['couch_process_warning'] = 0
         
         # This adds the last time and message when data was updated to agentInfo
-        lastDataUpload = DataUploadTime.getInfo(self)
+        lastDataUpload = DataUploadTime.getInfo()
         if lastDataUpload['data_last_update']:
             agentInfo['data_last_update'] = lastDataUpload['data_last_update']
         if lastDataUpload['data_error']:

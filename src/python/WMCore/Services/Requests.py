@@ -94,9 +94,6 @@ class Requests(dict):
         self.setdefault("logger", logging)
 
         check_server_url(self['host'])
-        if not self.pycurl:
-            # and then get the URL opener
-            self.setdefault("conn", self._getURLOpener())
 
     def get(self, uri=None, data={}, incoming_headers={},
             encode=True, decode=True, contentType=None):
@@ -234,7 +231,8 @@ class Requests(dict):
         # httplib2 will allow sockets to close on remote end without retrying
         # try to send request - if this fails try again - should then succeed
         try:
-            response, result = self['conn'].request(uri, method=verb,
+            conn = self._getURLOpener()
+            response, result = conn.request(uri, method=verb,
                                                     body=encoded_data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
@@ -244,17 +242,17 @@ class Requests(dict):
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
-            for conn in self['conn'].connections.values():
-                conn.close()
-            self['conn'] = self._getURLOpener()
+            for con in conn.connections.values():
+                con.close()
+            conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client
             try:
-                response, result = self['conn'].request(uri, method=verb,
+                response, result = conn.request(uri, method=verb,
                                                         body=encoded_data, headers=headers)
             except AttributeError as ex:
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
-                self['conn'].connections = {}
+                conn.connections = {}
                 raise socket.error('Error contacting: %s: %s' % (self.getDomainName(), msg))
         if response.status >= 400:
             e = HTTPException()

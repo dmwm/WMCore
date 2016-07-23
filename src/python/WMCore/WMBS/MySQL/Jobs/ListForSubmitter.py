@@ -18,7 +18,7 @@ class ListForSubmitter(DBFormatter):
                     wmbs_subscription.last_update as timestamp,
                     wmbs_workflow.name as request_name,
                     wmbs_workflow.id as task_id,
-                    wmbs_workflow.priority as task_priority,
+                    wmbs_workflow.priority as wf_priority,
                     wmbs_workflow.task as task_name
                     FROM wmbs_job
                INNER JOIN wmbs_jobgroup ON

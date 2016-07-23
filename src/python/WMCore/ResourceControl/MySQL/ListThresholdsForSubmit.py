@@ -94,34 +94,30 @@ class ListThresholdsForSubmit(DBFormatter):
 
             if siteName not in formattedResults:
                 siteInfo = {}
-                formattedResults[siteName] = siteInfo
-                siteInfo['cms_name']             = result['cms_name']
                 siteInfo['pnns']                 = mappedPNNs.get(siteName, [])
                 siteInfo['state']                = result['state']
                 siteInfo['total_pending_slots']  = result['pending_slots']
                 siteInfo['total_running_slots']  = result['running_slots']
                 siteInfo['total_pending_jobs']   = task_pending_jobs
                 siteInfo['total_running_jobs']   = task_running_jobs
-                siteInfo['thresholds']           = []
+                siteInfo['thresholds']           = {}
+                formattedResults[siteName] = siteInfo
             else:
                 formattedResults[siteName]['total_pending_jobs'] += task_pending_jobs
                 formattedResults[siteName]['total_running_jobs'] += task_running_jobs
 
-            for threshold in formattedResults[siteName]['thresholds']:
-                if threshold['task_type'] == taskType:
-                    threshold['task_running_jobs'] += task_running_jobs
-                    threshold['task_pending_jobs'] += task_pending_jobs
-                    break
-            else:
+            if taskType not in formattedResults[siteName]['thresholds']:
                 threshold = {}
-                threshold['task_type']               = taskType
-                threshold['max_slots']               = result['max_slots']
-                threshold['pending_slots']           = result['task_pending_slots']
-                threshold['priority']                = result['priority']
-                threshold['task_running_jobs']       = task_running_jobs
-                threshold['task_pending_jobs']       = task_pending_jobs
-                formattedResults[siteName]['thresholds'].append(threshold)
-
+                threshold[taskType]                      = {}
+                threshold[taskType]['max_slots']         = result['max_slots']
+                threshold[taskType]['pending_slots']     = result['task_pending_slots']
+                threshold[taskType]['priority']          = result['priority']
+                threshold[taskType]['task_running_jobs'] = task_running_jobs
+                threshold[taskType]['task_pending_jobs'] = task_pending_jobs
+                formattedResults[siteName]['thresholds'].update(threshold)
+            else:
+                formattedResults[siteName]['thresholds'][taskType]['task_pending_jobs'] += task_pending_jobs
+                formattedResults[siteName]['thresholds'][taskType]['task_running_jobs'] += task_running_jobs
 
         return formattedResults
 

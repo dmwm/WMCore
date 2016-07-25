@@ -388,8 +388,8 @@ class JobSubmitterTest(unittest.TestCase):
         nJobs = 10
         site = "T1_US_FNAL"
 
-        self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 200, tasks = ['Processing', 'Merge'],
-                                   Processing = {'pendingSlots' : 45, 'runningSlots' :-1},
+        self.setResourceThresholds(site, pendingSlots = 50, runningSlots = 220, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 45, 'runningSlots' :200},
                                    Merge = {'pendingSlots' : 10, 'runningSlots' : 20, 'priority' : 5})
 
         # Always initialize the submitter after setting the sites, flaky!
@@ -456,8 +456,8 @@ class JobSubmitterTest(unittest.TestCase):
         # The scenario will be setup as follows: Move all current jobs as running
         # Create 300 Processing jobs and 300 merge jobs
         # Run 5 polling cycles, moving all pending jobs to running in between
-        # Result is, merge is left at 25 running 0 pending and processing is left at 215 running 0 pending
-        # Processing has 135 jobs in queue and Merge 285
+        # Result is, merge is left at 30 running 0 pending and processing is left at 240 running 0 pending
+        # Processing has 110 jobs in queue and Merge 280
         # This tests all threshold dynamics including the prioritization of merge over processing
         nSubs = 1
         nJobs = 300
@@ -478,7 +478,7 @@ class JobSubmitterTest(unittest.TestCase):
         getRunJobID = self.baDaoFactory(classname = "LoadByWMBSID")
         setRunJobStatus = self.baDaoFactory(classname = "SetStatus")
 
-        for _ in range(5):
+        for i in range(5):
             result = getJobsAction.execute(state = 'Executing')
             binds = []
             for jobId in result:
@@ -488,13 +488,13 @@ class JobSubmitterTest(unittest.TestCase):
             jobSubmitter.algorithm()
 
         result = getJobsAction.execute(state = 'Executing', jobType = 'Processing')
-        self.assertEqual(len(result), 215)
+        self.assertEqual(len(result), 240)
         result = getJobsAction.execute(state = 'Created', jobType = 'Processing')
-        self.assertEqual(len(result), 135)
+        self.assertEqual(len(result), 110)
         result = getJobsAction.execute(state = 'Executing', jobType = 'Merge')
-        self.assertEqual(len(result), 25)
+        self.assertEqual(len(result), 30)
         result = getJobsAction.execute(state = 'Created', jobType = 'Merge')
-        self.assertEqual(len(result), 285)
+        self.assertEqual(len(result), 280)
 
         return
 
@@ -513,9 +513,9 @@ class JobSubmitterTest(unittest.TestCase):
         nJobs = 10
         site = "T1_US_FNAL"
 
-        self.setResourceThresholds(site, pendingSlots = 10, runningSlots = -1, tasks = ['Processing', 'Merge'],
-                                   Processing = {'pendingSlots' : 50, 'runningSlots' :-1},
-                                   Merge = {'pendingSlots' : 10, 'runningSlots' :-1, 'priority' : 5})
+        self.setResourceThresholds(site, pendingSlots = 10, runningSlots = 10000, tasks = ['Processing', 'Merge'],
+                                   Processing = {'pendingSlots' : 50, 'runningSlots' :10000},
+                                   Merge = {'pendingSlots' : 10, 'runningSlots' :10000, 'priority' : 5})
 
         # Always initialize the submitter after setting the sites, flaky!
         jobSubmitter = JobSubmitterPoller(config = config)
@@ -555,15 +555,16 @@ class JobSubmitterTest(unittest.TestCase):
                                             workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                         workloadName),
                                             site = site,
-                                            name = 'NewestWorkflow')
+                                            name = 'OldestWorkflow')
+        for group in jobGroupList:
+            changeState.propagate(group.jobs, 'created', 'new')
 
-        jobGroupList.extend(self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
+        jobGroupList = self.createJobGroups(nSubs = nSubs, nJobs = nJobs,
                                     task = workload.getTask("ReReco"),
                                     workloadSpec = os.path.join(self.testDir, 'workloadTest',
                                                                 workloadName),
                                     site = site,
-                                    name = 'OldestWorkflow'))
-
+                                    name = 'NewestWorkflow')
         for group in jobGroupList:
             changeState.propagate(group.jobs, 'created', 'new')
 

@@ -238,8 +238,8 @@ class WMBSMergeBySize(JobFactory):
 
         mergeUnits = self.defineMergeUnits(mergeableFiles)
 
-        for seName in mergeUnits.keys():
-            for runNumber in mergeUnits[seName].keys():
-                self.defineMergeJobs(mergeUnits[seName][runNumber])
+        for pnn in mergeUnits.keys():
+            for runNumber in mergeUnits[pnn].keys():
+                self.defineMergeJobs(mergeUnits[pnn][runNumber])
 
         return

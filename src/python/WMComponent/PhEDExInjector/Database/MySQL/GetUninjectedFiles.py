@@ -14,7 +14,7 @@ class GetUninjectedFiles(DBFormatter):
                     dbsbuffer_file.filesize AS filesize,
                     dbsbuffer_block.blockname AS blockname,
                     dbsbuffer_dataset.path AS dataset,
-                    dbsbuffer_location.se_name AS location,
+                    dbsbuffer_location.pnn AS location,
                     dbsbuffer_file_checksums.cksum as cksum,
                     dbsbuffer_checksum_type.type as cktype
                     FROM dbsbuffer_file

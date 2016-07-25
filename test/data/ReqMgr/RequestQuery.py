@@ -72,7 +72,6 @@ class RequestQuery:
         Return a list block origin sites.
         """
         
-        sites=[]
         local_dbs = dbs_url.split('/')[5]
         if local_dbs == 'phys01':
             response = self.dbsPhys01.listBlocks(detail=True,dataset=data)
@@ -81,17 +80,12 @@ class RequestQuery:
         elif local_dbs == 'phys03':
             response = self.dbsPhys03.listBlocks(detail=True,dataset=data)
         
-        seList = []
+        pnnList = set()
         for block in response:
-            if block['origin_site_name'] not in seList:
-                seList.append(block['origin_site_name'])
+            pnnList.add(block['origin_site_name'])
+        psnList = self.mySiteDB.PNNstoPSNs(pnnList)
         
-        siteNames = []
-        for node in self.nodeMappings['phedex']['node']:
-            if node['se'] in seList:
-                siteNames.append(node['name']) 
-        
-        return siteNames, seList
+        return psnList, list(pnnList)
     
     def setGlobalTagFromOrigin(self, dbs_url,input_dataset):
         """
@@ -220,8 +214,7 @@ class RequestQuery:
             new_dataset = '_'.join(stripped_dataset)
                         
         # Get dataset site info:
-        phedex_map, se_names = self.getDatasetOriginSites(dbs_url,input_dataset)
-        sites = set([self.mySiteDB.PNNtoPSN(node) for node in phedex_map])
+        psnList, pnnList = self.getDatasetOriginSites(dbs_url,input_dataset)
 
         infoDict = {}
         # Build store results json
@@ -248,7 +241,7 @@ class RequestQuery:
         infoDict["CMSSWVersion"] = release
         infoDict["ScramArch"] = scram_arch
         infoDict["ProcessingVersion"] = dataset_version                    
-        infoDict["SiteWhitelist"] = list(sites)
+        infoDict["SiteWhitelist"] = psnList
         
         # Create report for Migration2Global
         report = {}
@@ -260,8 +253,8 @@ class RequestQuery:
         report["InputDataset"] = input_dataset
         report["ProcessingString"] = new_dataset
         report["localUrl"] = dbs_url
-        report["sites"] = list(sites)
-        report["se_names"] = list(se_names)
+        report["sites"] = psnList
+        report["pnns"] = pnnList
 
         return report
 
@@ -293,7 +286,7 @@ class RequestQuery:
         """
         Print out a report
         """
-        print("%20s %5s %10s %50s %50s" %( 'Ticket','json','local DBS','Sites','se_names')) 
+        print("%20s %5s %10s %50s %50s" %( 'Ticket','json','local DBS','Sites','pnns')) 
         print("%20s %5s %10s %50s %50s" %( '-'*20,'-'*5,'-'*10,'-'*50,'-'*50 ))
         
         json = report["json"]
@@ -301,7 +294,7 @@ class RequestQuery:
         #status = report["ticketStatus"]
         localUrl = report["localUrl"].split('/')[5]
         site = ', '.join(report["sites"])
-        se_names = ', '.join(report["se_names"])
-        print("%20s %5s %10s %50s %50s" %(ticket,json,localUrl,site,se_names))  
+        pnns = ', '.join(report["pnns"])
+        print("%20s %5s %10s %50s %50s" %(ticket,json,localUrl,site,pnns))  
 
         

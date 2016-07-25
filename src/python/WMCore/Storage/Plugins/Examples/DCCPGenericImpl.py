@@ -28,7 +28,7 @@ class DCCPGenericImpl(StageOutImplV2):
 
     """
 
-    def doTransfer(self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum  ):
+    def doTransfer(self, fromPfn, toPfn, stageOut, pnn, command, options, protocol, checksum  ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -56,7 +56,7 @@ class DCCPGenericImpl(StageOutImplV2):
 
         return toPfn
 
-    def doDelete(self, pfn, seName, command, options, protocol  ):
+    def doDelete(self, pfn, pnn, command, options, protocol  ):
         """
             deletes a file, raises on error
             StageOutError (and inherited exceptions) are for expected errors

@@ -332,7 +332,7 @@ FrameworkJobReport.logArch1.output.logArchive.section_('dataset')
 FrameworkJobReport.logArch1.id = None
 FrameworkJobReport.logArch1.counter = 2
 FrameworkJobReport.WMAgentJobName = 'f44abb00-b0cb-11e1-a16b-003048c9c3fe-0'
-FrameworkJobReport.seName = 'cmssrm.fnal.gov'
+FrameworkJobReport.pnn = 'T1_US_FNAL_Disk'
 FrameworkJobReport.WMAgentJobID = 62480
 FrameworkJobReport.steps = ['cmsRun1', 'stageOut1', 'logArch1']
 FrameworkJobReport.section_('stageOut1')

@@ -38,7 +38,7 @@ class StageOutMgr:
         self.override = False
         if overrideParams != {}:
             print("StageOutMgr::__init__(): Override: %s" % overrideParams)
-            checkParams = ["command", "option", "se-name", "lfn-prefix"]
+            checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
             for param in checkParams:
                 if param in self.overrideConf.keys():
                     self.override = True
@@ -94,13 +94,6 @@ class StageOutMgr:
         msg = "Local Stage Out Implementation to be used is: "
         msg += "%s\n" % implName
 
-        seName = self.siteCfg.localStageOut.get("se-name", None)
-        if seName == None:
-            msg = "Unable to retrieve local stage out se-name\n"
-            msg += "From site config file.\n"
-            msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
-        msg += "Local Stage Out SE Name to be used is %s\n" % seName
         pnn = self.siteCfg.localStageOut.get("phedex-node", None)
         if pnn == None:
             msg = "Unable to retrieve local stage out phedex-node\n"
@@ -130,7 +123,7 @@ class StageOutMgr:
 
         msg += "There are %s fallback stage out definitions.\n" % len(self.fallbacks)
         for item in self.fallbacks:
-            msg += "\tFallback to : %s using: %s \n" % (item['se-name'], item['command'])
+            msg += "\tFallback to : %s using: %s \n" % (item['phedex-node'], item['command'])
 
         print("==== Stageout configuration start ====")
         print(msg)
@@ -149,14 +142,12 @@ class StageOutMgr:
         overrideParams = {
             "command" : None,
             "option" : None,
-            "se-name" : None,
             "phedex-node" : None,
             "lfn-prefix" : None,
             }
 
         try:
             overrideParams['command'] = overrideConf['command']
-            overrideParams['se-name'] = overrideConf['se-name']
             overrideParams['phedex-node'] = overrideConf['phedex-node']
             overrideParams['lfn-prefix'] = overrideConf['lfn-prefix']
         except Exception as ex:
@@ -200,7 +191,6 @@ class StageOutMgr:
             try:
                 pfn = self.localStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['SEName'] = self.siteCfg.localStageOut['se-name']
                 fileToStage['PNN'] = self.siteCfg.localStageOut['phedex-node']
                 fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
                 self.completedFiles[fileToStage['LFN']] = fileToStage
@@ -233,7 +223,6 @@ class StageOutMgr:
                 pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
                                             fallback, fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['SEName'] = fallback['se-name']
                 fileToStage['PNN'] = fallback['phedex-node']
                 fileToStage['StageOutCommand'] = fallback['command']
                 print("attempting fallback")
@@ -263,7 +252,7 @@ class StageOutMgr:
         command - the stage out impl plugin name to be used
         option - the option values to be passed to that command (None is allowed)
         lfn-prefix - the LFN prefix to generate the PFN
-        se-name - the Name of the SE to which the file is being xferred
+        phedex-node - the Name of the PNN to which the file is being xferred
 
         """
         pfn = "%s%s" % (fbParams['lfn-prefix'], lfn)
@@ -298,7 +287,6 @@ class StageOutMgr:
         Given the lfn and local stage out params, invoke the local stage out
 
         """
-        seName = self.siteCfg.localStageOut['se-name']
         pnn = self.siteCfg.localStageOut['phedex-node']
         command = self.siteCfg.localStageOut['command']
         options = self.siteCfg.localStageOut.get('option', None)

@@ -81,12 +81,11 @@ class StageOut(Executor):
 
         stageOutCall = {}
         if "command" in overrides and "option" in overrides \
-               and "se-name" in overrides and "phedex-node" in overrides \
+               and "phedex-node" in overrides \
                and"lfn-prefix" in overrides:
             logging.critical('using override in StageOut')
             stageOutCall['command']    = overrides.get('command')
             stageOutCall['option']     = overrides.get('option')
-            stageOutCall['se-name']    = overrides.get('se-name')
             stageOutCall['phedex-node']= overrides.get('phedex-node')
             stageOutCall['lfn-prefix'] = overrides.get('lfn-prefix')
 
@@ -191,7 +190,6 @@ class StageOut(Executor):
                     lfnRegEx(lfn)
                 fileForTransfer = {'LFN': lfn,
                                    'PFN': getattr(fileName, 'pfn'),
-                                   'SEName' : None,
                                    'PNN' : None,
                                    'StageOutCommand': None,
                                    'Checksums' : getattr(fileName, 'checksums', None)}

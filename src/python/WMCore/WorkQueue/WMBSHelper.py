@@ -550,7 +550,7 @@ class WMBSHelper(WMConnectionBase):
                     # If we don't have it, try and add it
                     locationsToAdd.append(jobLocation)
                     self.addedLocations.append(jobLocation)
-                dbsFileLoc.append({'lfn': lfn, 'sename': jobLocation})
+                dbsFileLoc.append({'lfn': lfn, 'pnn': jobLocation})
 
             if selfChecksums:
                 # If we have checksums we have to create a bind

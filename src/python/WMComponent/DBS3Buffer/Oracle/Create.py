@@ -123,9 +123,9 @@ class Create(DBCreator):
         self.create[len(self.create)] = \
             """CREATE TABLE dbsbuffer_location (
                  id       INTEGER,
-                 se_name  VARCHAR2(255) NOT NULL,
+                 pnn  VARCHAR2(255) NOT NULL,
                  PRIMARY KEY (id),
-                 CONSTRAINT uq_dbs_loc UNIQUE (se_name)
+                 CONSTRAINT uq_dbs_loc UNIQUE (pnn)
                )"""
 
         self.create[len(self.create)] = \

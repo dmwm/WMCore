@@ -77,7 +77,6 @@ class LogCollect(Executor):
         castorStageOutParams = {}
         castorStageOutParams['command'] = overrides.get('command', "xrdcp")
         castorStageOutParams['option'] = overrides.get('option', "--cerncastor")
-        castorStageOutParams['se-name'] = overrides.get('se-name', "srm-cms.cern.ch")
         castorStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
         castorStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://castorcms.cern.ch//castor/cern.ch/cms")
 
@@ -85,7 +84,6 @@ class LogCollect(Executor):
         eosStageOutParams = {}
         eosStageOutParams['command'] = overrides.get('command', "xrdcp")
         eosStageOutParams['option'] = overrides.get('option', "")
-        eosStageOutParams['se-name'] = overrides.get('se-name', "srm-eoscms.cern.ch")
         eosStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
         eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://eoscms.cern.ch//eos/cms")
 
@@ -232,7 +230,6 @@ class LogCollect(Executor):
 
         tarInfo = {'LFN'    : lfn,
                    'PFN'    : tarLocation,
-                   'SEName' : None,
                    'PNN'    : None,
                    'GUID'   : None}
 
@@ -262,7 +259,6 @@ class LogCollect(Executor):
 
         tarInfo = {'LFN'    : lfn,
                    'PFN'    : tarLocation,
-                   'SEName' : None,
                    'PNN'    : None,
                    'GUID'   : None}
 
@@ -286,7 +282,6 @@ class LogCollect(Executor):
             try:
                 fileToDelete = {'LFN': log['lfn'],
                                 'PFN': None,
-                                'SEName': None,
                                 'PNN': None,
                                 'StageOutCommand': None}
                 deleteMgr(fileToDelete = fileToDelete)

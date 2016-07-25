@@ -28,7 +28,7 @@ class XRDCPImpl(StageOutImplV2):
         commandArgs.insert(0,wrapperPath)
         return runCommand(commandArgs)
 
-    def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options, protocol, checksum ):
+    def doTransfer(self, sourcePFN, targetPFN, stageOut, pnn, command, options, protocol, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -53,7 +53,7 @@ class XRDCPImpl(StageOutImplV2):
                 pass
             raise StageOutFailure("File sizes don't match")
 
-    def doDelete(self, pfnToRemove, seName, command, options, protocol  ):
+    def doDelete(self, pfnToRemove, pnn, command, options, protocol  ):
         """
         _removeFile_
 

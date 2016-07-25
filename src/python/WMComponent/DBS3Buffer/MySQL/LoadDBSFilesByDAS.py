@@ -47,7 +47,7 @@ class LoadDBSFilesByDAS(DBFormatter):
                      ORDER BY dbsbuffer_file.id
                      """
 
-    getLocationSQL = """SELECT dbsbuffer_location.se_name as location, dbsbuffer_file.id as id
+    getLocationSQL = """SELECT dbsbuffer_location.pnn as location, dbsbuffer_file.id as id
                           FROM dbsbuffer_location
                           INNER JOIN dbsbuffer_file_location dfl ON dfl.location = dbsbuffer_location.id
                           INNER JOIN dbsbuffer_file ON dbsbuffer_file.id = dfl.filename

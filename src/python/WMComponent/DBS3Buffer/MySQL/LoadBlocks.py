@@ -13,7 +13,7 @@ class LoadBlocks(DBFormatter):
                     dbsbuffer_block.create_time as create_time,
                     dbsbuffer_block.status AS status,
                     dbsbuffer_dataset.path AS datasetpath,
-                    dbsbuffer_location.se_name AS location
+                    dbsbuffer_location.pnn AS location
               FROM dbsbuffer_block
               INNER JOIN dbsbuffer_dataset ON
                 dbsbuffer_dataset.id = dbsbuffer_block.dataset_id

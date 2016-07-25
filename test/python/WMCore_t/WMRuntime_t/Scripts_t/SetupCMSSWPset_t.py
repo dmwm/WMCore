@@ -225,7 +225,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         </event-data>
         <local-stage-out>
             <!-- original cmssrm.fnal.gov -->
-            <se-name value="storm-fe-cms.cr.cnaf.infn.it"/>
+            <phedex-node value="T2_CH_CERN"/>
             <command value="test-copy"/>
             <catalog url="trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap"/>
         </local-stage-out>
@@ -269,7 +269,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # find out local site name from the testing local site config,
         # will be needed later
         siteConfig = loadSiteLocalConfig()
-        seLocalName = siteConfig.localStageOut["se-name"]
+        seLocalName = siteConfig.localStageOut["phedex-node"]
         print("Running on site '%s', local SE name: '%s'" % (siteConfig.siteName, seLocalName))
 
         # before calling the script, SetupCMSSWPset will try to load JSON
@@ -305,7 +305,7 @@ class SetupCMSSWPsetTest(unittest.TestCase):
         # consider only locally available files
         filesInConfigDict = []
         for v in pileupSubDict.values():
-            if seLocalName in v["StorageElementNames"]:
+            if seLocalName in v["phedexNodeNames"]:
                 filesInConfigDict.extend(v["FileList"])
 
         for m in modules:

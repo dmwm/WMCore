@@ -126,15 +126,3 @@ class FileInfo:
                                         "dataTier": dataTier})
 
         return fileReport
-
-
-    def getSEName(self):
-        """
-        Using SiteLocalConfig, get the SEName
-
-        """
-
-        from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
-
-
-        self.siteCfg = loadSiteLocalConfig()

@@ -478,10 +478,10 @@ class WMBSHelperTest(unittest.TestCase):
 
         # add sites that would normally be added by operator via resource_control
         locationDAO = self.daoFactory(classname = "Locations.New")
-        self.ses = []
+        self.pnns = []
         for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, pnn = self.siteDB.cmsNametoSE(site)[0])
-            self.ses.append(self.siteDB.cmsNametoSE(site)[0])
+            locationDAO.execute(siteName = site, pnn = self.siteDB.cmsNametoPhEDExNode(site)[0])
+            self.pnns.append(self.siteDB.cmsNametoPhEDExNode(site)[0])
 
     def createWMSpec(self, name = 'ReRecoWorkload'):
         factory = ReRecoWorkloadFactory()
@@ -978,7 +978,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(file['merged'], False) # merged files get added to dbs
         self.assertEqual(len(file['parents']), 0)
         #file.loadData()
-        self.assertEqual(sorted(file['locations']), sorted(self.ses))
+        self.assertEqual(sorted(file['locations']), sorted(self.pnns))
         self.assertEqual(len(file.getParentLFNs()), 0)
 
         self.assertEqual(len(file.getRuns()), 1)

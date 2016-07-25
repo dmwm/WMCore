@@ -71,7 +71,6 @@ class deleteFileTest(unittest.TestCase):
         step.override.command    = 'cp'
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', '')
-        step.override.__setattr__('se-name','DUMMYSE')
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 

@@ -5,7 +5,6 @@
   </event-data>
   <local-stage-out>
     <phedex-node value="T1_US_FNAL_Disk"/>
-    <se-name value="cmssrm.fnal.gov"/>
     <command value="test-copy"/>
     <catalog url="trivialcatalog_file:/uscmst1/prod/sw/cms/SITECONF/T1_US_FNAL/PhEDEx/storage.xml?protocol=dcap"/>
   </local-stage-out>

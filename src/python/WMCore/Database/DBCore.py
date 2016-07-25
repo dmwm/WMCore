@@ -55,7 +55,7 @@ class DBInterface(WMObject):
     def buildbinds(self, sequence, thename, therest=[{}]):
         """
         Build a list of binds. Can be used recursively, e.g.:
-        buildbinds(file, 'file', buildbinds(sename, 'location'), {'lumi':123})
+        buildbinds(file, 'file', buildbinds(pnn, 'location'), {'lumi':123})
         TODO: replace with an appropriate map function
         """
         binds = []

@@ -723,7 +723,7 @@ class AccountantWorker(WMConnectionBase):
                                   dbsFile['events'], assocID,
                                   dbsFile['status'], workflowID))
 
-            dbsFileLoc.append({'lfn': lfn, 'sename' : jobLocation})
+            dbsFileLoc.append({'lfn': lfn, 'pnn' : jobLocation})
             if dbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': dbsFile['runs']})
 

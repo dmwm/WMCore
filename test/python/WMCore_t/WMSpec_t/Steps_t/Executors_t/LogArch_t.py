@@ -203,7 +203,7 @@ class LogArchiveTest(unittest.TestCase):
         helper = LogArchiveTemplate.LogArchiveStepHelper(self.stepdata)
         helper.addOverride(override = 'command', overrideValue='test-win')
         helper.addOverride(override = 'option', overrideValue='')
-        helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override = 'phedex-node', overrideValue='charlie.sheen.biz')
         helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
         
         executor.initialise( self.stepdata, self.job)
@@ -223,7 +223,7 @@ class LogArchiveTest(unittest.TestCase):
         helper = LogArchiveTemplate.LogArchiveStepHelper(self.stepdata)
         helper.addOverride(override = 'command', overrideValue='test-win')
         helper.addOverride(override = 'option', overrideValue='')
-        helper.addOverride(override = 'se-name', overrideValue='charlie.sheen.biz')
+        helper.addOverride(override = 'phedex-node', overrideValue='charlie.sheen.biz')
         helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
         helper.setNewStageoutOverride( True )
         
@@ -239,7 +239,6 @@ class LogArchiveTest(unittest.TestCase):
         step.override.command    = 'cp'
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
-        step.override.__setattr__('se-name','DUMMYSE')
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 
@@ -501,7 +500,6 @@ class otherLogArchiveTexst:#(unittest.TestCase):
         step.override.command    = 'cp'
         step.override.option     = ''
         step.override.__setattr__('lfn-prefix', self.testDir +"/")
-        step.override.__setattr__('se-name','DUMMYSE')
         step.override.__setattr__('phedex-node','DUMMYPNN')
 
 

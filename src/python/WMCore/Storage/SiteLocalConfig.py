@@ -121,15 +121,6 @@ class SiteLocalConfig(object):
         """
         return self.localStageOut['option']
 
-    def localStageOutSEName(self):
-        """
-        _localStageOutSEName_
-
-        return the local SE Name used for stage out
-
-        """
-        return self.localStageOut['se-name']
-
     def localStageOutPNN(self):
         """
         _localStageOutPNN_
@@ -274,7 +265,7 @@ def processLocalStageOut():
         report, node = (yield)
         localReport = {}
         for subnode in node.children:
-            if subnode.name in ['se-name', 'phedex-node', 'command', 'option']:
+            if subnode.name in ['phedex-node', 'command', 'option']:
                 localReport[subnode.name] = subnode.attrs.get('value', None)
             elif subnode.name == 'catalog':
                 localReport[subnode.name] = subnode.attrs.get('url', None)
@@ -291,7 +282,7 @@ def processFallbackStageOut():
         report, node = (yield)
         localReport = {}
         for subnode in node.children:
-            if subnode.name in ['se-name', 'phedex-node', 'command', 'option', 'lfn-prefix']:
+            if subnode.name in ['phedex-node', 'command', 'option', 'lfn-prefix']:
                 localReport[subnode.name] = subnode.attrs.get('value', None)
         report['fallbackStageOut'] = [localReport]
 

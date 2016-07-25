@@ -61,7 +61,7 @@ class DCCPFNALImpl(StageOutImplV2):
 
         return (exitCode, output)
 
-    def doTransfer(self, sourcePFN, targetPFN, stageOut, seName, command, options, protocol, checksum ):
+    def doTransfer(self, sourcePFN, targetPFN, stageOut, pnn, command, options, protocol, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -122,10 +122,10 @@ class DCCPFNALImpl(StageOutImplV2):
         else:
             # looks like lustre -- do a regular CP
             copyGuy = retrieveStageOutImpl('cp',useNewVersion = True)
-            return copyGuy.doTransfer(sourcePFN,targetPFN,stageOut, seName, command, options, protocol, checksum)
+            return copyGuy.doTransfer(sourcePFN,targetPFN,stageOut, pnn, command, options, protocol, checksum)
 
 
-    def doDelete(self, pfnToRemove, seName, command, options, protocol  ):
+    def doDelete(self, pfnToRemove, pnn, command, options, protocol  ):
         """
             deletes a file, raises on error
             StageOutError (and inherited exceptions) are for expected errors

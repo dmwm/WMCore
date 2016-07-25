@@ -190,7 +190,7 @@ class FNALImpl(StageOutImplV2):
 
         return pfn
 
-    def doDelete(self, pfnToRemove, seName, command, options, protocol ):
+    def doDelete(self, pfnToRemove, pnn, command, options, protocol ):
         """
         _removeFile_
 
@@ -201,7 +201,7 @@ class FNALImpl(StageOutImplV2):
         method =  self.storageMethod(pfnToRemove)
 
         if method == 'srm':
-            return self.srmImpl.doDelete(pfnToRemove, seName, command, options, protocol)
+            return self.srmImpl.doDelete(pfnToRemove, pnn, command, options, protocol)
         elif method == 'dccp':
             pfnSplit = pfnToRemove.split("/11/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
@@ -217,7 +217,7 @@ class FNALImpl(StageOutImplV2):
         else:
             raise RuntimeError("Unsupported storage method in doDelete: %s" % method)
 
-    def doTransfer( self, fromPfn, toPfn, stageOut, seName, command, options, protocol, checksum ):
+    def doTransfer( self, fromPfn, toPfn, stageOut, pnn, command, options, protocol, checksum ):
         """
             performs a transfer. stageOut tells you which way to go. returns the new pfn or
             raises on failure. StageOutError (and inherited exceptions) are for expected errors
@@ -247,7 +247,7 @@ class FNALImpl(StageOutImplV2):
 
         if method == 'srm' or sourceMethod == 'srm':
             return self.srmImpl.doTransfer( fromPfn, toPfn, stageOut,\
-                                           seName, command, options, protocol, checksum)
+                                           pnn, command, options, protocol, checksum)
 
         # transfer with lustre
         elif method == 'lustre':
@@ -285,7 +285,7 @@ class FNALImpl(StageOutImplV2):
                     logging.info("unlinking %s" % pnfsPfn2(targetPFN))
                     os.unlink( pnfsPfn2(targetPFN) )
                 else:
-                    self.doDelete( targetPFN, seName, command, options, protocol )
+                    self.doDelete( targetPFN, pnn, command, options, protocol )
                 raise
 
 
@@ -312,7 +312,7 @@ class FNALImpl(StageOutImplV2):
                     logging.info("unlinking %s" % pnfsPfn2(targetPFN))
                     os.unlink( pnfsPfn2(targetPFN) )
                 else:
-                    self.doDelete( targetPFN, seName, command, options, protocol )
+                    self.doDelete( targetPFN, pnn, command, options, protocol )
                 raise
 
             #  //
@@ -328,6 +328,6 @@ class FNALImpl(StageOutImplV2):
 
             except:
                 logging.info("DCCP CRC Check failed, removing failed file")
-                self.doDelete( targetPFN, seName, command, options, protocol )
+                self.doDelete( targetPFN, pnn, command, options, protocol )
                 raise
             return

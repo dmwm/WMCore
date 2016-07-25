@@ -26,6 +26,7 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 
 class ResubmitBlockTest(EmulatedUnitTestCase):
     """
@@ -35,7 +36,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(ResubmitBlockTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        super(ResubmitBlockTest, self).__init__(methodName=methodName)
 
     def setUp(self):
         """
@@ -52,13 +53,15 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setupCouch("resubmitblock_t", "ACDC", "GroupUser")
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
 
         # Define test environment
         self.couchUrl = os.environ["COUCHURL"]
         self.acdcDBName = 'resubmitblock_t'
-        self.validLocations = ['T2_US_Nebraska', 'T1_US_FNAL', 'T1_UK_RAL']
+        self.validLocations = ['T2_US_Nebraska', 'T1_US_FNAL_Disk', 'T1_UK_RAL_Disk']
         self.siteWhitelist = ['T2_XX_SiteA']
+        siteDB = SiteDB()
+        #Convert phedex node name to a valid processing site name
+        self.PSNs = siteDB.PNNstoPSNs(self.validLocations)
         self.workflowName = 'dballest_ReReco_workflow'
         couchServer = CouchServer(dburl=self.couchUrl)
         self.acdcDB = couchServer.connectDatabase(self.acdcDBName, create=False)
@@ -79,12 +82,14 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         EmulatorHelper.resetEmulators()
         return
 
-    def getProcessingACDCSpec(self, splittingAlgo='LumiBased', splittingArgs={'lumis_per_job' : 8}, setLocationFlag=False):
+    def getProcessingACDCSpec(self, splittingAlgo='LumiBased', splittingArgs=None, setLocationFlag=False):
         """
         _getProcessingACDCSpec_
 
         Get a ACDC spec for the processing task of a ReReco workload
         """
+        if splittingArgs is None:
+            splittingArgs = {'lumis_per_job' : 8}
         factory = ReRecoWorkloadFactory()
         rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
@@ -98,12 +103,15 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         return Tier1ReRecoWorkload
 
-    def getMergeACDCSpec(self, splittingAlgo='ParentlessMergeBySize', splittingArgs={}):
+    def getMergeACDCSpec(self, splittingAlgo='ParentlessMergeBySize', splittingArgs=None):
         """
         _getMergeACDCSpec_
 
         Get a ACDC spec for the merge task of a ReReco workload
         """
+        if splittingArgs is None:
+            splittingArgs = {}
+
         factory = ReRecoWorkloadFactory()
         rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
@@ -212,7 +220,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(50, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -245,7 +253,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -274,7 +282,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(500, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -305,7 +313,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])
@@ -321,7 +329,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
             for unit in units:
                 self.assertEqual(len(unit['Inputs']), 1)
                 inputBlock = unit['Inputs'].keys()[0]
-                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.validLocations))
+                self.assertEqual(sorted(unit['Inputs'][inputBlock]), sorted(self.PSNs))
                 self.assertEqual(10000, unit['Priority'])
                 self.assertEqual(100, unit['Jobs'])
                 self.assertEqual(acdcWorkload, unit['WMSpec'])

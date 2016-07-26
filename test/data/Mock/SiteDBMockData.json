@@ -467,6 +467,21 @@
   {
    "phedex_name": "T2_CH_CSCS",
    "psn_name": "T2_CH_CSCS_HPC"
+  },
+  {
+   "phedex_name": "T2_XX_SiteA",
+   "psn_name": "T2_XX_SiteA",
+   "site_name": "XX_T2_XX_SiteA"
+  },
+  {
+   "phedex_name": "T2_XX_SiteB",
+   "psn_name": "T2_XX_SiteB",
+   "site_name": "XX_T2_XX_SiteB"
+  },
+  {
+   "phedex_name": "T2_XX_SiteC",
+   "psn_name": "T2_XX_SiteC",
+   "site_name": "XX_T2_XX_SiteC"
   }
  ],
  "[('callname', 'people'), ('clearCache', False), ('data', {}), ('filename', 'people.json'), ('verb', 'GET')]": [

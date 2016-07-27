@@ -76,14 +76,9 @@ class DashboardMonitor(WMRuntimeMonitor):
 
         destHost = args.get('destinationHost', None)
         destPort = args.get('destinationPort', None)
+        dashboardUrl = '%s:%s' % (destHost, str(destPort))
 
-        self.dashboardInfo = DashboardInfo(task = task, job = job)
-
-        if destHost and destPort:
-            logging.info("About to set destination to %s:%s" % (destHost, destPort))
-            self.dashboardInfo.addDestination(host = destHost,
-                                              port = destPort)
-
+        self.dashboardInfo = DashboardInfo(task=task, job=job, dashboardUrl=dashboardUrl)
 
     def jobStart(self, task):
         """

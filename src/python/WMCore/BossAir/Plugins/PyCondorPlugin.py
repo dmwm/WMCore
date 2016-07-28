@@ -33,7 +33,7 @@ from Utils.IterTools import grouper
 import htcondor as condor
 import classad
 
-GROUP_NAME_RE = re.compile("^[a-zA-Z0-9_]+_([A-Z]+)-")
+GROUP_NAME_RE = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-")
 
 
 def submitWorker(inputQueue, results, timeout=None):

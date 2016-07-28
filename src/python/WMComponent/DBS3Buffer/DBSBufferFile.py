@@ -184,12 +184,12 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         Insert this file and all it's metadata into the DBS Buffer.
         """
-        existingTransaction = self.beginTransaction()
-
+        
         if self.exists() != False:
             self.load()
             return
 
+        existingTransaction = self.beginTransaction()
         assocID = self.insertDatasetAlgo()
 
         addAction = self.daoFactory(classname = "DBSBufferFiles.Add")

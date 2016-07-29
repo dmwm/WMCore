@@ -229,7 +229,7 @@ class WorkQueue(WorkQueueBase):
         self.sendAlert = alertAPI.getSendAlert(sender=self.alertSender,
                                                preAlert=preAlert)
 
-        # set the thread name before creat the log db.
+        # set the thread name before create the log db.
         # only sets that when it is not set already
         # setLogDB
 
@@ -237,8 +237,8 @@ class WorkQueue(WorkQueueBase):
         if myThread.getName() == "MainThread":  # this should be only GQ case other cases thread name should be set
             myThread.setName(self.__class__.__name__)
 
-        centralurl = self.params.get("central_logdb_url", "")
-        identifier = self.params.get("log_reporter", "")
+        centralurl = self.params.get("central_logdb_url")
+        identifier = self.params.get("log_reporter")
         self.logdb = LogDB(centralurl, identifier, logger=self.logger)
 
         self.logger.debug("WorkQueue created successfully")
@@ -346,7 +346,6 @@ class WorkQueue(WorkQueueBase):
         # TODO: Check to see if we can skip spec loading - need to persist some more details to element
         wmspecCache = {}
         for match in matches:
-            skipMatch = False
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
                 if match['RequestName'] not in wmspecCache:
@@ -355,11 +354,18 @@ class WorkQueue(WorkQueueBase):
                 else:
                     wmspec = wmspecCache[match['RequestName']]
 
-                if match['StartPolicy'] == 'Dataset':
-                    # actually returns dataset name and dataset info
-                    blockName, dbsBlock = self._getDBSDataset(match)
-                elif match['Inputs']:
-                    blockName, dbsBlock = self._getDBSBlock(match, wmspec)
+                try:
+                    if match['StartPolicy'] == 'Dataset':
+                        # actually returns dataset name and dataset info
+                        blockName, dbsBlock = self._getDBSDataset(match)
+                    elif match['Inputs']:
+                        blockName, dbsBlock = self._getDBSBlock(match, wmspec)
+                except Exception as ex:
+                    msg = "%s, %s: \n" % (wmspec.name(), match['Inputs'].keys())
+                    msg += "failed to retrieve data from DBS/PhEDEx in LQ: \n%s" % str(ex)
+                    self.logger.error(msg)
+                    self.logdb.post(wmspec.name(), msg, 'error')
+                    continue
 
                 try:
                     match['Subscription'] = self._wmbsPreparation(match,
@@ -367,16 +373,12 @@ class WorkQueue(WorkQueueBase):
                                                                   blockName,
                                                                   dbsBlock)
                 except Exception as ex:
-                    skipMatch = True
                     msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
                     self.logger.error(msg)
-                    centralurl = self.params.get("central_logdb_url", "")
-                    identifier = self.params.get("log_reporter", "")
-                    self.logdb = LogDB(centralurl, identifier, logger=self.logger)
                     self.logdb.post(wmspec.name(), msg, 'error')
+                    continue
 
-            if not skipMatch:
-                results.append(match)
+            results.append(match)
 
         del wmspecCache  # remove cache explicitly
         self.logger.info('Injected %s units into WMBS' % len(results))

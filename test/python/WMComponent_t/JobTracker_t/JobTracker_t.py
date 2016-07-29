@@ -549,16 +549,6 @@ class JobTrackerTest(unittest.TestCase):
         p.print_stats()
 
 
-    def testAlerts(self):
-        """
-        Tests only alerts triggered from JobTrackerPoller.
-
-        """
-        config = self.getConfig()
-        jobTracker = JobTrackerPoller(config)
-        jobTracker.sendAlert(6, msg = "test message")
-
-
 
 if __name__ == '__main__':
     unittest.main()

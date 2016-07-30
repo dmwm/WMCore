@@ -16,10 +16,8 @@ import time
 
 from WMCore.WMBase import getTestBase
 from WMCore.Services.Dashboard.Logger import Logger
-from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
-from WMCore.Services.Dashboard.DashboardAPI import apmonFree, apmonSend, parseAd
-from WMCore.Services.Dashboard.DashboardAPI import APMONINSTANCE, APMONINIT, APMONCONF
-from WMCore.Services.Dashboard.DashboardAPI import reportFailureToDashboard, logger, getApmonInstance
+from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI, parseAd, \
+    reportFailureToDashboard, logger
 
 
 class DashboardAPITest(unittest.TestCase):
@@ -34,22 +32,23 @@ class DashboardAPITest(unittest.TestCase):
 
         Just test initialization of apmon Instance
         """
-        print("Apmon Configuration %s" % APMONCONF)
-        apmon = getApmonInstance(apmonServer=APMONCONF)
-        self.assertTrue(apmon.initializedOK())
+        dashboard = DashboardAPI()
+        apmonInst = dashboard.getApMonInstance()
+        self.assertTrue(apmonInst.initializedOK())
         # Free up apmon instance and check if it was successfull
-        apmonFree()
-        self.assertFalse(APMONINIT)
-        self.assertEqual(None, APMONINSTANCE)
+        apmonInst.free()
+        self.assertEqual(None, apmonInst)
 
     def testApmonSend(self):
         """
         _testApmonSend_
 
-        Just test simple apmonSend with fake data
+        We cannot really test any results, but let's just send some data
         """
-        # We just sent fake data which is not monitored by dashboard.
-        self.assertEqual(0, apmonSend("TaskID", "Job1", {"CPUUsage": 100, "MemUsage": 1}))
+        package = {'jobId': 'abcd-1234_0', 'MessageType': 'JobStatus',
+                   'taskId': 'wmagent_alan', 'StatusValue': 'submitted'}
+        dashboard = DashboardAPI()
+        dashboard.apMonSend(package)
 
     def testLogger(self):
         """

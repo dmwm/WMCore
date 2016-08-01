@@ -217,6 +217,9 @@ def validateSiteLists(arguments):
     if len(res):
         msg = "Validation failed: The same site cannot be white and blacklisted: %s" % list(res)
         raise WMSpecFactoryException(msg)
+    # store the properly formatted values (list instead of string)
+    arguments["SiteWhitelist"] = whiteList
+    arguments["SiteBlacklist"] = blackList
     return
 
 

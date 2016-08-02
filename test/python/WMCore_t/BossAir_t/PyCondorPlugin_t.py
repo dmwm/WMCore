@@ -18,7 +18,7 @@ from WMCore.BossAir.StatusPoller import StatusPoller
 from WMCore.JobStateMachine.ChangeState          import ChangeState
 from WMComponent.JobSubmitter.JobSubmitterPoller import JobSubmitterPoller
 from WMComponent.JobTracker.JobTrackerPoller     import JobTrackerPoller
-
+from WMCore.BossAir.Plugins.PyCondorPlugin import GROUP_NAME_RE
 from WMCore_t.BossAir_t.BossAir_t import BossAirTest, getCondorRunningJobs
 
 class PyCondorPluginTest(BossAirTest):
@@ -455,6 +455,23 @@ class PyCondorPluginTest(BossAirTest):
             baAPI.kill(jtok, errorCode=71301)  # errorCode can be either 71301/71302/71303 (Aborted/Draining/Down)
 
         return
+
+    def test_CMSGroupsRegex(self):
+        """
+        _test_CMSGroupsRegex_
+
+        Simply test the regular expression for the CMSGroups classad
+        """
+        mapGroupReqName = {'HIRun2015': 'jen_a_ACDC_HIRun2015-HIMinimumBias5-02May2016_758p4_160721_015926_2101',
+                           'HIG': 'pdmvserv_HIG-RunIISummer15GS-01331_00274_v2__160308_111346_296',
+                           'EXO': 'pdmvserv_task_EXO-RunIISpring16DR80-03516__v1_T_160719_140341_8564',
+                           'BPH': 'pdmvserv_BPH-Summer12-00208_00263_v1__160726_025423_731',
+                           'undefined': 'amaltaro_TaskChain_MC_DMWM_Test_July_Patches_160727_234956_6253'}
+
+        for group, request in mapGroupReqName.iteritems():
+            match = GROUP_NAME_RE.match(request)
+            matchedGroup = match.groups()[0] if match else 'undefined'
+            self.assertEqual(group, matchedGroup)
 
 
 if __name__ == '__main__':

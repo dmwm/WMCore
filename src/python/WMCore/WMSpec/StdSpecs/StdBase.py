@@ -568,7 +568,7 @@ class StdBase(object):
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
         mergeTaskCmsswHelper.setOverrideCatalog(self.overrideCatalog)
 
-        if splitAlgo != "WMBSMergeBySize":
+        if splitAlgo != "WMBSMergeBySize" and self.robustMerge:
             mergeTaskCmsswHelper.setSkipBadFiles(True)
 
         mergeTask.setSplittingAlgorithm(splitAlgo,
@@ -1017,7 +1017,8 @@ class StdBase(object):
                      "Dashboard": {"default": "", "type": str},
                      # team name
                      "Team": {"default": "", "type": str},
-                     "PrepID": {"default": None, "null": True}
+                     "PrepID": {"default": None, "null": True},
+                     "RobustMerge": {"default": True, "type": bool}
                     }
 
         # Set defaults for the argument specification

@@ -26,10 +26,12 @@ parentProcArgs.update(IncludeParents="True")
 class DatasetTestCase(EmulatedUnitTestCase):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=5)
 
+    def __init__(self, methodName='runTest'):
+        super(DatasetTestCase, self).__init__(methodName=methodName)
+
     def setUp(self):
         super(DatasetTestCase, self).setUp()
         Globals.GlobalParams.resetParams()
-        EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=True, requestMgr=False)
 
     def tearDown(self):
         EmulatorHelper.resetEmulators()
@@ -210,7 +212,6 @@ class DatasetTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))

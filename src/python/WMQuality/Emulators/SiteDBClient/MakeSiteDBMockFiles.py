@@ -18,7 +18,12 @@ if __name__ == '__main__':
              {'callname': 'data-processing', 'filename': 'data-processing.json', 'clearCache': False, 'verb': 'GET', 'data':{}}
             ]
 
-    extraSitenames = { 'site-names':[{"site_name": "T2_XX_SiteA", "type": "psn","alias": "T2_XX_SiteA"}]   }
+    additionals = { 'site-names':[{"site_name": "T2_XX_SiteA", "type": "psn","alias": "T2_XX_SiteA"}],
+                        'data-processing':[{u'phedex_name': u'T2_XX_SiteA', u'psn_name': u'T2_XX_SiteA', u'site_name': u'XX_T2_XX_SiteA'},
+                                           {u'phedex_name': u'T2_XX_SiteB', u'psn_name': u'T2_XX_SiteB', u'site_name': u'XX_T2_XX_SiteB'},
+                                           {u'phedex_name': u'T2_XX_SiteC', u'psn_name': u'T2_XX_SiteC', u'site_name': u'XX_T2_XX_SiteC'}
+                            ]
+                        }
 
     dns = ["/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
            "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jha/CN=618566/CN=Manoj Jha"]
@@ -39,9 +44,9 @@ if __name__ == '__main__':
 
         if callname == 'people':
             result = [res  for res in result for dn in dns if res['dn'] == dn]
-        elif callname == 'site-names':
-            for extraSitename in extraSitenames[callname]:
-                result.append(extraSitename)
+        elif callname == 'site-names' or callname == 'data-processing':
+            for additional in additionals[callname]:
+                result.append(additional)
         else:
             result = result
 

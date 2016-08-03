@@ -64,8 +64,9 @@ def jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="L
     filteredResources = {}
     filteredJobCounts = {}
     for site in possibleSites:
-        filteredResources[site] = resources[site]
-        filteredJobCounts[site] = jobCounts[site]
+        if site in resources:
+            filteredResources[site] = resources[site]
+            filteredJobCounts[site] = jobCounts[site]
          
         
     siteSummary = {}
@@ -100,10 +101,10 @@ def jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="L
                 jobCount += wqe["Jobs"]
             else:
                 highJobs += wqe["Jobs"]
-                print("%s" % wqe["RequestName"], wqe["Jobs"])
+                print("%s, higher priority %s, jobs %s " % (wqe["RequestName"], wqe["Priority"], wqe["Jobs"]))
         
         if eleCount > 0:
-            print("% , elements %s, total jobs %s will be pull to LQ" % (request, eleCount, jobCount))
+            print("%s , elements %s, total jobs %s will be pull to %s" % (request, eleCount, jobCount, flag))
         else:
             print("There are other works with higher priority : Jobs: %s" % highJobs)
     else:

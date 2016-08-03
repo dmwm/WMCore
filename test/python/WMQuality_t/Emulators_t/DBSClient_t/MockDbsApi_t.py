@@ -58,7 +58,7 @@ class MockDbsApiTest(unittest.TestCase):
             mock = getattr(self.mockDBS, member)(*args, **kwargs)
             
             #assert the result
-            self.assertEqual(sorted(real), sorted(mock))
+            self.assertEqual(sorted(real), sorted(mock), "Identity check on member %s failed" % member)
 
         return
 

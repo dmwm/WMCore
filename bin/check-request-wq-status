@@ -119,10 +119,12 @@ def checkLQPullStatusFromGQ(localQ, request, possibleSites):
     if localQ.pullWorkConditionCheck(printFlag = True):
         print("All pre condition checks are passed to pullWork to LQ")
     else:
-        exit(1)
+        print("Error: Failed to pull elements from GQ")
+        return
            
     resources, jobCounts = localQ.freeResouceCheck(printFlag=True) 
     jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="LQ")
+    return
     
 def checkCreateWorkStatusFromLQ(localQ, request, possibleSites):
     
@@ -135,6 +137,18 @@ def checkCreateWorkStatusFromLQ(localQ, request, possibleSites):
                               knownCmsSites = cmsSiteNames())
     jobSiteSummary(localQ, request, possibleSites, resources, jobCounts, flag="WMBS")
     
+def reportByRequest(wqSummary, request, eleStatus, localQ):
+    wqSummary.printSummary(request)
+    possibleSites = wqSummary.getPossibleSitesByRequest(request)
+    
+    #### Local queue pullWork status (only checks when gq status is Available)
+    ### for Acquired state skip this
+    if eleStatus == "Available":
+        checkLQPullStatusFromGQ(localQ, request, possibleSites)
+    elif eleStatus == "Acquired":
+        ### get Work check
+        checkCreateWorkStatusFromLQ(localQ, request, possibleSites)
+    
 def main():
     
     cfgObject = loadConfigurationFile(os.environ.get("WMAGENT_CONFIG", None))
@@ -146,27 +160,27 @@ def main():
     
     if len(teams) != 1:
         print("No team of multiple teams are set %s" % teams)
-        exit(1)
+        return
+    
     team = teams[0].strip()
     
     localQ = createWorkQueue(cfgObject)
     
     # change the filter only filters TeamNam
     gqElements = localQ.parent_queue.getElements(status=eleStatus, TeamName=team)
-
     print("GQ: There are total %s elements in %s" % (len(gqElements), eleStatus))
          
     wqSummary = WorkQueueElementsSummary(gqElements)
-    wqSummary.printSummary(request)
-    possibleSites = wqSummary.getPossibleSitesByRequest(request)
     
-    #### Local queue pullWork status (only checks when gq status is Available)
-    ### for Acquired state skip this
-    if eleStatus == "Available":
-        checkLQPullStatusFromGQ(localQ, request, possibleSites)
-    elif eleStatus == "Acquired":
-        ### get Work check
-        checkCreateWorkStatusFromLQ(localQ, request, possibleSites)
+    if request:
+        requests = [request]
+    else:
+        requests = set()
+        for ele in gqElements:
+            requests.add(ele["RequestName"])
+    for request in requests:
+        reportByRequest(wqSummary, request, eleStatus, localQ)
+        print("\n\n")
         
 if __name__ == '__main__':
     main()

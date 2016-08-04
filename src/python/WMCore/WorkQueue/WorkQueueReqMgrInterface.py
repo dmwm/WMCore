@@ -350,7 +350,7 @@ class WorkQueueReqMgrInterface():
             try:
                 self.logger.info("Processing request %s" % (reqName))
                 units = queue.addWork(requestName = reqName)
-                self.logdb.delete(request["RequestName"], 'error', True)
+                self.logdb.delete(reqName, 'error', True)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - but at least it was split the first time. Log and skip.
                 msg = 'Error adding further work to request "%s". Will try again later' \
@@ -369,6 +369,8 @@ class WorkQueueReqMgrInterface():
                 # Log exception as it isnt a communication problem
                 msg = 'Error processing request "%s": will try again later.' \
                 '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
+                traceMsg = traceback.format_exc()
+                msg = "%s\n%s" % (msg, traceMsg)
                 self.logger.exception('Unknown error processing %s' % reqName)
                 self.logdb.post(reqName, msg, 'error')
                 continue

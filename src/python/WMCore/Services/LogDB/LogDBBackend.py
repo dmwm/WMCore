@@ -65,6 +65,7 @@ class LogDBBackend(object):
         self.design = kwds.get('design', 'LogDB') # name of design document
         self.view = kwds.get('view', 'requests') # name of view to look-up requests
         self.tsview = kwds.get('tsview', 'tstamp') # name of tsview to look-up requests
+        self.threadview = kwds.get('tsview', 'logByRequestAndThread')
         if  create:
             uri = '/%s/_design/%s' % (db_name, self.design)
             data = design_doc()
@@ -146,6 +147,15 @@ class LogDBBackend(object):
             spec.update({'include_docs': True})
         docs = self.db.loadView(self.design, self.view, spec)
         return docs
+    
+    def get_by_thread(self, request, mtype='error', detail=False):
+        self.check(request, mtype)
+        spec = {'request':request, 'indentifier': self.dbid, 
+                'thr': self.thread_name, 'type':mtype, 'reduce':False}
+        if detail:
+            spec.update({'include_docs': True})
+        docs = self.db.loadView(self.design, self.threadview, spec)
+        return docs
 
     def get_all_requests(self):
         """Retrieve all entries from LogDB"""
@@ -153,14 +163,20 @@ class LogDBBackend(object):
         docs = self.db.loadView(self.design, self.view, spec)
         return docs
 
-    def delete(self, request):
+    def delete(self, request, mtype=None, this_thread=False):
         """Delete entry in LogDB for given request"""
-        self.check(request)
-        docs = self.get(request, detail=False)
+        if mtype:
+            self.check(request, mtype)
+        else:   
+            self.check(request)
+        if this_thread:
+            docs = self.get_by_thread(request, mtype=mtype, detail=False)
+        else:
+            docs = self.get(request, mtype=mtype, detail=False)
         ids = [r['id'] for r in docs.get('rows', [])]
         res = self.db.bulkDeleteByIDs(ids)
         return res
-
+    
     def cleanup(self, thr):
         """
         Clean-up docs older then given threshold (thr should be specified in seconds).

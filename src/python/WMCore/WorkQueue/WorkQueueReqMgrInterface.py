@@ -108,6 +108,7 @@ class WorkQueueReqMgrInterface():
 
                 self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
                 units = queue.queueWork(workLoadUrl, request = reqName, team = team)
+                self.logdb.delete(reqName, "error", this_thread=True)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - report back to ReqMgr
                 self.logger.info('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
@@ -237,6 +238,7 @@ class WorkQueueReqMgrInterface():
         for request in tempResults:
             if "Teams" in request and len(request["Teams"]) == 1:
                 filteredResults.append(request)
+                self.logdb.delete(request["RequestName"], "error", this_thread=True)
             else:
                 msg = "no team or more than one team (%s) are assigined: %s" % (
                                     request.get("Teams", None), request["RequestName"])
@@ -348,6 +350,7 @@ class WorkQueueReqMgrInterface():
             try:
                 self.logger.info("Processing request %s" % (reqName))
                 units = queue.addWork(requestName = reqName)
+                self.logdb.delete(request["RequestName"], 'error', True)
             except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
                 # fatal error - but at least it was split the first time. Log and skip.
                 msg = 'Error adding further work to request "%s". Will try again later' \

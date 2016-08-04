@@ -366,6 +366,7 @@ class WorkQueue(WorkQueueBase):
                                                                   wmspec,
                                                                   blockName,
                                                                   dbsBlock)
+                    self.logdb.delete(wmspec.name(), "error", this_thread=True)
                 except Exception as ex:
                     skipMatch = True
                     msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
@@ -863,6 +864,8 @@ class WorkQueue(WorkQueueBase):
                     lastUpdate = float(max(childrenElements, key=lambda x: x.timestamp).timestamp)
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
+                    #if it is successful remove previous error
+                    self.logdb.delete(element.id, "error", this_thread=True)
                 else:
                     msg = "ChildElement is empty for element id %s: investigate" % element.id
                     self.logdb.post(element.id, msg, "error")

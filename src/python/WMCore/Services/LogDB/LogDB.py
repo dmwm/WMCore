@@ -88,10 +88,14 @@ class LogDB(object):
         self.logger.debug("LogDB get_all_requests request, res=%s", res)
         return res
 
-    def delete(self, request):
-        """Delete entry in LogDB for given request"""
+    def delete(self, request, mtype=None, this_thread=False):
+        """
+        Delete entry in LogDB for given request
+        if mtype == None - delete all the log for that request
+        mtype != None - only delete specified mtype
+        """
         try:
-            res = self.backend.delete(request)
+            res = self.backend.delete(request, mtype, this_thread)
         except Exception as exc:
             self.logger.error("LogDBBackend delete API failed, error=%s" % str(exc))
             res = 'delete-error'

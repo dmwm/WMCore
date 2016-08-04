@@ -35,9 +35,12 @@ class EmulatedUnitTestCase(unittest.TestCase):
         """
 
         if self.mockDBS:
-            self.dbsPatcher = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
-            self.inUseDbsApi = self.dbsPatcher.start()
-            self.addCleanup(self.dbsPatcher.stop)
+            self.dbsPatcher1 = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
+            self.dbsPatcher2 = mock.patch('WMCore.Services.DBS.DBS3Reader.DbsApi', new=MockDbsApi)
+            self.inUseDbsApi = self.dbsPatcher1.start()
+            self.inUseDbsApi = self.dbsPatcher2.start()
+            self.addCleanup(self.dbsPatcher1.stop)
+            self.addCleanup(self.dbsPatcher2.stop)
 
         if self.mockPhEDEx:
             self.phedexPatcher = mock.patch('WMCore.Services.PhEDEx.PhEDEx.PhEDEx', new=MockPhEDExApi)

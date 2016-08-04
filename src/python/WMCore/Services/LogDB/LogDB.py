@@ -5,7 +5,6 @@ https://github.com/dmwm/WMCore/issues/5705
 """
 
 # standard modules
-import os
 import re
 import logging
 import threading
@@ -13,7 +12,6 @@ import threading
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend, clean_entry
 from WMCore.Lexicon import splitCouchServiceURL
-from WMCore.Database.CMSCouch import CouchNotFoundError
 
 class LogDB(object):
     """
@@ -23,15 +21,14 @@ class LogDB(object):
     """
     def __init__(self, url, identifier, logger=None, **kwds):
         self.logger = logger if logger else logging.getLogger()
-        if  not url or not identifier:
-            raise RuntimeError("Attempt to init LogDB with url='%s', identifier='%s'"\
-                    % (url, identifier))
-        self.identifier = identifier
+        self.url = url if url else 'https://cmsweb.cern.ch/couchdb/wmstats_logdb'
+        self.identifier = identifier if identifier else 'unknown'
+
         try:
             self.thread_name = kwds.pop('thread_name')
         except KeyError:
             self.thread_name = threading.currentThread().getName()
-        self.url = url
+
         self.user_pat = re.compile(r'^/[a-zA-Z][a-zA-Z0-9/\=\s()\']*\=[a-zA-Z0-9/\=\.\-_/#:\s\']*$')
         self.agent = 0 if self.user_pat.match(self.identifier) else 1
         couch_url, db_name = splitCouchServiceURL(self.url)

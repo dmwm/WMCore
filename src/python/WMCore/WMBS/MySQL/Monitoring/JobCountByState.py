@@ -4,14 +4,36 @@ _JobsByState_
 
 Monitoring DAO classes for Jobs in WMBS
 """
-__all__ = []
+
+from WMCore.Database.DBFormatter import DBFormatter
 
 
-
-from WMCore.WMBS.MySQL.Monitoring.DefaultFormatter import DefaultFormatter
-
-class JobCountByState(DefaultFormatter):
+class JobCountByState(DBFormatter):
     sql = """SELECT count(wmbs_job.state) AS job_count, wmbs_job_state.name AS job_state
              FROM wmbs_job
              INNER JOIN wmbs_job_state ON wmbs_job.state=wmbs_job_state.id
              GROUP BY wmbs_job_state.name"""
+
+    def formatDict(self, results):
+        """
+        _formatDict_
+
+        Format the results in a dict keyed by the state name
+        """
+        formattedResults = DBFormatter.formatDict(self, results)
+
+        dictResult = {}
+        for formattedResult in formattedResults:
+            dictResult[formattedResult['job_state']] = int(formattedResult['job_count'])
+
+        return dictResult
+
+    def execute(self, conn=None, transaction=False, returnCursor=False):
+        """
+        _execute_
+
+        Execute the SQL.
+        """
+        result = self.dbi.processData(self.sql, conn=conn, transaction=transaction)
+
+        return self.formatDict(result)

@@ -1,25 +1,37 @@
 #!/usr/bin/env python
 """
 _GetJobSlotsByCMSName_
-
-MySQL implementation of Locations.GetSiteInfo
 """
-
-__all__ = []
-
-
 
 from WMCore.Database.DBFormatter import DBFormatter
 
+
 class GetJobSlotsByCMSName(DBFormatter):
     """
-    get number of jobSlots by cms name
+    Get site running and pending thresholds grouped by CMS name
     """
 
-    sql = "SELECT cms_name, SUM(job_slots) AS job_slots FROM wmbs_location GROUP BY cms_name"
+    sql = """
+        SELECT cms_name, wmbs_location_state.name as state, pending_slots, running_slots
+            FROM wmbs_location
+            INNER JOIN wmbs_location_state ON wmbs_location.state = wmbs_location_state.id
+        """
 
+    def formatDict(self, results):
+        """
+        _formatDict_
 
-    def execute(self, conn = None, transaction = False):
+        Format the results in a dict keyed by the cms_name
+        """
+        formattedResults = DBFormatter.formatDict(self, results)
 
-        results = self.dbi.processData(self.sql, conn = conn, transaction = transaction)
+        dictResult = {}
+        for item in formattedResults:
+            site = item.pop('cms_name')
+            dictResult[site] = item
+
+        return dictResult
+
+    def execute(self, conn=None, transaction=False, returnCursor=False):
+        results = self.dbi.processData(self.sql, conn=conn, transaction=transaction)
         return self.formatDict(results)

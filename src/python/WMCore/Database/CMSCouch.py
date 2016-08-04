@@ -16,6 +16,7 @@ import re
 import hashlib
 import base64
 import logging
+import traceback
 from httplib import HTTPException
 from datetime import datetime
 
@@ -216,7 +217,7 @@ class Database(CouchDBRequests):
             self.commit(viewlist=viewlist, callback=callback)
         self._queue.append(doc)
 
-    def queueDelete(self, doc, viewlist=[]):
+    def queueDelete(self, doc):
         """
         Queue up a document for deletion
         """
@@ -225,7 +226,7 @@ class Database(CouchDBRequests):
         doc = {'_id': doc['_id'], '_rev': doc['_rev'], '_deleted': True}
         self.queue(doc)
 
-    def commitOne(self, doc, returndocs=False, timestamp=False, viewlist=[]):
+    def commitOne(self, doc, timestamp=False, viewlist=[]):
         """
         Helper function for when you know you only want to insert one doc
         additionally keeps from having to rewrite ConfigCache to handle the
@@ -245,9 +246,8 @@ class Database(CouchDBRequests):
     def commit(self, doc=None, returndocs=False, timestamp=False,
                viewlist=[], callback=None, **data):
         """
-        Add doc and/or the contents of self._queue to the database. If
-        returndocs is true, return document objects representing what has been
-        committed. If timestamp is true timestamp all documents with a unix style
+        Add doc and/or the contents of self._queue to the database.
+        If timestamp is true timestamp all documents with a unix style
         timestamp - this will be the timestamp of when the commit was called, it
         will not override an existing timestamp field.  If timestamp is a string
         that string will be used as the label for the timestamp.
@@ -1084,8 +1084,8 @@ class CouchMonitor(object):
                     else:
                         logging.error("""replication failed from %s to %s 
                                          couch server needs to be manually restarted""" % (
-                                      replaceToSantizeURL(source),
-                                      replaceToSantizeURL(target)))
+                            replaceToSantizeURL(source),
+                            replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
 
@@ -1117,6 +1117,9 @@ class CouchMonitor(object):
         return couchInfo
 
     def checkCouchServerStatus(self, source, target, checkUpdateSeq):
+        """
+        Check the status of a specific replication task
+        """
         try:
             if checkUpdateSeq:
                 dbInfo = self.couchServer.get("/%s" % source)
@@ -1124,47 +1127,48 @@ class CouchMonitor(object):
                 dbInfo = None
             activeTasks = self.couchServer.get("/_active_tasks")
             replicationFlag = False
-            passwdStrippedURL = target.split("@")[-1]
+            passwdStrippedTarget = target.split("@")[-1]
 
             for activeStatus in activeTasks:
                 if activeStatus["type"].lower() == "replication":
-                    if passwdStrippedURL in activeStatus.get("target", ""):
-                        replicationFlag = self.checkReplicationStatus(activeStatus,
-                                                                      dbInfo, source, target, checkUpdateSeq)
+                    if passwdStrippedTarget in activeStatus.get("target", ""):
+                        replicationFlag = self.checkReplicationStatus(activeStatus, dbInfo, source,
+                                                                      passwdStrippedTarget, checkUpdateSeq)
                         break
 
             if replicationFlag:
                 return {'status': 'ok'}
             else:
-                return {'status': 'error', 'error_message': "replication stopped"}
+                msg = "Replication stopped from %s to %s.\n" % (source, passwdStrippedTarget)
+                return {'status': 'error', 'error_message': msg}
         except Exception as ex:
-            import traceback
             msg = traceback.format_exc()
             logging.error(msg)
             return {'status': 'down', 'error_message': str(ex)}
 
-    def checkReplicationStatus(self, activeStatus, dbInfo, source, target,
-                               checkUpdateSeq):
+    def checkReplicationStatus(self, activeStatus, dbInfo, source, target, checkUpdateSeq):
         """
-        adhog way to check the replication
+        adhoc way to check the replication
         """
-
-        logging.info("checking the replication status")
-        # if activeStatus["started_on"]:
-        #   logging.info("Starting status: ok")
-        #    return True
+        # monitor the last update on replications according to 5 min + checkpoint_interval
+        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval'] / 1000
+        lastUpdate = activeStatus["updated_on"]
+        updateNum = int(activeStatus["source_seq"])
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)
 
-        if activeStatus["updated_on"]:
-            updateNum = int(activeStatus["source_seq"])
-            self.setPreviousUpdateSequence(source, target, updateNum)
-            if not checkUpdateSeq:
-                logging.warning("Need to check replication from %s to %s", replaceToSantizeURL(source),
-                                                                           replaceToSantizeURL(target))
-                return True
-            elif updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
-                logging.info("update up-to-date: ok")
+        self.setPreviousUpdateSequence(source, target, updateNum)
+        if checkUpdateSeq:
+            if updateNum == dbInfo["update_seq"] or updateNum > previousUpdateNum:
                 return True
             else:
+                logging.warning("'update_seq for replication from %s to %s is falling behind", source, target)
+                return False
+        else:
+            if int(time.time()) - lastUpdate < secsUpdateOn:
+                return True
+            else:
+                logging.warning("Replication from %s to %s has not been updated for more than %d minutes", source,
+                                target,
+                                secsUpdateOn)
                 return False
         return False

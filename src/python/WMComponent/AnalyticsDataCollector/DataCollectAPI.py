@@ -2,33 +2,27 @@
 Provide functions to collect data and upload data
 """
 
-"""
-JobInfoByID
-
-Retrieve information about a job from couch and format it nicely.
-"""
-
 import os
 import time
 import subprocess
-from WMCore.Configuration import loadConfigurationFile
 import logging
+
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
+from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
-@emulatorHook
-class LocalCouchDBData():
 
+@emulatorHook
+class LocalCouchDBData(object):
     def __init__(self, couchURL, statSummaryDB, summaryLevel):
         # set the connection for local couchDB call
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
         self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
-        #TODO: remove the hard coded name (wma_summarydb)
         self.summaryStatsDB = CouchServer(self.couchURLBase).connectDatabase(statSummaryDB, False)
         self.summaryLevel = summaryLevel
 
@@ -60,7 +54,7 @@ class LocalCouchDBData():
         # site of data should be relatively small (~1M) for put in the memory
         # If not, find a way to stream
         results = self.jobCouchDB.loadView("JobDump", "jobStatusByWorkflowAndSite",
-                                        options)
+                                           options)
 
         # reformat the doc to upload to reqmon db
         data = {}
@@ -75,13 +69,13 @@ class LocalCouchDBData():
             for x in results.get('rows', []):
                 data.setdefault(x['key'][0], {})
                 data[x['key'][0]].setdefault(x['key'][2], {})
-                #data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
+                # data[x['key'][0]][x['key'][1]].setdefault(x['key'][2], {})
                 data[x['key'][0]][x['key'][2]][x['key'][3]] = x['value']
-        logging.info("Found %i requests" % len(data))
+        logging.info("Found %i requests", len(data))
         return data
-        
+
     def getJobPerformanceByTaskAndSiteFromSummaryDB(self):
-        
+
         options = {"include_docs": True}
         results = self.summaryStatsDB.allDocs(options)
         data = {}
@@ -90,7 +84,7 @@ class LocalCouchDBData():
                 data[row['id']] = {}
                 data[row['id']]['tasks'] = row['doc']['tasks']
         return data
-    
+
     def getEventSummaryByWorkflow(self):
         """
         gets the job status information by workflow
@@ -118,47 +112,69 @@ class LocalCouchDBData():
 
           'request_name2': ...
         """
-        options = {"group": True, "stale": "ok", "reduce":True}
+        options = {"group": True, "stale": "ok", "reduce": True}
         # site of data should be relatively small (~1M) for put in the memory
         # If not, find a way to stream
         results = self.fwjrsCouchDB.loadView("FWJRDump", "outputByWorkflowName",
-                                        options)
+                                             options)
 
         # reformat the doc to upload to reqmon db
         data = {}
         for x in results.get('rows', []):
             data.setdefault(x['key'][0], [])
             data[x['key'][0]].append(x['value'])
-        logging.info("Found %i requests" % len(data))
+        logging.info("Found %i requests", len(data))
         return data
-    
+
     def getHeartbeat(self):
         try:
-            return self.jobCouchDB.info();
+            return self.jobCouchDB.info()
         except Exception as ex:
             return {'error_message': str(ex)}
 
+
 @emulatorHook
-class WMAgentDBData():
-
+class WMAgentDBData(object):
     def __init__(self, summaryLevel, dbi, logger):
-        # interface to WMBS/BossAir db
-        bossAirDAOFactory = DAOFactory(package = "WMCore.BossAir",
-                                       logger = logger, dbinterface = dbi)
-        wmbsDAOFactory = DAOFactory(package = "WMCore.WMBS",
-                                    logger = logger, dbinterface = dbi)
-        wmAgentDAOFactory = DAOFactory(package = "WMCore.Agent.Database",
-                                     logger = logger, dbinterface = dbi)
-
         self.summaryLevel = summaryLevel
+        # interface to WMBS/BossAir db
+        bossAirDAOFactory = DAOFactory(package="WMCore.BossAir",
+                                       logger=logger, dbinterface=dbi)
+        wmbsDAOFactory = DAOFactory(package="WMCore.WMBS",
+                                    logger=logger, dbinterface=dbi)
+        wmAgentDAOFactory = DAOFactory(package="WMCore.Agent.Database",
+                                       logger=logger, dbinterface=dbi)
+
         if self.summaryLevel == "task":
-            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByTaskAndSite")
+            self.batchJobAction = bossAirDAOFactory(classname="JobStatusByTaskAndSite")
         else:
-            self.batchJobAction = bossAirDAOFactory(classname = "JobStatusByWorkflowAndSite")
-        self.jobSlotAction = wmbsDAOFactory(classname = "Locations.GetJobSlotsByCMSName")
-        self.finishedTaskAndJobType = wmbsDAOFactory(classname = "Subscriptions.CountFinishedSubscriptionsByTask")
-        self.componentStatusAction = wmAgentDAOFactory(classname = "GetAllHeartbeatInfo")
+            self.batchJobAction = bossAirDAOFactory(classname="JobStatusByWorkflowAndSite")
+
+        self.jobSlotAction = wmbsDAOFactory(classname="Locations.GetJobSlotsByCMSName")
+        self.finishedTaskAndJobType = wmbsDAOFactory(classname="Subscriptions.CountFinishedSubscriptionsByTask")
+        self.jobCountByStatus = wmbsDAOFactory(classname="Monitoring.JobCountByState")
+        self.jobTypeCountByStatus = wmbsDAOFactory(classname="Monitoring.JobTypeCountByState")
+        self.runJobByStatus = wmbsDAOFactory(classname="Monitoring.RunJobByStatus")
+        self.componentStatusAction = wmAgentDAOFactory(classname="GetAllHeartbeatInfo")
         self.components = None
+
+    def getAgentMonitoring(self):
+        """
+        Return a list of dicts with all information we can gather from the databases.
+        """
+        monitoring = {}
+        monitoring['wmbsCreatedTypeCount'] = self.jobTypeCountByStatus.execute('created')
+        monitoring['wmbsExecutingTypeCount'] = self.jobTypeCountByStatus.execute('executing')
+        monitoring['wmbsCountByState'] = self.jobCountByStatus.execute()
+        monitoring['activeRunJobByStatus'] = self.runJobByStatus.execute(active=True)
+        monitoring['completeRunJobByStatus'] = self.runJobByStatus.execute(active=False)
+
+        # get thresholds for job creation (GQ to LQ), only for sites in Normal state
+        # also get the number of pending jobs and their priority per site
+        thresholdsForCreate, pendingCountByPrio = freeSlots(minusRunning=True)
+        monitoring['thresholdsGQ2LQ'] = thresholdsForCreate
+        monitoring['sitePendCountByPrio'] = pendingCountByPrio
+        return monitoring
 
     def getHeartbeatWarning(self):
 
@@ -186,10 +202,9 @@ class WMAgentDBData():
         # check the component status
         for component in components:
             compDir = config.section_(component).componentDir
-            compDir = config.section_(component).componentDir
             compDir = os.path.expandvars(compDir)
             daemonXml = os.path.join(compDir, "Daemon.xml")
-            downFlag = False;
+            downFlag = False
             if not os.path.exists(daemonXml):
                 downFlag = True
             else:
@@ -199,19 +214,18 @@ class WMAgentDBData():
             if downFlag:
                 agentInfo['down_components'].add(component)
                 agentInfo['status'] = 'down'
-        
+
         # check the thread status
         results = self.componentStatusAction.execute()
         for componentInfo in results:
-            if (componentInfo["state"] == "Error"):
+            if componentInfo["state"] == "Error":
                 agentInfo['down_components'].add(componentInfo['name'])
                 agentInfo['status'] = 'down'
                 agentInfo['down_component_detail'].append(componentInfo)
-        
+
         agentInfo['down_components'] = list(agentInfo['down_components'])
         return agentInfo
-        
-    
+
     def getBatchJobInfo(self):
         return self.batchJobAction.execute()
 
@@ -235,7 +249,8 @@ class WMAgentDBData():
             finishedSubs[item['workflow']]['tasks'][item['task']]['subscription_status']['updated'] = item['updated']
         return finishedSubs
 
-def combineAnalyticsData(a, b, combineFunc = None):
+
+def combineAnalyticsData(a, b, combineFunc=None):
     """
         combining 2 data which is the format of dict of dict of ...
         a = {'a' : {'b': {'c': 1}}, 'b' : {'b': {'c': 1}}}
@@ -254,14 +269,15 @@ def combineAnalyticsData(a, b, combineFunc = None):
         if key not in result:
             result[key] = value
         else:
-            if not combineFunc and (type(value) != dict or type(result[key]) != dict):
+            if not combineFunc and (not isinstance(value, dict) or not isinstance(result[key], dict)):
                 # this will raise error if it can't combine two
                 result[key] = combineFunc(value, result[key])
             else:
                 result[key] = combineAnalyticsData(value, result[key])
     return result
 
-def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks, 
+
+def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                              agentInfo, uploadTime, summaryLevel):
     requestDocs = []
     for request, status in combinedRequests.items():
@@ -278,7 +294,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                 doc['tasks'] = tempData["tasks"]
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
-            #TODO need to handle this correctly by task
+            # TODO need to handle this correctly by task
             if 'inWMBS' in status:
                 doc['status']['inWMBS'] = status['inWMBS']
             if 'inQueue' in status:
@@ -289,8 +305,8 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
             doc['sites'] = tempData['sites']
 
         doc['timestamp'] = uploadTime
-        #doc['output_progress'] = fwjrInfo.get(request, [])
-        #if task is not specified set default
+        # doc['output_progress'] = fwjrInfo.get(request, [])
+        # if task is not specified set default
         doc.setdefault('tasks', {})
         if request in fwjrInfo:
             doc['tasks'] = combineAnalyticsData(doc['tasks'], fwjrInfo[request]['tasks'])
@@ -299,9 +315,9 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
         requestDocs.append(doc)
     return requestDocs
 
-def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
 
-    #sets the _id using agent url, need to be unique
+def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
+    # sets the _id using agent url, need to be unique
     aInfo = {}
     aInfo.update(agentInfo)
     aInfo['_id'] = agentInfo["agent_url"]
@@ -310,6 +326,7 @@ def convertToAgentCouchDoc(agentInfo, acdcConfig, uploadTime):
     aInfo['timestamp'] = uploadTime
     aInfo['type'] = "agent_info"
     return aInfo
+
 
 def _setMultiLevelStatus(statusData, status, value):
     """
@@ -329,9 +346,10 @@ def _setMultiLevelStatus(statusData, status, value):
         statusData[statusStruct[0]][statusStruct[1]] += value
     return
 
+
 def _combineJobsForStatusAndSite(requestData, data):
     for status, siteJob in requestData.items():
-        if type(siteJob) != dict:
+        if not isinstance(siteJob, dict):
             _setMultiLevelStatus(data['status'], status, siteJob)
         else:
             for site, job in siteJob.items():
@@ -343,7 +361,8 @@ def _combineJobsForStatusAndSite(requestData, data):
                     _setMultiLevelStatus(data['sites'][site], status, int(job))
     return
 
-def _convertToStatusSiteFormat(requestData, summaryLevel = None):
+
+def _convertToStatusSiteFormat(requestData, summaryLevel=None):
     """
     convert data structure for couch db.
     "status": { "inWMBS": 100, "success": 1000, "inQueue": 100, "cooloff": 1000,
@@ -369,6 +388,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel = None):
         _combineJobsForStatusAndSite(requestData, data)
     return data
 
+
 def _getCouchACDCHtmlBase(acdcCouchURL):
     """
     TODO: currently it is hard code to the front page of ACDC
@@ -376,20 +396,20 @@ def _getCouchACDCHtmlBase(acdcCouchURL):
     through
     """
 
-
     return '%s/_design/ACDC/collections.html' % sanitizeURL(acdcCouchURL)['url']
+
 
 def isDrainMode(config):
     """
-    config is loaded WMAgentCofig 
+    config is loaded WMAgentCofig
     """
     if hasattr(config, "Tier0Feeder"):
         return False
     else:
         return config.WorkQueueManager.queueParams.get('DrainMode', False)
 
+
 def initAgentInfo(config):
-    
     agentInfo = {}
     agentInfo['agent_team'] = config.Agent.teamName
     agentInfo['agent'] = config.Agent.agentName
@@ -397,19 +417,21 @@ def initAgentInfo(config):
     agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
     return agentInfo
 
+
 def diskUse():
     """
     This returns the % use of each disk partition
     """
-    diskPercent=[]
+    diskPercent = []
     df = subprocess.Popen(["df", "-klP"], stdout=subprocess.PIPE)
     output = df.communicate()[0].split("\n")
     for x in output:
         split = x.split()
         if split != [] and split[0] != 'Filesystem':
-            diskPercent.append({'mounted':split[5],'percent':split[4]})
+            diskPercent.append({'mounted': split[5], 'percent': split[4]})
 
     return diskPercent
+
 
 def numberCouchProcess():
     """
@@ -417,28 +439,29 @@ def numberCouchProcess():
     """
     ps = subprocess.Popen(["ps", "-ef"], stdout=subprocess.PIPE)
     process = ps.communicate()[0].count('couchjs')
-    
+
     return process
 
-class DataUploadTime():
+
+class DataUploadTime(object):
     """
     Cache class to storage the last time when data was uploaded
     If data could not be updated, it storages the error message.
     """
     data_last_update = 0
     data_error = ""
-    
+
     @staticmethod
-    def setInfo(self, time, message):
+    def setInfo(timestamp, message):
         """
-        Set the time and message  
+        Set the time and message
         """
-        if time:
-            DataUploadTime.data_last_update = time
+        if timestamp:
+            DataUploadTime.data_last_update = timestamp
         DataUploadTime.data_error = message
-    
-    @staticmethod            
-    def getInfo(self):
+
+    @staticmethod
+    def getInfo():
         """
         Returns the last time when data was uploaded and the error message (if any)
         """

@@ -1,5 +1,9 @@
 """
-Perform cleanup actions
+Perform general agent monitoring, like:
+ 1. Status of the agent processes
+ 2. Status of the agent threads
+ 3. Couchdb replication status (and status of its database)
+ 4. Disk usage status
 """
 __all__ = []
 
@@ -9,6 +13,7 @@ import threading
 import logging
 import time
 import traceback
+import json
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -31,7 +36,11 @@ class AgentStatusPoller(BaseWorkerThread):
         self.config = config
         # need to get campaign, user, owner info
         self.agentInfo = initAgentInfo(self.config)
-        self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
+        self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
+        self.jsonFile = config.AgentStatusWatcher.jsonFile
+        # counter for deep agent monitoring. Every 15min (3 cycles of the component)
+        self.monitorCounter = 0
+        self.monitorInterval = getattr(config.AgentStatusWatcher, 'monitorPollInterval', 3)
     
     def setUpCouchDBReplication(self):
         
@@ -58,9 +67,8 @@ class AgentStatusPoller(BaseWorkerThread):
                                         'filter': wqfilter, 'query_params': query_params})       
             self.replicatorDocs.append({'source': sanitizeURL(localQInboxURL)['url'], 'target': parentQURL, 
                                         'filter': wqfilter, 'query_params': query_params})
-        
-        
-    # delete or replicator docs befor setting up
+
+        # delete old replicator docs before setting up
         self.localCouchMonitor.deleteReplicatorDocs()
         
         for rp in self.replicatorDocs:
@@ -91,18 +99,18 @@ class AgentStatusPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
-            logging.info("Getting Agent info ...")
             agentInfo = self.collectAgentInfo()
-            
             #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())
-            
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
-            
-            logging.info("Agent components down:\n %s" % agentInfo['down_components'])
-            logging.info("Agent in drain mode:\n %s \nsleep for next WMStats alarm updating cycle"
-                          % agentInfo['drain_mode'])
-            
+
+            if self.monitorCounter % self.monitorInterval == 0:
+                monitoring = self.collectWMBSInfo()
+                monitoring['components'] = agentInfo['down_components']
+                monitoring['timestamp'] = int(time.time())
+                with open(self.jsonFile, 'w') as outFile:
+                    json.dump(monitoring, outFile, indent=2)
+            self.monitorCounter += 1
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
@@ -111,42 +119,47 @@ class AgentStatusPoller(BaseWorkerThread):
      
     def collectCouchDBInfo(self):
         
-        couchInfo = {'status': 'ok', 'error_message': ""}
+        couchInfo = {'name': 'CouchServer', 'status': 'ok', 'error_message': ""}
         
         if self.skipReplicationCheck:
             # skipping the check this round set if False so it can be checked next round.
             self.skipReplicationCheck = False
             return couchInfo
-        
-        msg = ""
+
         for rp in self.replicatorDocs:
             cInfo = self.localCouchMonitor.checkCouchServerStatus(rp['source'], 
                                                         rp['target'], checkUpdateSeq = False)
             if cInfo['status'] != 'ok':
                 couchInfo['status'] = 'error'
+                couchInfo['error_message'] = cInfo['error_message']
         
-        couchInfo['error_message'] = msg
         return couchInfo
         
     def collectAgentInfo(self):
-        
+        """
+        Monitors the general health of the agent, as:
+          1. status of the agent processes
+          2. status of the agent threads based on the database info
+          3. couchdb active tasks and its replications
+          4. check the disk usage
+          5. check the number of couch processes
+
+        :return: a dict with all the info collected
+        """
+        logging.info("Getting agent info ...")
         agentInfo = self.wmagentDB.getComponentStatus(self.config)
         agentInfo.update(self.agentInfo)
         
         if isDrainMode(self.config):
             logging.info("Agent is in DrainMode")
             agentInfo['drain_mode'] = True
-            agentInfo['status'] = "warning"
-        
         else:
             agentInfo['drain_mode'] = False
         
         couchInfo = self.collectCouchDBInfo()
-        
-        if (couchInfo['status'] != 'ok'):
-            agentInfo['down_components'].append("CouchServer")
+        if couchInfo['status'] != 'ok':
+            agentInfo['down_components'].append(couchInfo['name'])
             agentInfo['status'] = couchInfo['status']
-            couchInfo['name'] = "CouchServer"
             agentInfo['down_component_detail'].append(couchInfo)
         
         
@@ -155,33 +168,36 @@ class AgentStatusPoller(BaseWorkerThread):
         diskUseThreshold = float(self.config.AnalyticsDataCollector.diskUseThreshold)
         agentInfo['disk_warning'] = []
         for disk in diskUseList:
-            if float(disk['percent'].strip('%')) >= diskUseThreshold and disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
+            if float(disk['percent'].strip('%')) >= diskUseThreshold and \
+                            disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
         
         # Couch process warning
         couchProc = numberCouchProcess()
-        couchProcessThreshold = float(self.config.AnalyticsDataCollector.couchProcessThreshold)
+        logging.info("CouchDB is running with %d processes", couchProc)
+        couchProcessThreshold = self.config.AnalyticsDataCollector.couchProcessThreshold
         if couchProc >= couchProcessThreshold:
             agentInfo['couch_process_warning'] = couchProc
         else:
             agentInfo['couch_process_warning'] = 0
         
         # This adds the last time and message when data was updated to agentInfo
-        lastDataUpload = DataUploadTime.getInfo(self)
-        if lastDataUpload['data_last_update']!=0:
+        lastDataUpload = DataUploadTime.getInfo()
+        if lastDataUpload['data_last_update']:
             agentInfo['data_last_update'] = lastDataUpload['data_last_update']
-        if lastDataUpload['data_error']!="":
+        if lastDataUpload['data_error']:
             agentInfo['data_error'] = lastDataUpload['data_error']
         
         # Change status if there is data_error, couch process maxed out or disk full problems.
-        if agentInfo['status'] == 'ok':
-            if agentInfo['disk_warning'] != []:
-                agentInfo['status'] = "warning"
+        if agentInfo['status'] == 'ok' and (agentInfo['drain_mode'] or agentInfo['disk_warning']):
+            agentInfo['status'] = "warning"
                 
         if agentInfo['status'] == 'ok' or agentInfo['status'] == 'warning':
-            if ('data_error' in agentInfo and agentInfo['data_error'] != 'ok') or \
-               ('couch_process_warning' in agentInfo and agentInfo['couch_process_warning'] != 0):
+            if agentInfo.get('data_error', 'ok') != 'ok' or agentInfo.get('couch_process_warning', 0):
                 agentInfo['status'] = "error"
+
+        if agentInfo['down_components']:
+            logging.info("List of agent components down: %s" % agentInfo['down_components'])
 
         return agentInfo
 
@@ -190,3 +206,29 @@ class AgentStatusPoller(BaseWorkerThread):
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
         self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
 
+    def collectWMBSInfo(self):
+        """
+        Fetches WMBS job information.
+        In addition to WMBS, also collects RunJob info from BossAir
+        :return: dict with the number of jobs in each status
+        """
+        results = {}
+        logging.info("Getting wmbs job info ...")
+        # first retrieve the site thresholds
+        results['thresholds'] = self.wmagentDB.getJobSlotInfo()
+        logging.info("Running and pending site thresholds: %s", results['thresholds'])
+
+        # now fetch the amount of jobs in each state and the amount of created
+        # jobs grouped by task
+        results.update(self.wmagentDB.getAgentMonitoring())
+        logging.info("Total number of jobs in WMBS sorted by status: %s", results['wmbsCountByState'])
+        logging.info("Total number of 'created' jobs in WMBS sorted by type: %s", results['wmbsCreatedTypeCount'])
+        logging.info("Total number of 'executing' jobs in WMBS sorted by type: %s", results['wmbsExecutingTypeCount'])
+
+        logging.info("Total number of active jobs in BossAir sorted by status: %s", results['activeRunJobByStatus'])
+        logging.info("Total number of complete jobs in BossAir sorted by status: %s", results['completeRunJobByStatus'])
+
+        logging.info("Available slots thresholds to pull work from GQ to LQ: %s", results['thresholdsGQ2LQ'])
+        logging.info("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])
+
+        return results

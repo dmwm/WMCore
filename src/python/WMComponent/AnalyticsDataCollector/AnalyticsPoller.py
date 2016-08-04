@@ -128,10 +128,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
-            DataUploadTime.setInfo(self, uploadTime, "ok")
+            DataUploadTime.setInfo(uploadTime, "ok")
             
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
-            DataUploadTime.setInfo(self, False, str(ex))
+            DataUploadTime.setInfo(False, str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())

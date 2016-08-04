@@ -38,10 +38,10 @@ class CMSCouchTest(unittest.TestCase):
     def testCommitOne(self):
         # Can I commit one dict
         doc = {'foo':123, 'bar':456}
-        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        id = self.db.commitOne(doc)[0]['id']
         # What about a Document
         doc = Document(inputDict = doc)
-        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        id = self.db.commitOne(doc)[0]['id']
 
     def testCommitOneWithQueue(self):
         """
@@ -54,14 +54,14 @@ class CMSCouchTest(unittest.TestCase):
             self.db.queue(doc)
         # Commit one Document
         doc = Document(inputDict = doc)
-        id = self.db.commitOne(doc, returndocs=True)[0]['id']
+        id = self.db.commitOne(doc)[0]['id']
         self.assertEqual(1, len(self.db.allDocs()['rows']))
         self.db.commit()
         self.assertEqual(6, len(self.db.allDocs()['rows']))
 
     def testTimeStamping(self):
         doc = {'foo':123, 'bar':456}
-        id = self.db.commitOne(doc, timestamp=True, returndocs=True)[0]['id']
+        id = self.db.commitOne(doc, timestamp=True)[0]['id']
         doc = self.db.document(id)
         self.assertTrue('timestamp' in doc.keys())
 
@@ -104,7 +104,7 @@ class CMSCouchTest(unittest.TestCase):
     def testReplicate(self):
         repl_db = self.server.connectDatabase(self.db.name + 'repl')
 
-        doc_id = self.db.commitOne({'foo':123}, timestamp=True, returndocs=True)[0]['id']
+        doc_id = self.db.commitOne({'foo':123}, timestamp=True)[0]['id']
         doc_v1 = self.db.document(doc_id)
 
         #replicate
@@ -165,7 +165,7 @@ class CMSCouchTest(unittest.TestCase):
         """
         Test uploading attachments with and without checksumming
         """
-        doc = self.db.commitOne({'foo':'bar'}, timestamp=True, returndocs=True)[0]
+        doc = self.db.commitOne({'foo':'bar'}, timestamp=True)[0]
         attachment1 = "Hello"
         attachment2 = "How are you today?"
         attachment3 = "I'm very well, thanks for asking"
@@ -202,7 +202,7 @@ class CMSCouchTest(unittest.TestCase):
         self.db = self.server.connectDatabase(self.db.name)
         repl_db = self.server.connectDatabase(self.db.name + 'repl')
 
-        doc_id = self.db.commitOne({'foo':123}, timestamp=True, returndocs=True)[0]['id']
+        doc_id = self.db.commitOne({'foo':123}, timestamp=True)[0]['id']
         doc_v1 = self.db.document(doc_id)
 
         #replicate
@@ -210,7 +210,7 @@ class CMSCouchTest(unittest.TestCase):
 
         doc_v2 = self.db.document(doc_id)
         doc_v2['bar'] = 456
-        doc_id_rev2 = self.db.commitOne(doc_v2, returndocs=True)[0]
+        doc_id_rev2 = self.db.commitOne(doc_v2)[0]
         doc_v2 = self.db.document(doc_id)
 
         #now update the replica
@@ -238,7 +238,7 @@ class CMSCouchTest(unittest.TestCase):
         #update it again
         doc_v3 = self.db.document(doc_id)
         doc_v3['baz'] = 789
-        doc_id_rev3 = self.db.commitOne(doc_v3, returndocs=True)[0]
+        doc_id_rev3 = self.db.commitOne(doc_v3)[0]
         doc_v3 = self.db.document(doc_id)
 
         #test that I can pull out an old revision

@@ -10,30 +10,28 @@ Also, provides utils to shutdown the daemon process
 """
 from __future__ import print_function
 
-
-
-
-
 import os
 import subprocess
 import shutil
 import time
-#FIXME: needs to be replaced with persistent backend.
+# FIXME: needs to be replaced with persistent backend.
 from xml.dom.minidom import parse
+
 
 def run(command):
     proc = subprocess.Popen(
-            ["/bin/bash"], shell=True, cwd=os.environ['PWD'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-            )
+        ["/bin/bash"], shell=True, cwd=os.environ['PWD'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
 
     proc.stdin.write(command)
-    stdout, stderr =  proc.communicate()
+    stdout, stderr = proc.communicate()
     rc = proc.returncode
 
     return stdout, stderr, rc
+
 
 class Details(dict):
     """
@@ -47,11 +45,11 @@ class Details(dict):
     This util takes that file, reads its fields into a dictionary.
 
     """
+
     def __init__(self, daemonXmlFile):
         dict.__init__(self)
         self.load(daemonXmlFile)
         self.daemonXmlFile = daemonXmlFile
-
 
     def load(self, xmlFile):
         """
@@ -75,16 +73,15 @@ class Details(dict):
         _isAlive_
 
         Is the process still running?
-
-        Dumb check on /proc/pid existing. Anyone know a better way?
-
         """
-        se, so, rc = run('ps -p %s' % self['ProcessID'])
+        # Reference: ps -T -p 1946167 -o euser,pid,ppid,lwp,nlwp,stat,start
+        # it prints the user, process and its threads, number of threads, etc
+        dummyse, dummyso, rc = run('ps -p %s' % self['ProcessID'])
         if rc != 0:
             return False
         return True
 
-    def kill(self, signal = 15):
+    def kill(self, signal=15):
         """
         _kill_
 
@@ -96,7 +93,7 @@ class Details(dict):
         self.removeAndBackupDaemonFile()
         return
 
-    def killWithPrejudice(self, signal = 15):
+    def killWithPrejudice(self, signal=15):
         """
         _killWithPredjudice_
 
@@ -105,7 +102,7 @@ class Details(dict):
 
         """
         os.killpg(self['ProcessGroupID'], signal)
-        for count in range(0, 3):
+        for dummycount in range(0, 3):
             time.sleep(1)
             if not self.isAlive():
                 self.removeAndBackupDaemonFile()
@@ -120,11 +117,11 @@ class Details(dict):
         Removes the daemon file (after a kill) and backs it up
         for post mortem.
         """
-        path, file = os.path.split(self.daemonXmlFile)
+        path, dFile = os.path.split(self.daemonXmlFile)
         timeStamp = time.strftime("%d-%M-%Y")
-        newFile = "%s.BAK.%s" %(file, str(timeStamp))
+        newFile = "%s.BAK.%s" % (dFile, str(timeStamp))
         newLocation = os.path.join(path, newFile)
         try:
             shutil.move(self.daemonXmlFile, newLocation)
         except Exception as ex:
-            print('Move failed. Remove manual: '+str(ex))
+            print('Move failed. Remove manual: ' + str(ex))

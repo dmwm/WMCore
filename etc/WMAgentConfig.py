@@ -545,7 +545,9 @@ config.AgentStatusWatcher.forceSiteDown = [] # List of sites to be forced to Dow
 config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)
 config.AgentStatusWatcher.enabled = True # switch to enable or not this component
 config.AgentStatusWatcher.agentPollInterval = 300
+config.AgentStatusWatcher.monitorPollInterval = 3  # number of component polling cycles
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
+config.AgentStatusWatcher.jsonFile = config.General.workDir + "/AgentStatusWatcher/WMA_monitoring.json"
 
 config.component_("ArchiveDataReporter")
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"

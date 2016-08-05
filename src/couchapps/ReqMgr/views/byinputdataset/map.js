@@ -5,7 +5,7 @@ function(doc) {
   
   if (doc.TaskChain){
   	for (var i = 0; i < doc.TaskChain; i++) {
-  		if (doc["Task" + (i+1)].InputDataset && doc.InputDataset !== "None") {
+  		if (doc["Task" + (i+1)].InputDataset && doc["Task" + (i+1)].InputDataset !== "None") {
   			emit(doc["Task" + (i+1)].InputDataset, null);
   		}
   	} 
@@ -13,7 +13,7 @@ function(doc) {
   
   if (doc.StepChain){
   	for (var i = 0; i < doc.StepChain; i++) {
-  		if (doc["Step" + (i+1)].InputDataset && doc.InputDataset !== "None") {
+  		if (doc["Step" + (i+1)].InputDataset && doc["Step" + (i+1)].InputDataset !== "None") {
   			emit(doc["Step" + (i+1)].InputDataset, null);
   		}
   	} 

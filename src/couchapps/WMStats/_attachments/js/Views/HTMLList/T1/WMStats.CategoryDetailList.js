@@ -19,8 +19,10 @@ WMStats.namespace('CategoryDetailList');
             //htmlstr += "<li><b>vo group:</b> " + reqDoc.vo_group + "</li>";
             htmlstr += "<li><b>status:</b> " + WMStats.Utils.formatWorkloadSummarylUrl(reqDoc.workflow, 
                                                  reqDoc.request_status[reqDoc.request_status.length - 1].status) + "</li>";
-            htmlstr += "<li><b>input dataset:</b> " + reqDoc.inputdataset + "</li>";
+            htmlstr += "<li><b>input dataset:</b> " + WMStats.Utils.getInputDatasets(reqDoc) + "</li>";
             htmlstr += "<li><b>input events:</b> " + reqDoc.input_events + "</li>";
+            htmlstr += "<li><b>input lumis:</b> " + reqDoc.input_lumis + "</li>";
+            htmlstr += "<li><b>input files:</b> " + reqDoc.input_num_files + "</li>";
             htmlstr += "<li><b>site white list:</b> " + reqDoc.site_white_list + "</li>";
             htmlstr += "<li><b>output datasets:</b> " + reqDoc.outputdatasets + "</li>";
         }

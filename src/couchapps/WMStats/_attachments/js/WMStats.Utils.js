@@ -225,3 +225,27 @@ WMStats.Utils.delay =  (function(){
     	timer = setTimeout(callback, ms);
   	};
 })();
+
+WMStats.Utils.getInputDatasets = function(reqDoc) {
+     if (reqDoc.inputdataset && reqDoc.inputdataset !== "None"){
+     	return [reqDoc.inputdataset];
+     }
+     if (reqDoc.TaskChain) {
+        var inputDatasets = [];
+     	for (var i = 0; i < reqDoc.TaskChain; i++) {
+  			if (reqDoc["Task" + (i+1)].InputDataset && reqDoc["Task" + (i+1)].InputDataset !== "None") {
+  				inputDatasets.push(reqDoc["Task" + (i+1)].InputDataset);
+  			}
+  		}
+  		return inputDatasets;
+  	 }
+  	 if (reqDoc.StepChain) {
+        var inputDatasets = [];
+     	for (var i = 0; i < reqDoc.StepChain; i++) {
+  			if (reqDoc["Step" + (i+1)].InputDataset && reqDoc["Step" + (i+1)].InputDataset !== "None") {
+  				inputDatasets.push(reqDoc["Step" + (i+1)].InputDataset);
+  			}
+  		}
+  		return inputDatasets;
+  	}
+};

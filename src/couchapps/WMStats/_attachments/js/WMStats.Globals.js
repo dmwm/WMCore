@@ -58,9 +58,12 @@ WMStats.Globals = function($){
     				}
     			} else {
     				wmstatsReq[reqPropertyMap[key]] = doc[key];
-    			}
+    			}	
+    		} else {
+    			// use original key
+    			wmstatsReq[key] = doc[key];
+    		}
     			
-    		}	
     	}
     	return wmstatsReq;
     };

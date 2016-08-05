@@ -76,7 +76,7 @@ WMStats.namespace('JobDetailList');
             htmlstr += "<li><b>Workflow:</b> " + jobDoc.workflow + "</li>";
             htmlstr += "<li><b>Task:</b> " + jobDoc.task + "</li>";
             htmlstr += "<li><b>Status:</b> " + jobDoc.state + "</li>";
-            htmlstr += "<li><b>Input dataset:</b> " + requestData.getKeyValue(jobDoc.workflow, "inputdataset", "") + "</li>";
+            htmlstr += "<li><b>Input dataset:</b> " + WMStats.Utils.getInputDatasets(requestData.getData(jobDoc.workflow)) + "</li>";
             if (typeof jobDoc.site == "object") {
                 htmlstr += "<li><b>Site:</b> N/A </li>";
             } else {

@@ -40,8 +40,14 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                           },
               "bUseRendered": false
             },
-            { "mDataProp": "request_type", "sTitle": "type", "sDefaultContent": ""},
-            { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
+            { "mDataProp": function (source, type, val) { 
+                              var requestInfo = _activePageData.getData(source.workflow);
+                              return requestInfo.request_type;
+                           }, "sTitle": "type", "sDefaultContent": ""},
+            { "mDataProp": function (source, type, val) { 
+                              var requestInfo = _activePageData.getData(source.workflow);
+                              return requestInfo.priority;
+                           }, "sTitle": "priority", "sDefaultContent": 0},
             { "sDefaultContent": 0,
               "sTitle": "queue injection",  
               "fnRender": function ( o, val ) {

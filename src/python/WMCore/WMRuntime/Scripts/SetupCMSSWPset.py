@@ -568,6 +568,20 @@ class SetupCMSSWPset(ScriptInterface):
 
         return
 
+    def handleAlcaHarvestSettings(self):
+        """
+        _handleAlcaHarvestSettings_
+
+        AlcaHarvest jobs should only use one core in CMSSW
+        """
+        try:
+            if int(self.step.data.application.multicore.numberOfCores) > 1:
+                self.step.data.application.multicore.numberOfCores = 1
+        except AttributeError:
+            pass
+
+        return
+
     def handleSpecialCERNMergeSettings(self, funcName):
         """
         _handleSpecialCERNMergeSettings_
@@ -642,6 +656,8 @@ class SetupCMSSWPset(ScriptInterface):
                 self.handleRepackSettings()
             elif funcName == "merge":
                 self.handleMergeSettings()
+            elif funcName == "alcaHarvesting":
+                self.handleAlcaHarvestSettings()
 
             if socket.getfqdn().endswith("cern.ch"):
                 self.handleSpecialCERNMergeSettings(funcName)

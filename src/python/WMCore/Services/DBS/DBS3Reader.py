@@ -10,6 +10,7 @@ from collections import defaultdict
 from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import *
 
+from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from Utils.IterTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -825,7 +826,7 @@ class DBS3Reader:
                 result = self.dbs.listDatasets(dataset=pathName, dataset_access_type='*')
                 if len(result) == 0:
                     raise DBSReaderError("Dataset %s doesn't exist in DBS %s" % (pathName, self.dbsURL))
-            except dbsClientException as ex:
+            except (dbsClientException, HTTPError) as ex:
                 msg = "Error in "
                 msg += "DBSReader.checkDatasetPath(%s)\n" % pathName
                 msg += "%s\n" % formatEx3(ex)

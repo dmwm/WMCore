@@ -52,6 +52,7 @@ calls = [['listDataTiers'],
          ['listDatasets', {'primary_ds_name': 'Jet', 'data_tier_name': 'RAW', 'detail': True}],
          ['listDatasets', {'primary_ds_name': 'Jet', 'data_tier_name': 'blah'}],
          ['listDatasets', {'primary_ds_name': 'blah', 'data_tier_name': 'RAW'}],
+         ['listDatasets', {'dataset_access_type': '*', 'dataset': '/MET/Run2015B-05Aug2015-v1/DQMIO'}],
          ['listFileLumiArray', {'logical_file_name': [
              u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root']}],
          ['listFileLumiArray', {'logical_file_name': [
@@ -86,6 +87,7 @@ calls = [['listDataTiers'],
           {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaaceasas', 'detail': True}],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#somethingelse'}],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaaceasas'}],
+         ['listBlocks', {'block_name': u'/HighPileUp/Run2011A-v1/RAW#fabf118a-cbbf-11e0-80a9-003048caaaceasas'}],
          ['listBlocks', {'detail': True, 'dataset': '/HighPileUp/Run2011A-v1/RAWblah'}],
          ['listBlocks', {'detail': False, 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
          ['listBlocks',
@@ -93,4 +95,7 @@ calls = [['listDataTiers'],
            'dataset': '/HighPileUp/Run2011A-v1/RAW'}],
          ['listBlocks', {'block_name': '/HighPileUp/Run2011A-v1/RAW#blah'}],
          ['listBlocks', {'detail': True, 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
+         ['listDatasets', {'dataset_access_type': '*', 'dataset': '/HighPileUp/Run2011A-v1/RAWblah'}],
+         ['listDatasets', {'dataset_access_type': '*', 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
+
          ]

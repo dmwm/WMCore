@@ -115,7 +115,7 @@ class MockDbsApi(object):
 
         try:
             if mockData[self.url][signature] == 'Raises HTTPError':
-                raise HTTPError
+                raise HTTPError('http:/dbs.mock.fail', 400, 'MockDBS is raising an exception in place of DBS', 'Dummy header', 'Dummy body')
             else:
                 return mockData[self.url][signature]
         except KeyError:

@@ -51,6 +51,7 @@ class DBS3Reader:
 
         # instantiate dbs api object
         try:
+            self.dbsURL = url
             self.dbs = DbsApi(url, **contact)
         except dbsClientException as ex:
             msg = "Error in DBSReader with DbsApi\n"
@@ -86,7 +87,20 @@ class DBS3Reader:
             item['LumiSectionNumber'] = lumisItem['lumi_section_num']
             lumiDict[lumisItem['logical_file_name']].append(item)
         return lumiDict
-
+    
+    def checkDBSServer(self):
+        """
+        check whether dbs server is up and running
+        returns {"dbs_instance": "prod/global", "dbs_version": "3.3.144"}
+        """
+        try:
+            return self.dbs.serverinfo()
+        except dbsClientException as ex:
+            msg = "Error in "
+            msg += "DBS server is not up: %s" % self.dbsURL
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)
+        
     def listPrimaryDatasets(self, match = '*'):
         """
         _listPrimaryDatasets_
@@ -806,6 +820,17 @@ class DBS3Reader:
         """
         if pathName in ("", None):
             raise DBSReaderError("Invalid Dataset Path name: => %s <=" % pathName)
+        else:
+            try:
+                result = self.dbs.listDatasets(dataset=pathName, dataset_access_type='*')
+                if len(result) == 0:
+                    raise DBSReaderError("Dataset %s doesn't exist in DBS %s" % (pathName, self.dbsURL))
+            except dbsClientException as ex:
+                msg = "Error in "
+                msg += "DBSReader.checkDatasetPath(%s)\n" % pathName
+                msg += "%s\n" % formatEx3(ex)
+                raise DBSReaderError(msg)
+        return
 
     def checkBlockName(self, blockName):
         """
@@ -832,4 +857,16 @@ class DBS3Reader:
             msg += "DBSReader.getFileListByDataset(%s)\n" % dataset
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)
-
+        
+    def listDatasetParents(self, childDataset):
+        """
+        list the the parents dataset path given childDataset
+        """
+        try:
+            parentList = self.dbs.listDatasetParents(dataset=childDataset)
+            return parentList
+        except dbsClientException as ex:
+            msg = "Error in "
+            msg += "DBSReader.listDatasetParents(%s)\n" % childDataset
+            msg += "%s\n" % formatEx3(ex)
+            raise DBSReaderError(msg)

@@ -12,8 +12,6 @@ import random
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WMBSHelper import freeSlots
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.Job import Job
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 
 class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
@@ -43,12 +41,10 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         """
         Pull in work
         """
-        # reinitialize site and slot
-        if self.checkJobCreation():
-            try:
-                self.getWorks()
-            except Exception as ex:
-                self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
+        try:
+            self.getWorks()
+        except Exception as ex:
+            self.queue.logger.error("Error in wmbs inject loop: %s" % str(ex))
 
     def getWorks(self):
         """
@@ -67,21 +63,3 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
         self.queue.logger.info("%s of units of work acquired for file creation"
                                % len(self.previousWorkList))
         return
-
-    def checkJobCreation(self):
-        # check to see whether there is job created for all the file
-        # in the given subscription
-        self.queue.logger.info("Checking the JobCreation from previous pulled work")
-        for workUnit in self.previousWorkList:
-            filesForPeningJobCreation = len(workUnit["Subscription"].filesOfStatus("Available"))
-            if filesForPeningJobCreation > 0:
-                self.queue.logger.info("""Not all the jobs are created.
-                                          %s files left for job creation
-                                          Will get the work later""" %
-                                          filesForPeningJobCreation)
-                return False
-
-        self.queue.logger.info("All the jobs are created.\nWill get the work now")
-        #reset previousWorkList to [] since all the jobs are created
-        self.previousWorkList = []
-        return True

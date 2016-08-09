@@ -479,20 +479,21 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 except:
                     logging.error("Couldn't get block info from PhEDEx, retry next cycle")
                 else:
+                    nodes = set()
                     for entry in blockInfo:
                         if entry['name'] == blockName:
                             nodes = set([x['node'] for x in entry['replica']])
-                            if location not in nodes:
-                                logging.debug("Block %s not present on %s, mark as deleted", blockName, location)
-                                binds = {'DELETED': 1, 'BLOCKNAME': blockName}
-                                self.markBlocksDeleted.execute(binds)
-                            elif sites.issubset(nodes):
-                                logging.debug("Deleting block %s from %s since it is fully transfered", blockName, location)
-                                if location not in deletableEntries:
-                                    deletableEntries[location] = {}
-                                if dataset not in deletableEntries[location]:
-                                    deletableEntries[location][dataset] = set()
-                                    deletableEntries[location][dataset].add(blockName)
+                    if location not in nodes:
+                        logging.debug("Block %s not present on %s, mark as deleted", blockName, location)
+                        binds = {'DELETED': 1, 'BLOCKNAME': blockName}
+                        self.markBlocksDeleted.execute(binds)
+                    elif sites.issubset(nodes):
+                        logging.debug("Deleting block %s from %s since it is fully transfered", blockName, location)
+                        if location not in deletableEntries:
+                            deletableEntries[location] = {}
+                            if dataset not in deletableEntries[location]:
+                                deletableEntries[location][dataset] = set()
+                                deletableEntries[location][dataset].add(blockName)
 
         binds = []
         for blockName in skippableBlocks:

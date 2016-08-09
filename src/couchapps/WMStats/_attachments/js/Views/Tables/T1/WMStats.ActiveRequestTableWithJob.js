@@ -40,7 +40,11 @@ WMStats.ActiveRequestTableWithJob = function (requestData, containerDiv) {
                           },
               "bUseRendered": false
             },
-            { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
+            { "mDataProp": function (source, type, val) { 
+                              var requestInfo = _activePageData.getData(source.workflow);
+                              return requestInfo.priority;
+                           }, 
+                           "sTitle": "priority", "sDefaultContent": 0},
             { "sDefaultContent": 0,
               "sTitle": "created", 
               "fnRender": function ( o, val ) {

@@ -3411,6 +3411,16 @@
    "alias": "T2_XX_SiteA",
    "site_name": "T2_XX_SiteA",
    "type": "psn"
+  },
+  {
+   "alias": "T2_XX_SiteA",
+   "site_name": "T2_XX_SiteA",
+   "type": "cms"
+  },
+  {
+   "alias": "T2_XX_SiteA",
+   "site_name": "T2_XX_SiteA",
+   "type": "phedex"
   }
  ],
  "[('callname', 'site-resources'), ('clearCache', False), ('data', {}), ('filename', 'site-resources.json'), ('verb', 'GET')]": [

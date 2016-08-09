@@ -32,19 +32,27 @@ class DashboardAPI(object):
         self.defaultParams = {'sys_monitoring': 0, 'general_info': 0, 'job_monitoring': 0}
         self.server = server if server else DASHBOARDURL
         self.logger = logr if logr else logging.getLogger()
+        self.apmon = None
 
-    def getApMonInstance(self):
+    def __enter__(self):
+        self.apmon = self._getApMonInstance()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.apmon.free()
+
+    def _getApMonInstance(self):
         """
         _getApMonInstance_
 
-        Return an instance of ApMon
+        Private method that returns an instance of ApMon
         """
         self.logger.debug("Creating ApMon with static configuration")
         apMonConf = {self.server: self.defaultParams}
         try:
             return apmon.ApMon(apMonConf, self.logger)
         except Exception as ex:
-            msg = "Errror while getting an instance of ApMon under: %s\n" % self.server
+            msg = "Error while getting an instance of ApMon under: %s\n" % self.server
             msg += str(ex)
             self.logger.error(msg)
         return None
@@ -62,30 +70,24 @@ class DashboardAPI(object):
         elif not isinstance(params, list):
             self.logger.error("apMon send received data in the wrong format: %s", type(params))
 
-        apmonInst = self.getApMonInstance()
-        if not apmonInst:
+        if not self.apmon:
             return
 
         for job in params:
-            self.logger.debug("Sending info to dashboard for jobid: %s", job['jobId'])
             try:
                 # special case for TaskMeta report type
                 if job.get('MessageType') == 'TaskMeta':
-                    apmonInst.sendParameters(job['TaskName'], job['JobName'], job)
+                    self.apmon.sendParameters(job['TaskName'], job['JobName'], job)
                 elif 'MonitorJobID' in job:
-                    apmonInst.sendParameters(job.pop('MonitorID'), job.pop('MonitorJobID'), job)
+                    self.logger.debug("Sending info to dashboard for MonitorID: %s", job['MonitorID'])
+                    self.apmon.sendParameters(job.pop('MonitorID'), job.pop('MonitorJobID'), job)
                 else:
-                    apmonInst.sendParameters(job['taskId'], job['jobId'], job)
+                    self.logger.debug("Sending info to dashboard for jobid: %s", job['jobId'])
+                    self.apmon.sendParameters(job['taskId'], job['jobId'], job)
             except Exception as ex:
                 msg = "Error sending the following job information to dashboard: %s\n" % job
                 msg += str(ex)
                 self.logger.error(msg)
-
-        # then close the socket and release apmon resources
-        try:
-            apmonInst.free()
-        except Exception as ex:
-            self.logger.error("Failed to free apmon resources.")
 
     def publishValues(self, taskId, jobId, message):
         """
@@ -105,6 +107,8 @@ class DashboardAPI(object):
         self.apMonSend(paramArgs)
 
     def publish(self, **message):
+        if not message:
+            return None
         self.publishValues(None, None, message)
 
     def sendValues(self, message, jobId=None, taskId=None):
@@ -191,7 +195,6 @@ def filterArgs(argValues):
 # Main method for the usage of the report.py script
 #
 def report(args):
-    dashboardInst = DashboardAPI(logr=logging, server=DASHBOARDURL)
     argValues = readArgs(args)
     contextArgs, paramArgs = filterArgs(argValues)
     context = getContext(contextArgs)
@@ -199,7 +202,9 @@ def report(args):
     jobId = context['MonitorJobID']
     logger('SENDING with Task:%s Job:%s' % (taskId, jobId))
     logger('params : ' + repr(paramArgs))
-    dashboardInst.apMonSend(paramArgs)
+    with DashboardAPI(logr=logging, server=DASHBOARDURL) as dashboardInst:
+        dashboardInst.apMonSend(paramArgs)
+
     print("Parameters sent to Dashboard.")
 
 
@@ -226,7 +231,6 @@ def parseAd():
 
 def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     """ Report failure to dashboard (CRAB3) """
-    dashboardInst = DashboardAPI(logr=logging, server=DASHBOARDURL)
     if ad is None:
         try:
             ad = parseAd()
@@ -251,7 +255,8 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     if stageOutReport:
         params['StageOutReport'] = stageOutReport
     print("Dashboard stageout failure parameters: %s" % str(params))
-    dashboardInst.apMonSend(params)
+    with DashboardAPI(logr=logging, server=DASHBOARDURL) as dashboardInst:
+        dashboardInst.apMonSend(params)
     return exitCode
 
 def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageOutExit):

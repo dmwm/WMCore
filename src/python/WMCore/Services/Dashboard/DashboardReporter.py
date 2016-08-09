@@ -44,8 +44,7 @@ class DashboardReporter(WMObject):
     def __init__(self, config):
         self.config = config
 
-        #Have to default this to the local host otherwise a lot of unit tests
-        #die
+        #Have to default this to the local host otherwise a lot of unit tests die
         if hasattr(config, 'DashboardReporter'):
             self.destHost = getattr(self.config.DashboardReporter, 'dashboardHost', '127.0.0.1')
             self.destPort = getattr(self.config.DashboardReporter, 'dashboardPort', 8884)
@@ -57,7 +56,6 @@ class DashboardReporter(WMObject):
         self.tsFormat = '%Y-%m-%d %H:%M:%S'
 
         self.dashboardUrl = '%s:%s' % (self.destHost, str(self.destPort))
-        self.dashboard = DashboardAPI(logr=logging, server=self.dashboardUrl)
 
     def handleCreated(self, jobs):
         """
@@ -93,7 +91,8 @@ class DashboardReporter(WMObject):
             package['NEventsToProcess'] = job.get('nEventsToProc', 'NotAvailable')
             jobParams.append(package)
 
-        self.dashboard.apMonSend(jobParams)
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
         return
 
@@ -132,7 +131,8 @@ class DashboardReporter(WMObject):
                 package['scheduler'] = job['plugin'][:-6]
             jobParams.append(package)
 
-        self.dashboard.apMonSend(jobParams)
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
         # send step information, if available
         self.handleSteps(jobs)
@@ -145,6 +145,9 @@ class DashboardReporter(WMObject):
 
         Handle the post-processing step information
         """
+        if not isinstance(jobs, list):
+            jobs = [jobs]
+
         jobParams = []
         for job in jobs:
             if job['fwjr'] is None:
@@ -190,7 +193,8 @@ class DashboardReporter(WMObject):
                 logging.debug("Sending step info: %s" % str(package))
                 jobParams.append(package)
 
-            self.dashboard.apMonSend(package)
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
         return
 
@@ -397,4 +401,6 @@ class DashboardReporter(WMObject):
 
         logging.info("Sending %s info" % taskName)
         logging.debug("Sending task info: %s" % str(package))
-        self.dashboard.apMonSend(package)
+
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(package)

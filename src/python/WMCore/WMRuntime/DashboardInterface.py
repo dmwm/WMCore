@@ -166,7 +166,7 @@ class DashboardInfo():
         #Dashboard server interface info
         self.publisher    = None
         self.destinations = {}
-        self.server       = None
+        self.server       = dashboardUrl
 
         #Job ids
         self.taskName = unicodeToStr('wmagent_%s' % self.workload.name())
@@ -186,10 +186,6 @@ class DashboardInfo():
 
         #Utility
         self.tsFormat = '%Y-%m-%d %H:%M:%S'
-
-        # API to talk to apmon
-        self.dashboard = DashboardAPI(server=dashboardUrl)
-        self.server = self.dashboard.server
 
         return
 
@@ -412,6 +408,8 @@ class DashboardInfo():
         instance.
         """
         logging.info("About to send UDP package to dashboard: %s" % data)
-        logging.info("Using address %s" % self.server)
-        self.dashboard.apMonSend(data)
+        with DashboardAPI(server=self.server) as dashboard:
+            logging.info("Using address %s" % dashboard.server)
+            dashboard.apMonSend(data)
+
         return

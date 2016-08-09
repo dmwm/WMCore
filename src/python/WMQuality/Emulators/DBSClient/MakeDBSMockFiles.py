@@ -38,6 +38,7 @@ for endpoint, outFile, calls, datasets in INSTANCES:
 
     for dataset in datasets:
         print("Building call list for", dataset)
+        calls.append(['listBlocks', {'dataset': dataset}])
         calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
         calls.append(['listBlocks', {'detail': True, 'dataset': dataset}])
         calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])

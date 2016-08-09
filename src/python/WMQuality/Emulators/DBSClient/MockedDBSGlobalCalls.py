@@ -7,6 +7,7 @@ endpoint = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 # Datasets to get all blocks, array, and lumis from
 datasets = ['/HighPileUp/Run2011A-v1/RAW', '/MinimumBias/ComissioningHI-v1/RAW', '/Cosmics/ComissioningHI-v1/RAW',
             '/Cosmics/ComissioningHI-PromptReco-v1/RECO', '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO',
+            '/SingleElectron/StoreResults-Run2011A-WElectron-PromptSkim-v4-ALCARECO-NOLC-36cfce5a1d3f3ab4df5bd2aa0a4fa380/USER',
            ]
 
 calls = [['listDataTiers'],

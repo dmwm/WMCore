@@ -152,7 +152,7 @@ def validateInputDatasSetAndParentFlag(arguments):
             dbsURL = arguments.get("DbsUrl", None)
             if dbsURL != None:
                 #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
-                from WMCore.Services.DBS.DBS3Reader import DBS3Reader, DBSReaderError
+                from WMCore.Services.DBS.DBS3Reader import DBS3Reader
                 result = DBS3Reader(dbsURL).listDatasetParents(inputdataset)
                 if len(result) == 0:
                     msg = "IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)

@@ -19,6 +19,8 @@ from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
 
 def injectReDigiConfigs(configDatabase, combinedStepOne = False):
     """
@@ -70,13 +72,14 @@ def injectReDigiConfigs(configDatabase, combinedStepOne = False):
     stepThree = configDatabase.commitOne(stepThreeConfig)[0]["id"]
     return (stepOne, stepTwo, stepThree)
 
-class ReDigiTest(unittest.TestCase):
+class ReDigiTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Initialize the database and couch.
         """
+        super(ReDigiTest, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -88,7 +91,6 @@ class ReDigiTest(unittest.TestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("redigi_t")
 
-        EmulatorHelper.setEmulators(dbs = True)
         return
 
     def tearDown(self):
@@ -101,6 +103,7 @@ class ReDigiTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
         EmulatorHelper.resetEmulators()
+        super(ReDigiTest, self).tearDown()
         return
 
     def testDependentReDigi(self):
@@ -638,7 +641,7 @@ class ReDigiTest(unittest.TestCase):
         defaultArguments["StepThreeConfigCacheID"] = configs[2]
         defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
         defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
-        defaultArguments["MCPileup"] = "/mixing/pileup/DATASET"
+        defaultArguments["MCPileup"] = PILEUP_DATASET
         defaultArguments["KeepStepOneOutput"] = False
 
         factory = ReDigiWorkloadFactory()

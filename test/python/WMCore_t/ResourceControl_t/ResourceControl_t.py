@@ -5,39 +5,37 @@ _ResourceControl_t_
 Unit tests for ResourceControl.
 """
 
-import unittest
-import threading
 import os
-import sys
 import subprocess
+import sys
+import threading
+import unittest
 
+from WMCore.Agent.Configuration import Configuration
+from WMCore.BossAir.RunJob import RunJob
+from WMCore.DAOFactory import DAOFactory
+from WMCore.FwkJobReport.Report import Report
+from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.UUID import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
-
-from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMQuality.TestInit import TestInit
-from WMCore.Services.UUID import makeUUID
-from WMCore.DAOFactory import DAOFactory
-from WMCore.Agent.Configuration import Configuration
-from WMCore.BossAir.RunJob import RunJob
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBase import getTestBase
-from WMCore.FwkJobReport.Report import Report
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.TestInit import TestInit
 
-class ResourceControlTest(unittest.TestCase):
+
+class ResourceControlTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Install schema and create a DAO factory for WMBS.
         """
-        EmulatorHelper.setEmulators(phedex = False, dbs = False,
-                                    siteDB = True, requestMgr = False)
-
+        super(ResourceControlTest, self).setUp()
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -69,7 +67,7 @@ class ResourceControlTest(unittest.TestCase):
 
         Clear the schema.
         """
-        EmulatorHelper.resetEmulators()
+        super(ResourceControlTest, self).tearDown()
         self.testInit.clearDatabase()
         return
 

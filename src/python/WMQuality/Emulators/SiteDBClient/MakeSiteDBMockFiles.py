@@ -5,9 +5,11 @@ Program to create mock SiteDB JSON files used by the SiteDB mock-based emulator
 """
 
 from __future__ import (division, print_function)
-from urllib2 import HTTPError
+
 import json
 import os
+from urllib2 import HTTPError
+
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMCore.WMBase import getTestBase
 
@@ -18,12 +20,15 @@ if __name__ == '__main__':
              {'callname': 'data-processing', 'filename': 'data-processing.json', 'clearCache': False, 'verb': 'GET', 'data':{}}
             ]
 
-    additionals = { 'site-names':[{"site_name": "T2_XX_SiteA", "type": "psn","alias": "T2_XX_SiteA"}],
-                        'data-processing':[{u'phedex_name': u'T2_XX_SiteA', u'psn_name': u'T2_XX_SiteA', u'site_name': u'XX_T2_XX_SiteA'},
-                                           {u'phedex_name': u'T2_XX_SiteB', u'psn_name': u'T2_XX_SiteB', u'site_name': u'XX_T2_XX_SiteB'},
-                                           {u'phedex_name': u'T2_XX_SiteC', u'psn_name': u'T2_XX_SiteC', u'site_name': u'XX_T2_XX_SiteC'}
-                            ]
-                        }
+    additionals = {'site-names': [{"site_name": "T2_XX_SiteA", "type": "psn", "alias": "T2_XX_SiteA"},
+                                  {"site_name": "T2_XX_SiteA", "type": "cms", "alias": "T2_XX_SiteA"},
+                                  {"site_name": "T2_XX_SiteA", "type": "phedex", "alias": "T2_XX_SiteA"}],
+                   'data-processing': [
+                       {u'phedex_name': u'T2_XX_SiteA', u'psn_name': u'T2_XX_SiteA', u'site_name': u'XX_T2_XX_SiteA'},
+                       {u'phedex_name': u'T2_XX_SiteB', u'psn_name': u'T2_XX_SiteB', u'site_name': u'XX_T2_XX_SiteB'},
+                       {u'phedex_name': u'T2_XX_SiteC', u'psn_name': u'T2_XX_SiteC', u'site_name': u'XX_T2_XX_SiteC'}
+                       ]
+                   }
 
     dns = ["/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
            "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jha/CN=618566/CN=Manoj Jha"]

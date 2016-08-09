@@ -170,8 +170,10 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertEqual(block['NumberOfFiles'], 2)
         self.assertEqual(block['NumberOfLumis'], 94)
 
-        self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET + 'blah')
-        self.assertRaises(DBSReaderError, self.dbs.getDBSSummaryInfo, DATASET, BLOCK + 'asas')
+        with self.assertRaises(DBSReaderError):
+            self.dbs.getDBSSummaryInfo(DATASET + 'blah')
+        with self.assertRaises(DBSReaderError):
+            self.dbs.getDBSSummaryInfo(DATASET, BLOCK + 'asas')
 
     def testGetFileBlocksInfo(self):
         """getFileBlocksInfo returns block info, including location lookup"""
@@ -190,8 +192,11 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue(block['PhEDExNodeList'])
 
         # weird error handling - depends on whether block or dataset is missing
-        self.assertRaises(DBSReaderError, self.dbs.getFileBlocksInfo, DATASET + 'blah')
-        self.assertRaises(DBSReaderError, self.dbs.getFileBlocksInfo, DATASET, blockName=BLOCK + 'asas')
+        with self.assertRaises(DBSReaderError):
+            self.dbs.getFileBlocksInfo(DATASET + 'blah')
+
+        with self.assertRaises(DBSReaderError):
+            self.dbs.getFileBlocksInfo(DATASET, blockName=BLOCK + 'asas')
 
     def testListFileBlocks(self):
         """listFileBlocks returns block names in dataset"""

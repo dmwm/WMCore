@@ -33,12 +33,14 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def setUp(self):
         self.fakeDBS = False
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
+        super(BlockTestCase, self).setUp()
+        #EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
         Globals.GlobalParams.resetParams()
 
     def tearDown(self):
         EmulatorHelper.resetEmulators()
         Globals.GlobalParams.resetParams()
+        super(BlockTestCase, self).tearDown()
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
@@ -308,13 +310,13 @@ class BlockTestCase(EmulatedUnitTestCase):
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
         for task in processingSpec.taskIterator():
-            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+            self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
         # invalid run whitelist
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
-            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+            self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
             # blocks with 0 files are skipped
             # set all blocks in request to 0 files, no work should be found & an error is raised
@@ -322,7 +324,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             # Globals.GlobalParams.setNumOfFilesPerBlock(0)
             # processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
             # for task in processingSpec.taskIterator():
-            # self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
+            # self.assertRaises(DBSReaderError, Block(), processingSpec, task)
             # Globals.GlobalParams.resetParams()
 
     def notestParentProcessing(self):

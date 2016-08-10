@@ -10,6 +10,7 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
 from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
@@ -265,7 +266,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
 
         for task in processingSpec.taskIterator():
-            self.assertRaises(WorkQueueNoWorkError, Dataset(), processingSpec, task)
+            self.assertRaises(DBSReaderError, Dataset(), processingSpec, task)
 
         # invalid run whitelist
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)

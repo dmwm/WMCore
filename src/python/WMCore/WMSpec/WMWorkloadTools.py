@@ -62,32 +62,6 @@ def strToBool(string):
         raise WMSpecFactoryException("Can't convert to bool: %s" % string)
 
 
-def _verifyDBSCall(dbsURL, uri):
-    try:
-        # from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-        # DBS3Reader(dbsURL).dbs.serverinfo()
-        from WMCore.Services.Requests import JSONRequests
-        jsonSender = JSONRequests(dbsURL)
-        result = jsonSender.get("/%s" % uri)
-        if not result[1] == 200:
-            raise WMSpecFactoryException("DBS is not connected: %s : %s" % (dbsURL, str(result)))
-    except:
-        raise WMSpecFactoryException("DBS is not responding: %s" % dbsURL)
-
-    return result[0]
-
-
-def checkDBSURL(dbsURL):
-    # use the import statement here since this is packed and used in RunTime code.
-    # dbs client is not shipped with it.
-
-    if dbsURL:
-        _verifyDBSCall(dbsURL, "serverinfo")
-        return True
-
-    return True
-
-
 def parsePileupConfig(mcPileup, dataPileup):
     """
     _parsePileupConfig_
@@ -153,13 +127,18 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
 
 
 def _validateInputDataset(arguments):
+    
     inputdataset = arguments.get("InputDataset", None)
     dbsURL = arguments.get("DbsUrl", None)
     if inputdataset != None and dbsURL != None:
-        result = _verifyDBSCall(dbsURL, "datasets?&dataset_access_type=*&dataset=%s" % inputdataset)
-        if len(result) == 0:
-            msg = "Inputdataset %s doesn't exist on %s" % (inputdataset, dbsURL)
-            raise WMSpecFactoryException(msg)
+        #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+        from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+        from WMCore.Services.DBS.DBSErrors import DBSReaderError
+        try:
+            DBS3Reader(dbsURL).checkDatasetPath(inputdataset)
+        except DBSReaderError as ex:
+            # we need to Wrap the exception to WMSpecFactoryException to be caught in reqmgr validation
+            raise WMSpecFactoryException(str(ex))
     return
 
 
@@ -172,7 +151,9 @@ def validateInputDatasSetAndParentFlag(arguments):
         else:
             dbsURL = arguments.get("DbsUrl", None)
             if dbsURL != None:
-                result = _verifyDBSCall(dbsURL, "datasetparents?dataset=%s" % inputdataset)
+                #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+                from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+                result = DBS3Reader(dbsURL).listDatasetParents(inputdataset)
                 if len(result) == 0:
                     msg = "IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
                     raise WMSpecFactoryException(msg)
@@ -298,3 +279,9 @@ def loadSpecClassByType(specType):
 def loadSpecByType(specType):
     specClass = loadSpecClassByType(specType)
     return specClass()
+
+def checkDBSURL(url):
+    #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+    from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+    return DBS3Reader(url).checkDBSServer()
+

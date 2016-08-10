@@ -10,6 +10,7 @@ import json
 import os
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.WMBase import getTestBase
 
 
@@ -108,6 +109,10 @@ class MockDbsApi(object):
         :param kwargs: named arguments it was called with
         :return: the dictionary that DBS would have returned
         """
+
+        if self.url not in mockData.keys():
+            raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
+
         if kwargs:
             signature = '%s:%s' % (self.item, sorted(kwargs.iteritems()))
         else:
@@ -115,7 +120,7 @@ class MockDbsApi(object):
 
         try:
             if mockData[self.url][signature] == 'Raises HTTPError':
-                raise HTTPError
+                raise HTTPError('http:/dbs.mock.fail', 400, 'MockDBS is raising an exception in place of DBS', 'Dummy header', 'Dummy body')
             else:
                 return mockData[self.url][signature]
         except KeyError:

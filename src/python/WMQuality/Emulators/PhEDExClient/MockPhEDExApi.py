@@ -5,17 +5,31 @@ Version of Services/PhEDEx intended to be used with mock or unittest.mock
 
 from __future__ import (division, print_function)
 
+import json
+import os
+
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
+from WMCore.WMBase import getTestBase
+
 
 NOT_EXIST_DATASET = 'thisdoesntexist'
-PILEUP_DATASET = '/mixing/pileup/DATASET'
+PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
 
 SITES = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
 _BLOCK_LOCATIONS = {}
 
 mockData = {}
 
+# Read in the data just once so that we don't have to do it for every test (in __init__)
+#TODO: this needs to be change to PhEDEx mock file
+#globalFile = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData.json')
 
+#try:
+#    with open(globalFile, 'r') as mockFile:
+#        mockData = json.load(mockFile)
+#except IOError:
+#    mockData = {}
+    
 class MockPhEDExApi(object):
     """
     Version of Services/PhEDEx intended to be used with mock or unittest.mock
@@ -58,7 +72,8 @@ class MockPhEDExApi(object):
         """
 
         if dataset:
-            return {'%s#1' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+            #TODO This is the real block name for PILEUP_DATASET - This should get it from the PhEDEx mock 
+            return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
 
         replicas = {}
         for oneBlock in block:

@@ -61,7 +61,7 @@ rerecoCmsswHelper.addOutputModule(
     processedDataset = "Processed",
     dataTier = "RECO")
 
-pileupConfig = {"data" : ["/MinBias_TuneZ2_7TeV-pythia6/Fall10-START38_V12-v1/GEN-SIM-RAW"]}
+pileupConfig = {"data" : ["/HighPileUp/Run2011A-v1/RAW"]}
 rerecoCmsswHelper.setupPileup(pileupConfig, DBSURL)
 
 #Add a stageOut step

@@ -3,6 +3,7 @@ Given a pile up dataset, pull the information required to cache the list
 of pileup files in the job sandbox for the dataset.
 
 """
+from __future__ import print_function
 
 import datetime
 import json

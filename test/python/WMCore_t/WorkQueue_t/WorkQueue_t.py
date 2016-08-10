@@ -27,6 +27,7 @@ from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
+from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.WMBS.Job import Job
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
@@ -39,6 +40,7 @@ from WMQuality.Emulators import EmulatorSetup
 from WMQuality.Emulators.DataBlockGenerator import Globals
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
 
 NBLOCKS_HICOMM = 47
 NFILES_HICOMM = 72
@@ -124,11 +126,11 @@ class WorkQueueTest(WorkQueueTestCase):
         self.openRunningProcArgs["ConfigCacheID"] = createConfig(self.openRunningProcArgs["CouchDBName"])
 
         self.redigiArgs = ReDigiWorkloadFactory.getTestArguments()
-        self.redigiArgs.update(MCPileup = "/mixing/pileup/DATASET")
+        self.redigiArgs.update(MCPileup = PILEUP_DATASET)
         self.redigiArgs["CouchDBName"] = self.configCacheDB
 
         self.pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
-        self.pileupMcArgs.update(MCPileup = "/mixing/pileup/DATASET")
+        self.pileupMcArgs.update(MCPileup = PILEUP_DATASET)
         self.pileupMcArgs["CouchDBName"] = self.configCacheDB
         self.pileupMcArgs["ConfigCacheID"] = createConfig(self.pileupMcArgs["CouchDBName"])
 
@@ -1027,13 +1029,13 @@ class WorkQueueTest(WorkQueueTestCase):
                                                     'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
         processingSpec.save(processingSpec.specUrl())
-        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.assertRaises(DBSReaderError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
         # Cant have a slash in primary ds name - validation should fail
         getFirstTask(processingSpec).data.input.dataset.primary = 'a/b'
         processingSpec.save(processingSpec.specUrl())
-        self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, processingSpec.specUrl())
+        self.assertRaises(DBSReaderError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
         # dataset splitting with invalid run whitelist
@@ -1043,7 +1045,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.setStartPolicy('Dataset')
         processingSpec.setRunWhitelist([666]) # not in this dataset
         processingSpec.save(processingSpec.specUrl())
-        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.assertRaises(DBSReaderError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
         # block splitting with invalid run whitelist
@@ -1053,7 +1055,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.setStartPolicy('Block')
         processingSpec.setRunWhitelist([666]) # not in this dataset
         processingSpec.save(processingSpec.specUrl())
-        self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, processingSpec.specUrl())
+        self.assertRaises(DBSReaderError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())
 
     def testIgnoreDuplicates(self):
@@ -1278,9 +1280,9 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # close the global inbox elements, they won't be split anymore
         self.globalQueue.closeWork('testProcessing', 'testProduction')
-        # This fails here
+        # There are too many jobs to pull down for testProcessing still has element not in WMBS
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(),
-                         [{'testProcessing': True}, {'testProduction': True}])
+                         [{'testProcessing': False}, {'testProduction': True}])
         self.assertEqual(self.localQueue.getWMBSInjectionStatus(self.spec.name()),
                          True)
 
@@ -1567,8 +1569,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1,
                                                       'T2_XX_SiteB' : 3,
                                                       'T2_XX_SiteC' : 4}, {})), 0)
-        Globals.moveBlock({'/mixing/pileup/DATASET#1' : ['T2_XX_SiteA', 'T2_XX_SiteC'],
-                           '/mixing/pileup/DATASET#2' : ['T2_XX_SiteA', 'T2_XX_SiteC']})
+        Globals.moveBlock({'%s#1'  % PILEUP_DATASET : ['T2_XX_SiteA', 'T2_XX_SiteC'],
+                           '%s#2'  % PILEUP_DATASET : ['T2_XX_SiteA', 'T2_XX_SiteC']})
         self.localQueue.updateLocationInfo()
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA' : 1}, {})), 0)
         self.assertGreaterEqual(len(self.localQueue), 4)

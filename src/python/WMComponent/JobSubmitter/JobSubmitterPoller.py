@@ -501,8 +501,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                     try:
                         totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
                         totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
+                        totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
+                        totalRunningJobs = self.currentRcThresholds[siteName]["total_running_jobs"]
+
                         taskPendingSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["pending_slots"]
                         taskPendingJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"]
+                        taskRunningSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["max_slots"]
+                        taskRunningJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_running_jobs"]
                         taskPriority = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
                     except KeyError as ex:
                         msg = "Invalid key for site %s and job type %s\n" % (siteName, jobType)
@@ -514,11 +519,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                     if totalPendingJobs >= totalPendingSlots or taskPendingJobs >= taskPendingSlots:
                         logging.debug("Found a job for %s which has no free pending slots", siteName)
                         continue
-                    else:
-                        # update the site/task thresholds and the component job counter
-                        self.currentRcThresholds[siteName]["total_pending_jobs"] += 1
-                        self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"] += 1
-                        jobsCount += 1
+                    # check if site overall thresholds have free slots
+                    if totalPendingJobs + totalRunningJobs >= totalPendingSlots + totalRunningSlots:
+                        logging.debug("Found a job for %s which has no free overall slots", siteName)
+                        continue
+                    # finally, check whether task has free overall slots
+                    if taskPendingJobs + taskRunningJobs >= taskPendingSlots + taskRunningSlots:
+                        logging.debug("Found a job for %s which has no free task slots", siteName)
+                        continue
+
+                    # otherwise, update the site/task thresholds and the component job counter
+                    self.currentRcThresholds[siteName]["total_pending_jobs"] += 1
+                    self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"] += 1
+                    jobsCount += 1
 
                     # load (and remove) the job dictionary object from jobDataCache
                     cachedJob = self.jobDataCache.pop(jobid)

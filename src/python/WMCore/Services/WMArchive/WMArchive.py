@@ -5,7 +5,7 @@ import json
 from WMCore.Services.Service import Service
 
 
-class WMArchiver(Service):
+class WMArchive(Service):
     """
     This is skelton class which need be implemented.
     """

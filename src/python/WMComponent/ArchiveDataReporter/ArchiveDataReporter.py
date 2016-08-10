@@ -36,7 +36,7 @@ class ArchiveDataReporter(Harness):
         myThread = threading.currentThread()
         
         #TODO temporary condition check for archive setting.
-        if self.config.ArchiveDataReporter.WMArchiverURL == None:
+        if self.config.ArchiveDataReporter.WMArchiveURL == None:
             logging.info("No archive url is set: Doing nothing")
         else:
             logging.info("Setting ResourcesUpdate poll interval to %s seconds" % pollInterval)

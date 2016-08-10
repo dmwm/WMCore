@@ -180,10 +180,13 @@ class FWJRDBAPITest(unittest.TestCase):
                         "archivestatus": "ready",
                         "fwjr": SAMPLE_FWJR,
                         "type": "fwjr"}
+        workflow = SAMPLE_FWJR['task'].split('/')[1]
         self.assertEqual(self.fwjrAPI.couchDB.commitOne(fwjrDocument)[0]['id'], fwjrDocument['_id'])
-        self.assertEqual(self.fwjrAPI.getFWJRByArchiveStatus("ready")['rows'][0]['id'], fwjrDocument['_id'])      
+        self.assertEqual(self.fwjrAPI.getFWJRByArchiveStatus("ready")['rows'][0]['id'], fwjrDocument['_id'])
+        self.assertEqual(self.fwjrAPI.isAllFWJRArchived(workflow), False)    
         self.fwjrAPI.updateArchiveUploadedStatus(fwjrDocument['_id'])
         self.assertEqual(self.fwjrAPI.getFWJRByArchiveStatus("uploaded")['rows'][0]['id'], fwjrDocument['_id'])
+        self.assertEqual(self.fwjrAPI.isAllFWJRArchived(workflow), True)
         
 if __name__ == '__main__':
 

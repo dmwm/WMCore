@@ -4,120 +4,115 @@
 This is the Dashboard API Module for the Worker Node
 """
 from __future__ import print_function
-from WMCore.Services.Dashboard import apmon
+
 import sys
 import os
 import traceback
-
-#
-# Methods for manipulating the apmon instance
-#
-
-# Config attributes
-APMONUSEURL = False
-
-# Internal attributes
-APMONINSTANCE = None
-APMONINIT = False
-
-# Monalisa configuration
-#APMONCONF = {'dashb-ai-584.cern.ch:8884': {'sys_monitoring' : 0, \
-#                                    'general_info'   : 0, \
-#                                    'job_monitoring' : 0} }
-
-# Export default params to it's own variable, as WMAgent might want
-# to report to diff endhost.
-DEFAULT_PARAMS = {'sys_monitoring': 0,
-                  'general_info': 0,
-                  'job_monitoring': 0}
-APMONCONF = {'cms-jobmon.cern.ch:8884': DEFAULT_PARAMS}
+import logging
+from WMCore.Services.Dashboard import apmon
 
 
-APMONLOGGINGLEVEL = apmon.Logger.ERROR
+# AMR still some functions out there that I don't know about their usage
+DASHBOARDURL = 'cms-jobmon.cern.ch:8884'
 
-#
-# Method to create a single apmon instance at a time
-#
-def getApmonInstance(logr=None, apmonServer=None):
-    """ Get Apmon instance
-    logr can be set to custom logger or to logging level.
-        logging levels are defined in Logger.
-    apmonServer can point to custom monitoring server"""
-    global APMONINSTANCE
-    global APMONINIT
-    global APMONCONF
-    global APMONLOGGINGLEVEL
-    if apmonServer:
-        APMONCONF = apmonServer
-    if logr:
-        APMONLOGGINGLEVEL = logr
-    if APMONINSTANCE is None and not APMONINIT:
-        APMONINIT = True
-        if APMONUSEURL:
-            apm = None
-            print("Creating ApMon with dynamic configuration/url")
-            try:
-                apm = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
-            except Exception as ex:
-                print('Got exception %s' % str(ex))
-            if apm is not None and not apm.initializedOK():
-                print("Setting ApMon to static configuration")
-                try:
-                    apm.setDestinations(APMONCONF)
-                except Exception:
-                    apm = None
-            APMONINSTANCE = apm
-        if APMONINSTANCE is None:
-            print("Creating ApMon with static configuration")
-            try:
-                APMONINSTANCE = apmon.ApMon(APMONCONF, APMONLOGGINGLEVEL)
-            except Exception as ex:
-                print('Got exception %s' % str(ex))
-    return APMONINSTANCE
+class DashboardAPI(object):
+    """
+    _DashboardAPI_
 
-#
-# Method to free the apmon instance
-#
-def apmonFree():
-    """ Stop backgroun threads, close opened sockets """
-    global APMONINSTANCE
-    global APMONINIT
-    if APMONINSTANCE is not None:
+    High level interface with apmon
+    """
+    def __init__(self, monitorId=None, jobMonitorId=None, lookupUrl=None,
+                 logr=None, server=None):
+        self.defaultContext = {}
+        self.defaultContext['MonitorID'] = monitorId
+        self.defaultContext['MonitorJobID'] = jobMonitorId
+        # cannot be set from outside
+        self.defaultContext['MonitorLookupURL'] = lookupUrl
+
+        self.defaultParams = {'sys_monitoring': 0, 'general_info': 0, 'job_monitoring': 0}
+        self.server = server if server else DASHBOARDURL
+        self.logger = logr if logr else logging.getLogger()
+        self.apmon = None
+
+    def __enter__(self):
+        self.apmon = self._getApMonInstance()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.apmon.free()
+
+    def _getApMonInstance(self):
+        """
+        _getApMonInstance_
+
+        Private method that returns an instance of ApMon
+        """
+        self.logger.debug("Creating ApMon with static configuration")
+        apMonConf = {self.server: self.defaultParams}
         try:
-            APMONINSTANCE.free()
-        except Exception:
-            pass
-        APMONINSTANCE = None
-    APMONINIT = False
+            return apmon.ApMon(apMonConf, self.logger)
+        except Exception as ex:
+            msg = "Error while getting an instance of ApMon under: %s\n" % self.server
+            msg += str(ex)
+            self.logger.error(msg)
+        return None
 
-#
-# Method to send params to Monalisa service
-#
-def apmonSend(taskid, jobid, params, logr=None, apmonServer=None):
-    """ Send multiple parameters to apmon server """
-    apm = getApmonInstance(logr, apmonServer)
-    if apm is not None:
-        if not isinstance(params, (dict, list)):
-            params = {'unknown' : '0'}
-        taskid = __checkAndConvertToStr(taskid)
-        jobid = __checkAndConvertToStr(jobid)
-        try:
-            apm.sendParameters(taskid, jobid, params)
-            return 0
-        except Exception:
-            pass
-    return 1
+    def apMonSend(self, params=None):
+        """
+        _apMonSend_
 
+        Get an apmon instance and send all the job parameters to it.
+        """
+        if not params:
+            self.logger.info("ApMon has nothing to send out")
+        elif isinstance(params, dict):
+            params = [params]
+        elif not isinstance(params, list):
+            self.logger.error("apMon send received data in the wrong format: %s", type(params))
 
-# private function converting unitcode to str
-def __checkAndConvertToStr(value):
-    if not isinstance(value, basestring):
-        return 'unknown'
-    try:
-        return str(value)
-    except UnicodeEncodeError:
-        #This contains some unicode outside ascii range
-        return 'unknown'
+        if not self.apmon:
+            return
+
+        for job in params:
+            try:
+                # special case for TaskMeta report type
+                if job.get('MessageType') == 'TaskMeta':
+                    self.apmon.sendParameters(job['TaskName'], job['JobName'], job)
+                elif 'MonitorJobID' in job:
+                    self.logger.debug("Sending info to dashboard for MonitorID: %s", job['MonitorID'])
+                    self.apmon.sendParameters(job.pop('MonitorID'), job.pop('MonitorJobID'), job)
+                else:
+                    self.logger.debug("Sending info to dashboard for jobid: %s", job['jobId'])
+                    self.apmon.sendParameters(job['taskId'], job['jobId'], job)
+            except Exception as ex:
+                msg = "Error sending the following job information to dashboard: %s\n" % job
+                msg += str(ex)
+                self.logger.error(msg)
+
+    def publishValues(self, taskId, jobId, message):
+        """
+        Is there anyone really using this method?!?!
+        """
+        contextArgs, paramArgs = filterArgs(message)
+        if taskId is not None:
+            contextArgs['MonitorID'] = taskId
+        if jobId is not None:
+            contextArgs['MonitorJobID'] = jobId
+        for key in contextConf.keys():
+            if key not in contextArgs and self.defaultContext[key] is not None:
+                contextArgs[key] = self.defaultContext[key]
+        context = getContext(contextArgs)
+        paramArgs['MonitorID'] = context['MonitorID']
+        paramArgs['MonitorJobID'] = context['MonitorJobID']
+        self.apMonSend(paramArgs)
+
+    def publish(self, **message):
+        if not message:
+            return None
+        self.publishValues(None, None, message)
+
+    def sendValues(self, message, jobId=None, taskId=None):
+        self.publishValues(taskId, jobId, message)
 
 
 def logger(msg):
@@ -207,44 +202,10 @@ def report(args):
     jobId = context['MonitorJobID']
     logger('SENDING with Task:%s Job:%s' % (taskId, jobId))
     logger('params : ' + repr(paramArgs))
-    apmonSend(taskId, jobId, paramArgs)
-    apmonFree()
+    with DashboardAPI(logr=logging, server=DASHBOARDURL) as dashboardInst:
+        dashboardInst.apMonSend(paramArgs)
+
     print("Parameters sent to Dashboard.")
-
-#
-# PYTHON BASED JOB WRAPPER
-# Main class for Dashboard reporting
-#
-class DashboardAPI(object):
-    def __init__(self, monitorId=None, jobMonitorId=None, lookupUrl=None):
-        self.defaultContext = {}
-        self.defaultContext['MonitorID'] = monitorId
-        self.defaultContext['MonitorJobID'] = jobMonitorId
-        # cannot be set from outside
-        self.defaultContext['MonitorLookupURL'] = lookupUrl
-
-    def publishValues(self, taskId, jobId, message):
-        contextArgs, paramArgs = filterArgs(message)
-        if taskId is not None:
-            contextArgs['MonitorID'] = taskId
-        if jobId is not None:
-            contextArgs['MonitorJobID'] = jobId
-        for key in contextConf.keys():
-            if key not in contextArgs and self.defaultContext[key] is not None:
-                contextArgs[key] = self.defaultContext[key]
-        context = getContext(contextArgs)
-        taskId = context['MonitorID']
-        jobId = context['MonitorJobID']
-        apmonSend(taskId, jobId, paramArgs)
-
-    def publish(self, **message):
-        self.publishValues(None, None, message)
-
-    def sendValues(self, message, jobId=None, taskId=None):
-        self.publishValues(taskId, jobId, message)
-
-    def free(self):
-        apmonFree()
 
 
 def parseAd():
@@ -294,8 +255,8 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     if stageOutReport:
         params['StageOutReport'] = stageOutReport
     print("Dashboard stageout failure parameters: %s" % str(params))
-    apmonSend(params['MonitorID'], params['MonitorJobID'], params)
-    apmonFree()
+    with DashboardAPI(logr=logging, server=DASHBOARDURL) as dashboardInst:
+        dashboardInst.apMonSend(params)
     return exitCode
 
 def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageOutExit):

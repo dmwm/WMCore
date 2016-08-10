@@ -7,8 +7,7 @@ Created on Tue Feb 23 13:30:04 2016
 
 @author: jbalcas
 """
-from __future__ import print_function
-from __future__ import division
+from __future__ import print_function, division
 import unittest
 
 import os
@@ -16,10 +15,8 @@ import time
 
 from WMCore.WMBase import getTestBase
 from WMCore.Services.Dashboard.Logger import Logger
-from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
-from WMCore.Services.Dashboard.DashboardAPI import apmonFree, apmonSend, parseAd
-from WMCore.Services.Dashboard.DashboardAPI import APMONINSTANCE, APMONINIT, APMONCONF
-from WMCore.Services.Dashboard.DashboardAPI import reportFailureToDashboard, logger, getApmonInstance
+from WMCore.Services.Dashboard.DashboardAPI import (DashboardAPI, parseAd,
+                                                    reportFailureToDashboard, logger)
 
 
 class DashboardAPITest(unittest.TestCase):
@@ -34,22 +31,20 @@ class DashboardAPITest(unittest.TestCase):
 
         Just test initialization of apmon Instance
         """
-        print("Apmon Configuration %s" % APMONCONF)
-        apmon = getApmonInstance(apmonServer=APMONCONF)
-        self.assertTrue(apmon.initializedOK())
-        # Free up apmon instance and check if it was successfull
-        apmonFree()
-        self.assertFalse(APMONINIT)
-        self.assertEqual(None, APMONINSTANCE)
+        with DashboardAPI() as dashboard:
+            self.assertTrue(dashboard.apmon.initializedOK())
 
     def testApmonSend(self):
         """
         _testApmonSend_
 
-        Just test simple apmonSend with fake data
+        We cannot really test any results, but let's just send some data
         """
-        # We just sent fake data which is not monitored by dashboard.
-        self.assertEqual(0, apmonSend("TaskID", "Job1", {"CPUUsage": 100, "MemUsage": 1}))
+        package = {'jobId': 'abcd-1234_0', 'MessageType': 'JobStatus',
+                   'taskId': 'wmagent_alan', 'StatusValue': 'submitted'}
+
+        with DashboardAPI() as dashboard:
+            dashboard.apMonSend(package)
 
     def testLogger(self):
         """
@@ -117,17 +112,14 @@ class DashboardAPITest(unittest.TestCase):
 
         Test dashboard API which can be used through python to publish values
         """
-        dashboardAPI = DashboardAPI()
         os.environ["_CONDOR_JOB_AD"] = os.path.join(getTestBase(), '..', 'data', 'WMCore', 'Services', 'Dashboard', 'job_ad_file')
         out = parseAd()
-        # No one expects anything to be returned, so double check if it is None
-        self.assertTrue(isinstance(out, dict))
-        self.assertEqual(None, dashboardAPI.publish())
-        self.assertEqual(None, dashboardAPI.sendValues(out))
-        self.assertEqual(None, dashboardAPI.sendValues(out, out['CRAB_Id']))
-        self.assertEqual(None, dashboardAPI.sendValues(out, out['CRAB_Id'], out['CRAB_ReqName']))
-        self.assertEqual(None, dashboardAPI.free())
-
+        with DashboardAPI() as dashboardAPI:
+            self.assertTrue(isinstance(out, dict))
+            self.assertEqual(None, dashboardAPI.publish())
+            self.assertEqual(None, dashboardAPI.sendValues(out))
+            self.assertEqual(None, dashboardAPI.sendValues(out, out['CRAB_Id']))
+            self.assertEqual(None, dashboardAPI.sendValues(out, out['CRAB_Id'], out['CRAB_ReqName']))
 
 if __name__ == '__main__':
     unittest.main()

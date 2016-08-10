@@ -10,7 +10,19 @@ import logging
 from WMCore import __version__
 from WMCore.WMException                     import WMException
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree, DEFAULT_PARAMS
+from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
+
+
+# xdrlib cannot handle unicode strings
+def unicodeToStr(value):
+    if not isinstance(value, basestring):
+        return 'unknown'
+    try:
+        return str(value)
+    except UnicodeEncodeError:
+        #This contains some unicode outside ascii range
+        return 'unknown'
+
 
 class DashboardReporterException(WMException):
     """
@@ -32,21 +44,18 @@ class DashboardReporter(WMObject):
     def __init__(self, config):
         self.config = config
 
-        #Have to default this to the local host otherwise a lot of unit tests
-        #die
+        #Have to default this to the local host otherwise a lot of unit tests die
         if hasattr(config, 'DashboardReporter'):
-            self.destHost = getattr(self.config.DashboardReporter, 'dashboardHost',
-                               '127.0.0.1')
-            self.destPort = getattr(self.config.DashboardReporter, 'dashboardPort',
-                               8884)
+            self.destHost = getattr(self.config.DashboardReporter, 'dashboardHost', '127.0.0.1')
+            self.destPort = getattr(self.config.DashboardReporter, 'dashboardPort', 8884)
         else:
             self.destHost = '127.0.0.1'
             self.destPort = 8884
 
-        self.serverreport = {str(self.destHost + ':' + str(self.destPort)) : DEFAULT_PARAMS}
-
         self.taskPrefix = 'wmagent_'
         self.tsFormat = '%Y-%m-%d %H:%M:%S'
+
+        self.dashboardUrl = '%s:%s' % (self.destHost, str(self.destPort))
 
     def handleCreated(self, jobs):
         """
@@ -67,38 +76,23 @@ class DashboardReporter(WMObject):
         to the description of the addTask method
         """
         logging.info ("Handling %d created jobs" % len(jobs))
-        logging.debug ("Handling created jobs: %s" % jobs)
 
+        jobParams = []
         for job in jobs:
             logging.debug("Sending info for job %s" % str(job))
 
+            jobid = '%s_%i' % (job['name'], job['retry_count'])
             package = {}
-            package['MessageType']      = 'JobMeta'
-            package['taskId']           = self.taskPrefix + \
-                                               job['workflow']
-            package['jobId']            = '%s_%i' % (job['name'],
-                                                    job['retry_count'])
-            package['TaskType']         = job['taskType']
-            package['JobType']          = job['jobType']
-            package['NEventsToProcess'] = job.get('nEventsToProc',
-                                                    'NotAvailable')
+            package['MessageType'] = 'JobMeta'
+            package['jobId'] = unicodeToStr(jobid)
+            package['taskId'] = unicodeToStr(self.taskPrefix + job['workflow'])
+            package['TaskType'] = job['taskType']
+            package['JobType'] = job['jobType']
+            package['NEventsToProcess'] = job.get('nEventsToProc', 'NotAvailable')
+            jobParams.append(package)
 
-            logging.debug("Sending: %s" % str(package))
-            result = apmonSend(taskid = package['taskId'],
-                               jobid = package['jobId'],
-                               params = package,
-                               logr = logging,
-                               apmonServer = self.serverreport)
-            if result != 0:
-                msg = "Error %i sending info for submitted job %s via UDP\n" \
-                      % (result, job['name'])
-                msg += "Ignoring"
-                logging.error(msg)
-                logging.debug("Package sent: %s\n" % package)
-                logging.debug("Host info: host %s, port %s" \
-                              % (self.destHost,
-                                 self.destPort))
-            apmonFree()
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
         return
 
@@ -119,111 +113,88 @@ class DashboardReporter(WMObject):
             *fwjr -> Post processing step information
         """
         logging.info("Handling %d jobs" % len(jobs))
-        logging.debug("Handling jobs: %s" % jobs)
 
+        jobParams = []
         for job in jobs:
             logging.debug("Sending info for job %s" % str(job))
 
+            jobid = '%s_%i' % (job['name'], job['retry_count'])
             package = {}
-            package['MessageType']       = 'JobStatus'
-            package['jobId']             = '%s_%i' % (job['name'],
-                                                    job['retry_count'])
-            package['taskId']            = self.taskPrefix + job['workflow']
-            package['StatusValue']       = statusValue
+            package['MessageType'] = 'JobStatus'
+            package['jobId'] = unicodeToStr(jobid)
+            package['taskId'] = unicodeToStr(self.taskPrefix + job['workflow'])
+            package['StatusValue'] = statusValue
             package['StatusValueReason'] = statusMessage
-            package['StatusEnterTime']   = time.strftime(self.tsFormat,
-                                        time.gmtime())
-            package['StatusDestination'] = job.get('location',
-                                                   'NotAvailable')
-
+            package['StatusEnterTime'] = time.strftime(self.tsFormat, time.gmtime())
+            package['StatusDestination'] = job.get('location', 'NotAvailable')
             if job.get('plugin', None):
-                package['scheduler']     = job['plugin'][:-6]
+                package['scheduler'] = job['plugin'][:-6]
+            jobParams.append(package)
 
-            logging.debug("Sending: %s" % str(package))
-            result = apmonSend(taskid = package['taskId'],
-                               jobid = package['jobId'],
-                               params = package,
-                               logr = logging,
-                               apmonServer = self.serverreport)
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
-            if result != 0:
-                msg =  "Error %i sending info for submitted job %s via UDP\n" \
-                        % (result, job['name'])
-                msg += "Ignoring"
-                logging.error(msg)
-                logging.debug("Package sent: %s\n" % package)
-                logging.debug("Host info: host %s, port %s" \
-                              % (self.destHost,
-                                 self.destPort))
-            apmonFree()
-
-            if 'fwjr' in job:
-                self.handleSteps(job)
+        # send step information, if available
+        self.handleSteps(jobs)
 
         return
 
-    def handleSteps(self, job):
+    def handleSteps(self, jobs):
         """
         _handleSteps_
 
         Handle the post-processing step information
         """
-        if job['fwjr'] == None:
-            return
+        if not isinstance(jobs, list):
+            jobs = [jobs]
 
-        steps = job['fwjr'].listSteps()
-        for stepName in steps:
-            step = job['fwjr'].retrieveStep(stepName)
-            if not hasattr(step, 'counter'):
-                continue
+        jobParams = []
+        for job in jobs:
+            if job['fwjr'] is None:
+                return
 
-            counter = step.counter
+            steps = job['fwjr'].listSteps()
+            for stepName in steps:
+                step = job['fwjr'].retrieveStep(stepName)
+                if not hasattr(step, 'counter'):
+                    continue
 
-            package = {}
+                counter = step.counter
 
-            package.update(self.getPerformanceInformation(step))
-            package.update(self.getEventInformation(stepName, job['fwjr']))
+                package = {}
+                package.update(self.getPerformanceInformation(step))
+                package.update(self.getEventInformation(stepName, job['fwjr']))
 
-            # Input files should just be appended onto inputFiles instead of given a step #
-            # per https://hypernews.cern.ch/HyperNews/CMS/get/comp-monitoring/326.html
-            inputFilePackage = self.getInputFilesInformation(step)
-            if inputFilePackage:
-                if 'inputFiles' in package:
-                    package['inputFiles'] += ';' +  inputFilePackage['inputFiles']
-                else:
-                    package.update(self.getInputFilesInformation(step))
+                # Input files should just be appended onto inputFiles instead of given a step #
+                # per https://hypernews.cern.ch/HyperNews/CMS/get/comp-monitoring/326.html
+                inputFilePackage = self.getInputFilesInformation(step)
+                if inputFilePackage:
+                    if 'inputFiles' in package:
+                        package['inputFiles'] += ';' +  inputFilePackage['inputFiles']
+                    else:
+                        package.update(self.getInputFilesInformation(step))
 
-            trimmedPackage = {}
-            for key in package:
-                if key in ['inputFiles', 'Basename', 'inputBlocks']:
-                    trimmedPackage[key] = package[key]
-                elif package[key] != None:
-                    trimmedPackage['%d_%s' % (counter, key)] = package[key]
-            package = trimmedPackage
+                trimmedPackage = {}
+                for key in package:
+                    if key in ['inputFiles', 'Basename', 'inputBlocks']:
+                        trimmedPackage[key] = package[key]
+                    elif package[key] is not None:
+                        trimmedPackage['%d_%s' % (counter, key)] = package[key]
+                package = trimmedPackage
 
-            if not package:
-                continue
+                if not package:
+                    continue
 
-            package['jobId']    = '%s_%i' % (job['name'], job['retry_count'])
-            package['taskId']   = self.taskPrefix + job['workflow']
-            package['%d_stepName' % counter] = stepName
+                jobid = '%s_%i' % (job['name'], job['retry_count'])
+                package['jobId'] = unicodeToStr(jobid)
+                package['taskId'] = unicodeToStr(self.taskPrefix + job['workflow'])
+                package['%d_stepName' % counter] = stepName
 
+                logging.debug("Sending step info: %s" % str(package))
+                jobParams.append(package)
 
-            logging.debug("Sending step info: %s" % str(package))
-            result = apmonSend(taskid = package['taskId'],
-                               jobid = package['jobId'], params = package,
-                               logr = logging, apmonServer = self.serverreport)
-
-            if result != 0:
-                msg =  "Error %i sending info for completed job %s via UDP\n" \
-                        % (result, job['name'])
-                msg += "Ignoring"
-                logging.error(msg)
-                logging.debug("Package sent: %s\n" % package)
-                logging.debug("Host info: host %s, port %s" \
-                              % (self.destHost,
-                                 self.destPort))
-            apmonFree()
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(jobParams)
 
         return
 
@@ -430,17 +401,6 @@ class DashboardReporter(WMObject):
 
         logging.info("Sending %s info" % taskName)
         logging.debug("Sending task info: %s" % str(package))
-        result = apmonSend(taskid = package['TaskName'],
-                           jobid = package['JobName'], params = package,
-                           logr = logging, apmonServer = self.serverreport)
 
-        if result != 0:
-            msg =  "Error %i sending info for new task %s via UDP\n" % (result,
-                                                                        taskName)
-            msg += "Ignoring"
-            logging.error(msg)
-            logging.debug("Package sent: %s\n" % package)
-            logging.debug("Host info: host %s, port %s" \
-                          % (self.destHost,
-                             self.destPort))
-        apmonFree()
+        with DashboardAPI(logr=logging, server=self.dashboardUrl) as dashboard:
+            dashboard.apMonSend(package)

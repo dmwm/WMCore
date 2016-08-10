@@ -289,10 +289,14 @@ class ApMon(object):
             if clusterName is None or clusterName == "":
                 clusterName = self.__defaultUserCluster
             else:
+                if isinstance(clusterName, int):
+                    clusterName = str(clusterName)
                 self.__defaultUserCluster = clusterName
             if nodeName is None:
                 nodeName = self.__defaultUserNode
             else:
+                if isinstance(nodeName, int):
+                    nodeName = str(nodeName)
                 self.__defaultUserNode = nodeName
             if len(self.destinations) == 0:
                 self.logger.log(Logger.WARNING, "Not sending parameters since no destination is defined.")
@@ -457,9 +461,15 @@ class ApMon(object):
 
     def initializedOK(self):
         """
-        Retruns true if there is no destination where the parameters to be sent.
+        Returns true if there are destination(s) configured.
         """
         return len(self.destinations) > 0
+
+    def freedOK(self):
+        """
+        Returns true if all ApMon resources were properly freed.
+        """
+        return self.__freed
 
     def setLogLevel(self, strLevel):
         """

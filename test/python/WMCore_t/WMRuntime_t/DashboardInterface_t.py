@@ -133,8 +133,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.setupJobEnvironment(name = name)
 
         # Instantiate DBInfo
-        dbInfo   = DashboardInfo(job = job, task = task)
-        dbInfo.addDestination('127.0.0.1', 8884)
+        dbInfo   = DashboardInfo(job=job, task=task, dashboardUrl='127.0.0.1:8884')
 
         # Check jobStart information
         data = dbInfo.jobStart()
@@ -205,8 +204,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.setupJobEnvironment(name = name)
 
         # Instantiate DBInfo
-        dbInfo   = DashboardInfo(job = job, task = task)
-        dbInfo.addDestination('127.0.0.1', 8884)
+        dbInfo   = DashboardInfo(job=job, task=task, dashboardUrl='127.0.0.1:8884')
 
         # Modify the first step
         step = task.getStep(stepName = "cmsRun1")
@@ -254,8 +252,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.setupJobEnvironment(name = name)
 
         # Instantiate DBInfo
-        dbInfo   = DashboardInfo(job = job, task = task)
-        dbInfo.addDestination('127.0.0.1', 8884)
+        dbInfo   = DashboardInfo(job=job, task=task, dashboardUrl='127.0.0.1:8884')
 
         # Check jobStart information
         data = dbInfo.jobStart()
@@ -310,8 +307,7 @@ class DashboardInterfaceTest(unittest.TestCase):
         self.setupJobEnvironment(name = name)
 
         # Instantiate DBInfo
-        dbInfo   = DashboardInfo(job = job, task = task)
-        dbInfo.addDestination('127.0.0.1', 8884)
+        dbInfo   = DashboardInfo(job=job, task=task, dashboardUrl='127.0.0.1:8884')
 
         # Check jobStart information
         data = dbInfo.jobStart()

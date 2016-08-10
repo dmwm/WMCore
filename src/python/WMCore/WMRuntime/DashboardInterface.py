@@ -11,8 +11,8 @@ import re
 
 from WMCore.WMSpec.WMStep     import WMStepHelper
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
-from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestMgr import ApMonDestMgr
-from WMCore.Services.Dashboard.DashboardAPI import apmonSend, apmonFree
+from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
+from WMCore.Services.Dashboard.DashboardReporter import unicodeToStr
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
 
 def getSyncCE(default = socket.gethostname()):
@@ -152,7 +152,7 @@ class DashboardInfo():
 
     """
 
-    def __init__(self, task, job):
+    def __init__(self, task, job, dashboardUrl=None):
         """
         Init some stuff
 
@@ -166,11 +166,11 @@ class DashboardInfo():
         #Dashboard server interface info
         self.publisher    = None
         self.destinations = {}
-        self.server       = None
+        self.server       = dashboardUrl
 
         #Job ids
-        self.taskName = 'wmagent_%s' % self.workload.name()
-        self.jobName  = '%s_%i' % (job['name'], job['retry_count'])
+        self.taskName = unicodeToStr('wmagent_%s' % self.workload.name())
+        self.jobName  = unicodeToStr('%s_%i' % (job['name'], job['retry_count']))
 
         #Step counter
         self.stepCount = 0
@@ -399,56 +399,17 @@ class DashboardInfo():
 
         return
 
-    def addDestination(self, host, port):
-        """
-        _addDestination_
-
-        Add a publishing destination to the Publisher
-        """
-
-        if self.publisher == None:
-            self._InitPublisher()
-        self.destinations[host] = port
-        self.publisher.newDestination(host, port)
-        self.server = ['%s:%s' % (host, port)]
-
-    def publish(self, data, redundancy = 1):
+    def publish(self, data):
         """
         _publish_
 
         Publish information in this object to the Dashboard
         using the ApMon interface and the destinations stored in this
         instance.
-
-        redunancy is the amount to times to publish this information
-
         """
-
         logging.info("About to send UDP package to dashboard: %s" % data)
-        logging.info("Using address %s" % self.server)
-        apmonSend(taskid = self.taskName, jobid = self.jobName, params = data,
-                  logr = logging, apmonServer = self.server)
-        apmonFree()
-        return
+        with DashboardAPI(server=self.server) as dashboard:
+            logging.info("Using address %s" % dashboard.server)
+            dashboard.apMonSend(data)
 
-    def _InitPublisher(self):
-        """
-        _InitPublisher_
-
-        *private*
-
-        Initialise the ApMonDestMgr instance, verifying that the task and
-        job attributes are set
-
-        """
-        if self.taskName == None:
-            msg = "Error: You must set the task id before adding \n"
-            msg += "destinations or publishing data"
-            raise RuntimeError(msg)
-        if self.jobName == None:
-            msg = "Error: You must set the job id before adding \n"
-            msg += "destinations or publishing data"
-            raise RuntimeError(msg)
-        self.publisher = ApMonDestMgr(clusterName = self.taskName,
-                                      nodeName = self.jobName)
         return

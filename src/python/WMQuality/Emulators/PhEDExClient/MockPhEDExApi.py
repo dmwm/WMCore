@@ -5,12 +5,11 @@ Version of Services/PhEDEx intended to be used with mock or unittest.mock
 
 from __future__ import (division, print_function)
 
-import json
-import os
-
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
-from WMCore.WMBase import getTestBase
 
+from WMCore.Services.DBS.DBS3Reader import (DBS3Reader, DBSReaderError)
+
+PROD_DBS = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
 
 NOT_EXIST_DATASET = 'thisdoesntexist'
 PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
@@ -20,16 +19,7 @@ _BLOCK_LOCATIONS = {}
 
 mockData = {}
 
-# Read in the data just once so that we don't have to do it for every test (in __init__)
-#TODO: this needs to be change to PhEDEx mock file
-#globalFile = os.path.join(getTestBase(), '..', 'data', 'Mock', 'DBSMockData.json')
 
-#try:
-#    with open(globalFile, 'r') as mockFile:
-#        mockData = json.load(mockFile)
-#except IOError:
-#    mockData = {}
-    
 class MockPhEDExApi(object):
     """
     Version of Services/PhEDEx intended to be used with mock or unittest.mock
@@ -70,10 +60,19 @@ class MockPhEDExApi(object):
         Returns:
             a fake list of blocks and the fakes sites they are at
         """
-
         if dataset:
-            #TODO This is the real block name for PILEUP_DATASET - This should get it from the PhEDEx mock 
-            return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+            dataset = dataset[0] # Dataset is a list in these tests
+
+            if dataset == PILEUP_DATASET:
+                return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+            else:
+                # TODO This is the real block name for PILEUP_DATASET - This should get it from the PhEDEx mock
+                try:
+                    DBS3Reader(PROD_DBS).checkDatasetPath(dataset)
+                    return {
+                        '%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+                except DBSReaderError:
+                    return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: []}
 
         replicas = {}
         for oneBlock in block:

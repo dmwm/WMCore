@@ -4,7 +4,7 @@ import time
 import json
 import os
 from WMCore.WMBase import getTestBase
-from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
+from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 
 SAMPLE_FWJR = {'fallbackFiles': [],
  'skippedFiles': [],
@@ -196,7 +196,7 @@ class DataMap_t(unittest.TestCase):
                        "SkimSuccessFwjr.json"]
         for sample in fwjrSamples:
             sPath = os.path.join(getTestBase(),
-                          "WMCore_t/Services_t/WMArchiver_t/FWJRSamples/%s" % sample)
+                          "WMCore_t/Services_t/WMArchive_t/FWJRSamples/%s" % sample)
             with open(sPath, 'r') as infile:
                 fwjr = json.load(infile)
             job = {}

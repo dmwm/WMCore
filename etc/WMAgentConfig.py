@@ -553,6 +553,6 @@ config.component_("ArchiveDataReporter")
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
 config.ArchiveDataReporter.componentDir  = config.General.workDir + "/ArchiveDataReporter"
 config.ArchiveDataReporter.pollInterval = 300
-config.ArchiveDataReporter.WMArchiverURL = None
+config.ArchiveDataReporter.WMArchiveURL = None
 config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000 # number of documents needed to be polled each time
 config.ArchiveDataReporter.numDocsUploadPerCall = 200 # number of documents upload each time in bulk to WMArchive

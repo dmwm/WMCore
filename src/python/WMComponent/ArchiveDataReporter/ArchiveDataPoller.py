@@ -7,8 +7,8 @@ import logging
 import traceback
 from Utils.IterTools import grouper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.WMArchiver.DataMap import createArchiverDoc
-from WMCore.Services.WMArchiver.WMArchiver import WMArchiver
+from WMCore.Services.WMArchive.DataMap import createArchiverDoc
+from WMCore.Services.WMArchive.WMArchive import WMArchive
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 
 
@@ -32,7 +32,7 @@ class ArchiveDataPoller(BaseWorkerThread):
         dbname = "%s/fwjrs" % getattr(self.config.JobStateMachine, "couchDBName")
 
         self.fwjrAPI = FWJRDBAPI(baseURL, dbname)
-        self.wmarchiver = WMArchiver(self.config.ArchiveDataReporter.WMArchiverURL)
+        self.wmarchiver = WMArchive(self.config.ArchiveDataReporter.WMArchiveURL)
         self.numDocsRetrievePerPolling = getattr(self.config.ArchiveDataReporter, "numDocsRetrievePerPolling", 1000)
         self.numDocsUploadPerCall = getattr(self.config.ArchiveDataReporter, "numDocsUploadPerCall", 200)
 

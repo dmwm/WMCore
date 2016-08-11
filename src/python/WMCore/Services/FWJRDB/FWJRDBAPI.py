@@ -91,4 +91,13 @@ class FWJRDBAPI():
 
         return self.couchDB.updateDocument(docID, self.couchapp, "archiveStatus")
     
+    def isAllFWJRArchived(self, workflow):
+        keys = [[workflow, "ready"]]
+        options = {"reduce": True, "group": True}
+        result = self._getCouchView("byWorkflowAndArchiveStatus", options, keys)
+        if len(result["rows"]) == 0:
+            return True
+        else:
+            return False
+    
     

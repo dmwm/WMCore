@@ -36,6 +36,7 @@ from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
 from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
+from WMCore.Services.FWJRDB.FWJRDBAPI            import FWJRDBAPI
 from WMCore.WMException                          import WMException
 
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
@@ -228,6 +229,7 @@ class CleanCouchPoller(BaseWorkerThread):
         self.jobCouchdb  = CouchServer(jobDBurl)
         self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
         self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
+        self.fwjrService = FWJRDBAPI(self.fwjrdatabase)
         
         self.workCouchdb = CouchServer(workDBurl)
         self.workdatabase = self.workCouchdb.connectDatabase(workDBName)
@@ -289,6 +291,8 @@ class CleanCouchPoller(BaseWorkerThread):
     def archiveWorkflows(self, workflows, archiveState):
         updated = 0
         for workflowName in workflows:
+            if not self.isUploadedToWMArchive(workflowName):
+                continue
             if self.cleanAllLocalCouchDB(workflowName):
                 if self.useReqMgrForCompletionCheck:
                     try:
@@ -455,6 +459,16 @@ class CleanCouchPoller(BaseWorkerThread):
             wmstatsReport["status"] == "error"):
             return False
         # other wise return True.
+        return True
+    
+    def isUploadedToWMArchive(self, workflowName):
+        
+        if hasattr(self.config, "ArchiveDataReporter") and self.config.ArchiveDataReporter.WMArchiveURL != None:
+            try: 
+                return self.fwjrService.isAllFWJRArchived(workflowName)
+            except Exception as ex:
+                logging.error("Fail to check FWJR upload status: %s" % workflowName)
+                return False
         return True
         
     def cleanAlreadyArchivedWorkflows(self):

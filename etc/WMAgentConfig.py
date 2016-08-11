@@ -547,7 +547,7 @@ config.AgentStatusWatcher.enabled = True # switch to enable or not this componen
 config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.monitorPollInterval = 3  # number of component polling cycles
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
-config.AgentStatusWatcher.jsonFile = config.General.workDir + "/AgentStatusWatcher/WMA_monitoring.json"
+config.AgentStatusWatcher.jsonFile = config.AgentStatusWatcher.componentDir + "/WMA_monitoring.json"
 
 config.component_("ArchiveDataReporter")
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"

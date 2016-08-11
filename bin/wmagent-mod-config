@@ -339,6 +339,12 @@ def modifyConfiguration(config, **args):
 
     return config
 
+     # custom WMArchiveReporter
+    if hasattr(config, "ArchiveDataReporter"):
+        config.ArchiveDataReporter.WMArchiveURL = args["wmarchive_url"]
+
+    return config
+
 
 def main(argv=None):
     if argv is None:
@@ -360,7 +366,7 @@ def main(argv=None):
                                         "reqmgr_url=", "reqmgr2_url=",
                                         "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=",
                                         "dashboard_url=",
-                                        "requestcouch_url=", "central_logdb_url="])
+                                        "requestcouch_url=", "central_logdb_url=", "wmarchive_url="])
 
         except getopt.error as msg:
             raise Usage(msg)
@@ -382,7 +388,7 @@ def main(argv=None):
                           '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
-                          '--requestcouch_url', '--central_logdb_url'):
+                          '--requestcouch_url', '--central_logdb_url', 'wmarchive_url='):
                 parameters[option[2:]] = value
 
 

@@ -78,12 +78,12 @@ def modifyConfiguration(config, **args):
     for component in config.listComponents_():
         compCfg = getattr(config, component)
         compCfg.componentDir = "%s/%s" % (args['working_dir'], component)
-
         if component == "JobCreator":
             compCfg.jobCacheDir = "%s/%s/JobCache" % (args['working_dir'], component)
-
-        if component == "JobAccountant":
+        elif component == "JobAccountant":
             compCfg.specDir = "%s/%s/SpecCache" % (args['working_dir'], component)
+        elif component == "AgentStatusWatcher":
+            compCfg.jsonFile = "%s/%s/WMA_monitoring.json" % (args['working_dir'], component)
 
     localhost = socket.getfqdn()
     for webapp in config.listWebapps_():

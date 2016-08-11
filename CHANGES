@@ -1,3 +1,197 @@
+1.0.17 to 1.0.19:
+  - Merge pull request #7039 from ticoann/archive_checking
+  - Merge pull request #7040 from ticoann/add_wmarchive_url
+  - add checking for wmarchiver upload status
+  - Merge pull request #7038 from ericvaandering/dbs_wq_plus_mock2
+  - add wmarchive url from secrete file
+  - More needed changes to DBS Mock emulator
+  - add existing dataset name
+  - Merge pull request #7009 from juztas/gfalFile
+  - Merge pull request #6910 from amaltaro/wmarchive-minordupfix
+  - Merge pull request #7014 from amaltaro/optimize-dashboard
+  - Use context manager for the DashboardAPI
+  - fix unit tests
+  - Send multiple job report to dashboard with the same object
+  - Remove check for dup docs
+  - Merge pull request #7027 from ticoann/prioriy_fix_wmstatswq
+  - Merge pull request #7033 from ericvaandering/rc_with_sitedb
+  - Update Resource control to use Mock SiteDB and add a bit to mocked SiteDB to make it work.
+  - Adding more data to mock, improving mock, and the unit tests
+  - use dbs client to check the dbs status instead of REST call
+  - 1.0.19.pre5
+  - Merge pull request #7032 from hufnagel/block-delete-fix
+  - handle block deletion for blocks without any replica
+  - Merge pull request #7029 from amaltaro/stupid-alan
+  - Catch deadlock in PhEDExInjector component
+  - Merge pull request #6971 from hufnagel/alcaharvest-singlecore
+  - priorty fix for agent category view
+  - 1.0.19.pre4
+  - Merge pull request #7026 from ticoann/wmstats_update
+  - update wmstats (add priority, inputdataset)
+  - Merge pull request #7024 from ticoann/wq_diagnosis
+  - Merge pull request #7022 from ericvaandering/dbs_mock_more
+  - Merge pull request #7023 from ticoann/fix_logdb_update
+  - add support for whole available WQE checking
+  - Solve issues with DBS not using the mocked emulator and Say which member failed
+  - fix logdb report
+  - Merge pull request #7010 from ticoann/add_foreign_key
+  - Merge pull request #7013 from amaltaro/wqmff-tryblock
+  - Merge pull request #7011 from ticoann/remove_log_db_entry
+  - Merge pull request #7001 from amaltaro/agentstatus-monitor
+  - Merge pull request #7020 from ticoann/make_robust_optional
+  - Merge pull request #7019 from ticoann/update_wq_script
+  - add robust merge optional
+  - update wq diagnosis script
+  - Merge pull request #7017 from jha2/indirectly_sitedb_dataset_t
+  - Merge pull request #6981 from amaltaro/jobtracker-errorcode
+  - Merge pull request #7007 from amaltaro/groups-regex
+  - Merge pull request #7016 from amaltaro/sites-format
+  - Added metadata for the sites T2_XX_SiteB, T2_XX_SiteC for using mock version of SiteDB for the tests in Dataset_t.py
+  - Store site lists in the proper list format
+  - Remove test alerts
+  - Fix regex for CMSGroups and add a unit test
+  - Protect WorkQueueManager thread against DBS/PhEDEx faulty calls
+  - add foreign key for dbsbuffer_file
+  - Merge pull request #7005 from amaltaro/wmbs-unittest
+  - Make sure file:// is added before source/dest pfn in gfal2 plugin Created a new function createFinalPFN, which will take care of preparing pfn and appending file:// if needed a) Also added a check if pfn starts with '/' and in that case append file:// any function createStageOutCommand or createRemoveCommand or removeFile uses new function for preparing pfn. In any case if WMA or CRAB or whatever would call this Stageout plugin without correct pfns, it enforces pfn modification by calling createFinalPFN function. Some details here: https://github.com/dmwm/WMCore/pull/6980
+  - remove the log db error entry when the error is gone
+  - Correct error message; remove alert system; other minor improvements
+  - Fix pylint and python3 issues
+  - Improvements for agent monitoring: agent, wmbs, couch...
+  - Fix a some WMBSHelper unit tests - SE to PNN transition
+  - Merge pull request #7002 from ticoann/fix_500_error
+  - Merge pull request #6974 from jha2/indirectly_sitedb
+  - Merge pull request #6365 from alexanderrichards/feature/wmbs_location_senames
+  - fix 500 errors
+  - Using mock version of SiteDB for the tests in ResubmitBlock_t.py
+  - Merge pull request #7000 from jha2/pnns_to_psns
+  - Added testPNNstoPSNs
+  - migrating seList to pnns
+  - Convert seName to pnn and SEName to PNN
+  - Migrate sename to pnn
+  - Migrating the table column name from se_name to pnn
+  - Migrate table name to wmbs_location_pnns
+  - Merge pull request #6990 from hufnagel/stageout-xrdcp
+  - Merge pull request #6984 from amaltaro/ssb-zero
+  - Merge pull request #6965 from hufnagel/stdbase-bphskim
+  - Merge pull request #6944 from hufnagel/gfal2-checksum-optional
+  - Merge pull request #6925 from hufnagel/submit-bulk-efficiency
+  - Merge pull request #6995 from ericvaandering/fix_1L
+  - Merge pull request #6993 from amaltaro/validate-reqname
+  - Merge pull request #6996 from ticoann/check-request-wq-status
+  - Make resource control management resilient to dashboard glitches
+  - initial patch for request status check script
+  - Remove reference to 1L which futurize does not like
+  - Validate RequestName for reqmgr2 as well
+  - Merge pull request #6983 from ticoann/add_t0_compact
+  - Merge pull request #6986 from amaltaro/finished-wfSQL
+  - create a working xrdcp stageout plugin, fixes #6989
+  - Merge pull request #6985 from amaltaro/phedex-deadOra
+  - Typo on the cleanup job type for TaskArchiver
+  - Catch deadlock on oracle as well...
+  - add cronjob to compact T0 couchdb
+  - Merge pull request #6977 from amaltaro/tracking-jobs
+  - Pylint fixes
+  - Set jobs killed by JobStatusLite to Timeout status
+  - Merge pull request #6975 from amaltaro/phedex-immortal
+  - Pylint fixes
+  - Handle db deadlock when setting lfn status
+  - 1.0.18.pre6
+  - Merge pull request #6967 from amaltaro/wmdatamining-getkey
+  - Merge pull request #6968 from vkuznet/issue6966
+  - Pylint fixes
+  - Get campaign key with default value
+  - Fix hiding split window
+  - add BPHSkim to StdBase
+  - 1.0.18.pre5
+  - Merge pull request #6964 from amaltaro/ssb-report
+  - Fix metadata and job reporting to dashboard
+  - 1.0.18.pre4
+  - Merge pull request #6960 from amaltaro/reqmgr2-jsonpage
+  - Merge pull request #6959 from vkuznet/issue6956
+  - Merge pull request #6958 from amaltaro/statusChange-reqmgr2
+  - Do not pass unicode strings to reqmgr2 javascript
+  - Fix issue 6956
+  - Minor improvements on prio and status in reqmgr2
+  - 1.0.18.pre3
+  - Merge pull request #6912 from vkuznet/oracle_handler
+  - Merge pull request #6940 from amaltaro/requestApi-startTime
+  - Merge pull request #6885 from mmascher/callable_config_master
+  - Merge pull request #6955 from emaszs/master_checksum
+  - New checksum version for CRABCache
+  - pylint for Configuration_t.pt
+  - Improve testStripReport unit test
+  - Allow to use callables as configuration params
+  - Fixed merge conflicts provenient from 6946
+  - Merge pull request #6946 from amaltaro/500error-patch1
+  - Apply oracle handler to convert unicode input to byte strings within DBCore code; revert patch for RESTModel
+  - Merge pull request #6951 from amaltaro/remove-arroba
+  - Merge pull request #6942 from vkuznet/reqmgr2-remove-admin
+  - Pylint fixes
+  - Don.t share db handler object among APIs; retrieve single doc always when possible
+  - Remove RestApiHub/RESTMain
+  - Merge pull request #6943 from amaltaro/update-cpconfig
+  - Pylint fixes
+  - Remove @<hostname> from ReqMgr2 Requestor field
+  - Merge pull request #6895 from hufnagel/logcollect-edmcopyutil
+  - Merge pull request #6936 from jha2/manoj_alternate_2
+  - fix pylint complains
+  - Merge pull request #6948 from amaltaro/deploy-tweaks2
+  - Merge pull request #6947 from amaltaro/get-fullhostname
+  - Pylint fixes
+  - Deployment tweaks for the hlt agent; update example
+  - Using mock for SiteDB_t
+  - Make sure to always retrieve the long hostname
+  - make checksum use with gfal2 optional, fixes #6591
+  - Remove admin interface
+  - Merge pull request #6945 from amaltaro/remove-relvallfn
+  - make sure AlcaHarvest CMSSW jobs only use a single core
+  - 1.0.18.pre2
+  - Update test template stageout to backfill namespace
+  - Merge pull request #6937 from ericvaandering/fix_cstringio
+  - Merge pull request #6934 from ericvaandering/remove_jsonwrapper
+  - make more efficient use of condor bulk submission
+  - Update deprecated cherrypy key
+  - Reqmgr couch api to retrieve requests by status and start time
+  - Use cStringIO without try/except
+  - Actually remove the wrapper
+  - Remove references to JsonWrapper in WMCore test code
+  - Remove references to JsonWrapper in WMCore code
+  - 1.0.18.pre1
+  - Merge pull request #6742 from mmascher/lightclientmaster
+  - Take care of pylint suggestion for Service and Request
+  - Merge pull request #6916 from mmascher/pycurl_encoded
+  - Merge pull request #6929 from ericvaandering/cleanup_restserver
+  - Merge pull request #6927 from ericvaandering/axe_dead_code
+  - Merge pull request #6882 from amaltaro/remove-analysis
+  - Merge pull request #6531 from ericvaandering/standard_json
+  - Merge pull request #6920 from vkuznet/reqmgr2-fixes
+  - Remove unused code from RestServerSetup
+  - Remove Inclusive and Exclusive mask since they are not used, clean up imports
+  - Remove Downloader since it is unused
+  - Remove Action since it is unused
+  - More pylint for pycurl_manager
+  - pycurlmanager pylint plus review
+  - Merge pull request #6924 from amaltaro/createOutputFile
+  - Create the output file expected by condor to be transferred back
+  - Add /store/unmerged
+  - Merge pull request #6915 from amaltaro/fnal-deletion
+  - Merge pull request #6897 from emaszs/master_untar_patch
+  - Merge pull request #6904 from hufnagel/cmssw-home
+  - Allow pycurl_manager.py to accepd encoded string as data. Fixes #6467
+  - Pylint fixes
+  - Change file deletion from srm to xrd for FNAL plugin
+  - make sure CMSSW always finds HOME in environment
+  - switch logcollect stagein to use edmCopyUtil, fixes #6740
+  - Merge Justas' patch for untarring with python 2.6 for older releases
+  - Delete Analysis and PrivateMC spec, task etc
+  - Make sure httplib2 is not required if using pycurl
+  - Fixup pylint
+  - Get rid of cjson
+  - json in python 2.7 is simplejson
+  - Remove the other JSON wrapper options
+  - Remove possibility of cjson and simplejson from json wrapper and cleanup the tests and remove cjson from the tests
+
 1.0.17 to 1.0.19.pre5:
   - Merge pull request #7032 from hufnagel/block-delete-fix
   - handle block deletion for blocks without any replica

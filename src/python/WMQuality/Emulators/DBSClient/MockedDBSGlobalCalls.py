@@ -98,5 +98,6 @@ calls = [['listDataTiers'],
          ['listBlocks', {'detail': True, 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
          ['listDatasets', {'dataset_access_type': '*', 'dataset': '/HighPileUp/Run2011A-v1/RAWblah'}],
          ['listDatasets', {'dataset_access_type': '*', 'dataset': '/thisdoesntexist/ComissioningHI-v1/RAW'}],
+         ['listDatasets', {'dataset_access_type': '*', 'dataset': '/MinimumBias/FAKE-Filter-v1/RECO'}],
 
          ]

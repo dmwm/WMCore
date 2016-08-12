@@ -5,19 +5,19 @@
 
 import unittest
 
+from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
+from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
+
 from WMCore.DataStructs.LumiList import LumiList
-from WMCore.WorkQueue.Policy.Start.Block import Block
-from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
-    import workload as MultiTaskProcessingWorkload
+from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
+from WMCore.WorkQueue.Policy.Start.Block import Block
 from WMCore.WorkQueue.WorkQueueExceptions import *
-from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 rerecoArgs["SplittingAlgo"] = "LumiBased"
@@ -190,11 +190,9 @@ class BlockTestCase(EmulatedUnitTestCase):
         rerecoArgs2["ConfigCacheID"] = createConfig(rerecoArgs2["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         # Block blacklist
-        lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                           rerecoArgs2)
+        lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
         task = getFirstTask(lumiWorkload)
         #task.data.input.splitting.runs = ['1']
         task.data.input.splitting.runs = ['180992']
@@ -232,7 +230,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         for task in Tier1ReRecoWorkload.taskIterator():
             units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
@@ -276,7 +273,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
                         # This is what it is with DBS3 unless we calculate it
-                        self.assertEqual(runLumis[run], None) 
+                        self.assertEqual(runLumis[run], None)
             self.assertEqual(2, int(wq_jobs))
 
     def testInvalidSpecs(self):
@@ -316,7 +313,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
-            self.assertRaises(DBSReaderError, Block(), processingSpec, task)
+            self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
 
             # blocks with 0 files are skipped
             # set all blocks in request to 0 files, no work should be found & an error is raised
@@ -363,7 +360,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         for task in Tier1ReRecoWorkload.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(**self.splitArgs), Tier1ReRecoWorkload, task)
@@ -454,9 +450,10 @@ class BlockTestCase(EmulatedUnitTestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
-            outputs = policyInstance.getDatasetLocations({'https://cmsweb.cern.ch/dbs/prod/global/DBSReader':Tier1ReRecoWorkload.listOutputDatasets()})
+            outputs = policyInstance.getDatasetLocations(
+                {'https://cmsweb.cern.ch/dbs/prod/global/DBSReader': Tier1ReRecoWorkload.listInputDatasets()})
             for dataset in outputs:
-                self.assertEqual(sorted(outputs[dataset]), [])
+                self.assertEqual(sorted(outputs[dataset]), ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return
 
     def testPileupData(self):
@@ -472,7 +469,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             for unit in units:
                 pileupData = unit["PileupData"]
                 self.assertEqual(len(pileupData), 1)
-                self.assertEqual(pileupData.values()[0], [])
+                self.assertItemsEqual(pileupData.values()[0], ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return
 
     def testWithMaskedBlocks(self):
@@ -496,11 +493,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
         lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                 inputDataset.processed,
-                                 inputDataset.tier)
-        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
-        units, rejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
+        units, dummyRejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
 
         nLumis = 0
         for unit in units:
@@ -537,8 +530,8 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = DBSReader(inputDataset.dbsurl)
         maskedBlocks = Block(**self.splitArgs).getMaskedBlocks(task, dbs, dataset)
-        for block, files in maskedBlocks.items():
-            for file, lumiList in files.items():
+        for dummyBlock, files in maskedBlocks.iteritems():
+            for dummyFile, lumiList in files.iteritems():
                 self.assertEqual(str(lumiList), str(inputLumis & lumiMask))
 
 

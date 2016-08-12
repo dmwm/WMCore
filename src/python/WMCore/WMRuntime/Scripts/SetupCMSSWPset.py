@@ -534,8 +534,6 @@ class SetupCMSSWPset(ScriptInterface):
         _handleRepackSettings_
 
         Disable lazy-download for repacking (no benefit on streamer files).
-
-        Repack jobs should only use one core in CMSSW
         """
         print("Hardcoding read/cache strategies for repack")
         self.process.add_(
@@ -546,33 +544,13 @@ class SetupCMSSWPset(ScriptInterface):
                         )
             )
 
-        try:
-            if int(self.step.data.application.multicore.numberOfCores) > 1:
-                self.step.data.application.multicore.numberOfCores = 1
-        except AttributeError:
-            pass
-
         return
 
-    def handleMergeSettings(self):
+    def handleSingleCoreOverride(self):
         """
-        _handleMergeSettings_
+        _handleSingleCoreOverride_
 
-        Merge jobs should only use one core in CMSSW
-        """
-        try:
-            if int(self.step.data.application.multicore.numberOfCores) > 1:
-                self.step.data.application.multicore.numberOfCores = 1
-        except AttributeError:
-            pass
-
-        return
-
-    def handleAlcaHarvestSettings(self):
-        """
-        _handleAlcaHarvestSettings_
-
-        AlcaHarvest jobs should only use one core in CMSSW
+        Make sure job only uses one core in CMSSW
         """
         try:
             if int(self.step.data.application.multicore.numberOfCores) > 1:
@@ -654,10 +632,9 @@ class SetupCMSSWPset(ScriptInterface):
 
             if funcName == "repack":
                 self.handleRepackSettings()
-            elif funcName == "merge":
-                self.handleMergeSettings()
-            elif funcName == "alcaHarvesting":
-                self.handleAlcaHarvestSettings()
+
+            if funcName in ["repack", "merge", "alcaHarvesting" ]:
+                self.handleSingleCoreOverride()
 
             if socket.getfqdn().endswith("cern.ch"):
                 self.handleSpecialCERNMergeSettings(funcName)

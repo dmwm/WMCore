@@ -190,11 +190,9 @@ class BlockTestCase(EmulatedUnitTestCase):
         rerecoArgs2["ConfigCacheID"] = createConfig(rerecoArgs2["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         # Block blacklist
-        lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload',
-                                                           rerecoArgs2)
+        lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
         task = getFirstTask(lumiWorkload)
         #task.data.input.splitting.runs = ['1']
         task.data.input.splitting.runs = ['180992']
@@ -232,7 +230,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         for task in Tier1ReRecoWorkload.taskIterator():
             units, rejectedWork = Block(**splitArgs)(Tier1ReRecoWorkload, task)
@@ -276,7 +273,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
                         # This is what it is with DBS3 unless we calculate it
-                        self.assertEqual(runLumis[run], None) 
+                        self.assertEqual(runLumis[run], None)
             self.assertEqual(2, int(wq_jobs))
 
     def testInvalidSpecs(self):
@@ -363,7 +360,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
-        inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
 
         for task in Tier1ReRecoWorkload.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(**self.splitArgs), Tier1ReRecoWorkload, task)
@@ -497,11 +493,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
         lumiMask = LumiList(compactList={'206371': [[1, 50], [60, 70]], '180899': [[1, 1]], })
 
-        dataset = "/%s/%s/%s" % (inputDataset.primary,
-                                 inputDataset.processed,
-                                 inputDataset.tier)
-        dbs = {inputDataset.dbsurl: DBSReader(inputDataset.dbsurl)}
-        units, rejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
+        units, dummyRejectedWork = Block(**self.splitArgs)(Tier1ReRecoWorkload, task)
 
         nLumis = 0
         for unit in units:
@@ -538,8 +530,8 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = DBSReader(inputDataset.dbsurl)
         maskedBlocks = Block(**self.splitArgs).getMaskedBlocks(task, dbs, dataset)
-        for block, files in maskedBlocks.items():
-            for file, lumiList in files.items():
+        for dummyBlock, files in maskedBlocks.iteritems():
+            for dummyFile, lumiList in files.iteritems():
                 self.assertEqual(str(lumiList), str(inputLumis & lumiMask))
 
 

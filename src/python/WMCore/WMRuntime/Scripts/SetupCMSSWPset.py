@@ -435,7 +435,8 @@ class SetupCMSSWPset(ScriptInterface):
                         if PhEDExNodeName in blockDict["PhEDExNodeNames"]:
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
-                                inputTypeAttrib.fileNames.append(fileLFN['logical_file_name'])
+                                # vstring does not support unicode
+                                inputTypeAttrib.fileNames.append(str(fileLFN['logical_file_name']))
                     if requestedPileupType == 'data':
                         baggage = self.job.getBaggage()
                         if getattr(baggage, 'skipPileupEvents', None) is not None:

@@ -14,7 +14,7 @@ class CreateBlocks(MySQLCreateBlocks):
              SELECT dbsbuffer_block_seq.nextval,
                     (SELECT id from dbsbuffer_dataset WHERE path = :dataset),
                     :block,
-                    (SELECT id FROM dbsbuffer_location WHERE se_name = :location),
+                    (SELECT id FROM dbsbuffer_location WHERE pnn = :location),
                     :status,
                     :time
              FROM DUAL

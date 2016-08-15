@@ -184,7 +184,10 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       71301: "The job was killed by the WMAgent because the site it was running at was set to Aborted (WMAgent).",
                       71302: "The job was killed by the WMAgent because the site it was running at was set to Draining (WMAgent).",
                       71303: "The job was killed by the WMAgent because the site it was running at was set to Down (WMAgent).",
-                      71304: "The job was killed by the WMAgent for using too much wallclock time (WMAgent).",
+                      71304: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Running.",
+                      71305: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Pending.",
+                      71306: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Error.",
+                      71307: "The job was killed by the WMAgent for using too much wallclock time (WMAgent) Job status was Unkown.",
                       80000: "Internal error in CRAB job wrapper.", # CRAB3
                       80001: "No exit code set by job wrapper.", # CRAB3
                       80453: "Unable to determine pset hash from output file (CRAB3).",

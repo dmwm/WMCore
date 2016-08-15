@@ -6,16 +6,16 @@ wmagent-resource-control
 Utility script for manipulating resource control.
 """
 
-import sys
 import os
-
+import sys
 from optparse import OptionParser
 
-from WMCore.WMInit import connectToDB
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
+from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
+from WMCore.WMInit import connectToDB
+from WMQuality.Emulators.SiteDBClient.MockSiteDBApi import mockGetJSON
 
 
 def getTaskTypes(tier0 = False):
@@ -283,7 +283,9 @@ myOptParser = createOptionParser()
 (options, args) = myOptParser.parse_args()
 
 if options.emulator:#emulate sitedb in unittests
-    EmulatorHelper.setEmulators(siteDB = True)
+    import mock
+    siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)
+    siteDBPatcher.start()
 
 connectToDB()
 wmConfig = loadConfigurationFile(os.environ['WMAGENT_CONFIG'])

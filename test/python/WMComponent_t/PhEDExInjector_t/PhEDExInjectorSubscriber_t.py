@@ -6,27 +6,24 @@ Created on Oct 12, 2012
 """
 
 import os
-import time
 import threading
 import unittest
 
+from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
-from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
-
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
-
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInit import TestInit
 
 
-class PhEDExInjectorSubscriberTest(unittest.TestCase):
+class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
     """
     _PhEDExInjectorSubscriberTest_
 
@@ -35,6 +32,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
     For unsafe mode there a WMBS database is also created
     """
 
+    def __init__(self, methodName='runTest'):
+        super(PhEDExInjectorSubscriberTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=False,
+                                                           mockSiteDB=True)
+
     def setUp(self):
         """
         _setUp_
@@ -42,9 +43,10 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         Install the DBSBuffer schema into the database and connect to PhEDEx.
         """
 
+        super(PhEDExInjectorSubscriberTest, self).setUp()
         self.phedexURL = "https://bogus.cern.ch/bogus"
         self.dbsURL = "https://bogus.cern.ch/bogus"
-        EmulatorHelper.setEmulators(phedex = True, dbs = True, siteDB = True)
+        EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=False)
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -69,6 +71,7 @@ class PhEDExInjectorSubscriberTest(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         EmulatorHelper.resetEmulators()
+        super(PhEDExInjectorSubscriberTest, self).tearDown()
 
     def createConfig(self):
         """

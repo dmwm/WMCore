@@ -28,7 +28,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
 
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=True)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=True)
         WorkQueueTestCase.setUp(self)
 
         self.cacheDir = tempfile.mkdtemp()

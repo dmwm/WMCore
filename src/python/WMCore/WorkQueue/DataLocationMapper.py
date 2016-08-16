@@ -155,8 +155,7 @@ class DataLocationMapper(object):
                     phedexNodeNames = dbs.listDatasetLocation(dataItem, dbsOnly=True)
                 else:
                     phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly=True)
-                for pnn in phedexNodeNames:
-                    result[dataItem].update(pnn)
+                result[dataItem].update(phedexNodeNames)
             except Exception as ex:
                 logging.error('Error getting block location from dbs for %s: %s' % (dataItem, str(ex)))
 

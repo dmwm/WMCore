@@ -639,9 +639,12 @@ class DBS3Reader:
 
         return locations
 
-    def getFileBlock(self, fileBlockName):
+    def getFileBlock(self, fileBlockName, dbsOnly=False):
         """
         _getFileBlock_
+
+        dbsOnly flag is mostly meant for StoreResults, since there is no
+        data in TMDB.
 
         return a dictionary:
         { blockName: {
@@ -659,8 +662,8 @@ class DBS3Reader:
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
 
-        result = { fileBlockName: {
-            "PhEDExNodeNames" : self.listFileBlockLocation(fileBlockName),
+        result = {fileBlockName: {
+            "PhEDExNodeNames": self.listFileBlockLocation(fileBlockName, dbsOnly),
             "Files" : self.listFilesInBlock(fileBlockName),
             "IsOpen" : self.blockIsOpen(fileBlockName)
                                  }

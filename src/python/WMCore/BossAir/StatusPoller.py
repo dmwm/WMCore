@@ -11,7 +11,9 @@ JobStatusAir
 import time
 import logging
 import threading
+from collections import defaultdict
 
+from Utils.IterTools import flattenList
 from WMCore.WMException                    import WMException
 from WMCore.WMExceptions                   import WM_JOB_ERROR_CODES
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -101,7 +103,7 @@ class StatusPoller(BaseWorkerThread):
             return
 
         # Look for jobs that need to be killed
-        jobsToKill = []
+        jobsToKill = defaultdict(list)
 
         # Now check for timeouts
         for job in runningJobs:
@@ -116,14 +118,18 @@ class StatusPoller(BaseWorkerThread):
                     # Timeout status is used by JobTracker to fail jobs in WMBS database
                     logging.info("Killing job %i because it has exceeded timeout for status '%s'", job['id'], globalState)
                     job['status'] = 'Timeout'
-                    jobsToKill.append(job)
-
+                    jobsToKill[globalState].append(job)
+        
+        timeOutCodeMap = {"Running": 71304, "Pending": 71305, "Error": 71306}            
         # We need to show that the jobs are in state timeout
         # and then kill them.
+        jobsToKillList = flattenList(jobsToKill.values())
         myThread = threading.currentThread()
         myThread.transaction.begin()
-        self.bossAir.update(jobs=jobsToKill)
-        self.bossAir.kill(jobs=jobsToKill, killMsg=WM_JOB_ERROR_CODES[71304], errorCode=71304)
+        self.bossAir.update(jobs=jobsToKillList)
+        for preJobStatus in jobsToKill:
+            eCode = timeOutCodeMap.get(preJobStatus, 71307) # it shouldn't have 71307 (states should be among Running, Pending, Error)
+            self.bossAir.kill(jobs=jobsToKill[preJobStatus], killMsg=WM_JOB_ERROR_CODES[eCode], errorCode=eCode)
         myThread.transaction.commit()
 
         return

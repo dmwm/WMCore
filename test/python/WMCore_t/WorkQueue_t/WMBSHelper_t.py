@@ -14,6 +14,8 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Mask import Mask
 from WMCore.ResourceControl.ResourceControl import ResourceControl
+from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
@@ -25,9 +27,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WorkQueue.WMBSHelper import killWorkflow
 from WMQuality.Emulators import EmulatorSetup
-from WMQuality.Emulators.DBSClient.DBSReader import DBSReader as MockDBSReader
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
-from WMQuality.Emulators.SiteDBClient.SiteDB import SiteDBJSON as fakeSiteDB
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.WMSpecGenerator.Samples.TestMonteCarloWorkload import (monteCarloWorkload, getMCArgs)
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -35,18 +35,23 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 mcArgs = getMCArgs()
 
+BLOCK1 = '03fe83c2-0c23-11e1-b764-003048caaace'
+BLOCK2 = '04be2fcc-0b8f-11e1-b764-003048caaace'
+
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
     # pylint: disable=E1101,E1103
     return next(wmspec.taskIterator())
 
-class WMBSHelperTest(unittest.TestCase):
+class WMBSHelperTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         """
+        super(WMBSHelperTest, self).setUp()
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -66,7 +71,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.topLevelTask = getFirstTask(self.wmspec)
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
-        self.dbs = MockDBSReader(self.inputDataset.dbsurl)
+        self.dbs = DBSReader(self.inputDataset.dbsurl)
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = threading.currentThread().logger,
                                      dbinterface = threading.currentThread().dbi)
@@ -81,6 +86,9 @@ class WMBSHelperTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
+
+        super(WMBSHelperTest, self).tearDown()
+
         return
 
     def setupForKillTest(self, baAPI = None):
@@ -474,7 +482,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = None
-        self.siteDB = fakeSiteDB()
+        self.siteDB = SiteDBJSON()
 
         # add sites that would normally be added by operator via resource_control
         locationDAO = self.daoFactory(classname = "Locations.New")
@@ -505,7 +513,7 @@ class WMBSHelperTest(unittest.TestCase):
     def getDBS(self, wmspec):
         topLevelTask = getFirstTask(wmspec)
         inputDataset = topLevelTask.inputDataset()
-        dbs = MockDBSReader(inputDataset.dbsurl)
+        dbs = DBSReader(inputDataset.dbsurl)
         #dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
 
@@ -799,40 +807,37 @@ class WMBSHelperTest(unittest.TestCase):
     def testReReco(self):
         """ReReco workflow"""
         # create workflow
-        block = self.dataset + "#1"
+        block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block))
         self.assertEqual(len(files), 1)
 
     def testReRecoBlackRunRestriction(self):
         """ReReco workflow with Run restrictions"""
-        block = self.dataset + "#2"
-        #add run blacklist
-        self.topLevelTask.setInputRunBlacklist([1, 2, 3, 4])
+        block = self.dataset + "#" + BLOCK2
+        self.topLevelTask.setInputRunBlacklist([181183])  # Set run blacklist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
 
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
         self.assertEqual(len(files), 0)
 
-
     def testReRecoWhiteRunRestriction(self):
-        block = self.dataset + "#2"
-        # Run Whitelist
-        self.topLevelTask.setInputRunWhitelist([1])
+        block = self.dataset + "#" + BLOCK2
+        self.topLevelTask.setInputRunWhitelist([181183])  # Set run whitelist to only run in the block
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
-        self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())
+        self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsOK(self):
-        block = self.dataset + "#1"
-        self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['1']
-        self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['1,1']
+        block = self.dataset + "#" + BLOCK1
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['181367']
+        self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['57,80']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         files = wmbs.validFiles(self.dbs.getFileBlock(block)[block]['Files'])
-        self.assertEqual(len(files), GlobalParams.numOfFilesPerBlock())
+        self.assertEqual(len(files), 1)
 
     def testLumiMaskRestrictionsKO(self):
-        block = self.dataset + "#1"
+        block = self.dataset + "#" + BLOCK1
         self.wmspec.getTopLevelTask()[0].data.input.splitting.runs = ['123454321']
         self.wmspec.getTopLevelTask()[0].data.input.splitting.lumis = ['123,123']
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
@@ -841,7 +846,7 @@ class WMBSHelperTest(unittest.TestCase):
 
     def testDuplicateFileInsert(self):
         # using default wmspec
-        block = self.dataset + "#1"
+        block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
@@ -855,7 +860,7 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(numOfFiles, len(dbsFiles))
 
         # use the new spec with same inputdataset
-        block = self.dataset + "#1"
+        block = self.dataset + "#" + BLOCK1
         wmspec = self.createWMSpec("TestSpec1")
         dbs = self.getDBS(wmspec)
         wmbs = self.createWMBSHelperWithTopTask(wmspec, block)
@@ -874,7 +879,7 @@ class WMBSHelperTest(unittest.TestCase):
     def testDuplicateSubscription(self):
         """Can't duplicate subscriptions"""
         # using default wmspec
-        block = self.dataset + "#1"
+        block = self.dataset + "#" + BLOCK1
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, block)
         wmbs.topLevelFileset.loadData()
         numOfFiles = len(wmbs.topLevelFileset.files)
@@ -918,7 +923,6 @@ class WMBSHelperTest(unittest.TestCase):
         self.assertEqual(filesetId, wmbs.topLevelFileset.id)
         self.assertEqual(subId, wmbs.topLevelSubscription['id'])
 
-
     def testParentage(self):
         """
         1. check whether parent files are created in wmbs.
@@ -928,26 +932,27 @@ class WMBSHelperTest(unittest.TestCase):
            parent processing insert, it still needs to create parent files although child files
            are duplicate
         """
-        block = self.dataset + "#1"
-        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block,
-                                                parentFlag = False, detail = True)
-        # file creation without parents
-        self.assertEqual(GlobalParams.numOfFilesPerBlock(), numFiles)
+
+        # Swap out the dataset for one that has parents
+        task = next(self.wmspec.taskIterator())
+        oldDS = task.inputDataset()  # Copy the old dataset, only will use DBS URL from it
+        task.addInputDataset(dbsurl=oldDS.dbsurl, primary='Cosmics', processed='ComissioningHI-PromptReco-v1',
+                             tier='RECO')
+        block = '/Cosmics/ComissioningHI-PromptReco-v1/RECO' + '#5b89ba9c-0dbf-11e1-9b6c-003048caaace'
+
+        # File creation without parents
+        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=False, detail=True)
+        self.assertEqual(8, numFiles)
         wmbs.topLevelFileset.loadData()
-
         for child in wmbs.topLevelFileset.files:
-            # no parent per child
-            self.assertEqual(len(child["parents"]), 0)
+            self.assertEqual(len(child["parents"]), 0)  # no parents per child
 
-        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block,
-                                                parentFlag = True, detail = True)
-        self.assertEqual(GlobalParams.numOfFilesPerBlock(), numFiles)
-
+        # File creation with parents
+        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=True, detail=True)
+        self.assertEqual(8, numFiles)
         wmbs.topLevelFileset.loadData()
-
         for child in wmbs.topLevelFileset.files:
-            # one parent per child
-            self.assertEqual(len(child["parents"]), 1)
+            self.assertEqual(len(child["parents"]), 1)  # one parent per child
 
     def testMCFakeFileInjection(self):
         """Inject fake Monte Carlo files into WMBS"""

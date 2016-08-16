@@ -265,15 +265,15 @@ class ResourceControlTest(EmulatedUnitTestCase):
         procThreshold2  = None
         mergeThreshold1 = None
         mergeThreshold2 = None
-        for threshold in site1Thresholds:
-            if threshold["task_type"] == "Merge":
+        for taskType, threshold in site1Thresholds.items():
+            if taskType == "Merge":
                 mergeThreshold1 = threshold
-            elif threshold["task_type"] == "Processing":
+            elif taskType == "Processing":
                 procThreshold1 = threshold
-        for threshold in site2Thresholds:
-            if threshold["task_type"] == "Merge":
+        for taskType, threshold in site2Thresholds.items():
+            if taskType == "Merge":
                 mergeThreshold2 = threshold
-            elif threshold["task_type"] == "Processing":
+            elif taskType == "Processing":
                 procThreshold2 = threshold
 
         self.assertEqual(len(site1Thresholds), 2,
@@ -409,17 +409,16 @@ class ResourceControlTest(EmulatedUnitTestCase):
         mergeThreshold2 = None
         procThreshold1  = None
         procThreshold2  = None
-        self.assertEqual(submitThresholds["testSite1"]['cms_name'], 'T1_US_FNAL')
-        for threshold in submitThresholds["testSite1"]["thresholds"]:
-            if threshold['task_type'] == "Merge":
+        self.assertEqual(set(submitThresholds.keys()), set(["testSite1", "testSite2"]))
+        for taskType, threshold in submitThresholds["testSite1"]["thresholds"].items():
+            if taskType == "Merge":
                 mergeThreshold1 = threshold
-            elif threshold['task_type'] == "Processing":
+            elif taskType == "Processing":
                 procThreshold1 = threshold
-        self.assertEqual(submitThresholds["testSite2"]['cms_name'], "T3_US_FNAL")
-        for threshold in submitThresholds["testSite2"]["thresholds"]:
-            if threshold['task_type'] == "Merge":
+        for taskType, threshold in submitThresholds["testSite2"]["thresholds"].items():
+            if taskType == "Merge":
                 mergeThreshold2 = threshold
-            elif threshold['task_type'] == "Processing":
+            elif taskType == "Processing":
                 procThreshold2 = threshold
 
         self.assertEqual(submitThresholds["testSite1"]["total_running_jobs"], 0,
@@ -560,38 +559,25 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl.insertSite("testSite1", 20, 40, "testSE1", "testCE1")
         myResourceControl.insertThreshold("testSite1", "Processing", 10, 8)
         myResourceControl.insertThreshold("testSite1", "Merge", 5, 3)
+
+        # test default task priorities
+        result = myResourceControl.listThresholdsForSubmit()
+        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 5)
+        self.assertEqual(result['testSite1']['thresholds']['Processing']['priority'], 0)
+
         myResourceControl.changeTaskPriority("Merge", 3)
         myResourceControl.changeTaskPriority("Processing", 1)
 
         result = myResourceControl.listThresholdsForSubmit()
+        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 3)
+        self.assertEqual(result['testSite1']['thresholds']['Processing']['priority'], 1)
 
-        self.assertEqual(result['testSite1']['thresholds'][0]['task_type'], 'Merge')
-        self.assertEqual(result['testSite1']['thresholds'][1]['task_type'], 'Processing')
-
-
-        myResourceControl.insertThreshold("testSite1", "Processing", 10, 8)
-        myResourceControl.insertThreshold("testSite1", "Merge", 5, 3)
         myResourceControl.changeTaskPriority("Merge", 1)
         myResourceControl.changeTaskPriority("Processing", 3)
 
-        # Should now be in reverse order
         result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite1']['thresholds'][1]['task_type'], 'Merge')
-        self.assertEqual(result['testSite1']['thresholds'][0]['task_type'], 'Processing')
-
-        myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2")
-        myResourceControl.insertThreshold("testSite2", "Processing", 10, 8)
-        myResourceControl.insertThreshold("testSite2", "Merge", 5, 3)
-
-
-        # Should be in the same order for site 1 and 2
-        result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite2']['thresholds'][0]['task_type'], result['testSite1']['thresholds'][0]['task_type'])
-        self.assertEqual(result['testSite2']['thresholds'][1]['task_type'], result['testSite1']['thresholds'][1]['task_type'])
-
-        myResourceControl.changeTaskPriority("Merge", 4)
-        result = myResourceControl.listThresholdsForSubmit()
-        self.assertEqual(result['testSite2']['thresholds'][0]['priority'], 4)
+        self.assertEqual(result['testSite1']['thresholds']['Merge']['priority'], 1)
+        self.assertEqual(result['testSite1']['thresholds']['Processing']['priority'], 3)
 
         return
 
@@ -715,8 +701,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
             self.assertEqual(len(result[x]['thresholds']), 8)
             self.assertEqual(result[x]['total_pending_slots'], 100)
             self.assertEqual(result[x]['total_running_slots'], 500)
-            for thresh in result[x]['thresholds']:
-                if thresh['task_type'] == 'Processing':
+            for taskType, thresh in result[x]['thresholds'].items():
+                if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 20)
                     self.assertEqual(thresh['max_slots'], 500)
 
@@ -741,13 +727,13 @@ class ResourceControlTest(EmulatedUnitTestCase):
                                        plugin = 'CondorPlugin', taskList = taskList)
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('test_T1_US_FNAL_Buffer' in result.keys())
-        self.assertEqual(result['test_T1_US_FNAL_Buffer']['cms_name'], 'T1_US_FNAL')
+        self.assertEqual(len(result), 10)
         for x in result.keys():
             self.assertEqual(len(result[x]['thresholds']), 2)
             self.assertEqual(result[x]['total_pending_slots'], 200)
             self.assertEqual(result[x]['total_running_slots'], 400)
-            for thresh in result[x]['thresholds']:
-                if thresh['task_type'] == 'Processing':
+            for taskType, thresh in result[x]['thresholds'].items():
+                if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], 100)
                     self.assertEqual(thresh['pending_slots'], 80)
@@ -784,8 +770,8 @@ class ResourceControlTest(EmulatedUnitTestCase):
             self.assertEqual(len(result[x]['thresholds']), 10)
             self.assertEqual(result[x]['total_pending_slots'], 500)
             self.assertEqual(result[x]['total_running_slots'], -1)
-            for thresh in result[x]['thresholds']:
-                if thresh['task_type'] == 'Processing':
+            for taskType, thresh in result[x]['thresholds'].items():
+                if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], -1)
 

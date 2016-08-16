@@ -13,6 +13,7 @@ import logging
 import threading
 import os.path
 import cPickle
+from operator import itemgetter
 
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMExceptions      import WM_JOB_ERROR_CODES
@@ -24,22 +25,6 @@ from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
-
-
-def siteListCompare(a, b):
-    """
-    _siteListCompare_
-
-    Sites are stored as a tuple where the first element is the SE name and the
-    second element is the number of free slots.  We'll sort based on the second
-    element.
-    """
-    if a[1] > b[1]:
-        return 1
-    elif a[1] == b[1]:
-        return 0
-
-    return -1
 
 
 class JobSubmitterPollerException(WMException):
@@ -62,45 +47,35 @@ class JobSubmitterPoller(BaseWorkerThread):
     def __init__(self, config):
         BaseWorkerThread.__init__(self)
         myThread = threading.currentThread()
+        self.config = config
 
         #DAO factory for WMBS objects
-        self.daoFactory = DAOFactory(package="WMCore.WMBS", \
-                                     logger=logging,
-                                     dbinterface=myThread.dbi)
-        self.config = config
+        self.daoFactory = DAOFactory(package="WMCore.WMBS", logger=logging, dbinterface=myThread.dbi)
 
         #Libraries
         self.resourceControl = ResourceControl()
-
         self.changeState = ChangeState(self.config)
+        self.bossAir = BossAirAPI(config=self.config)
+
         self.repollCount = getattr(self.config.JobSubmitter, 'repollCount', 10000)
         self.maxJobsPerPoll = int(getattr(self.config.JobSubmitter, 'maxJobsPerPoll', 1000))
         self.cacheRefreshSize = int(getattr(self.config.JobSubmitter, 'cacheRefreshSize', 30000))
         self.skipRefreshCount = int(getattr(self.config.JobSubmitter, 'skipRefreshCount', 20))
-        self.refreshPollingCount = 0
-
-        # BossAir
-        self.bossAir = BossAirAPI(config=self.config)
+        self.packageSize = getattr(self.config.JobSubmitter, 'packageSize', 500)
+        self.collSize = getattr(self.config.JobSubmitter, 'collectionSize', self.packageSize * 1000)
+        self.maxTaskPriority = getattr(self.config.BossAir, 'maxTaskPriority', 1e7)
 
         # Additions for caching-based JobSubmitter
-        self.workflowTimestamps = {}
-        self.workflowPrios = {}
         self.cachedJobIDs = set()
         self.cachedJobs = {}
         self.jobDataCache = {}
         self.jobsToPackage = {}
         self.sandboxPackage = {}
-        self.siteKeys = {}
         self.locationDict = {}
+        self.taskTypePrioMap = {}
         self.drainSites = set()
         self.abortSites = set()
-        self.sortedSites = []
-        self.packageSize = getattr(self.config.JobSubmitter, 'packageSize', 500)
-        self.collSize = getattr(self.config.JobSubmitter, 'collectionSize',
-                                self.packageSize * 1000)
-
-        # initialize the alert framework (if available)
-        self.initAlerts(compName="JobSubmitter")
+        self.refreshPollingCount = 0
 
         try:
             if not getattr(self.config.JobSubmitter, 'submitDir', None):
@@ -113,7 +88,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             msg = "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
-            self.sendAlert(6, msg=msg)
             try:
                 logging.debug("PackageDir: %s", self.packageDir)
                 logging.debug("Config: %s", config)
@@ -247,14 +221,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         badJobs = dict([(x, []) for x in range(71101, 71105)])
         dbJobs = set()
 
-        logging.info("Refreshing priority cache...")
-        workflows = self.listWorkflows.execute()
-        workflows = filter(lambda x: x['name'] in self.workflowPrios, workflows)
-        for workflow in workflows:
-            self.workflowPrios[workflow['name']] = workflow['priority']
+        logging.info("Refreshing priority cache with currently %i jobs", len(self.cachedJobIDs))
 
-        logging.info("Querying WMBS for jobs to be submitted...")
-        logging.info("cachedJobIDs : %s" % len(self.cachedJobIDs))
         if self.cacheRefreshSize == -1 or len(self.cachedJobIDs) < self.cacheRefreshSize or \
            self.refreshPollingCount >= self.skipRefreshCount:
             newJobs = self.listJobsAction.execute()
@@ -293,7 +261,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 msg = "Error while loading pickled job object %s\n" % pickledJobPath
                 msg += str(ex)
                 logging.error(msg)
-                self.sendAlert(6, msg=msg)
                 raise JobSubmitterPollerException(msg)
 
             loadedJob['retry_count'] = newJob['retry_count']
@@ -335,29 +302,19 @@ class JobSubmitterPoller(BaseWorkerThread):
                     badJobs[71104].append(newJob)
                     continue
 
+            # locations clear of abort and draining sites
+            newJob['possibleLocations'] = possibleLocations
+
             batchDir = self.addJobsToPackage(loadedJob)
             self.cachedJobIDs.add(jobID)
 
-            for possibleLocation in possibleLocations:
-                if possibleLocation not in self.cachedJobs:
-                    self.cachedJobs[possibleLocation] = {}
-                if newJob["type"] not in self.cachedJobs[possibleLocation]:
-                    self.cachedJobs[possibleLocation][newJob["type"]] = {}
+            # calculate the final job priority such that we can order cached jobs by prio
+            jobPrio = self.taskTypePrioMap.get(newJob['type'], 0) + newJob['wf_priority']
+            if jobPrio not in self.cachedJobs:
+                self.cachedJobs[jobPrio] = {}
 
-                locTypeCache = self.cachedJobs[possibleLocation][newJob["type"]]
-                workflowName = newJob['workflow']
-                timestamp = newJob['timestamp']
-                prio = newJob['task_priority']
-                if workflowName not in locTypeCache:
-                    locTypeCache[workflowName] = set()
-                if workflowName not in self.jobDataCache:
-                    self.jobDataCache[workflowName] = {}
-                if not workflowName in self.workflowTimestamps:
-                    self.workflowTimestamps[workflowName] = timestamp
-                if workflowName not in self.workflowPrios:
-                    self.workflowPrios[workflowName] = prio
-
-                locTypeCache[workflowName].add(jobID)
+            # now add basic information keyed by the jobid
+            self.cachedJobs[jobPrio][jobID] = newJob
 
             # allow job baggage to override numberOfCores
             #       => used for repacking to get more slots/disk
@@ -372,34 +329,38 @@ class JobSubmitterPoller(BaseWorkerThread):
             if newJob['type'] in ["Repack", "Merge", "Cleanup", "LogCollect"]:
                 highIOjob = True
 
-            # Now that we're out of that loop, put the job data in the cache
-            jobInfo = (jobID,
-                       newJob["retry_count"],
-                       batchDir,
-                       loadedJob["sandbox"],
-                       loadedJob["cache_dir"],
-                       loadedJob.get("ownerDN", None),
-                       loadedJob.get("ownerGroup", ''),
-                       loadedJob.get("ownerRole", ''),
-                       frozenset(possibleLocations),
-                       loadedJob.get("scramArch", None),
-                       loadedJob.get("swVersion", None),
-                       loadedJob["name"],
-                       loadedJob.get("proxyPath", None),
-                       newJob['request_name'],
-                       loadedJob.get("estimatedJobTime", None),
-                       loadedJob.get("estimatedDiskUsage", None),
-                       loadedJob.get("estimatedMemoryUsage", None),
-                       newJob['task_name'],
-                       frozenset(potentialLocations),
-                       loadedJob.get("numberOfCores", 1),
-                       newJob['task_id'],
-                       loadedJob.get('inputDataset', None),
-                       loadedJob.get('inputDatasetLocations', None),
-                       loadedJob.get('allowOpportunistic', False),
-                       highIOjob)
+            # Create a job dictionary object and put it in the cache
+            jobInfo = {'id': jobID,
+                       'requestName': newJob['request_name'],
+                       'taskName': newJob['task_name'],
+                       'taskType': newJob['type'],
+                       'cache_dir': newJob["cache_dir"],
+                       'requestPriority': newJob['wf_priority'],
+                       'taskID': newJob['task_id'],
+                       'retry_count': newJob["retry_count"],
+                       'highIOjob': highIOjob,
+                       'taskPriority': None,                                # update from the thresholds
+                       'custom': {'location': None},                        # update later
+                       'packageDir': batchDir,
+                       'sandbox': loadedJob["sandbox"],                     # remove before submit
+                       'userdn': loadedJob.get("ownerDN", None),
+                       'usergroup': loadedJob.get("ownerGroup", ''),
+                       'userrole': loadedJob.get("ownerRole", ''),
+                       'possibleSites': frozenset(possibleLocations),       # abort and drain sites filtered out
+                       'potentialSites': frozenset(potentialLocations),     # original list of sites
+                       'scramArch': loadedJob.get("scramArch", None),
+                       'swVersion': loadedJob.get("swVersion", None),
+                       'name': loadedJob["name"],
+                       'proxyPath': loadedJob.get("proxyPath", None),
+                       'estimatedJobTime': loadedJob.get("estimatedJobTime", None),
+                       'estimatedDiskUsage': loadedJob.get("estimatedDiskUsage", None),
+                       'estimatedMemoryUsage': loadedJob.get("estimatedMemoryUsage", None),
+                       'numberOfCores': loadedJob.get("numberOfCores", 1),  # may update it later
+                       'inputDataset': loadedJob.get('inputDataset', None),
+                       'inputDatasetLocations': loadedJob.get('inputDatasetLocations', None),
+                       'allowOpportunistic': loadedJob.get('allowOpportunistic', False)}
 
-            self.jobDataCache[workflowName][jobID] = jobInfo
+            self.jobDataCache[jobID] = jobInfo
 
         # Register failures in submission
         for errorCode in badJobs:
@@ -409,7 +370,6 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # If there are any leftover jobs, we want to get rid of them.
         self.flushJobPackages()
-        logging.info("Done with refreshCache() loop, pruning killed jobs.")
 
         # We need to remove any jobs from the cache that were not returned in
         # the last call to the database.
@@ -419,17 +379,13 @@ class JobSubmitterPoller(BaseWorkerThread):
         if len(jobIDsToPurge) == 0:
             return
 
-        for siteName in self.cachedJobs.keys():
-            for taskType in self.cachedJobs[siteName].keys():
-                for workflow in self.cachedJobs[siteName][taskType].keys():
-                    for cachedJobID in list(self.cachedJobs[siteName][taskType][workflow]):
-                        if cachedJobID in jobIDsToPurge:
-                            self.cachedJobs[siteName][taskType][workflow].remove(cachedJobID)
-                            try:
-                                del self.jobDataCache[workflow][cachedJobID]
-                            except KeyError:
-                                # Already gone
-                                pass
+        for jobid in jobIDsToPurge:
+            self.jobDataCache.pop(jobid, None)
+            for jobPrio in self.cachedJobs:
+                if self.cachedJobs[jobPrio].pop(jobid, None):
+                    # then the jobid was found, go to the next one
+                    break
+
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
 
@@ -465,14 +421,16 @@ class JobSubmitterPoller(BaseWorkerThread):
         """
         _getThresholds_
 
-        Reformat the submit thresholds.  This will store a dictionary keyed by
-        task type.  Each task type will contain a list of tuples where each
-        tuple contains teh site name and the number of running jobs.
+        Retrieve submit thresholds, which considers what is pending and running
+        for those sites.
+        Also update the list of draining and abort/down sites.
+        Finally, creates a map between task type and its priority.
         """
-        rcThresholds = self.resourceControl.listThresholdsForSubmit()
-
+        self.taskTypePrioMap = {}
         newDrainSites = set()
         newAbortSites = set()
+
+        rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
         for siteName in rcThresholds.keys():
             # Add threshold if we don't have it already
@@ -483,34 +441,18 @@ class JobSubmitterPoller(BaseWorkerThread):
             if state in ["Down", "Aborted"]:
                 newAbortSites.add(siteName)
 
-            for pnn in rcThresholds[siteName]["pnns"]:
-                if not pnn in self.siteKeys.keys():
-                    self.siteKeys[pnn] = []
-                if not siteName in self.siteKeys[pnn]:
-                    self.siteKeys[pnn].append(siteName)
+            # then update the task type x task priority mapping
+            if not self.taskTypePrioMap:
+                for task, value in rcThresholds[siteName]['thresholds'].items():
+                    self.taskTypePrioMap[task] = value.get('priority', 0) * self.maxTaskPriority
 
-        # When the list of drain/abort sites changes between iteration then a location
+        # When the list of drain/abort sites change between iteration then a location
         # refresh is needed, for now it forces a full cache refresh
-        # TODO: Make it more efficient, only reshuffle locations when this happens
         if newDrainSites != self.drainSites or  newAbortSites != self.abortSites:
             logging.info("Draining or Aborted sites have changed, the cache will be rebuilt.")
             self.cachedJobIDs = set()
             self.cachedJobs = {}
             self.jobDataCache = {}
-
-        # Sort the sites, utilizing the fact python has a stable sort function - we can simply
-        # sort twice.
-        # - First, fill up the smaller tiers
-        # - Within a tier, fill up the smallest sites first
-        # Of course, condor does not care about our submission order.  We sort the sites because
-        # WMAgent will stop submitting once we hit a pending threshold.  We assume the T1s
-        # will have the workflows with the most restrictive whitelist and want to hit their
-        # WMAgent-calculated limit last.
-        self.sortedSites = sorted(rcThresholds.keys(),
-                                  key=lambda x: rcThresholds[x]["total_pending_slots"])
-        #T3 sites go first, then T2, then T1
-        self.sortedSites = sorted(self.sortedSites, key=lambda x: rcThresholds[x]["cms_name"][0:2], reverse=True)
-        logging.debug('Sites will be filled in the following order: %s', self.sortedSites)
 
         self.currentRcThresholds = rcThresholds
         self.abortSites = newAbortSites
@@ -533,226 +475,95 @@ class JobSubmitterPoller(BaseWorkerThread):
           - SE name of the site to run at
         """
         jobsToSubmit = {}
-        jobsToPrune = {}
+        jobsToUncache = []
         jobsCount = 0
         exitLoop = False
 
-        for siteName in self.sortedSites:
+        # iterate over jobs from the highest to the lowest prio
+        for jobPrio in sorted(self.cachedJobs, reverse=True):
+
+            # then we're completely done and have our basket full of jobs to submit
             if exitLoop:
                 break
 
-            totalPending = None
-            if siteName not in self.cachedJobs:
-                logging.debug("No jobs for site %s", siteName)
-                continue
-            logging.debug("Have site %s", siteName)
-            try:
-                totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
-                totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
-                totalRunning = self.currentRcThresholds[siteName]["total_running_jobs"]
-                totalPending = self.currentRcThresholds[siteName]["total_pending_jobs"]
-                state = self.currentRcThresholds[siteName]["state"]
-            except KeyError as ex:
-                msg = "Had invalid site info %s\n" % siteName['thresholds']
-                msg += str(ex)
-                logging.error(msg)
-                continue
-            for threshold in self.currentRcThresholds[siteName].get('thresholds', []):
-                if exitLoop:
-                    break
-                try:
-                    # Pull basic info for the threshold
-                    taskType = threshold["task_type"]
-                    maxSlots = threshold["max_slots"]
-                    taskPendingSlots = threshold["pending_slots"]
-                    taskRunning = threshold["task_running_jobs"]
-                    taskPending = threshold["task_pending_jobs"]
-                    taskPriority = threshold["priority"]
-                except KeyError as ex:
-                    msg = "Had invalid threshold %s\n" % threshold
-                    msg += str(ex)
-                    logging.error(msg)
-                    continue
+            # start eating through the elder jobs first
+            for job in sorted(self.cachedJobs[jobPrio].values(), key=itemgetter('timestamp')):
+                jobid = job['id']
+                jobType = job['type']
+                possibleSites = job['possibleLocations']
 
-                #If the site is down, do not submit anything to it
-                if state == 'Down':
-                    continue
+                # now look for sites with free pending slots
+                for siteName in possibleSites:
+                    if siteName not in self.currentRcThresholds:
+                        logging.warn("Have a job for %s which is not in the resource control", siteName)
+                        continue
 
-                #If the number of running exceeded the running slots in the
-                #site then get out
-                if totalRunningSlots >= 0 and totalRunning >= totalRunningSlots:
-                    continue
+                    try:
+                        totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
+                        totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
+                        totalRunningSlots = self.currentRcThresholds[siteName]["total_running_slots"]
+                        totalRunningJobs = self.currentRcThresholds[siteName]["total_running_jobs"]
 
-                #If the task is running more than allowed then get out
-                if maxSlots >= 0 and taskRunning >= maxSlots:
-                    continue
+                        taskPendingSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["pending_slots"]
+                        taskPendingJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"]
+                        taskRunningSlots = self.currentRcThresholds[siteName]['thresholds'][jobType]["max_slots"]
+                        taskRunningJobs = self.currentRcThresholds[siteName]['thresholds'][jobType]["task_running_jobs"]
+                        taskPriority = self.currentRcThresholds[siteName]['thresholds'][jobType]["priority"]
+                    except KeyError as ex:
+                        msg = "Invalid key for site %s and job type %s\n" % (siteName, jobType)
+                        msg += str(ex)
+                        logging.error(msg)
+                        continue
 
-                # Ignore this threshold if we've cleaned out the site
-                if siteName not in self.cachedJobs:
-                    continue
+                    # check if site has free pending slots AND free pending task slots
+                    if totalPendingJobs >= totalPendingSlots or taskPendingJobs >= taskPendingSlots:
+                        logging.debug("Found a job for %s which has no free pending slots", siteName)
+                        continue
+                    # check if site overall thresholds have free slots
+                    if totalPendingJobs + totalRunningJobs >= totalPendingSlots + totalRunningSlots:
+                        logging.debug("Found a job for %s which has no free overall slots", siteName)
+                        continue
+                    # finally, check whether task has free overall slots
+                    if taskPendingJobs + taskRunningJobs >= taskPendingSlots + taskRunningSlots:
+                        logging.debug("Found a job for %s which has no free task slots", siteName)
+                        continue
 
-                # Ignore this threshold if we have no jobs
-                # for it
-                if taskType not in self.cachedJobs[siteName]:
-                    continue
+                    # otherwise, update the site/task thresholds and the component job counter
+                    self.currentRcThresholds[siteName]["total_pending_jobs"] += 1
+                    self.currentRcThresholds[siteName]['thresholds'][jobType]["task_pending_jobs"] += 1
+                    jobsCount += 1
 
-                taskCache = self.cachedJobs[siteName][taskType]
-
-                # Calculate number of jobs we need
-                nJobsRequired = min(totalPendingSlots - totalPending, taskPendingSlots - taskPending)
-                breakLoop = False
-                logging.debug("nJobsRequired for task %s: %i", taskType, nJobsRequired)
-
-                while nJobsRequired > 0:
-                    # Do this until we have all the jobs for this threshold
-
-                    # Pull a job out of the cache for the task/site.  Verify that we
-                    # haven't already used this job in this polling cycle.
-                    cachedJob = None
-                    cachedJobWorkflow = None
-
-                    workflows = taskCache.keys()
-                    # Sorting by prio and timestamp on the subscription
-                    def sortingCmp(x, y):
-                        if (x not in self.workflowTimestamps) or (y not in self.workflowTimestamps):
-                            return -1
-                        if (x not in self.workflowPrios) or (y not in self.workflowPrios):
-                            return -1
-                        if self.workflowPrios[x] > self.workflowPrios[y]:
-                            return -1
-                        elif self.workflowPrios[x] == self.workflowPrios[y]:
-                            return cmp(self.workflowTimestamps[x], self.workflowTimestamps[y])
-                        else:
-                            return 1
-                    workflows.sort(cmp=sortingCmp)
-
-                    for workflow in workflows:
-                        # Run a while loop until you get a job
-                        while len(taskCache[workflow]) > 0:
-                            cachedJobID = taskCache[workflow].pop()
-                            try:
-                                cachedJob = self.jobDataCache[workflow].get(cachedJobID, None)
-                                del self.jobDataCache[workflow][cachedJobID]
-                            except:
-                                pass
-
-                            if cachedJobID not in jobsToPrune.get(workflow, set()):
-                                cachedJobWorkflow = workflow
-                                break
-                            else:
-                                cachedJob = None
-
-                        # Remove the entry in the cache for the workflow if it is empty.
-                        if len(self.cachedJobs[siteName][taskType][workflow]) == 0:
-                            del self.cachedJobs[siteName][taskType][workflow]
-                        if workflow in self.jobDataCache and len(self.jobDataCache[workflow].keys()) == 0:
-                            del self.jobDataCache[workflow]
-
-                        if cachedJob:
-                            # We found a job, bail out and handle it.
-                            break
-
-                    # Check to see if we need to delete this site from the cache
-                    if len(self.cachedJobs[siteName][taskType].keys()) == 0:
-                        del self.cachedJobs[siteName][taskType]
-                        breakLoop = True
-                    if len(self.cachedJobs[siteName].keys()) == 0:
-                        del self.cachedJobs[siteName]
-                        breakLoop = True
-
-                    if not cachedJob:
-                        # We didn't find a job, bail out.
-                        # This site and task type is done
-                        break
-
-                    self.cachedJobIDs.remove(cachedJob[0])
-
-                    if cachedJobWorkflow not in jobsToPrune:
-                        jobsToPrune[cachedJobWorkflow] = set()
-
-                    jobsToPrune[cachedJobWorkflow].add(cachedJob[0])
+                    # load (and remove) the job dictionary object from jobDataCache
+                    cachedJob = self.jobDataCache.pop(jobid)
+                    jobsToUncache.append((jobPrio, jobid))
 
                     # Sort jobs by jobPackage
-                    package = cachedJob[2]
-                    if not package in jobsToSubmit.keys():
+                    package = cachedJob['packageDir']
+                    if package not in jobsToSubmit.keys():
                         jobsToSubmit[package] = []
 
                     # Add the sandbox to a global list
-                    self.sandboxPackage[package] = cachedJob[3]
+                    self.sandboxPackage[package] = cachedJob.pop('sandbox')
 
-                    possibleSites = cachedJob[8]
-                    # We used to pick a site at random from all the possible ones and
-                    # attribute the job as 'pending' there (some WMAgent components and
-                    # Dashboard doesn't understand jobs pending at multiple sites).  HOWEVER,
-                    # this caused some sites to go way over their pending job limit (for
-                    # example, what if the site name "Nebraska" comes up 10,000 jobs in a row).
-                    # This would cause acquired high-priority jobs to starve on future rounds.
-                    assignedSiteName = siteName
-                    potentialSites = cachedJob[18]
+                    # Now update the job dictionary object
+                    cachedJob['custom'] = {'location': siteName}
+                    cachedJob['taskPriority'] = taskPriority
 
-                    # Create a job dictionary object
-                    jobDict = {'id': cachedJob[0],
-                               'retry_count': cachedJob[1],
-                               'custom': {'location': assignedSiteName},
-                               'cache_dir': cachedJob[4],
-                               'packageDir': package,
-                               'userdn': cachedJob[5],
-                               'usergroup': cachedJob[6],
-                               'userrole': cachedJob[7],
-                               'priority': taskPriority,
-                               'taskType': taskType,
-                               'possibleSites': possibleSites,
-                               'scramArch': cachedJob[9],
-                               'swVersion': cachedJob[10],
-                               'name': cachedJob[11],
-                               'proxyPath': cachedJob[12],
-                               'requestName': cachedJob[13],
-                               'estimatedJobTime' : cachedJob[14],
-                               'estimatedDiskUsage' : cachedJob[15],
-                               'estimatedMemoryUsage' : cachedJob[16],
-                               'taskPriority' : self.workflowPrios[workflow],
-                               'taskName' : cachedJob[17],
-                               'potentialSites' : potentialSites,
-                               'numberOfCores' : cachedJob[19],
-                               'taskID' : cachedJob[20],
-                               'inputDataset' : cachedJob[21],
-                               'inputDatasetLocations' : cachedJob[22],
-                               'allowOpportunistic' : cachedJob[23],
-                               'highIOjob' : cachedJob[24]}
+                    # Get this job in place to be submitted by the plugin
+                    jobsToSubmit[package].append(cachedJob)
 
-                    # Add to jobsToSubmit
-                    jobsToSubmit[package].append(jobDict)
-                    jobsCount += 1
-                    if jobsCount >= self.maxJobsPerPoll:
-                        breakLoop, exitLoop = True, True
+                    # found a site to submit this job, so go to the next job
+                    break
 
-                    # Deal with accounting
-                    nJobsRequired -= 1
-                    totalPending += 1
-                    taskPending += 1
+                # set the flag and get out of the job iteration
+                if jobsCount >= self.maxJobsPerPoll:
+                    exitLoop = True
+                    break
 
-                    if breakLoop:
-                        break
-
-        # Remove the jobs that we're going to submit from the cache.
-        allWorkflows = set()
-        for siteName in self.cachedJobs.keys():
-            for taskType in self.cachedJobs[siteName].keys():
-                for workflow in self.cachedJobs[siteName][taskType].keys():
-                    allWorkflows.add(workflow)
-                    if workflow in jobsToPrune.keys():
-                        self.cachedJobs[siteName][taskType][workflow] -= jobsToPrune[workflow]
-
-        # Remove workflows from the timestamp dictionary which are not anymore in the cache
-        workflowsWithTimestamp = self.workflowTimestamps.keys()
-        for workflow in workflowsWithTimestamp:
-            if workflow not in allWorkflows:
-                del self.workflowTimestamps[workflow]
-
-        workflowsWithPrios = self.workflowPrios.keys()
-        for workflow in workflowsWithPrios:
-            if workflow not in allWorkflows:
-                del self.workflowPrios[workflow]
+        # jobs that are going to be submitted must be removed from all caches
+        for prio, jobid in jobsToUncache:
+            self.cachedJobs[prio].pop(jobid)
+            self.cachedJobIDs.remove(jobid)
 
         logging.info("Have %s packages to submit.", len(jobsToSubmit))
         logging.info("Done assigning site locations.")
@@ -843,8 +654,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             self.refreshCache()
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
-
-
         except WMException:
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
@@ -855,7 +664,6 @@ class JobSubmitterPoller(BaseWorkerThread):
             #msg += str(traceback.format_exc())
             msg += '\n\n'
             logging.error(msg)
-            self.sendAlert(7, msg=msg)
             if getattr(myThread, 'transaction', None) != None:
                 myThread.transaction.rollback()
             raise JobSubmitterPollerException(msg)

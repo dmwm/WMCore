@@ -860,30 +860,10 @@ class PyCondorPlugin(BasePlugin):
             # Transfer the output files
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
 
-            # Add priority if necessary
-            task_priority = job.get("taskPriority", self.defaultTaskPriority)
-            try:
-                task_priority = int(task_priority)
-            except:
-                logging.error("Priority for task not castable to an int")
-                logging.error("Not setting priority")
-                logging.debug("Priority: %s", task_priority)
-                task_priority = 0
-
-            prio = 0
-            if job.get('priority'):
-                try:
-                    prio = int(job['priority'])
-                except ValueError:
-                    logging.error("Priority for job %i not castable to an int\n", job['id'])
-                    logging.error("Not setting priority")
-                    logging.debug("Priority: %s", job['priority'])
-                except Exception as ex:
-                    logging.error("Got unhandled exception while setting priority for job %i\n", job['id'])
-                    logging.error(str(ex))
-                    logging.error("Not setting priority")
-
-            jdl.append("priority = %i\n" % (task_priority + prio * self.maxTaskPriority))
+            # Set job priority from the request and task priority
+            task_priority = int(job.get("taskPriority", self.defaultTaskPriority))
+            prio = int(job.get('requestPriority', 0))
+            jdl.append("priority = %i\n" % (prio + task_priority * self.maxTaskPriority))
 
             jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
             jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])

@@ -167,13 +167,12 @@ def printThresholds(resourceControl, desiredSiteName):
         print "%s - %d running, %d pending, %d running slots total, %d pending slots total%s:" % (
                         siteName, runningJobs, pendingJobs, runningSlots, pendingSlots, stateMsg)
 
-        for task in siteThresholds['thresholds']:
+        for task, thres in siteThresholds['thresholds'].iteritems():
             print "  %s - %d running, %d pending, %d max running, %d max pending, priority %s" % \
-                  (task['task_type'], task["task_running_jobs"],
-                   task['task_pending_jobs'], task["max_slots"],
-                   task["pending_slots"], str(task.get("priority", 1)))
-            if task["task_running_jobs"] > 0:
-                taskWorkloads = resourceControl.listWorkloadsForTaskSite(task['task_type'], siteName)
+                  (task, thres["task_running_jobs"], thres['task_pending_jobs'], thres["max_slots"],
+                   thres["pending_slots"], str(thres.get("priority", 1)))
+            if thres["task_running_jobs"] > 0:
+                taskWorkloads = resourceControl.listWorkloadsForTaskSite(task, siteName)
                 for t in taskWorkloads:
                     print "    %d - %s" % (t["running"], t["task"])
 

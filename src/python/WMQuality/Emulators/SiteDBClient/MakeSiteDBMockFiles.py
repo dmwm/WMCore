@@ -20,15 +20,24 @@ if __name__ == '__main__':
              {'callname': 'data-processing', 'filename': 'data-processing.json', 'clearCache': False, 'verb': 'GET', 'data':{}}
             ]
 
-    additionals = {'site-names': [{"site_name": "T2_XX_SiteA", "type": "psn", "alias": "T2_XX_SiteA"},
-                                  {"site_name": "T2_XX_SiteA", "type": "cms", "alias": "T2_XX_SiteA"},
-                                  {"site_name": "T2_XX_SiteA", "type": "phedex", "alias": "T2_XX_SiteA"}],
-                   'data-processing': [
-                       {u'phedex_name': u'T2_XX_SiteA', u'psn_name': u'T2_XX_SiteA', u'site_name': u'XX_T2_XX_SiteA'},
-                       {u'phedex_name': u'T2_XX_SiteB', u'psn_name': u'T2_XX_SiteB', u'site_name': u'XX_T2_XX_SiteB'},
-                       {u'phedex_name': u'T2_XX_SiteC', u'psn_name': u'T2_XX_SiteC', u'site_name': u'XX_T2_XX_SiteC'}
-                       ]
-                   }
+    additionals = {
+        'site-names': [
+            {"site_name": "T2_XX_SiteA", "type": "psn", "alias": "T2_XX_SiteA"},
+            {"site_name": "T2_XX_SiteA", "type": "cms", "alias": "T2_XX_SiteA"},
+            {"site_name": "T2_XX_SiteA", "type": "phedex", "alias": "T2_XX_SiteA"},
+            {"site_name": "T2_XX_SiteB", "type": "psn", "alias": "T2_XX_SiteB"},
+            {"site_name": "T2_XX_SiteB", "type": "cms", "alias": "T2_XX_SiteB"},
+            {"site_name": "T2_XX_SiteB", "type": "phedex", "alias": "T2_XX_SiteB"},
+            {"site_name": "T2_XX_SiteC", "type": "psn", "alias": "T2_XX_SiteC"},
+            {"site_name": "T2_XX_SiteC", "type": "cms", "alias": "T2_XX_SiteC"},
+            {"site_name": "T2_XX_SiteC", "type": "phedex", "alias": "T2_XX_SiteC"},
+        ],
+        'data-processing': [
+            {u'phedex_name': u'T2_XX_SiteA', u'psn_name': u'T2_XX_SiteA', u'site_name': u'XX_T2_XX_SiteA'},
+            {u'phedex_name': u'T2_XX_SiteB', u'psn_name': u'T2_XX_SiteB', u'site_name': u'XX_T2_XX_SiteB'},
+            {u'phedex_name': u'T2_XX_SiteC', u'psn_name': u'T2_XX_SiteC', u'site_name': u'XX_T2_XX_SiteC'}
+        ]
+    }
 
     dns = ["/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=liviof/CN=472739/CN=Livio Fano'",
            "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=jha/CN=618566/CN=Manoj Jha"]

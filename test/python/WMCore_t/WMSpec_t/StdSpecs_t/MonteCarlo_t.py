@@ -5,38 +5,38 @@ _MonteCarlo_t_
 Unit tests for the Monte Carlo workflow.
 """
 
-import unittest
 import os
+import unittest
 
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 TEST_DB_NAME = 'db_configcache_test'
-class MonteCarloTest(unittest.TestCase):
+class MonteCarloTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Initialize the database and couch.
         """
+        super(MonteCarloTest, self).setUp()
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch(TEST_DB_NAME, "ConfigCache")
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"], useDefault=False)
         self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase(TEST_DB_NAME)
-        EmulatorHelper.setEmulators(dbs = True)
+
         return
 
     def tearDown(self):
@@ -48,7 +48,9 @@ class MonteCarloTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        EmulatorHelper.resetEmulators()
+
+        super(MonteCarloTest, self).tearDown()
+
         return
 
     def injectMonteCarloConfig(self):

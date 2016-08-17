@@ -105,7 +105,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
 
-        locationAction = daoFactory(classname = "Locations.New")
+        dummyLocationAction = daoFactory(classname = "Locations.New")
         changeStateAction = daoFactory(classname = "Jobs.ChangeState")
         resourceControl = ResourceControl()
         resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
@@ -443,7 +443,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
         cleanupTaskCMSSW = cleanupTask.makeStep("cmsRun1")
         cleanupTaskCMSSW.setStepType("CMSSW")
-        cleanupTaskCMSSWHelper = cleanupTaskCMSSW.getTypeHelper()
+        dummyCleanupTaskCMSSWHelper = cleanupTaskCMSSW.getTypeHelper()
         cleanupTask.setTaskType("Cleanup")
         cleanupTask.applyTemplates()
 
@@ -889,7 +889,9 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         # check initially inserted files.
         dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
-        firstFileset = wmbs.topLevelFileset
+
+        # Not clear what's supposed to happen here, 2nd test is completely redundant
+        dummyFirstFileset = wmbs.topLevelFileset
         self.assertEqual(numOfFiles, len(dbsFiles))
 
         # reinsert subscription - shouldn't create anything new
@@ -911,9 +913,10 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         subId = wmbs.topLevelSubscription['id']
 
         # check initially inserted files.
+        # Not clear what's supposed to happen here, 2nd test is completely redundant
         numDbsFiles = 1
         self.assertEqual(numOfFiles, numDbsFiles)
-        firstFileset = wmbs.topLevelFileset
+        dummyFirstFileset = wmbs.topLevelFileset
         self.assertEqual(numOfFiles, numDbsFiles)
 
         # reinsert subscription - shouldn't create anything new
@@ -941,14 +944,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         block = '/Cosmics/ComissioningHI-PromptReco-v1/RECO' + '#5b89ba9c-0dbf-11e1-9b6c-003048caaace'
 
         # File creation without parents
-        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=False, detail=True)
+        wmbs, _, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=False, detail=True)
         self.assertEqual(8, numFiles)
         wmbs.topLevelFileset.loadData()
         for child in wmbs.topLevelFileset.files:
             self.assertEqual(len(child["parents"]), 0)  # no parents per child
 
         # File creation with parents
-        wmbs, sub, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=True, detail=True)
+        wmbs, _, numFiles = self.createWMBSHelperWithTopTask(self.wmspec, block, parentFlag=True, detail=True)
         self.assertEqual(8, numFiles)
         wmbs.topLevelFileset.loadData()
         for child in wmbs.topLevelFileset.files:
@@ -978,16 +981,16 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(len(fileset.parents), 0)
         self.assertFalse(fileset.open)
 
-        file = list(fileset.files)[0]
-        self.assertEqual(file['events'], mask['LastEvent'] - mask['FirstEvent'] + 1) # inclusive range
-        self.assertEqual(file['merged'], False) # merged files get added to dbs
-        self.assertEqual(len(file['parents']), 0)
-        #file.loadData()
-        self.assertEqual(sorted(file['locations']), sorted(self.pnns))
-        self.assertEqual(len(file.getParentLFNs()), 0)
+        firstFile = list(fileset.files)[0]
+        self.assertEqual(firstFile['events'], mask['LastEvent'] - mask['FirstEvent'] + 1) # inclusive range
+        self.assertEqual(firstFile['merged'], False) # merged files get added to dbs
+        self.assertEqual(len(firstFile['parents']), 0)
+        #firstFile.loadData()
+        self.assertEqual(sorted(firstFile['locations']), sorted(self.pnns))
+        self.assertEqual(len(firstFile.getParentLFNs()), 0)
 
-        self.assertEqual(len(file.getRuns()), 1)
-        run = file.getRuns()[0]
+        self.assertEqual(len(firstFile.getRuns()), 1)
+        run = firstFile.getRuns()[0]
         self.assertEqual(run.run, mask['FirstRun'])
         self.assertEqual(run.lumis[0], mask['FirstLumi'])
         self.assertEqual(run.lumis[-1], mask['LastLumi'])

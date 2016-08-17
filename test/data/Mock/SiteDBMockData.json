@@ -3421,6 +3421,36 @@
    "alias": "T2_XX_SiteA",
    "site_name": "T2_XX_SiteA",
    "type": "phedex"
+  },
+  {
+   "alias": "T2_XX_SiteB",
+   "site_name": "T2_XX_SiteB",
+   "type": "psn"
+  },
+  {
+   "alias": "T2_XX_SiteB",
+   "site_name": "T2_XX_SiteB",
+   "type": "cms"
+  },
+  {
+   "alias": "T2_XX_SiteB",
+   "site_name": "T2_XX_SiteB",
+   "type": "phedex"
+  },
+  {
+   "alias": "T2_XX_SiteC",
+   "site_name": "T2_XX_SiteC",
+   "type": "psn"
+  },
+  {
+   "alias": "T2_XX_SiteC",
+   "site_name": "T2_XX_SiteC",
+   "type": "cms"
+  },
+  {
+   "alias": "T2_XX_SiteC",
+   "site_name": "T2_XX_SiteC",
+   "type": "phedex"
   }
  ],
  "[('callname', 'site-resources'), ('clearCache', False), ('data', {}), ('filename', 'site-resources.json'), ('verb', 'GET')]": [

@@ -9,11 +9,11 @@ import contextlib
 import copy
 import os, subprocess
 import re
+import time
+from hashlib import sha1
 from datetime import datetime
 from WMCore.Credential.Credential import Credential
 from WMCore.WMException import WMException
-import time
-from hashlib import sha1
 
 def execute_command( command, logger, timeout, redirect = True ):
     """

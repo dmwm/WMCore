@@ -13,6 +13,10 @@ import threading
 import traceback
 import time
 
+from WMCore.Lexicon import sanitizeURL
+from WMCore.Algorithms import MathAlgos
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
@@ -21,16 +25,11 @@ from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
-from WMCore.Lexicon import sanitizeURL
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
-from WMCore.Algorithms import MathAlgos
-from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.BossAir.Plugins.gLitePlugin import getDefaultDelegation
-from WMCore.Credential.Proxy import Proxy
-from WMCore.WMException import WMException
+from WMCore.ReqMgr.Utils.url_utils import get_key_cert
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
@@ -52,39 +51,14 @@ class FileEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def getProxy(config, userdn, group, role):
-    """
-    _getProxy_
-    """
-    defaultDelegation = getDefaultDelegation(config, "cms", "myproxy.cern.ch", threading.currentThread().logger)
-    defaultDelegation['userDN'] = userdn
-    defaultDelegation['group'] = group
-    defaultDelegation['role'] = role
-
-    logging.debug("Retrieving proxy for %s", userdn)
-    proxy = Proxy(defaultDelegation)
-    proxyPath = proxy.getProxyFilename(True)
-    timeleft = proxy.getTimeLeft(proxyPath)
-    if timeleft is not None and timeleft > 3600:
-        return (True, proxyPath)
-    proxyPath = proxy.logonRenewMyProxy()
-    timeleft = proxy.getTimeLeft(proxyPath)
-    if timeleft is not None and timeleft > 0:
-        return (True, proxyPath)
-    return (False, None)
-
-
 def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     """
     Write out and upload to the UFC a JSON file
     with all the info needed to publish this dataset later
     """
-    retok, proxyfile = getProxy(config, workflow.dn, workflow.vogroup, workflow.vorole)
-    if not retok:
-        logging.info("Cannot get the user's proxy")
-        return False
+    certKey, cert = get_key_cert()
 
-    ufc = UserFileCache({'endpoint': ufcEndpoint, 'cert': proxyfile, 'key': proxyfile})
+    ufc = UserFileCache({'endpoint': ufcEndpoint, 'cert': cert, 'key': certKey})
 
     # Skip tasks ending in LogCollect, they have nothing interesting.
     taskNameParts = workflow.task.split('/')

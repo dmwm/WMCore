@@ -144,6 +144,6 @@ config.General.handlers.append(pickle.dumps(handler))
 
 
 plugin = {'component'  : 'JobSubmitter', \
-          'plugins'    : 'Condor,GLite', \
+          'plugins'    : 'PyCondor', \
           'handler'    : 'SubmitJob'}
 config.General.plugins.append(pickle.dumps(plugin))

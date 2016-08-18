@@ -38,6 +38,7 @@ from WMQuality.Emulators.WMSpecGenerator.ReqMgrDocGenerator import generate_reqm
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
 
+
 class TaskArchiverTest(unittest.TestCase):
     """
     TestCase for TestTaskArchiver module
@@ -90,6 +91,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         self.nJobs = 10
         self.campaignName = 'aCampaign'
+
         return
 
     def tearDown(self):
@@ -162,16 +164,6 @@ class TaskArchiverTest(unittest.TestCase):
         config.section_("Alert")
         config.Alert.address = "tcp://127.0.0.1:5557"
         config.Alert.controlAddr = "tcp://127.0.0.1:5559"
-
-        config.section_("BossAir")
-        config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
-        config.BossAir.gliteConf = '/afs/cern.ch/cms/LCG/LCG-2/UI/conf/glite_wms_CERN.conf'
-        config.BossAir.credentialDir = '/home/crab/ALL_SETUP/credentials/'
-        config.BossAir.gLiteProcesses = 2
-        config.BossAir.gLitePrefixEnv = "/lib64/"
-        config.BossAir.pluginNames = ["gLitePlugin"]
-        config.BossAir.proxyDir = "/tmp/credentials"
-        config.BossAir.manualProxyPath = os.environ['X509_USER_PROXY'] if 'X509_USER_PROXY' in os.environ else None
 
         config.section_("Agent")
         config.Agent.serverDN = "/we/bypass/myproxy/logon"

@@ -1,7 +1,7 @@
-#/usr/bin/env python
-#pylint: disable=E1101,C0103
-#E1101: ignore no member complaints here (created dynamically)
-#C0103: also ignore invalid variable name
+# /usr/bin/env python
+# pylint: disable=E1101,C0103
+# E1101: ignore no member complaints here (created dynamically)
+# C0103: also ignore invalid variable name
 """
 WMAgent Configuration
 
@@ -13,7 +13,6 @@ __version__ = "$Revision: 1.2 $"
 
 import os
 
-from WMCore.WMBase import getWMBASE
 from WMCore.Configuration import Configuration
 
 # The following parameters may need to be changed.
@@ -40,7 +39,7 @@ summaryStatsDBName = "stat_summary"
 acdcDBName = "acdcserver"
 workqueueDBName = 'workqueue'
 workqueueInboxDbName = 'workqueue_inbox'
-#example of workloadSummary url
+# example of workloadSummary url
 workloadSummaryDB = "workloadsummary"
 workloadSummaryURL = couchURL
 
@@ -69,7 +68,7 @@ diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
 
 # Job retry information.  This includes the number of times a job will be retried and
 # for how long it will sit in cool off.
-maxJobRetries = {'default' : 3, 'Merge' : 4, 'LogCollect' : 1, 'Cleanup' : 2, 'Harvesting' : 2}
+maxJobRetries = {'default': 3, 'Merge': 4, 'LogCollect': 1, 'Cleanup': 2, 'Harvesting': 2}
 retryAlgoParams = {"create": 5000, "submit": 5000, "job": 5000}
 
 # The amount of time to wait after a workflow has completed before archiving it.
@@ -122,7 +121,7 @@ config.BossAir.acctGroupUser = glideInAcctGroupUser
 
 config.section_("CoreDatabase")
 config.CoreDatabase.connectUrl = databaseUrl
-#config.CoreDatabase.socket = databaseSocket
+# config.CoreDatabase.socket = databaseSocket
 
 config.section_("DashboardReporter")
 config.DashboardReporter.dashboardHost = "cms-jobmon.cern.ch"
@@ -148,7 +147,7 @@ config.DBS3Upload.componentDir = config.General.workDir + "/DBS3Upload"
 config.DBS3Upload.logLevel = globalLogLevel
 config.DBS3Upload.workerThreads = 1
 config.DBS3Upload.pollInterval = 100
-#"https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
+# "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter" - production one
 config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 
@@ -168,7 +167,7 @@ config.PhEDExInjector.logLevel = globalLogLevel
 config.PhEDExInjector.maxThreads = 1
 config.PhEDExInjector.subscribeDatasets = True
 config.PhEDExInjector.safeMode = False
-#phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
+# phedex address "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"
 config.PhEDExInjector.phedexurl = "OVER_WRITE_BY_SECETES"
 config.PhEDExInjector.pollInterval = 100
 config.PhEDExInjector.subscribeInterval = 43200
@@ -196,8 +195,10 @@ config.JobCreator.jobCacheDir = config.General.workDir + "/JobCache"
 config.JobCreator.defaultJobType = "Processing"
 config.JobCreator.workerThreads = 1
 # glidein restrictions used for resource estimation (per core)
-config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 60 * 60, "MaxWallTimeSecs": 45 * 60 * 60,   # pilot lifetime is usually 48h
-                                        "MinRequestDiskKB": 1 * 1024 * 1024, "MaxRequestDiskKB": 20 * 1024 * 1024} # site limit is ~27GB
+config.JobCreator.GlideInRestriction = {"MinWallTimeSecs": 1 * 60 * 60, "MaxWallTimeSecs": 45 * 60 * 60,
+                                        # pilot lifetime is usually 48h
+                                        "MinRequestDiskKB": 1 * 1024 * 1024,
+                                        "MaxRequestDiskKB": 20 * 1024 * 1024}  # site limit is ~27GB
 config.component_("JobSubmitter")
 config.JobSubmitter.namespace = "WMComponent.JobSubmitter.JobSubmitter"
 config.JobSubmitter.componentDir = config.General.workDir + "/JobSubmitter"
@@ -207,20 +208,20 @@ config.JobSubmitter.pollInterval = 120
 config.JobSubmitter.workerThreads = 1
 config.JobSubmitter.jobsPerWorker = 100
 config.JobSubmitter.maxJobsPerPoll = 1000
-config.JobSubmitter.cacheRefreshSize = 30000 # set -1 if cache need to refresh all the time.
-config.JobSubmitter.skipRefreshCount = 20 # (If above the threshold meet, cache will updates every 20 polling cycle) 120 * 20 = 40 minutes
+config.JobSubmitter.cacheRefreshSize = 30000  # set -1 if cache need to refresh all the time.
+config.JobSubmitter.skipRefreshCount = 20  # (If above the threshold meet, cache will updates every 20 polling cycle) 120 * 20 = 40 minutes
 config.JobSubmitter.submitScript = os.path.join(os.environ["WMCORE_ROOT"], "etc/submit.sh")
-config.JobSubmitter.extraMemoryPerCore =  500 # in MB
+config.JobSubmitter.extraMemoryPerCore = 500  # in MB
 
 config.component_("JobTracker")
 config.JobTracker.namespace = "WMComponent.JobTracker.JobTracker"
-config.JobTracker.componentDir  = config.General.workDir + "/JobTracker"
+config.JobTracker.componentDir = config.General.workDir + "/JobTracker"
 config.JobTracker.logLevel = globalLogLevel
 config.JobTracker.pollInterval = 60
 
 config.component_("JobStatusLite")
 config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
-config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
+config.JobStatusLite.componentDir = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
 config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 432000}
@@ -230,12 +231,12 @@ config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
 config.JobUpdater.componentDir = config.General.workDir + "/JobUpdater"
 config.JobUpdater.logLevel = globalLogLevel
 config.JobUpdater.pollInterval = 120
-#reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
+# reqmgr url 'https://cmsweb.cern.ch/reqmgr/reqMgr'
 config.JobUpdater.reqMgr2Url = "OVER_WRITE_BY_SECETES"
 
 config.component_("ErrorHandler")
 config.ErrorHandler.namespace = "WMComponent.ErrorHandler.ErrorHandler"
-config.ErrorHandler.componentDir  = config.General.workDir + "/ErrorHandler"
+config.ErrorHandler.componentDir = config.General.workDir + "/ErrorHandler"
 config.ErrorHandler.logLevel = globalLogLevel
 config.ErrorHandler.maxRetries = maxJobRetries
 config.ErrorHandler.pollInterval = 240
@@ -246,31 +247,31 @@ config.ErrorHandler.maxProcessSize = 30
 
 config.component_("RetryManager")
 config.RetryManager.namespace = "WMComponent.RetryManager.RetryManager"
-config.RetryManager.componentDir  = config.General.workDir + "/RetryManager"
+config.RetryManager.componentDir = config.General.workDir + "/RetryManager"
 config.RetryManager.logLevel = globalLogLevel
 config.RetryManager.pollInterval = 240
-config.RetryManager.plugins = {"default" : "SquaredAlgo"}
+config.RetryManager.plugins = {"default": "SquaredAlgo"}
 config.RetryManager.section_("SquaredAlgo")
 config.RetryManager.SquaredAlgo.section_("default")
 config.RetryManager.SquaredAlgo.default.coolOffTime = retryAlgoParams
 
 config.component_("JobArchiver")
 config.JobArchiver.namespace = "WMComponent.JobArchiver.JobArchiver"
-config.JobArchiver.componentDir  = config.General.workDir + "/JobArchiver"
+config.JobArchiver.componentDir = config.General.workDir + "/JobArchiver"
 config.JobArchiver.pollInterval = 240
 config.JobArchiver.logLevel = globalLogLevel
 config.JobArchiver.numberOfJobsToCluster = 1000
 # This is now OPTIONAL, it defaults to the componentDir
 # HOWEVER: Is is HIGHLY recommended that you do NOT run this on the same
 # disk as the JobCreator
-#config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
+# config.JobArchiver.logDir = config.General.workDir + "/JobArchives"
 
 config.component_("TaskArchiver")
 config.TaskArchiver.namespace = "WMComponent.TaskArchiver.TaskArchiver"
-config.TaskArchiver.componentDir  = config.General.workDir + "/TaskArchiver"
+config.TaskArchiver.componentDir = config.General.workDir + "/TaskArchiver"
 config.TaskArchiver.logLevel = globalLogLevel
 config.TaskArchiver.pollInterval = 240
-config.TaskArchiver.timeOut      = workflowArchiveTimeout
+config.TaskArchiver.timeOut = workflowArchiveTimeout
 config.TaskArchiver.useWorkQueue = True
 config.TaskArchiver.workloadSummaryCouchURL = workloadSummaryURL
 config.TaskArchiver.workloadSummaryCouchDBName = workloadSummaryDB
@@ -278,18 +279,19 @@ config.TaskArchiver.histogramKeys = ["PeakValueRss", "PeakValueVsize", "TotalJob
 config.TaskArchiver.perfPrimaryDatasets = ['SingleMu', 'MuHad', 'MinimumBias']
 config.TaskArchiver.perfDashBoardMinLumi = 50
 config.TaskArchiver.perfDashBoardMaxLumi = 9000
-#dqm address -'https://cmsweb.cern.ch/dqm/dev/'
+# dqm address -'https://cmsweb.cern.ch/dqm/dev/'
 config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
-config.TaskArchiver.requireCouch  = True
+config.TaskArchiver.requireCouch = True
 # set to False couch data if request mgr is not used (Tier0, PromptSkiming)
 config.TaskArchiver.useReqMgrForCompletionCheck = True
-config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
+config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
 config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
-config.TaskArchiver.DataKeepDays = 0.125 # couhch history keeping days.
-config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
+config.TaskArchiver.localWMStatsURL = "%s/%s" % (
+config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.TaskArchiver.DataKeepDays = 0.125  # couhch history keeping days.
+config.TaskArchiver.cleanCouchInterval = 60 * 20  # 20 min
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
-config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
+config.TaskArchiver.archiveDelayHours = 24  # delay the archiving so monitor can still show. default 24 hours
 
 # Alert framework configuration
 
@@ -320,10 +322,10 @@ config.AlertProcessor.soft.bufferSize = 3
 # alerts don't get duplicated - i.e. either soft or critical alert is sent, not both
 config.AlertProcessor.critical.section_("sinks")
 config.AlertProcessor.soft.section_("sinks")
-config.AlertProcessor.critical.sinks.section_("couch") # in tests used: ConfigSection("couch")
+config.AlertProcessor.critical.sinks.section_("couch")  # in tests used: ConfigSection("couch")
 config.AlertProcessor.critical.sinks.couch.url = couchURL
 config.AlertProcessor.critical.sinks.couch.database = "alerts_critical"
-config.AlertProcessor.soft.sinks.section_("couch") # in tests used: ConfigSection("couch")
+config.AlertProcessor.soft.sinks.section_("couch")  # in tests used: ConfigSection("couch")
 config.AlertProcessor.soft.sinks.couch.url = couchURL
 config.AlertProcessor.soft.sinks.couch.database = "alerts_soft"
 # alerts delivery via email
@@ -337,7 +339,7 @@ config.AlertProcessor.critical.sinks.section_("email")
 # undeliverable since the wmagent machine doesn't run any email service,
 # with noreply@ it goes to /dev/null
 config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
-config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"]  # add more in the list
 config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.critical.sinks.email.smtpUser = None
 config.AlertProcessor.critical.sinks.email.smtpPass = None
@@ -346,24 +348,25 @@ config.AlertProcessor.soft.sinks.section_("email")
 # was @cern.ch: it said email is queued but was never delivered,
 # may not always be the case though
 config.AlertProcessor.soft.sinks.email.fromAddr = "noreply@cern.ch"
-config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
+config.AlertProcessor.soft.sinks.email.toAddr = ["wmagentalerts@gmail.com"]  # add more in the list
 config.AlertProcessor.soft.sinks.email.smtpServer = "cernmx.cern.ch"
 config.AlertProcessor.soft.sinks.email.smtpUser = None
 config.AlertProcessor.soft.sinks.email.smtpPass = None
 config.AlertProcessor.critical.sinks.section_("file")
-config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkCritical.json")
+config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(config.General.workDir,
+                                                                    "AlertsFileSinkCritical.json")
 config.AlertProcessor.soft.sinks.section_("file")
 config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkSoft.json")
 # forward sink - should be remote addresses allowing alerts forwarding to a
 # different AlertProcessor, actually may not even be used ... disable this sink for now
-#config.AlertProcessor.critical.sinks.section_("forward")
-#config.AlertProcessor.critical.sinks.forward.address = "tcp://127.0.0.1:55555"
-#config.AlertProcessor.critical.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
-#config.AlertProcessor.critical.sinks.forward.label = "ForwardSink"
-#config.AlertProcessor.soft.sinks.section_("forward")
-#config.AlertProcessor.soft.sinks.forward.address = "tcp://127.0.0.1:55555"
-#config.AlertProcessor.soft.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
-#config.AlertProcessor.soft.sinks.forward.label = "ForwardSink"
+# config.AlertProcessor.critical.sinks.section_("forward")
+# config.AlertProcessor.critical.sinks.forward.address = "tcp://127.0.0.1:55555"
+# config.AlertProcessor.critical.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
+# config.AlertProcessor.critical.sinks.forward.label = "ForwardSink"
+# config.AlertProcessor.soft.sinks.section_("forward")
+# config.AlertProcessor.soft.sinks.forward.address = "tcp://127.0.0.1:55555"
+# config.AlertProcessor.soft.sinks.forward.controlAddr = "tcp://127.0.0.1:44444"
+# config.AlertProcessor.soft.sinks.forward.label = "ForwardSink"
 # see comments on ticket 1640 - AlertCollector
 # currently, for development & testing, CouchSink and AlertCollector are virtually the same thing
 # though generally RESTSink is supposed to communicate with a generic REST server, not just CouchDB
@@ -383,80 +386,83 @@ config.AlertGenerator.namespace = "WMComponent.AlertGenerator.AlertGenerator"
 config.AlertGenerator.componentDir = os.path.join(config.General.workDir, "AlertGenerator")
 # configuration for overall machine load monitor: cpuPoller (percentage values)
 config.AlertGenerator.section_("cpuPoller")
-config.AlertGenerator.cpuPoller.soft = 8 # [percent]
-config.AlertGenerator.cpuPoller.critical = 10 # [percent]
-config.AlertGenerator.cpuPoller.pollInterval = 60 # [second]
+config.AlertGenerator.cpuPoller.soft = 8  # [percent]
+config.AlertGenerator.cpuPoller.critical = 10  # [percent]
+config.AlertGenerator.cpuPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.cpuPoller.period = 300 # [second]
+config.AlertGenerator.cpuPoller.period = 300  # [second]
 # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
 config.AlertGenerator.section_("memPoller")
-config.AlertGenerator.memPoller.soft = 85 # [percent]
-config.AlertGenerator.memPoller.critical = 90 # [percent]
-config.AlertGenerator.memPoller.pollInterval = 60 # [second]
+config.AlertGenerator.memPoller.soft = 85  # [percent]
+config.AlertGenerator.memPoller.critical = 90  # [percent]
+config.AlertGenerator.memPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.memPoller.period = 300 # [second]
+config.AlertGenerator.memPoller.period = 300  # [second]
 # configuration for available disk space monitor: diskSpacePoller (percentage usage per partition)
 config.AlertGenerator.section_("diskSpacePoller")
-config.AlertGenerator.diskSpacePoller.soft = 70 # [percent]
-config.AlertGenerator.diskSpacePoller.critical = 90 # [percent]
-config.AlertGenerator.diskSpacePoller.pollInterval = 600 # [second]
+config.AlertGenerator.diskSpacePoller.soft = 70  # [percent]
+config.AlertGenerator.diskSpacePoller.critical = 90  # [percent]
+config.AlertGenerator.diskSpacePoller.pollInterval = 600  # [second]
 # configuration for particular components CPU usage: componentCPUPoller (percentage values)
 config.AlertGenerator.section_("componentsCPUPoller")
-config.AlertGenerator.componentsCPUPoller.soft = 70 # [percent]
-config.AlertGenerator.componentsCPUPoller.critical = 90 # [percent]
-config.AlertGenerator.componentsCPUPoller.pollInterval = 60 # [second]
+config.AlertGenerator.componentsCPUPoller.soft = 70  # [percent]
+config.AlertGenerator.componentsCPUPoller.critical = 90  # [percent]
+config.AlertGenerator.componentsCPUPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsCPUPoller.period = 300 # [second]
+config.AlertGenerator.componentsCPUPoller.period = 300  # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
-config.AlertGenerator.componentsMemPoller.soft = 3 # [percent]
-config.AlertGenerator.componentsMemPoller.critical = 5 # [percent]
+config.AlertGenerator.componentsMemPoller.soft = 3  # [percent]
+config.AlertGenerator.componentsMemPoller.critical = 5  # [percent]
 config.AlertGenerator.componentsMemPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.componentsMemPoller.period = 300 # [second]
+config.AlertGenerator.componentsMemPoller.period = 300  # [second]
 # configuration for CouchDB database size monitor: couchDbSizePoller (gigabytes values)
 config.AlertGenerator.section_("couchDbSizePoller")
 config.AlertGenerator.couchDbSizePoller.couchURL = couchURL
-config.AlertGenerator.couchDbSizePoller.soft = 600 # GB
-config.AlertGenerator.couchDbSizePoller.critical = 650 # GB
-config.AlertGenerator.couchDbSizePoller.pollInterval = 600 # [second]
+config.AlertGenerator.couchDbSizePoller.soft = 600  # GB
+config.AlertGenerator.couchDbSizePoller.critical = 650  # GB
+config.AlertGenerator.couchDbSizePoller.pollInterval = 600  # [second]
 # configuration for CouchDB CPU monitor: couchCPUPoller (percentage values)
 config.AlertGenerator.section_("couchCPUPoller")
 config.AlertGenerator.couchCPUPoller.couchURL = couchURL
-config.AlertGenerator.couchCPUPoller.soft = 250 # [percent]
-config.AlertGenerator.couchCPUPoller.critical = 300 # [percent]
-config.AlertGenerator.couchCPUPoller.pollInterval = 60 # [second]
+config.AlertGenerator.couchCPUPoller.soft = 250  # [percent]
+config.AlertGenerator.couchCPUPoller.critical = 300  # [percent]
+config.AlertGenerator.couchCPUPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchCPUPoller.period = 300 # [second]
+config.AlertGenerator.couchCPUPoller.period = 300  # [second]
 # configuration for CouchDB memory monitor: couchMemPoller (percentage values)
 config.AlertGenerator.section_("couchMemPoller")
 config.AlertGenerator.couchMemPoller.couchURL = couchURL
-config.AlertGenerator.couchMemPoller.soft = 7 # [percent]
-config.AlertGenerator.couchMemPoller.critical = 10 # [percent]
-config.AlertGenerator.couchMemPoller.pollInterval = 60 # [second]
+config.AlertGenerator.couchMemPoller.soft = 7  # [percent]
+config.AlertGenerator.couchMemPoller.critical = 10  # [percent]
+config.AlertGenerator.couchMemPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
-config.AlertGenerator.couchMemPoller.period = 300 # [second]
+config.AlertGenerator.couchMemPoller.period = 300  # [second]
 # configuration for CouchDB HTTP errors poller: couchErrorsPoller (number of error occurrences)
 # (once certain threshold of the HTTP error counters is exceeded, poller keeps sending alerts)
 config.AlertGenerator.section_("couchErrorsPoller")
 config.AlertGenerator.couchErrorsPoller.couchURL = couchURL
-config.AlertGenerator.couchErrorsPoller.soft = 100 # [number of error occurrences]
-config.AlertGenerator.couchErrorsPoller.critical = 200 # [number of error occurrences]
+config.AlertGenerator.couchErrorsPoller.soft = 100  # [number of error occurrences]
+config.AlertGenerator.couchErrorsPoller.critical = 200  # [number of error occurrences]
 # remove 404 for the moment, there is way too many of them and no interest generated
-config.AlertGenerator.couchErrorsPoller.observables = (403, 500) # HTTP status codes to watch over
-config.AlertGenerator.couchErrorsPoller.pollInterval = 600 # [second]
+config.AlertGenerator.couchErrorsPoller.observables = (403, 500)  # HTTP status codes to watch over
+config.AlertGenerator.couchErrorsPoller.pollInterval = 600  # [second]
 
 # mysql*Poller sections were made optional and are defined in the
 # wmagent-mod-config file
 
 config.component_("AnalyticsDataCollector")
 config.AnalyticsDataCollector.namespace = "WMComponent.AnalyticsDataCollector.AnalyticsDataCollector"
-config.AnalyticsDataCollector.componentDir  = config.General.workDir + "/AnalyticsDataCollector"
+config.AnalyticsDataCollector.componentDir = config.General.workDir + "/AnalyticsDataCollector"
 config.AnalyticsDataCollector.logLevel = globalLogLevel
 config.AnalyticsDataCollector.pollInterval = 600
-config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
-config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
-config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
+config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (
+config.JobStateMachine.couchurl, config.JobStateMachine.couchDBName)
+config.AnalyticsDataCollector.localQueueURL = "%s/%s" % (
+config.WorkQueueManager.couchurl, config.WorkQueueManager.dbname)
+config.AnalyticsDataCollector.localWMStatsURL = "%s/%s" % (
+config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.AnalyticsDataCollector.centralWMStatsURL = "Central WMStats URL"
 config.AnalyticsDataCollector.centralRequestDBURL = "Cental Request DB URL"
 config.AnalyticsDataCollector.summaryLevel = "task"
@@ -469,28 +475,28 @@ config.component_("AgentStatusWatcher")
 config.AgentStatusWatcher.namespace = "WMComponent.AgentStatusWatcher.AgentStatusWatcher"
 config.AgentStatusWatcher.componentDir = config.General.workDir + "/AgentStatusWatcher"
 config.AgentStatusWatcher.logLevel = globalLogLevel
-config.AgentStatusWatcher.resourceUpdaterPollInterval = 900 # [second]
-config.AgentStatusWatcher.siteStatusMetric = 237 # [column number in SSB] The source of the information in SSB for Site status
-config.AgentStatusWatcher.cpuBoundMetric = 160 # [column number in SSB] The source of the information in SSB for CPUBound
-config.AgentStatusWatcher.ioBoundMetric = 161 # [column number in SSB] The source of the information in SSB for IOBound
+config.AgentStatusWatcher.resourceUpdaterPollInterval = 900  # [second]
+config.AgentStatusWatcher.siteStatusMetric = 237  # [column number in SSB] The source of the information in SSB for Site status
+config.AgentStatusWatcher.cpuBoundMetric = 160  # [column number in SSB] The source of the information in SSB for CPUBound
+config.AgentStatusWatcher.ioBoundMetric = 161  # [column number in SSB] The source of the information in SSB for IOBound
 config.AgentStatusWatcher.dashboard = "Dashboard URL"
 config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
-config.AgentStatusWatcher.pendingSlotsSitePercent = 100 # [percent] Pending slots percent over site max running for a site
-config.AgentStatusWatcher.pendingSlotsTaskPercent = 90 # [percent] Pending slots percent over task max running for tasks
-config.AgentStatusWatcher.runningExpressPercent = 30 # [percent] Only used for tier0 agent
-config.AgentStatusWatcher.runningRepackPercent = 10 # [percent] Only used for tier0 agent
-config.AgentStatusWatcher.t1SitesCores = 30 # [percent] Only used for tier0 agent
-config.AgentStatusWatcher.forceSiteDown = [] # List of sites to be forced to Down status
-config.AgentStatusWatcher.onlySSB = False # Set thresholds for sites only in SSB (Force all other to zero/down)
-config.AgentStatusWatcher.enabled = True # switch to enable or not this component
+config.AgentStatusWatcher.pendingSlotsSitePercent = 100  # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 90  # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.runningExpressPercent = 30  # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.runningRepackPercent = 10  # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.t1SitesCores = 30  # [percent] Only used for tier0 agent
+config.AgentStatusWatcher.forceSiteDown = []  # List of sites to be forced to Down status
+config.AgentStatusWatcher.onlySSB = False  # Set thresholds for sites only in SSB (Force all other to zero/down)
+config.AgentStatusWatcher.enabled = True  # switch to enable or not this component
 config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5
 config.AgentStatusWatcher.jsonFile = config.AgentStatusWatcher.componentDir + "/WMA_monitoring.json"
 
 config.component_("ArchiveDataReporter")
 config.ArchiveDataReporter.namespace = "WMComponent.ArchiveDataReporter.ArchiveDataReporter"
-config.ArchiveDataReporter.componentDir  = config.General.workDir + "/ArchiveDataReporter"
+config.ArchiveDataReporter.componentDir = config.General.workDir + "/ArchiveDataReporter"
 config.ArchiveDataReporter.pollInterval = 300
 config.ArchiveDataReporter.WMArchiveURL = None
-config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000 # number of documents needed to be polled each time
-config.ArchiveDataReporter.numDocsUploadPerCall = 200 # number of documents upload each time in bulk to WMArchive
+config.ArchiveDataReporter.numDocsRetrievePerPolling = 1000  # number of documents needed to be polled each time
+config.ArchiveDataReporter.numDocsUploadPerCall = 200  # number of documents upload each time in bulk to WMArchive

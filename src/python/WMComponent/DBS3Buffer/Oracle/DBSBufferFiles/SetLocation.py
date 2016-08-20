@@ -12,4 +12,11 @@ from WMComponent.DBS3Buffer.MySQL.DBSBufferFiles.SetLocation import SetLocation 
      MySQLSetLocation
 
 class SetLocation(MySQLSetLocation):
-    pass
+    """
+    Insert unique lfn, location row
+    """
+    sql = """INSERT INTO dbsbuffer_file_location (filename, location)
+               SELECT :fileid, :locationid FROM DUAL WHERE NOT EXISTS
+                 (SELECT filename FROM dbsbuffer_file_location
+                 WHERE filename= :fileid and location= :locationid)
+               """

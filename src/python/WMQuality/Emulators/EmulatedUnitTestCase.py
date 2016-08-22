@@ -47,6 +47,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
                     self.mockingDBS = True
                 except AttributeError:
                     print('Failure mocking DBS at %s. Continuing.' % name)
+                    raise
 
         if self.mockPhEDEx:
             for name in ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.WorkQueue.WorkQueue.PhEDEx',
@@ -58,6 +59,7 @@ class EmulatedUnitTestCase(unittest.TestCase):
                     self.mockingPhEDEx = True
                 except AttributeError:
                     print('Failure mocking PhEDEx at %s. Continuing.' % name)
+                    raise
 
         if self.mockSiteDB:
             self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)

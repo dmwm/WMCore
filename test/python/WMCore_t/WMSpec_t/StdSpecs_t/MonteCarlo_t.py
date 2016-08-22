@@ -18,6 +18,9 @@ from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 TEST_DB_NAME = 'db_configcache_test'
+DATA_PU = '/HighPileUp/Run2011A-v1/RAW'
+COSMICS_PU = '/Cosmics/ComissioningHI-v1/RAW'
+
 class MonteCarloTest(EmulatedUnitTestCase):
     def setUp(self):
         """
@@ -281,8 +284,8 @@ class MonteCarloTest(EmulatedUnitTestCase):
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         # Add pileup inputs
-        defaultArguments["MCPileup"] = "/some/cosmics/dataset1"
-        defaultArguments["DataPileup"] = "/some/minbias/dataset1"
+        defaultArguments["MCPileup"] = COSMICS_PU
+        defaultArguments["DataPileup"] = DATA_PU
         defaultArguments["DeterministicPileup"] = True
 
         factory = MonteCarloWorkloadFactory()
@@ -296,8 +299,8 @@ class MonteCarloTest(EmulatedUnitTestCase):
         productionTask = testWorkload.getTaskByPath('/TestWorkload/Production')
         cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
         pileupData = cmsRunStep.getPileup()
-        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
-        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+        self.assertEqual(pileupData.data.dataset, [DATA_PU])
+        self.assertEqual(pileupData.mc.dataset, [COSMICS_PU])
 
         splitting = productionTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])

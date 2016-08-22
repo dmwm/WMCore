@@ -44,6 +44,8 @@ for endpoint, outFile, calls, datasets in INSTANCES:
         calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
         calls.append(['listBlocks', {'detail': True, 'dataset': dataset}])
         calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
+        calls.append(['listFileArray',
+                      {'dataset': '/Cosmics/ComissioningHI-v1/RAW', 'detail': True, 'validFileOnly': 1}])
         calls.append(['listRuns', {'dataset': unicode(dataset)}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:

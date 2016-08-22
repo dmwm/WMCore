@@ -719,25 +719,22 @@ class ResourceControlTest(EmulatedUnitTestCase):
         Depending on the WMCore.Services.SiteDB interface
         """
         myResourceControl = ResourceControl()
-        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'pendingSlots' : 80},
-                    {'taskType': 'Merge', 'maxSlots': 50, 'pendingSlots' : 30}]
-        myResourceControl.insertAllSEs(siteName = 'test', pendingSlots = 200,
-                                       runningSlots = 400,
-                                       ceName = 'glidein-ce.fnal.gov',
-                                       plugin = 'CondorPlugin', taskList = taskList)
+        taskList = [{'taskType': 'Processing', 'maxSlots': 100, 'pendingSlots': 80},
+                    {'taskType': 'Merge', 'maxSlots': 50, 'pendingSlots': 30}]
+        myResourceControl.insertAllSEs(siteName='test', pendingSlots=200, runningSlots=400,
+                                       ceName='glidein-ce.fnal.gov', plugin='CondorPlugin', taskList=taskList)
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('test_T1_US_FNAL_Buffer' in result.keys())
-        self.assertEqual(len(result), 10)
-        for x in result.keys():
-            self.assertEqual(len(result[x]['thresholds']), 2)
-            self.assertEqual(result[x]['total_pending_slots'], 200)
-            self.assertEqual(result[x]['total_running_slots'], 400)
-            for taskType, thresh in result[x]['thresholds'].items():
+        self.assertGreaterEqual(len(result), 1)
+        for siteName in result.iterkeys():
+            self.assertEqual(len(result[siteName]['thresholds']), 2)
+            self.assertEqual(result[siteName]['total_pending_slots'], 200)
+            self.assertEqual(result[siteName]['total_running_slots'], 400)
+            for taskType, thresh in result[siteName]['thresholds'].iteritems():
                 if taskType == 'Processing':
                     self.assertEqual(thresh['priority'], 0)
                     self.assertEqual(thresh['max_slots'], 100)
                     self.assertEqual(thresh['pending_slots'], 80)
-
                 else:
                     self.assertEqual(thresh['priority'], 5)
                     self.assertEqual(thresh['max_slots'], 50)

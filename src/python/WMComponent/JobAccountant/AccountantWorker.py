@@ -1,7 +1,6 @@
 #!/usr/bin/env python
-#pylint: disable=E1103, W6501, E1101, C0301
+#pylint: disable=E1103, E1101, C0301
 #E1103: Use DB objects attached to thread
-#W6501: Allow string formatting in error messages
 #E1101: Create config sections
 #C0301: The names for everything are so ridiculously long
 # that I'm disabling this.  The rest of you will have to get
@@ -13,7 +12,6 @@ Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
 import os
-import shutil
 import threading
 import logging
 import gc
@@ -34,8 +32,8 @@ from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
-from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.ACDC.DataCollectionService  import DataCollectionService
+
 
 class AccountantWorkerException(WMException):
     """
@@ -579,7 +577,7 @@ class AccountantWorker(WMConnectionBase):
             # We assume full file processing (no job masks)
             if jobSuccess:
                 skippedFiles = fwkJobReport.getAllSkippedFiles()
-                if skippedFiles:
+                if skippedFiles and jobType not in ['LogCollect', 'Cleanup']:
                     self.jobsWithSkippedFiles[jobID] = skippedFiles
 
             # Only save once job is done, and we're sure we made it through okay

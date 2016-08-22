@@ -19,7 +19,6 @@ REQUEST_STATE_TRANSITION = {
                                                           
     "acquired": ["running-open",
                  "completed",
-                 "acquired",
                  "aborted"],
                              
     "running": ["completed",
@@ -32,13 +31,13 @@ REQUEST_STATE_TRANSITION = {
                        "completed",
                        "aborted"], # manual transition
     
-    "force-complete" : ["completed"],
+    "force-complete": ["completed",
+                       "aborted"], # manual transition
                              
     "failed": ["rejected",  # manual transition
                "assigned"], # manual transition
                              
-    "completed": ["completed",
-                  "closed-out",
+    "completed": ["closed-out",
                   "rejected"], # manual transition
                              
     "closed-out": ["announced", "rejected"], # manual transition

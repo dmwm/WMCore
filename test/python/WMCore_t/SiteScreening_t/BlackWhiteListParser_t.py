@@ -89,7 +89,7 @@ class BlackWhiteListParserTest(unittest.TestCase):
         results = set(results)
         self.assertTrue(results == set(whitelist))
 
-    def testCEBlackList(self):
+    def ntestCEBlackList(self):
         """
         Tests black list parsing for Compute Elements
         """

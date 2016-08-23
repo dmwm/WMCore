@@ -298,7 +298,7 @@ class EventBasedTest(unittest.TestCase):
 
         return
 
-    def ntestSingleRunsMultipleLumiCombineUneven(self):
+    def testSingleRunsMultipleLumiCombineUneven(self):
         """
         _testSingleRunsMultipeLumiCombineUneven_
 

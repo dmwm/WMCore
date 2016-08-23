@@ -25,9 +25,6 @@ class EmulatedUnitTestCase(unittest.TestCase):
         self.mockDBS = mockDBS
         self.mockPhEDEx = mockPhEDEx
         self.mockSiteDB = mockSiteDB
-
-        self.mockingDBS = False
-        self.mockingPhEDEx = False
         super(EmulatedUnitTestCase, self).__init__(methodName)
 
     def setUp(self):
@@ -37,29 +34,24 @@ class EmulatedUnitTestCase(unittest.TestCase):
         TODO: parameters to turn off emulators individually
         """
 
-
         if self.mockDBS:
-            for name in ['dbs.apis.dbsClient.DbsApi', 'WMCore.Services.DBS.DBS3Reader.DbsApi']:
-                try:
-                    dbsPatcher = mock.patch(name, new=MockDbsApi)
-                    dbsPatcher.start()
-                    self.addCleanup(dbsPatcher.stop)
-                    self.mockingDBS = True
-                except AttributeError:
-                    print('Failure mocking DBS at %s. Continuing.' % name)
-                    raise
+            self.dbsPatcher1 = mock.patch('dbs.apis.dbsClient.DbsApi', new=MockDbsApi)
+            self.dbsPatcher2 = mock.patch('WMCore.Services.DBS.DBS3Reader.DbsApi', new=MockDbsApi)
+            self.inUseDbsApi = self.dbsPatcher1.start()
+            self.inUseDbsApi = self.dbsPatcher2.start()
+            self.addCleanup(self.dbsPatcher1.stop)
+            self.addCleanup(self.dbsPatcher2.stop)
 
         if self.mockPhEDEx:
-            for name in ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.WorkQueue.WorkQueue.PhEDEx',
-                         'WMCore.Services.DBS.DBS3Reader.PhEDEx']:
-                try:
-                    phedexPatcher = mock.patch(name, new=MockPhEDExApi)
-                    phedexPatcher.start()
-                    self.addCleanup(phedexPatcher.stop)
-                    self.mockingPhEDEx = True
-                except AttributeError:
-                    print('Failure mocking PhEDEx at %s. Continuing.' % name)
-                    raise
+            self.phedexPatcher = mock.patch('WMCore.Services.PhEDEx.PhEDEx.PhEDEx', new=MockPhEDExApi)
+            self.phedexPatcher2 = mock.patch('WMCore.WorkQueue.WorkQueue.PhEDEx', new=MockPhEDExApi)
+            self.phedexPatcher3 = mock.patch('WMCore.Services.DBS.DBS3Reader.PhEDEx', new=MockPhEDExApi)
+            self.phedexPatcher.start()
+            self.phedexPatcher2.start()
+            self.phedexPatcher3.start()
+            self.addCleanup(self.phedexPatcher.stop)
+            self.addCleanup(self.phedexPatcher2.stop)
+            self.addCleanup(self.phedexPatcher3.stop)
 
         if self.mockSiteDB:
             self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)

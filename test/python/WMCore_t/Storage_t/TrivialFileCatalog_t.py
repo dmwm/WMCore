@@ -29,7 +29,7 @@ class TrivialFileCatalogTest(unittest.TestCase):
         pass
 
 
-    def ntestTrivialFileCatalog(self):
+    def testTrivialFileCatalog(self):
         """
         Run some simple tests on reading a trivialFileCatalog
 

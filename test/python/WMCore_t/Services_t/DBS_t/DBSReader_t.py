@@ -123,7 +123,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertEqual(49, len(files))
         self.assertTrue(FILE in files)
 
-    def ntestlistDatasetFileDetails(self):
+    def testlistDatasetFileDetails(self):
         """testlistDatasetFilesDetails returns lumis, events, and parents of a dataset"""
         TESTFILE = '/store/data/Run2011A/HighPileUp/RAW/v1/000/173/658/56484BAB-CBCB-E011-AF00-BCAEC518FF56.root'
         self.dbs = DBSReader(self.endpoint)

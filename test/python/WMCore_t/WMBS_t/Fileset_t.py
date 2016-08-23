@@ -1406,7 +1406,7 @@ class FilesetTest(unittest.TestCase):
 
         return
 
-    def ntestSetLastUpdate(self):
+    def testSetLastUpdate(self):
         """
         _testSetLastUpdate_
 

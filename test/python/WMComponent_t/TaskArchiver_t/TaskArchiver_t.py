@@ -474,7 +474,7 @@ class TaskArchiverTest(unittest.TestCase):
         result = self.requestWriter.updateRequestStatus(name, "completed")
         return result
     
-    def ntestA_BasicFunctionTest(self):
+    def testA_BasicFunctionTest(self):
         """
         _BasicFunctionTest_
 

@@ -368,7 +368,7 @@ class TestRequests(unittest.TestCase):
         self.assertEqual(out[1], 200)
         self.assertNotEqual(out[0].find('passed basic validation'), -1)
 
-    def ntestNoCache(self):
+    def testNoCache(self):
         """Cache disabled"""
         req = Requests.Requests('http://cmssw.cvs.cern.ch', {'cachepath' : None})
         out = req.makeRequest('/', decoder=False)

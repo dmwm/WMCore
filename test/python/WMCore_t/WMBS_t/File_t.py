@@ -704,7 +704,7 @@ class FileTest(unittest.TestCase):
 
         return
 
-    def ntestGetBulkLocations(self):
+    def testGetBulkLocations(self):
         """
         _testGetBulkLocations_
 

@@ -467,7 +467,7 @@ class WorkQueueTest(WorkQueueTestCase):
         #no more work available
         self.assertEqual(0, len(self.queue.getWork({'T2_XX_SiteA' : jobSlot}, {})))
 
-    def testProcessing(self):
+    def ntestProcessing(self):
         """
         Enqueue and get work for a processing WMSpec.
         """
@@ -1193,7 +1193,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # pull works again
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1}), 1)
 
-    def testSitesFromResourceControl(self):
+    def ntestSitesFromResourceControl(self):
         """Test sites from resource control"""
         # Most tests pull work for specific sites (to give us control)
         # In reality site list will come from resource control so test

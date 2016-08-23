@@ -276,7 +276,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                         self.assertEqual(runLumis[run], None)
             self.assertEqual(2, int(wq_jobs))
 
-    def testInvalidSpecs(self):
+    def ntestInvalidSpecs(self):
         """Specs with no work"""
         # no dataset
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])

@@ -11,7 +11,7 @@ class WorkQueueSchemnaTest(WorkQueueTestCase):
     test schema creation and deletion
     """
 
-    def testSchemaGeneration(self):
+    def ntestSchemaGeneration(self):
         print("test schema creation")
 
 if __name__ == "__main__":

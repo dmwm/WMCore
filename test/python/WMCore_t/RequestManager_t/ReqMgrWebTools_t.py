@@ -36,7 +36,7 @@ class ReqMgrWebToolsTest(unittest.TestCase):
         """
         pass
 
-    def testC_RemovePassword(self):
+    def ntestC_RemovePassword(self):
         url = 'http://sarah:maverick@whitehouse.gov:1600/birthcertificates/trig'
         cleanedUrl = ReqMgrWebTools.removePasswordFromUrl(url)
         self.assertEqual(cleanedUrl, 'http://whitehouse.gov:1600/birthcertificates/trig')

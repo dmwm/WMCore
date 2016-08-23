@@ -11,7 +11,7 @@ MySQL implementation of DBSBuffer.SetLocation
 from WMCore.Database.DBFormatter import DBFormatter
 
 class SetLocation(DBFormatter):
-    sql = """INSERT INTO dbsbuffer_file_location (filename, location)
+    sql = """INSERT IGNORE INTO dbsbuffer_file_location (filename, location)
                VALUES (:fileid, :locationid)"""
 
     def execute(self, binds, conn = None, transaction = None):

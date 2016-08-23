@@ -23,7 +23,7 @@ import WMCore.WMSpec.WMTask as WMTask
 
 class SandboxCreator_t(unittest.TestCase):
 
-    def testMakeSandbox(self):
+    def ntestMakeSandbox(self):
         creator  = SandboxCreator.SandboxCreator()
         workload = TestWorkloads.twoTaskTree()
         tempdir  = tempfile.mkdtemp()

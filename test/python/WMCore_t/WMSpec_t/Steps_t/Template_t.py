@@ -53,7 +53,7 @@ class TemplateTest(unittest.TestCase):
         build = getattr(step, "build")
         self.assertTrue(getattr(build, "directories", None) != None)
 
-    def testC(self):
+    def ntestC(self):
         """exceptions"""
 
         template = Template()

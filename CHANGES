@@ -1,3 +1,45 @@
+1.0.19 to 1.0.19.patch2:
+  - Merge pull request #7088 from ticoann/1.0.19_wmagent
+  - Do not upload skipped files for LogCollect/Cleanup to ACDC Server
+  - Add only unique file/location rows into dbsbuffer
+  - Make unique file entries for ACDC MCFakeFiles
+  - 1.0.19.patch1
+  - Merge pull request #7037 from amaltaro/storeresults-fix
+  - Merge pull request #7004 from amaltaro/jobsubmitter-new
+  - Merge pull request #7047 from hufnagel/singlecore-override-simplify
+  - Merge pull request #7051 from ticoann/add_more_error_code
+  - Merge pull request #7055 from amaltaro/vstring-unicode
+  - Merge pull request #7059 from amaltaro/views-typeerror
+  - Failed jobs may not contain LogCollect key
+  - Merge pull request #7057 from ericvaandering/phedexinjector_mock_sitedb
+  - specify the timeout error
+  - Merge pull request #7056 from ericvaandering/more_sitedb_mock
+  - Switch PhEDEx injector tests to mock for SiteDB and DBS
+  - Make LocalQueue really use mocked SiteDB
+  - Make resource control script use emulator
+  - Cast list of PU files to string in the PSet tweak
+  - Merge pull request #7049 from amaltaro/last-sename
+  - Convert leftover se_name to pnn
+  - simplify single core override for repack, merge and alcaharvest
+  - Merge pull request #7046 from ericvaandering/robust_comparison
+  - Use assertContentsEqual for DBS returns
+  - Create ExtendedUnitTestCase with a new type of assert that sorts all the lists in a nested structure before applying the dictionary comparison
+  - Tests for a new comparison operator
+  - Merge pull request #7044 from ericvaandering/fix_start_block_tests
+  - Fix pylint complaints and use iteritems
+  - Update Block_t test to work with #7038
+  - Improvements to PhEDEx and DBS mock emulators and their data
+  - Merge pull request #7043 from amaltaro/jsonfile-monitor
+  - Merge pull request #7041 from amaltaro/wmarchive-typo
+  - Merge pull request #7042 from amaltaro/monitoring-typo
+  - Fix jsonFile var for AgentStatusWatcher
+  - Fix typo in wmarchive parameter
+  - Fix typo in monitoring class
+  - Also watch running thresholds
+  - Fix resource control unit tests
+  - Get proper data location for StoreResults requests
+  - JobSubmitter refactoring; always submit higher prio first
+
 1.0.19 to 1.0.19.patch1:
   - Merge pull request #7037 from amaltaro/storeresults-fix
   - Merge pull request #7004 from amaltaro/jobsubmitter-new

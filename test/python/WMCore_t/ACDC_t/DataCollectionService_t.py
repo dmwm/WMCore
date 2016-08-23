@@ -9,9 +9,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
-
 from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.ACDC.DataCollectionService import DataCollectionService
+from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
@@ -294,6 +293,87 @@ class DataCollectionService_t(unittest.TestCase):
         self.assertEqual(whiteList["3"], [[20, 20]],
                          "Error: Whitelist for run 3 is wrong.")
         return
+
+    def testMergeFakeFiles(self):
+        """
+        _testMergeFakeFiles_
+
+        Verify that we can merge MCFakeFiles together when a fileset contains
+        several failures for the same input fake file.
+        """
+        originalFiles = [{'checksums': {},
+                          'events': 500000,
+                          'first_event': 1,
+                          'id': 40,
+                          'last_event': 0,
+                          'lfn': 'MCFakeFile-File1',
+                          'locations': ['T1_DE_KIT_Disk'],
+                          'merged': '0',
+                          'parents': [],
+                          'runs': [{'lumis': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'run_number': 1}],
+                          'size': 0},
+                         {'checksums': {},
+                          'events': 500000,
+                          'first_event': 1000001,
+                          'id': 40,
+                          'last_event': 0,
+                          'lfn': 'MCFakeFile-File2',
+                          'locations': ['T1_DE_KIT_Disk'],
+                          'merged': '0',
+                          'parents': [],
+                          'runs': [{'lumis': [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+                                    'run_number': 1}],
+                          'size': 0},
+                         {'checksums': {},
+                          'events': 500000,
+                          'first_event': 2000001,
+                          'id': 40,
+                          'last_event': 0,
+                          'lfn': 'MCFakeFile-File1',
+                          'locations': ['T1_DE_KIT_Disk'],
+                          'merged': '0',
+                          'parents': [],
+                          'runs': [{'lumis': [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+                                    'run_number': 1}],
+                          'size': 0},
+                         {'checksums': {},
+                          'events': 500000,
+                          'first_event': 7000001,
+                          'id': 40,
+                          'last_event': 0,
+                          'lfn': 'MCFakeFile-File3',
+                          'locations': ['T1_DE_KIT_Disk'],
+                          'merged': '0',
+                          'parents': [],
+                          'runs': [{'lumis': [81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91],
+                                    'run_number': 1}],
+                          'size': 0},
+                         {'checksums': {},
+                          'events': 500000,
+                          'first_event': 4000001,
+                          'id': 40,
+                          'last_event': 0,
+                          'lfn': 'MCFakeFile-File3',
+                          'locations': ['T1_DE_KIT_Disk'],
+                          'merged': '0',
+                          'parents': [],
+                          'runs': [{'lumis': [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
+                                    'run_number': 1}],
+                          'size': 0}]
+
+        mergedFiles = mergeFakeFiles(originalFiles)
+        self.assertEqual(len(mergedFiles), 3, "Error: wrong number of files.")
+
+        totalEvents = 0
+        for job in mergedFiles:
+            totalEvents += job['events']
+        self.assertEqual(totalEvents, 2500000, "Error: wrong number of total events.")
+
+        for job in mergedFiles:
+            if job['lfn'] == 'MCFakeFile-File1':
+                lumiList= job['runs'][0]['lumis']
+        self.assertEqual(len(lumiList), 22)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -5,7 +5,7 @@ from cherrypy import expose
 from multiprocessing import Process
 
 # WMCore modules
-from WMCore.REST.Test import setup_test_server, fake_authz_headers
+from WMCore.REST.Test import setup_dummy_server, fake_authz_headers
 from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Tools import tools
 
@@ -57,7 +57,7 @@ class SimpleTest(webtest.WebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
+    setup_dummy_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
 
 def load_server(engine):
     setup_server()

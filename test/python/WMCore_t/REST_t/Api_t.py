@@ -10,7 +10,7 @@ from cherrypy.test import webtest
 
 # WMCore modules
 from WMCore.REST.Server import RESTApi, RESTEntity, restcall, rows
-from WMCore.REST.Test import setup_test_server, fake_authz_headers
+from WMCore.REST.Test import setup_dummy_server, fake_authz_headers
 from WMCore.REST.Test import fake_authz_key_file
 from WMCore.REST.Validation import validate_num, validate_str
 from WMCore.REST.Error import InvalidObject
@@ -246,7 +246,7 @@ class Tester(webtest.WebCase):
 
 def setup_server():
     srcfile = __file__.split("/")[-1].split(".py")[0]
-    setup_test_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
+    setup_dummy_server(srcfile, "Root", authz_key_file=FAKE_FILE, port=PORT)
 
 def load_server(engine):
     setup_server()

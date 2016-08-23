@@ -63,7 +63,7 @@ def fake_authz_key_file(delete=True):
     t.seek(0)
     return t
 
-def setup_test_server(module_name, class_name, app_name = None, authz_key_file=None, port=8888):
+def setup_dummy_server(module_name, class_name, app_name = None, authz_key_file=None, port=8888):
     """Helper function to set up a :class:`~.RESTMain` server from given
     module and class. Creates a fake server configuration and instantiates
     the server application from it.

@@ -894,7 +894,7 @@ class JobTest(unittest.TestCase):
 
         return
 
-    def ntestGetOutputMapDAO(self):
+    def testGetOutputMapDAO(self):
         """
         _testGetOutputMapDAO_
 

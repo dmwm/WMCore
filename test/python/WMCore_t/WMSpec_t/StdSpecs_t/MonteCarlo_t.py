@@ -5,38 +5,41 @@ _MonteCarlo_t_
 Unit tests for the Monte Carlo workflow.
 """
 
-import unittest
 import os
+import unittest
 
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 TEST_DB_NAME = 'db_configcache_test'
-class MonteCarloTest(unittest.TestCase):
+DATA_PU = '/HighPileUp/Run2011A-v1/RAW'
+COSMICS_PU = '/Cosmics/ComissioningHI-v1/RAW'
+
+class MonteCarloTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Initialize the database and couch.
         """
+        super(MonteCarloTest, self).setUp()
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch(TEST_DB_NAME, "ConfigCache")
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"], useDefault=False)
         self.testInit.generateWorkDir()
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase(TEST_DB_NAME)
-        EmulatorHelper.setEmulators(dbs = True)
+
         return
 
     def tearDown(self):
@@ -48,7 +51,9 @@ class MonteCarloTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        EmulatorHelper.resetEmulators()
+
+        super(MonteCarloTest, self).tearDown()
+
         return
 
     def injectMonteCarloConfig(self):
@@ -279,8 +284,8 @@ class MonteCarloTest(unittest.TestCase):
         defaultArguments["ConfigCacheID"] = self.injectMonteCarloConfig()
 
         # Add pileup inputs
-        defaultArguments["MCPileup"] = "/some/cosmics/dataset1"
-        defaultArguments["DataPileup"] = "/some/minbias/dataset1"
+        defaultArguments["MCPileup"] = COSMICS_PU
+        defaultArguments["DataPileup"] = DATA_PU
         defaultArguments["DeterministicPileup"] = True
 
         factory = MonteCarloWorkloadFactory()
@@ -294,8 +299,8 @@ class MonteCarloTest(unittest.TestCase):
         productionTask = testWorkload.getTaskByPath('/TestWorkload/Production')
         cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
         pileupData = cmsRunStep.getPileup()
-        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
-        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+        self.assertEqual(pileupData.data.dataset, [DATA_PU])
+        self.assertEqual(pileupData.mc.dataset, [COSMICS_PU])
 
         splitting = productionTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])

@@ -132,7 +132,7 @@ class JobTest(unittest.TestCase):
         assert self.dummyJob["state"] == "created", \
             "ERROR: Couldn't change Job state - changeState method error"
 
-    def testChangeOutcome(self):
+    def ntestChangeOutcome(self):
         """
         _testChangeOutcome_
 

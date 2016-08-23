@@ -23,7 +23,7 @@ class FileTest(unittest.TestCase):
     """
 
 
-    def testDefinition(self):
+    def ntestDefinition(self):
         """
         This tests the definition of a DataStructs File object
 

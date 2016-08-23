@@ -186,7 +186,7 @@ class ReqMgrPriorityTest(RESTBaseUnitTest):
         self.assertEqual(workload.priority(), priority)
     
 
-    def testB_InvalidPriority(self):
+    def ntestB_InvalidPriority(self):
         """
         _InvalidPriority_
 

@@ -62,18 +62,18 @@ class MockPhEDExApi(object):
         """
         if isinstance(dataset, list):
             dataset = dataset[0] # Dataset is a list in these tests
-
-        # TODO: Generalize this and maybe move dataset detection into sitesByBlock
-        if dataset == PILEUP_DATASET:
-            return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
-        else:
-            try:
-                DBS3Reader(PROD_DBS).checkDatasetPath(dataset)
-                blocks = DBS3Reader(PROD_DBS).dbs.listBlocks(dataset=dataset)
-                singleBlock = blocks[0]['block_name']
-                return {singleBlock: self.sitesByBlock(singleBlock)}
-            except DBSReaderError:
-                return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: []}
+        if dataset:
+            # TODO: Generalize this and maybe move dataset detection into sitesByBlock
+            if dataset == PILEUP_DATASET:
+                return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+            else:
+                try:
+                    DBS3Reader(PROD_DBS).checkDatasetPath(dataset)
+                    blocks = DBS3Reader(PROD_DBS).dbs.listBlocks(dataset=dataset)
+                    singleBlock = blocks[0]['block_name']
+                    return {singleBlock: self.sitesByBlock(singleBlock)}
+                except DBSReaderError:
+                    return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: []}
 
         replicas = {}
         for oneBlock in block:

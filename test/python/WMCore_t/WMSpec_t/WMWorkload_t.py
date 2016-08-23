@@ -1755,7 +1755,7 @@ class WMWorkloadTest(unittest.TestCase):
                           'SomeURL/SomeDBName/DocIDThatIsReallyLong2/configFile'])
         return
 
-    def ntestPileupDatasetList(self):
+    def testPileupDatasetList(self):
         """
         _testPileupDatasetList_
 

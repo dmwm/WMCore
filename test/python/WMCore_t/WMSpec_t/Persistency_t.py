@@ -5,7 +5,7 @@ from WMCore.WMSpec.WMStep import WMStep, makeWMStep
 
 class PersistencyTest(unittest.TestCase):
 
-    def ntestSplitUrl(self):
+    def testSplitUrl(self):
         helper = PersistencyHelper()
         url = 'https://cmsreqmgr.cern.ch/couchdb/mydb/doc/spec'
         base, dbname, doc = helper.splitCouchUrl(url)

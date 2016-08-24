@@ -7,9 +7,12 @@ Module dealing with Configuration file in python format
 
 
 """
-
-
-
+import sys
+# python 3
+if  sys.version.startswith('3.'):
+    unicode = str
+    basestring = str
+    long = int
 
 import os
 import imp

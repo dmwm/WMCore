@@ -24,9 +24,18 @@ import cherrypy
 from cherrypy import log as cplog
 from cherrypy import expose
 
-# cheetah modules
-from Cheetah.Template import Template
-from Cheetah import Version
+CHEETAH=False
+try:
+    from Cheetah.Template import Template
+    CHEETAH=True
+except:
+    pass
+try:
+    import jinja2
+    JINJA = True
+    CHEETAH=False
+except:
+    JINJA = False
 
 class Page(object):
     """
@@ -76,11 +85,20 @@ class TemplatedPage(Page):
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
         verbose = config.get('verbose', 0)
-        if  verbose:
-            self.info("Templates are located in: %s" % self.templatedir)
-            self.info("Using Cheetah version: %s" % Version)
+        if  JINJA:
+            templates = 'JINJA'
+        else:
+            templates = 'Cheetah'
+        self.log("### ReqMgr uses %s templates" % templates, logging.INFO)
+        self.log("Templates are located in: %s" % self.templatedir, logging.INFO)
 
     def templatepage(self, ifile=None, *args, **kwargs):
+        """Choose template page handler based on templates engine"""
+        if  JINJA and self.templatedir.find("jinja") != -1:
+            return self.templatepage_jinja(ifile, *args, **kwargs)
+        return self.templatepage_cheetah(ifile, *args, **kwargs)
+
+    def templatepage_cheetah(self, ifile=None, *args, **kwargs):
         """
         Template page method.
         """
@@ -96,6 +114,22 @@ class TemplatedPage(Page):
             template = Template(file=templatefile, searchList=search_list)
             return template.respond()
 
+        else:
+            self.warning("%s not found at %s" % (ifile, self.templatedir))
+            return "Template %s not known" % ifile
+
+    def templatepage_jinja(self, ifile=None, *args, **kwargs):
+        """
+        Template page method.
+        """
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader(self.templatedir))
+        for arg in args:
+            kwargs.update(**arg)
+        kwargs.update(**{"quote":quote})
+        tmpl = os.path.join(self.templatedir, ifile + '.tmpl')
+        if  os.path.exists(tmpl):
+            template = env.get_template(ifile + '.tmpl')
+            return template.render(kwargs)
         else:
             self.warning("%s not found at %s" % (ifile, self.templatedir))
             return "Template %s not known" % ifile

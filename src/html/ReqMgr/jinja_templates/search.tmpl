@@ -1,0 +1,22 @@
+<h2>Search interface</h2>
+<hr/>
+DB statistics: N-docs, Number TB, last update: 20140303
+
+<br/>
+This form will provide search capabilities. For example you can enter
+the following dataset
+<br/>
+<mark>/RelValSingleMuPt10/CMSSW_6_2_0-PRE_ST62_V8-v1/GEN-SIM-RECO</mark>
+<br/>
+to see how it works.
+
+<form method="post" action="{{base}}/request" class="forms">
+    <label class="input-groups">
+        <input type="text" name="uinput" placeholder="Search" />
+        <span class="btn-append">
+            <button class="btn btn-blue">Search</button>
+        </span>
+    </label>
+</form>
+
+<div id="results">{{content}}</div>

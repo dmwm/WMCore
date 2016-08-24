@@ -1,0 +1,34 @@
+<h6>Confirmation</h6>
+<hr/>
+<div id="results">
+{% if isinstance(ticket, list) -%}
+{% for t in ticket -%}
+Your request &nbsp;<span class="ticket">{{t}}</span>&nbsp;
+has been created on <kbd>$time.ctime()</kbd>
+<hr/>
+{%- endfor -%}
+{% else -%}
+Your request &nbsp;<span class="ticket">{{ticket}}</span>&nbsp;
+has been created on <kbd>$time.ctime()</kbd>
+{%- endif -%}
+<br/>
+{% if status=="ok" -%}
+{%- set scol="green" %}
+{% else -%}
+{%- set scol="red" %}
+{%- endif -%}
+Status: <span style="background-color:white;color:{{scol}}">{{status}}</span>
+<br/>
+<br/>
+<h6>Further actions</h6>
+<ul>
+{% if not isinstance(ticket, list) -%}
+<li>
+<a href="{{base}}/requests?rid={{ticket}}">Check</a> status of this request
+</li>
+{%- endif -%}
+<li>
+<a href="{{base}}/requests?user={{user}}">Check</a> status of all requests
+</li>
+</ul>
+</div>

@@ -1,0 +1,134 @@
+<! -- doc.tmpl -->
+{% if table -%}
+<header class="group">
+    <nav class="navbar navbar-left">
+    <h3>{{title}}</h3>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-table" onclick="Activate('table', ['json', 'comment'])">Table</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="Activate('json', ['table', 'comment'])">JSON</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="activateSplitting()">Splitting</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="ShowConfig()">Config</button></li>
+        <li><button class="btn btn-small btn-yellow" id="btn-comment" onclick="Activate('comment', ['table', 'json'])">Comment</button></li>
+        </ul>
+    </nav>
+</header>
+<hr/>
+<header class="group">
+<nav class="navbar navbar-right">
+<ul>
+<li>
+Status: <b>{{status}}</b> to
+<select id="RequestStatus" name="RequestStatus">
+<option value="{{status}}">{{status}}</option>
+{% for val in transitions -%}
+<option value="{{val}}">{{val}}</option>
+{%- endfor -%}
+</select>
+</li>
+<li>
+<input type="hidden" id="RequestName" name="RequestName" value="{{name}}" />
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:ChangeRequestStatus()">Submit</button>
+</li>
+</nav>
+</header>
+
+<div name="edit-table" id="edit-table">
+{{table}}
+</div>
+
+<div name="edit-json" id="edit-json" class="hide">
+<h3>Series of requests</h3>
+<pre><code>
+{{jsondata}}
+</code></pre>
+</div>
+{% else -%}
+<pre><code>
+{{jsondata}}
+</code></pre>
+{%- endif -%}
+
+<div name="edit-comment" id="edit-comment">
+{%- set tstamp=time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(ts)) %}
+<form method="post" action="{{base}}/record2logdb" class="forms">
+<fieldset>
+    Name: {{user}}
+    <input type="hidden" name="user" value="{{user}}" />
+    <br/>
+    Time: {{tstamp}}
+    <input type="hidden" name="tstamp" value="{{ts}}" />
+    <input type="hidden" name="userdn" value="{{userdn}}" />
+    <input type="hidden" name="request" value="{{name}}" />
+    <legend>LogDB entry</legend>
+    <label>
+        Add your comment below:
+        <textarea name="message" class="width-100" rows="5"></textarea>
+    </label>
+<p>
+    <input type="submit" class="btn btn-small unit-push-right" value="Add to LogDB" />
+</p>
+</fieldset>
+</form>
+</div>
+
+<div id="splitting" name="splitting" class="hide">
+{% if status=="new" or status=="assignment-approved" -%}
+    <div id="splittingTasks"></div>
+{% else -%}
+<div class="tasks">
+    <div align="right"><a href="javascript:HideTag('splitting')">Close</a></div>
+    <pre><code>{{tasks}}</code></pre>
+    <div align="right"><a href="javascript:HideTag('splitting')">Close</a></div>
+</div>
+{%- endif -%}
+</div>
+
+<script>
+function ChangeRequestStatus() {
+    var doc={{doc}};
+    var parameters = {'RequestStatus':$('#RequestStatus').val()};
+    if(parameters["RequestStatus"] == '{{status}}' || parameters["status"] == 'no-change') {
+        delete parameters["RequestStatus"];
+    }
+    // look-up all visible inputs
+    var inputs = $('.visible_input');
+    for(var i=0; i<inputs.length; i++) {
+        var elem = inputs[i];
+        if(elem.value != doc[elem.name]) {
+            parameters[elem.name] = elem.value;
+        }
+    }
+    ajaxRequest('{{base}}/data/request/{{name}}', parameters, 'PUT');
+}
+function Activate(tag, hidetags) {
+    var id = document.getElementById('btn-'+tag);
+    id.className="btn btn-small btn-active";
+    for(var i=0; i<hidetags.length; i++) {
+        id = document.getElementById('btn-'+hidetags[i]);
+        id.className="btn btn-small";
+        if(hidetags[i]=='comment') id.className += ' btn-yellow';
+        HideTag('edit-'+hidetags[i]);
+    }
+    ShowTag('edit-'+tag);
+}
+function UpdateTaskParams() {
+    var parameters = $('#taskParams').val();
+    ajaxRequest('{{base}}/data/splitting/{{rid}}', JSON.parse(parameters), 'POST');
+}
+function ShowConfig() {
+    var url="{{base}}/config?name={{rid}}";
+    load(url);
+}
+function loadSpec(tag) {
+    var url="{{base}}/create?form="+tag.value;
+    load(url);
+}
+function activateSplitting() {
+    ShowTag('splitting');
+    var path = '{{base}}/data/splitting/web_form/{{name}}';
+    ajaxRequestTaskData(path, 'splittingTasks');
+}
+</script>
+<! -- End of doc.tmpl -->

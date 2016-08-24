@@ -1,0 +1,24 @@
+<h2>Welcome to Request Manager interface</h2>
+<hr/>
+
+<div id="requests">
+Supported request statuses:
+<ul>
+{% for status in requests -%}
+<li>
+<a href="{{base}}/requests?status={{status}}">{{status}}</a>
+{% for key, vals in rdict.items() -%}
+{% if key==status -%}
+<ul>
+{% for item in vals -%}
+{% if item!=status -%}
+<li><a href="{{base}}/requests?status={{item}}">{{item}}</a>
+{%- endif -%}
+{%- endfor -%}
+</ul>
+{%- endif -%}
+{%- endfor -%}
+</li>
+{%- endfor -%}
+</ul>
+</div>

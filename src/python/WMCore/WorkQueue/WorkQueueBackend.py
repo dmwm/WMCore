@@ -134,6 +134,7 @@ class WorkQueueBackend(object):
             return
         # store spec file separately - assume all elements share same spec
         self.insertWMSpec(units[0]['WMSpec'])
+        newUnitsInserted = []
         for unit in units:
 
             # cast to couch
@@ -148,10 +149,12 @@ class WorkQueueBackend(object):
             if unit._couch.documentExists(unit.id):
                 self.logger.info('Element "%s" already exists, skip insertion.' % unit.id)
                 continue
+            else:
+                newUnitsInserted.append(unit)
             unit.save()
 
         unit._couch.commit(all_or_nothing=True)
-        return
+        return newUnitsInserted
 
     def createWork(self, spec, **kwargs):
         """Return the Inbox element for this spec.

@@ -1008,10 +1008,6 @@ class WorkQueue(WorkQueueBase):
         and already split inbox element.
         """
         totalUnits = []
-        totalToplevelJobs = 0
-        totalEvents = 0
-        totalLumis = 0
-        totalFiles = 0
         # split each top level task into constituent work elements
         # get the acdc server and db name
         for topLevelTask in wmspec.taskIterator():
@@ -1038,16 +1034,26 @@ class WorkQueue(WorkQueueBase):
                 if unit['Mask']:
                     msg += ' on events %d-%d' % (unit['Mask']['FirstEvent'], unit['Mask']['LastEvent'])
                 self.logger.info(msg)
-                totalToplevelJobs += unit['Jobs']
-                totalEvents += unit['NumberOfEvents']
-                totalLumis += unit['NumberOfLumis']
-                totalFiles += unit['NumberOfFiles']
             totalUnits.extend(units)
 
-        return (totalUnits, {'total_jobs': totalToplevelJobs,
-                             'input_events': totalEvents,
-                             'input_lumis': totalLumis,
-                             'input_num_files': totalFiles}, rejectedWork)
+        return (totalUnits, rejectedWork)
+    
+    def _getTotalStats(self, units):
+        totalToplevelJobs = 0
+        totalEvents = 0
+        totalLumis = 0
+        totalFiles = 0
+        
+        for unit in units:
+            totalToplevelJobs += unit['Jobs']
+            totalEvents += unit['NumberOfEvents']
+            totalLumis += unit['NumberOfLumis']
+            totalFiles += unit['NumberOfFiles']
+        
+        return {'total_jobs': totalToplevelJobs,
+                'input_events': totalEvents,
+                'input_lumis': totalLumis,
+                'input_num_files': totalFiles}
 
     def processInboundWork(self, inbound_work=None, throw=False, continuous=False):
         """Retrieve work from inbox, split and store
@@ -1070,12 +1076,14 @@ class WorkQueue(WorkQueueBase):
                 if work and not continuous:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
-                    work, totalStats, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
+                    work, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
                                                                      mask=inbound['Mask'], inbound=inbound,
                                                                      continuous=continuous)
 
                     # save inbound work to signal we have completed queueing
-                    self.backend.insertElements(work, parent=inbound)  # if this fails, rerunning will pick up here
+                    newWork = self.backend.insertElements(work, parent=inbound)  # if this fails, rerunning will pick up here
+                    #get statistics for the new work
+                    totalStats = self._getTotalStats(newWork)
 
                     if not continuous:
                         # Update to Acquired when it's the first processing of inbound work

@@ -862,7 +862,7 @@ class PyCondorPlugin(BasePlugin):
 
             # Set job priority from the request and task priority
             task_priority = int(job.get("taskPriority", self.defaultTaskPriority))
-            prio = int(job.get('requestPriority', 0))
+            prio = int(job.get('priority', 0))
             jdl.append("priority = %i\n" % (prio + task_priority * self.maxTaskPriority))
 
             jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))

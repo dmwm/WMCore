@@ -9,6 +9,7 @@ import os
 import os.path
 import pickle
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import unittest
@@ -53,19 +54,10 @@ class SandboxCreator_t(unittest.TestCase):
         # make sure the sandbox is there
         self.fileExistsTest( extractDir + '/WMCore.zip')
 
-        # EWV removed this code and related code that was mucking with sys.modules because it broke mock emulators
-        # now test that zipimport works
-        # This gets replaced in setup/teardown
-        # sys.path.append(os.path.join(extractDir, 'WMCore.zip'))
-        # os.system('ls -lah %s' % extractDir)
-        # Gotta remove this since python caches subpackage folders in package.__path__
-        # del sys.modules['WMCore']
-        # if 'WMCore.ZipImportTestModule' in sys.modules:
-        #     del sys.modules['WMCore.ZipImportTestModule']
-        # import WMCore.ZipImportTestModule as zipImport
-        # sys.modules = copy.copy(self.modulesBackup)
-        # self.assertTrue( 'WMCore.zip' in zipImport.__file__ )
-        # EWV: See if we can find a way to put similar code back in
+        # Test that zipimport works on the dummy module that SandboxCreator inserts
+        output = subprocess.check_output(['python', '-m', 'WMCore.ZipImportTestModule'],
+                                         env={'PYTHONPATH': os.path.join(extractDir, 'WMCore.zip')})
+        self.assertIn('ZIPIMPORTTESTOK', output)
 
         # make sure the pickled file is the same
         pickleHandle = open( extractDir + "/WMSandbox/WMWorkload.pkl")
@@ -86,28 +78,10 @@ class SandboxCreator_t(unittest.TestCase):
         shutil.rmtree( extractDir )
         shutil.rmtree( tempdir )
 
-    def fileExistsTest(self,file,msg = None):
-        if (msg == None):
+    def fileExistsTest(self, file, msg=None):
+        if msg is None:
             msg = "Failed file existence test for (%s)" % file
-        self.assertEqual(os.path.exists(file),True,msg)
-
-    # EWV: No need for this code right now, but if we need to do this, this is the way rather than using tearDown()
-    # def setUp(self):
-    #     """
-    #     Backup sys.path and sys.modules, add a cleanup to guarantee they restore
-    #     """
-    #
-    #     # self.backupPath = copy.deepcopy(sys.path)
-    #     # self.modulesBackup = copy.copy(sys.modules)
-    #     # self.addCleanup(self.restorePathModules)
-    #
-    # def restorePathModules(self):
-    #     """
-    #     Restore sys.path and sys.modules from backups
-    #     """
-    #
-    #     # sys.path = copy.deepcopy(self.backupPath)
-    #     # sys.modules = copy.copy(self.modulesBackup)
+        self.assertEqual(os.path.exists(file), True, msg)
 
 
 if __name__ == "__main__":

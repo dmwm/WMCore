@@ -77,7 +77,7 @@ ACTIVE_STATUS = ["new",
 
 # if the state is not defined here (new, assignment-approved) allows all the property to get 
 ALLOWED_ACTIONS_FOR_STATUS = {
-                 "assignment-approved":["Team", "SiteWhitelist", "SiteBlacklist",
+                 "assignment-approved":["RequestPriority", "Team", "SiteWhitelist", "SiteBlacklist",
                                         "AcquisitionEra", "ProcessingString", "ProcessingVersion", 
                                         "Dashboard", "MergedLFNBase", "MaxRSS", "TrustSitelists", 
                                         "UnmergedLFNBase", "MinMergeSize", "MaxMergeSize",
@@ -124,6 +124,12 @@ def get_modifiable_properties(status = None):
     TODO: Currently gets the result from hardcoded list. change to get from configuration or db
     """
     if status:
-        return ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all')
+        return ALLOWED_ACTIONS_FOR_STATUS.get(status, 'all_attributes')
     else:
         return ALLOWED_ACTIONS_FOR_STATUS
+
+def get_protected_properties():
+    """
+    returns properties never be modified once request is created
+    """
+    return ["RequestName", "_id"]

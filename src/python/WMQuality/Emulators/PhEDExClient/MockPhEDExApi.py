@@ -60,17 +60,18 @@ class MockPhEDExApi(object):
         Returns:
             a fake list of blocks and the fakes sites they are at
         """
-        if dataset:
+        if isinstance(dataset, list):
             dataset = dataset[0] # Dataset is a list in these tests
-
+        if dataset:
+            # TODO: Generalize this and maybe move dataset detection into sitesByBlock
             if dataset == PILEUP_DATASET:
                 return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
             else:
-                # TODO This is the real block name for PILEUP_DATASET - This should get it from the PhEDEx mock
                 try:
                     DBS3Reader(PROD_DBS).checkDatasetPath(dataset)
-                    return {
-                        '%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']}
+                    blocks = DBS3Reader(PROD_DBS).dbs.listBlocks(dataset=dataset)
+                    singleBlock = blocks[0]['block_name']
+                    return {singleBlock: self.sitesByBlock(singleBlock)}
                 except DBSReaderError:
                     return {'%s#0fcb2b12-d27e-11e0-91b1-003048caaace' % dataset: []}
 

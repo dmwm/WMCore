@@ -453,7 +453,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             outputs = policyInstance.getDatasetLocations(
                 {'https://cmsweb.cern.ch/dbs/prod/global/DBSReader': Tier1ReRecoWorkload.listInputDatasets()})
             for dataset in outputs:
-                self.assertEqual(sorted(outputs[dataset]), ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
+                self.assertItemsEqual(outputs[dataset], ['T2_XX_SiteA', 'T2_XX_SiteB'])
         return
 
     def testPileupData(self):

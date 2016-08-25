@@ -5,21 +5,19 @@
     Tests sandbox production
 """
 
-import unittest
-
-import tempfile
+import os
 import os.path
-import tarfile
 import pickle
 import shutil
-import sys
-import copy
-import os
-
+import tarfile
+import tempfile
+import unittest
 
 import WMCore_t.WMSpec_t.TestWorkloads as TestWorkloads
+
 import WMCore.WMRuntime.SandboxCreator as SandboxCreator
 import WMCore.WMSpec.WMTask as WMTask
+
 
 class SandboxCreator_t(unittest.TestCase):
 
@@ -55,18 +53,19 @@ class SandboxCreator_t(unittest.TestCase):
         # make sure the sandbox is there
         self.fileExistsTest( extractDir + '/WMCore.zip')
 
+        # EWV removed this code and related code that was mucking with sys.modules because it broke mock emulators
         # now test that zipimport works
         # This gets replaced in setup/teardown
-        sys.path.insert(0, os.path.join(extractDir, 'WMCore.zip'))
-        os.system('ls -lah %s' % extractDir)
+        # sys.path.append(os.path.join(extractDir, 'WMCore.zip'))
+        # os.system('ls -lah %s' % extractDir)
         # Gotta remove this since python caches subpackage folders in package.__path__
-        del sys.modules['WMCore']
-        if 'WMCore.ZipImportTestModule' in sys.modules:
-            del sys.modules['WMCore.ZipImportTestModule']
-
-        import WMCore.ZipImportTestModule
-        sys.modules = copy.copy(self.modulesBackup)
-        self.assertTrue( 'WMCore.zip' in WMCore.ZipImportTestModule.__file__ )
+        # del sys.modules['WMCore']
+        # if 'WMCore.ZipImportTestModule' in sys.modules:
+        #     del sys.modules['WMCore.ZipImportTestModule']
+        # import WMCore.ZipImportTestModule as zipImport
+        # sys.modules = copy.copy(self.modulesBackup)
+        # self.assertTrue( 'WMCore.zip' in zipImport.__file__ )
+        # EWV: See if we can find a way to put similar code back in
 
         # make sure the pickled file is the same
         pickleHandle = open( extractDir + "/WMSandbox/WMWorkload.pkl")
@@ -92,16 +91,24 @@ class SandboxCreator_t(unittest.TestCase):
             msg = "Failed file existence test for (%s)" % file
         self.assertEqual(os.path.exists(file),True,msg)
 
-    def setUp(self):
-        # need to take a slice to make a real copy
-        self.backupPath    = sys.path[:]
-        self.modulesBackup = copy.copy(sys.modules)
-
-    def tearDown(self):
-        sys.path    = self.backupPath[:]
-        sys.modules = copy.copy(self.modulesBackup)
+    # EWV: No need for this code right now, but if we need to do this, this is the way rather than using tearDown()
+    # def setUp(self):
+    #     """
+    #     Backup sys.path and sys.modules, add a cleanup to guarantee they restore
+    #     """
+    #
+    #     # self.backupPath = copy.deepcopy(sys.path)
+    #     # self.modulesBackup = copy.copy(sys.modules)
+    #     # self.addCleanup(self.restorePathModules)
+    #
+    # def restorePathModules(self):
+    #     """
+    #     Restore sys.path and sys.modules from backups
+    #     """
+    #
+    #     # sys.path = copy.deepcopy(self.backupPath)
+    #     # sys.modules = copy.copy(self.modulesBackup)
 
 
 if __name__ == "__main__":
-    #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

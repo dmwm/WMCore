@@ -77,6 +77,17 @@ ACTIVE_STATUS = ["new",
 
 # if the state is not defined here (new, assignment-approved) allows all the property to get 
 ALLOWED_ACTIONS_FOR_STATUS = {
+                 "assignment-approved":["Team", "SiteWhitelist", "SiteBlacklist",
+                                        "AcquisitionEra", "ProcessingString", "ProcessingVersion", 
+                                        "Dashboard", "MergedLFNBase", "MaxRSS", "TrustSitelists", 
+                                        "UnmergedLFNBase", "MinMergeSize", "MaxMergeSize",
+                                        "MaxMergeEvents", "MaxVSize", 
+                                        "BlockCloseMaxWaitTime", 
+                                        "BlockCloseMaxFiles", "BlockCloseMaxEvents", "BlockCloseMaxSize",
+                                        "SoftTimeout", "GracePeriod",
+                                        "TrustPUSitelists", "CustodialSites", "CustodialSubType", 
+                                        "NonCustodialSites", "NonCustodialSubType", 
+                                        "AutoApproveSubscriptionSites", "SubscriptionPriority"],
                  "assigned": ["RequestPriority"],
                  "acquired": ["RequestPriority"],
                  "running": ["RequestPriority"],

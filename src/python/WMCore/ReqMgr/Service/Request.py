@@ -530,7 +530,8 @@ class Request(RESTEntity):
                 "cascade" in request_args:
                 report = self._handleCascadeUpdate(workload, request_args, dn)
                 
-            elif len(request_args) == 1:
+            elif len(request_args) == 1 or req_status in ["aborted", "force-complete", "rejected"]:
+                # If status chnage is to aborted, force-complete, rejected, ignore other argument
                 report = self._handleOnlyStateTransition(workload, req_status, dn)
             else:
                 raise InvalidSpecParameterValue(

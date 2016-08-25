@@ -110,11 +110,17 @@ def json2table(jsondata, web_ui_map, visible_attrs=None):
         if  key in web_ui_map:
             kname = web_ui_map[key]
         else:
-            kname = key.capitalize().replace('_', ' ')
+            # use original key
+            kname = key
         cells[key] = (kname, val)
     if  visible_attrs and isinstance(visible_attrs, list):
         for attr in visible_attrs:
-            kname, val = cells.pop(attr)
+            key, val = cells.pop(attr)
+            if  key in web_ui_map:
+                kname = web_ui_map[key]
+            else:
+                # use original key
+                kname = key
             val = val.replace('width-100', 'width-100 visible_input')
             table += "<tr><td>%s</td><td class=\"visible\">%s</td></tr>\n" % (kname, val)
     for key, pair in cells.items():

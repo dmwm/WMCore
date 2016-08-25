@@ -398,7 +398,7 @@ class ReqMgrService(TemplatedPage):
         jsondata = get_request_template_from_type(spec)
         # create templatized page out of provided forms
         self.update_scripts()
-        content = self.templatepage('create', table=json2table(jsondata, web_ui_names()),
+        content = self.templatepage('create', table=json2table(jsondata, web_ui_names(), jsondata),
                                     jsondata=json2form(jsondata, indent=2, keep_first_value=True), name=spec,
                                     scripts=[s for s in self.sdict.keys() if s != 'ts'],
                                     specs=all_specs)
@@ -440,9 +440,12 @@ class ReqMgrService(TemplatedPage):
             if status in transitions:
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
+            filteredDoc = {}
+            for prop in visible_attrs:
+                filteredDoc[prop] = doc.get(prop, "")
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
-                                        table=json2table(doc, web_ui_names(), visible_attrs),
+                                        table=json2table(filteredDoc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         doc=json.dumps(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())

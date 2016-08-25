@@ -13,7 +13,9 @@ from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError
-
+"""
+NOT USED!
+"""
 class HadoopImpl(StageOutImplV2):
     """
     _HadoopImpl_

@@ -18,7 +18,9 @@ from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 _CheckExitCodeOption = True
 
 
-
+"""
+NOT USED!
+"""
 class SRMImpl(StageOutImplV2):
     """
     _SRMImpl_

@@ -14,7 +14,9 @@ from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommand
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
-
+"""
+NOT USED!
+"""
 class RFCPImpl(StageOutImplV2):
     """
     _RFCPImpl_

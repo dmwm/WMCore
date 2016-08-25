@@ -12,7 +12,9 @@ import os.path
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutFailure
 
-
+"""
+NOT USED!
+"""
 class CPImpl(StageOutImplV2):
     """
     _CPImpl_

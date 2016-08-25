@@ -3,20 +3,20 @@ import os
 import logging
 logging.basicConfig(level = logging.DEBUG)
 import unittest
-import mox
+from mox3 import mox
 import tempfile
 import os.path
-import WMCore_t.Storage_t.Plugins_t.PluginTestBase_t
 from WMCore.Storage.Plugins.LCGImpl import LCGImpl as ourPlugin
 import WMCore.Storage.Plugins.LCGImpl
 moduleWeAreTesting = WMCore.Storage.Plugins.LCGImpl
 
 import subprocess
-from WMCore.WMBase import getWMBASE
-from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
+from WMCore.Storage.StageOutError import StageOutFailure
 
 from nose.plugins.attrib import attr
-
+"""
+NOT USED!
+"""
 class popenMockHelper(object):
     def Popen(self,args,**kwargs):
         # an empty thing so I can mock this

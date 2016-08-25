@@ -14,7 +14,9 @@ import shutil
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutFailure
 
-
+"""
+NOT USED!
+"""
 class TestLocalCopyImpl(StageOutImplV2):
     """
     _LocalCopyImp_

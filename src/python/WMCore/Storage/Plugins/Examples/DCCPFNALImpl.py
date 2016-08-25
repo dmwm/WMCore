@@ -17,7 +17,9 @@ from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.WMException import WMException
 from WMCore.WMBase import getWMBASE
-
+"""
+NOT USED!
+"""
 _CheckExitCodeOption = True
 
 def pnfsPfn(pfn):

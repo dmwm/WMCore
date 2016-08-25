@@ -16,7 +16,9 @@ from WMCore.Storage.StageOutError import StageOutFailure
 
 
 
-
+"""
+NOT USED!
+"""
 class TestFailImpl(StageOutImplV2):
     """
     _FailImpl_

@@ -15,7 +15,9 @@ import logging
 
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 
-
+"""
+NOT USED!
+"""
 _CheckExitCodeOption = True
 
 

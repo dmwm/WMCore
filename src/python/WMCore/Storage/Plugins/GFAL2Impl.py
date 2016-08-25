@@ -13,7 +13,9 @@ from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
-
+"""
+NOT USED!
+"""
 class GFAL2Impl(StageOutImpl2):
     """
     _GFAL2Impl_

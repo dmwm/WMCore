@@ -5,20 +5,20 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
-
 import os
 import re
+import shutil
 import tarfile
 import tempfile
-import WMCore.WMSpec.WMTask as WMTask
-import WMCore.WMSpec.WMStep as WMStep
 import urlparse
 import zipfile
-import shutil
 
 import PSetTweaks
 import Utils
+import WMCore.WMSpec.WMStep as WMStep
+import WMCore.WMSpec.WMTask as WMTask
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
+
 
 def tarballExclusion(path):
     """
@@ -168,10 +168,10 @@ class SandboxCreator:
 
             # Add a dummy module for zipimport testing
             (handle, dummyModulePath) = tempfile.mkstemp()
-            os.write( handle, "#!/usr/bin/env python\n")
-            os.write( handle, "# This file should only appear in zipimports, used for testing\n")
-            os.close( handle )
-            zipFile.write( filename = dummyModulePath, arcname = 'WMCore/ZipImportTestModule.py')
+            os.write(handle, "#!/usr/bin/env python\n")
+            os.write(handle, "print('ZIPIMPORTTESTOK')\n")
+            os.close(handle)
+            zipFile.write(filename=dummyModulePath, arcname='WMCore/ZipImportTestModule.py')
 
             # Add the wmcore zipball to the sandbox
             zipFile.close()

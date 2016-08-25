@@ -3,7 +3,7 @@ import os
 import logging
 logging.basicConfig(level = logging.DEBUG)
 import unittest
-from mox3 import mox
+# from mox3 import mox
 import tempfile
 import os.path
 from WMCore.Storage.Plugins.LCGImpl import LCGImpl as ourPlugin
@@ -24,7 +24,7 @@ class popenMockHelper(object):
         pass
 
 
-
+@unittest.skip("Plugins are not used. Mocking is not supported")
 class SRMV2ImplTest(unittest.TestCase):
 
     def setUp(self):

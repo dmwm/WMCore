@@ -1,6 +1,6 @@
 import os
 import unittest
-from mox3 import mox
+# from mox3 import mox
 from WMCore.Storage.Plugins.FNALImpl import FNALImpl as ourPlugin
 
 from WMCore.Storage.Plugins.CPImpl import CPImpl as ourFallbackPlugin
@@ -16,7 +16,7 @@ class RunCommandThing:
     def runCommand(self,things):
         return ("dummy1", "dummy2")
 
-
+@unittest.skip("Plugins are not used. Mocking is not supported")
 class DCCPFNALImplTest(unittest.TestCase):
 
     def setUp(self):

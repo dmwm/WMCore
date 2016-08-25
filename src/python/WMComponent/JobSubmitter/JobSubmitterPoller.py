@@ -329,13 +329,13 @@ class JobSubmitterPoller(BaseWorkerThread):
             if newJob['type'] in ["Repack", "Merge", "Cleanup", "LogCollect"]:
                 highIOjob = True
 
-            # Create a job dictionary object and put it in the cache
+            # Create a job dictionary object and put it in the cache (needs to be in sync with RunJob)
             jobInfo = {'id': jobID,
                        'requestName': newJob['request_name'],
                        'taskName': newJob['task_name'],
                        'taskType': newJob['type'],
                        'cache_dir': newJob["cache_dir"],
-                       'requestPriority': newJob['wf_priority'],
+                       'priority': newJob['wf_priority'],
                        'taskID': newJob['task_id'],
                        'retry_count': newJob["retry_count"],
                        'highIOjob': highIOjob,
@@ -588,7 +588,6 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             sandbox = self.sandboxPackage[package]
             jobs = jobsToSubmit.get(package, [])
-
             for job in jobs:
                 job['location'], job['plugin'], job['site_cms_name'] = self.getSiteInfo(job['custom']['location'])
                 job['sandbox'] = sandbox

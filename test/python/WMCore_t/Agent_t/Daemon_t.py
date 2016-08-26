@@ -5,7 +5,6 @@ _Daemon_t_
 Unit tests for  daemon creation.
 """
 
-import commands
 import unittest
 import logging
 import os

@@ -11,7 +11,6 @@ Unit tests for the WMBS File class.
 import unittest
 import logging
 import os
-import commands
 import threading
 import random
 

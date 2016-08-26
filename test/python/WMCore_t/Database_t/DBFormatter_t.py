@@ -10,7 +10,6 @@ from __future__ import print_function
 
 
 
-import commands
 import logging
 import unittest
 import os

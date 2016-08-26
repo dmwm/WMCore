@@ -9,14 +9,13 @@ code style.
 """
 from __future__ import print_function
 
-
-
-
-
-import commands
 import os
 import sys
-
+try:
+    from commands import getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getstatusoutput
 
 class Code:
     """
@@ -63,7 +62,7 @@ class Code:
             localPath = os.path.join(self.baseDir, packageDir)
             # execute the quality script which produces a codeQuality.txt file
             command = self.script+' '+localPath
-            result = commands.getstatusoutput(command)
+            result = getstatusoutput(command)
             for entry in result:
                 print(str(entry))
             # parse the code quality file for the rating:

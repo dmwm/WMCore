@@ -7,12 +7,14 @@ Implementation of StageOutImpl interface for DCCPFNAL
 from __future__ import print_function
 
 import os
-import commands
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-
-from WMCore.WMException import WMException
+try:
+    from commands import getoutput, getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getoutput, getstatusoutput
 
 _CheckExitCodeOption = True
 
@@ -85,7 +87,7 @@ class DCCPFNALImpl(StageOutImpl):
             checkdircmd="/bin/ls %s > /dev/null " % targetdir
             print("Check dir existence : %s" %checkdircmd)
             try:
-                (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
+                (checkdirexitCode, output) = getstatusoutput(checkdircmd)
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd
@@ -121,7 +123,7 @@ class DCCPFNALImpl(StageOutImpl):
 
         if pfn.find('/store/unmerged/') == -1:
             print("Translating PFN: %s\n To use dcache door" % pfn)
-            dcacheDoor = commands.getoutput(
+            dcacheDoor = getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)

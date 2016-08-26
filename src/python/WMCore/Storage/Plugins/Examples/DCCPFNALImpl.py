@@ -7,7 +7,11 @@ Implementation of StageOutImpl interface for DCCPFNAL
 from __future__ import print_function
 
 import os
-import commands
+try:
+    from commands import getoutput
+except ImportError:
+    # python3
+    from subprocess import getoutput
 import logging
 import subprocess
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
@@ -191,7 +195,7 @@ class DCCPFNALImpl(StageOutImplV2):
 
         if pfn.find('/store/unmerged/lustre/') == -1:
             print("Translating PFN: %s\n To use dcache door" % pfn)
-            dcacheDoor = commands.getoutput(
+            dcacheDoor = getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)

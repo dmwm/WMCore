@@ -5,7 +5,7 @@ _Subscription_t_
 Testcase for the Subscription class
 """
 
-import unittest, os, logging, commands, random
+import unittest, os, logging, random
 
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.File import File

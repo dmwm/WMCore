@@ -3,7 +3,6 @@ import unittest
 import mox
 import WMCore_t.Storage_t.Plugins_t.PluginTestBase_t
 from WMCore.Storage.Plugins.FNALImpl import FNALImpl as ourPlugin
-
 from WMCore.Storage.Plugins.CPImpl import CPImpl as ourFallbackPlugin
 import subprocess
 from WMCore.WMBase import getWMBASE

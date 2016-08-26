@@ -5,8 +5,6 @@ _UnpackUserTarball_
 Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
-
-import commands
 import os
 import re
 import shutil
@@ -16,7 +14,11 @@ import tempfile
 import urllib
 from urllib import URLopener
 import urlparse
-
+try:
+    from commands import getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getstatusoutput
 
 def setHttpProxy(url):
     """
@@ -26,7 +28,7 @@ def setHttpProxy(url):
     if 'http_proxy' in os.environ:
         return os.environ['http_proxy']
 
-    status, output = commands.getstatusoutput('cmsGetFnConnect frontier://smallfiles')
+    status, output = getstatusoutput('cmsGetFnConnect frontier://smallfiles')
     if status:
         return None
 

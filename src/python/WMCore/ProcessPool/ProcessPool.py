@@ -13,8 +13,11 @@ import logging
 import os
 import threading
 import traceback
-import cPickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMFactory import WMFactory
@@ -106,7 +109,7 @@ class ProcessPool:
             msg = "Something's in the way of the ProcessPool config: %s" % self.configPath
             logging.error(msg)
         f = open(self.configPath, 'w')
-        cPickle.dump(config, f)
+        pickle.dump(config, f)
         f.close()
 
         # Set up ZMQ
@@ -389,7 +392,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     f = open(configPath, 'r')
-    config = cPickle.load(f)
+    config = pickle.load(f)
     f.close()
 
 

@@ -7,10 +7,13 @@ __all__ = []
 
 import os
 import os.path
-import cPickle
 import logging
 import traceback
 import threading
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from WMCore.WorkerThreads.BaseWorkerThread  import BaseWorkerThread
 from WMCore.DAOFactory                      import DAOFactory
@@ -149,7 +152,7 @@ def saveJob(job, workflow, sandbox, wmTask = None, jobNumber = 0,
     job['allowOpportunistic'] = allowOpportunistic
 
     output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-    cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+    pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
     output.close()
 
 

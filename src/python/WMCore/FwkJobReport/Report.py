@@ -9,12 +9,15 @@ Framework job report object.
 from __future__ import print_function
 
 import re
-import cPickle
 import logging
 import sys
 import traceback
 import time
 import math
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from WMCore.Configuration import ConfigSection
 
@@ -345,7 +348,7 @@ class Report:
         Pickle this object and save it to disk.
         """
         handle = open(filename, 'w')
-        cPickle.dump(self.data, handle)
+        pickle.dump(self.data, handle)
         handle.close()
         return
 
@@ -356,7 +359,7 @@ class Report:
         Load a pickled FWJR from disk.
         """
         handle = open(filename, 'r')
-        self.data = cPickle.load(handle)
+        self.data = pickle.load(handle)
         handle.close()
 
         # old self.report (if it existed) became unattached

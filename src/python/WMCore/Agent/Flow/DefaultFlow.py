@@ -12,8 +12,11 @@ Sample configuration for generating workflow.
 
 
 import os
-import cPickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMCore.Agent.Configuration import Configuration
 config = Configuration()
 config.section_('General')
@@ -32,7 +35,7 @@ config.General.plugins = []
 # synchronizer is for trigger module.
 synchronizer = {'ID' : 'JobPostProcess', \
                 'action' : 'PA.Core.Trigger.PrepareCleanup'}
-config.General.synchronizers.append(cPickle.dumps(synchronizer))
+config.General.synchronizers.append(pickle.dumps(synchronizer))
 
 # A handler is a piece of code that takes as input a message (and its payload)
 # and performs certain actions. For example: a submit job handler takes as
@@ -61,86 +64,86 @@ config.General.synchronizers.append(cPickle.dumps(synchronizer))
 handler = {'messageIn'   : 'CreateJob', \
            'messageOut'  : 'SubmitJob|JobCreateFailed', \
            'component'   : 'JobCreator'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'ReCreateJob', \
            'messageOut'  : 'SubmitJob|JobCreateFailed', \
            'component'   : 'JobCreator'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'SubmitJob', \
            'messageOut'  : 'TrackJob|JobSubmitFailed', \
            'component'   : 'JobSubmitter', \
            'threading'   : 'yes', \
            'createSynchronizer' : 'JobPostProcess'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'ReSubmitJob', \
            'messageOut'  : 'TrackJob|JobSubmitFailed', \
            'component'   : 'JobSubmitter', \
            'createSynchronizer' : 'JobPostProcess'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'TrackJob', \
            'messageOut'  : 'JobProcessSuccess|JobProcessFailed', \
            'component'   : 'JobTracker', \
            'threading'   : 'yes'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobProcessFailed', \
            'configurable': 'yes', \
            'messageOut'  : 'ResubmitJob|JobFailed', \
            'component'   : 'ErrorHandler'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobSubmitFailed', \
            'configurable': 'yes', \
            'messageOut'  : 'ResubmitJob|JobFailed', \
            'component'   : 'ErrorHandler'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobCreateFailed', \
            'configurable': 'yes', \
            'messageOut'  : 'ResubmitJob|JobFailed', \
            'component'   : 'ErrorHandler'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'CleanJob', \
            'messageOut'  : '', \
            'component'   : 'JobCleanup'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobFailed', \
            'messageOut'  : '', \
            'component'   : 'JobCleanup'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobSuccess', \
            'messageOut'  : '', \
            'component'   : 'JobCleanup'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobProcessSuccess', \
            'messageOut'  : '', \
            'component'   : 'DBS', \
            'synchronize' : 'JobPostProcess'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobProcessSucess', \
            'messageOut'  : 'AccountData', \
            'component'   : 'MergeSensor', \
            'synchronize' : 'JobPostProcess', \
            'threading'   : 'yes'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 handler = {'messageIn'   : 'JobProcessSuccess', \
            'messageOut'  : '', \
            'component'   : 'Phedex', \
            'synchronize' : 'JobPostProcess'}
-config.General.handlers.append(cPickle.dumps(handler))
+config.General.handlers.append(pickle.dumps(handler))
 
 
 plugin = {'component'  : 'JobSubmitter', \
           'plugins'    : 'Condor,GLite', \
           'handler'    : 'SubmitJob'}
-config.General.plugins.append(cPickle.dumps(plugin))
+config.General.plugins.append(pickle.dumps(plugin))

@@ -17,11 +17,14 @@ attribute.
 
 
 import base64
-import cPickle
 import logging
 import threading
 import os
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
@@ -166,7 +169,7 @@ class ThreadSlave:
         # we commit here because if the component crashes this is where
         # if will look for lost threads (the ones that are in the process state
         myThread.transaction.commit()
-        return (result[1], cPickle.loads(base64.decodestring(result[2])))
+        return (result[1], pickle.loads(base64.decodestring(result[2])))
 
     def removeWork(self):
         """

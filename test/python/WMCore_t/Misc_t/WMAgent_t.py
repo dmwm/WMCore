@@ -6,14 +6,15 @@ import time
 import shutil
 import random
 import os.path
-import logging
 import getpass
-import cPickle
 import unittest
 import threading
 
 from subprocess import Popen, PIPE
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 # Imports for testing
 from WMQuality.TestInit import TestInit
@@ -445,7 +446,7 @@ class WMAgentTest(unittest.TestCase):
         jobFile = os.path.join(groupDirectory, 'job_1', 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
         f = open(jobFile, 'r')
-        job = cPickle.load(f)
+        job = pickle.load(f)
         f.close()
 
 

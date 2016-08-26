@@ -12,8 +12,11 @@ Submit jobs for execution.
 import logging
 import threading
 import os.path
-import cPickle
 from operator import itemgetter
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMExceptions      import WM_JOB_ERROR_CODES
@@ -255,7 +258,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 continue
             try:
                 jobHandle = open(pickledJobPath, "r")
-                loadedJob = cPickle.load(jobHandle)
+                loadedJob = pickle.load(jobHandle)
                 jobHandle.close()
             except Exception as ex:
                 msg = "Error while loading pickled job object %s\n" % pickledJobPath

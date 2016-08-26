@@ -8,6 +8,7 @@ WMStats.namespace('ResubmissionList');
         htmlstr += "<ul>";
         htmlstr += "<li><b>Request String: :</b><input type='text' name='RequestString' size=30 value='" + summary.RequestString + "'/></li>";
         htmlstr += "<li><b>Original Request Name: :</b>" + summary.OriginalRequestName + "</li>";
+        htmlstr += "<li><b>Campaign:</b> " + summary.Campaign + "</li>";
         htmlstr += "<li><b>Initial Task Path:</b> " + summary.InitialTaskPath + "</li>";
 
         if (summary.ACDCServer) {

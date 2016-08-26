@@ -432,6 +432,7 @@ WMStats.ViewModel = (function (){
             summary.PrepID = requestInfo.PrepID;
             summary.SoftwareVersions = requestInfo.SoftwareVersions;
             summary.CMSSWVersion = requestInfo.SoftwareVersions[0];
+            summary.Campaign = requestInfo.Campaign;
             /*
             //TODO this handles the legacy data need to be removed
             requestInfo = WMStats.ActiveRequestModel.getData().getData(summary.OriginalRequestName);

@@ -33,7 +33,7 @@ from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
 # WMCore modules
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties
+from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
 from WMCore.Services.LogDB.LogDB import LogDB
 # import WMCore itself to determine path of modules
 import WMCore
@@ -440,9 +440,20 @@ class ReqMgrService(TemplatedPage):
             if status in transitions:
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
-            filteredDoc = {}
-            for prop in visible_attrs:
-                filteredDoc[prop] = doc.get(prop, "")
+            filterout_attrs = get_protected_properties()
+            
+            #extend filterout list with "RequestStatus" since it is passed separately
+            filterout_attrs.append("RequestStatus")
+            
+            if visible_attrs == "all_attributes":
+                filteredDoc = doc
+                for prop in filterout_attrs:
+                    if prop in filteredDoc:
+                        del filteredDoc[prop]                    
+            else:
+                filteredDoc = {}
+                for prop in visible_attrs:
+                    filteredDoc[prop] = doc.get(prop, "")
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs),

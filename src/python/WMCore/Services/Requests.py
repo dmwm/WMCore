@@ -10,7 +10,6 @@ The response from the remote server is cached if expires/etags are set.
 """
 
 import base64
-import cStringIO as StringIO
 import logging
 import os
 import shutil
@@ -24,6 +23,10 @@ import urlparse
 import types
 from httplib import HTTPException
 from json import JSONEncoder, JSONDecoder
+try:
+    import cStringIO as StringIO
+except ImportError: # python3
+    import io as StringIO
 
 from WMCore.Algorithms import Permissions
 from WMCore.Lexicon import sanitizeURL

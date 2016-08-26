@@ -7,7 +7,7 @@ independent python structure
 
 """
 
-import StringIO
+import io as StringIO
 import imp
 import inspect
 import json
@@ -394,11 +394,8 @@ class PSetTweak:
 
 
         if formatting == "json":
-            handle = open(filename, 'r')
-            jsonContent = handle.read()
-            handle.close()
-
-
+            with StringIO.open(filename, 'r', encoding='utf-8') as handle:
+                jsonContent = handle.read()
             jsoniser = JSONiser()
             jsoniser.dejson(json.load(StringIO.StringIO(jsonContent)))
 

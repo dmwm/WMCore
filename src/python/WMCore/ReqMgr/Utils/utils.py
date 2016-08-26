@@ -8,7 +8,10 @@ Description: Set of utilities for RequestManager code
 """
 
 # system modules
-import cStringIO as StringIO
+try:
+    import cStringIO as StringIO
+except ImportError: # python3
+    import io as StringIO
 import xml.etree.cElementTree as ET
 
 

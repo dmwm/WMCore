@@ -5,20 +5,16 @@ _Daemon_t_
 Unit tests for  daemon creation.
 """
 
-import unittest
-import logging
 import os
-import threading
-import time
 import shutil
 import tempfile
+import time
+import unittest
 
 from WMCore.Agent.Daemon.Create import createDaemon
 from WMCore.Agent.Daemon.Details import Details
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
-from nose.plugins.skip import Skip, SkipTest
+
 
 class DaemonTest(unittest.TestCase):
     """
@@ -46,7 +42,7 @@ class DaemonTest(unittest.TestCase):
         Deletion of the databases
         """
         self.testInit.clearDatabase()
-        shutil.rmtree( self.tempDir, True )
+        shutil.rmtree(self.tempDir, True)
 
     def testA(self):
         """
@@ -58,9 +54,9 @@ class DaemonTest(unittest.TestCase):
         self.pid = createDaemon(self.tempDir, True)
         try:
             try:
-                if self.pid != 0 :
+                if self.pid != 0:
                     time.sleep(2)
-                    details = Details(os.path.join(self.tempDir,"Daemon.xml"))
+                    details = Details(os.path.join(self.tempDir, "Daemon.xml"))
                     time.sleep(10)
                     details.killWithPrejudice()
                 else:
@@ -73,6 +69,7 @@ class DaemonTest(unittest.TestCase):
                 os._exit(-1)
             else:
                 os.system('kill -9 %s' % self.pid)
+
 
 if __name__ == "__main__":
     unittest.main()

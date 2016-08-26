@@ -7,20 +7,15 @@ Unit tests for the DBFormatter class
 """
 from __future__ import print_function
 
-
-
-
-import logging
-import unittest
-import os
 import threading
+import unittest
 
 from nose.plugins.attrib import attr
 
-from WMCore.Database.DBFactory import DBFactory
 from WMCore.Database.DBFormatter import DBFormatter
 from WMCore.Database.Transaction import Transaction
 from WMQuality.TestInit import TestInit
+
 
 class DBFormatterTest(unittest.TestCase):
     """
@@ -32,7 +27,6 @@ class DBFormatterTest(unittest.TestCase):
 
     def setUp(self):
         "make a logger instance and create tables"
-
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -50,9 +44,9 @@ create table test (bind1 varchar(20), bind2 varchar(20)) ENGINE=InnoDB """
         myThread.insert = """
 insert into test (bind1, bind2) values (:bind1, :bind2) """
         myThread.insert_binds = \
-          [ {'bind1':'value1a', 'bind2': 'value2a'},\
-            {'bind1':'value1b', 'bind2': 'value2b'},\
-            {'bind1':'value1c', 'bind2': 'value2d'} ]
+            [{'bind1': 'value1a', 'bind2': 'value2a'}, \
+             {'bind1': 'value1b', 'bind2': 'value2b'}, \
+             {'bind1': 'value1c', 'bind2': 'value2d'}]
         myThread.select = "select * from test"
 
         myThread = threading.currentThread()
@@ -85,20 +79,20 @@ insert into test (bind1, bind2) values (:bind1, :bind2) """
 
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.format(result)
-        self.assertEqual(output ,  [['value1a', 'value2a'], \
-            ['value1b', 'value2b'], ['value1c', 'value2d']])
+        self.assertEqual(output, [['value1a', 'value2a'], \
+                                  ['value1b', 'value2b'], ['value1c', 'value2d']])
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatOne(result)
-        print('test1 '+str(output))
-        self.assertEqual( output , ['value1a', 'value2a'] )
+        print('test1 ' + str(output))
+        self.assertEqual(output, ['value1a', 'value2a'])
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatDict(result)
-        self.assertEqual( output , [{'bind2': 'value2a', 'bind1': 'value1a'}, \
-            {'bind2': 'value2b', 'bind1': 'value1b'},\
-            {'bind2': 'value2d', 'bind1': 'value1c'}] )
+        self.assertEqual(output, [{'bind2': 'value2a', 'bind1': 'value1a'}, \
+                                  {'bind2': 'value2b', 'bind1': 'value1b'}, \
+                                  {'bind2': 'value2d', 'bind1': 'value1c'}])
         result = myThread.transaction.processData(myThread.select)
         output = dbformatter.formatOneDict(result)
-        self.assertEqual( output,  {'bind2': 'value2a', 'bind1': 'value1a'} )
+        self.assertEqual(output, {'bind2': 'value2a', 'bind1': 'value1a'})
 
 
 if __name__ == "__main__":

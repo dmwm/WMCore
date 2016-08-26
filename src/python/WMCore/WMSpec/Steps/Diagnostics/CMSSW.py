@@ -12,11 +12,14 @@ from __future__ import print_function
 
 import logging
 import os.path
+import socket
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from WMCore.FwkJobReport.Report import FwkJobReportException
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 
+# strip the lines from the log for the report
+DEFAULT_TAIL_LINES_FROM_LOG = 25
 
 class Exit127(DiagnosticHandler):
     """
@@ -25,7 +28,9 @@ class Exit127(DiagnosticHandler):
     """
 
     def __call__(self, errCode, executor, **args):
-        msg = "Executable Not Found"
+        msg = "Executable Not Found at host: %s" % socket.getfqdn()
+        if args.get('ExceptionInstance', False):
+            msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
                                  50110, "ExecutableNotFound", msg)
 
@@ -37,7 +42,7 @@ class Exit126(DiagnosticHandler):
     """
 
     def __call__(self, errCode, executor, **args):
-        msg = "Executable permissions not executable"
+        msg = "Executable permissions not executable at host: %s" % socket.getfqdn()
         if args.get('ExceptionInstance', False):
             msg += str(args.get('ExceptionInstance'))
         executor.report.addError(executor.step._internal_name,
@@ -67,8 +72,8 @@ class Exit50513(DiagnosticHandler):
                               'scramOutput.log')
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 25)
-            msg += '\n Adding last ten lines of SCRAM error log:\n'
+            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
 
         executor.report.addError(executor.step._internal_name,
@@ -115,14 +120,15 @@ class CMSDefaultHandler(DiagnosticHandler):
                               '%s-stderr.log' % (executor.step._internal_name))
         outLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stdout.log' % (executor.step._internal_name))
-
+        
+        
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stdout:\n'
+            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
 
         # If it exists, grab the SCRAM log
@@ -177,12 +183,12 @@ class CMSRunHandler(DiagnosticHandler):
                               '%s-stdout.log' % (executor.step._internal_name))
 
         if os.path.exists(errLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stderr:\n'
+            logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg += '\n Adding last ten lines of CMSSW stdout:\n'
+            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
 
         # make sure the report has the error in it
@@ -235,8 +241,8 @@ class EDMExceptionHandler(DiagnosticHandler):
             logging.error(os.listdir(os.path.basename(jobRepXml)))
 
         if os.path.exists(outLog):
-            logTail = BasicAlgos.tail(errLog, 10)
-            msg = '\n Adding last ten lines of CMSSW stdout:\n'
+            logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
+            msg = '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
             msg += "".join(logTail)
 
         # Add the error we were sent
@@ -249,7 +255,7 @@ class EDMExceptionHandler(DiagnosticHandler):
             msg = "No Job Report Found: %s" % jobRepXml
             executor.report.addError(executor.step._internal_name,
                                      50115, "MissingJobReport", msg)
-            return
+            return 
 
         # job report XML exists, load the exception information from it
         try:

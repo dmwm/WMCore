@@ -1765,7 +1765,7 @@ class WMWorkloadHelper(PersistencyHelper):
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)
 
-        return kwargs
+        return
 
     def loadSpecFromCouch(self, couchurl, requestName):
         """

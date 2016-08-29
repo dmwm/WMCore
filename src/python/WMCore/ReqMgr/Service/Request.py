@@ -21,7 +21,7 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST,\
     REQUEST_STATE_TRANSITION, ACTIVE_STATUS
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
 from WMCore.ReqMgr.Utils.Validation import validate_request_create_args,\
-    validate_request_update_args, loadRequestSchema
+    validate_request_update_args, loadRequestSchema, validateOutputDatasets
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
@@ -477,14 +477,17 @@ class Request(RESTEntity):
             cherrypy.log("Error for request args %s: %s" % (request_args, msg))
             raise InvalidSpecParameterValue(str(ex))
         
+        # validate/update OutputDatasets after ProcessingString and AcquisionEra is updated
+        request_args['OutputDatasets'] = workload.listOutputDatasets()
+        validateOutputDatasets(request_args['OutputDatasets'], workload.getDbsUrl())
+
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)
-        #update OutputDatasets after ProcessingString and AcquisionEra is updated
-        request_args['OutputDatasets'] = workload.listOutputDatasets()
+
         report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         return report
-    
+
     def _handleCascadeUpdate(self, workload, request_args, dn):
         
         """

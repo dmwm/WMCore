@@ -23,10 +23,9 @@ BLOCK_WITH_PARENTS = DATASET_WITH_PARENTS + '#7020873e-0dcd-11e1-9b6c-003048caaa
 PARENT_DATASET = '/Cosmics/ComissioningHI-v1/RAW'
 PARENT_BLOCK = PARENT_DATASET + '#929366bc-0c31-11e1-b764-003048caaace'
 PARENT_FILE = '/store/data/ComissioningHI/Cosmics/RAW/v1/000/181/369/662EAD44-300C-E111-A709-BCAEC518FF62.root'
-#FILE_WITH_PARENTS =
+
 
 class DBSReaderTest(EmulatedUnitTestCase):
-
     def setUp(self):
         """
         _setUp_
@@ -43,8 +42,6 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """
         _tearDown_
 
-
-        :return:
         """
 
         super(DBSReaderTest, self).tearDown()
@@ -59,8 +56,9 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue('GEN-SIM-RECO' in results)
         self.assertTrue('GEN-SIM' in results)
         self.assertFalse('RAW-ALAN' in results)
-        # then test the caching (will raise an exception if cache is not used)
-        self.assertEqual(len(results), len(DBSReader.listDatatiers()))
+        # dbsUrl is mandatory
+        with self.assertRaises(DBSReaderError):
+            _ = DBSReader.listDatatiers()
         return
 
     def testListPrimaryDatasets(self):
@@ -133,7 +131,8 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertTrue(TESTFILE in details)
         self.assertEqual(details[TESTFILE]['NumberOfEvents'], 545)
         self.assertEqual(details[TESTFILE]['file_size'], 286021145)
-        self.assertEqual(details[TESTFILE]['BlockName'], '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace')
+        self.assertEqual(details[TESTFILE]['BlockName'],
+                         '/HighPileUp/Run2011A-v1/RAW#dd6e0796-cbcc-11e0-80a9-003048caaace')
         self.assertEqual(details[TESTFILE]['Md5'], 'NOTSET')
         self.assertEqual(details[TESTFILE]['md5'], 'NOTSET')
         self.assertEqual(details[TESTFILE]['Adler32'], 'a41a1446')
@@ -230,12 +229,16 @@ class DBSReaderTest(EmulatedUnitTestCase):
     def testListFilesInBlockWithParents(self):
         """listFilesInBlockWithParents gets files with parents for a block"""
         self.dbs = DBSReader(self.endpoint)
-        files = self.dbs.listFilesInBlockWithParents('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
+        files = self.dbs.listFilesInBlockWithParents(
+            '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0')
         self.assertEqual(4, len(files))
-        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0', files[0]['block_name'])
-        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0', files[0]['BlockName'])
-        self.assertEqual('/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
-                         files[0]['ParentList'][0]['LogicalFileName'])
+        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0',
+                         files[0]['block_name'])
+        self.assertEqual('/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0',
+                         files[0]['BlockName'])
+        self.assertEqual(
+            '/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/1043E89F-2DCF-E411-9CAE-02163E013751.root',
+            files[0]['ParentList'][0]['LogicalFileName'])
 
         self.assertRaises(DBSReaderError, self.dbs.listFilesInBlockWithParents, BLOCK + 'asas')
 
@@ -247,20 +250,20 @@ class DBSReaderTest(EmulatedUnitTestCase):
 
     def testListFileBlockLocation(self):
         """listFileBlockLocation returns block location"""
-        WRONG_BLOCK = BLOCK[:-4]+'abcd'
+        WRONG_BLOCK = BLOCK[:-4] + 'abcd'
         BLOCK2 = '/HighPileUp/Run2011A-v1/RAW#6021175e-cbfb-11e0-80a9-003048caaace'
-        DBS_BLOCK = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-'+\
-                                    'ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e'
-        DBS_BLOCK2 = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-'+\
-                                    'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
+        DBS_BLOCK = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-' + \
+                    'ea0972193530f531086947d06eb0f121/USER#fb978442-a61b-413a-b4f4-526e6cdb142e'
+        DBS_BLOCK2 = '/GenericTTbar/hernan-140317_231446_crab_JH_ASO_test_T2_ES_CIEMAT_5000_100_140318_0014-' + \
+                     'ea0972193530f531086947d06eb0f121/USER#0b04d417-d734-4ef2-88b0-392c48254dab'
         self.dbs = DBSReader('https://cmsweb.cern.ch/dbs/prod/phys03/DBSReader/')
 
         self.assertTrue(self.dbs.listFileBlockLocation(BLOCK))
-        #This block is only found on DBS
+        # This block is only found on DBS
         self.assertTrue(self.dbs.listFileBlockLocation(DBS_BLOCK))
         # doesn't raise on non-existant block
         self.assertTrue(self.dbs.listFileBlockLocation(WRONG_BLOCK))
-        #test bulk call:
+        # test bulk call:
         ## two blocks in phedex
         self.assertEqual(2, len(self.dbs.listFileBlockLocation([BLOCK, BLOCK2])))
         ## one block in phedex one does not exist
@@ -318,6 +321,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.dbs = DBSReader(self.endpoint)
         self.assertEqual(self.dbs.blockToDatasetPath(BLOCK), DATASET)
         self.assertRaises(DBSReaderError, self.dbs.blockToDatasetPath, BLOCK + 'asas')
+
 
 if __name__ == '__main__':
     unittest.main()

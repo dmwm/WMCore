@@ -30,7 +30,7 @@ WMStats.Ajax = (function($){
                             $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, reqInfo);
                             },
                     error: function(jqXHR, textStatus, errorThrown){
-                            alert(jqXHR.responseText);
+                            console.log("call fails, response: " + jqXHR.responseText);
                         }
                     });
               },
@@ -70,7 +70,7 @@ WMStats.Ajax = (function($){
                                 $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.PHEDEX_PFN_SUCCESS, pfns);
                             },
                     error: function(jqXHR, textStatus, errorThrown){
-                            alert(jqXHR.responseText);
+                            console.log("call fails, response: " + jqXHR.responseText);
                         }
                     });
         }

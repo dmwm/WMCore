@@ -320,7 +320,7 @@ class Assign(WebAPI):
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:
-                self.validate(kwargs.get(field, origValue))
+                self.validate(kwargs.get(field, origValue), field)
 
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])

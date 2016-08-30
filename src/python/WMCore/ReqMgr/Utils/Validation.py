@@ -10,12 +10,13 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType, loadSpecClassByType, setArgumentsWithDefault
 from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
-
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.Tools.cms import releases, architectures
+from WMCore.Lexicon import procdataset
 
 def loadRequestSchema(workload, requestSchema):
     """
@@ -70,7 +71,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     2. validate using workload validation
     3. convert data from body to arguments (spec instance, argument with default setting)
     
-    TODO: rasie right kind of error with clear message 
+    TODO: raise right kind of error with clear message
     """
     # this needs to be deleted for validation
     request_name = request_args.pop("RequestName")
@@ -186,3 +187,35 @@ def get_request_template_from_type(request_type, loc="WMSpec.StdSpecs"):
 
     result = create_json_template_spec(specArgs)
     return result
+
+def validateOutputDatasets(outDsets, dbsUrl):
+    """
+    Validate output datasets after all the other arguments have been
+    locally update during assignment
+    """
+    datatier = []
+    for dataset in outDsets:
+        tokens = dataset.split("/")
+        procds = tokens[2]
+        datatier.append(tokens[3])
+        try:
+            procdataset(procds)
+        except AssertionError as ex:
+            msg = "Bad output dataset name, check the processed dataset.\n %s" % str(ex)
+            raise InvalidSpecParameterValue(msg)
+
+    # Verify whether the output datatiers are available in DBS
+    _validateDatatier(datatier, dbsUrl)
+
+def _validateDatatier(datatier, dbsUrl):
+    """
+    _validateDatatier_
+
+    Provided a list of datatiers extracted from the outputDatasets, checks
+    whether they all exist in DBS already.
+    """
+    dbsReader = DBSReader(dbsUrl)
+    dbsTiers = dbsReader.listDatatiers()
+    badTiers = list(set(datatier) - set(dbsTiers))
+    if badTiers:
+        raise InvalidSpecParameterValue("Bad datatier(s): %s not available in DBS." % badTiers)

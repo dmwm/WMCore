@@ -79,10 +79,11 @@ def parsePileupConfig(mcPileup, dataPileup):
 
 
 def _validateArgument(argument, value, argumentDefinition):
+    dictArguments = ['AcquisitionEra', 'ProcessingString', 'ProcessingVersion', 'MaxRSS', 'MaxVSize']
     validNull = argumentDefinition[argument]["null"]
     if not validNull and value is None:
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
-    elif validNull and value is None:
+    elif value is None:
         return value
 
     try:
@@ -93,7 +94,9 @@ def _validateArgument(argument, value, argumentDefinition):
     validateFunction = argumentDefinition[argument]["validate"]
     if validateFunction is not None:
         try:
-            if not validateFunction(value):
+            if argument in dictArguments and isinstance(value, dict):
+                validateArgumentDict(argument, value, validateFunction)
+            elif not validateFunction(value):
                 raise WMSpecFactoryException(
                     "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
         except Exception as ex:
@@ -103,23 +106,29 @@ def _validateArgument(argument, value, argumentDefinition):
     return value
 
 
-def _validateArgumentOptions(arguments, argumentDefinition, optionKey):
+def validateArgumentDict(argument, argValues, valFunc):
+    """
+    Validate arguments that carry a dict value type
+    """
+    for value in argValues.values():
+        if not valFunc(value):
+            raise WMSpecFactoryException(
+                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+
+
+def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     for argument in argumentDefinition:
-        if optionKey == None:
-            optional = True
-        else:
-            optional = argumentDefinition[argument].get(optionKey, True)
-        if not optional and (argument not in arguments):
-            raise WMSpecFactoryException("Validation failed: %s is mandatory %s" % (argument,
-                                                                                    argumentDefinition[argument]))
-        # If assign_optional is set to false it need to be assigned later.
+        optional = argumentDefinition[argument].get(optionKey, True)
+        if not optional and argument not in arguments:
+            msg = "Validation failed: %s is mandatory %s" % (argument, argumentDefinition[argument])
+            raise WMSpecFactoryException(msg)
         # TODO this need to be done earlier then this function
         # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
         #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
-        elif optional and (argument not in arguments):
+        elif argument not in arguments:
             continue
-        elif optional and (argument in arguments) and (arguments[argument] == ""):
+        elif optional and arguments[argument] == "":
             del arguments[argument]
         else:
             arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
@@ -246,7 +255,7 @@ def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
     It returns an error message if the validation went wrong,
     otherwise returns None
     """
-    return _validateArgumentOptions(arguments, argumentDefinition, None)
+    return _validateArgumentOptions(arguments, argumentDefinition)
 
 
 def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):

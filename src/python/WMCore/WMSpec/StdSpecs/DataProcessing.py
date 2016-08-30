@@ -65,7 +65,7 @@ class DataProcessing(StdBase):
                                        "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
                                                                                        "EventAwareLumiBased", "FileBased"],
                                        "attr" : "procJobSplitAlgo", "null" : False},
-                    "EventsPerJob" : {"default" : None, "type" : int,
+                    "EventsPerJob" : {"default" : 1000, "type" : int,
                                       "optional" : True, "validate" : lambda x : x > 0,
                                       "attr" : "eventsPerJob", "null" : False},
                     "LumisPerJob" : {"default" : 8, "type" : int,

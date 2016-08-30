@@ -1349,6 +1349,13 @@ class WMTaskHelper(TreeHelper):
         """
         if isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
+            if taskEra is None:
+                # We cannot properly set AcqEra for ACDC of TaskChain Merge
+                # failures, so we should look up for a similar taskname in
+                # the acqera dict passed from the requestor
+                for taskname in era:
+                    if taskname in self.name():
+                        taskEra = era[self.name()]
         else:
             taskEra = era
 

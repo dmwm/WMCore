@@ -403,7 +403,7 @@ class StepChainWorkloadFactory(StdBase):
                                       "optional": True, "null": False,
                                       "validate": lambda x: x in ["EventBased", "LumiBased",
                                                                   "EventAwareLumiBased", "FileBased"]},
-                    "EventsPerJob": {"default": None, "type": int,
+                    "EventsPerJob": {"default": 1000, "type": int,
                                      "optional": True, "validate": lambda x: x > 0,
                                      "null": False},
                     "LumisPerJob": {"default": 8, "type": int,

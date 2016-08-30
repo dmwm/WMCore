@@ -7,7 +7,7 @@ Unit test for the DBS helper class.
 
 import unittest
 
-from WMCore.Services.DBS.DBSReader import DBSReader as DBSReader
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
@@ -54,12 +54,13 @@ class DBSReaderTest(EmulatedUnitTestCase):
         """
         listDatatiers returns all datatiers available
         """
-        self.dbs = DBSReader(self.endpoint)
-        results = self.dbs.listDatatiers()
+        results = DBSReader.listDatatiers(self.endpoint)
         self.assertTrue('RAW' in results)
         self.assertTrue('GEN-SIM-RECO' in results)
         self.assertTrue('GEN-SIM' in results)
         self.assertFalse('RAW-ALAN' in results)
+        # then test the caching (will raise an exception if cache is not used)
+        self.assertEqual(len(results), len(DBSReader.listDatatiers()))
         return
 
     def testListPrimaryDatasets(self):

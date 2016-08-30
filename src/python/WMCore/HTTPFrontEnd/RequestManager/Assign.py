@@ -19,7 +19,7 @@ import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeSt
 import WMCore.RequestManager.RequestDB.Interface.Request.GetRequest as GetRequest
 from WMCore.Database.CMSCouch import Database
 from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
-from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMSpec.WMWorkloadTools import strToBool
 from WMCore.WebTools.WebAPI import WebAPI
@@ -141,8 +141,7 @@ class Assign(WebAPI):
         Provided a list of datatiers extracted from the outputDatasets, checks
         whether they all exist in DBS already.
         """
-        dbsReader = DBSReader(dbsUrl)
-        dbsTiers = dbsReader.listDatatiers()
+        dbsTiers = DBSReader.listDatatiers(dbsUrl)
         badTiers = list(set(datatier) - set(dbsTiers))
         if badTiers:
             raise cherrypy.HTTPError(400, "Bad datatier(s): %s not available in DBS." % badTiers)

@@ -5,10 +5,11 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+import time
 from collections import defaultdict
 
 from dbs.apis.dbsClient import DbsApi
-from dbs.exceptions.dbsClientException import *
+from dbs.exceptions.dbsClientException import dbsClientException
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from Utils.IterTools import grouper
@@ -40,14 +41,15 @@ def remapDBS3Keys(data, stringify = False, **others):
 # when emulator values are set.
 # Look WMQuality.Emulators.EmulatorSetup module for the values
 #@emulatorHook
-class DBS3Reader:
+class DBS3Reader(object):
     """
     _DBSReader_
 
     General API for reading data from DBS
-
-
     """
+    # cache all the datatiers known by DBS
+    _datatiers = {}
+
     def __init__(self, url, **contact):
 
         # instantiate dbs api object
@@ -176,12 +178,6 @@ class DBS3Reader:
         return runs
 
     def listRunLumis(self, dataset = None, block = None):
-        # Pointless code in python3
-        if isinstance(block, str):
-            block = unicode(block)
-        if isinstance(dataset, str):
-            dataset = unicode(dataset)
-
         """
         It gets a list of DBSRun objects and returns the number of lumisections per run
         DbsRun (RunNumber,
@@ -197,6 +193,12 @@ class DBS3Reader:
                 LastModifiedBy
                 )
         """
+        # Pointless code in python3
+        if isinstance(block, str):
+            block = unicode(block)
+        if isinstance(dataset, str):
+            dataset = unicode(dataset)
+
         try:
             if block:
                 results = self.dbs.listRuns(block_name = block)
@@ -244,15 +246,42 @@ class DBS3Reader:
         Get list of files for dataset
 
         """
-        return [ x['logical_file_name'] for x in self.dbs.listFileArray(dataset = datasetPath)]
+        return [x['logical_file_name'] for x in self.dbs.listFileArray(dataset = datasetPath)]
 
-    def listDatatiers(self):
+    @staticmethod
+    def listDatatiers(dbsUrl=None):
         """
         _listDatatiers_
 
         Get a list of datatiers known by DBS.
         """
-        return [ tier['data_tier_name'] for tier in self.dbs.listDataTiers() ]
+        if dbsUrl is None:
+            msg = "Error in DBSReader.listDatatiers(). DBS Url not set."
+            raise DBSReaderError(msg)
+
+        timenow = int(time.time())
+        if DBS3Reader._datatiers and timenow - 7200 < DBS3Reader._datatiers['ts']:
+            return DBS3Reader._datatiers['tiers']
+
+        try:
+            DBS3Reader._setDatatiersCache(timenow, dbsUrl)
+        except Exception as ex:
+            if not DBS3Reader._datatiers:
+                msg = "Error in DBSReader.listDatatiers\n%s" % formatEx3(ex)
+                raise DBSReaderError(msg)
+        return DBS3Reader._datatiers['tiers']
+
+    @staticmethod
+    def _setDatatiersCache(ts, dbsUrl):
+        """
+        Set a timestamp and update the list of datatiers cached in
+        the class property
+        """
+        dbs = DbsApi(dbsUrl)
+        DBS3Reader._datatiers['ts'] = ts
+        DBS3Reader._datatiers['tiers'] = [tier['data_tier_name'] for tier in dbs.listDataTiers()]
+
+        return
 
     def listDatasetFileDetails(self, datasetPath, getParents=False, validFileOnly=1):
         """

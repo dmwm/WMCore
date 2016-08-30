@@ -10,7 +10,7 @@ from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecByType, loadSpecClassByType, setArgumentsWithDefault
 from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
-from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
@@ -214,8 +214,7 @@ def _validateDatatier(datatier, dbsUrl):
     Provided a list of datatiers extracted from the outputDatasets, checks
     whether they all exist in DBS already.
     """
-    dbsReader = DBSReader(dbsUrl)
-    dbsTiers = dbsReader.listDatatiers()
+    dbsTiers = DBSReader.listDatatiers(dbsUrl)
     badTiers = list(set(datatier) - set(dbsTiers))
     if badTiers:
         raise InvalidSpecParameterValue("Bad datatier(s): %s not available in DBS." % badTiers)

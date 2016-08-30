@@ -47,7 +47,12 @@ deprecatedRequestArgs = ["ReqMgrGroupID",
                          "RequestWorkflow",
                          "WorkflowSpec",
                          "RequestSizeEvents",
-                         "RequestEventSize"]
+                         "RequestEventSize",
+                         "TotalEstimatedJobs", 
+                         "TotalInputEvents",
+                         "TotalInputLumis",
+                         "TotalInputFiles",
+                         ]
 
 
 class ReqMgrRESTModel(RESTModel):

@@ -212,6 +212,13 @@ def validateSiteLists(arguments):
     arguments["SiteBlacklist"] = blackList
     return
 
+def validateAutoGenArgument(arguments):
+    autoGenArgs = ["TotalInputEvents", "TotalInputFiles", "TotalInputLumis", "TotalEstimatedJobs"]
+    protectedArgs =set(autoGenArgs).intersection(set(arguments.keys()))
+        
+    if len(protectedArgs) > 0:
+        raise WMSpecFactoryException("Shouldn't set auto generated params %s: remove it" % list(protectedArgs))
+    return
 
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -223,6 +230,7 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     otherwise returns None, this is used for spec creation 
     checks the whether argument is optional as well as validation
     """
+    validateAutoGenArgument(arguments)
     _validateArgumentOptions(arguments, argumentDefinition, "optional")
     validateInputDatasSetAndParentFlag(arguments)
     validatePhEDExSubscription(arguments)

@@ -74,6 +74,10 @@ class DBS3Reader:
                 lumiLists = []
                 for slfn in grouper(lfns, 50):
                     lumiLists.extend(self.dbs.listFileLumiArray(logical_file_name = slfn))
+            else:
+                # shouldn't call this with both blockName and lfns empty
+                # but still returns empty dict for that case
+                return {}
         except dbsClientException as ex:
             msg = "Error in "
             msg += "DBSReader.listFileLumiArray(%s)\n" % lfns
@@ -531,7 +535,14 @@ class DBS3Reader:
             # Probably a child can have more than 1 parent file
             for fp in f['parent_logical_file_name']:
                 childByParents[fp].append(f['logical_file_name'])
+        
         parentsLFNs = childByParents.keys()
+        
+        if len(parentsLFNs) == 0:
+            msg = "Error in "
+            msg += "DBSReader.listFilesInBlockWithParents(%s)\n There is no parents files" % (
+                fileBlockName)
+            raise DBSReaderError(msg)
 
         parentFilesDetail = []
         #TODO: slicing parentLFNs util DBS api is handling that.

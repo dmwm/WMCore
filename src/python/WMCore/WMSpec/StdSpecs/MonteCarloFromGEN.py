@@ -119,10 +119,10 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                                       "attr": "configCacheID", "null": False},
                     "MCPileup": {"default": None, "type": str,
                                  "optional": True, "validate": dataset,
-                                 "attr": "mcPileup", "null": False},
+                                 "attr": "mcPileup", "null": True},
                     "DataPileup": {"default": None, "type": str,
                                    "optional": True, "validate": dataset,
-                                   "attr": "dataPileup", "null": False},
+                                   "attr": "dataPileup", "null": True},
                     "DeterministicPileup": {"default": False, "type": strToBool,
                                             "optional": True, "validate": None,
                                             "attr": "deterministicPileup", "null": False}}

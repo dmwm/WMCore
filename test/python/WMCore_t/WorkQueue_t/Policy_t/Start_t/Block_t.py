@@ -11,12 +11,11 @@ from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Block import Block
-from WMCore.WorkQueue.WorkQueueExceptions import *
-from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -32,14 +31,9 @@ class BlockTestCase(EmulatedUnitTestCase):
     splitArgs = dict(SliceType='NumberOfFiles', SliceSize=10)
 
     def setUp(self):
-        self.fakeDBS = False
         super(BlockTestCase, self).setUp()
-        #EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
-        Globals.GlobalParams.resetParams()
 
     def tearDown(self):
-        EmulatorHelper.resetEmulators()
-        Globals.GlobalParams.resetParams()
         super(BlockTestCase, self).tearDown()
 
     def testTier1ReRecoWorkload(self):
@@ -189,7 +183,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         rerecoArgs2.update(rerecoArgs)
         rerecoArgs2["ConfigCacheID"] = createConfig(rerecoArgs2["CouchDBName"])
         factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
+        dummyWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
 
         # Block blacklist
         lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
@@ -243,10 +237,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         ReReco lumi split with Run whitelist
         This test may not do much of anything anymore since listRunLumis is not in DBS3
         """
-        # get files with multiple runs
-        Globals.GlobalParams.setNumOfRunsPerFile(8)
-        # a large number of lumis to ensure we get multiple runs
-        Globals.GlobalParams.setNumOfLumisPerBlock(20)
+
         splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
 
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
@@ -294,18 +285,16 @@ class BlockTestCase(EmulatedUnitTestCase):
 
         # invalid dataset name
         # This test is throwing a DBS exception but continuing on:
-        """
-        Message: DbsBadRequest: DBS Server Raised An Error
-	ModuleName : WMCore.Services.DBS.DBSErrors
-	MethodName : __init__
-	ClassInstance : None
-	FileName : /data/srv/wmagent/current/sw.amaltaro/slc6_amd64_gcc493/cms/wmagent/1.0.12.patch2/lib/python2.7/site-packages/WMCore/Services/DBS/DBSErrors.py
-	ClassName : None
-	LineNumber : 29
-	ErrorNr : 1002
-        """
+        # Message: DbsBadRequest: DBS Server Raised An Error
+        # ModuleName : WMCore.Services.DBS.DBSErrors
+        # MethodName : __init__
+        # ClassInstance : None
+        # FileName : .../WMCore/Services/DBS/DBSErrors.py
+        # ClassName : None
+        # LineNumber : 29
+        # ErrorNr : 1002
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
+        getFirstTask(processingSpec).data.input.dataset.primary = NOT_EXIST_DATASET
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
@@ -314,15 +303,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
-
-            # blocks with 0 files are skipped
-            # set all blocks in request to 0 files, no work should be found & an error is raised
-            # This test does not work without the emulator
-            # Globals.GlobalParams.setNumOfFilesPerBlock(0)
-            # processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-            # for task in processingSpec.taskIterator():
-            # self.assertRaises(DBSReaderError, Block(), processingSpec, task)
-            # Globals.GlobalParams.resetParams()
 
     def notestParentProcessing(self):
         # Does not work with a RAW dataset, need a different workload
@@ -355,7 +335,6 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def testIgnore0SizeBlocks(self):
         """Ignore blocks with 0 files"""
-        Globals.GlobalParams.setNumOfFilesPerBlock(0)
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
@@ -400,33 +379,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': inputs.keys()})
             self.assertRaises(WorkQueueNoWorkError, policyInstance, Tier1ReRecoWorkload, task)
-
-        # Pop up 2 more blocks for the dataset with different statistics
-        Globals.GlobalParams.setNumOfBlocksPerDataset(Globals.GlobalParams.numOfBlocksPerDataset() + 2)
-        Globals.GlobalParams.setNumOfFilesPerBlock(
-            10)  # Emulator is crooked, it gives the sum of all the files in the dataset not block
-
-
-        # Now run another pass of the Block policy
-        # Broken: makes no work
-        # policyInstance = Block(**self.splitArgs)
-        # policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs' : inputs.keys()})
-        # for task in Tier1ReRecoWorkload.taskIterator():
-        # units, rejectedWork = policyInstance(Tier1ReRecoWorkload, task)
-        # self.assertEqual(2, len(units))
-        # self.assertEqual(0, len(rejectedWork))
-        # for unit in units:
-        # blocks.extend(unit['Inputs'].keys())
-        # inputs.update(unit['Inputs'])
-        # self.assertEqual(69, unit['Priority'])
-        # self.assertEqual(1, unit['Jobs'])
-        # self.assertEqual(Tier1ReRecoWorkload, unit['WMSpec'])
-        # self.assertEqual(task, unit['Task'])
-        # self.assertEqual(8, unit['NumberOfLumis'])
-        # self.assertEqual(40, unit['NumberOfFiles'])
-        # self.assertEqual(40000, unit['NumberOfEvents'])
-        # self.assertEqual(len(units),
-        # len(dbs[inputDataset.dbsurl].getFileBlocksInfo(dataset)) - 2)
 
         # Run one last time
         policyInstance = Block(**self.splitArgs)
@@ -479,15 +431,13 @@ class BlockTestCase(EmulatedUnitTestCase):
         Test job splitting with masked blocks
         """
 
-        Globals.GlobalParams.setNumOfRunsPerFile(3)
-        Globals.GlobalParams.setNumOfLumisPerBlock(5)
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
 
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.data.request.priority = 69
         task = getFirstTask(Tier1ReRecoWorkload)
-        inputDataset = task.inputDataset()
+        dummyDataset = task.inputDataset()
 
         task.data.input.splitting.runs = [181061, 180899]
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']
@@ -508,8 +458,6 @@ class BlockTestCase(EmulatedUnitTestCase):
         Check that getMaskedBlocks is returning the correct information
         """
 
-        Globals.GlobalParams.setNumOfRunsPerFile(3)
-        Globals.GlobalParams.setNumOfLumisPerBlock(5)
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
 

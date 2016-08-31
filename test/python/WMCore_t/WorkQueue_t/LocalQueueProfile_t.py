@@ -2,19 +2,20 @@
 """
     WorkQueue tests
 """
-from __future__ import absolute_import
+from __future__ import (absolute_import, print_function, division)
 
-import tempfile
-import unittest
 import cProfile
 import pstats
 import shutil
+import tempfile
+import unittest
+
+from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-from WMQuality.Emulators.DataBlockGenerator import Globals
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import localQueue
-from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 
 class LocalWorkQueueProfileTest(WorkQueueTestCase):
@@ -36,8 +37,10 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         self.specs = self.createReRecoSpec(1, "file")
 
         # Create queues
-        self.localQueue = localQueue(DbName=self.queueDB, InboxDbName=self.queueInboxDB, \
-                NegotiationTimeout=0, QueueURL='global.example.com', CacheDir=self.cacheDir, central_logdb_url="%s/%s" %(self.couchURL, self.logDBName), log_reporter='lq_profile_test')
+        self.localQueue = localQueue(DbName=self.queueDB, InboxDbName=self.queueInboxDB,
+                                     NegotiationTimeout=0, QueueURL='global.example.com', CacheDir=self.cacheDir,
+                                     central_logdb_url="%s/%s" % (self.couchURL, self.logDBName),
+                                     log_reporter='lq_profile_test')
 
 
     def tearDown(self):
@@ -50,19 +53,19 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
             pass
         EmulatorHelper.resetEmulators()
 
-    def createReRecoSpec(self, numOfSpec, type="spec"):
+    def createReRecoSpec(self, numOfSpec, kind="spec"):
         specs = []
         for i in range(numOfSpec):
             specName = "MinBiasProcessingSpec_Test_%s" % (i+1)
-            specs.append(self.specGenerator.createReRecoSpec(specName, type))
+            specs.append(self.specGenerator.createReRecoSpec(specName, kind))
         return specs
 
     def createProfile(self, name, function):
-        file = name
+        fileName = name
         prof = cProfile.Profile()
         prof.runcall(function)
-        prof.dump_stats(file)
-        p = pstats.Stats(file)
+        prof.dump_stats(fileName)
+        p = pstats.Stats(fileName)
         p.strip_dirs().sort_stats('cumulative').print_stats(0.1)
         p.strip_dirs().sort_stats('time').print_stats(0.1)
         p.strip_dirs().sort_stats('calls').print_stats(0.1)
@@ -79,7 +82,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
 
     def localQueueGetWork(self):
         siteJobs = {}
-        for site in Globals.SITES:
+        for site in DUMMY_SITES:
             siteJobs[site] = 100000
         self.localQueue.getWork(siteJobs, {})
 

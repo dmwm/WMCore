@@ -9,14 +9,13 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
-from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
-from WMCore.WorkQueue.WorkQueueExceptions import *
-from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -32,10 +31,8 @@ class DatasetTestCase(EmulatedUnitTestCase):
 
     def setUp(self):
         super(DatasetTestCase, self).setUp()
-        Globals.GlobalParams.resetParams()
 
     def tearDown(self):
-        EmulatorHelper.resetEmulators()
         super(DatasetTestCase, self).tearDown()
 
     def testTier1ReRecoWorkload(self):
@@ -224,10 +221,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         ReReco lumi split with Run whitelist
         This test may not do much of anything anymore since listRunLumis is not in DBS3
         """
-        # get files with multiple runs
-        Globals.GlobalParams.setNumOfRunsPerFile(2)
-        # a large number of lumis to ensure we get multiple runs
-        Globals.GlobalParams.setNumOfLumisPerBlock(10)
+
         splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         factory = ReRecoWorkloadFactory()
@@ -263,7 +257,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
 
         # invalid dataset name
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
+        getFirstTask(processingSpec).data.input.dataset.primary = NOT_EXIST_DATASET
 
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Dataset(), processingSpec, task)

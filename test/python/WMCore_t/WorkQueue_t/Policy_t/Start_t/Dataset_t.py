@@ -9,14 +9,14 @@ from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload \
     import workload as MultiTaskProcessingWorkload
 from WMCore_t.WorkQueue_t.WorkQueue_t import getFirstTask
 
-from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
+from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Dataset import Dataset
-from WMCore.WorkQueue.WorkQueueExceptions import *
+from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 parentProcArgs = ReRecoWorkloadFactory.getTestArguments()

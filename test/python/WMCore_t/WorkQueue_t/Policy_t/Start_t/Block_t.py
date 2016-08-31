@@ -13,9 +13,9 @@ from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Block import Block
-from WMCore.WorkQueue.WorkQueueExceptions import *
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
+from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -183,7 +183,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         rerecoArgs2.update(rerecoArgs)
         rerecoArgs2["ConfigCacheID"] = createConfig(rerecoArgs2["CouchDBName"])
         factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
+        dummyWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
 
         # Block blacklist
         lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
@@ -285,16 +285,14 @@ class BlockTestCase(EmulatedUnitTestCase):
 
         # invalid dataset name
         # This test is throwing a DBS exception but continuing on:
-        """
-        Message: DbsBadRequest: DBS Server Raised An Error
-	ModuleName : WMCore.Services.DBS.DBSErrors
-	MethodName : __init__
-	ClassInstance : None
-	FileName : /data/srv/wmagent/current/sw.amaltaro/slc6_amd64_gcc493/cms/wmagent/1.0.12.patch2/lib/python2.7/site-packages/WMCore/Services/DBS/DBSErrors.py
-	ClassName : None
-	LineNumber : 29
-	ErrorNr : 1002
-        """
+        # Message: DbsBadRequest: DBS Server Raised An Error
+        # ModuleName : WMCore.Services.DBS.DBSErrors
+        # MethodName : __init__
+        # ClassInstance : None
+        # FileName : .../WMCore/Services/DBS/DBSErrors.py
+        # ClassName : None
+        # LineNumber : 29
+        # ErrorNr : 1002
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
         getFirstTask(processingSpec).data.input.dataset.primary = NOT_EXIST_DATASET
         for task in processingSpec.taskIterator():
@@ -439,7 +437,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.data.request.priority = 69
         task = getFirstTask(Tier1ReRecoWorkload)
-        inputDataset = task.inputDataset()
+        dummyDataset = task.inputDataset()
 
         task.data.input.splitting.runs = [181061, 180899]
         task.data.input.splitting.lumis = ['1,50,60,70', '1,1']

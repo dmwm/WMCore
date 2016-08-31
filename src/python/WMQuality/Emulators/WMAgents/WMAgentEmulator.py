@@ -10,7 +10,8 @@ import logging
 # harness class that encapsulates the basic component logic.
 from WMCore.Agent.Harness import Harness
 from .WMAgentTasks import WMAgentTasks
-from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
+
 class WMAgentEmulator(Harness):
 
 
@@ -35,6 +36,6 @@ class WMAgentEmulator(Harness):
         {site: job} format
         """
         jobSites = {}
-        for site in Globals.SITES:
+        for site in DUMMY_SITES:
             jobSites[site] = 100
         return jobSites

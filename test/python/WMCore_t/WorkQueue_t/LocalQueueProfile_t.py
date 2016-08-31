@@ -11,7 +11,7 @@ import pstats
 import shutil
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
-from WMQuality.Emulators.DataBlockGenerator import Globals
+from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
@@ -79,7 +79,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
 
     def localQueueGetWork(self):
         siteJobs = {}
-        for site in Globals.SITES:
+        for site in DUMMY_SITES:
             siteJobs[site] = 100000
         self.localQueue.getWork(siteJobs, {})
 

@@ -122,6 +122,8 @@ class JobFactory(WMObject):
         """
         Instantiate a new Job onject, apply all the generators to it
         """
+        if name is None:
+            name = self.getJobName()
         self.currentJob = self.jobInstance(name, files)
         self.currentJob["task"] = self.subscription.taskName()
         self.currentJob["workflow"] = self.subscription.workflowName()

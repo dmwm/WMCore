@@ -89,7 +89,8 @@ class DQMHarvestTests(unittest.TestCase):
             "CouchURL": os.environ["COUCHURL"],
             "ConfigCacheUrl": os.environ["COUCHURL"],
             "CouchDBName": "dqmharvest_t",
-            "DQMConfigCacheID": self.injectDQMHarvestConfig()
+            "DQMConfigCacheID": self.injectDQMHarvestConfig(),
+            "LumiList": {"251643": [[1, 15], [50,70]], "251721": [[50,100], [110,120]]}
         })
         testArguments.pop("ConfigCacheID", None)
 
@@ -99,20 +100,18 @@ class DQMHarvestTests(unittest.TestCase):
         # test workload properties
         self.assertEqual(testWorkload.getDashboardActivity(), "harvesting")
         self.assertEqual(testWorkload.getCampaign(), "Campaign-OVERRIDE-ME")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "CMSSW_7_3_1_patch1")
-        self.assertEqual(testWorkload.getProcessingString(), "GR_R_73_V0A_TEST_RelVal_jetHT2012c")
+        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2015B")
+        self.assertEqual(testWorkload.getProcessingString(), "TEST_05Aug2015")
         self.assertEqual(testWorkload.getProcessingVersion(), 1)
         self.assertFalse(testWorkload.getPrepID(), "PrepId does not match")
-        self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_3_1_patch1'])
+        self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_5_1'])
 
         # test workload attributes
-        self.assertEqual(testWorkload.processingString, "GR_R_73_V0A_TEST_RelVal_jetHT2012c")
-        self.assertEqual(testWorkload.acquisitionEra, "CMSSW_7_3_1_patch1")
+        self.assertEqual(testWorkload.processingString, "TEST_05Aug2015")
+        self.assertEqual(testWorkload.acquisitionEra, "Run2015B")
         self.assertEqual(testWorkload.processingVersion, 1)
-        self.assertEqual(sorted(testWorkload.lumiList.keys()), ['139788', '139790', '144011'])
-        self.assertEqual(sorted(testWorkload.lumiList.values()),
-                         [[[5, 10], [15, 20], [25, 30]], [[25, 75],
-                                                          [125, 175], [275, 325]], [[50, 100], [110, 125]]])
+        self.assertEqual(sorted(testWorkload.lumiList.keys()), ['251643', '251721'])
+        self.assertEqual(sorted(testWorkload.lumiList.values()), [[[1,15], [50,70]], [[50,100], [110,120]]])
         self.assertEqual(testWorkload.data.policies.start.policyName, "Dataset")
 
         # test workload tasks and steps
@@ -126,9 +125,7 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(task.taskType(), "Harvesting", "Wrong task type")
         self.assertEqual(task.jobSplittingAlgorithm(), "Harvest", "Wrong job splitting algo")
         self.assertFalse(task.getTrustSitelists().get('trustlists'), "Wrong input location flag")
-        self.assertEqual(sorted(task.inputRunWhitelist()),
-                         [138923, 138924, 138934, 138937, 139788, 139789,
-                          139790, 144011, 144083, 144084, 144086])
+        self.assertFalse(task.inputRunWhitelist())
 
         self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'logArch1', 'upload1'])
         self.assertEqual(task.getStep("cmsRun1").stepType(), "CMSSW")

@@ -183,7 +183,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                       "attr" : "physicsSkims", "null" : False},
                     "InitCommand" : {"default" : None, "type" : str,
                                      "optional" : True, "validate" : None,
-                                     "attr" : "initCommand", "null" : False},
+                                     "attr" : "initCommand", "null" : True},
                     "EnvPath" : {"default" : None, "type" : str,
                                  "optional" : True, "validate" : None,
                                  "attr" : "envPath", "null" : True},
@@ -243,7 +243,7 @@ class PromptRecoWorkloadFactory(StdBase):
                            "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
                                             "validate" : identifier},
                            "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
-                           "ConfigCacheID" : {},
+                           "ConfigCacheID" : {"optional": True, "null": True},
                            "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "validate" : identifier},
                          }
         baseArgs.update(reqMgrArguments)

@@ -261,8 +261,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
 
         # Add pileup inputs
-        arguments["MCPileup"] = "/some/cosmics/dataset1"
-        arguments["DataPileup"] = "/some/minbias/dataset1"
+        arguments["MCPileup"] = "/some/cosmics-procstringwhatever-v1/RAW"
+        arguments["DataPileup"] = "/some/minbias-procstringwhatever-v1/LHE"
         arguments["DeterministicPileup"] = True
 
         factory = MonteCarloFromGENWorkloadFactory()
@@ -271,8 +271,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
         cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
         pileupData = cmsRunStep.getPileup()
-        self.assertEqual(pileupData.data.dataset, ["/some/minbias/dataset1"])
-        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics/dataset1"])
+        self.assertEqual(pileupData.data.dataset, ["/some/minbias-procstringwhatever-v1/LHE"])
+        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics-procstringwhatever-v1/RAW"])
 
         splitting = productionTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])

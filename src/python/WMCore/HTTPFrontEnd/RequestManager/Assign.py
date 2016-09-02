@@ -9,7 +9,7 @@ Handles site whitelist/blacklist info as well.
 
 import json
 import threading
-
+import traceback
 import cherrypy
 
 import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
@@ -22,6 +22,7 @@ from WMCore.HTTPFrontEnd.RequestManager.ReqMgrAuth import ReqMgrAuth
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.WMSpec.WMWorkloadTools import strToBool
+from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WebTools.WebAPI import WebAPI
 
 
@@ -310,16 +311,25 @@ class Assign(WebAPI):
         request = GetRequest.getRequestByName(requestName)
         helper = Utilities.loadWorkload(request)
 
+        try:
+            helper.validateArgumentForAssignment(kwargs)
+        except WMSpecFactoryException as ex:
+            raise cherrypy.HTTPError(400, str(ex.message()))
+        except Exception:
+            msg = traceback.format_exc()
+            raise cherrypy.HTTPError(400, "Unhandled error: %s" % msg)
+
         # Validate the different parts of the processed dataset
-        processedDatasetParts = {"AcquisitionEra": helper.getAcquisitionEra(),
-                                 "ProcessingString": helper.getProcessingString(),
-                                 "ProcessingVersion": helper.getProcessingVersion()}
-        for field, origValue in processedDatasetParts.iteritems():
+        processedDatasetParts = {"AcquisitionEra": kwargs.get("AcquisitionEra"),
+                                 "ProcessingString": kwargs.get("ProcessingString"),
+                                 "ProcessingVersion": kwargs.get("ProcessingVersion")
+                                }
+        for field, values in processedDatasetParts.iteritems():
             if field in kwargs and isinstance(kwargs[field], dict):
                 for value in kwargs[field].values():
                     self.validate(value, field)
             else:
-                self.validate(kwargs.get(field, origValue), field)
+                self.validate(kwargs.get(field, values), field)
 
         # Set white list and black list
         whiteList = kwargs.get("SiteWhitelist", [])
@@ -333,14 +343,10 @@ class Assign(WebAPI):
         res = set(whiteList) & set(blackList)
         if len(res):
             raise cherrypy.HTTPError(400, "White and blacklist the same site is not allowed %s" % list(res))
-        # Set AcquisitionEra, ProcessingString and ProcessingVersion
-        # which could be json encoded dicts
-        if 'AcquisitionEra' in kwargs:
-            helper.setAcquisitionEra(kwargs["AcquisitionEra"])
-        if 'ProcessingString' in kwargs:
-            helper.setProcessingString(kwargs["ProcessingString"])
-        if 'ProcessingVersion' in kwargs:
-            helper.setProcessingVersion(kwargs["ProcessingVersion"])
+
+        helper.setAcquisitionEra(kwargs.get("AcquisitionEra", None))
+        helper.setProcessingString(kwargs.get("ProcessingString", None))
+        helper.setProcessingVersion(kwargs.get("ProcessingVersion", None))
 
         # Now verify the output datasets
         datatier = []
@@ -355,7 +361,6 @@ class Assign(WebAPI):
                 raise cherrypy.HTTPError(400,
                                          "Bad output dataset name, check the processed dataset.\n %s" %
                                          str(ex))
-
         # Verify whether the output datatiers are available in DBS
         self.validateDatatier(datatier, dbsUrl=helper.getDbsUrl())
 
@@ -378,24 +383,9 @@ class Assign(WebAPI):
         custodialList = kwargs.get("CustodialSites", [])
         nonCustodialList = kwargs.get("NonCustodialSites", [])
         autoApproveList = kwargs.get("AutoApproveSubscriptionSites", [])
-        for site in autoApproveList:
-            if site.endswith('_MSS'):
-                raise cherrypy.HTTPError(400, "Auto-approval to MSS endpoint not allowed %s" % autoApproveList)
         subscriptionPriority = kwargs.get("SubscriptionPriority", "Low")
-        if subscriptionPriority not in ["Low", "Normal", "High"]:
-            raise cherrypy.HTTPError(400, "Invalid subscription priority %s" % subscriptionPriority)
         custodialType = kwargs.get("CustodialSubType", "Replica")
-        if custodialType not in ["Move", "Replica"]:
-            raise cherrypy.HTTPError(400, "Invalid custodial subscription type %s" % custodialType)
         nonCustodialType = kwargs.get("NonCustodialSubType", "Replica")
-        if nonCustodialType not in ["Move", "Replica"]:
-            raise cherrypy.HTTPError(400, "Invalid noncustodial subscription type %s" % nonCustodialType)
-        if "CustodialGroup" in kwargs and not isinstance(kwargs["CustodialGroup"], basestring):
-            raise cherrypy.HTTPError(400, "Invalid CustodialGroup format %s" % kwargs["CustodialGroup"])
-        if "NonCustodialGroup" in kwargs and not isinstance(kwargs["NonCustodialGroup"], basestring):
-            raise cherrypy.HTTPError(400, "Invalid NonCustodialGroup format %s" % kwargs["NonCustodialGroup"])
-        if "DeleteFromSource" in kwargs and not isinstance(kwargs["DeleteFromSource"], bool):
-            raise cherrypy.HTTPError(400, "Invalid DeleteFromSource format %s" % kwargs["DeleteFromSource"])
 
         helper.setSubscriptionInformationWildCards(wildcardDict=self.wildcardSites,
                                                    custodialSites=custodialList,

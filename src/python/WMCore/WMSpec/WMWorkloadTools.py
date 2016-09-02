@@ -79,19 +79,22 @@ def parsePileupConfig(mcPileup, dataPileup):
 
 
 def _validateArgument(argument, value, argumentDefinition):
+    """
+    Validate a single argument against its definition in the spec
+    """
     dictArguments = ['AcquisitionEra', 'ProcessingString', 'ProcessingVersion', 'MaxRSS', 'MaxVSize']
-    validNull = argumentDefinition[argument]["null"]
+    validNull = argumentDefinition["null"]
     if not validNull and value is None:
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
     elif value is None:
         return value
 
     try:
-        value = argumentDefinition[argument]["type"](value)
+        value = argumentDefinition["type"](value)
     except Exception:
         raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
 
-    validateFunction = argumentDefinition[argument]["validate"]
+    validateFunction = argumentDefinition["validate"]
     if validateFunction is not None:
         try:
             if argument in dictArguments and isinstance(value, dict):
@@ -117,22 +120,26 @@ def validateArgumentDict(argument, argValues, valFunc):
 
 
 def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
-    for argument in argumentDefinition:
-        optional = argumentDefinition[argument].get(optionKey, True)
-        if not optional and argument not in arguments:
-            msg = "Validation failed: %s is mandatory %s" % (argument, argumentDefinition[argument])
+    """
+    Check whether create or assign mandatory parameters were properly
+    set in the request schema.
+    """
+    for arg, argValue in argumentDefinition.iteritems():
+        optional = argValue.get(optionKey, True)
+        if not optional and arg not in arguments:
+            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argValue)
             raise WMSpecFactoryException(msg)
         # TODO this need to be done earlier then this function
         # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
         #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
-        elif argument not in arguments:
+        elif arg not in arguments:
             continue
-        elif optional and arguments[argument] == "":
-            del arguments[argument]
+        elif optional and arguments[arg] == "":
+            del arguments[arg]
         else:
-            arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
-        return
+            arguments[arg] = _validateArgument(arg, arguments[arg], argValue)
+    return
 
 
 def _validateInputDataset(arguments):
@@ -215,7 +222,7 @@ def validateSiteLists(arguments):
 def validateAutoGenArgument(arguments):
     autoGenArgs = ["TotalInputEvents", "TotalInputFiles", "TotalInputLumis", "TotalEstimatedJobs"]
     protectedArgs =set(autoGenArgs).intersection(set(arguments.keys()))
-        
+
     if len(protectedArgs) > 0:
         raise WMSpecFactoryException("Shouldn't set auto generated params %s: remove it" % list(protectedArgs))
     return

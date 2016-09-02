@@ -42,7 +42,7 @@ class MockDbsApi(object):
         # print("Initializing MockDBSApi")
 
     def serverinfo(self):
-        return None
+        return {'dbs_instance': 'MOCK', 'dbs_version': '3.3.144'}
 
     def listFileArray(self, **kwargs):
         """

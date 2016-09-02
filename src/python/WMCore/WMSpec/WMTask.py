@@ -1355,7 +1355,7 @@ class WMTaskHelper(TreeHelper):
                 # the acqera dict passed from the requestor
                 for taskname in era:
                     if taskname in self.name():
-                        taskEra = era[self.name()]
+                        taskEra = era[taskname]
         else:
             taskEra = era
 

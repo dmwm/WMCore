@@ -70,6 +70,8 @@ class ResubmitBlock(StartPolicyInterface):
                                  Jobs=ceil(float(block[self.args['SliceType']]) /
                                            float(self.args['SliceSize'])),
                                  ACDC=block['ACDC'],
+                                 NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
+                                 NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
                                 )
 
     def validate(self):

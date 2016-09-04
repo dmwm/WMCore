@@ -6,12 +6,12 @@
 """
 
 import os
-import re
 import shutil
 import tarfile
 import tempfile
 import urlparse
 import zipfile
+import logging
 
 import PSetTweaks
 import Utils
@@ -20,18 +20,16 @@ import WMCore.WMSpec.WMTask as WMTask
 from WMCore.WMSpec.Steps.StepFactory import getFetcher
 
 
-def tarballExclusion(path):
+def tarFilter(tarinfo):
     """
-    _tarballExclusion_
+    _tarFilter_
 
-    Eliminates all unnecessary packages
+    Filters what goes into a tarball
     """
-    patternList = ['\.svn', '\.git']
-
-    for pattern in patternList:
-        if re.search(pattern, path):
-            return True
-    return False
+    if tarinfo.name.endswith(".svn") or tarinfo.name.endswith(".git"):
+        return None
+    else:
+        return tarinfo
 
 class SandboxCreator:
 
@@ -139,32 +137,27 @@ class SandboxCreator:
         workload.save(workloadFile)
 
         # now, tar everything up and put it somewhere special
-        #(archiveHandle,archivePath) = tempfile.mkstemp('.tar.bz2','sbox',
-        #                                              buildItHere)
 
-        pythonHandle = open(archivePath, 'w+b')
-        archive = tarfile.open(None,'w:bz2', pythonHandle)
-        archive.add("%s/%s/" % (buildItHere, workloadName), '/',
-                    exclude = tarballExclusion)
+        tarContent = []
+        deleteFiles = []
+        tarContent.append(("%s/%s/" % (buildItHere, workloadName), '/'))
 
-        if (self.packageWMCore):
-            # package up the WMCore distribution in a zip file
-            # fixes #2943
-            
+        if self.packageWMCore:
+
             wmcorePath = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
-            (zipHandle, zipPath)  = tempfile.mkstemp()
+            (zipHandle, zipPath) = tempfile.mkstemp()
             os.close(zipHandle)
-            zipFile               = zipfile.ZipFile( zipPath,
-                                                     mode = 'w',
-                                                     compression = zipfile.ZIP_DEFLATED )
+            zipFile = zipfile.ZipFile(zipPath,
+                                      mode = 'w',
+                                      compression = zipfile.ZIP_DEFLATED)
 
-            for ( root, dirnames, filenames ) in os.walk(wmcorePath):
+            for (root, dirnames, filenames) in os.walk(wmcorePath):
                 for filename in filenames:
-                    if not tarballExclusion( filename ):
-                        zipFile.write( filename = os.path.join( root, filename ),
-                                       # the name in the archive is the path relative to WMCore/
-                                       arcname  = os.path.join( root, filename )[len(wmcorePath) - len('WMCore/') + 1:])
+                    if not filename.endswith(".svn") and not filename.endswith(".git"):
+                        zipFile.write(filename = os.path.join(root, filename),
+                                      # the name in the archive is the path relative to WMCore/
+                                      arcname = os.path.join(root, filename)[len(wmcorePath) - len('WMCore/') + 1:])
 
             # Add a dummy module for zipimport testing
             (handle, dummyModulePath) = tempfile.mkstemp()
@@ -175,26 +168,31 @@ class SandboxCreator:
 
             # Add the wmcore zipball to the sandbox
             zipFile.close()
-            archive.add(zipPath, '/WMCore.zip')
-            os.unlink( zipPath )
-            os.unlink( dummyModulePath )
+            tarContent.append((zipPath, '/WMCore.zip'))
+            deleteFiles.append(dummyModulePath)
+            deleteFiles.append(zipPath)
 
             psetTweaksPath = PSetTweaks.__path__[0]
-            archive.add(psetTweaksPath, '/PSetTweaks',
-                        exclude = tarballExclusion)
+            tarContent.append((psetTweaksPath, '/PSetTweaks'))
             
             utilsPath = Utils.__path__[0]
-            archive.add(utilsPath, '/Utils',
-                        exclude = tarballExclusion)
+            tarContent.append((psetTweaksPath, '/Utils'))
 
         for sb in userSandboxes:
             splitResult = urlparse.urlsplit(sb)
             if not splitResult[0]:
-                archive.add(sb, os.path.basename(sb))
+                tarContent.append((sb, os.path.basename(sb)))
 
-        archive.close()
-        pythonHandle.close()
+        with tarfile.open(archivePath, 'w:bz2') as tar:
+            for (name, arcname) in tarContent:
+                tar.add(name, arcname,
+                        filter=tarFilter)
 
+        for deleteFile in deleteFiles:
+            os.unlink(deleteFile)
 
+        logging.info("Created sandbox %s with size %d",
+                     os.path.basename(archivePath),
+                     os.path.getsize(archivePath))
 
         return archivePath

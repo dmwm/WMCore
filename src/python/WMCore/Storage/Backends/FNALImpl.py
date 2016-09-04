@@ -121,7 +121,7 @@ class FNALImpl(StageOutImpl):
 
             # always overwrite the output
 
-            result = "/usr/bin/xrdcp-old -d 0 -f "
+            result = "xrdcp-old -d 0 -f "
             if options != None:
                 result += " %s " % options
             result += " %s " % sourcePFN

@@ -470,6 +470,7 @@ class Request(RESTEntity):
             request_args['HardTimeout'] = request_args['SoftTimeout'] + request_args['GracePeriod']
         
         #Only allow extra value update for assigned status
+        cherrypy.log("INFO: Assign request, input args: %s ..." % request_args)
         try:
             workload.updateArguments(request_args)
         except Exception as ex:

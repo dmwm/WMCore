@@ -96,8 +96,10 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
         # delete request_args since it is not part of spec argument and validation
         args_without_status = {}
-        args_without_status.update(request_args)
-        del args_without_status["RequestStatus"]
+        # only these state transitions allow spec changes
+        if request_args["RequestStatus"] in ['new', 'assigned']:
+            args_without_status.update(request_args)
+            del args_without_status["RequestStatus"]
     else:
         args_without_status = request_args
 

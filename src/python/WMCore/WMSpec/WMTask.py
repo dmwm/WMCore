@@ -1277,6 +1277,10 @@ class WMTaskHelper(TreeHelper):
         """
         if isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
+            if taskProcVer is None:
+                for taskname in procVer:
+                    if taskname in self.name():
+                        taskProcVer = procVer[taskname]
         else:
             taskProcVer = procVer
 
@@ -1301,6 +1305,10 @@ class WMTaskHelper(TreeHelper):
         """
         if isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
+            if taskProcString is None:
+                for taskname in procString:
+                    if taskname in self.name():
+                        taskProcString = procString[taskname]
         else:
             taskProcString = procString
 

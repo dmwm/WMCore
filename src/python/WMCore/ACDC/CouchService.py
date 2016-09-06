@@ -113,7 +113,7 @@ class CouchService(Service):
         Remove all the collections matching certain collection
         name.
         """
-        result = self.couchdb.loadView("ACDC", "byCollectionName", keys = [collectionName])
+        result = self.couchdb.loadView("ACDC", "byCollectionName", options={"reduce": False}, keys=[collectionName])
         for entry in result["rows"]:
             self.couchdb.queueDelete(entry["value"])
         return self.couchdb.commit()

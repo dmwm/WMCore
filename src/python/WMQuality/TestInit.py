@@ -20,6 +20,7 @@ import tempfile
 import shutil
 import nose
 import traceback
+import inspect
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
@@ -36,6 +37,11 @@ except ImportError as ex:
 
 # Sorry for the global, but I think this should go here
 trashDatabases = False  # delete databases after every test?
+
+HEADER_FMT = "Call stack at %s, line %d in function %s:"
+STACK_FMT = "%s, line %d in function %s."
+
+
 
 class TestInitException(WMException):
     """
@@ -294,9 +300,18 @@ class TestInit:
         """
         Database deletion. Global, ignore modules.
         """
+        print("TestInit called with self.hasDatabase=%s" % self.hasDatabase)
+        stack = inspect.stack()
+        here = stack[0]
+        fileName, line, func = here[1:4]
+        print(HEADER_FMT % (fileName, line, func))
+        # Print the next frames
+        for frame in stack[1:5]:
+            fileName, line, func = frame[1:4]
+            print(STACK_FMT % (fileName, line, func))
         if not self.hasDatabase:
             return
-
+        print("Calling WMInit clearDatabase")
         self.init.clearDatabase()
 
         return

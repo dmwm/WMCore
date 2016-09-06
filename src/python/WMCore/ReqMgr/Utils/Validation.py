@@ -13,7 +13,7 @@ from WMCore.WMFactory import WMFactory
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Lexicon import procdataset
@@ -95,9 +95,15 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     if "RequestStatus" in request_args:
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
         # delete request_args since it is not part of spec argument and validation
-        args_without_status = {}
-        args_without_status.update(request_args)
-        del args_without_status["RequestStatus"]
+        if request_args["RequestStatus"] not in STATES_ALLOW_ONLY_STATE_TRANSITION:
+            args_without_status = {}
+            args_without_status.update(request_args)
+            del args_without_status["RequestStatus"]
+        else:
+            #if state change doesn't allow other transition nothing else to validate
+            args_only_status = {}
+            args_only_status["RequestStatus"] = request_args["RequestStatus"]
+            return  workload, args_only_status 
     else:
         args_without_status = request_args
 

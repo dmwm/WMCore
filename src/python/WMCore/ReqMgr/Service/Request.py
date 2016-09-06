@@ -532,8 +532,7 @@ class Request(RESTEntity):
             elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
                 "cascade" in request_args:
                 report = self._handleCascadeUpdate(workload, request_args, dn)
-                
-            elif len(request_args) == 1 or req_status in ["aborted", "force-complete", "rejected"]:
+            elif len(request_args) == 1:
                 # If status chnage is to aborted, force-complete, rejected, ignore other argument
                 report = self._handleOnlyStateTransition(workload, req_status, dn)
             else:

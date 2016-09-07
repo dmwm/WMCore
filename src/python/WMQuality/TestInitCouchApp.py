@@ -62,6 +62,8 @@ class CouchAppTestHarness:
         for couchappdir in  couchappdirs:
             couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
 
+    def listDBs(self):
+        return self.couchServer.listDatabases()
 
 class TestInitCouchApp(TestInit):
     """
@@ -118,6 +120,8 @@ class TestInitCouchApp(TestInit):
             print ("Removing CouchDB %s" % database)
             couch = CouchAppTestHarness(database)
             couch.drop()
+
+        print("After teardown, CouchDB has %s" % self.couch.listDBs())
 
         self.couch = None
         return

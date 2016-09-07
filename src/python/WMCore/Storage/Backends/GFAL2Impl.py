@@ -103,6 +103,8 @@ class GFAL2Impl(StageOutImpl):
 
         copyCommandDict = {'checksum': '', 'options': '', 'source': '', 'destination': ''}
 
+        useChecksum = (checksums is not None and 'adler32' in checksums and not self.stageIn)
+
         if not options:
             options = ''
 
@@ -111,7 +113,11 @@ class GFAL2Impl(StageOutImpl):
         args, unknown = parser.parse_known_args(options.split())
 
         if not args.nochecksum:
-            copyCommandDict['checksum'] = "-K adler32"
+            if useChecksum:
+                checksums['adler32'] = "%08x" % int(checksums['adler32'], 16)
+                copyCommandDict['checksum'] = "-K adler32:%s" % checksums['adler32']
+            else:
+                copyCommandDict['checksum'] = "-K adler32"
 
         copyCommandDict['options'] = ' '.join(unknown)
 

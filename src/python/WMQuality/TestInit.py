@@ -178,6 +178,7 @@ class TestInit:
                                         config.CoreDatabase.dialect,
                                         config.CoreDatabase.socket)
 
+        print("From %s and %s - clearDatabase: %s" % (trashDatabases, destroyAllDatabase, trashDatabases or destroyAllDatabase))
         if trashDatabases or destroyAllDatabase:
             self.clearDatabase()
 

@@ -174,23 +174,24 @@ class ReqMgrClient(RESTClient):
         config.request_args - arguments for both creation and assignment
         
         """
-        logging.info("Assigning request args:\n%s ..." %
-                     config.request_args["assignRequest"])
         assign_args = config.request_args["assignRequest"]
         assign_args["RequestStatus"] = "assigned"
         json_args = json.dumps(assign_args)
-        urn = self.urn_prefix + "/request/%s" % config.request_names
-        status, data = self.http_request("PUT", urn, data=json_args,
-                                         headers=self.headersBody)
-        if status > 216:
-            logging.error("Error occurred, exit.")
+        if isinstance(config.request_names, basestring):
+            config.request_names = [config.request_names]
+        for request_name in config.request_names:
+            logging.info("Assigning %s with request args:\n%s ..." % (request_name,
+                                                                      config.request_args["assignRequest"]))
+            urn = self.urn_prefix + "/request/%s" % request_name
+            status, data = self.http_request("PUT", urn, data=json_args,
+                                             headers=self.headersBody)
+            if status > 216:
+                logging.error("Error occurred, exit.")
+                print(data)
+                sys.exit(1)
+            data = json.loads(data)
             print(data)
-            sys.exit(1)
-        data = json.loads(data)
-        print(data)
-        request_name = str(data["result"][0].keys()[0])
-        logging.info("Assign succeeded.")
-        return request_name
+            logging.info("Assign succeeded.")
 
     def query_requests(self, config, to_query=None):
         """
@@ -322,8 +323,8 @@ def process_cli_args(args):
         err_exit("--request_names can't be provided with --create_request", parser)
     if opts.all_tests and not opts.config_file:
         err_exit("When --all_tests, --config_file is necessary", parser)
-    if (opts.json and not opts.create_request) and (opts.json and not opts.all_tests):
-        err_exit("--json only with --create_request, --all_tests", parser)
+    if opts.json and not (opts.create_request or opts.assign_request or opts.all_tests):
+        err_exit("--json only with --create_request, --assign_request or --all_tests", parser)
 
     for action in filter(lambda name: getattr(opts, name), actions):
         if opts.all_tests and action and action != "all_tests":
@@ -451,7 +452,7 @@ def initialization(cli_args):
     logging.basicConfig(level=logging.DEBUG if config.verbose else logging.INFO)
     logging.debug("Set verbose console output.")
     reqmgr_client = ReqMgrClient(config.reqmgrurl, config)
-    if config.create_request or config.all_tests:
+    if config.create_request or config.assign_request or config.all_tests:
         # process request arguments and store them
         config.request_args = process_request_args(config.config_file, config.json)
     return reqmgr_client, config, actions

@@ -37,6 +37,7 @@ class CouchAppTestHarness:
             raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
         self.couchappConfig = Config()
+        print("After construction of %s DB list contains" % (dbName, self.couchServer.listDatabases()))
 
 
     def create(self, dropExistingDb=True):

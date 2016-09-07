@@ -1,3 +1,100 @@
+1.0.19 to 1.0.20.pre5:
+  - Merge pull request #7163 from ticoann/fix_assignment_reject_transition
+  - fix assignment reject transiton for reqmgr2
+  - Merge pull request #7048 from hufnagel/gfal2-use-adler32
+  - Merge pull request #7162 from amaltaro/procstr-alltasks
+  - Merge pull request #7159 from amaltaro/reqmgr2-client2
+  - Set ProcStr and ProcVer for any task level - TaskChain
+  - Merge pull request #7148 from ticoann/fix_acdc_cleanup
+  - Fix assignment-only with reqmgr2 client
+  - fix the acdc clean up call
+  - Update deployment tag; remove site restrictions besides NERSC (#7143)
+  - 1.0.20.pre4
+  - Merge pull request #7142 from amaltaro/trustPUlist-acdcs
+  - Fix Trust flags for Resubmission requests
+  - 1.0.20.pre3
+  - Merge pull request #7130 from amaltaro/fix-AcqEra
+  - Merge pull request #7125 from amaltaro/cache-datatiers
+  - Properly set AcqEra for any task level - TaskChain
+  - Pylint fixes
+  - Cache list of datatiers from DBS
+  - Merge pull request #7129 from ticoann/check_parent_files
+  - Merge pull request #7131 from ericvaandering/remove_datablockgenerator
+  - check parent file exist
+  - pylint and formatting
+  - Remove DBG from LocalQueueProfile_t.py, Block_t.py, WMAgent emulator and dataset_t
+  - 1.0.20.pre2
+  - Merge pull request #7122 from ticoann/remove_alert
+  - Merge pull request #7103 from ticoann/fix_event_number
+  - Merge pull request #7120 from amaltaro/reqmgr2-validations2
+  - remove alert
+  - fix the counting of event lumi number when addtional work is added
+  - 1.0.20.pre1
+  - Port assignment validation code to ReqMgr2
+  - Merge pull request #7108 from ticoann/reqmgr2_1609_fix
+  - Merge pull request #7109 from ticoann/acdc_campaign_fix
+  - fixes #7015
+  - fixes #6961
+  - Merge pull request #7080 from amaltaro/no-logcollect-cleanup
+  - Merge pull request #7097 from amaltaro/fix-jobprio1
+  - Merge pull request #7076 from amaltaro/unique-fileLocation
+  - Merge pull request #7105 from ericvaandering/restore_import_test
+  - Merge pull request #7065 from ericvaandering/mock_mc_spec
+  - Restore check on zip import without messing with python internals
+  - Merge pull request #7058 from ticoann/reqmgr2_approve_fix
+  - Update locations for changed PhEDEx emulator
+  - Get rid of import testing and mucking with sys.modules
+  - Switch to MonteCarlo_t to mock DBS Update PhEDEx emulator to query DBS for real block names and change the logic slightly Add calls to the DBS emulator to pass tests
+  - Use the correct priority var between JobSubmitter and RunJob
+  - use the adler32 checksum in gfal2 stageout
+  - Merge pull request #7084 from amaltaro/simple-unittest
+  - Avoid using test in function names
+  - filter to have only editable fields
+  - Do not upload skipped files for LogCollect/Cleanup to ACDC Server
+  - Merge pull request #7064 from ericvaandering/fix_insertSEs2
+  - Add only unique file/location rows into dbsbuffer
+  - Merge pull request #7061 from ericvaandering/mock_for_wmbs
+  - The real change is that we no longer have a constant # of sites in ResourceControl since we're using the mock emulator. (assertGreaterEqual).  Rest of the changes are just cosmetic.
+  - Fix some pylint complaints
+  - 1.0.19.patch1
+  - Merge pull request #7037 from amaltaro/storeresults-fix
+  - Make all WMBSHelper_t tests run with DBS and SiteDB emulators
+  - Add some more stuff to SiteDB emulator and create new JSON
+  - Merge pull request #7004 from amaltaro/jobsubmitter-new
+  - Merge pull request #7047 from hufnagel/singlecore-override-simplify
+  - Merge pull request #7051 from ticoann/add_more_error_code
+  - Merge pull request #7055 from amaltaro/vstring-unicode
+  - Merge pull request #7059 from amaltaro/views-typeerror
+  - Failed jobs may not contain LogCollect key
+  - Merge pull request #7057 from ericvaandering/phedexinjector_mock_sitedb
+  - specify the timeout error
+  - Merge pull request #7056 from ericvaandering/more_sitedb_mock
+  - Switch PhEDEx injector tests to mock for SiteDB and DBS
+  - Make LocalQueue really use mocked SiteDB
+  - Make resource control script use emulator
+  - Cast list of PU files to string in the PSet tweak
+  - Merge pull request #7049 from amaltaro/last-sename
+  - Convert leftover se_name to pnn
+  - simplify single core override for repack, merge and alcaharvest
+  - Merge pull request #7046 from ericvaandering/robust_comparison
+  - Use assertContentsEqual for DBS returns
+  - Create ExtendedUnitTestCase with a new type of assert that sorts all the lists in a nested structure before applying the dictionary comparison
+  - Tests for a new comparison operator
+  - Merge pull request #7044 from ericvaandering/fix_start_block_tests
+  - Fix pylint complaints and use iteritems
+  - Update Block_t test to work with #7038
+  - Improvements to PhEDEx and DBS mock emulators and their data
+  - Merge pull request #7043 from amaltaro/jsonfile-monitor
+  - Merge pull request #7041 from amaltaro/wmarchive-typo
+  - Merge pull request #7042 from amaltaro/monitoring-typo
+  - Fix jsonFile var for AgentStatusWatcher
+  - Fix typo in wmarchive parameter
+  - Fix typo in monitoring class
+  - Also watch running thresholds
+  - Fix resource control unit tests
+  - Get proper data location for StoreResults requests
+  - JobSubmitter refactoring; always submit higher prio first
+
 1.0.19 to 1.0.20.pre4:
   - Merge pull request #7142 from amaltaro/trustPUlist-acdcs
   - Fix Trust flags for Resubmission requests

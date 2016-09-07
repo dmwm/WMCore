@@ -75,8 +75,10 @@ ACTIVE_STATUS = ["new",
                  "aborted-completed",
                  "rejected"]
 
-# if the state is not defined here (new, assignment-approved) allows all the property to get 
+# if the state is not defined here (new) allows all the property to get
+# states in the key is the source states (need to define source states instead of destination states for GUI update) 
 ALLOWED_ACTIONS_FOR_STATUS = {
+                 "new": ["RequestPriority"],
                  "assignment-approved":["RequestPriority", "Team", "SiteWhitelist", "SiteBlacklist",
                                         "AcquisitionEra", "ProcessingString", "ProcessingVersion", 
                                         "Dashboard", "MergedLFNBase", "MaxRSS", "TrustSitelists", 
@@ -93,7 +95,7 @@ ALLOWED_ACTIONS_FOR_STATUS = {
                  "running": ["RequestPriority"],
                  "running-open": ["RequestPriority"],
                  "running-closed": ["RequestPriority"],
-                 "failed": ["RequestPriority"],
+                 "failed": [],
                  "force-complete": [],
                  "completed": [],
                  "closed-out": [],
@@ -106,6 +108,8 @@ ALLOWED_ACTIONS_FOR_STATUS = {
                  "rejected-archived": [],
                 }
 
+# list of destiantion states which doesn't allow any additional arguement update
+STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.iteritems() if len(val) == 0]
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status
 REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()

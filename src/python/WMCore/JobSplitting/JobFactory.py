@@ -174,21 +174,25 @@ class JobFactory(WMObject):
             for jobGroup in self.jobGroups:
 
                 for job in jobGroup.newjobs:
-
+                    #temporary place holder for file location
+                    fileLocations = set([])
                     if self.trustSitelists:
                         locSet = set(self.siteWhitelist) - set(self.siteBlacklist)
                     else:
                         locSet = set([])
                         for pnn in job['input_files'][0]['locations']:
                             locSet.update(self.pnn_to_psn.get(pnn, []))
-
+                        fileLocations = locSet
                         if len(self.siteWhitelist) > 0:
                             locSet = locSet & set(self.siteWhitelist)
                         if len(self.siteBlacklist) > 0:
                             locSet = locSet - set(self.siteBlacklist)
 
                     job['possiblePSN'] = locSet
-
+                    if len(job['possiblePSN']) == 0:
+                        job["fileLocations"] = fileLocations
+                        job["siteWhitelist"] = self.siteWhitelist
+                        job["siteBlacklist"] = self.siteBlacklist
                 # now after the jobs are created, remove input file locations
                 # they are no longer needed and just take up space
                 for job in jobGroup.newjobs:

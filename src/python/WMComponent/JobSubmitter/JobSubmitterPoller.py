@@ -401,8 +401,23 @@ class JobSubmitterPoller(BaseWorkerThread):
         for job in badJobs:
             job['couch_record'] = None
             job['fwjr'] = Report()
-            if exitCode in (71102, 71104):
+            if exitCode in [71102, 71104]:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
+            elif exitCode in [71101]:
+                # there is no possible site 
+                if "fileLocations" in job:
+                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
+                                         ": file locations: " + ', '.join(job['fileLocations']) +
+                                         ": site white list: " + ', '.join(job['siteWhitelist']) +
+                                         ": site black list: " + ', '.join(job['siteBlacklist']))
+                else:
+                    # This is temporary addition if this is patched for existing agent.
+                    # If jobs are created before the patch is applied fileLocations is not set.
+                    # TODO. remove this later for new agent
+                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
+                                         ": Job is created before this patch. Please check this input for the jobs: %s " % 
+                                         job['fwjr'].getAllInputFiles())
+                    
             else:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode])
             fwjrPath = os.path.join(job['cache_dir'],

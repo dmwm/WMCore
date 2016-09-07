@@ -6,11 +6,12 @@ Implementation of StageOutImpl interface for RFIO in Castor-2
 
 """
 from __future__ import print_function
+
 import os
-from WMCore.Storage.Registry import registerStageOutImpl
-from WMCore.Storage.StageOutImpl import StageOutImpl
 
 from WMCore.Storage.Execute import runCommand
+from WMCore.Storage.Registry import registerStageOutImpl
+from WMCore.Storage.StageOutImpl import StageOutImpl
 
 
 class RFCP2Impl(StageOutImpl):
@@ -38,11 +39,12 @@ class RFCP2Impl(StageOutImpl):
 
         create dir with group permission
         """
+        checkdirexitCode = None
 
-        targetdir= os.path.dirname(targetPFN)
+        targetdir = os.path.dirname(targetPFN)
 
-        checkdircmd="rfstat %s > /dev/null " % targetdir
-        print("Check dir existence : %s" %checkdircmd)
+        checkdircmd = "rfstat %s > /dev/null " % targetdir
+        print("Check dir existence : %s" % checkdircmd)
         try:
             checkdirexitCode = self.run(checkdircmd)
         except Exception as ex:
@@ -55,7 +57,7 @@ class RFCP2Impl(StageOutImpl):
 
         if checkdirexitCode:
             mkdircmd = "rfmkdir -m 775 -p %s" % targetdir
-            print("=> creating the dir : %s" %mkdircmd)
+            print("=> creating the dir : %s" % mkdircmd)
             try:
                 self.run(mkdircmd)
             except Exception as ex:
@@ -68,8 +70,7 @@ class RFCP2Impl(StageOutImpl):
         else:
             print("=> dir already exists... do nothing.")
 
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -89,9 +90,9 @@ class RFCP2Impl(StageOutImpl):
 
         result += "\nFILE_SIZE=`stat -c %s"
         result += " %s `;\n" % localPFN
-        result += " echo \"Local File Size is: $FILE_SIZE\"; DEST_SIZE=`rfstat %s | grep Size | cut -f2 -d:` ; if [ $DEST_SIZE ] && [ $FILE_SIZE == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (remotePFN)
+        result += " echo \"Local File Size is: $FILE_SIZE\"; DEST_SIZE=`rfstat %s | grep Size | cut -f2 -d:` ; if [ $DEST_SIZE ] && [ $FILE_SIZE == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (
+        remotePFN)
         return result
-
 
     def removeFile(self, pfnToRemove):
         """
@@ -100,7 +101,7 @@ class RFCP2Impl(StageOutImpl):
         CleanUp pfn provided: specific for Castor-1
 
         """
-        command = "stager_rm -M %s ; nsrm %s" %(pfnToRemove,pfnToRemove)
+        command = "stager_rm -M %s ; nsrm %s" % (pfnToRemove, pfnToRemove)
         self.executeCommand(command)
 
 

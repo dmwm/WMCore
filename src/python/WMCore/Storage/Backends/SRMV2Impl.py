@@ -156,8 +156,6 @@ class SRMV2Impl(StageOutImpl):
             remotePFN, localPFN = sourcePFN, targetPFN.replace("file://", "", 1)
         else:
             remotePFN, localPFN = targetPFN, sourcePFN.replace("file://", "", 1)
-
-        #targetPFN =  remotePFN
         remotePath = None
         SFN = '?SFN='
         sfn_idx = remotePFN.find(SFN)
@@ -171,26 +169,6 @@ class SRMV2Impl(StageOutImpl):
         if remotePath == None:
             remotePath = m.groups()[2]
         remoteHost = m.groups()[0]
-
-#        for filePath in (sourcePFN, targetPFN):
-#            if filePath.startswith("file://"):
-#                localPFN = filePath.replace("file://", "")
-#            elif filePath.startswith("srm://"):
-#                remotePFN = filePath
-#                targetPFN = filePath
-#                targetPath = None
-#                SFN = '?SFN='
-#                sfn_idx = filePath.find(SFN)
-#                if sfn_idx >= 0:
-#                    targetPath = filePath[sfn_idx+5:]
-#                r = re.compile('srm://([A-Za-z\-\.0-9]*)(:[0-9]*)?(/.*)')
-#                m = r.match(filePath)
-#                if not m:
-#                    raise StageOutError("Unable to determine path from PFN for " \
-#                                "target %s." % filePath)
-#                if targetPath == None:
-#                    targetPath = m.groups()[2]
-#                targetHost = m.groups()[0]
 
         result += "FILE_SIZE=`stat -c %s"
         result += " %s `\n" % localPFN

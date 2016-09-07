@@ -110,6 +110,7 @@ def runCommandWithOutput(command):
                 print(msg)
                 outchunk = ''
             if outchunk == '': outeof = 1
+            sys.stdout.write(outchunk)
             output += outchunk
         if errfd in ready[0]:
             try:
@@ -120,6 +121,7 @@ def runCommandWithOutput(command):
                 errchunk = ""
             if errchunk == '': erreof = 1
             output += errchunk
+            sys.stderr.write(errchunk)
         if outeof and erreof: break
         select.select([],[],[],.1) # give a little time for buffers to fill
 

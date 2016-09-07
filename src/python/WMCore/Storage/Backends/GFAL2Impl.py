@@ -142,7 +142,6 @@ class GFAL2Impl(StageOutImpl):
         _removeFile_
         CleanUp pfn provided
         """
-        command = ""
         if os.path.isfile(pfnToRemove):
             command = "/bin/rm -f %s" % os.path.abspath(pfnToRemove)
         else:

@@ -45,6 +45,7 @@ class CouchAppTestHarness:
         #pdb.set_trace()
         if self.dbName in self.couchServer.listDatabases():
             if not dropExistingDb:
+                print("Already found %s, not dropping and recreating" % self.dbName)
                 return
             self.drop()
 
@@ -96,6 +97,7 @@ class TestInitCouchApp(TestInit):
         and the required list of couchapps from WMCore/src/couchapps
         """
         self.databases.append(dbName)
+        print("Adding %s to list of CouchDBs, now %s" % (dbName, self.databases))
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create(dropExistingDb=self.dropExistingDb)
         # just create the db is couchapps are not specified
@@ -113,6 +115,7 @@ class TestInitCouchApp(TestInit):
         call this in tearDown to erase all evidence of your couch misdemeanours
         """
         for database in self.databases:
+            print ("Removing CouchDB %s" % database)
             couch = CouchAppTestHarness(database)
             couch.drop()
 

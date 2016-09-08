@@ -37,14 +37,19 @@ class CouchAppTestHarness:
             raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
         self.couchappConfig = Config()
+        print("After construction of %s DB list contains %s" % (dbName, self.couchServer.listDatabases()))
 
 
     def create(self, dropExistingDb=True):
         """create couch db instance"""
         #import pdb
         #pdb.set_trace()
+        print("Creating %s with drop=%s" % (self.dbName, dropExistingDb))
         if self.dbName in self.couchServer.listDatabases():
+            print("Found %s already. Dropping? %s" % (self.dbName, dropExistingDb))
+
             if not dropExistingDb:
+                print("Already found %s, not dropping and recreating" % self.dbName)
                 return
             self.drop()
 
@@ -52,7 +57,11 @@ class CouchAppTestHarness:
 
     def drop(self):
         """blow away the couch db instance"""
+        print("In drop() with %s" % (self.dbName))
+
         self.couchServer.deleteDatabase(self.dbName)
+
+        print(" Completed drop()")
 
     def pushCouchapps(self, *couchappdirs):
         """
@@ -61,6 +70,8 @@ class CouchAppTestHarness:
         for couchappdir in  couchappdirs:
             couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
 
+    def listDBs(self):
+        return self.couchServer.listDatabases()
 
 class TestInitCouchApp(TestInit):
     """
@@ -96,6 +107,7 @@ class TestInitCouchApp(TestInit):
         and the required list of couchapps from WMCore/src/couchapps
         """
         self.databases.append(dbName)
+        print("Adding %s to list of CouchDBs, now %s" % (dbName, self.databases))
         self.couch = CouchAppTestHarness(dbName)
         self.couch.create(dropExistingDb=self.dropExistingDb)
         # just create the db is couchapps are not specified
@@ -112,9 +124,16 @@ class TestInitCouchApp(TestInit):
 
         call this in tearDown to erase all evidence of your couch misdemeanours
         """
+        print("In tearDownCouch")
+
+        print("Before teardown, CouchDB has %s" % self.couch.listDBs())
+
         for database in self.databases:
+            print ("Removing CouchDB %s" % database)
             couch = CouchAppTestHarness(database)
             couch.drop()
+
+        print("After teardown, CouchDB has %s" % self.couch.listDBs())
 
         self.couch = None
         return

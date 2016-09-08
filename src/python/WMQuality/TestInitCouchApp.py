@@ -125,15 +125,17 @@ class TestInitCouchApp(TestInit):
         call this in tearDown to erase all evidence of your couch misdemeanours
         """
         print("In tearDownCouch")
-
-        print("Before teardown, CouchDB has %s" % self.couch.listDBs())
+        if self.couch:
+            print("Before teardown, CouchDB has %s" % self.couch.listDBs())
+        else:
+            print("Couch does not actually exist")
 
         for database in self.databases:
             print ("Removing CouchDB %s" % database)
             couch = CouchAppTestHarness(database)
             couch.drop()
-
-        print("After teardown, CouchDB has %s" % self.couch.listDBs())
+        if self.couch:
+            print("After teardown, CouchDB has %s" % self.couch.listDBs())
 
         self.couch = None
         return

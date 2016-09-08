@@ -301,7 +301,7 @@ class TestInit:
         """
         Database deletion. Global, ignore modules.
         """
-        print("TestInit called with self.hasDatabase=%s" % self.hasDatabase)
+        print("TestInit::clearDatabase called with self.hasDatabase=%s" % self.hasDatabase)
         stack = inspect.stack()
         here = stack[0]
         fileName, line, func = here[1:4]

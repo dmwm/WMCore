@@ -75,6 +75,8 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
 
         Drop all the WMBS tables.
         """
+        print("In WorkQueueTest teardown")
+
         self.localCouchMonitor.deleteReplicatorDocs()
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()

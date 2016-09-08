@@ -37,13 +37,14 @@ class CouchAppTestHarness:
             raise RuntimeError("COUCHURL env var shouldn't end with /")
         self.couchServer = CouchServer(self.couchUrl)
         self.couchappConfig = Config()
-        print("After construction of %s DB list contains" % (dbName, self.couchServer.listDatabases()))
+        print("After construction of %s DB list contains %s" % (dbName, self.couchServer.listDatabases()))
 
 
     def create(self, dropExistingDb=True):
         """create couch db instance"""
         #import pdb
         #pdb.set_trace()
+        print("Creating %s with drop=%s" % (self.dbName, dropExistingDb))
         if self.dbName in self.couchServer.listDatabases():
             if not dropExistingDb:
                 print("Already found %s, not dropping and recreating" % self.dbName)

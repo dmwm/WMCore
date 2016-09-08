@@ -46,6 +46,8 @@ class CouchAppTestHarness:
         #pdb.set_trace()
         print("Creating %s with drop=%s" % (self.dbName, dropExistingDb))
         if self.dbName in self.couchServer.listDatabases():
+            print("Found %s already. Dropping? %s" % (self.dbName, dropExistingDb))
+
             if not dropExistingDb:
                 print("Already found %s, not dropping and recreating" % self.dbName)
                 return
@@ -55,7 +57,11 @@ class CouchAppTestHarness:
 
     def drop(self):
         """blow away the couch db instance"""
+        print("In drop() with %s" % (self.dbName))
+
         self.couchServer.deleteDatabase(self.dbName)
+
+        print(" Completed drop()")
 
     def pushCouchapps(self, *couchappdirs):
         """

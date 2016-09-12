@@ -463,7 +463,7 @@ class CleanCouchPoller(BaseWorkerThread):
     
     def isUploadedToWMArchive(self, workflowName):
         
-        if hasattr(self.config, "ArchiveDataReporter") and self.config.ArchiveDataReporter.WMArchiveURL != None:
+        if hasattr(self.config, "ArchiveDataReporter") and self.config.ArchiveDataReporter.WMArchiveURL:
             try: 
                 return self.fwjrService.isAllFWJRArchived(workflowName)
             except Exception as ex:

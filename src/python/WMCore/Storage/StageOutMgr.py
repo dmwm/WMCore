@@ -15,7 +15,7 @@ from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
-
+from WMCore.Services.Condor.CondorAPI import condorChirpAttrDelayed
 
 class StageOutMgr:
     """
@@ -41,6 +41,7 @@ class StageOutMgr:
             if not self.override:
                 print("=======StageOut Override: These are not the parameters you are looking for")
 
+
         self.substituteGUID = True
         self.fallbacks = []
 
@@ -49,6 +50,7 @@ class StageOutMgr:
         # //
         self.tfc = None
 
+        self.condorChirpKey = 0
         self.numberOfRetries = 3
         self.retryPauseTime = 600
 
@@ -182,12 +184,14 @@ class StageOutMgr:
             try:
                 pfn = self.localStageOut(lfn, fileToStage['PFN'], fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['PNN'] = self.siteCfg.localStageOut['phedex-node']
-                fileToStage['StageOutCommand'] = self.siteCfg.localStageOut['command']
+                fileToStage['PNN'] = self.siteCfg.localStageOut.get('phedex-node', None)
+                fileToStage['StageOutCommand'] = self.siteCfg.localStageOut.get('command', None)
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
                 print("===> Stage Out Successful: %s" % fileToStage)
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'LOCAL', 0)
+                condorChirpAttrDelayed('Chirp_WMCore_Stageout_%s' % self.condorChirpKey, str(fileToStage['StageOutReport']))
+                self.condorChirpKey += 1
                 return fileToStage
             except WMException as ex:
                 lastException = ex
@@ -212,8 +216,8 @@ class StageOutMgr:
                 pfn = self.fallbackStageOut(lfn, fileToStage['PFN'],
                                             fallback, fileToStage.get('Checksums'))
                 fileToStage['PFN'] = pfn
-                fileToStage['PNN'] = fallback['phedex-node']
-                fileToStage['StageOutCommand'] = fallback['command']
+                fileToStage['PNN'] = fallback.get('phedex-node', None)
+                fileToStage['StageOutCommand'] = fallback.get('command', None)
                 print("attempting fallback")
                 self.completedFiles[fileToStage['LFN']] = fileToStage
                 if lfn in self.failed:
@@ -221,6 +225,8 @@ class StageOutMgr:
 
                 print("===> Stage Out Successful: %s" % fileToStage)
                 fileToStage = stageoutPolicyReport(fileToStage, None, None, 'FALLBACK', 0)
+                condorChirpAttrDelayed('Chirp_WMCore_Stageout_%s' % self.condorChirpKey, str(fileToStage['StageOutReport']))
+                self.condorChirpKey += 1
                 return fileToStage
             except Exception as ex:
                 fileToStage = stageoutPolicyReport(fileToStage, fallback.get('phedex-node', None),
@@ -228,6 +234,8 @@ class StageOutMgr:
                 lastException = ex
                 continue
 
+        condorChirpAttrDelayed('Chirp_WMCore_Stageout_%s' % self.condorChirpKey, str(fileToStage['StageOutReport']))
+        self.condorChirpKey += 1
         raise lastException
 
     def fallbackStageOut(self, lfn, localPfn, fbParams, checksums):

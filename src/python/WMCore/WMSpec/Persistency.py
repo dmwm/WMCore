@@ -10,23 +10,21 @@ Placeholder for ideas at present....
 """
 from __future__ import print_function
 
-
-
-
-import cPickle
-import urllib2
 from urllib2 import urlopen, Request
 from urlparse import urlparse
-import json
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 class PersistencyHelper:
     """
     _PersistencyHelper_
 
-    Save a WMSpec object to a file using cPickle
+    Save a WMSpec object to a file using pickle
 
     Future ideas:
-    - cPickle mode: read/write using cPickle
+    - pickle mode: read/write using pickle
     - python mode: write using pythonise, read using import
        Needs work to preserve tree information
     - gzip mode: also gzip/unzip content if set to True
@@ -44,7 +42,7 @@ class PersistencyHelper:
         handle = open(filename, 'w')
         #TODO: use different encoding scheme for different extension
         #extension = filename.split(".")[-1].lower()
-        cPickle.dump(self.data, handle)
+        pickle.dump(self.data, handle)
         handle.close()
         return
 
@@ -52,7 +50,7 @@ class PersistencyHelper:
         """
         _load_
 
-        UncPickle data from file
+        Unpickle data from file
 
         """
 
@@ -63,18 +61,18 @@ class PersistencyHelper:
         if not urlparse(filename)[0]:
             filename = 'file:' + filename
             handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
-            self.data = cPickle.load(handle)
+            self.data = pickle.load(handle)
             handle.close()
         elif filename.startswith('file:'):
             handle = urlopen(Request(filename, headers = {"Accept" : "*/*"}))
-            self.data = cPickle.load(handle)
+            self.data = pickle.load(handle)
             handle.close()
         else:
             # use own request class so we get authentication if needed
             from WMCore.Services.Requests import Requests
             request = Requests(filename)
             data = request.makeRequest('', incoming_headers = {"Accept" : "*/*"})
-            self.data = cPickle.loads(data[0])
+            self.data = pickle.loads(data[0])
 
         #TODO: use different encoding scheme for different extension
         #extension = filename.split(".")[-1].lower()
@@ -101,7 +99,7 @@ class PersistencyHelper:
             rev = doc['_rev']
 
         #specuriwrev = specuri + '?rev=%s' % rev
-        workloadString = cPickle.dumps(self.data)
+        workloadString = pickle.dumps(self.data)
         #result = database.put(specuriwrev, workloadString, contentType='application/text')
         result = database.addAttachment(name, rev, workloadString, 'spec')
         url = couchUrl + specuri

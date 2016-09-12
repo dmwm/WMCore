@@ -6,14 +6,16 @@ Base class for BossAir plugins
 """
 
 import os
-import cPickle as pickle
 import logging
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from datetime import datetime
 from datetime import timedelta
 from random import randint
 import multiprocessing
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 def processWorker(myinput, tmp):
     try:

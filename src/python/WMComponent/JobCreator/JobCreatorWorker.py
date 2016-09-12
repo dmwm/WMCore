@@ -39,8 +39,10 @@ import os.path
 
 import gc
 
-import cPickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from WMCore.DAOFactory                      import DAOFactory
 from WMCore.JobSplitting.SplitterFactory    import SplitterFactory
@@ -390,7 +392,7 @@ class JobCreatorWorker:
         cacheDir = job.getCache()
         job['cache_dir'] = cacheDir
         output = open(os.path.join(cacheDir, 'job.pkl'), 'w')
-        cPickle.dump(job, output, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(job, output, pickle.HIGHEST_PROTOCOL)
         output.flush()
         os.fsync(output.fileno())
         output.close()

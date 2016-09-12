@@ -6,10 +6,11 @@ Data structure for storing and retreiving multiple job objects.
 """
 
 
-
-
-import cPickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMCore.DataStructs.WMObject import WMObject
 
 class JobPackage(WMObject, dict):
@@ -35,7 +36,7 @@ class JobPackage(WMObject, dict):
         Pickle this object and save it to disk.
         """
         fileHandle = open(fileName, "w")
-        cPickle.dump(self, fileHandle, -1)
+        pickle.dump(self, fileHandle, -1)
         fileHandle.close()
         return
 
@@ -46,7 +47,7 @@ class JobPackage(WMObject, dict):
         Load a pickled JobPackage object.
         """
         fileHandle = open(fileName, "r")
-        loadedJobPackage = cPickle.load(fileHandle)
+        loadedJobPackage = pickle.load(fileHandle)
         self.clear()
         self.update(loadedJobPackage)
         return

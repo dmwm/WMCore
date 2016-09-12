@@ -10,7 +10,10 @@ import threading
 import unittest
 import getpass
 import subprocess
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp             import TestInitCouchApp as TestInit

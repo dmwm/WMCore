@@ -16,8 +16,11 @@ import time
 import os
 import cProfile
 import pstats
-import cPickle
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory import DAOFactory
@@ -307,7 +310,7 @@ class JobCreatorTest(unittest.TestCase):
         jobFile = os.path.join(groupDirectory, jobDir, 'job.pkl')
         self.assertTrue(os.path.isfile(jobFile))
         f = open(jobFile, 'r')
-        job = cPickle.load(f)
+        job = pickle.load(f)
         f.close()
 
         self.assertEqual(job.baggage.PresetSeeder.generator.initialSeed, 1001)

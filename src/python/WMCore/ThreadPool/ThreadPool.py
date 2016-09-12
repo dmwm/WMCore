@@ -12,12 +12,15 @@ To use this you need to use the ThreadSlave class
 
 
 import base64
-import cPickle
 import logging
 import random
 import threading
 import time
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMCore.ThreadPool.WorkQueue import ThreadPool as Queue
 from WMCore.WMFactory import WMFactory
 
@@ -141,7 +144,7 @@ class ThreadPool(Queue):
         self.lock.acquire()
         args = {'event': str(key), \
                 'component' : self.component.config.Agent.componentName, \
-                'payload' : base64.encodestring(cPickle.dumps(parameters)), \
+                'payload' : base64.encodestring(pickle.dumps(parameters)), \
                 'thread_pool_id' : self.threadPoolId}
         myThread = threading.currentThread()
         myThread.transaction.begin()

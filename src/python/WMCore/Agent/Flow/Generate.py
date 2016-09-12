@@ -13,10 +13,13 @@ from __future__ import print_function
 
 
 
-import cPickle
 import os
 import sys
-
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+    
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 
@@ -74,11 +77,11 @@ Inheritance is preferred.
         print('Parsing config file')
         # preprocess
         for synchronizer in self.config.General.synchronizers:
-            synchro = cPickle.loads(synchronizer)
+            synchro = pickle.loads(synchronizer)
             self.synchronizers[synchro['ID']] = synchro
             self.synchronizers[synchro['ID']]['components'] = []
         for handler in self.config.General.handlers:
-            hndlr = cPickle.loads(handler)
+            hndlr = pickle.loads(handler)
             if hndlr['component'] not in self.components:
                 self.components[hndlr['component']] = {}
             self.components[hndlr['component']][hndlr['messageIn']] = hndlr
@@ -86,7 +89,7 @@ Inheritance is preferred.
                 self.synchronizers[hndlr['synchronize']]['components'].\
                     append(hndlr['component'])
         for plugin in self.config.General.plugins:
-            plgn = cPickle.loads(plugin)
+            plgn = pickle.loads(plugin)
             self.components[plgn['component']][plgn['handler']]['plugin'] = \
                  plgn
 

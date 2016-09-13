@@ -5,103 +5,103 @@ WMStats.TaskSummaryTable = function (data, containerDiv) {
     var taskData = data;
     var _activePageData = WMStats.ViewModel.ActiveRequestPage.data();
     var tableConfig = {
-        "sDom": '<"top"plf>rt<"bottom"ip>',
-        "iDisplayLength": 25,
-        "aoColumns": [
-            { "mDataProp": function (source, type, val) {
+        "dom": '<"top"plf>rt<"bottom"ip>',
+        "pageLength": 25,
+        "columns": [
+            { "render": function (data, type, row, meta) {
                 if (type == 'display') {
-                    var taskList = source[0].split('/');
+                    var taskList = row[0].split('/');
                     return taskList[taskList.length - 1];
                 }
-                return source;
-            }, "sTitle": "task", "sWidth": "150px"},
-            { "sDefaultContent": 0,
-              "sTitle": "created",
-              "mDataProp": function ( source, type, val ) {
-                            var taskSummary = taskData.getSummary(source[0]);
+                return row;
+            }, "title": "task", "sWidth": "150px"},
+            { "defaultContent": 0,
+              "title": "created",
+              "render": function (data, type, row, meta) {
+                            var taskSummary = taskData.getSummary(row[0]);
                             var jobs = taskSummary.getWMBSTotalJobs();
                             return jobs;
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "queued", 
-              "mDataProp": function ( source, type, val ) {
-                            var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "queued", 
+              "render": function (data, type, row, meta) {
+                            var taskSummary = taskData.getSummary(row[0]);
                             var jobs = taskSummary.getTotalQueued();
                             return jobs;
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "pending ", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "pending ", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getPending();
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "running ", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "running ", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getRunning();
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "success ", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "success ", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getJobStatus("success");
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "failure ", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "failure ", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getTotalFailure();
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "cool off ", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "cool off ", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getTotalCooloff();
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "paused", 
-              "mDataProp": function ( source, type, val ) {
-                                var taskSummary = taskData.getSummary(source[0]);
+            { "defaultContent": 0,
+              "title": "paused", 
+              "render": function (data, type, row, meta) {
+                                var taskSummary = taskData.getSummary(row[0]);
                                 var jobs = taskSummary.getTotalPaused();
                                 return jobs;
                               }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "events processed", 
-              "mDataProp": function ( source, type, val ) {
-                           var outputEvents = taskData.getSummary(source[0]).getAvgEvents() || 0;
+            { "defaultContent": 0,
+              "title": "events processed", 
+              "render": function (data, type, row, meta) {
+                           var outputEvents = taskData.getSummary(row[0]).getAvgEvents() || 0;
                            return outputEvents;
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "lumi processed", 
-              "mDataProp": function ( source, type, val ) {
-                           var outputLumis = taskData.getSummary(source[0]).getAvgLumis();
+            { "defaultContent": 0,
+              "title": "lumi processed", 
+              "render": function (data, type, row, meta) {
+                           var outputLumis = taskData.getSummary(row[0]).getAvgLumis();
                            return outputLumis;
                           }
             }
          ],
-         "aaSorting": [[1, 'asc']]
+         "order": [[1, 'asc']]
     };
     
     var taskNamesArray = [];
     for (var taskNames in data.getData()){
     	taskNamesArray.push([taskNames]);
     }
-    tableConfig.aaData = taskNamesArray;
+    tableConfig.data = taskNamesArray;
     
     var filterConfig = {};
     

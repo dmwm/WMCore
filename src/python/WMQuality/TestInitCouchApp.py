@@ -11,6 +11,8 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from __future__ import print_function
+
 import os
 import urllib
 

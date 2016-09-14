@@ -4,6 +4,7 @@ _WorkQueueTestCase_
 
 Unit tests for the WMBS File class.
 """
+from __future__ import print_function
 
 import os
 

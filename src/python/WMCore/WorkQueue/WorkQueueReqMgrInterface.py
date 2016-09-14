@@ -18,6 +18,9 @@ import traceback
 import threading
 from httplib import HTTPException
 
+from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
+
+
 class WorkQueueReqMgrInterface():
     """Helper class for ReqMgr interaction"""
     def __init__(self, **kwargs):
@@ -89,14 +92,6 @@ class WorkQueueReqMgrInterface():
             return 0
 
         for team, reqName, workLoadUrl in workLoads:
-#            try:
-#                self.reportRequestStatus(reqName, "negotiating")
-#            except Exception, ex:
-#                self.logger.error("""
-#                    Unable to update ReqMgr state to negotiating: %s
-#                    Ignoring this request: %s""" % (str(ex), reqName))
-#                continue
-
             try:
                 try:
                     Lexicon.couchurl(workLoadUrl)
@@ -109,23 +104,23 @@ class WorkQueueReqMgrInterface():
                 self.logger.info("Processing request %s at %s" % (reqName, workLoadUrl))
                 units = queue.queueWork(workLoadUrl, request = reqName, team = team)
                 self.logdb.delete(reqName, "error", this_thread=True)
-            except (WorkQueueWMSpecError, WorkQueueNoWorkError) as ex:
+            except TERMINAL_EXCEPTIONS as ex:
                 # fatal error - report back to ReqMgr
-                self.logger.info('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
+                self.logger.error('Permanent failure processing request "%s": %s' % (reqName, str(ex)))
                 self.logger.info("Marking request %s as failed in ReqMgr" % reqName)
                 self.reportRequestStatus(reqName, 'Failed', message = str(ex))
                 continue
             except (IOError, socket.error, CouchError, CouchConnectionError) as ex:
                 # temporary problem - try again later
-                msg = 'Error processing request "%s": will try again later.' \
-                '\nError: "%s"' % (reqName, str(ex))
+                msg = 'Error processing request "%s": will try again later.' % reqName
+                msg += '\nError: "%s"' % str(ex)
                 self.logger.info(msg)
                 self.logdb.post(reqName, msg, 'error')
                 continue
             except Exception as ex:
                 # Log exception as it isnt a communication problem
-                msg = 'Error processing request "%s": will try again later.' \
-                '\nSee log for details.\nError: "%s"' % (reqName, str(ex))
+                msg = 'Error processing request "%s": will try again later.' % reqName
+                msg += '\nSee log for details.\nError: "%s"' % str(ex)
                 self.logger.exception('Unknown error processing %s' % reqName)
                 self.logdb.post(reqName, msg, 'error')
                 continue
@@ -180,14 +175,16 @@ class WorkQueueReqMgrInterface():
                                     continue
                     else:
                         pass # assume workqueue status will catch up later
-                elif request['RequestStatus'] == 'aborted' or request['RequestStatus'] == 'force-complete':
+                elif request['RequestStatus'] in ['aborted', 'force-complete']:
                     queue.cancelWork(WorkflowName=request['RequestName'])
                 # Check consistency of running-open/closed and the element closure status
                 elif request['RequestStatus'] == 'running-open' and not ele.get('OpenForNewData', False):
                     self.reportRequestStatus(ele['RequestName'], 'running-closed')
                 elif request['RequestStatus'] == 'running-closed' and ele.get('OpenForNewData', False):
                     queue.closeWork(ele['RequestName'])
-                # update request status if necessary
+                # we do not want to move the request to 'failed' status
+                elif ele['Status'] == 'Failed':
+                    continue
                 elif ele['Status'] not in self._reqMgrToWorkQueueStatus(request['RequestStatus']):
                     self.reportElement(ele)
                     

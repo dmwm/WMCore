@@ -615,11 +615,6 @@ class WorkQueue(WorkQueueBase):
         wmspec.load(wmspecUrl)
 
         if request:  # validate request name
-            try:
-                Lexicon.requestName(request)
-            except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
-                error = WorkQueueWMSpecError(wmspec, "Request name validation error: %s" % str(ex))
-                raise error
             if request != wmspec.name():
                 raise WorkQueueWMSpecError(wmspec,
                                            'Request & workflow name mismatch %s vs %s' % (request, wmspec.name()))
@@ -1024,7 +1019,7 @@ class WorkQueue(WorkQueueBase):
                 policy.modifyPolicyForWorkAddition(inbound)
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                                           policyName, self.params['SplittingMapping']))
-            units, rejectedWork = policy(spec, topLevelTask, data, mask)
+            units, rejectedWork = policy(spec, topLevelTask, data, mask, continuous)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                                                   unit['Task'].getPathName(),
@@ -1113,25 +1108,22 @@ class WorkQueue(WorkQueueBase):
                             self.reqmgrSvc.updateRequestStats(inbound['WMSpec'].name(), totalStats)
 
             except TERMINAL_EXCEPTIONS as ex:
+                msg = 'Terminal exception splitting WQE: %s' % inbound
+                self.logger.error(msg)
+                self.logdb.post(inbound['RequestName'], msg, 'error')
                 if not continuous:
                     # Only fail on first splitting
-                    self.logger.info('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
+                    self.logger.error('Failing workflow "%s": %s' % (inbound['RequestName'], str(ex)))
                     self.backend.updateInboxElements(inbound.id, Status='Failed')
                     if throw:
                         raise
             except Exception as ex:
                 if continuous:
                     continue
-                # if request has been failing for too long permanently fail it.
-                # last update time was when element was assigned to this queue
-                if (float(inbound.updatetime) + self.params['QueueRetryTime']) < time.time():
-                    self.logger.info('Failing workflow "%s" as not queued in %d secs: %s' % (inbound['RequestName'],
-                                                                                             self.params[
-                                                                                                 'QueueRetryTime'],
-                                                                                             str(ex)))
-                    self.backend.updateInboxElements(inbound.id, Status='Failed')
-                else:
-                    self.logger.info('Exception splitting work for wmspec "%s": %s' % (inbound['RequestName'], str(ex)))
+                msg = 'Exception splitting wqe %s for %s: %s' % (inbound.id, inbound['RequestName'], str(ex))
+                self.logger.error(msg)
+                self.logdb.post(inbound['RequestName'], msg, 'error')
+
                 if throw:
                     raise
                 continue

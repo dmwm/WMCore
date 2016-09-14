@@ -125,7 +125,7 @@ class StartPolicyInterface(PolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))
         self.workQueueElements.append(ele)
 
-    def __call__(self, wmspec, task, data=None, mask=None, team=None):
+    def __call__(self, wmspec, task, data=None, mask=None, team=None, continuous=False):
         self.wmspec = wmspec
         # bring in spec specific settings
         self.args.update(self.wmspec.startPolicyParameters())
@@ -158,12 +158,14 @@ class StartPolicyInterface(PolicyInterface):
                 raise error
             raise  # propagate other dbs errors
 
-        # if we have no elements then there was no work in the spec, fail it
-        if not self.workQueueElements:
+        # if we have no new elements and we are not adding work to request
+        # already running, then raise exception
+        if not self.workQueueElements and not continuous:
             data = task.data.input.pythonise_() if task.data.input else 'None'
-            msg = """data: %s, mask: %s.""" % (str(data), str(mask))
+            msg = "Failed to add work. Input data: %s, mask: %s." % (str(data), str(mask))
             error = WorkQueueNoWorkError(self.wmspec, msg)
             raise error
+
         return self.workQueueElements, self.rejectedWork
 
     def dbs(self, dbs_url=None):

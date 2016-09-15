@@ -1145,7 +1145,7 @@ class WorkQueue(WorkQueueBase):
         returns list of [{workflowName: injection status (True or False)}]
         if the workflow is not exist return []
         """
-        if self.parent_queue:
+        if self.parent_queue and not self.params['DrainMode']:
             return self.parent_queue.getWMBSInjectStatus(workflowName)
         else:
             return self.backend.getWMBSInjectStatus(workflowName)

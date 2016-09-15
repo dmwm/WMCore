@@ -946,7 +946,7 @@ class StdBase(object):
                                       "validate": lambda x: x > 0},
                      "MaxWaitTime": {"default": 24 * 3600, "type": int,
                                      "validate": lambda x: x > 0},
-                     "MaxMergeEvents": {"default": 100000, "type": int,
+                     "MaxMergeEvents": {"default": 100000000, "type": int,
                                         "validate": lambda x: x > 0},
                      "ValidStatus": {"default": "PRODUCTION"},
                      "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",

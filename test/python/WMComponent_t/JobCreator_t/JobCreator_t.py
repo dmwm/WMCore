@@ -527,11 +527,11 @@ class JobCreatorTest(unittest.TestCase):
                       first_event = 1024, locations = set(["somese.cern.ch"]))
         fileII.addRun(Run(2, *[46]))
         fileII.create()
-        fileIII = File(lfn = "fileIII", size = 1024, events = 102400,
+        fileIII = File(lfn = "fileIII", size = 1024, events = 1024,
                        first_event = 2048, locations = set(["somese.cern.ch"]))
         fileIII.addRun(Run(2, *[46]))
         fileIII.create()
-        fileIV = File(lfn = "fileIV", size = 102400, events = 1024,
+        fileIV = File(lfn = "fileIV", size = 1024 * 1000 * 1000, events = 1024,
                       first_event = 3072, locations = set(["somese.cern.ch"]))
         fileIV.addRun(Run(2, *[46]))
         fileIV.create()
@@ -552,11 +552,8 @@ class JobCreatorTest(unittest.TestCase):
         """
         _TestNonProxySplitting_
 
-        Test and see if we can split things without
-        a proxy.
+        Test and see if we can split things without a proxy.
         """
-
-
 
         myThread = threading.currentThread()
 
@@ -566,19 +563,11 @@ class JobCreatorTest(unittest.TestCase):
         name         = makeUUID()
         workloadName = 'TestWorkload'
 
-
         workload = self.createWorkload(workloadName = workloadName)
-
-        # Change the file splitting algo
-        procTask = workload.getTask("ReReco")
-        procTask.setSplittingAlgorithm("ParentlessMergeBySize", min_merge_size = 1, max_merge_size = 100000,
-                            max_merge_events = 200000)
 
         workloadPath = os.path.join(self.testDir, 'workloadTest', 'TestWorkload', 'WMSandbox', 'WMWorkload.pkl')
 
-
         self.stuffWMBS(workflowURL = workloadPath, name = name)
-
 
         testJobCreator = JobCreatorPoller(config = config)
 
@@ -586,6 +575,7 @@ class JobCreatorTest(unittest.TestCase):
 
         getJobsAction = self.daoFactory(classname = "Jobs.GetAllJobs")
         result = getJobsAction.execute(state = 'Created', jobType = "Processing")
+
         self.assertEqual(len(result), 1)
 
         result = getJobsAction.execute(state = 'Created', jobType = "Merge")

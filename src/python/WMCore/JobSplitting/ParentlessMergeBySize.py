@@ -169,7 +169,7 @@ class ParentlessMergeBySize(JobFactory):
 
         self.maxMergeSize    = int(kwargs.get("max_merge_size", 1000000000))
         self.minMergeSize    = int(kwargs.get("min_merge_size", 1048576))
-        self.maxMergeEvents  = int(kwargs.get("max_merge_events", 50000))
+        self.maxMergeEvents  = int(kwargs.get("max_merge_events", 100000000))
         self.mergeAcrossRuns = kwargs.get("merge_across_runs", True)
         self.maxWaitTime     = kwargs.get("max_wait_time", 12 * 3600)
 

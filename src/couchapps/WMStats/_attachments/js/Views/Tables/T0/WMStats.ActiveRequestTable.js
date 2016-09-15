@@ -5,27 +5,27 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
     var formatReqDetailUrl = WMStats.Utils.formatReqDetailUrl;
     var formatWorkloadSummarylUrl = WMStats.Utils.formatWorkloadSummarylUrl;
     var tableConfig = {
-        "iDisplayLength": 25,
-        "sScrollX": "",
-        "aoColumns": [
-            {"sTitle": "D", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
+        "pageLength": 25,
+        "scrollX": "",
+        "columns": [
+            {"title": "D", 
+             "defaultContent": 0,
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("detail");
                         }},
-            {"sTitle": "L", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
+            {"title": "L", 
+             "defaultContent": 0,
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
-            { "mDataProp": "workflow", "sTitle": "workflow"},
+            { "data": "workflow", "title": "workflow"},
             /*
-            { "sDefaultContent": "new",
-              "sTitle": "status", 
-              "fnRender": function ( o, val ) {
+            { "defaultContent": "new",
+              "title": "status", 
+              "render": function (data, type, row, meta) {
                            
-                           var status = o.aData.request_status[o.aData.request_status.length -1].status;
-                           var reqSummary = requestData.getSummary(o.aData.workflow);
+                           var status = row.request_status[row.request_status.length -1].status;
+                           var reqSummary = requestData.getSummary(row.workflow);
                            var totalJobs = reqSummary.getWMBSTotalJobs();
                            if (totalJobs > 0) {
                                if (reqSummary.getTotalSubmitted() > 0) {
@@ -44,82 +44,82 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                            return status
                           }
             },*/
-            { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].status;
-                           }, "sTitle": "status",
-              "fnRender": function ( o, val ) {
-                            return formatWorkloadSummarylUrl(o.aData.workflow, 
-                                o.aData.request_status[o.aData.request_status.length -1].status);
-                          },
-              "bUseRendered": false
+            { "title": "status",
+              "render": function (data, type, row, meta) {
+              				if (type === "display") {
+                            	return formatWorkloadSummarylUrl(row.workflow, 
+                                	row.request_status[row.request_status.length -1].status);
+                            }
+                            return row.request_status[row.request_status.length -1].status;
+                          }
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].update_time;
-                           }, "sTitle": "duration",
-              "fnRender": function ( o, val ) {
-                            var currentTime = Math.round(new Date().getTime() / 1000);
-                            var startTime = o.aData.request_status[o.aData.request_status.length -1].update_time;
-                            return WMStats.Utils.foramtDuration(currentTime - startTime);
+            { "title": "duration",
+              "render": function (data, type, row, meta) {
+              	            if (type === "display") {
+	                            var currentTime = Math.round(new Date().getTime() / 1000);
+	                            var startTime = row.request_status[row.request_status.length -1].update_time;
+	                            return WMStats.Utils.foramtDuration(currentTime - startTime);
+                            }
+                            return row.request_status[row.request_status.length -1].update_time;
                           },
-              "bUseRendered": false
             },
-            { "sDefaultContent": 0,
-              "sTitle": "job progress", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "job progress", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             var totalJobs = reqSummary.getWMBSTotalJobs() || 1;
                             var result = (reqSummary.getJobStatus("success") + reqSummary.getTotalFailure()) /
                                      totalJobs * 100;
                             return  (result.toFixed(1) + "%");
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "submitted", 
-              "fnRender": function ( o, val ) {
-                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.first", 0);
-                           result += requestData.getKeyValue(o.aData.workflow, "status.submitted.retry", 0);
+            { "defaultContent": 0,
+              "title": "submitted", 
+              "render": function (data, type, row, meta) {
+                           var result = requestData.getKeyValue(row.workflow, "status.submitted.first", 0);
+                           result += requestData.getKeyValue(row.workflow, "status.submitted.retry", 0);
                            return result;
                           }
             },
-			{ "sDefaultContent": 0,
-              "sTitle": "pending", 
-              "fnRender": function ( o, val ) {
-                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.pending", 0);
+			{ "defaultContent": 0,
+              "title": "pending", 
+              "render": function (data, type, row, meta) {
+                           var result = requestData.getKeyValue(row.workflow, "status.submitted.pending", 0);
                            return result;
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "running", 
-              "fnRender": function ( o, val ) {
-                           var result = requestData.getKeyValue(o.aData.workflow, "status.submitted.running", 0);
+            { "defaultContent": 0,
+              "title": "running", 
+              "render": function (data, type, row, meta) {
+                           var result = requestData.getKeyValue(row.workflow, "status.submitted.running", 0);
                            return result;
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "cool off ", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "cool off ", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             return reqSummary.getTotalCooloff();
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "paused", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "paused", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             return  reqSummary.getTotalPaused();
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "failed", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "failed", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             return  reqSummary.getTotalFailure();
                           }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "run", 
-              "fnRender": function ( o, val ) {
-                            return requestData.getKeyValue(o.aData.workflow, "run", 0);
+            { "defaultContent": 0,
+              "title": "run", 
+              "render": function (data, type, row, meta) {
+                            return requestData.getKeyValue(row.workflow, "run", 0);
                           }
             }
             //TODO add more data (consult dataops)
@@ -130,7 +130,7 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
         return (Number(b.run) - Number(a.run));
     }
     
-    tableConfig.aaData = requestData.getList(runNumerDesc);
+    tableConfig.data = requestData.getList(runNumerDesc);
     
     return WMStats.Table(tableConfig).create(containerDiv, null);
 };

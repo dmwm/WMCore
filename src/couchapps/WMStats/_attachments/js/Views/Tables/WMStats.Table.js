@@ -3,17 +3,16 @@ WMStats.Table = function(config, tableSetting) {
 
     var tableSetting = tableSetting || '<table cellpadding="0" cellspacing="0" border="0.5" class="display" width="100%"></table>';
     var tableConfig = {
-        //"sPaginationType": "full_numbers",
-        //"sScrollX": "100%",
-        //"bScrollCollapse": true,
-        "bStateSave": true,
-        "bProcessing": true,
+        //"paginationType": "full_numbers",
+        //"scrollX": "100%",
+        //"scrollCollapse": true,
+        "stateSave": true,
+        "processing": true,
         //"iDisplayLength": 10,
-        "sDom": '<"top"pl>rt<"bottom"ip>',
+        "dom": '<"top"pl>rt<"bottom"ip>',
         //"sDom": 'C<"clear">lfrtip',
-        "aaSorting": [],
-        "bAutoWidth": true,
-        "bJQueryUI": true
+        "autoWidth": true,
+        "jQueryUI": true	
         };
     
     function updateConfig(config) {
@@ -29,7 +28,7 @@ WMStats.Table = function(config, tableSetting) {
       
         for (var i in tableConfig.aoColumns) {
             if (tableConfig.aoColumns[i].bVisible != false){
-                footer += '<th>' + tableConfig.aoColumns[i]["sTitle"] + '</th>';
+                footer += '<th>' + tableConfig.aoColumns[i]["title"] + '</th>';
             }
         }
         footer += '</tr></tfoot>';
@@ -39,19 +38,19 @@ WMStats.Table = function(config, tableSetting) {
     function create(selector, filterConfig) {
         $(selector).empty();
         $(selector).html(tableSetting);
-        var oTable = $(selector + " table").dataTable(tableConfig);
+        var oTable = $(selector + " table").DataTable(tableConfig);
         if ( oTable.length > 0 ) {
-            oTable.fnAdjustColumnSizing();
+            oTable.columns.adjust().draw();
         }
         
         jQuery(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.LOADING_DIV_END);
         
-        if (filterConfig) {
-            //oTable.append(_footer());
-            return oTable.columnFilter(filterConfig);
-        } else {
-            return oTable;
-        }
+        //TODO: enable column filter
+        //if (filterConfig) {
+           //oTable.append(_footer());
+           //https://datatables.net/reference/api/column().search()
+        //}
+        return oTable;
     }
     
     if (config) {updateConfig(config);}

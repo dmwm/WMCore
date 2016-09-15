@@ -7,122 +7,121 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
     var _activePageData = WMStats.ViewModel.ActiveRequestPage.data();
     
     var tableConfig = {
-        "iDisplayLength": 25,
-        "sScrollX": "",
-        "bAutoWidth": false,
-        "aoColumns": [
-            {"sTitle": "D", 
-             "sDefaultContent": 0,
-             "sWidth": "15px",
-             "fnRender": function ( o, val ) {
+        "pageLength": 25,
+        "scrollX": true,
+        "columns": [
+            {"title": "D", 
+             "defaultContent": 0,
+             "width": "15px",
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("detail");
                         }},
-            {"sTitle": "L", 
-             "sDefaultContent": 0,
-             "sWidth": "15px",
-             "fnRender": function ( o, val ) {
+            {"title": "L", 
+             "defaultContent": 0,
+             "width": "15px",
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
-            { "mDataProp": "workflow", "sTitle": "workflow",
-              "fnRender": function ( o, val ) {
-                            return formatReqDetailUrl(o.aData.workflow, o.aData.ReqMgr2Only);
-                      },
-              "bUseRendered": false, "sWidth": "150px"
+            { "data": "workflow", 
+              "title": "workflow",
+              "render": function (data, type, row, meta) {
+                            return formatReqDetailUrl(data, row.ReqMgr2Only);
+                      }, 
+              "width": "150px"
             },
-            { "mDataProp": function (source, type, val) {
-                              var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.getLastState();
-                           }, "sTitle": "status",
-              "fnRender": function ( o, val ) {
-                            var requestInfo = _activePageData.getData(o.aData.workflow);
-                            return formatWorkloadSummarylUrl(o.aData.workflow, 
+            { "title": "status",
+              "render": function (data, type, row, meta) {
+                            var requestInfo = _activePageData.getData(row.workflow);
+                            return formatWorkloadSummarylUrl(row.workflow, 
                                 requestInfo.getLastState());
                           },
-              "bUseRendered": false
             },
-            { "mDataProp": function (source, type, val) { 
-                              var requestInfo = _activePageData.getData(source.workflow);
-                              return requestInfo.request_type;
-                           }, "sTitle": "type", "sDefaultContent": ""},
-            { "mDataProp": function (source, type, val) { 
-                              var requestInfo = _activePageData.getData(source.workflow);
+            { "title": "type",
+              "render": function (data, type, row, meta) { 
+                            var requestInfo = _activePageData.getData(row.workflow);
+                            return requestInfo.request_type;
+                           }, 
+             },
+            { "render": function (data, type, row, meta) { 
+                              var requestInfo = _activePageData.getData(row.workflow);
                               return requestInfo.priority;
-                           }, "sTitle": "priority", "sDefaultContent": 0},
-            { "sDefaultContent": 0,
-              "sTitle": "queue injection",  
-              "fnRender": function ( o, val ) {
-                              var result = _activePageData.getKeyValue(o.aData.workflow, "status.inWMBS",  0) / 
-                                          _activePageData.getKeyValue(o.aData.workflow, 'total_jobs', 1) * 100;
+                           }, 
+              "title": "priority", 
+              "defaultContent": 0,
+              "type": "num"},
+            { "defaultContent": 0,
+              "title": "queue injection",  
+              "render": function (data, type, row, meta) {
+                              var result = _activePageData.getKeyValue(row.workflow, "status.inWMBS",  0) / 
+                                          _activePageData.getKeyValue(row.workflow, 'total_jobs', 1) * 100;
                               return (result.toFixed(1) + '%');
                         }
             },
-            { "sDefaultContent": 0,
-              "sTitle": "job progress", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "job progress", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             var totalJobs = reqSummary.getWMBSTotalJobs() || 1;
                             var result = (reqSummary.getJobStatus("success") + reqSummary.getTotalFailure()) /
                                      totalJobs * 100;
                             return  (result.toFixed(1) + "%");
-                          }
+                         },
+               "type": "num-fmt"
             },
-            { "sDefaultContent": 0,
-              "sTitle": "event progress", 
-              "fnRender": function ( o, val ) {
+            { "defaultContent": 0,
+              "title": "event progress", 
+              "render": function (data, type, row, meta) {
                            //TODO this might not needed since input_events should be number not string. (for the legacy record)
-                           var inputEvents =Number(_activePageData.getKeyValue(o.aData.workflow, "input_events", 1)) || 1;
-                           var outputEvents = requestData.getSummary(o.aData.workflow).getAvgEvents();
+                           var inputEvents =Number(_activePageData.getKeyValue(row.workflow, "input_events", 1)) || 1;
+                           var outputEvents = requestData.getSummary(row.workflow).getAvgEvents();
                            var result = (outputEvents / inputEvents) * 100;
                            return (result.toFixed(1) + "%");
-                          }
+                          },
+               "type": "num-fmt"
             },
-            { "sDefaultContent": 0,
-              "sTitle": "lumi progress", 
-              "fnRender": function ( o, val ) {
-                           var inputLumis =Number(_activePageData.getKeyValue(o.aData.workflow, "input_lumis", 1)) || 1;
-                           var outputLumis = requestData.getSummary(o.aData.workflow).getAvgLumis();
+            { "defaultContent": 0,
+              "title": "lumi progress", 
+              "render": function (data, type, row, meta) {
+                           var inputLumis =Number(_activePageData.getKeyValue(row.workflow, "input_lumis", 1)) || 1;
+                           var outputLumis = requestData.getSummary(row.workflow).getAvgLumis();
                            var result = (outputLumis / inputLumis) * 100;
                            return (result.toFixed(1) + "%");
-                          }
+                          },
+               "type": "num-fmt"
             },
-            { "sDefaultContent": 0,
-              "sTitle": "failure rate", 
-              "fnRender": function ( o, val ) {
-                           var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "failure rate", 
+              "render": function (data, type, row, meta) {
+                           var reqSummary = requestData.getSummary(row.workflow);
                            var totalFailure = reqSummary.getTotalFailure();
                            var totalJobs = (reqSummary.getJobStatus("success") + totalFailure) || 1;
                            var result = totalFailure / totalJobs * 100;
                            return (result.toFixed(1)  + "%");
-                          }
+                          },
+               "type": "num-fmt"
             },
-            { "sDefaultContent": 0,
-              "sTitle": "Eestimated Completion", 
-              "fnRender": function ( o, val ) {
-                            return (WMStats.Utils.foramtDuration(requestData.estimateCompletionTime(o.aData.workflow)));
-                          }
+            { "defaultContent": 0,
+              "title": "Eestimated Completion", 
+              "render": function (data, type, row, meta) {
+                            return (WMStats.Utils.foramtDuration(requestData.estimateCompletionTime(row.workflow)));
+                          },
+               "type": "num-fmt"
             },
-            { "sDefaultContent": 0,
-              "sTitle": "cool off ", 
-              "fnRender": function ( o, val ) {
-                            var reqSummary = requestData.getSummary(o.aData.workflow);
+            { "defaultContent": 0,
+              "title": "cool off ", 
+              "render": function (data, type, row, meta) {
+                            var reqSummary = requestData.getSummary(row.workflow);
                             return (reqSummary.getTotalCooloff());
-                          }
-            },
-            /*
-            { "sDefaultContent": 0,
-              "sTitle": "EAT", 
-              "fnRender": function ( o, val ) {
-                            return _get(o.aData, "status.submitted.running", 0);
-                          }
-            },
-            */
+                          },
+               "type": "num"
+            }
             //TODO add more data (consult dataops)
         ]
     };
     
     var filterConfig = {};
     
-    tableConfig.aaData = requestData.getList();
+    tableConfig.data = requestData.getList();
     
     return WMStats.Table(tableConfig).create(containerDiv, filterConfig);
 };

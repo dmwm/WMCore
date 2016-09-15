@@ -3,34 +3,34 @@ WMStats.namespace("JobSummaryTable");
 WMStats.JobSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
-        "sDom": '<"top"plf>rt<"bottom"ip>',
-        "iDisplayLength": 25,
-        "aoColumns": [
-            {"sTitle": "L", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
+        "dom": '<"top"plf>rt<"bottom"ip>',
+        "pageLength": 25,
+        "columns": [
+            {"title": "L", 
+             "defaultContent": 0,
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
-            { "mDataProp": function (source, type, val) {
+            {  "render": function (data, type, row, meta) {
                 if (type == 'display') {
-                    var taskList = source.task.split('/');
+                    var taskList = row.task.split('/');
                     return taskList[taskList.length - 1];
                 }
-                return source.task;
-            }, "sTitle": "task", "sWidth": "150px"},
-            { "mDataProp": "status", "sTitle": "status"},
-            { "mDataProp": "site", "sTitle": "site"},
-            { "mDataProp": "exitCode", "sTitle": "exit code"},
-            { "mDataProp": "count", "sTitle": "jobs"},
-            { "mDataProp": "errorMsg", "sTitle": "error mesage", 
-                           "sDefaultContent": ""},
-            { "sTitle": "acdc", sDefaultContent: "",
-              "sWidth": "15px",
-              "mDataProp": function (source, type, val ) {
+                return row.task;
+            }, "title": "task", "width": "150px"},
+            { "data": "status", "title": "status"},
+            { "data": "site", "title": "site"},
+            { "data": "exitCode", "title": "exit code"},
+            { "data": "count", "title": "jobs"},
+            { "data": "errorMsg", "title": "error mesage", 
+                           "defaultContent": ""},
+            { "title": "acdc", defaultContent: "",
+              "width": "15px",
+              "render": function (data, type, row, meta) {
                             if (type == 'display') {
-                                var taskList = source.task.split('/');
+                                var taskList = row.task.split('/');
                                 var endTask = taskList[taskList.length - 1];
-                                if (source.status !== "success" && 
+                                if (row.status !== "success" && 
                                     !endTask.match(/LogCollect$/) && 
                                     !endTask.match(/Cleanup$/)) {
                                     return WMStats.Utils.formatDetailButton("acdc");
@@ -40,10 +40,10 @@ WMStats.JobSummaryTable = function (data, containerDiv) {
                         }
              }
          ],
-         "aaSorting": [[1, 'asc']]
+         "order": [[1, 'asc']]
     };
     
-    tableConfig.aaData = data.getData().status;
+    tableConfig.data = data.getData().status;
     
     var filterConfig = {};
 

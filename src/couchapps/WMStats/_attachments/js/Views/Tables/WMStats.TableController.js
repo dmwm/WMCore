@@ -75,7 +75,7 @@
             summary.workflow = $("#job_view div.summary_data").data("workflow");
             //summary.task = $(nTds[0]).text();
             var currentRow = $(currentElement).closest("tr")[0];
-            var currentRowData = WMStats.JobSummaryTable.data.fnGetData(currentElement);
+            var currentRowData = WMStats.JobSummaryTable.data.row(currentElement).data();
             summary.task = currentRowData.task;
             summary.status = currentRowData.status;
             summary.site = currentRowData.site;
@@ -94,7 +94,7 @@
             var summary = {};
             summary.requestName = workflow;
             //TODO: should be getting most information from request mgr database
-            var currentRowData = WMStats.JobSummaryTable.data.fnGetData(currentElement);
+            var currentRowData = WMStats.JobSummaryTable.data.row(currentElement).data();
             summary.task = currentRowData.task;
             summary.acdcURL = currentRowData.acdcURL;
             vm.Resubmission.keys(summary);

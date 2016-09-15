@@ -6,49 +6,47 @@ WMStats.WorkloadSummaryTable = function (data, containerDiv) {
     var formatWorkloadSummarylUrl = WMStats.Utils.formatWorkloadSummarylUrl;
 
     var tableConfig = {
-        "iDisplayLength": 25,
-        "sScrollX": "",
-        "sDom": 'lfrtip',
-        "bAutoWidth": false,
-        "aoColumns": [
+        "pageLength": 25,
+        "scrollX": true,
+        "dom": 'lfrtip',
+        "columns": [
             /*
-            {"sTitle": "D", 
-             "sDefaultContent": 0,
-             "sWidth": "15px",
-             "fnRender": function ( o, val ) {
+            {"title": "D", 
+             "defaultContent": 0,
+             "width": "15px",
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("detail");
                         }},
-            {"sTitle": "L", 
-             "sDefaultContent": 0,
-             "sWidth": "15px",
-             "fnRender": function ( o, val ) {
+            {"title": "L", 
+             "defaultContent": 0,
+             "width": "15px",
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
             */
-            { "mDataProp": "workflow", "sTitle": "workflow",
-              "fnRender": function ( o, val ) {
-                            return formatReqDetailUrl(o.aData._id, o.aData.ReqMgr2Only);
+            { "data": "workflow", "title": "workflow",
+             "render": function (data, type, row, meta) {
+                            return formatReqDetailUrl(row._id, row.ReqMgr2Only);
                       },
-              "bUseRendered": false, "sWidth": "150px"
+              "width": "150px"
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.request_status[source.request_status.length -1].status;
-                           }, "sTitle": "status",
-              "fnRender": function ( o, val ) {
-                            return formatWorkloadSummarylUrl(o.aData._id, 
-                                o.aData.request_status[o.aData.request_status.length -1].status);
+            {"render": function (data, type, row, meta) {
+              				if (type === "display") {
+                            	return formatWorkloadSummarylUrl(row._id, 
+                                	row.request_status[row.request_status.length -1].status);
+                            }
+                            return row.request_status[row.request_status.length -1].status;
                           },
-              "bUseRendered": false
             },
-            { "mDataProp": "request_type", "sTitle": "type", "sDefaultContent": ""},
-            { "mDataProp": "priority", "sTitle": "priority", "sDefaultContent": 0},
-            { "mDataProp": "campaign", "sTitle": "campaign", "sDefaultContent": ""}
+            { "data": "request_type", "title": "type", "defaultContent": ""},
+            { "data": "priority", "title": "priority", "defaultContent": 0},
+            { "data": "campaign", "title": "campaign", "defaultContent": ""}
         ]
     };
     
     var filterConfig = {};
     
-    tableConfig.aaData = data.getData();
+    tableConfig.data = data.getData();
     
     return WMStats.Table(tableConfig).create(containerDiv, filterConfig);
 };

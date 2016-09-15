@@ -3,42 +3,42 @@ WMStats.namespace("RunSummaryTable");
 WMStats.RunSummaryTable = function (data, containerDiv) {
     
     var tableConfig = {
-        "iDisplayLength": 25,
-        "sScrollX": "",
-        "aoColumns": [
-            {"sTitle": "D", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
+        "pageLength": 25,
+        "scrollX": "",
+        "columns": [
+            {"title": "D", 
+             "defaultContent": 0,
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("detail");
                         }},
-            {"sTitle": "L", 
-             "sDefaultContent": 0,
-             "fnRender": function ( o, val ) {
+            {"title": "L", 
+             "defaultContent": 0,
+             "render": function (data, type, row, meta) {
                             return WMStats.Utils.formatDetailButton("drill");
                         }},
-            { "mDataProp": "key", "sTitle": "run"},               
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.summaryStruct.numRequests;
-                           }, "sTitle": "requests", "sDefaultContent": 0, 
+            { "data": "key", "title": "run"},               
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.summaryStruct.numRequests;
+                           }, "title": "requests", "defaultContent": 0, 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.summaryStruct.runStatus;
-                           }, "sTitle": "run status", "sDefaultContent": "Active", 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.summaryStruct.runStatus;
+                           }, "title": "run status", "defaultContent": "Active", 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getJobStatus("success");
-                           }, "sTitle": "success", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getJobStatus("success");
+                           }, "title": "success", "defaultContent": 0, 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getTotalFailure();
-                           }, "sTitle": "failure", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getTotalFailure();
+                           }, "title": "failure", "defaultContent": 0, 
             },
-            { "sDefaultContent": 0,
-              "sTitle": "job progress", 
-              "mDataProp": function (source, type, val) { 
-                            var totalJobs = source.summary.getWMBSTotalJobs() || 1;
-                            var result = (source.summary.getJobStatus("success") + 
-                                          source.summary.getTotalFailure()) /
+            { "defaultContent": 0,
+              "title": "job progress", 
+              "render": function (data, type, row, meta) { 
+                            var totalJobs = row.summary.getWMBSTotalJobs() || 1;
+                            var result = (row.summary.getJobStatus("success") + 
+                                          row.summary.getTotalFailure()) /
                                           totalJobs * 100;
                             if (type === 'display') {
                                 return result.toFixed(1) + "%";
@@ -46,21 +46,21 @@ WMStats.RunSummaryTable = function (data, containerDiv) {
                             return result.toFixed(1);
                           }
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getJobStatus("submitted.pending");
-                           }, "sTitle": "pending", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getJobStatus("submitted.pending");
+                           }, "title": "pending", "defaultContent": 0, 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getJobStatus("submitted.running");
-                           }, "sTitle": "running", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getJobStatus("submitted.running");
+                           }, "title": "running", "defaultContent": 0, 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getTotalCooloff();
-                           }, "sTitle": "cool off", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getTotalCooloff();
+                           }, "title": "cool off", "defaultContent": 0, 
             },
-            { "mDataProp": function (source, type, val) { 
-                              return source.summary.getTotalPaused();
-                           }, "sTitle": "paused", "sDefaultContent": 0, 
+            { "render": function (data, type, row, meta) { 
+                              return row.summary.getTotalPaused();
+                           }, "title": "paused", "defaultContent": 0, 
             }
         ]
     };
@@ -69,7 +69,7 @@ WMStats.RunSummaryTable = function (data, containerDiv) {
         return (Number(b.key) - Number(a.key));
     }
     
-    tableConfig.aaData = data.getList(runNumerDesc);
+    tableConfig.data = data.getList(runNumerDesc);
     
     var filterConfig = {};
     

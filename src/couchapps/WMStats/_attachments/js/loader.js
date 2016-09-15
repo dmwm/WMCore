@@ -18,9 +18,10 @@ function couchapp_load(scripts) {
 
 couchapp_load([
    "vendor/couchapp/loader.js",
-   "vendor/jquery/jquery-ui.min.js",
-   "vendor/datatables/jquery.dataTables.min.js",
-   "vendor/datatables/ColVis.min.js",
+   "https://code.jquery.com/ui/1.12.0/jquery-ui.min.js",
+   "https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js",
+   "https://cdn.datatables.net/buttons/1.2.2/js/dataTables.buttons.min.js",
+   "https://cdn.datatables.net/buttons/1.2.2/js/buttons.colVis.min.js",
    "lib/namespace.js",
    "lib/jquery.dataTables.columnFilter.js"
 ]);

@@ -38,9 +38,6 @@ class AgentStatusPoller(BaseWorkerThread):
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
         self.jsonFile = config.AgentStatusWatcher.jsonFile
-        # counter for deep agent monitoring. Every 15min (3 cycles of the component)
-        self.monitorCounter = 0
-        self.monitorInterval = getattr(config.AgentStatusWatcher, 'monitorPollInterval', 3)
     
     def setUpCouchDBReplication(self):
         
@@ -101,16 +98,16 @@ class AgentStatusPoller(BaseWorkerThread):
         try:
             agentInfo = self.collectAgentInfo()
             #set the uploadTime - should be the same for all docs
+            wmbsInfo = self.collectWMBSInfo()
+            logging.info("finished collecting agent/wmbs info")
+            agentInfo["WMBS_INFO"] = wmbsInfo
             uploadTime = int(time.time())
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
-
-            if self.monitorCounter % self.monitorInterval == 0:
-                monitoring = self.collectWMBSInfo()
-                monitoring['components'] = agentInfo['down_components']
-                monitoring['timestamp'] = int(time.time())
-                with open(self.jsonFile, 'w') as outFile:
-                    json.dump(monitoring, outFile, indent=2)
-            self.monitorCounter += 1
+            
+            #save locally json file as well
+            with open(self.jsonFile, 'w') as outFile:
+                json.dump(agentInfo, outFile, indent=2)
+            
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))
@@ -212,23 +209,29 @@ class AgentStatusPoller(BaseWorkerThread):
         In addition to WMBS, also collects RunJob info from BossAir
         :return: dict with the number of jobs in each status
         """
-        results = {}
         logging.info("Getting wmbs job info ...")
+        results = {}
+        
+        start = int(time.time())
         # first retrieve the site thresholds
         results['thresholds'] = self.wmagentDB.getJobSlotInfo()
-        logging.info("Running and pending site thresholds: %s", results['thresholds'])
+        logging.debug("Running and pending site thresholds: %s", results['thresholds'])
 
         # now fetch the amount of jobs in each state and the amount of created
         # jobs grouped by task
         results.update(self.wmagentDB.getAgentMonitoring())
-        logging.info("Total number of jobs in WMBS sorted by status: %s", results['wmbsCountByState'])
-        logging.info("Total number of 'created' jobs in WMBS sorted by type: %s", results['wmbsCreatedTypeCount'])
-        logging.info("Total number of 'executing' jobs in WMBS sorted by type: %s", results['wmbsExecutingTypeCount'])
+        end = int(time.time())
+        #adding total query time
+        results["total_query_time"] = end - start
+        
+        logging.debug("Total number of jobs in WMBS sorted by status: %s", results['wmbsCountByState'])
+        logging.debug("Total number of 'created' jobs in WMBS sorted by type: %s", results['wmbsCreatedTypeCount'])
+        logging.debug("Total number of 'executing' jobs in WMBS sorted by type: %s", results['wmbsExecutingTypeCount'])
 
-        logging.info("Total number of active jobs in BossAir sorted by status: %s", results['activeRunJobByStatus'])
-        logging.info("Total number of complete jobs in BossAir sorted by status: %s", results['completeRunJobByStatus'])
+        logging.debug("Total number of active jobs in BossAir sorted by status: %s", results['activeRunJobByStatus'])
+        logging.debug("Total number of complete jobs in BossAir sorted by status: %s", results['completeRunJobByStatus'])
 
-        logging.info("Available slots thresholds to pull work from GQ to LQ: %s", results['thresholdsGQ2LQ'])
-        logging.info("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])
+        logging.debug("Available slots thresholds to pull work from GQ to LQ: %s", results['thresholdsGQ2LQ'])
+        logging.debug("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])
 
         return results

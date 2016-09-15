@@ -15,16 +15,14 @@ from __future__ import print_function
 
 import logging
 import os
-import threading
-import tempfile
 import shutil
-import nose
+import tempfile
+import threading
 import traceback
 
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
-from WMCore.WMException         import WMException
-from WMCore.WMBase import getWMBASE
+from WMCore.WMException import WMException
 
 hasDatabase = True
 try:
@@ -59,28 +57,8 @@ def deleteDatabaseAfterEveryTest(areYouSerious):
         print("We are not going to trash databases after every test")
         trashDatabases = False
 
-def requiresPython26(testMethod, *args, **kwargs):
-    """
-    _requiresPython26_
 
-    A decorator for unit tests that will skip a test if a python version less
-    than 2.6 is being used.
-    """
-    def skipTest(*args, **kwargs):
-        print("SKIPPING")
-        raise nose.SkipTest
-
-    import sys
-
-    majorVersion = sys.version_info[0]
-    minorVersion = sys.version_info[1]
-
-    if (majorVersion == 2 and minorVersion >= 6) or majorVersion > 2:
-        return testMethod
-
-    return skipTest
-
-class TestInit:
+class TestInit(object):
     """
     A set of initialization steps used in many tests.
     Test can call the methods from this class to

@@ -1,0 +1,16 @@
+<div class="unit-10"></div>
+<div class="unit-10 gray">
+<nav class="nav nav-stacked">
+    <ul>
+{% for item in menus -%}
+{% if item==tmpl -%}
+{%- set style="active" %}
+{% else -%}
+{%- set style="" %}
+{%- endif -%}
+{%- set title=item.capitalize() %}
+    <li class="{{style}}"><a href="{{base}}/{{item}}">{{title}}</a></li>
+{%- endfor -%}
+    </ul>
+</nav>
+</div>

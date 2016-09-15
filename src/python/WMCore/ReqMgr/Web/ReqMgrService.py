@@ -35,6 +35,7 @@ from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.ReqMgr.Web.utils import gen_color
 # import WMCore itself to determine path of modules
 import WMCore
 
@@ -376,7 +377,8 @@ class ReqMgrService(TemplatedPage):
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('approve', requests=toString(docs), date=tstamp(),
-                                    sort=sortby, filter_sort_table=filter_sort)
+                                    sort=sortby, filter_sort_table=filter_sort,
+                                    gen_color=gen_color)
         return self.abs_page('approve', content)
 
     @expose
@@ -458,12 +460,12 @@ class ReqMgrService(TemplatedPage):
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
-                                        doc=json.dumps(doc),
+                                        doc=json.dumps(doc), time=time,
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
-                                        table="", jsondata=jsondata,
+                                        table="", jsondata=jsondata, time=time,
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid

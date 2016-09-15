@@ -1,0 +1,57 @@
+____________________________________________________________________________________________________
+Could not fully convert file: src/html/ReqMgr/templates/doc.tmpl
+__________________________________________________________________________________________
+In lines: 54 - 54: #import, #from expression could not be converted 
+
+Old code:
+#import time
+Results:
+-------------------------
+Import was removed
+Need to add imported object to environment to use as normal placeholder
+--------------------------------------------------
+____________________________________________________________________________________________________
+Could not fully convert file: src/html/ReqMgr/templates/filter_sort.tmpl
+__________________________________________________________________________________________
+In lines: 25 - 25: #filter expression could not be converted 
+
+Old code:
+\$("\#filter").keyup(function(event) {
+Results:
+-------------------------
+Jinja2 implements filter differently. Look up documentation and change code accordingly
+\$("\#filter").keyup(function(event) {
+--------------------------------------------------
+____________________________________________________________________________________________________
+Could not fully convert file: src/html/ReqMgr/templates/confirm.tmpl
+__________________________________________________________________________________________
+In lines: 1 - 1: #import, #from expression could not be converted 
+
+Old code:
+#import time
+Results:
+-------------------------
+Import was removed
+Need to add imported object to environment to use as normal placeholder
+--------------------------------------------------
+____________________________________________________________________________________________________
+Could not fully convert file: src/html/ReqMgr/templates/approve.tmpl
+__________________________________________________________________________________________
+In lines: 1 - 1: #import, #from expression could not be converted 
+
+Old code:
+#from WMCore.ReqMgr.Web.utils import gen_color
+Results:
+-------------------------
+Import was removed
+Need to add imported object to environment to use as normal placeholder
+--------------------------------------------------
+In lines: 2 - 2: #import, #from expression could not be converted 
+
+Old code:
+#from WMCore.ReqMgr.Tools.cms import next_status
+Results:
+-------------------------
+Import was removed
+Need to add imported object to environment to use as normal placeholder
+--------------------------------------------------

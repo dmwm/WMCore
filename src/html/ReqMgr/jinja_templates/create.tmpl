@@ -1,0 +1,112 @@
+<h2>Create request interface</h2>
+<hr/>
+<header class="group">
+    <nav class="navbar navbar-left">
+        Workflow template:
+        <select onchange="loadSpec(this)">
+        {% for spec in specs -%}
+        <option value="{{spec}}">{{spec}}</option>
+        {%- endfor -%}
+        </select>
+    </nav>
+    <nav class="navbar navbar-right">
+        <ul>
+        <li><button class="btn btn-small btn-active" id="btn-table" onclick="ActivateTable()">Table</button></li>
+        <li><button class="btn btn-small" id="btn-json" onclick="ActivateJSON()">JSON</button></li>
+        </ul>
+    </nav>
+</header>
+
+<div name="edit-table" id="edit-table">
+<form id="table-form" name="table-form" method="post">
+<strong>
+Please use the following table to fill out template form. If you need to extend it
+fill free to switch to JSON format and edit JSON directly.
+</strong>
+{{table}}
+
+    <table><tr><td>
+    Apply a script:
+    </td><td>
+    <select name="script">
+    <option value="">None</option>
+    {% for item in scripts -%}
+    <option value="{{item}}">{{item}} script</option>
+    {%- endfor -%}
+    </select>
+    </td>
+    <td>if provided, it will generate series of requests from given template</td>
+    </tr></table>
+
+</form>
+<p class="units-row">
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:CreateRequest('table-form');">Create</button>
+</p>
+</div>
+
+<div name="edit-json" id="edit-json" class="hide">
+<form id="json-form" name="json-form">
+    <input type="hidden" name="action" value="create" />
+    <textarea class="editor height-200" name="jsondict" id="jsondict">
+{{jsondata}}
+    </textarea>
+
+    <table><tr><td>
+    Apply a script:
+    </td><td>
+    <select name="jsonscript">
+    <option value="">None</option>
+    {% for item in scripts -%}
+    <option value="{{item}}">{{item}} script</option>
+    {%- endfor -%}
+    </select>
+    </td>
+    <td>if provided, it will generate series of requests from given template</td>
+    </tr></table>
+
+</form>
+<p class="units-row">
+<button class="btn btn-small btn-green unit-push-right" onclick="javascript:CreateRequest('json-form');">Create</button>
+</p>
+</div>
+
+<hr/>
+
+<script>
+// helper function to call server side ajax_action method and pass
+// along action method, request ids, and new status
+// create interface either create single request or multiple requests
+function CreateRequest(formtag) {
+    var parameters = {};
+    if (formtag=='table-form') {
+        parameters = $('#table-form').serializeObject();
+    } else if (formtag=='json-form') {
+        var doc = document.getElementById('jsondict');
+        var data = doc.value;
+        parameters = JSON.parse(doc.value)
+        var script = document.getElementById('jsonscript');
+        parameters.script = script;
+    }
+    parameters.ids = '';
+    parameters.new_status = 'new';
+    ajaxRequest('{{base}}/data/request', parameters);
+}
+function ActivateTable() {
+    var id = document.getElementById('btn-table');
+    id.className="btn btn-small btn-active";
+    id = document.getElementById('btn-json');
+    id.className="btn btn-small";
+    ShowTag('edit-table');HideTag('edit-json');
+}
+function ActivateJSON() {
+    var id = document.getElementById('btn-json');
+    id.className="btn btn-small btn-active";
+    id = document.getElementById('btn-table');
+    id.className="btn btn-small";
+    ShowTag('edit-json');HideTag('edit-table');
+}
+function loadSpec(tag) {
+    var url="{{base}}/create?form="+tag.value;
+    load(url);
+}
+</script>

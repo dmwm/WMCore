@@ -8,8 +8,7 @@ API to get requests from the DB
 
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
-import WMCore.RequestManager.RequestDB.Interface.Request.ListRequests as ListRequests
-import WMCore.RequestManager.RequestDB.Interface.Request.ChangeState as ChangeState
+from WMCore.RequestManager.RequestDB.Interface.Request.ListRequests import listRequests
 from WMCore.RequestManager.DataStructs.Request import Request
 from cherrypy import HTTPError
 
@@ -64,7 +63,7 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     request["Group"] = groupData['group_name']
     request["Requestor"] = userData['requestor_hn_name']
 
-    updates = ChangeState.getProgress(requestName)
+    updates = getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)
     sqDeps = factory(classname = "Software.GetByAssoc")
     swVers = sqDeps.execute(requestId)
@@ -90,19 +89,17 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
         request["ProcessingVersion"] = str(helper.getProcessingVersion())
         request["ProcessingString"] = str(helper.getProcessingString())
     except Exception as ex:
-        logging.error("Could not check workload for %s, reason: %s" %
-                      (request["RequestName"], ex))
+        logging.error("Could not check workload for %s, reason: %s", request["RequestName"], ex)
     
     return request
-
 
 def requestID(requestName):
     """ Finds the ReqMgr database ID for a request """
     factory = DBConnect.getConnection()
     f =  factory(classname = "Request.FindByName")
     reqId = f.execute(requestName)
-    if reqId == None:
-        raise HTTPError(404, 'Given requestName not found')
+    if reqId is None:
+        raise HTTPError(404, 'Given request name not found: %s' % requestName)
     return reqId
 
 def getRequestByName(requestName):
@@ -124,7 +121,7 @@ def getRequests():
     """ This only fills the details needed to make succint browser tables,
         so some fields, such as InputDatasets or SoftwareVersions,
         need to be filled through getRequestDetails """
-    requests = ListRequests.listRequests()
+    requests = listRequests()
     reverseTypes, reverseStatus = reverseLookups()
     result = []
     for request in requests:
@@ -142,9 +139,9 @@ def getRequestDetails(requestName):
     request = getRequestByName(requestName)
     request['Assignments'] = getAssignmentsByName(requestName)
     # show the status and messages
-    request['RequestMessages'] = ChangeState.getMessages(requestName)
+    request['RequestMessages'] = getMessages(requestName)
     # updates
-    request['RequestUpdates'] = ChangeState.getProgress(requestName)
+    request['RequestUpdates'] = getProgress(requestName)
     # it returns a datetime object, which I can't pass through
     request['percent_complete'] = 0
     request['percent_success'] = 0
@@ -214,3 +211,19 @@ def getGlobalQueues():
     for url in results:
         queues.append(url.replace('workqueuemonitor', 'workqueue'))
     return queues
+
+def getProgress(requestName):
+    factory = DBConnect.getConnection()
+    reqId = requestID(requestName)
+    return factory(classname = "Progress.GetProgress").execute(reqId)
+
+def getMessages(requestName):
+    factory = DBConnect.getConnection()
+    reqId = requestID(requestName)
+    return factory(classname = "Progress.GetMessages").execute(reqId)
+
+def putMessage(requestName, message):
+    factory = DBConnect.getConnection()
+    reqId = requestID(requestName)
+    message = message[:999]
+    factory(classname = "Progress.Message").execute(reqId, message)

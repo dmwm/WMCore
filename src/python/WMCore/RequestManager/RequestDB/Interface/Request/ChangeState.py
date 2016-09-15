@@ -4,20 +4,11 @@ _ChangeState_
 
 State Change API methods
 
-
 """
-from cherrypy import HTTPError
-
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from WMCore.Database.CMSCouch import Database
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-
-# TODO: Merge with getRequest.requestID
-def getRequestID(factory, requestName):
-    reqId = factory(classname = "Request.ID").execute(requestName)
-    if reqId == None:
-        raise HTTPError(404, 'Given requestName not found')
-    return reqId
+from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest import requestID
 
 
 def changeRequestIDStatus(requestId, newState, priority = None):
@@ -50,7 +41,7 @@ def changeRequestIDStatus(requestId, newState, priority = None):
 
 def changeRequestPriority(requestName, priority):
     factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
+    reqId = requestID(requestName)
     priorityChange = factory(classname = "Request.Priority")
     priorityChange.execute(reqId, priority)
 
@@ -72,7 +63,7 @@ def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     """
     # MySQL/Oracle
     factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
+    reqId = requestID(requestName)
     changeRequestIDStatus(reqId, newState, priority)
     
     # CouchDB
@@ -112,7 +103,7 @@ def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
     """
 
     factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
+    reqId = requestID(requestName)
 
     teamId = factory(classname = "Team.ID").execute(teamName)
     if teamId == None:
@@ -138,8 +129,8 @@ def deleteAssignment(requestName):
     """
     """
     factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
-    delete = factory(classname = "Assignment.Delete").execute(reqId)
+    reqId = requestID(requestName)
+    factory(classname = "Assignment.Delete").execute(reqId)
 
 def updateRequest(requestName, paramDict):
     """
@@ -157,25 +148,7 @@ def updateRequest(requestName, paramDict):
     """
 
     factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
+    reqId = requestID(requestName)
     factory(classname = "Progress.Update").execute(reqId, **paramDict)
 
 
-def getProgress(requestName):
-    factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
-    return factory(classname = "Progress.GetProgress").execute(reqId)
-
-
-def getMessages(requestName):
-    factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
-    return factory(classname = "Progress.GetMessages").execute(reqId)
-
-
-def putMessage(requestName, message):
-    factory = DBConnect.getConnection()
-    reqId = getRequestID(factory, requestName)
-    #return factory(classname = "Progress.Message").execute(reqId, message)
-    message = message[:999]
-    factory(classname = "Progress.Message").execute(reqId, message)

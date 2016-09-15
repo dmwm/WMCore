@@ -10,7 +10,6 @@ import logging
 import threading
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 
 def getConnection():
     """

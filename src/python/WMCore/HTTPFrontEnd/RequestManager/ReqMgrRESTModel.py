@@ -410,7 +410,7 @@ class ReqMgrRESTModel(RESTModel):
 
     def getMessage(self, request):
         """ Returns a list of messages attached to this request """
-        return ChangeState.getMessages(request)
+        return GetRequest.getMessages(request)
 
     def getInputDataset(self, prim, proc=None, tier=None):
         """ returns a list of requests with this input dataset
@@ -592,7 +592,7 @@ class ReqMgrRESTModel(RESTModel):
         """ Needs to be passed an e-mail address, maybe dnName """
         if Registration.isRegistered(userName):
             return "User already exists"
-        result = Registration.registerUser(userName, email, dnName)
+        Registration.registerUser(userName, email, dnName)
 
     def putGroup(self, group, user=None):
         """ Creates a group, or if a user is passed, adds that user to the group """
@@ -614,8 +614,8 @@ class ReqMgrRESTModel(RESTModel):
     def putMessage(self, request):
         """ Attaches a message to this request """
         message = json.loads(cherrypy.request.body.read())
-        result = ChangeState.putMessage(request, message)
-        return result
+        GetRequest.putMessage(request, message)
+        return
 
     def putCampaign(self, campaign, request=None):
         """ Adds a campaign if it doesn't already exist, and optionally
@@ -727,8 +727,8 @@ class ReqMgrRESTModel(RESTModel):
         # Seangchan shall also fix here deleting such requests from WMStats (#4398)
         
         # returns None ...
-        response = RequestAdmin.deleteRequest(requestName)
-        return response
+        RequestAdmin.deleteRequest(requestName)
+        return
 
 
     def deleteUser(self, user):

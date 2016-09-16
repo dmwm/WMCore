@@ -1,3 +1,35 @@
+1.0.20 to 1.0.21.pre1:
+  - Merge pull request #7186 from ticoann/close_subscription
+  - Merge pull request #6094 from amaltaro/acdcFakeFiles-unique
+  - Merge pull request #7150 from hufnagel/remove-event-limits
+  - Merge pull request #7145 from ericvaandering/cleanup_26
+  - close subscription even if there is available element in GQ in Drain
+  - Merge pull request #7168 from hufnagel/xrdcp-old
+  - Merge pull request #7166 from amaltaro/classad-forHlt
+  - Merge pull request #7151 from hufnagel/sandbox-tar
+  - Merge pull request #7149 from hufnagel/fnal-xrdcp-relative
+  - Merge pull request #7117 from ticoann/error_code_fix
+  - Merge pull request #7100 from vkuznet/jinja
+  - Merge pull request #7178 from ticoann/update_jquery_lib
+  - update jquery and jquery table
+  - Merge pull request #7171 from ticoann/fix_wmarhcive_ingore_case
+  - Merge pull request #7031 from ticoann/wq_update_check
+  - Merge pull request #7111 from SaltumDis/cPickle
+  - fix handling WMArchiveURL default value
+  - support use of xrdcp-old
+  - fix typo on log reporting
+  - Additional condor classAd for HLT usage
+  - remove event limits for merges
+  - change sandbox tar creation code, fixing #7025
+  - remove absolute paths for xrdcp binaries
+  - Make unique file entries for ACDC MCFakeFiles
+  - We don't use old python anymore
+  - Adding support for cPickle > pickle
+  - Import sys module
+  - Adopt Alan's solution to check for jinja module
+  - Add support for jinja templates
+  - initial patch fixing high priority bottleneck
+
 1.0.19 to 1.0.20:
   - 1.0.20.pre5
   - Merge pull request #7163 from ticoann/fix_assignment_reject_transition

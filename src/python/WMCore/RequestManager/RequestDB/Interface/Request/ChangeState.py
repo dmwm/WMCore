@@ -11,7 +11,7 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest import requestID
 
 
-def changeRequestIDStatus(requestId, newState, priority = None):
+def changeRequestIDStatus(requestId, newState, priority=None):
     """
     _changeRequestIDStatus_
 
@@ -24,25 +24,25 @@ def changeRequestIDStatus(requestId, newState, priority = None):
 
     """
     factory = DBConnect.getConnection()
-    statusMap = factory(classname = "ReqStatus.Map").execute()
+    statusMap = factory(classname="ReqStatus.Map").execute()
     statusId = statusMap.get(newState, None)
     if statusId == None:
         msg = "Attempted to change request %s to unknown status value %s" % (
             requestId, newState)
         raise RuntimeError(msg)
 
-    stateChanger = factory(classname = "Request.SetStatus")
+    stateChanger = factory(classname="Request.SetStatus")
     stateChanger.execute(requestId, statusId)
 
     if priority != None:
-        priorityChange = factory(classname = "Request.Priority")
+        priorityChange = factory(classname="Request.Priority")
         priorityChange.execute(requestId, priority)
 
 
 def changeRequestPriority(requestName, priority):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
-    priorityChange = factory(classname = "Request.Priority")
+    priorityChange = factory(classname="Request.Priority")
     priorityChange.execute(reqId, priority)
 
 
@@ -56,7 +56,7 @@ def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     - *requestName* : name of the request to be modified
     - *newState*    : name of the new status for the request
     - *priority* : optional integer priority
-    
+
     Apparently when changing request state (on assignment page),
     it's possible to change priority at one go. Hence the argument is here.
 
@@ -65,30 +65,30 @@ def changeRequestStatus(requestName, newState, priority=None, wmstatUrl=None):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
     changeRequestIDStatus(reqId, newState, priority)
-    
+
     # CouchDB
     # have to first get information where the request Couch document is,
     # extracting the information from reqmgr_request.workflow table field
-    reqData = factory(classname = "Request.Get").execute(reqId)
+    reqData = factory(classname="Request.Get").execute(reqId)
     # this would be something like this:
     # http://localhost:5984/reqmgr_workload_cache/maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
     wfUrl = reqData['workflow']
     # cut off /maxa_RequestString-OVERRIDE-ME_130306_205649_8066/spec
     couchUrl = wfUrl.replace('/' + requestName + "/spec", '')
     couchDbName = couchUrl[couchUrl.rfind('/') + 1:]
-    # cut off database name from the URL 
+    # cut off database name from the URL
     url = couchUrl.replace('/' + couchDbName, '')
     couchDb = Database(couchDbName, url)
     fields = {"RequestStatus": newState}
-    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody=True) 
+    couchDb.updateDocument(requestName, "ReqMgr", "updaterequest", fields=fields, useBody=True)
 
-    #TODO: should we make this mendatory?
+    # TODO: should we make this mandatory?
     if wmstatUrl:
         wmstatSvc = WMStatsWriter(wmstatUrl)
         wmstatSvc.updateRequestStatus(requestName, newState)
-    
 
-def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
+
+def assignRequest(requestName, teamName, prodMgr=None, wmstatUrl=None):
     """
     _assignRequest_
 
@@ -105,7 +105,7 @@ def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
 
-    teamId = factory(classname = "Team.ID").execute(teamName)
+    teamId = factory(classname="Team.ID").execute(teamName)
     if teamId == None:
         msg = "Team named %s not known in database" % teamName
         msg += "Failed to assign request %s to team %s" % (requestName, teamName)
@@ -115,22 +115,21 @@ def assignRequest(requestName, teamName, prodMgr = None, wmstatUrl = None):
         wmstatSvc = WMStatsWriter(wmstatUrl)
         wmstatSvc.updateTeam(requestName, teamName)
 
-    assigner = factory(classname = "Assignment.New")
+    assigner = factory(classname="Assignment.New")
     assigner.execute(reqId, teamId)
 
-    changeRequestStatus(requestName, 'assigned', priority = None, wmstatUrl = wmstatUrl)
+    changeRequestStatus(requestName, 'assigned', priority=None, wmstatUrl=wmstatUrl)
 
     if prodMgr != None:
-        addPM = factory(classname = "Progress.ProdMgr")
+        addPM = factory(classname="Progress.ProdMgr")
         addPM.execute(reqId, prodMgr)
 
 
 def deleteAssignment(requestName):
-    """
-    """
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
-    factory(classname = "Assignment.Delete").execute(reqId)
+    factory(classname="Assignment.Delete").execute(reqId)
+
 
 def updateRequest(requestName, paramDict):
     """
@@ -149,6 +148,4 @@ def updateRequest(requestName, paramDict):
 
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
-    factory(classname = "Progress.Update").execute(reqId, **paramDict)
-
-
+    factory(classname="Progress.Update").execute(reqId, **paramDict)

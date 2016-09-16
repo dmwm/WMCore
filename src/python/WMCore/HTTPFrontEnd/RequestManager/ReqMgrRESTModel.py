@@ -48,16 +48,17 @@ deprecatedRequestArgs = ["ReqMgrGroupID",
                          "WorkflowSpec",
                          "RequestSizeEvents",
                          "RequestEventSize",
-                         "TotalEstimatedJobs", 
+                         "TotalEstimatedJobs",
                          "TotalInputEvents",
                          "TotalInputLumis",
                          "TotalInputFiles",
-                         ]
+                        ]
 
 
 class ReqMgrRESTModel(RESTModel):
     """ The REST interface to the ReqMgr database.  Documentation may
     be found at https://twiki.cern.ch/twiki/bin/viewauth/CMS/ReqMgrSystemDesign """
+
     def __init__(self, config):
         RESTModel.__init__(self, config)
         self.couchUrl = config.couchUrl
@@ -65,139 +66,138 @@ class ReqMgrRESTModel(RESTModel):
         self.configDBName = config.configDBName
         self.wmstatWriteURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.wmstatDBName)
         self.acdcURL = "%s/%s" % (self.couchUrl.rstrip('/'), config.acdcDBName)
-        self.security_params = {'roles':config.security_roles}
-        
+        self.security_params = {'roles': config.security_roles}
+
         # Optional values for individual methods
         self.reqPriorityMax = getattr(config, 'maxReqPriority', 100)
 
-
         self._addMethod('GET', 'request', self.getRequest,
-                       args = ['requestName'],
-                       secured=True, validation=[self.isalnum], expires = 0)
+                        args=['requestName'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'assignment', self.getAssignment,
-                       args = ['teamName', 'request'],
-                       secured=True, validation = [self.isalnum], expires = 0)
+                        args=['teamName', 'request'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'user', self.getUser,
-                       args = ['userName'],
-                       secured=True, validation = [self.isalnum], expires = 0)
+                        args=['userName'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'group', self.getGroup,
-                       args = ['group', 'user'], secured=True, expires = 0)
-        self._addMethod('GET', 'version', self.getVersion, args = [],
-                        secured=True, expires = 0)
-        self._addMethod('GET', 'team', self.getTeam, args = [],
-                        secured=True, expires = 0)
+                        args=['group', 'user'], secured=True, expires=0)
+        self._addMethod('GET', 'version', self.getVersion, args=[],
+                        secured=True, expires=0)
+        self._addMethod('GET', 'team', self.getTeam, args=[],
+                        secured=True, expires=0)
         self._addMethod('GET', 'workQueue', self.getWorkQueue,
-                       args = ['request', 'workQueue'],
-                       secured=True, validation = [self.isalnum], expires = 0)
+                        args=['request', 'workQueue'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'message', self.getMessage,
-                       args = ['request'],
-                       secured=True, validation = [self.isalnum], expires = 0)
+                        args=['request'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'inputdataset', self.getInputDataset,
-                       args = ['prim', 'proc', 'tier'],
-                       secured=True)
+                        args=['prim', 'proc', 'tier'],
+                        secured=True)
         self._addMethod('GET', 'outputdataset', self.getOutputDataset,
-                       args = ['prim', 'proc', 'tier'],
-                       secured=True)
+                        args=['prim', 'proc', 'tier'],
+                        secured=True)
         self._addMethod('GET', 'campaign', self.getCampaign,
-                       args = ['campaign'],
-                       secured=True, validation = [self.isalnum], expires = 0)
+                        args=['campaign'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('PUT', 'request', self.putRequest,
-                       args = ['requestName', 'status', 'priority', 'stats'],
-                       secured=True, validation = [self.isalnumExceptStats, self.reqPriority, self.validateStats])
+                        args=['requestName', 'status', 'priority', 'stats'],
+                        secured=True, validation=[self.isalnumExceptStats, self.reqPriority, self.validateStats])
         self._addMethod('PUT', 'clone', self.cloneRequest,
-                       args = ['requestName'],
-                       secured=True, validation = [self.isalnum])
+                        args=['requestName'],
+                        secured=True, validation=[self.isalnum])
         self._addMethod('PUT', 'assignment', self.putAssignment,
-                       args = ['team', 'requestName'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.isalnum])
+                        args=['team', 'requestName'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.isalnum])
         self._addMethod('PUT', 'user', self.putUser,
-                       args = ['userName', 'email', 'dnName'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.validateUser])
+                        args=['userName', 'email', 'dnName'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.validateUser])
         self._addMethod('PUT', 'group', self.putGroup,
-                       args = ['group', 'user'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.isalnum])
+                        args=['group', 'user'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.isalnum])
         self._addMethod('PUT', 'version', self.putVersion,
-                       args = ['version', 'scramArch'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.validateVersion])
+                        args=['version', 'scramArch'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.validateVersion])
         self._addMethod('PUT', 'team', self.putTeam,
-                       args = ['team'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.isalnum])
+                        args=['team'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.isalnum])
         self._addMethod('PUT', 'workQueue', self.putWorkQueue,
-                       args = ['request', 'url'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.validatePutWorkQueue])
+                        args=['request', 'url'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.validatePutWorkQueue])
         self._addMethod('PUT', 'message', self.putMessage,
-                       args = ['request'],
-                       secured=True, security_params=self.security_params,
-                       validation = [self.isalnum])
+                        args=['request'],
+                        secured=True, security_params=self.security_params,
+                        validation=[self.isalnum])
         self._addMethod('PUT', 'campaign', self.putCampaign,
-                       args = ['campaign', 'request'],
-                       secured=True,
-                       validation = [self.isalnum])
+                        args=['campaign', 'request'],
+                        secured=True,
+                        validation=[self.isalnum])
         self._addMethod('POST', 'request', self.postRequest,
-                        args = ['requestName', 'events_written',
-                                'events_merged', 'files_written',
-                                'files_merged', 'percent_written',
-                                'percent_success', 'dataset'],
-                        secured=True, validation = [self.validateUpdates])
+                        args=['requestName', 'events_written',
+                              'events_merged', 'files_written',
+                              'files_merged', 'percent_written',
+                              'percent_success', 'dataset'],
+                        secured=True, validation=[self.validateUpdates])
         self._addMethod('POST', 'closeout', self.closeOutRequest,
-                        args = ['requestName', 'cascade'], secured=True,
-                        validation=[self.isalnum], expires = 0)
+                        args=['requestName', 'cascade'], secured=True,
+                        validation=[self.isalnum], expires=0)
         self._addMethod('POST', 'announce', self.announceRequest,
-                        args = ['requestName', 'cascade'], secured=True,
-                        validation=[self.isalnum], expires = 0)
+                        args=['requestName', 'cascade'], secured=True,
+                        validation=[self.isalnum], expires=0)
         self._addMethod('DELETE', 'request', self.deleteRequest,
-                        args = ['requestName'],
+                        args=['requestName'],
                         secured=True, security_params=self.security_params,
-                        validation = [self.isalnum])
+                        validation=[self.isalnum])
         self._addMethod('DELETE', 'user', self.deleteUser,
-                        args = ['user'],
+                        args=['user'],
                         secured=True, security_params=self.security_params,
-                        validation = [self.isalnum])
+                        validation=[self.isalnum])
         self._addMethod('DELETE', 'group', self.deleteGroup,
-                        args = ['group', 'user'],
+                        args=['group', 'user'],
                         secured=True, security_params=self.security_params,
-                        validation = [self.isalnum])
+                        validation=[self.isalnum])
         self._addMethod('DELETE', 'version', self.deleteVersion,
-                        args = ['version', 'scramArch'],
-                        secured=True, validation = [self.validateVersion])
+                        args=['version', 'scramArch'],
+                        secured=True, validation=[self.validateVersion])
         self._addMethod('DELETE', 'team', self.deleteTeam,
-                        args = ['team'],
+                        args=['team'],
                         secured=True, security_params=self.security_params,
-                        validation = [self.isalnum])
+                        validation=[self.isalnum])
         self._addMethod('DELETE', 'campaign', self.deleteCampaign,
-                        args = ['campaign'],
+                        args=['campaign'],
                         secured=True, security_params=self.security_params,
-                        validation = [self.isalnum])
+                        validation=[self.isalnum])
         self._addMethod('GET', 'requestnames', self.getRequestNames,
-                       args = [], secured=True, expires = 0)
+                        args=[], secured=True, expires=0)
         self._addMethod('GET', 'outputDatasetsByRequestName', self.getOutputForRequest,
-                       args = ['requestName'], secured=True,
-                       validation=[self.isalnum], expires = 0)
+                        args=['requestName'], secured=True,
+                        validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'outputDatasetsByPrepID', self.getOutputForPrepID,
-                       args = ['prepID'], secured=True,
-                       validation=[self.isalnum], expires = 0)
+                        args=['prepID'], secured=True,
+                        validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'mostRecentOutputDatasetsByPrepID', self.getMostRecentOutputForPrepID,
-                       args = ['prepID'], secured=True,
-                       validation=[self.isalnum], expires = 0)
+                        args=['prepID'], secured=True,
+                        validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'configIDs', self.getConfigIDs,
-                        args = ['prim', 'proc', 'tier'],
-                        secured=True, validation=[self.isalnum], expires = 0)
+                        args=['prim', 'proc', 'tier'],
+                        secured=True, validation=[self.isalnum], expires=0)
         self._addMethod('GET', 'requestsByStatusAndTeam', self.getRequestsByStatusAndTeam,
-                        args = ['teamName', 'status'], secured=True,
-                        validation=[self.isalnum], expires = 0)
+                        args=['teamName', 'status'], secured=True,
+                        validation=[self.isalnum], expires=0)
 
         cherrypy.engine.subscribe('start_thread', self.initThread)
 
     def initThread(self, thread_index):
         """ The ReqMgr expects the DBI to be contained in the Thread  """
         myThread = threading.currentThread()
-        #myThread = cherrypy.thread_data
+        # myThread = cherrypy.thread_data
         # Get it from the DBFormatter superclass
         myThread.dbi = self.dbi
 
@@ -207,13 +207,13 @@ class ReqMgrRESTModel(RESTModel):
         for v in index.values():
             WMCore.Lexicon.identifier(v)
         return index
-    
+
     def isalnumExceptStats(self, index):
         """ Validates that all input is alphanumeric,
             with spaces and underscores tolerated"""
         if 'stats' in index:
             return index
-        return self.isalnum(index);
+        return self.isalnum(index)
 
     def getDataset(self, prim, proc, tier):
         """ If only prim exists, assume it's urlquoted.
@@ -246,7 +246,7 @@ class ReqMgrRESTModel(RESTModel):
         if 'priority' not in index:
             return index
 
-        index = self.intpriority(index = index)
+        index = self.intpriority(index=index)
         value = index['priority']
         if math.fabs(value) > self.reqPriorityMax and not Utilities.privileged():
             msg = "Invalid requestPriority!  Request priority must have abs() less then %i!" % self.reqPriorityMax
@@ -257,16 +257,15 @@ class ReqMgrRESTModel(RESTModel):
     def validateUser(self, index):
         assert index['userName'].isalnum()
         assert '@' in index['email']
-        assert index['email'].replace('@','').replace('.','').isalnum()
+        assert index['email'].replace('@', '').replace('.', '').isalnum()
         if 'dnName' in index:
-            assert index['dnName'].replace(' ','').isalnum()
+            assert index['dnName'].replace(' ', '').isalnum()
         return index
 
     def validateVersion(self, index):
         """ Make sure it's a legitimate CMSSW version format """
         WMCore.Lexicon.cmsswversion(index['version'])
         return index
-
 
     def getRequest(self, requestName=None):
         """ If a request name is specified, return the details of the request.
@@ -283,14 +282,12 @@ class ReqMgrRESTModel(RESTModel):
                 pass
         return result
 
-
     def getRequestNames(self):
         # 2013-02-13 is wrong anyway (e.g. Campaign is not working)
         # should be removed
         """ return all the request names in RequestManager as list """
-        #TODO this could me combined with getRequest
+        # TODO this could me combined with getRequest
         return GetRequest.getOverview()
-                
 
     def getOutputForRequest(self, requestName):
         """Return the datasets produced by this request."""
@@ -304,7 +301,7 @@ class ReqMgrRESTModel(RESTModel):
             request = GetRequest.getRequest(requestID)
             requestName = request["RequestName"]
             helper = Utilities.loadWorkload(request)
-            result[requestName] =  helper.listOutputDatasets()
+            result[requestName] = helper.listOutputDatasets()
         return result
 
     def getMostRecentOutputForPrepID(self, prepID):
@@ -335,7 +332,7 @@ class ReqMgrRESTModel(RESTModel):
         assigned to
         """
         # better to use ReqMgr/RequestDB/Interface/ProdSystem/ProdMgrRetrieve?
-        #requestIDs = ProdMgrRetrieve.findAssignedRequests(teamName)
+        # requestIDs = ProdMgrRetrieve.findAssignedRequests(teamName)
         # Maybe now assigned to team is same as assigned to ProdMgr
         result = []
         if teamName != None:
@@ -355,7 +352,7 @@ class ReqMgrRESTModel(RESTModel):
         requestNames = ListRequests.listRequestsByTeam(teamName, status).keys()
         return requestNames
 
-    def getUser(self, userName = None, group = None):
+    def getUser(self, userName=None, group=None):
         """ No args returns a list of all users.  Group returns groups this user is in.  Username
             returs a JSON with information about the user """
         if userName != None:
@@ -371,13 +368,11 @@ class ReqMgrRESTModel(RESTModel):
         else:
             return Registration.listUsers()
 
-
-
     def getGroup(self, group=None, user=None):
         """ No args lists all groups, one args returns JSON with users."""
         if group != None:
             result = {}
-            result['users'] =  GroupInfo.usersInGroup(group)
+            result['users'] = GroupInfo.usersInGroup(group)
             return result
         elif user != None:
             return GroupInfo.groupsForUser(user).keys()
@@ -387,7 +382,7 @@ class ReqMgrRESTModel(RESTModel):
     def getVersion(self):
         """ Returns a list of all CMSSW versions registered with ReqMgr """
         archList = SoftwareAdmin.listSoftware()
-        result   = []
+        result = []
         for arch in archList.keys():
             for version in archList[arch]:
                 if not version in result:
@@ -440,18 +435,17 @@ class ReqMgrRESTModel(RESTModel):
         return ProdManagement.associateProdMgr(request, urllib.unquote(url))
 
     def validatePutWorkQueue(self, index):
-        assert index['request'].replace('_','').replace('-','').replace('.','').isalnum()
+        assert index['request'].replace('_', '').replace('-', '').replace('.', '').isalnum()
         assert index['url'].startswith('http')
         return index
 
-
     # had no permission control before, security issue fix
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group=Utilities.security_groups())
     def putRequest(self, requestName=None, status=None, priority=None, stats=None):
         request = None
         if requestName:
             request = self.getRequest(requestName)
-            
+
         if request == None:
             # Create a new request, with a JSON-encoded schema that is
             # sent in the body of the HTTP request
@@ -471,8 +465,8 @@ class ReqMgrRESTModel(RESTModel):
             reqInputArgs.setdefault('Requestor', cherrypy.request.user["login"])
             try:
                 self.info("Creating a request for: '%s'\n\tworkloadDB: '%s'\n\twmstatUrl: "
-                             "'%s' ..." % (reqInputArgs, self.workloadDBName,
-                                           Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
+                          "'%s' ..." % (reqInputArgs, self.workloadDBName,
+                                        Utilities.removePasswordFromUrl(self.wmstatWriteURL)))
                 request = Utilities.makeRequest(self, reqInputArgs, self.couchUrl,
                                                 self.workloadDBName, self.wmstatWriteURL)
             except cherrypy.HTTPError as ex:
@@ -493,7 +487,7 @@ class ReqMgrRESTModel(RESTModel):
                 elif hasattr(ex, "name"):
                     detail = ex.name
                 else:
-                    detail = "check logs." 
+                    detail = "check logs."
                 msg = "Create request failed, %s" % detail
                 raise cherrypy.HTTPError(400, msg)
             self.info("Request '%s' created." % request['RequestName'])
@@ -501,7 +495,8 @@ class ReqMgrRESTModel(RESTModel):
         if status != None:
             # forbid assignment here
             if status == 'assigned':
-                raise cherrypy.HTTPError(403, "Cannot change status without a team.  Please use PUT /reqmgr/reqMgr/assignment/<team>/<requestName>")
+                raise cherrypy.HTTPError(403,
+                                         "Cannot change status without a team.  Please use PUT /reqmgr/reqMgr/assignment/<team>/<requestName>")
             try:
                 Utilities.changeStatus(requestName, status, self.wmstatWriteURL, self.acdcURL)
             except RuntimeError as ex:
@@ -512,13 +507,12 @@ class ReqMgrRESTModel(RESTModel):
         if priority != None:
             Utilities.changePriority(requestName, priority, self.wmstatWriteURL)
         if stats != None:
-            Utilities.updateRequestStats(requestName = requestName,
-                                         stats = stats,
-                                         couchURL = self.couchUrl,
-                                         couchDBName = self.workloadDBName) 
+            Utilities.updateRequestStats(requestName=requestName,
+                                         stats=stats,
+                                         couchURL=self.couchUrl,
+                                         couchDBName=self.workloadDBName)
         return request
-    
-    
+
     def cloneRequest(self, requestName):
         """
         Input assumes an existing request, checks that.
@@ -527,9 +521,8 @@ class ReqMgrRESTModel(RESTModel):
         The cloned request has a newly generated RequestName, new timestamp,
         RequestDate, however -everything- else is copied from the original request.
         Addition: since Edgar changed his mind, he no longer
-        wants this cloned request be in the 'new' state but put 
+        wants this cloned request be in the 'new' state but put
         straight into 'assignment-approved' state.
-        
         """
         request = None
         if requestName:
@@ -548,14 +541,14 @@ class ReqMgrRESTModel(RESTModel):
                             "RequestDate",
                             "timeStamp"]
                 toRemove.extend(deprecatedRequestArgs)
-                            
+
                 for remove in toRemove:
                     try:
                         del requestOrigDict[remove]
                     except KeyError:
                         pass
-                newReqSchema.update(requestOrigDict) # clone
-                
+                newReqSchema.update(requestOrigDict)  # clone
+
                 # problem that priority wasn't preserved went down from here:
                 # via CheckIn.checkIn() -> MakeRequest.createRequest() -> Request.New.py factory
                 request = Utilities.buildWorkloadAndCheckIn(self, newReqSchema,
@@ -564,8 +557,8 @@ class ReqMgrRESTModel(RESTModel):
                 # change the clone request state as desired
                 Utilities.changeStatus(newReqSchema["RequestName"],
                                        "assignment-approved",
-                                        self.wmstatWriteURL,
-                                        self.acdcURL)
+                                       self.wmstatWriteURL,
+                                       self.acdcURL)
                 return request
             else:
                 msg = "Request '%s' not found." % requestName
@@ -575,17 +568,16 @@ class ReqMgrRESTModel(RESTModel):
             msg = "Received empty request name: '%s', exit." % requestName
             self.warn(msg)
             raise cherrypy.HTTPError(400, msg)
-        
 
     def putAssignment(self, team, requestName):
         """ Assigns this request to this team """
         # see if it's already assigned
         team = urllib.unquote(team)
         if not team in ProdManagement.listTeams():
-            raise cherrypy.HTTPError(404,"Cannot find this team")
+            raise cherrypy.HTTPError(404, "Cannot find this team")
         requestNamesAndIDs = ListRequests.listRequestsByTeam(team)
         if requestName in requestNamesAndIDs.keys():
-            raise cherrypy.HTTPError(400,"Already assigned to this team")
+            raise cherrypy.HTTPError(400, "Already assigned to this team")
         return ChangeState.assignRequest(requestName, team)
 
     def putUser(self, userName, email, dnName=None):
@@ -596,16 +588,16 @@ class ReqMgrRESTModel(RESTModel):
 
     def putGroup(self, group, user=None):
         """ Creates a group, or if a user is passed, adds that user to the group """
-        if(user != None):
+        if (user != None):
             # assume group exists and add user to it
             return GroupManagement.addUserToGroup(user, group)
         if GroupInfo.groupExists(group):
             return "Group already exists"
         GroupManagement.addGroup(group)
 
-    def putVersion(self, version, scramArch = None):
+    def putVersion(self, version, scramArch=None):
         """ Registers a new CMSSW version with ReqMgr """
-        return SoftwareAdmin.addSoftware(version, scramArch = scramArch)
+        return SoftwareAdmin.addSoftware(version, scramArch=scramArch)
 
     def putTeam(self, team):
         """ Registers a team with ReqMgr """
@@ -624,18 +616,16 @@ class ReqMgrRESTModel(RESTModel):
             requestID = GetRequest.requestID(request)
             if requestID:
                 result = Campaign.associateCampaign(campaign, requestID)
-                Utilities.associateCampaign(campaign = campaign,
-                                            requestName = request,
-                                            couchURL = self.couchUrl,
-                                            couchDBName = self.workloadDBName)
+                Utilities.associateCampaign(campaign=campaign,
+                                            requestName=request,
+                                            couchURL=self.couchUrl,
+                                            couchDBName=self.workloadDBName)
                 return result
             else:
                 return False
         else:
             Campaign.addCampaign(campaign)
 
-#    def postRequest(self, requestName, events_written=None, events_merged=None,
-#                    files_written=None, files_merged = None, dataset=None):
     def postRequest(self, requestName, **kwargs):
         """
         Add a progress update to the request Id provided, params can
@@ -650,7 +640,7 @@ class ReqMgrRESTModel(RESTModel):
         """
         return ChangeState.updateRequest(requestName, kwargs)
 
-    def closeOutRequest(self, requestName, cascade = False):
+    def closeOutRequest(self, requestName, cascade=False):
         """
         Close out a request, if the cascade option is given
         then it will search for any Resubmission requests
@@ -668,7 +658,7 @@ class ReqMgrRESTModel(RESTModel):
                                    self.acdcURL)
         return
 
-    def announceRequest(self, requestName, cascade = False):
+    def announceRequest(self, requestName, cascade=False):
         """
         Announce a request, if the cascade option is given
         then it will search for any Resubmission requests
@@ -707,29 +697,27 @@ class ReqMgrRESTModel(RESTModel):
             if k in index['stats']:
                 index['stats'][k] = int(index['stats'][k])
         return index
-    
+
     # had no permission control before, security issue fix
-    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group = Utilities.security_groups())
+    @cherrypy.tools.secmodv2(role=Utilities.security_roles(), group=Utilities.security_groups())
     def deleteRequest(self, requestName):
         """
         Deletes a request from the ReqMgr MySQL/Oracle database
         and also from CoucDB.
         
-        """        
+        """
         # 404 will be thrown automatically on a non-existing request
         request = self.getRequest(requestName)
         helper = Utilities.loadWorkload(request)
         couchDocId = requestName
         helper.deleteCouch(self.couchUrl, self.workloadDBName, couchDocId)
-                
+
         # #4289 - Request delete operation deletes the request from
         # MySQL/Oracle but not from CouchDB, fix here
         # Seangchan shall also fix here deleting such requests from WMStats (#4398)
-        
-        # returns None ...
+
         RequestAdmin.deleteRequest(requestName)
         return
-
 
     def deleteUser(self, user):
         """ Deletes a user, as well as deleting his requests and removing

@@ -11,6 +11,7 @@ import threading
 
 from WMCore.DAOFactory import DAOFactory
 
+
 def getConnection():
     """
     _getConnection_
@@ -20,7 +21,7 @@ def getConnection():
 
     """
     myThread = threading.currentThread()
-    factory = DAOFactory(package = 'WMCore.RequestManager.RequestDB',
-                         logger = logging.getLogger(),
-                         dbinterface = myThread.dbi)
+    factory = DAOFactory(package='WMCore.RequestManager.RequestDB',
+                         logger=logging.getLogger(),
+                         dbinterface=myThread.dbi)
     return factory

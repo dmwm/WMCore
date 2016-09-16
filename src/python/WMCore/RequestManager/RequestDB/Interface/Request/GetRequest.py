@@ -5,23 +5,24 @@ API to get requests from the DB
 
 """
 
-
 import logging
 import WMCore.RequestManager.RequestDB.Connection as DBConnect
 from WMCore.RequestManager.RequestDB.Interface.Request.ListRequests import listRequests
 from WMCore.RequestManager.DataStructs.Request import Request
 from cherrypy import HTTPError
 
+
 def reverseLookups():
     """ returns reverse lookups for Types and Status """
     factory = DBConnect.getConnection()
-    reqTypes = factory(classname = 'ReqTypes.Map').execute()
-    reqStatus = factory(classname = 'ReqStatus.Map').execute()
+    reqTypes = factory(classname='ReqTypes.Map').execute()
+    reqStatus = factory(classname='ReqStatus.Map').execute()
     reverseTypes = {}
-    [ reverseTypes.__setitem__(v, k) for k, v in reqTypes.iteritems() ]
+    [reverseTypes.__setitem__(v, k) for k, v in reqTypes.iteritems()]
     reverseStatus = {}
-    [ reverseStatus.__setitem__(v, k) for k, v in reqStatus.iteritems() ]
+    [reverseStatus.__setitem__(v, k) for k, v in reqStatus.iteritems()]
     return reverseTypes, reverseStatus
+
 
 def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     """
@@ -34,17 +35,17 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
 
     """
     factory = DBConnect.getConnection()
-    reqGet = factory(classname = "Request.Get")
+    reqGet = factory(classname="Request.Get")
     reqData = reqGet.execute(requestId)
     requestName = reqData['request_name']
 
     if not reverseTypes or not reverseStatus:
         reverseTypes, reverseStatus = reverseLookups()
 
-    getGroup = factory(classname = "Group.GetGroupFromAssoc")
+    getGroup = factory(classname="Group.GetGroupFromAssoc")
     groupData = getGroup.execute(reqData['requestor_group_id'])
 
-    getUser = factory(classname = "Requestor.GetUserFromAssoc")
+    getUser = factory(classname="Requestor.GetUserFromAssoc")
     userData = getUser.execute(reqData['requestor_group_id'])
     request = Request()
     request["RequestName"] = requestName
@@ -59,27 +60,27 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
     # this nomenclature inconsistency on Oracle level
     request["SizePerEvent"] = reqData['request_event_size']
     request["PrepID"] = reqData['prep_id']
-    
+
     request["Group"] = groupData['group_name']
     request["Requestor"] = userData['requestor_hn_name']
 
     updates = getProgress(requestName)
     request['percent_complete'], request['percent_success'] = percentages(updates)
-    sqDeps = factory(classname = "Software.GetByAssoc")
+    sqDeps = factory(classname="Software.GetByAssoc")
     swVers = sqDeps.execute(requestId)
     if swVers == {}:
         request['SoftwareVersions'] = ['DEPRECATED']
     else:
         request['SoftwareVersions'] = swVers.values()
 
-    getDatasetsIn = factory(classname = "Datasets.GetInput")
-    getDatasetsOut = factory(classname = "Datasets.GetOutput")
+    getDatasetsIn = factory(classname="Datasets.GetInput")
+    getDatasetsOut = factory(classname="Datasets.GetOutput")
     datasetsIn = getDatasetsIn.execute(requestId)
     datasetsOut = getDatasetsOut.execute(requestId)
     request['InputDatasetTypes'] = datasetsIn
     request['InputDatasets'] = datasetsIn.keys()
     request['OutputDatasets'] = datasetsOut
-    
+
     # fetch AcquisitionEra from spec, it's not stored in Oracle at all
     import WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools as Utilities
     try:
@@ -90,20 +91,23 @@ def getRequest(requestId, reverseTypes=None, reverseStatus=None):
         request["ProcessingString"] = str(helper.getProcessingString())
     except Exception as ex:
         logging.error("Could not check workload for %s, reason: %s", request["RequestName"], ex)
-    
+
     return request
+
 
 def requestID(requestName):
     """ Finds the ReqMgr database ID for a request """
     factory = DBConnect.getConnection()
-    f =  factory(classname = "Request.FindByName")
+    f = factory(classname="Request.FindByName")
     reqId = f.execute(requestName)
     if reqId is None:
         raise HTTPError(404, 'Given request name not found: %s' % requestName)
     return reqId
 
+
 def getRequestByName(requestName):
     return getRequest(requestID(requestName))
+
 
 def percentages(updates):
     """ returns percent complete and percent success, from a list of updates """
@@ -128,11 +132,13 @@ def getRequests():
         result.append(getRequest(request['RequestID'], reverseTypes, reverseStatus))
     return result
 
+
 def getRequestByPrepID(prepID):
     factory = DBConnect.getConnection()
-    getID = factory(classname = "Request.FindByPrepID")
+    getID = factory(classname="Request.FindByPrepID")
     requestIDs = getID.execute(prepID)
     return requestIDs
+
 
 def getRequestDetails(requestName):
     """ Return a dict with the intimate details of the request """
@@ -162,9 +168,10 @@ def getRequestAssignments(requestId):
 
     """
     factory = DBConnect.getConnection()
-    getAssign = factory(classname = "Assignment.GetByRequest")
+    getAssign = factory(classname="Assignment.GetByRequest")
     result = getAssign.execute(requestId)
     return result
+
 
 def getRequestsByCriteria(classname, criterion):
     factory = DBConnect.getConnection()
@@ -188,13 +195,14 @@ def getOverview():
 
     """
     factory = DBConnect.getConnection()
-    getSummary = factory(classname = "Request.GetOverview")
+    getSummary = factory(classname="Request.GetOverview")
     result = getSummary.execute()
     for request in result:
-        getCampaign = factory(classname = "Campaign.GetByRequest")
+        getCampaign = factory(classname="Campaign.GetByRequest")
         campaign = getCampaign.execute(request["request_id"])
         request["campaign"] = campaign
     return result
+
 
 def getGlobalQueues():
     """
@@ -205,25 +213,28 @@ def getGlobalQueues():
     Service address
     """
     factory = DBConnect.getConnection()
-    getQueues = factory(classname = "Request.GetGlobalQueues")
+    getQueues = factory(classname="Request.GetGlobalQueues")
     results = getQueues.execute()
     queues = []
     for url in results:
         queues.append(url.replace('workqueuemonitor', 'workqueue'))
     return queues
 
+
 def getProgress(requestName):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
-    return factory(classname = "Progress.GetProgress").execute(reqId)
+    return factory(classname="Progress.GetProgress").execute(reqId)
+
 
 def getMessages(requestName):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
-    return factory(classname = "Progress.GetMessages").execute(reqId)
+    return factory(classname="Progress.GetMessages").execute(reqId)
+
 
 def putMessage(requestName, message):
     factory = DBConnect.getConnection()
     reqId = requestID(requestName)
     message = message[:999]
-    factory(classname = "Progress.Message").execute(reqId, message)
+    factory(classname="Progress.Message").execute(reqId, message)

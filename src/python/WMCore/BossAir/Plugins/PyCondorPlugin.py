@@ -871,6 +871,9 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("+WMAgent_JobID = %s\n" % job['jobid'])
             jdl.append("job_machine_attrs = GLIDEIN_CMSSite\n")
 
+            # As discussed with Farrukh on Sept 6, this knob is needed for HLT usage
+            jdl.append("+JobLeaseDuration = isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0\n")
+
             ### print all the variables needed for us to rely on condor userlog
             jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
 

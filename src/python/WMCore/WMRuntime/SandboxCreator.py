@@ -176,7 +176,7 @@ class SandboxCreator:
             tarContent.append((psetTweaksPath, '/PSetTweaks'))
             
             utilsPath = Utils.__path__[0]
-            tarContent.append((psetTweaksPath, '/Utils'))
+            tarContent.append((utilsPath, '/Utils'))
 
         for sb in userSandboxes:
             splitResult = urlparse.urlsplit(sb)

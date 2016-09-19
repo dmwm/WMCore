@@ -164,16 +164,6 @@ class WMStatsWriter(WMStatsReader):
         couchStatus = self.couchServer.status()
         return couchStatus['active_tasks']
 
-    def deleteReplicatorDocs(self):
-        repDocs = self.replicatorDB.allDocs()['rows']
-        for j in repDocs:
-            if not j['id'].startswith('_'):
-                doc = {}
-                doc["_id"]  = j['id']
-                doc["_rev"] = j['value']['rev']
-                self.replicatorDB.queueDelete(doc)
-        return self.replicatorDB.commit()
-
     def deleteDocsByIDs(self, ids):
         
         if not ids:

@@ -588,7 +588,10 @@ def replaceToSantizeURL(url_str):
 
     # TODO: won't catch every case (But is it good enough (trade off to performance)?)
     urlRegExpr = r'\b(((?i)http|https|ftp|mysql|oracle|sqlite)+://)([^:]+:[^@]+@)(\S+)\b'
-    return re.sub(urlRegExpr, _repUrl, url_str)
+    try:
+        return re.sub(urlRegExpr, _repUrl, url_str)
+    except Exception:
+        return url_str
 
 
 def splitCouchServiceURL(serviceURL):

@@ -61,6 +61,7 @@ class XRDCPImpl(StageOutImpl):
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--cerncastor', action='store_true')
+        parser.add_argument('--old', action='store_true')
         args, unknown = parser.parse_known_args(options.split())
 
         copyCommandOptions = ' '.join(unknown)
@@ -78,7 +79,12 @@ class XRDCPImpl(StageOutImpl):
 
         useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
 
-        copyCommand += "xrdcp --force --nopbar "
+        if args.old:
+            copyCommand += "xrdcp-old "
+        else:
+            copyCommand += "xrdcp "
+
+        copyCommand += "--force --nopbar "
 
         if copyCommandOptions:
             copyCommand += "%s " % copyCommandOptions

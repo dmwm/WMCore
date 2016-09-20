@@ -23,6 +23,7 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import sanitizeURL
 from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMComponent.TaskArchiver.DataCache import DataCache
+from WMCore.DataStructs.LumiList import LumiList
 
 from WMCore.Algorithms                           import MathAlgos
 from WMCore.DAOFactory                           import DAOFactory
@@ -599,7 +600,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         logging.debug(msg)
 
                 if workflows[workflow]["spec"] is None:
-                    logging.warn("Workflow spec not found for %s", workflow)
+                    logging.warning("Workflow spec not found for %s", workflow)
                     continue
 
                 spec = workflows[workflow]["spec"]
@@ -825,6 +826,18 @@ class CleanCouchPoller(BaseWorkerThread):
                         for log in logs:
                             if not log in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
+        # Now convert run/lumis into a compact list, to avoid monstrous lists
+        # e.g. {"1": [3, 6, 9, 2, 7, 1, 19]} becomes {'1': [[1, 3], [6, 7], [9, 9], [19, 19]]}
+        for task in workflowData['errors']:
+            for step in workflowData['errors'][task]:
+                stepFailures = workflowData['errors'][task][step]
+                if not isinstance(stepFailures, dict):
+                    continue
+                for exitCode in stepFailures:
+                    if stepFailures[exitCode]['runs']:
+                        runLumiObj = LumiList(runsAndLumis = stepFailures[exitCode]['runs'])
+                        stepFailures[exitCode]['runs'] = runLumiObj.getCompactList()
+
         # Adding logArchives per task
         logArchives = self.getLogArchives(spec)
         workflowData['logArchives'] = logArchives
@@ -847,12 +860,19 @@ class CleanCouchPoller(BaseWorkerThread):
 
         workflowData['histograms'] = jsonHistograms
 
-        # Now we have the workflowData in the right format
-        # Time to send them on
-        logging.info("About to commit workflow summary for %s" % workflowName)
-        self.workdatabase.commitOne(workflowData)
+        # No easy way to get the memory footprint of a python object.
+        summarySize = len(json.dumps(workflowData))/1024
+        if summarySize > 6 * 1024: # 6MB
+            msg = "Workload summary for %s is too big: %d Kb. " % (workflowName, summarySize)
+            msg += "Wiping out the 'errors' section to make it smaller."
+            logging.warning(msg)
+            workflowData['errors'] = {}
+        summarySize = len(json.dumps(workflowData))/1024
 
-        logging.info("Finished committing workflow summary to couch")
+        # Now we have the workflowData in the right format, time to push it
+        logging.info("About to commit %d Kb of data for workflow summary for %s", summarySize, workflowName)
+        retval = self.workdatabase.commitOne(workflowData)
+        logging.info("Finished committing summary,returned value: %s", retval)
 
         return
     

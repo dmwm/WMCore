@@ -1060,7 +1060,7 @@ class CouchMonitor(object):
         self.previousUpdateSequence = {}
 
     def deleteReplicatorDocs(self, source=None, target=None, repDocs=None):
-        if repDocs == None:
+        if repDocs is None:
             repDocs = self.replicatorDB.allDocs(options={'include_docs': True})['rows']
 
         filteredDocs = self._filterReplicationDocs(repDocs, source, target)
@@ -1073,19 +1073,12 @@ class CouchMonitor(object):
     def _filterReplicationDocs(self, repDocs, source, target):
         filteredDocs = []
         for j in repDocs:
-            if not j['id'].startswith('_'):
-                if (source == None and target == None) or \
+            if '_design' not in j['id']:
+                if (source is None and target is None) or \
                         (j['doc']['source'] == source and j['doc']['target'] == target):
                     doc = {}
                     doc["_id"] = j['id']
                     doc["_rev"] = j['value']['rev']
-                    if "_replication_state" in j["doc"]:
-                        doc["_replication_state"] = j["doc"]["_replication_state"]
-                    else:
-                        logging.error("""replication failed from %s to %s 
-                                         couch server needs to be manually restarted""" % (
-                            replaceToSantizeURL(source),
-                            replaceToSantizeURL(target)))
                     filteredDocs.append(doc)
         return filteredDocs
 

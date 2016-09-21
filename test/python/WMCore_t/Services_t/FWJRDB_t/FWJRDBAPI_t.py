@@ -7,7 +7,8 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 SAMPLE_FWJR = {'fallbackFiles': [],
- 'skippedFiles': [],
+ 'skippedFiles': ['/store/data/Run2011A/Cosmics/RAW/v1/000/160/960/E8099605-8853-E011-A848-0030487A18F3.root',
+                  '/store/data/Run2011A/Cosmics/RAW/v1/000/160/960/E8099605-8853-E011-A848-0030487A18F4.root'],
  'steps': {'cmsRun1': {'analysis': {},
                        'cleanup': {},
                        'errors': [],
@@ -20,7 +21,8 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                                              'module_label': 'source',
                                              'pfn': 'root://eoscms.cern.ch//eos/cms/store/data/Run2011A/Cosmics/RAW/v1/000/160/960/E8099605-8853-E011-A848-0030487A18F2.root',
                                              'runs': {'160960': [164,
-                                                                 165]}}]},
+                                                                 165]}},
+                                            ]},
                        'logs': {},
                        'output': {'ALCARECOStreamDtCalib': [{'InputPFN': '/pool/condor/dir_2661042/glide_qqd8kp/execute/dir_5444/job/WMTaskSpace/cmsRun1/ALCARECOStreamDtCalib.root',
                                                              'OutputPFN': 'root://eoscms.cern.ch//eos/cms/store/unmerged/CMSSW_7_0_0_pre11/Cosmics/ALCARECO/DtCalib-RECOCOSD_TaskChain_Data_pile_up_test-v1/00000/ECCFE421-08CB-E511-9F4C-02163E017804.root',
@@ -179,14 +181,17 @@ class FWJRDBAPITest(unittest.TestCase):
                         "retrycount": retryCount,
                         "archivestatus": "ready",
                         "fwjr": SAMPLE_FWJR,
+                        "jobtype": "Merge",
                         "type": "fwjr"}
         workflow = SAMPLE_FWJR['task'].split('/')[1]
+        
         self.assertEqual(self.fwjrAPI.couchDB.commitOne(fwjrDocument)[0]['id'], fwjrDocument['_id'])
         self.assertEqual(self.fwjrAPI.getFWJRByArchiveStatus("ready")['rows'][0]['id'], fwjrDocument['_id'])
         self.assertEqual(self.fwjrAPI.isAllFWJRArchived(workflow), False)    
         self.fwjrAPI.updateArchiveUploadedStatus(fwjrDocument['_id'])
         self.assertEqual(self.fwjrAPI.getFWJRByArchiveStatus("uploaded")['rows'][0]['id'], fwjrDocument['_id'])
         self.assertEqual(self.fwjrAPI.isAllFWJRArchived(workflow), True)
+        self.assertEqual(self.fwjrAPI.getFWJRWithSkippedFiles()['rows'][0]['value']['skippedFiles'], 2)
         
 if __name__ == '__main__':
 

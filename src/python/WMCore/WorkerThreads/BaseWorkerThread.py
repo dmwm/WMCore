@@ -142,6 +142,15 @@ class BaseWorkerThread:
             # to get the right name
             myThread = threading.currentThread()
 
+            if hasattr(self.component.config, "General") and \
+               hasattr(self.component.config.General, "central_logdb_url") and \
+               hasattr(self.component.config, "Agent"):
+                from WMCore.Services.LogDB.LogDB import LogDB
+                myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url, 
+                                         self.component.config.Agent.hostName, logger=logging)
+            else:
+                myThread.logdbClient = None
+                
             if hasattr(self.component.config, "Agent"):
                 if getattr(self.component.config.Agent, "useHeartbeat", True):
                     self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName())

@@ -13,6 +13,17 @@ import threading
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend, clean_entry
 from WMCore.Lexicon import splitCouchServiceURL
 
+
+def getLogDBInstanceFromThread():
+    """This function only gets to call when LogDB is instantiated before hand
+       All the WMComponentWorkers instatntiate LogDB automatically 
+    """
+    myThread = threading.currentThread()
+    if not hasattr(myThread, "logdbClient") or not isinstance(myThread.logdbClient, LogDB):
+        #logdb is not set do nothting
+        return None
+    return myThread.logdbClient
+
 class LogDB(object):
     """
     _LogDB_

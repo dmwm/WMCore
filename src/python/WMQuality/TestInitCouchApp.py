@@ -11,14 +11,16 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+import logging
 import os
 import urllib
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
-from WMCore.Database.CMSCouch import CouchServer
 
+from WMCore.Database.CMSCouch import CouchServer
 from WMQuality.TestInit import TestInit
+
 
 class CouchAppTestHarness:
     """
@@ -118,3 +120,19 @@ class TestInitCouchApp(TestInit):
 
         self.couch = None
         return
+
+    def clearDatabase(self, modules=None):
+        if not modules:
+            modules = []
+        logging.debug("Calling SQL clearDatabase()")
+        super(TestInitCouchApp, self).clearDatabase(modules=modules)
+        logging.debug("Running couch clearDatabase()")
+
+        couch = self.couch.couchServer
+        dbList = couch.listDatabases()
+        dbList.remove(u'_users')
+        for db in dbList:
+            logging.debug(" deleting %s", db)
+            couch.deleteDatabase(db)
+
+        logging.debug("Finished")

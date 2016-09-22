@@ -127,8 +127,10 @@ class TestInitCouchApp(TestInit):
         logging.debug("Calling SQL clearDatabase()")
         super(TestInitCouchApp, self).clearDatabase(modules=modules)
         logging.debug("Running couch clearDatabase()")
-
-        couch = self.couch.couchServer
+        couchURL = os.environ.get("COUCHURL", None)
+        if not couchURL:
+            return
+        couch = CouchServer(self.couchUrl)
         dbList = couch.listDatabases()
         dbList.remove(u'_users')
         for db in dbList:
@@ -136,3 +138,5 @@ class TestInitCouchApp(TestInit):
             couch.deleteDatabase(db)
 
         logging.debug("Finished")
+
+        return

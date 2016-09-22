@@ -56,9 +56,9 @@ def globalQueue(logger=None, dbi=None, **kwargs):
                 'SplittingMapping': {'DatasetBlock':
                                          {'name': 'Block',
                                           'args': {}}
-                                     },
+                                    },
                 'TrackLocationOrSubscription': 'location'
-                }
+               }
     defaults.update(kwargs)
     return WorkQueue(logger, dbi, **defaults)
 
@@ -155,23 +155,23 @@ class WorkQueue(WorkQueueBase):
         self.params['SplittingMapping'].setdefault('DatasetBlock',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                   )
+                                                  )
         self.params['SplittingMapping'].setdefault('MonteCarlo',
                                                    {'name': 'MonteCarlo',
                                                     'args': {}}
-                                                   )
+                                                  )
         self.params['SplittingMapping'].setdefault('Dataset',
                                                    {'name': 'Dataset',
                                                     'args': {}}
-                                                   )
+                                                  )
         self.params['SplittingMapping'].setdefault('Block',
                                                    {'name': 'Block',
                                                     'args': {}}
-                                                   )
+                                                  )
         self.params['SplittingMapping'].setdefault('ResubmitBlock',
                                                    {'name': 'ResubmitBlock',
                                                     'args': {}}
-                                                   )
+                                                  )
 
         self.params.setdefault('EndPolicySettings', {})
 
@@ -219,7 +219,6 @@ class WorkQueue(WorkQueueBase):
             # This is need for getting post call
             # TODO: Change ReqMgr api to accept post for for retrieving the data and remove this
             self.requestDB = RequestDBReader(self.params['RequestDBURL'])
-
 
         # initialize alerts sending client (self.sendAlert() method)
         # usage: self.sendAlert(levelNum, msg = msg) ; level - integer 1 .. 10
@@ -714,15 +713,15 @@ class WorkQueue(WorkQueueBase):
         result = self.dataLocationMapper()
         self.backend.recordTaskActivity('location_refresh')
         return result
-    
+
     def _printLog(self, msg, printFlag, logLevel):
         if printFlag:
             print(msg)
         else:
             getattr(self.logger, logLevel)(msg)
-            
-    def pullWorkConditionCheck(self, printFlag = False):
-        
+
+    def pullWorkConditionCheck(self, printFlag=False):
+
         if not self.params['ParentQueueCouchUrl']:
             msg = 'Unable to pull work from parent, ParentQueueCouchUrl not provided'
             self._printLog(msg, printFlag, "warning")
@@ -735,7 +734,7 @@ class WorkQueue(WorkQueueBase):
             msg = 'Draining queue: skipping work pull'
             self._printLog(msg, printFlag, "warning")
             return False
-        
+
         left_over = self.parent_queue.getElements('Negotiating', returnIdOnly=True,
                                                   ChildQueueUrl=self.params['QueueURL'])
         if left_over:
@@ -748,11 +747,11 @@ class WorkQueue(WorkQueueBase):
             msg = 'Not pulling more work. Still processing %d previous units' % len(still_processing)
             self._printLog(msg, printFlag, "warning")
             return False
-        
+
         return True
-    
-    def freeResouceCheck(self, resources=None, printFlag=False):    
-        
+
+    def freeResouceCheck(self, resources=None, printFlag=False):
+
         jobCounts = {}
         if not resources:
             # find out available resources from wmbs
@@ -765,19 +764,17 @@ class WorkQueue(WorkQueueBase):
             msg = 'Not pulling more work. No free slots.'
             self._printLog(msg, printFlag, "warning")
             return (False, False)
-        
+
         return (resources, jobCounts)
 
-        
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
-        
+
         work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Teams'])
 
         if not work:
             msg = 'No available work in parent queue.'
             self._printLog(msg, printFlag, "warning")
         return work
-    
 
     def pullWork(self, resources=None):
         """
@@ -788,16 +785,16 @@ class WorkQueue(WorkQueueBase):
         """
         if self.pullWorkConditionCheck() == False:
             return 0
-        
+
         (resources, jobCounts) = self.freeResouceCheck(resources)
         if (resources, jobCounts) == (False, False):
             return 0
-        
+
         self.logger.info("Pull work for sites %s: " % str(resources))
         work = self.getAvailableWorkfromParent(resources, jobCounts)
         if not work:
             return 0
-        
+
         work = self._assignToChildQueue(self.params['QueueURL'], *work)
 
         return len(work)
@@ -863,7 +860,7 @@ class WorkQueue(WorkQueueBase):
                     lastUpdate = float(max(childrenElements, key=lambda x: x.timestamp).timestamp)
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
-                    #if it is successful remove previous error
+                    # if it is successful remove previous error
                     self.logdb.delete(element.id, "error", this_thread=True)
                 else:
                     msg = "ChildElement is empty for element id %s: investigate" % element.id
@@ -1032,19 +1029,19 @@ class WorkQueue(WorkQueueBase):
             totalUnits.extend(units)
 
         return (totalUnits, rejectedWork)
-    
+
     def _getTotalStats(self, units):
         totalToplevelJobs = 0
         totalEvents = 0
         totalLumis = 0
         totalFiles = 0
-        
+
         for unit in units:
             totalToplevelJobs += unit['Jobs']
             totalEvents += unit['NumberOfEvents']
             totalLumis += unit['NumberOfLumis']
             totalFiles += unit['NumberOfFiles']
-        
+
         return {'total_jobs': totalToplevelJobs,
                 'input_events': totalEvents,
                 'input_lumis': totalLumis,
@@ -1072,12 +1069,13 @@ class WorkQueue(WorkQueueBase):
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
                     work, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],
-                                                                     mask=inbound['Mask'], inbound=inbound,
-                                                                     continuous=continuous)
+                                                         mask=inbound['Mask'], inbound=inbound,
+                                                         continuous=continuous)
 
                     # save inbound work to signal we have completed queueing
-                    newWork = self.backend.insertElements(work, parent=inbound)  # if this fails, rerunning will pick up here
-                    #get statistics for the new work
+                    # if this fails, rerunning will pick up here
+                    newWork = self.backend.insertElements(work, parent=inbound)
+                    # get statistics for the new work
                     totalStats = self._getTotalStats(newWork)
 
                     if not continuous:

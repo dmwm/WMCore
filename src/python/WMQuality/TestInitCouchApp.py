@@ -129,8 +129,9 @@ class TestInitCouchApp(TestInit):
         logging.debug("Running couch clearDatabase()")
         couchURL = os.environ.get("COUCHURL", None)
         if not couchURL:
+            logging.info("COUCHURL was not set, unable to clear old couch databases")
             return
-        couch = CouchServer(self.couchUrl)
+        couch = CouchServer(couchURL)
         dbList = couch.listDatabases()
         dbList.remove(u'_users')
         for db in dbList:

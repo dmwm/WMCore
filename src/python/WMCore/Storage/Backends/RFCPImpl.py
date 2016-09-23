@@ -38,7 +38,7 @@ class RFCPImpl(StageOutImpl):
 
         create dir with group permission
         """
-
+        checkdirexitCode = None
         targetdir= self.getDirname(targetPFN)
 
         checkdircmd="rfstat \"%s\" > /dev/null " % targetdir
@@ -109,9 +109,6 @@ class RFCPImpl(StageOutImpl):
         Parse directory name out of rfio: PFN
 
         """
-
-        start=0
-        path=""
 
         if pfn.startswith( "rfio:" ):
             if pfn.find( "path=" ) != -1:

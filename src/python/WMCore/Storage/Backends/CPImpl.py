@@ -39,7 +39,7 @@ class CPImpl(StageOutImpl):
         create dir with group permission
         """
         targetdir= os.path.dirname(targetPFN)
-
+        checkdirexitCode = None
         checkdircmd="/bin/ls %s > /dev/null " % targetdir
         print("Check dir existence : %s" %checkdircmd)
         try:

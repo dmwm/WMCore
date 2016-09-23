@@ -8,12 +8,10 @@ Generic, will/should work with any site.
 
 """
 from __future__ import print_function
-import os
 import argparse
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
-from WMCore.Storage.StageOutError import StageOutError
 
 from WMCore.Storage.Execute import execute
 

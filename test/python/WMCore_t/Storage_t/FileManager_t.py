@@ -10,7 +10,7 @@ import logging
 import shutil
 import tempfile
 import os.path
-from WMCore.Storage.FileManager import StageInMgr,StageOutMgr,DeleteMgr,FileManager
+from WMCore.Storage.FileManager import StageInMgr,StageOutMgr,DeleteMgr
 import WMCore.Storage.StageOutError
 class FileManagerTest(unittest.TestCase):
 

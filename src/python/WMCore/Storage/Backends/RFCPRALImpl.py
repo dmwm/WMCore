@@ -40,6 +40,7 @@ class RFCPRALImpl(StageOutImpl):
 
         create dir with group permission
         """
+        checkdirexitCode = None
 
         targetdir= os.path.dirname(self.parseCastorPath(targetPFN))
 
@@ -104,13 +105,13 @@ class RFCPRALImpl(StageOutImpl):
         simpleCastorPath = None
 
         if simpleCastorPath == None:
-            regExpParser = re.compile('/+castor/ads.rl.ac.uk/(.*)')
+            regExpParser = re.compile('/+castor/ads\.rl\.ac\.uk/(.*)')
             match = regExpParser.match(complexCastorPath)
             if ( match != None ):
                 simpleCastorPath = '/castor/ads.rl.ac.uk/' + match.group(1)
 
         if simpleCastorPath == None:
-            regExpParser = re.compile('rfio:.*/+castor/ads.rl.ac.uk/([^?]+).*')
+            regExpParser = re.compile('rfio:.*/+castor/ads\.rl\.ac\.uk/([^?]+).*')
             match = regExpParser.match(complexCastorPath)
             if ( match != None ):
                 simpleCastorPath = '/castor/ads.rl.ac.uk/' + match.group(1)
@@ -137,7 +138,7 @@ class RFCPRALImpl(StageOutImpl):
 
         # Does file need removing from cmsTemp, or cmsFarmRead?
         command = ''
-        if(re.match('/+castor/ads.rl.ac.uk/prod/cms/store/unmerged/.*', fileToDelete)):
+        if(re.match('/+castor/ads\.rl\.ac\.uk/prod/cms/store/unmerged/.*', fileToDelete)):
             command = "stager_rm -S cmsTemp -M %s ; nsrm %s" % (fileToDelete, fileToDelete)
         else:
             command = "stager_rm -M %s ; nsrm %s" %(fileToDelete, fileToDelete)

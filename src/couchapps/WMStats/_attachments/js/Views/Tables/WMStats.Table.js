@@ -38,6 +38,14 @@ WMStats.Table = function(config, tableSetting) {
     function create(selector, filterConfig) {
         $(selector).empty();
         $(selector).html(tableSetting);
+        
+        tableConfig.stateSaveCallback = function(settings,data) {
+            localStorage.setItem(selector, JSON.stringify(data));
+        };
+        tableConfig.stateLoadCallback = function(settings) {
+        	return JSON.parse(localStorage.getItem(selector));
+        };
+		
         var oTable = $(selector + " table").DataTable(tableConfig);
         if ( oTable.length > 0 ) {
             oTable.columns.adjust().draw();

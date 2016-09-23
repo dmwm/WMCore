@@ -132,7 +132,7 @@ WMStats.View.IndexHTML = function(){
         //vm.CategoryView.subscribe("ecategory", switchCategory) 
         retrieveData();
         //$("div.draggable").draggable();
-        // 5 min update
+        // 3 min update
         setInterval(retrieveData, 180000);
      } );
 };

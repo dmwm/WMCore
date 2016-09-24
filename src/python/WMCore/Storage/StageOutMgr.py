@@ -9,18 +9,13 @@ use this class as a basic API
 """
 from __future__ import print_function
 
-import os
-
 from WMCore.WMException import WMException
-
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError
 from WMCore.Storage.DeleteMgr import DeleteMgr
 from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 
-import WMCore.Storage.Backends
-import WMCore.Storage.Plugins
 
 class StageOutMgr:
     """
@@ -30,6 +25,7 @@ class StageOutMgr:
     using TFC or an override.
 
     """
+
     def __init__(self, **overrideParams):
         print("StageOutMgr::__init__()")
         self.overrideConf = overrideParams
@@ -45,16 +41,13 @@ class StageOutMgr:
             if not self.override:
                 print("=======StageOut Override: These are not the parameters you are looking for")
 
-
         self.substituteGUID = True
         self.fallbacks = []
 
         #  //
         # // Try an get the TFC for the site
-        #//
+        # //
         self.tfc = None
-
-
 
         self.numberOfRetries = 3
         self.retryPauseTime = 600
@@ -63,7 +56,7 @@ class StageOutMgr:
 
         #  //
         # // If override isnt None, we dont need SiteCfg, if it is
-        #//  then we need siteCfg otherwise we are dead.
+        # //  then we need siteCfg otherwise we are dead.
 
         if self.override == False:
             self.siteCfg = loadSiteLocalConfig()
@@ -90,7 +83,7 @@ class StageOutMgr:
             msg = "Unable to retrieve local stage out command\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
+            raise StageOutInitError(msg)
         msg = "Local Stage Out Implementation to be used is: "
         msg += "%s\n" % implName
 
@@ -99,14 +92,14 @@ class StageOutMgr:
             msg = "Unable to retrieve local stage out phedex-node\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
+            raise StageOutInitError(msg)
         msg += "Local Stage Out PNN to be used is %s\n" % pnn
         catalog = self.siteCfg.localStageOut.get("catalog", None)
         if catalog == None:
             msg = "Unable to retrieve local stage out catalog\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
-            raise StageOutInitError( msg)
+            raise StageOutInitError(msg)
         msg += "Local Stage Out Catalog to be used is %s\n" % catalog
 
         try:
@@ -117,7 +110,7 @@ class StageOutMgr:
             msg = "Unable to load Trivial File Catalog:\n"
             msg += "Local stage out will not be attempted\n"
             msg += str(ex)
-            raise StageOutInitError( msg )
+            raise StageOutInitError(msg)
 
         self.fallbacks = self.siteCfg.fallbackStageOut
 
@@ -130,7 +123,6 @@ class StageOutMgr:
         print("==== Stageout configuration finish ====")
         return
 
-
     def initialiseOverride(self):
         """
         _initialiseOverride_
@@ -140,11 +132,11 @@ class StageOutMgr:
         """
         overrideConf = self.overrideConf
         overrideParams = {
-            "command" : None,
-            "option" : None,
-            "phedex-node" : None,
-            "lfn-prefix" : None,
-            }
+            "command": None,
+            "option": None,
+            "phedex-node": None,
+            "lfn-prefix": None,
+        }
 
         try:
             overrideParams['command'] = overrideConf['command']
@@ -169,7 +161,6 @@ class StageOutMgr:
         self.fallbacks.append(overrideParams)
         return
 
-
     def __call__(self, fileToStage):
         """
         _operator()_
@@ -185,7 +176,7 @@ class StageOutMgr:
         fileToStage['StageOutReport'] = []
         #  //
         # // No override => use local-stage-out from site conf
-        #//  invoke for all files and check failures/successes
+        # //  invoke for all files and check failures/successes
         if not self.override:
             print("===> Attempting Local Stage Out.")
             try:
@@ -196,27 +187,25 @@ class StageOutMgr:
                 self.completedFiles[fileToStage['LFN']] = fileToStage
 
                 print("===> Stage Out Successful: %s" % fileToStage)
-                fileToStage = stageoutPolicyReport(fileToStage, None, None, None, 'LOCAL', 0)
+                fileToStage = stageoutPolicyReport(fileToStage, None, None, 'LOCAL', 0)
                 return fileToStage
             except WMException as ex:
                 lastException = ex
                 print("===> Local Stage Out Failure for file:")
                 print("======>  %s\n" % fileToStage['LFN'])
-                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut['se-name'],
-                                                   self.siteCfg.localStageOut['phedex-node'],
+                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut.get('phedex-node', None),
                                                    self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
             except Exception as ex:
                 lastException = StageOutFailure("Error during local stage out",
-                                                error = str(ex))
+                                                error=str(ex))
                 print("===> Local Stage Out Failure for file:\n")
                 print("======>  %s\n" % fileToStage['LFN'])
-                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut['se-name'],
-                                                   self.siteCfg.localStageOut['phedex-node'],
+                fileToStage = stageoutPolicyReport(fileToStage, self.siteCfg.localStageOut.get('phedex-node', None),
                                                    self.siteCfg.localStageOut['command'], 'LOCAL', 60311)
 
-        #  //
+        # //
         # // Still here => failure, start using the fallback stage outs
-        #//  If override is set, then that will be the only fallback available
+        # //  If override is set, then that will be the only fallback available
         print("===> Attempting %s Fallback Stage Outs" % len(self.fallbacks))
         for fallback in self.fallbacks:
             try:
@@ -231,10 +220,10 @@ class StageOutMgr:
                     del self.failed[lfn]
 
                 print("===> Stage Out Successful: %s" % fileToStage)
-                fileToStage = stageoutPolicyReport(fileToStage, None, None, None, 'FALLBACK', 0)
+                fileToStage = stageoutPolicyReport(fileToStage, None, None, 'FALLBACK', 0)
                 return fileToStage
             except Exception as ex:
-                fileToStage = stageoutPolicyReport(fileToStage, fallback['se-name'], fallback['phedex-node'],
+                fileToStage = stageoutPolicyReport(fileToStage, fallback.get('phedex-node', None),
                                                    fallback['command'], 'FALLBACK', 60310)
                 lastException = ex
                 continue
@@ -263,8 +252,8 @@ class StageOutMgr:
             msg = "Unable to retrieve impl for fallback stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: "
             msg += "%s\n" % fbParams['command']
-            raise StageOutFailure(msg, Command = fbParams['command'],
-                                  LFN = lfn, ExceptionDetail = str(ex))
+            raise StageOutFailure(msg, Command=fbParams['command'],
+                                  LFN=lfn, ExceptionDetail=str(ex))
 
         impl.numRetries = self.numberOfRetries
         impl.retryPause = self.retryPauseTime
@@ -274,9 +263,8 @@ class StageOutMgr:
         except Exception as ex:
             msg = "Failure for fallback stage out:\n"
             msg += str(ex)
-            raise StageOutFailure(msg, Command = fbParams['command'],
-                                  LFN = lfn, InputPFN = localPfn,
-                                  TargetPFN = pfn)
+            raise StageOutFailure(msg, Command=fbParams['command'],
+                                  LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
 
         return pfn
 
@@ -287,15 +275,13 @@ class StageOutMgr:
         Given the lfn and local stage out params, invoke the local stage out
 
         """
-        pnn = self.siteCfg.localStageOut['phedex-node']
         command = self.siteCfg.localStageOut['command']
         options = self.siteCfg.localStageOut.get('option', None)
         pfn = self.searchTFC(lfn)
         protocol = self.tfc.preferredProtocol
         if pfn == None:
             msg = "Unable to match lfn to pfn: \n  %s" % lfn
-            raise StageOutFailure(msg, LFN = lfn, TFC = str(self.tfc))
-
+            raise StageOutFailure(msg, LFN=lfn, TFC=str(self.tfc))
 
         try:
             impl = retrieveStageOutImpl(command)
@@ -303,8 +289,8 @@ class StageOutMgr:
             msg = "Unable to retrieve impl for local stage out:\n"
             msg += "Error retrieving StageOutImpl for command named: %s\n" % (
                 command,)
-            raise StageOutFailure(msg, Command = command,
-                                  LFN = lfn, ExceptionDetail = str(ex))
+            raise StageOutFailure(msg, Command=command,
+                                  LFN=lfn, ExceptionDetail=str(ex))
         impl.numRetries = self.numberOfRetries
         impl.retryPause = self.retryPauseTime
 
@@ -318,13 +304,10 @@ class StageOutMgr:
                 msg += traceback.format_exc()
             except AttributeError as ex:
                 msg += "Traceback unavailable\n"
-            raise StageOutFailure(msg, Command = command, Protocol = protocol,
-                                  LFN = lfn, InputPFN = localPfn,
-                                  TargetPFN = pfn)
+            raise StageOutFailure(msg, Command=command, Protocol=protocol,
+                                  LFN=lfn, InputPFN=localPfn, TargetPFN=pfn)
 
         return pfn
-
-
 
     def cleanSuccessfulStageOuts(self):
         """
@@ -340,7 +323,7 @@ class StageOutMgr:
             pfn = fileInfo['PFN']
             command = fileInfo['StageOutCommand']
             msg = "Cleaning out file: %s\n" % lfn
-            msg +=  "Removing PFN: %s" % pfn
+            msg += "Removing PFN: %s" % pfn
             msg += "Using command implementation: %s\n" % command
             print(msg)
             delManager = DeleteMgr(**self.overrideConf)
@@ -350,9 +333,6 @@ class StageOutMgr:
                 msg = "Failed to cleanup staged out file after error:"
                 msg += " %s\n%s" % (lfn, str(ex))
                 print(msg)
-
-
-
 
     def searchTFC(self, lfn):
         """

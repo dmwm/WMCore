@@ -11,9 +11,9 @@ import traceback
 import logging
 from WMCore.Services.Dashboard import apmon
 
-
 # AMR still some functions out there that I don't know about their usage
 DASHBOARDURL = 'cms-jobmon.cern.ch:8884'
+
 
 class DashboardAPI(object):
     """
@@ -21,6 +21,7 @@ class DashboardAPI(object):
 
     High level interface with apmon
     """
+
     def __init__(self, monitorId=None, jobMonitorId=None, lookupUrl=None,
                  logr=None, server=None):
         self.defaultContext = {}
@@ -127,13 +128,15 @@ def logger(msg):
     except Exception:
         pass
 
+
 #
 # Context handling for CLI
 #
 
 # Format envvar, context var name, context var default value
-contextConf = {'MonitorID'    : ('MonitorID', 'unknown'),
-               'MonitorJobID' : ('MonitorJobID', 'unknown')}
+contextConf = {'MonitorID': ('MonitorID', 'unknown'),
+               'MonitorJobID': ('MonitorJobID', 'unknown')}
+
 
 #
 # Method to return the context
@@ -155,6 +158,7 @@ def getContext(overload={}):
         context[paramName] = paramValue
     return context
 
+
 #
 # Methods to read in the CLI arguments
 #
@@ -174,8 +178,8 @@ def readArgs(lines):
             argValues[paramName] = paramValue
     return argValues
 
-def filterArgs(argValues):
 
+def filterArgs(argValues):
     contextValues = {}
     paramValues = {}
 
@@ -189,6 +193,7 @@ def filterArgs(argValues):
         else:
             logger('Bad value for parameter :' + paramName)
     return contextValues, paramValues
+
 
 #
 # SHELL SCRIPT BASED JOB WRAPPER
@@ -249,7 +254,8 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
         return exitCode
     params = {
         'MonitorID': ad['CRAB_ReqName'],
-        'MonitorJobID': '%d_https://glidein.cern.ch/%d/%s_%d' % (ad['CRAB_Id'], ad['CRAB_Id'], ad['CRAB_ReqName'].replace("_", ":"), ad['CRAB_Retry']),
+        'MonitorJobID': '%d_https://glidein.cern.ch/%d/%s_%d' % (ad['CRAB_Id'], ad['CRAB_Id'],
+                                                                 ad['CRAB_ReqName'].replace("_", ":"), ad['CRAB_Retry']),
         'JobExitCode': exitCode
     }
     if stageOutReport:
@@ -259,7 +265,8 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
         dashboardInst.apMonSend(params)
     return exitCode
 
-def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageOutExit):
+
+def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
     """
     Prepare Dashboard report about stageout policies
     This dashboard report will be used for reporting to dashboard and visualize local/fallback/direct
@@ -267,7 +274,6 @@ def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageO
     """
     tempDict = {}
     tempDict['LFN'] = fileToStage['LFN'] if 'LFN' in fileToStage else None
-    tempDict['SEName'] = seName if seName else fileToStage['SEName'] if 'SEName' in fileToStage else None
     tempDict['PNN'] = pnn if pnn else fileToStage['PNN'] if 'PNN' in fileToStage else None
     tempDict['StageOutCommand'] = command if command else fileToStage['command'] if 'command' in fileToStage else None
     tempDict['StageOutType'] = stageOutType
@@ -278,4 +284,3 @@ def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageO
 
 if __name__ == '__main__':
     sys.exit(reportFailureToDashboard(int(sys.argv[1])))
-

@@ -43,7 +43,7 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
         self.testInit.setupCouch(self.queueDB, *self.couchApps)

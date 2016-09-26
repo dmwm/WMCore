@@ -11,14 +11,16 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+import logging
 import os
 import urllib
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
-from WMCore.Database.CMSCouch import CouchServer
 
+from WMCore.Database.CMSCouch import (CouchNotFoundError, CouchServer)
 from WMQuality.TestInit import TestInit
+
 
 class CouchAppTestHarness:
     """
@@ -52,7 +54,10 @@ class CouchAppTestHarness:
 
     def drop(self):
         """blow away the couch db instance"""
-        self.couchServer.deleteDatabase(self.dbName)
+        try:
+            self.couchServer.deleteDatabase(self.dbName)
+        except CouchNotFoundError:
+            logging.debug("Couch database %s already deleted", self.dbName)
 
     def pushCouchapps(self, *couchappdirs):
         """
@@ -117,4 +122,25 @@ class TestInitCouchApp(TestInit):
             couch.drop()
 
         self.couch = None
+        return
+
+    def clearDatabase(self, modules=None):
+        if modules is None:
+            modules = []
+        logging.debug("Calling SQL clearDatabase()")
+        super(TestInitCouchApp, self).clearDatabase(modules=modules)
+        logging.debug("Running couch clearDatabase()")
+        couchURL = os.environ.get("COUCHURL", None)
+        if not couchURL:
+            logging.info("COUCHURL was not set, unable to clear old couch databases")
+            return
+        couch = CouchServer(couchURL)
+        dbList = couch.listDatabases()
+        dbList.remove(u'_users')
+        for db in dbList:
+            logging.debug(" deleting %s", db)
+            couch.deleteDatabase(db)
+
+        logging.debug("Finished")
+
         return

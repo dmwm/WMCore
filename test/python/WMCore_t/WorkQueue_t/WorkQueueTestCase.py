@@ -5,6 +5,7 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
+import logging
 import os
 
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -63,8 +64,10 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
         
         self.localCouchMonitor = CouchMonitor(self.couchURL)
-        self.localCouchMonitor.deleteReplicatorDocs()
-
+        try:
+            self.localCouchMonitor.deleteReplicatorDocs()
+        except CouchNotFoundError:
+            logging.debug("Failed to delete replicator docs")
         self.workDir = self.testInit.generateWorkDir()
 
         return
@@ -75,7 +78,10 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
 
         Drop all the WMBS tables.
         """
-        self.localCouchMonitor.deleteReplicatorDocs()
+        try:
+            self.localCouchMonitor.deleteReplicatorDocs()
+        except CouchNotFoundError:
+            logging.debug("Failed to delete replicator docs")
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()

@@ -318,7 +318,10 @@ class ChangeState(WMObject, WMConnectionBase):
                     jobState = "jobfailed"
                 else:
                     jobState = newstate
-                    
+                
+                # there is race condition updating couch record location and job is completed.
+                # for the fast fail job, it could miss the location update
+                job["location"] = job["fwjr"].getSiteName() or job.get("location", "Unknown")     
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 jsonFWJR = job["fwjr"].__to_json__(None)

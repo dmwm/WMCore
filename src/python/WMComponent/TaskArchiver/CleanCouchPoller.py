@@ -1,8 +1,6 @@
 """
 Perform cleanup actions
 """
-__all__ = []
-
 import re
 import json
 import logging
@@ -19,27 +17,26 @@ from httplib import HTTPException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Database.CMSCouch import CouchServer
+from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
+from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
+from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Lexicon import sanitizeURL
-from WMCore.Database.CMSCouch import CouchNotFoundError
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
+from WMCore.Algorithms import MathAlgos
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.BossAir.Plugins.gLitePlugin import getDefaultDelegation
+from WMCore.Credential.Proxy import Proxy
+from WMCore.WMException import WMException
+from WMComponent.JobCreator.CreateWorkArea import getMasterName
+from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
 
-from WMCore.Algorithms                           import MathAlgos
-from WMCore.DAOFactory                           import DAOFactory
-from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
-from WMCore.WMBS.Subscription                    import Subscription
-from WMCore.WMBS.Workflow                        import Workflow
-from WMCore.BossAir.Plugins.gLitePlugin          import getDefaultDelegation
-from WMCore.Credential.Proxy                     import Proxy
-from WMComponent.JobCreator.CreateWorkArea       import getMasterName
-from WMComponent.JobCreator.JobCreatorPoller     import retrieveWMSpec
-from WMCore.Services.RequestManager.RequestManager import RequestManager
-from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
-from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
-from WMCore.Services.FWJRDB.FWJRDBAPI            import FWJRDBAPI
-from WMCore.WMException                          import WMException
-
-from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
 
 class FileEncoder(json.JSONEncoder):
     """
@@ -56,6 +53,7 @@ class FileEncoder(json.JSONEncoder):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
 
+
 def getProxy(config, userdn, group, role):
     """
     _getProxy_
@@ -65,7 +63,7 @@ def getProxy(config, userdn, group, role):
     defaultDelegation['group'] = group
     defaultDelegation['role'] = role
 
-    logging.debug("Retrieving proxy for %s" % userdn)
+    logging.debug("Retrieving proxy for %s", userdn)
     proxy = Proxy(defaultDelegation)
     proxyPath = proxy.getProxyFilename(True)
     timeleft = proxy.getTimeLeft(proxyPath)
@@ -76,6 +74,7 @@ def getProxy(config, userdn, group, role):
     if timeleft is not None and timeleft > 0:
         return (True, proxyPath)
     return (False, None)
+
 
 def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     """
@@ -94,31 +93,31 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
     if taskNameParts.pop() in ['LogCollect']:
         logging.info('Skipping LogCollect task')
         return False
-    logging.info('Generating JSON for publication of %s of type %s' % (workflow.name, workflow.wfType))
+    logging.info('Generating JSON for publication of %s of type %s', workflow.name, workflow.wfType)
 
     myThread = threading.currentThread()
 
-    dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger, 
-                                     dbinterface = myThread.dbi)
-    
-    findFiles = dbsDaoFactory(classname = "LoadFilesByWorkflow")
+    dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                               logger=myThread.logger,
+                               dbinterface=myThread.dbi)
+
+    findFiles = dbsDaoFactory(classname="LoadFilesByWorkflow")
 
     # Fetch and filter the files to the ones we actually need
     uploadDatasets = {}
-    uploadFiles = findFiles.execute(workflowName = workflow.name)
-    for file in uploadFiles:
-        datasetName = file['datasetPath']
+    uploadFiles = findFiles.execute(workflowName=workflow.name)
+    for lfn in uploadFiles:
+        datasetName = lfn['datasetPath']
         if datasetName not in uploadDatasets:
             uploadDatasets[datasetName] = []
-        uploadDatasets[datasetName].append(file)
+        uploadDatasets[datasetName].append(lfn)
 
     if not uploadDatasets:
         logging.info('No datasets found to upload.')
         return False
 
     # Write JSON file and then create tarball with it
-    baseName = '%s_publish.tgz'  % workflow.name
+    baseName = '%s_publish.tgz' % workflow.name
     jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
     tgzName = os.path.join(workDir, baseName)
     with open(jsonName, 'w') as jsonFile:
@@ -128,9 +127,9 @@ def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
         tgzFile.add(jsonName)
 
     result = ufc.upload(fileName=tgzName)
-    logging.debug('Upload result %s' % result)
+    logging.debug('Upload result %s', result)
     # If this doesn't work, exception will propogate up and block archiving the task
-    logging.info('Uploaded with name %s and hashkey %s' % (result['name'], result['hashkey']))
+    logging.info('Uploaded with name %s and hashkey %s', result['name'], result['hashkey'])
     return
 
 
@@ -148,10 +147,11 @@ class CleanCouchPoller(BaseWorkerThread):
     Cleans up local couch db according the the given condition.
     1. Cleans local couch db when request is completed and reported to cental db.
        This will clean up local couchdb, local summary db, local queue
-       
+
     2. Cleans old couchdoc which is created older than the time threshold
-    
+
     """
+
     def __init__(self, config):
         """
         Initialize config
@@ -159,39 +159,39 @@ class CleanCouchPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         # set the workqueue service for REST call
         self.config = config
-        
-        myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        
-        self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger, 
-                                     dbinterface = myThread.dbi)
 
-        self.config      = config
+        myThread = threading.currentThread()
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+
+        self.dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                        logger=myThread.logger,
+                                        dbinterface=myThread.dbi)
+
+        self.config = config
         self.jobCacheDir = self.config.JobCreator.jobCacheDir
 
-        self.maxProcessSize    = getattr(self.config.TaskArchiver, 'maxProcessSize', 250)
-        self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
-        self.nOffenders        = getattr(self.config.TaskArchiver, 'nOffenders', 3)
+        self.maxProcessSize = getattr(self.config.TaskArchiver, 'maxProcessSize', 250)
+        self.timeout = getattr(self.config.TaskArchiver, "timeOut", None)
+        self.nOffenders = getattr(self.config.TaskArchiver, 'nOffenders', 3)
         self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
-        self.uploadPublishDir  = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
-        self.userFileCacheURL  = getattr(self.config.TaskArchiver, 'userFileCacheURL', None)
+        self.uploadPublishDir = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
+        self.userFileCacheURL = getattr(self.config.TaskArchiver, 'userFileCacheURL', None)
 
         # Set up optional histograms
-        self.histogramKeys  = getattr(self.config.TaskArchiver, "histogramKeys", [])
-        self.histogramBins  = getattr(self.config.TaskArchiver, "histogramBins", 10)
+        self.histogramKeys = getattr(self.config.TaskArchiver, "histogramKeys", [])
+        self.histogramBins = getattr(self.config.TaskArchiver, "histogramBins", 10)
         self.histogramLimit = getattr(self.config.TaskArchiver, "histogramLimit", 5.0)
-        
+
         # Set defaults for reco performance reporting
         self.interestingPDs = getattr(config.TaskArchiver, "perfPrimaryDatasets", ['SingleMu', 'MuHad'])
-        self.dqmUrl         = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')        
+        self.dqmUrl = getattr(config.TaskArchiver, "dqmUrl", 'https://cmsweb.cern.ch/dqm/dev/')
         self.perfDashBoardMinLumi = getattr(config.TaskArchiver, "perfDashBoardMinLumi", 50)
         self.perfDashBoardMaxLumi = getattr(config.TaskArchiver, "perfDashBoardMaxLumi", 9000)
         self.dashBoardUrl = getattr(config.TaskArchiver, "dashBoardUrl", None)
-        self.DataKeepDays = getattr(config.TaskArchiver, "DataKeepDays", 0.125) #3 hours
-        
+        self.DataKeepDays = getattr(config.TaskArchiver, "DataKeepDays", 0.125)  # 3 hours
+
     def setup(self, parameters=None):
         """
         Called at startup
@@ -201,44 +201,44 @@ class CleanCouchPoller(BaseWorkerThread):
         self.useReqMgrForCompletionCheck = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
         self.archiveDelayHours = getattr(self.config.TaskArchiver, 'archiveDelayHours', 0)
         self.wmstatsCouchDB = WMStatsWriter(self.config.TaskArchiver.localWMStatsURL, appName="WMStatsAgent")
-        
-        #TODO: we might need to use local db for Tier0
-        self.centralRequestDBReader = RequestDBReader(self.config.AnalyticsDataCollector.centralRequestDBURL, 
+
+        # TODO: we might need to use local db for Tier0
+        self.centralRequestDBReader = RequestDBReader(self.config.AnalyticsDataCollector.centralRequestDBURL,
                                                       couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
-        
+
         if self.useReqMgrForCompletionCheck:
             self.deletableState = "announced"
-            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL, 
+            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL,
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-            #TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
+            # TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
             self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableState = "completed"
             # use local for update
-            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+            self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL,
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
-        
+
         jobDBurl = sanitizeURL(self.config.JobStateMachine.couchurl)['url']
         jobDBName = self.config.JobStateMachine.couchDBName
         workDBName = getattr(self.config.TaskArchiver, 'workloadSummaryCouchDBName',
-                                        'workloadsummary')
+                             'workloadsummary')
         workDBurl = getattr(self.config.TaskArchiver, 'workloadSummaryCouchURL')
-        
-        self.jobCouchdb  = CouchServer(jobDBurl)
+
+        self.jobCouchdb = CouchServer(jobDBurl)
         self.jobsdatabase = self.jobCouchdb.connectDatabase("%s/jobs" % jobDBName)
         self.fwjrdatabase = self.jobCouchdb.connectDatabase("%s/fwjrs" % jobDBName)
         self.fwjrService = FWJRDBAPI(self.fwjrdatabase)
-        
+
         self.workCouchdb = CouchServer(workDBurl)
         self.workdatabase = self.workCouchdb.connectDatabase(workDBName)
-        
+
         statSummaryDBName = self.config.JobStateMachine.summaryStatsDBName
         self.statsumdatabase = self.jobCouchdb.connectDatabase(statSummaryDBName)
-        
-        logging.debug("Using url %s/%s for job" % (jobDBurl, jobDBName))
-        logging.debug("Writing to  %s/%s for workloadSummary" % (sanitizeURL(workDBurl)['url'], workDBName))
+
+        logging.debug("Using url %s/%s for job", jobDBurl, jobDBName)
+        logging.debug("Writing to  %s/%s for workloadSummary", sanitizeURL(workDBurl)['url'], workDBName)
 
     def algorithm(self, parameters=None):
         """
@@ -249,31 +249,31 @@ class CleanCouchPoller(BaseWorkerThread):
         try:
             logging.info("Cleaning up the old request docs")
             report = self.wmstatsCouchDB.deleteOldDocs(self.DataKeepDays)
-            logging.info("%s docs deleted" % report)
-        except Exception as ex:
+            logging.info("%s docs deleted", report)
+        except Exception:
             logging.error("Cleaning up the old docs failed")
             msg = traceback.format_exc()
             logging.error(msg)
-            
+
         try:
             logging.info("Cleaning up the archived request docs")
             report = self.cleanAlreadyArchivedWorkflows()
-            logging.info("%s archived workflows deleted" % report)
-        except Exception as ex:
+            logging.info("%s archived workflows deleted", report)
+        except Exception:
             logging.error("Cleaning up archived failed")
             msg = traceback.format_exc()
             logging.error(msg)
-        
+
         try:
             logging.info("Creating workload summary")
             finishedwfsWithLogCollectAndCleanUp = DataCache.getFinishedWorkflows()
             self.archiveSummaryAndPublishToDashBoard(finishedwfsWithLogCollectAndCleanUp)
-            logging.info("%s workload summary is created" % len(finishedwfsWithLogCollectAndCleanUp))
-            
+            logging.info("%s workload summary is created", len(finishedwfsWithLogCollectAndCleanUp))
+
             logging.info("Cleaning up couch db")
             self.cleanCouchDBAndChangeToArchiveStatus()
             logging.info("Done: cleaning up couch db")
-        except Exception as ex:
+        except Exception:
             msg = traceback.format_exc()
             logging.error(msg)
             logging.error("Error occurred, will try again next cycle")
@@ -287,7 +287,6 @@ class CleanCouchPoller(BaseWorkerThread):
             logging.error(msg)
             logging.error("Error occurred, will try again next cycle")
 
-    
     def archiveWorkflows(self, workflows, archiveState):
         updated = 0
         for workflowName in workflows:
@@ -296,10 +295,10 @@ class CleanCouchPoller(BaseWorkerThread):
             if self.cleanAllLocalCouchDB(workflowName):
                 if self.useReqMgrForCompletionCheck:
                     try:
-                        #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
+                        # TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
                         self.reqmgrSvc.updateRequestStatus(workflowName, archiveState)
-                        #And replace with this - remove all the excption
-                        #self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
+                        # And replace with this - remove all the excption
+                        # self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
                     except HTTPException as ex:
                         # If we get an HTTPException of 404 means reqmgr2 request
                         if ex.status == 404:
@@ -311,14 +310,14 @@ class CleanCouchPoller(BaseWorkerThread):
                             msg = "%s : fail to update status with HTTP error: %s" % (workflowName, str(ex))
                             logging.error(msg)
                             raise ex
-                            
-                    updated += 1 
-                    logging.debug("status updated to %s %s",  archiveState, workflowName)
+
+                    updated += 1
+                    logging.debug("status updated to %s %s", archiveState, workflowName)
                 else:
                     # tier0 update case
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
         return updated
-    
+
     def archiveSummaryAndPublishToDashBoard(self, finishedwfsWithLogCollectAndCleanUp):
         """
         _completeWithLogCollectAndCleanUp_
@@ -328,54 +327,53 @@ class CleanCouchPoller(BaseWorkerThread):
         2. Pulblish to Dashboard
         3. TODO: update LogCollect and Cleanup status in central couchdb
         """
-        #Upload summary to couch
+        # Upload summary to couch
         for workflow in finishedwfsWithLogCollectAndCleanUp:
-            spec = retrieveWMSpec(wmWorkloadURL = finishedwfsWithLogCollectAndCleanUp[workflow]["spec"])
+            spec = retrieveWMSpec(wmWorkloadURL=finishedwfsWithLogCollectAndCleanUp[workflow]["spec"])
             if spec:
-                self.archiveWorkflowSummary(spec = spec)
+                self.archiveWorkflowSummary(spec=spec)
                 # Send Reconstruciton performance information to DashBoard
                 if self.dashBoardUrl != None:
                     self.publishRecoPerfToDashBoard(spec)
             else:
                 logging.warn("Workflow spec was not found for %s", workflow)
-                        
+
         return
-    
+
     def cleanCouchDBAndChangeToArchiveStatus(self):
         # archiving only workflows that I own (same team)
         logging.info("Getting requests in '%s' state for team '%s'", self.deletableState,
-                                                                           self.teamName)
+                     self.teamName)
         endTime = int(time.time()) - self.archiveDelayHours * 3600
-        
+
         if self.useReqMgrForCompletionCheck:
             wfs = self.centralRequestDBReader.getRequestByTeamAndStatus(self.teamName,
-                                                                    self.deletableState)
+                                                                        self.deletableState)
         else:
-            #TO doesn't store team name in the requset document since there is only one team.
+            # TO doesn't store team name in the requset document since there is only one team.
             wfs = self.centralRequestDBReader.getRequestByStatus(self.deletableState)
-            
+
         commonWfs = self.centralRequestDBReader.getRequestByStatusAndEndTime(self.deletableState,
                                                                              False, endTime)
-        
+
         finishedWfs = set(DataCache.getFinishedWorkflows().keys())
         deletableWorkflows = list(set(wfs) & set(commonWfs) & finishedWfs)
         logging.info("Ready to archive normal %s workflows", len(deletableWorkflows))
         numUpdated = self.archiveWorkflows(deletableWorkflows, "normal-archived")
         logging.info("archive normal %s workflows", numUpdated)
-        
+
         abortedWorkflows = self.centralRequestDBReader.getRequestByStatus(["aborted-completed"])
         abortedWorkflows = list(set(abortedWorkflows) & finishedWfs)
         logging.info("Ready to archive aborted %s workflows", len(abortedWorkflows))
         numUpdated = self.archiveWorkflows(abortedWorkflows, "aborted-archived")
         logging.info("archive aborted %s workflows", numUpdated)
-        
+
         rejectedWorkflows = self.centralRequestDBReader.getRequestByStatus(["rejected"])
         rejectedWorkflows = list(set(rejectedWorkflows) & finishedWfs)
         logging.info("Ready to archive rejected %s workflows", len(rejectedWorkflows))
         numUpdated = self.archiveWorkflows(rejectedWorkflows, "rejected-archived")
         logging.info("archive rejected %s workflows", numUpdated)
-        
-    
+
     def deleteWorkflowFromJobCouch(self, workflowName, db):
         """
         _deleteWorkflowFromCouch_
@@ -387,7 +385,7 @@ class CleanCouchPoller(BaseWorkerThread):
         then order a delete on them.
         """
         options = {"startkey": [workflowName], "endkey": [workflowName, {}], "reduce": False}
-        
+
         if db == "JobDump":
             couchDB = self.jobsdatabase
             view = "jobsByWorkflowName"
@@ -401,29 +399,29 @@ class CleanCouchPoller(BaseWorkerThread):
             couchDB = self.wmstatsCouchDB.getDBInstance()
             view = "allWorkflows"
             options = {"key": workflowName, "reduce": False}
-            
-        if view == None:
+
+        if view is None:
             try:
                 committed = couchDB.delete_doc(workflowName)
             except CouchNotFoundError as ex:
                 return {'status': 'warning', 'message': "%s: %s" % (workflowName, str(ex))}
         else:
             try:
-                jobs = couchDB.loadView(db, view, options = options)['rows']
+                jobs = couchDB.loadView(db, view, options=options)['rows']
             except Exception as ex:
                 errorMsg = "Error on loading jobs for %s" % workflowName
-                logging.warning("%s/n%s" % (str(ex), errorMsg))
+                logging.warning("%s/n%s", str(ex), errorMsg)
                 return {'status': 'error', 'message': errorMsg}
-            
+
             for j in jobs:
                 doc = {}
-                doc["_id"]  = j['value']['id']
+                doc["_id"] = j['value']['id']
                 doc["_rev"] = j['value']['rev']
                 couchDB.queueDelete(doc)
             committed = couchDB.commit()
-        
+
         if committed:
-            #create the error report
+            # create the error report
             errorReport = {}
             deleted = 0
             status = "ok"
@@ -438,73 +436,71 @@ class CleanCouchPoller(BaseWorkerThread):
         else:
             return {'status': 'warning', 'message': "no %s exist" % workflowName}
 
-
     def cleanAllLocalCouchDB(self, workflowName):
-        logging.info("Deleting %s from JobCouch" % workflowName)
-        
+        logging.info("Deleting %s from JobCouch", workflowName)
+
         jobReport = self.deleteWorkflowFromJobCouch(workflowName, "JobDump")
         logging.debug("%s docs deleted from JobDump", jobReport)
-        
+
         fwjrReport = self.deleteWorkflowFromJobCouch(workflowName, "FWJRDump")
         logging.debug("%s docs deleted from FWJRDump", fwjrReport)
-        
+
         summaryReport = self.deleteWorkflowFromJobCouch(workflowName, "SummaryStats")
         logging.debug("%s docs deleted from SummaryStats", summaryReport)
-        
+
         wmstatsReport = self.deleteWorkflowFromJobCouch(workflowName, "WMStatsAgent")
         logging.debug("%s docs deleted from wmagent_summary", wmstatsReport)
-        
+
         # if one of the procedure fails return False
-        if (jobReport["status"] == "error" or fwjrReport["status"] == "error" or 
-            wmstatsReport["status"] == "error"):
+        if jobReport["status"] == "error" or fwjrReport["status"] == "error" or wmstatsReport["status"] == "error":
             return False
         # other wise return True.
         return True
-    
+
     def isUploadedToWMArchive(self, workflowName):
-        
+
         if hasattr(self.config, "ArchiveDataReporter") and self.config.ArchiveDataReporter.WMArchiveURL:
-            try: 
+            try:
                 return self.fwjrService.isAllFWJRArchived(workflowName)
-            except Exception as ex:
-                logging.error("Fail to check FWJR upload status: %s" % workflowName)
+            except Exception:
+                logging.error("Fail to check FWJR upload status: %s", workflowName)
                 return False
         return True
-        
+
     def cleanAlreadyArchivedWorkflows(self):
         """
         loop through the workflows in couchdb, if archived delete all the data in couchdb
         """
-        
+
         numDeletedRequests = 0
         try:
             localWMStats = self.wmstatsCouchDB.getDBInstance()
             options = {"group_level": 1, "reduce": True}
-            
-            results = localWMStats.loadView("WMStatsAgent", "allWorkflows", options = options)['rows']
+
+            results = localWMStats.loadView("WMStatsAgent", "allWorkflows", options=options)['rows']
             requestNames = [x['key'] for x in results]
-            logging.info("There are %s workfows to check for archived status" % len(requestNames))
-            
+            logging.info("There are %s workfows to check for archived status", len(requestNames))
+
             workflowDict = self.centralRequestDBReader.getStatusAndTypeByRequest(requestNames)
-            
+
             for request, value in workflowDict.items():
                 if value[0].endswith("-archived"):
                     self.cleanAllLocalCouchDB(request)
                     numDeletedRequests += 1
-        
+
         except Exception as ex:
             errorMsg = "Error on loading workflow list from wmagent_summary db"
-            logging.warning("%s/n%s" % (errorMsg, str(ex)))
-            
+            logging.warning("%s/n%s", errorMsg, str(ex))
+
         return numDeletedRequests
-    
+
     def deleteWorkflowFromWMBSAndDisk(self):
-        #Get the finished workflows, in descending order
-        deletableWorkflowsDAO = self.daoFactory(classname = "Workflow.GetDeletableWorkflows")
+        # Get the finished workflows, in descending order
+        deletableWorkflowsDAO = self.daoFactory(classname="Workflow.GetDeletableWorkflows")
         deletablewfs = deletableWorkflowsDAO.execute()
 
-        #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for deletion: %s" % (len(deletablewfs), deletablewfs.keys()))
+        # Only delete those where the upload and notification succeeded
+        logging.info("Found %d candidate workflows for deletion: %s", len(deletablewfs), deletablewfs.keys())
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(deletablewfs) == 0:
@@ -513,27 +509,27 @@ class CleanCouchPoller(BaseWorkerThread):
         wfsToDelete = {}
         for workflow in deletablewfs:
             try:
-                spec = retrieveWMSpec(wmWorkloadURL = deletablewfs[workflow]["spec"])
-                
-                #This is used both tier0 and normal agent case
+                spec = retrieveWMSpec(wmWorkloadURL=deletablewfs[workflow]["spec"])
+
+                # This is used both tier0 and normal agent case
                 result = self.centralRequestDBWriter.getStatusAndTypeByRequest(workflow)
                 wfStatus = result[workflow][0]
                 if wfStatus in safeStatesToDelete:
-                    wfsToDelete[workflow] = {"spec" : spec, "workflows": deletablewfs[workflow]["workflows"]}
+                    wfsToDelete[workflow] = {"spec": spec, "workflows": deletablewfs[workflow]["workflows"]}
                 else:
-                    logging.info("%s is in %s, will be deleted later" % (workflow, wfStatus))
-            
+                    logging.info("%s is in %s, will be deleted later", workflow, wfStatus)
+
             except Exception as ex:
-                #Something didn't go well on couch, abort!!!
+                # Something didn't go well on couch, abort!!!
                 msg = "Couldn't delete %s\n" % workflow
                 msg += "Exception message: %s" % str(ex)
                 msg += "\nTraceback: %s" % traceback.format_exc()
                 logging.error(msg)
                 continue
 
-        logging.info("Time to kill %d workflows." % len(wfsToDelete))
+        logging.info("Time to kill %d workflows.", len(wfsToDelete))
         self.killWorkflows(wfsToDelete)
-        
+
     def killWorkflows(self, workflows):
         """
         _killWorkflows_
@@ -545,46 +541,46 @@ class CleanCouchPoller(BaseWorkerThread):
         subscriptions lists as values
         """
         for workflow in workflows:
-            logging.info("Deleting workflow %s" % workflow)
+            logging.info("Deleting workflow %s", workflow)
             try:
-                #Get the task-workflow ids, sort them by ID,
-                #higher ID first so we kill
-                #the leaves of the tree first, root last
+                # Get the task-workflow ids, sort them by ID,
+                # higher ID first so we kill
+                # the leaves of the tree first, root last
                 workflowsIDs = workflows[workflow]["workflows"].keys()
-                workflowsIDs.sort(reverse = True)
+                workflowsIDs.sort(reverse=True)
 
-                #Now go through all tasks and load the WMBS workflow objects
+                # Now go through all tasks and load the WMBS workflow objects
                 wmbsWorkflows = []
                 for wfID in workflowsIDs:
-                    wmbsWorkflow = Workflow(id = wfID)
+                    wmbsWorkflow = Workflow(id=wfID)
                     wmbsWorkflow.load()
                     wmbsWorkflows.append(wmbsWorkflow)
 
-                #Time to shoot one by one
+                # Time to shoot one by one
                 for wmbsWorkflow in wmbsWorkflows:
                     if self.uploadPublishInfo:
                         self.createAndUploadPublish(wmbsWorkflow)
 
-                    #Load all the associated subscriptions and shoot them one by one
+                    # Load all the associated subscriptions and shoot them one by one
                     subIDs = workflows[workflow]["workflows"][wmbsWorkflow.id]
                     for subID in subIDs:
-                        subscription = Subscription(id = subID)
+                        subscription = Subscription(id=subID)
                         subscription['workflow'] = wmbsWorkflow
                         subscription.load()
                         subscription.deleteEverything()
 
-                    #Check that the workflow is gone
+                    # Check that the workflow is gone
                     if wmbsWorkflow.exists():
-                        #Something went bad, this workflow
-                        #should be gone by now
+                        # Something went bad, this workflow
+                        # should be gone by now
                         msg = "Workflow %s, Task %s was not deleted completely" % (wmbsWorkflow.name,
                                                                                    wmbsWorkflow.task)
                         raise CleanCouchPollerException(msg)
 
-                    #Now delete directories
-                    _, taskDir = getMasterName(startDir = self.jobCacheDir,
-                                               workflow = wmbsWorkflow)
-                    logging.info("About to delete work directory %s" % taskDir)
+                    # Now delete directories
+                    _, taskDir = getMasterName(startDir=self.jobCacheDir,
+                                               workflow=wmbsWorkflow)
+                    logging.info("About to delete work directory %s", taskDir)
                     if os.path.exists(taskDir):
                         if os.path.isdir(taskDir):
                             shutil.rmtree(taskDir)
@@ -599,7 +595,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         logging.debug(msg)
 
                 if workflows[workflow]["spec"] is None:
-                    logging.warn("Workflow spec not found for %s", workflow)
+                    logging.warning("Workflow spec not found for %s", workflow)
                     continue
 
                 spec = workflows[workflow]["spec"]
@@ -613,7 +609,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         shutil.rmtree(sandboxDir)
                         logging.debug("Sandbox dir deleted")
                     else:
-                        logging.error("Attempted to delete sandbox dir but it was already gone: %s" % sandboxDir)
+                        logging.error("Attempted to delete sandbox dir but it was already gone: %s", sandboxDir)
 
             except Exception as ex:
                 msg = "Critical error while deleting workflow %s\n" % workflow
@@ -634,12 +630,12 @@ class CleanCouchPoller(BaseWorkerThread):
         workflowData = {'retryData': {}}
         workflowName = spec.name()
 
-        #First make sure that we didn't upload something already
-        #Could be the that the WMBS deletion epic failed,
-        #so we can skip this if there is a summary already up there
-        #TODO: With multiple agents sharing workflows, we will need to differentiate and combine summaries for a request
+        # First make sure that we didn't upload something already
+        # Could be the that the WMBS deletion epic failed,
+        # so we can skip this if there is a summary already up there
+        # TODO: With multiple agents sharing workflows, we will need to differentiate and combine summaries for a request
         if self.workdatabase.documentExists(workflowName):
-            logging.info("Couch summary for %s already exists, proceeding only with cleanup" % workflowName)
+            logging.info("Couch summary for %s already exists, proceeding only with cleanup", workflowName)
             return
 
         # Set campaign
@@ -647,57 +643,56 @@ class CleanCouchPoller(BaseWorkerThread):
         # Set inputdataset
         workflowData['inputdatasets'] = spec.listInputDatasets()
         # Set histograms
-        histograms = {'workflowLevel' : {'failuresBySite' :
-                                         DiscreteSummaryHistogram('Failed jobs by site', 'Site')},
-                      'taskLevel' : {},
-                      'stepLevel' : {}}
+        histograms = {'workflowLevel': {'failuresBySite':
+                                            DiscreteSummaryHistogram('Failed jobs by site', 'Site')},
+                      'taskLevel': {},
+                      'stepLevel': {}}
 
         # Get a list of failed job IDs
         # Make sure you get it for ALL tasks in the spec
         for taskName in spec.listAllTaskPathNames():
             failedTmp = self.jobsdatabase.loadView("JobDump", "failedJobsByWorkflowName",
-                                                   options = {"startkey": [workflowName, taskName],
-                                                              "endkey": [workflowName, taskName],
-                                                              "stale" : "update_after"})['rows']
+                                                   options={"startkey": [workflowName, taskName],
+                                                            "endkey": [workflowName, taskName],
+                                                            "stale": "update_after"})['rows']
             for entry in failedTmp:
                 failedJobs.append(entry['value'])
 
         retryData = self.jobsdatabase.loadView("JobDump", "retriesByTask",
-                                               options = {'group_level': 3,
-                                                          'startkey': [workflowName],
-                                                          'endkey': [workflowName, {}],
-                                                          "stale" : "update_after"})['rows']
+                                               options={'group_level': 3,
+                                                        'startkey': [workflowName],
+                                                        'endkey': [workflowName, {}],
+                                                        "stale": "update_after"})['rows']
         for row in retryData:
             taskName = row['key'][2]
             count = str(row['key'][1])
-            if not taskName in workflowData['retryData'].keys():
+            if taskName not in workflowData['retryData'].keys():
                 workflowData['retryData'][taskName] = {}
             workflowData['retryData'][taskName][count] = row['value']
 
         output = self.fwjrdatabase.loadView("FWJRDump", "outputByWorkflowName",
-                                            options = {"group_level": 2,
-                                                       "startkey": [workflowName],
-                                                       "endkey": [workflowName, {}],
-                                                       "group": True,
-                                                       "stale" : "update_after"})['rows']
+                                            options={"group_level": 2,
+                                                     "startkey": [workflowName],
+                                                     "endkey": [workflowName, {}],
+                                                     "group": True,
+                                                     "stale": "update_after"})['rows']
         outputList = {}
         try:
             outputListStr = self.fwjrdatabase.loadList("FWJRDump", "workflowOutputTaskMapping",
-                                                    "outputByWorkflowName", options = {"startkey": [workflowName],
-                                                                                       "endkey": [workflowName, {}],
-                                                                                       "reduce": False})
+                                                       "outputByWorkflowName", options={"startkey": [workflowName],
+                                                                                        "endkey": [workflowName, {}],
+                                                                                        "reduce": False})
             outputList = json.loads(outputListStr)
         except Exception as ex:
             # Catch couch errors
             logging.error("Could not load the output task mapping list due to an error")
-            logging.error("Error: %s" % str(ex))
-        perf = self.handleCouchPerformance(workflowName = workflowName)
+            logging.error("Error: %s", str(ex))
+        perf = self.handleCouchPerformance(workflowName=workflowName)
         workflowData['performance'] = {}
         for key in perf:
             workflowData['performance'][key] = {}
             for attr in perf[key].keys():
                 workflowData['performance'][key][attr] = perf[key][attr]
-
 
         workflowData["_id"] = workflowName
         try:
@@ -707,8 +702,7 @@ class CleanCouchPoller(BaseWorkerThread):
             # We're missing the ACDC info.
             # Keep going
             logging.error("ACDC info missing from config.  Skipping this step in the workflow summary.")
-            logging.error("Error: %s" % str(ex))
-
+            logging.error("Error: %s", str(ex))
 
         # Attach output
         workflowData['output'] = {}
@@ -717,46 +711,46 @@ class CleanCouchPoller(BaseWorkerThread):
             dataset = entry['dataset']
             workflowData['output'][dataset] = {}
             workflowData['output'][dataset]['nFiles'] = entry['count']
-            workflowData['output'][dataset]['size']   = entry['size']
+            workflowData['output'][dataset]['size'] = entry['size']
             workflowData['output'][dataset]['events'] = entry['events']
-            workflowData['output'][dataset]['tasks']  = outputList.get(dataset, {}).keys()
+            workflowData['output'][dataset]['tasks'] = outputList.get(dataset, {}).keys()
 
         # If the workflow was aborted, then don't parse all the jobs, cut at 5k
         try:
             reqDetails = self.centralRequestDBWriter.getRequestByNames(workflowName)
             wfStatus = reqDetails[workflowName]['RequestTransition'][-1]['Status']
             if wfStatus in ["aborted", "aborted-completed", "aborted-archived"]:
-                logging.info("Workflow %s in status %s with a total of %d jobs, capping at 5000" % (
-                    workflowName, wfStatus, len(failedJobs)))
+                logging.info("Workflow %s in status %s with a total of %d jobs, capping at 5000", workflowName,
+                             wfStatus, len(failedJobs))
                 failedJobs = failedJobs[:5000]
         except Exception as ex:
-            logging.error("Failed to query getRequestByNames view. Will retry later.\n%s" % str(ex))
+            logging.error("Failed to query getRequestByNames view. Will retry later.\n%s", str(ex))
 
         # Loop over all failed jobs
         workflowData['errors'] = {}
 
-        #Get the job information from WMBS, a la ErrorHandler
-        #This will probably take some time, better warn first
+        # Get the job information from WMBS, a la ErrorHandler
+        # This will probably take some time, better warn first
         logging.info("Starting to load  the failed job information")
         logging.info("This may take some time")
 
-        #Let's split the list of failed jobs in chunks
+        # Let's split the list of failed jobs in chunks
         while len(failedJobs) > 0:
             chunkList = failedJobs[:self.maxProcessSize]
             failedJobs = failedJobs[self.maxProcessSize:]
-            logging.info("Processing %d this cycle, %d jobs remaining" % (self.maxProcessSize, len(failedJobs)))
+            logging.info("Processing %d this cycle, %d jobs remaining", self.maxProcessSize, len(failedJobs))
 
-            loadJobs = self.daoFactory(classname = "Jobs.LoadForTaskArchiver")
+            loadJobs = self.daoFactory(classname="Jobs.LoadForTaskArchiver")
             jobList = loadJobs.execute(chunkList)
-            logging.info("Processing %d jobs," % len(jobList))
+            logging.info("Processing %d jobs,", len(jobList))
             for job in jobList:
                 lastRegisteredRetry = None
                 errorCouch = self.fwjrdatabase.loadView("FWJRDump", "errorsByJobID",
-                                                        options = {"startkey": [job['id'], 0],
-                                                                   "endkey": [job['id'], {}],
-                                                                   "stale" : "update_after"})['rows']
+                                                        options={"startkey": [job['id'], 0],
+                                                                 "endkey": [job['id'], {}],
+                                                                 "stale": "update_after"})['rows']
 
-                #Get the input files
+                # Get the input files
                 inputLFNs = [x['lfn'] for x in job['input_files']]
                 runs = []
                 for inputFile in job['input_files']:
@@ -764,16 +758,16 @@ class CleanCouchPoller(BaseWorkerThread):
 
                 # Get rid of runs that aren't in the mask
                 mask = job['mask']
-                runs = mask.filterRunLumisByMask(runs = runs)
-                
-                logging.info("Processing %d errors, for job id %s" % (len(errorCouch), job['id']))
+                runs = mask.filterRunLumisByMask(runs=runs)
+
+                logging.info("Processing %d errors, for job id %s", len(errorCouch), job['id'])
                 for err in errorCouch:
-                    task   = err['value']['task']
-                    step   = err['value']['step']
+                    task = err['value']['task']
+                    step = err['value']['step']
                     errors = err['value']['error']
-                    logs   = err['value']['logs']
-                    start  = err['value']['start']
-                    stop   = err['value']['stop']
+                    logs = err['value']['logs']
+                    start = err['value']['start']
+                    stop = err['value']['stop']
                     errorSite = str(err['value']['site'])
                     retry = err['value']['retry']
                     if lastRegisteredRetry is None or lastRegisteredRetry != retry:
@@ -782,56 +776,65 @@ class CleanCouchPoller(BaseWorkerThread):
                     if task not in histograms['stepLevel']:
                         histograms['stepLevel'][task] = {}
                     if step not in histograms['stepLevel'][task]:
-                        histograms['stepLevel'][task][step] = {'errorsBySite' : DiscreteSummaryHistogram('Errors by site',
-                                                                                                         'Site')}
+                        histograms['stepLevel'][task][step] = {
+                            'errorsBySite': DiscreteSummaryHistogram('Errors by site',
+                                                                     'Site')}
                     errorsBySiteData = histograms['stepLevel'][task][step]['errorsBySite']
-                    if not task in workflowData['errors'].keys():
+                    if task not in workflowData['errors'].keys():
                         workflowData['errors'][task] = {'failureTime': 0}
-                    if not step in workflowData['errors'][task].keys():
+                    if step not in workflowData['errors'][task].keys():
                         workflowData['errors'][task][step] = {}
                     workflowData['errors'][task]['failureTime'] += (stop - start)
                     stepFailures = workflowData['errors'][task][step]
                     for error in errors:
                         exitCode = str(error['exitCode'])
-                        if not exitCode in stepFailures.keys():
+                        if exitCode not in stepFailures.keys():
                             stepFailures[exitCode] = {"errors": [],
-                                                      "jobs":   0,
-                                                      "input":  [],
-                                                      "runs":   {},
-                                                      "logs":   []}
-                        stepFailures[exitCode]['jobs'] += 1 # Increment job counter
+                                                      "jobs": 0,
+                                                      "input": [],
+                                                      "runs": {},
+                                                      "logs": []}
+                        stepFailures[exitCode]['jobs'] += 1  # Increment job counter
                         errorsBySiteData.addPoint(errorSite, str(exitCode))
                         if len(stepFailures[exitCode]['errors']) == 0 or \
-                               exitCode == '99999':
+                                        exitCode == '99999':
                             # Only record the first error for an exit code
                             # unless exit code is 99999 (general panic)
                             stepFailures[exitCode]['errors'].append(error)
                         # Add input LFNs to structure
                         for inputLFN in inputLFNs:
-                            if not inputLFN in stepFailures[exitCode]['input']:
+                            if inputLFN not in stepFailures[exitCode]['input']:
                                 stepFailures[exitCode]['input'].append(inputLFN)
                         # Add runs to structure
                         for run in runs:
-                            if not str(run.run) in stepFailures[exitCode]['runs'].keys():
+                            if str(run.run) not in stepFailures[exitCode]['runs'].keys():
                                 stepFailures[exitCode]['runs'][str(run.run)] = []
-                            logging.debug("number of lumis failed: %s" % len(run.lumis))    
-                            if len(run.lumis) > 10000:
-                                logging.warning("too many lumis: %s in job id: %s inputfiles: %s" % (
-                                                len(run.lumis), job['id'], inputLFNs))
-                                continue
-                            nodupLumis = set(run.lumis)    
+                            logging.debug("number of lumis failed: %s", len(run.lumis))
+                            nodupLumis = set(run.lumis)
                             for l in nodupLumis:
                                 stepFailures[exitCode]['runs'][str(run.run)].append(l)
                         for log in logs:
-                            if not log in stepFailures[exitCode]["logs"]:
+                            if log not in stepFailures[exitCode]["logs"]:
                                 stepFailures[exitCode]["logs"].append(log)
+        # Now convert run/lumis into a compact list, to avoid monstrous lists
+        # e.g. {"1": [3, 6, 9, 2, 7, 1, 19]} becomes {'1': [[1, 3], [6, 7], [9, 9], [19, 19]]}
+        for task in workflowData['errors']:
+            for step in workflowData['errors'][task]:
+                stepFailures = workflowData['errors'][task][step]
+                if not isinstance(stepFailures, dict):
+                    continue
+                for exitCode in stepFailures:
+                    if stepFailures[exitCode]['runs']:
+                        runLumiObj = LumiList(runsAndLumis=stepFailures[exitCode]['runs'])
+                        stepFailures[exitCode]['runs'] = runLumiObj.getCompactList()
+
         # Adding logArchives per task
         logArchives = self.getLogArchives(spec)
         workflowData['logArchives'] = logArchives
 
-        jsonHistograms = {'workflowLevel' : {},
-                          'taskLevel' : {},
-                          'stepLevel' : {}}
+        jsonHistograms = {'workflowLevel': {},
+                          'taskLevel': {},
+                          'stepLevel': {}}
         for histogram in histograms['workflowLevel']:
             jsonHistograms['workflowLevel'][histogram] = histograms['workflowLevel'][histogram].toJSON()
         for task in histograms['taskLevel']:
@@ -847,15 +850,22 @@ class CleanCouchPoller(BaseWorkerThread):
 
         workflowData['histograms'] = jsonHistograms
 
-        # Now we have the workflowData in the right format
-        # Time to send them on
-        logging.info("About to commit workflow summary for %s" % workflowName)
-        self.workdatabase.commitOne(workflowData)
+        # No easy way to get the memory footprint of a python object.
+        summarySize = len(json.dumps(workflowData)) / 1024
+        if summarySize > 6 * 1024:  # 6MB
+            msg = "Workload summary for %s is too big: %d Kb. " % (workflowName, summarySize)
+            msg += "Wiping out the 'errors' section to make it smaller."
+            logging.warning(msg)
+            workflowData['errors'] = {}
+        summarySize = len(json.dumps(workflowData)) / 1024
 
-        logging.info("Finished committing workflow summary to couch")
+        # Now we have the workflowData in the right format, time to push it
+        logging.info("About to commit %d Kb of data for workflow summary for %s", summarySize, workflowName)
+        retval = self.workdatabase.commitOne(workflowData)
+        logging.info("Finished committing summary,returned value: %s", retval)
 
         return
-    
+
     def getLogArchives(self, spec):
         """
         _getLogArchives_
@@ -864,13 +874,13 @@ class CleanCouchPoller(BaseWorkerThread):
         """
         try:
             logArchivesTaskStr = self.fwjrdatabase.loadList("FWJRDump", "logCollectsByTask",
-                                                            "logArchivePerWorkflowTask", options = {"reduce" : False},
-                                                            keys = spec.listAllTaskPathNames())
+                                                            "logArchivePerWorkflowTask", options={"reduce": False},
+                                                            keys=spec.listAllTaskPathNames())
             logArchivesTask = json.loads(logArchivesTaskStr)
             return logArchivesTask
         except Exception as ex:
             logging.error("Couldn't load the logCollect list from CouchDB.")
-            logging.error("Error: %s" % str(ex))
+            logging.error("Error: %s", str(ex))
             return {}
 
     def handleCouchPerformance(self, workflowName):
@@ -880,21 +890,21 @@ class CleanCouchPoller(BaseWorkerThread):
         The couch performance stuff is convoluted enough I think I want to handle it separately.
         """
         perf = self.fwjrdatabase.loadView("FWJRDump", "performanceByWorkflowName",
-                                          options = {"startkey": [workflowName],
-                                                     "endkey": [workflowName],
-                                                     "stale" : "update_after"})['rows']
-                                                     
+                                          options={"startkey": [workflowName],
+                                                   "endkey": [workflowName],
+                                                   "stale": "update_after"})['rows']
+
         failedJobs = self.getFailedJobs(workflowName)
 
-        taskList  = {}
+        taskList = {}
         finalTask = {}
 
         for row in perf:
             taskName = row['value']['taskName']
             stepName = row['value']['stepName']
-            if not taskName in taskList.keys():
+            if taskName not in taskList.keys():
                 taskList[taskName] = {}
-            if not stepName in taskList[taskName].keys():
+            if stepName not in taskList[taskName].keys():
                 taskList[taskName][stepName] = []
             value = row['value']
             taskList[taskName][stepName].append(value)
@@ -903,7 +913,7 @@ class CleanCouchPoller(BaseWorkerThread):
             final = {}
             for stepName in taskList[taskName].keys():
                 output = {'jobTime': []}
-                outputFailed = {'jobTime': []} # This will be same, but only for failed jobs
+                outputFailed = {'jobTime': []}  # This will be same, but only for failed jobs
                 final[stepName] = {}
                 masterList = []
 
@@ -914,19 +924,19 @@ class CleanCouchPoller(BaseWorkerThread):
                     for key in row.keys():
                         if key in ['startTime', 'stopTime', 'taskName', 'stepName', 'jobID']:
                             continue
-                        if not key in output.keys():
+                        if key not in output.keys():
                             output[key] = []
-                            if len(failedJobs) > 0 :
+                            if len(failedJobs) > 0:
                                 outputFailed[key] = []
                         try:
                             output[key].append(float(row[key]))
                             if row['jobID'] in failedJobs:
                                 outputFailed[key].append(float(row[key]))
-                                
+
                         except TypeError:
                             # Why do we get None values here?
                             # We may want to look into it
-                            logging.debug("Got a None performance value for key %s" % key)
+                            logging.debug("Got a None performance value for key %s", key)
                             if row[key] == None:
                                 output[key].append(0.0)
                             else:
@@ -936,7 +946,7 @@ class CleanCouchPoller(BaseWorkerThread):
                         output['jobTime'].append(jobTime)
                         row['jobTime'] = jobTime
                         # Account job running time here only if the job has failed
-                        if (row['jobID'] in failedJobs):
+                        if row['jobID'] in failedJobs:
                             outputFailed['jobTime'].append(jobTime)
                     except TypeError:
                         # One of those didn't have a real value
@@ -948,56 +958,55 @@ class CleanCouchPoller(BaseWorkerThread):
                     # Assemble the 'worstOffenders'
                     # These are the top [self.nOffenders] in that particular category
                     # i.e., those with the highest values
-                    offenders = MathAlgos.getLargestValues(dictList = masterList, key = key,
-                                                           n = self.nOffenders)
+                    offenders = MathAlgos.getLargestValues(dictList=masterList, key=key,
+                                                           n=self.nOffenders)
                     for x in offenders:
                         try:
                             logArchive = self.fwjrdatabase.loadView("FWJRDump", "logArchivesByJobID",
-                                                                    options = {"startkey": [x['jobID']],
-                                                                               "endkey": [x['jobID'],
-                                                                                          x['retry_count']],
-                                                                               "stale" : "update_after"})['rows'][0]['value']['lfn']
+                                                                    options={"startkey": [x['jobID']],
+                                                                             "endkey": [x['jobID'],
+                                                                                        x['retry_count']],
+                                                                             "stale": "update_after"})['rows'][0]['value']['lfn']
                             logCollectID = self.jobsdatabase.loadView("JobDump", "jobsByInputLFN",
-                                                                      options = {"startkey": [workflowName, logArchive],
-                                                                                 "endkey": [workflowName, logArchive],
-                                                                                 "stale" : "update_after"})['rows'][0]['value']
+                                                                      options={"startkey": [workflowName, logArchive],
+                                                                               "endkey": [workflowName, logArchive],
+                                                                               "stale": "update_after"})['rows'][0]['value']
                             logCollect = self.fwjrdatabase.loadView("FWJRDump", "outputByJobID",
-                                                                    options = {"startkey": logCollectID,
-                                                                               "endkey": logCollectID,
-                                                                               "stale" : "update_after"})['rows'][0]['value']['lfn']
+                                                                    options={"startkey": logCollectID,
+                                                                             "endkey": logCollectID,
+                                                                             "stale": "update_after"})['rows'][0]['value']['lfn']
                             x['logArchive'] = logArchive.split('/')[-1]
                             x['logCollect'] = logCollect
                         except IndexError as ex:
-                            logging.debug("Unable to find final logArchive tarball for %i" % x['jobID'])
+                            logging.debug("Unable to find final logArchive tarball for %i", x['jobID'])
                             logging.debug(str(ex))
                         except KeyError as ex:
-                            logging.debug("Unable to find final logArchive tarball for %i" % x['jobID'])
+                            logging.debug("Unable to find final logArchive tarball for %i", x['jobID'])
                             logging.debug(str(ex))
-
 
                     if key in self.histogramKeys:
                         # Usual histogram that was always done
-                        histogram = MathAlgos.createHistogram(numList = output[key],
-                                                              nBins = self.histogramBins,
-                                                              limit = self.histogramLimit)
+                        histogram = MathAlgos.createHistogram(numList=output[key],
+                                                              nBins=self.histogramBins,
+                                                              limit=self.histogramLimit)
                         final[stepName][key]['histogram'] = histogram
                         # Histogram only picking values from failed jobs
                         # Operators  can use it to find out quicker why a workflow/task/step is failing :
                         if len(failedJobs) > 0:
-                            failedJobsHistogram = MathAlgos.createHistogram(numList = outputFailed[key],
-                                                                  nBins = self.histogramBins,
-                                                                  limit = self.histogramLimit)
-                                                        
+                            failedJobsHistogram = MathAlgos.createHistogram(numList=outputFailed[key],
+                                                                            nBins=self.histogramBins,
+                                                                            limit=self.histogramLimit)
+
                             final[stepName][key]['errorsHistogram'] = failedJobsHistogram
                     else:
-                        average, stdDev = MathAlgos.getAverageStdDev(numList = output[key])
+                        average, stdDev = MathAlgos.getAverageStdDev(numList=output[key])
                         final[stepName][key]['average'] = average
-                        final[stepName][key]['stdDev']  = stdDev
+                        final[stepName][key]['stdDev'] = stdDev
 
                     final[stepName][key]['worstOffenders'] = [{'jobID': x['jobID'], 'value': x.get(key, 0.0),
                                                                'log': x.get('logArchive', None),
-                                                               'logCollect': x.get('logCollect', None)} for x in offenders]
-
+                                                               'logCollect': x.get('logCollect', None)} for x in
+                                                              offenders]
 
             finalTask[taskName] = final
         return finalTask
@@ -1005,22 +1014,22 @@ class CleanCouchPoller(BaseWorkerThread):
     def getFailedJobs(self, workflowName):
         # We want ALL the jobs, and I'm sorry, CouchDB doesn't support wildcards, above-than-absurd values will do:
         errorView = self.fwjrdatabase.loadView("FWJRDump", "errorsByWorkflowName",
-                                          options = {"startkey": [workflowName, 0, 0],
-                                                     "endkey": [workflowName, 999999999, 999999],
-                                                     "stale" : "update_after"})['rows']
+                                               options={"startkey": [workflowName, 0, 0],
+                                                        "endkey": [workflowName, 999999999, 999999],
+                                                        "stale": "update_after"})['rows']
         failedJobs = []
         for row in errorView:
             jobId = row['value']['jobid']
             if jobId not in failedJobs:
                 failedJobs.append(jobId)
-                
+
         return failedJobs
 
     def publishRecoPerfToDashBoard(self, workload):
 
-        listRunsWorkflow = self.dbsDaoFactory(classname = "ListRunsWorkflow")
-        
-        interestingPDs = self.interestingPDs 
+        listRunsWorkflow = self.dbsDaoFactory(classname="ListRunsWorkflow")
+
+        interestingPDs = self.interestingPDs
         interestingDatasets = []
         # Are the datasets from this request interesting? Do they have DQM output? One might ask afterwards if they have harvest
         for dataset in workload.listOutputDatasets():
@@ -1028,7 +1037,7 @@ class CleanCouchPoller(BaseWorkerThread):
             if PD in interestingPDs and dataTier == "DQM":
                 interestingDatasets.append(dataset)
         # We should have found 1 interesting dataset at least
-        logging.debug("Those datasets are interesting %s" % str(interestingDatasets))
+        logging.debug("Those datasets are interesting %s", str(interestingDatasets))
         if len(interestingDatasets) == 0:
             return
         # Request will be only interesting for performance if it's a ReReco or PromptReco
@@ -1040,54 +1049,50 @@ class CleanCouchPoller(BaseWorkerThread):
         # Might be safe enough
         # FIXME: in TaskArchiver, add a test to make sure that the dataset makes sense (procDataset ~= /a/ERA-PromptReco-vVERSON/DQM)
         if re.search('PromptReco_', workload.name()):
-            isPromptReco = True 
-        if not (isReReco or isPromptReco):
-            return        
+            isPromptReco = True
         # We are not interested if it's not a PromptReco or a ReReco
-        if (isReReco or isPromptReco) == False:
+        if (isReReco or isPromptReco) is False:
             return
-        logging.info("%s has interesting performance information, trying to publish to DashBoard" % workload.name())
+        logging.info("%s has interesting performance information, trying to publish to DashBoard", workload.name())
         release = workload.getCMSSWVersions()[0]
         if not release:
-            logging.info("no release for %s, bailing out" % workload.name())
+            logging.info("no release for %s, bailing out", workload.name())
 
-        
-        # If all is true, get the run numbers processed by this worklfow        
-        runList = listRunsWorkflow.execute(workflow = workload.name())
-        # GO to DQM GUI, get what you want 
+        # If all is true, get the run numbers processed by this worklfow
+        runList = listRunsWorkflow.execute(workflow=workload.name())
+        # GO to DQM GUI, get what you want
         for dataset in interestingDatasets:
             (dummy, PD, dummyProcDS, dataTier) = dataset.split('/')
             worthPoints = {}
-            for run in runList :
+            for run in runList:
                 responseJSON = self.getPerformanceFromDQM(self.dqmUrl, dataset, run)
-                if responseJSON:                
+                if responseJSON:
                     worthPoints.update(self.filterInterestingPerfPoints(responseJSON,
-                                                                         self.perfDashBoardMinLumi,
-                                                                         self.perfDashBoardMaxLumi))
-                            
-            # Publish dataset performance to DashBoard.
-            if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) == False:
-                logging.info("something went wrong when publishing dataset %s to DashBoard" % dataset)
-                
-        return 
+                                                                        self.perfDashBoardMinLumi,
+                                                                        self.perfDashBoardMaxLumi))
 
-    
+            # Publish dataset performance to DashBoard.
+            if self.publishPerformanceDashBoard(self.dashBoardUrl, PD, release, worthPoints) is False:
+                logging.info("something went wrong when publishing dataset %s to DashBoard", dataset)
+
+        return
+
     def getPerformanceFromDQM(self, dqmUrl, dataset, run):
-        
+
         # Get the proxy, as CMSWEB doesn't allow us to use plain HTTP
         hostCert = os.getenv("X509_HOST_CERT")
-        hostKey  = os.getenv("X509_HOST_KEY")
+        hostKey = os.getenv("X509_HOST_KEY")
         # it seems that curl -k works, but as we already have everything, I will just provide it
-        
+
         # Make function to fetch this from DQM. Returning Null or False if it fails
         getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
-        logging.debug("Requesting performance information from %s" % getUrl)
-        
+        logging.debug("Requesting performance information from %s", getUrl)
+
         regExp = re.compile('https://(.*)(/dqm.+)')
         regExpResult = regExp.match(getUrl)
         dqmHost = regExpResult.group(1)
         dqmPath = regExpResult.group(2)
-        
+
         connection = httplib.HTTPSConnection(dqmHost, 443, hostKey, hostCert)
         try:
             connection.request('GET', dqmPath)
@@ -1095,71 +1100,70 @@ class CleanCouchPoller(BaseWorkerThread):
             responseData = response.read()
             responseJSON = json.loads(responseData)
             if response.status != 200:
-                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d " % response.code)
+                logging.info("Something went wrong while fetching Reco performance from DQM, response code %d", response.code)
                 return False
         except Exception as ex:
-            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s' % (dataset, run))
-            logging.exception(ex) #Let's print the stacktrace with generic Exception
-            return False     
+            logging.error('Couldnt fetch DQM Performance data for dataset %s , Run %s', dataset, run)
+            logging.exception(ex)  # Let's print the stacktrace with generic Exception
+            return False
 
         try:
             if "content" in responseJSON["hist"]["bins"]:
                 return responseJSON
-        except Exception as ex:                    
-            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out"
-                         % (dataset, run))
+        except Exception as ex:
+            logging.info("Actually got a JSON from DQM perf in for %s run %d , but content was bad, Bailing out", dataset, run)
             return False
-        # If it gets here before returning False or responseJSON, it went wrong    
+        # If it gets here before returning False or responseJSON, it went wrong
         return False
-    
+
     def filterInterestingPerfPoints(self, responseJSON, minLumi, maxLumi):
         worthPoints = {}
         points = responseJSON["hist"]["bins"]["content"]
         for i in range(responseJSON["hist"]["xaxis"]["first"]["id"], responseJSON["hist"]["xaxis"]["last"]["id"]):
-            # is the point worth it? if yes add to interesting points dictionary. 
+            # is the point worth it? if yes add to interesting points dictionary.
             # 1 - non 0
             # 2 - between minimum and maximum expected luminosity
             # FIXME : 3 - population in dashboard for the bin interval < 100
             # Those should come from the config :
             if points[i] == 0:
                 continue
-            binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+            binSize = responseJSON["hist"]["xaxis"]["last"]["value"] / responseJSON["hist"]["xaxis"]["last"]["id"]
             # Fetching the important values
-            instLuminosity = i*binSize 
+            instLuminosity = i * binSize
             timePerEvent = points[i]
-                    
+
             if instLuminosity > minLumi and instLuminosity < maxLumi:
                 worthPoints[instLuminosity] = timePerEvent
-        logging.debug("Got %d worthwhile performance points" % len(worthPoints.keys()))
-        
+        logging.debug("Got %d worthwhile performance points", len(worthPoints.keys()))
+
         return worthPoints
 
     def publishPerformanceDashBoard(self, dashBoardUrl, PD, release, worthPoints):
         dashboardPayload = []
-        for instLuminosity in worthPoints :
+        for instLuminosity in worthPoints:
             timePerEvent = int(worthPoints[instLuminosity])
-            dashboardPayload.append({"primaryDataset" : PD, 
-                                     "release" : release, 
-                                     "integratedLuminosity" : instLuminosity,
-                                     "timePerEvent" : timePerEvent})
-            
+            dashboardPayload.append({"primaryDataset": PD,
+                                     "release": release,
+                                     "integratedLuminosity": instLuminosity,
+                                     "timePerEvent": timePerEvent})
+
         data = "{\"data\":%s}" % str(dashboardPayload).replace("\'", "\"")
-        headers = {"Accept":"application/json"}
-        
-        logging.debug("Going to upload this payload %s" % data)
-        
+        headers = {"Accept": "application/json"}
+
+        logging.debug("Going to upload this payload %s", data)
+
         try:
             request = urllib2.Request(dashBoardUrl, data, headers)
             response = urllib2.urlopen(request)
             if response.code != 200:
-                logging.info("Something went wrong while uploading to DashBoard, response code %d " % response.code)
+                logging.info("Something went wrong while uploading to DashBoard, response code %d", response.code)
                 return False
         except Exception as ex:
-            logging.error('Performance data : DashBoard upload failed for PD %s Release %s' % (PD, release))
-            logging.exception(ex) #Let's print the stacktrace with generic Exception
-            return False        
+            logging.error('Performance data : DashBoard upload failed for PD %s Release %s', PD, release)
+            logging.exception(ex)  # Let's print the stacktrace with generic Exception
+            return False
 
-        logging.debug("Uploaded it successfully, apparently")        
+        logging.debug("Uploaded it successfully, apparently")
         return True
 
     def createAndUploadPublish(self, workflow):
@@ -1175,7 +1179,6 @@ class CleanCouchPoller(BaseWorkerThread):
         try:
             return uploadPublishWorkflow(self.config, workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
         except Exception as ex:
-            logging.error('Upload failed for workflow: %s' % (workflow))
-            logging.exception(ex) #Let's print the stacktrace with generic Exception
+            logging.error('Upload failed for workflow: %s', workflow)
+            logging.exception(ex)  # Let's print the stacktrace with generic Exception
             return False
-    

@@ -661,9 +661,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertTrue('99999' in workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1'])
 
         failedRunInfo = workloadSummary['errors']['/TestWorkload/ReReco']['cmsRun1']['99999']['runs']
-        for key, value in failedRunInfo.items():
-            failedRunInfo[key] = list(set(value))
-        self.assertEqual(failedRunInfo, {'10' : [12312]},
+        self.assertEqual(failedRunInfo, {'10' : [[12312, 12312]]},
                           "Wrong lumi information in the summary for failed jobs")
 
         # Check the failures by site histograms

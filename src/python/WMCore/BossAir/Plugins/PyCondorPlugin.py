@@ -993,33 +993,23 @@ class PyCondorPlugin(BasePlugin):
             logging.debug(msg)
             return None, None
         else:
-            for slicedAds in grouper(itobj, 1000):
-                for jobAd in slicedAds:
-                    ### This condition ignores jobs that are Removed, but stay in the X state
-                    ### For manual condor_rm removal, job wont be in the queue \
-                    ### and status of the jobs will be read from condor log
-                    if jobAd["JobStatus"] == 3:
-                        continue
-                    else:
-                        ## For some strange race condition, schedd sometimes does not publish StartDate for a Running Job
-                        ## Get the entire classad for such a job
-                        ## Do not crash WMA, wait for next polling cycle to get all the info.
-                        if jobAd["JobStatus"] == 2 and jobAd.get("JobStartDate") is None:
-                            logging.debug("THIS SHOULD NOT HAPPEN. JobStartDate is MISSING from the CLASSAD.")
-                            logging.debug("Could be caused by some race condition. Wait for the next Polling Cycle")
-                            logging.debug("%s", str(jobAd))
-                            continue
-
-                        tmpDict = {}
-                        tmpDict["JobStatus"] = int(jobAd.get("JobStatus", 100))
-                        tmpDict["stateTime"] = int(jobAd["EnteredCurrentStatus"])
-                        tmpDict["runningTime"] = int(jobAd.get("JobStartDate", 0))
-                        tmpDict["submitTime"] = int(jobAd["QDate"])
-                        tmpDict["DESIRED_Sites"] = jobAd["DESIRED_Sites"]
-                        tmpDict["ExtDESIRED_Sites"] = jobAd["ExtDESIRED_Sites"]
-                        tmpDict["runningCMSSite"] = jobAd.get("MATCH_EXP_JOBGLIDEIN_CMSSite", None)
-                        tmpDict["WMAgentID"] = int(jobAd["WMAgent_JobID"])
-                        jobInfo[tmpDict["WMAgentID"]] = tmpDict
+            for jobAd in itobj:
+                ### This condition ignores jobs that are Removed, but stay in the X state
+                ### For manual condor_rm removal, job wont be in the queue \
+                ### and status of the jobs will be read from condor log
+                if jobAd["JobStatus"] == 3:
+                    continue
+                else:
+                    tmpDict = {}
+                    tmpDict["JobStatus"] = int(jobAd.get("JobStatus", 100))
+                    tmpDict["stateTime"] = int(jobAd["EnteredCurrentStatus"])
+                    tmpDict["runningTime"] = int(jobAd.get("JobStartDate", 0))
+                    tmpDict["submitTime"] = int(jobAd["QDate"])
+                    tmpDict["DESIRED_Sites"] = jobAd["DESIRED_Sites"]
+                    tmpDict["ExtDESIRED_Sites"] = jobAd["ExtDESIRED_Sites"]
+                    tmpDict["runningCMSSite"] = jobAd.get("MATCH_EXP_JOBGLIDEIN_CMSSite", None)
+                    tmpDict["WMAgentID"] = int(jobAd["WMAgent_JobID"])
+                    jobInfo[tmpDict["WMAgentID"]] = tmpDict
 
             logging.info("Retrieved %i classAds", len(jobInfo))
 
@@ -1052,30 +1042,29 @@ class PyCondorPlugin(BasePlugin):
 
         try:
             logging.debug("Opening condor job log file: %s", logFile)
-            logfileobj = open(logFile, "r")
+            lastEvent = None
+            with open(logFile) as logfileobj:
+                for event in condor.read_events(logfileobj, 1):
+                    lastEvent = event
         except:
             logging.debug('Cannot open condor job log file %s', logFile)
         else:
-            tmpDict = {}
-            cres = condor.read_events(logfileobj, 1)
-            ulog = list(cres)
-            if len(ulog) > 0:
-                if all(key in ulog[-1] for key in ("TriggerEventTypeNumber", "QDate", "JobStartDate",
-                                                   "EnteredCurrentStatus", "MATCH_EXP_JOBGLIDEIN_CMSSite",
-                                                   "WMAgent_JobID")):
-
-                    _tmpStat = int(ulog[-1]["TriggerEventTypeNumber"])
+            if lastEvent:
+                if all(key in lastEvent for key in ("TriggerEventTypeNumber", "QDate", "EnteredCurrentStatus",
+                                                    "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID")):
+                    tmpDict = {}
+                    _tmpStat = int(lastEvent["TriggerEventTypeNumber"])
                     tmpDict["JobStatus"] = PyCondorPlugin.logToScheddExitCodeMap(_tmpStat)
-                    tmpDict["submitTime"] = int(ulog[-1]["QDate"])
-                    tmpDict["runningTime"] = int(ulog[-1]["JobStartDate"])
-                    tmpDict["stateTime"] = int(ulog[-1]["EnteredCurrentStatus"])
-                    tmpDict["runningCMSSite"] = ulog[-1]["MATCH_EXP_JOBGLIDEIN_CMSSite"]
-                    tmpDict["WMAgentID"] = int(ulog[-1]["WMAgent_JobID"])
+                    tmpDict["submitTime"] = int(lastEvent["QDate"])
+                    tmpDict["stateTime"] = int(lastEvent["EnteredCurrentStatus"])
+                    tmpDict["runningTime"] = int(lastEvent.get("JobStartDate", 0))
+                    tmpDict["runningCMSSite"] = lastEvent["MATCH_EXP_JOBGLIDEIN_CMSSite"]
+                    tmpDict["WMAgentID"] = int(lastEvent["WMAgent_JobID"])
                     jobLogInfo[tmpDict["WMAgentID"]] = tmpDict
                 else:
-                    logging.debug('%s is CORRUPT', str(logFile))
+                    logging.debug('%s does not have all the classAds', str(logFile))
             else:
-                logging.debug('%s is EMPTY', str(logFile))
+                logging.debug('%s is empty', str(logFile))
 
         logging.info("Retrieved %i Info from Condor Job Log file %s", len(jobLogInfo), logFile)
 

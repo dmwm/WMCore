@@ -14,6 +14,7 @@ from __future__ import print_function
 import logging
 import threading
 import traceback
+import inspect
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Database.DBFactory import DBFactory
@@ -25,6 +26,9 @@ from WMCore.WMException import WMException
 
 import os.path
 import sys
+
+HEADER_FMT = "Call stack at %s, line %d in function %s:"
+STACK_FMT = "%s, line %d in function %s."
 
 
 class WMInitException(WMException):
@@ -178,35 +182,50 @@ class WMInit:
         """
         Database deletion. Global, ignore modules.
         """
+        print("WMInit called")
+        stack = inspect.stack()
+        here = stack[0]
+        fileName, line, func = here[1:4]
+        print(HEADER_FMT % (fileName, line, func))
+        # Print the next frames
+        for frame in stack[1:5]:
+            fileName, line, func = frame[1:4]
+            print(STACK_FMT % (fileName, line, func))
+
         myThread = threading.currentThread()
         if hasattr(myThread, 'transaction') and getattr(myThread.transaction, 'transaction', None):
             # Then we have an open transaction
             # We should try and close it first
+            print ("Transaction open")
             try:
                 myThread.transaction.commit()
+                print(" Committed")
             except:
                 try:
                     myThread.transaction.rollback()
+                    print(" Rolled back")
                 except:
                     pass
-
+                    print(" Failed to commit or roll back")
         # Setup the DAO
         daoFactory = DAOFactory(package = "WMCore.Database",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
         destroyDAO = daoFactory(classname = "Destroy")
 
-
+        print("Now to destroy databases")
         # Actually run a transaction and delete the DB
         try:
             destroyDAO.execute()
+            print(" Destroyed")
         except Exception as ex:
             msg =  "Critical error while attempting to delete entire DB!\n"
             msg += str(ex)
             msg += str(traceback.format_exc())
             logging.error(msg)
+            print(" Failed to destroy")
             raise WMInitException(msg)
-
+        print("Databases cleared successfully")
         return
 
     def checkDatabaseContents(self):

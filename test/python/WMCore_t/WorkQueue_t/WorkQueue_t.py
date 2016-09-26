@@ -300,6 +300,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def tearDown(self):
         """tearDown"""
+        print("In WorkQueue_t teardown")
         WorkQueueTestCase.tearDown(self)
         #Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)

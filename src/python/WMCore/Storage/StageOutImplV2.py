@@ -11,6 +11,9 @@ from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError
 import logging
 import os
+"""
+NOT USED!
+"""
 
 class StageOutImplV2:
     """

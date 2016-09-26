@@ -17,7 +17,9 @@ from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from WMCore.Storage.Execute import execute
 from WMCore.Storage.Execute import runCommandWithOutput
-
+"""
+NOT USED!
+"""
 class RFCPCERNImpl(StageOutImplV2):
     """
     _RFCPCERNImpl_

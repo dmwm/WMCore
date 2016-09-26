@@ -18,7 +18,9 @@ from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 _CheckExitCodeOption = True
 
 
-
+"""
+NOT USED!
+"""
 class SRMV2Impl(StageOutImplV2):
     """
     _SRMV2Impl_

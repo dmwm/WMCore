@@ -14,7 +14,9 @@ from subprocess import Popen, PIPE
 from WMCore.Storage.Execute import runCommand
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
-
+"""
+NOT USED!
+"""
 class XRDCPImpl(StageOutImplV2):
     """
     _XRDCPImpl_

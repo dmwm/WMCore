@@ -15,7 +15,9 @@ from WMCore.Storage.Execute import runCommand
 import logging
 from subprocess import Popen, PIPE
 
-
+"""
+NOT USED!
+"""
 class RFCP2Impl(StageOutImplV2):
     """
     _RFCP2Impl_

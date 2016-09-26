@@ -14,7 +14,9 @@ from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 
 _CheckExitCodeOption = True
 
-
+"""
+NOT USED!
+"""
 
 class LCGImpl(StageOutImplV2):
     """

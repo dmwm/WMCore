@@ -12,8 +12,10 @@ import logging
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError
 
+"""
+NOT USED!
+"""
 _CheckExitCodeOption = True
-
 
 
 class PYDCCPImpl(StageOutImplV2):

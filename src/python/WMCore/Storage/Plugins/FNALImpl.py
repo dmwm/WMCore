@@ -15,7 +15,9 @@ from WMCore.Storage.Plugins.CPImpl import CPImpl
 from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 
-
+"""
+NOT USED!
+"""
 _CheckExitCodeOption = True
 checkPathsCount = 5
 checkPaths = ['/lustre/unmerged/', '/lustre/temp/', '/store/unmerged/', '/store/temp/','/store/user/meloam/lustre']

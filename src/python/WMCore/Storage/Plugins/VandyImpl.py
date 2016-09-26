@@ -14,7 +14,9 @@ from WMCore.Storage.StageOutImplV2 import StageOutImplV2
 from WMCore.Storage.Execute import runCommandWithOutput as runCommand
 from WMCore.Storage.StageOutError import StageOutError
 import logging
-
+"""
+NOT USED!
+"""
 class VandyImpl(StageOutImplV2):
 
 

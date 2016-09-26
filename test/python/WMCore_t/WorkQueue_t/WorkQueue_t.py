@@ -1306,18 +1306,6 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(len(self.localQueue.statusInbox(Status='Negotiating')), 1)
         self.assertEqual(len(self.localQueue), 1)
 
-    def testFailRequestAfterTimeout(self):
-        """Fail a request if it errors for too long"""
-        # force queue to fail queueing
-        self.queue.params['SplittingMapping'] = 'thisisswrong'
-
-        self.assertRaises(Exception, self.queue.queueWork, self.processingSpec.specUrl())
-        self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Negotiating')
-        # simulate time passing by making timeout negative
-        self.queue.params['QueueRetryTime'] = -100
-        self.assertRaises(Exception, self.queue.queueWork, self.processingSpec.specUrl())
-        self.assertEqual(self.queue.statusInbox()[0]['Status'], 'Failed')
-
     def testSiteStatus(self):
         """Check that we only pull work on sites in Normal status"""
         self.globalQueue.queueWork(self.processingSpec.specUrl())

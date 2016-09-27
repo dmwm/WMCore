@@ -1,5 +1,9 @@
+from __future__ import print_function
+from __future__ import division
+import os
 import subprocess
 import json
+
 
 def condorChirpAttrDelayed(key, value):
     """
@@ -14,7 +18,6 @@ def condorChirpAttrDelayed(key, value):
             condorChirpBin = None
 
     if condorChirpBin:
-        args = [ condorChirpBin, 'set_job_attr_delayed', key, json.dumps(value) ]
-        returncode = subprocess.call(args)
+        args = [condorChirpBin, 'set_job_attr_delayed', key, json.dumps(value)]
+        subprocess.call(args)
     return
-

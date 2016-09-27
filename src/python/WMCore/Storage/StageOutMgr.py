@@ -17,6 +17,7 @@ from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 from WMCore.Services.Condor.CondorAPI import condorChirpAttrDelayed
 
+
 class StageOutMgr:
     """
     _StageOutMgr_
@@ -41,7 +42,6 @@ class StageOutMgr:
             if not self.override:
                 print("=======StageOut Override: These are not the parameters you are looking for")
 
-
         self.substituteGUID = True
         self.fallbacks = []
 
@@ -60,7 +60,7 @@ class StageOutMgr:
         # // If override isnt None, we dont need SiteCfg, if it is
         # //  then we need siteCfg otherwise we are dead.
 
-        if self.override == False:
+        if self.override is False:
             self.siteCfg = loadSiteLocalConfig()
 
         if self.override:
@@ -81,7 +81,7 @@ class StageOutMgr:
         """
 
         implName = self.siteCfg.localStageOut.get("command", None)
-        if implName == None:
+        if implName is None:
             msg = "Unable to retrieve local stage out command\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
@@ -90,14 +90,14 @@ class StageOutMgr:
         msg += "%s\n" % implName
 
         pnn = self.siteCfg.localStageOut.get("phedex-node", None)
-        if pnn == None:
+        if pnn is None:
             msg = "Unable to retrieve local stage out phedex-node\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
             raise StageOutInitError(msg)
         msg += "Local Stage Out PNN to be used is %s\n" % pnn
         catalog = self.siteCfg.localStageOut.get("catalog", None)
-        if catalog == None:
+        if catalog is None:
             msg = "Unable to retrieve local stage out catalog\n"
             msg += "From site config file.\n"
             msg += "Unable to perform StageOut operation"
@@ -287,7 +287,7 @@ class StageOutMgr:
         options = self.siteCfg.localStageOut.get('option', None)
         pfn = self.searchTFC(lfn)
         protocol = self.tfc.preferredProtocol
-        if pfn == None:
+        if pfn is None:
             msg = "Unable to match lfn to pfn: \n  %s" % lfn
             raise StageOutFailure(msg, LFN=lfn, TFC=str(self.tfc))
 
@@ -350,12 +350,12 @@ class StageOutMgr:
         if a match is made, return the matched PFN
 
         """
-        if self.tfc == None:
+        if self.tfc is None:
             msg = "Trivial File Catalog not available to match LFN:\n"
             msg += lfn
             print(msg)
             return None
-        if self.tfc.preferredProtocol == None:
+        if self.tfc.preferredProtocol is None:
             msg = "Trivial File Catalog does not have a preferred protocol\n"
             msg += "which prevents local stage out for:\n"
             msg += lfn
@@ -363,7 +363,7 @@ class StageOutMgr:
             return None
 
         pfn = self.tfc.matchLFN(self.tfc.preferredProtocol, lfn)
-        if pfn == None:
+        if pfn is None:
             msg = "Unable to map LFN to PFN:\n"
             msg += "LFN: %s\n" % lfn
             return None

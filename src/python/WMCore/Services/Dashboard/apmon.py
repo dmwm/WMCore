@@ -186,7 +186,7 @@ class ApMon(object):
         self.configRecheck = True           # enabled by default
         self.performBgMonitoring = True     # by default, perform background monitoring
         self.monitoredJobs = {}	            # Monitored jobs; key = pid; value = hash with
-        self.maxMsgRate = 10                # Maximum number of messages allowed to be sent per second
+        self.maxMsgRate = 100                # Maximum number of messages allowed to be sent per second
         self.maxMsgSize = 1440              # Maximum size of a message. Bulk parameters are split in several messages of smaller size
         self.__defaultSenderRef = {'INSTANCE_ID': self.__getInstanceID(), 'SEQ_NR': 0}
         self.__defaultUserCluster = "ApMon_UserSend"
@@ -209,7 +209,7 @@ class ApMon(object):
         self.__prvDrop = 0
         self.__crtSent = 0
         self.__crtDrop = 0
-        self.__hWeight = 0.92
+        self.__hWeight = 0.95
         try:
             self.logger = Logger(defaultLogLevel)
         except:

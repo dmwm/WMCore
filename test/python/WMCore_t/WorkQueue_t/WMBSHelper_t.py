@@ -54,7 +54,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.testInit.setupCouch("wmbshelper_t/jobs", "JobDump")
         self.testInit.setupCouch("wmbshelper_t/fwjrs", "FWJRDump")
         self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")

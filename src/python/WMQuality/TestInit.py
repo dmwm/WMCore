@@ -20,6 +20,8 @@ import tempfile
 import threading
 import traceback
 
+from _mysql_exceptions import OperationalError
+
 from WMCore.Agent.Configuration import Configuration
 from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.WMException import WMException
@@ -155,7 +157,11 @@ class TestInit(object):
 
         # Have to check whether or not database is empty
         # If the database is not empty when we go to set the schema, abort!
-        result = self.init.checkDatabaseContents()
+        try:
+            result = self.init.checkDatabaseContents()
+        except OperationalError:
+            logging.debug("Error checking DB contents, assume DB does not exist")
+            return
         if len(result) > 0:
             msg = "Database not empty, cannot set schema !\n"
             msg += str(result)

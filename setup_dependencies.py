@@ -29,7 +29,8 @@ dependencies = {'wmc-rest':{
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
+                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+',
+                                     'WMCore.Services.Condor+'],
                         'modules' : ['WMCore.Algorithms.ParseXMLFile'],
                         'systems':['wmc-base']
                         },
@@ -136,7 +137,7 @@ dependencies = {'wmc-rest':{
                         'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',
                                     'WMCore.JobSplitting', 'WMCore.Services.SiteDB+', 'WMCore.Services.DBS+',
                                     'WMCore.Services.UserFileCache+', 'WMCore.Services.PhEDEx+', 'WMCore.Services.Dashboard+',
-                                    'Utils+'],
+                                    'WMCore.Services.Condor+', 'Utils+'],
                         'modules': ['WMCore.WMBS.File', 'WMCore.WMBS.WMBSBase', 'WMCore.WMBS.__init__'],
                         'systems': ['wmc-database', 'wmc-runtime'],
                         },

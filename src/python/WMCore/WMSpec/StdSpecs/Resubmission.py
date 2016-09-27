@@ -18,7 +18,7 @@ class ResubmissionWorkloadFactory(StdBase):
     Build Resubmission workloads.
     """
 
-    def buildWorkload(self, originalRequestURL):
+    def buildWorkload(self, originalRequestURL, arguments):
         """
         _buildWorkload_
 
@@ -36,11 +36,22 @@ class ResubmissionWorkloadFactory(StdBase):
             # reqmgr2 call
             helper = WMWorkloadHelper()
             helper.loadSpecFromCouch(originalRequestURL, self.originalRequestName)
-            
+
         helper.truncate(self.workloadName, self.initialTaskPath,
                         self.acdcServer, self.acdcDatabase,
                         self.collectionName)
         helper.ignoreOutputModules(self.ignoredOutputModules)
+
+        # override a couple of parameters, if provided by user
+        if 'Memory' in arguments:
+            helper.setMemory(arguments['Memory'])
+        if 'Campaign' in arguments and not helper.getCampaign():
+            helper.setCampaign(arguments["Campaign"])
+        if 'RequestPriority' in arguments:
+            helper.setPriority(arguments["RequestPriority"])
+        if 'TimePerEvent' in arguments:
+            for task in helper.taskIterator():
+                task.setJobResourceInformation(timePerEvent=arguments["TimePerEvent"])
 
         return helper
 
@@ -48,14 +59,13 @@ class ResubmissionWorkloadFactory(StdBase):
         StdBase.__call__(self, workloadName, arguments)
         self.originalRequestName = self.initialTaskPath.split('/')[1]
         #TODO remove the None case when reqmgr is retired
-        return self.buildWorkload(arguments.get("OriginalRequestCouchURL", None))
+        return self.buildWorkload(arguments.get("OriginalRequestCouchURL", None), arguments)
 
     @staticmethod
     def getWorkloadArguments():
         specArgs = {"RequestType" : {"default" : "Resubmission"},
-                    "InitialTaskPath" : {"default" : "/SomeRequest/Task1", 
-                                         "optional" : False, "validate" : lambda x : len(x.split('/')) > 2,
-                                         },
+                    "InitialTaskPath" : {"default" : "/SomeRequest/Task1", "optional": False,
+                                         "validate": lambda x: len(x.split('/')) > 2},
                     "ACDCServer" : {"default" : "https://cmsweb.cern.ch/couchdb", "validate" : couchurl,
                                     "attr" : "acdcServer"},
                     "ACDCDatabase" : {"default" : "acdcserver", "validate" : identifier,

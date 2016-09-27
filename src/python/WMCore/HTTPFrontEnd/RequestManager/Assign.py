@@ -416,7 +416,8 @@ class Assign(WebAPI):
         helper.setBlockCloseSettings(blockCloseMaxWaitTime, blockCloseMaxFiles,
                                      blockCloseMaxEvents, blockCloseMaxSize)
 
-        helper.setMemoryAndCores(kwargs.get("Memory"), kwargs.get("Multicore"))
+        helper.setMemory(kwargs.get("Memory"))
+        helper.setCores(kwargs.get("Multicore"))
         helper.setDashboardActivity(kwargs.get("Dashboard", ""))
         helper.setTaskProperties(kwargs)
 

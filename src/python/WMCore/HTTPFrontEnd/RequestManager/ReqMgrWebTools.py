@@ -368,13 +368,6 @@ def buildWorkloadAndCheckIn(webApi, reqSchema, couchUrl, couchDB, wmstatUrl, clo
     
     helper = WMWorkloadHelper(request['WorkloadSpec'])
     
-    #4378 - ACDC (Resubmission) requests should inherit the Campaign ...
-    # for Resubmission request, there already is previous Campaign set
-    # this call would override it with initial request arguments where
-    # it is not specified, so would become ''
-    if not helper.getCampaign():
-        helper.setCampaign(reqSchema["Campaign"])
-    
     # update request as well for wmstats update
     # there is a better way to do this (passing helper to request but make sure all the information is there) 
     request["Campaign"] = helper.getCampaign()

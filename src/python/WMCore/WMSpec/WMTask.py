@@ -539,7 +539,11 @@ class WMTaskHelper(TreeHelper):
             taskMemory = memoryReq.get(self.name())
         else:
             taskMemory = memoryReq
-        if taskMemory or getattr(performanceParams, "memoryRequirement", None):
+
+        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            # we don't want to touch memory for these task types
+            pass
+        elif taskMemory or getattr(performanceParams, "memoryRequirement", None):
             performanceParams.memoryRequirement = taskMemory or getattr(performanceParams, "memoryRequirement")
 
         for task in self.childTaskIterator():
@@ -1332,17 +1336,19 @@ class WMTaskHelper(TreeHelper):
 
         Set number of cores for each CMSSW step in this task and its children
         """
-        if self.taskType() in ['Processing', 'Production', 'Skim']:
-            if isinstance(cores, dict):
-                taskCores = cores.get(self.name())
-            else:
-                taskCores = cores
+        if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            return
 
-            if taskCores:
-                for stepName in self.listAllStepNames():
-                    stepHelper = self.getStepHelper(stepName)
-                    if stepHelper.stepType() == "CMSSW":
-                        stepHelper.setNumberOfCores(taskCores)
+        if isinstance(cores, dict):
+            taskCores = cores.get(self.name())
+        else:
+            taskCores = cores
+
+        if taskCores:
+            for stepName in self.listAllStepNames():
+                stepHelper = self.getStepHelper(stepName)
+                if stepHelper.stepType() == "CMSSW":
+                    stepHelper.setNumberOfCores(taskCores)
 
         for task in self.childTaskIterator():
             task.setNumberOfCores(cores)

@@ -635,14 +635,29 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setMemoryAndCores(self, memory=None, cores=None):
+    def setCores(self, cores):
         """
-        _setMemoryAndCores_
+        _setCores_
 
-        Update memory requirements and number of cores for all tasks in the spec
+        Update number of cores for each task in the spec
         """
+        if not cores:
+            return
+
         for task in self.taskIterator():
             task.setNumberOfCores(cores)
+        return
+
+    def setMemory(self, memory):
+        """
+        _setMemory_
+
+        Update memory requirements for each task in the spec
+        """
+        if not memory:
+            return
+
+        for task in self.taskIterator():
             task.setJobResourceInformation(memoryReq=memory)
         return
 
@@ -1760,7 +1775,8 @@ class WMWorkloadHelper(PersistencyHelper):
         if self._checkKeys(kwargs, "Dashboard"):
             self.setDashboardActivity(kwargs["Dashboard"])
 
-        self.setMemoryAndCores(kwargs.get("Memory"), kwargs.get("Multicore"))
+        self.setMemory(kwargs.get("Memory"))
+        self.setCores(kwargs.get("Multicore"))
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

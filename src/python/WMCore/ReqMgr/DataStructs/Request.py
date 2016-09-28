@@ -61,7 +61,7 @@ def initialize_request_args(request, config, clone=False):
         request["CouchDBName"] = config.couch_config_cache_db
 
         request.setdefault("SoftwareVersions", [])
-        if request["CMSSWVersion"] and (request["CMSSWVersion"] not in request["SoftwareVersions"]):
+        if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
             request["SoftwareVersions"].append(request["CMSSWVersion"])
 
         # TODO

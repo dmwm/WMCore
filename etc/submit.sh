@@ -10,6 +10,25 @@ sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
 mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
 
+
+# Saving START_TIME and when job finishes, check if runtime is not lower than 20m
+# If it is lower, sleep the difference. We don`t want to overload agents with too fast jobs...
+START_TIME=$(date +%s)
+function finish {
+  END_TIME=$(date +%s)
+  DIFF_TIME=$((END_TIME-START_TIME))
+  echo "Job Running time in seconds: " $DIFF_TIME
+  if [ $DIFF_TIME -lt 1200];
+  then
+    SLEEP_TIME=$((1200 - DIFF_TIME))
+    echo "Job runtime is less than 20minutes. Sleeping " $SLEEP_TIME
+    sleep $SLEEP_TIME
+  fi
+}
+# Trap all exits and execute finish function
+trap finish EXIT
+
+
 # should be a bit nicer than before
 echo "WMAgent bootstrap : `date -u` : starting..."
 

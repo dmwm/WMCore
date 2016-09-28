@@ -289,7 +289,7 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
     apmonFree()
     return exitCode
 
-def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageOutExit):
+def stageoutPolicyReport(fileToStage, pnn, command, stageOutType, stageOutExit):
     """
     Prepare Dashboard report about stageout policies
     This dashboard report will be used for reporting to dashboard and visualize local/fallback/direct
@@ -297,7 +297,6 @@ def stageoutPolicyReport(fileToStage, seName, pnn, command, stageOutType, stageO
     """
     tempDict = {}
     tempDict['LFN'] = fileToStage['LFN'] if 'LFN' in fileToStage else None
-    tempDict['SEName'] = seName if seName else fileToStage['SEName'] if 'SEName' in fileToStage else None
     tempDict['PNN'] = pnn if pnn else fileToStage['PNN'] if 'PNN' in fileToStage else None
     tempDict['StageOutCommand'] = command if command else fileToStage['command'] if 'command' in fileToStage else None
     tempDict['StageOutType'] = stageOutType

@@ -1016,7 +1016,7 @@ class WorkQueue(WorkQueueBase):
                 policy.modifyPolicyForWorkAddition(inbound)
             self.logger.info('Splitting %s with policy %s params = %s' % (topLevelTask.getPathName(),
                                                                           policyName, self.params['SplittingMapping']))
-            units, rejectedWork = policy(spec, topLevelTask, data, mask, continuous)
+            units, rejectedWork = policy(spec, topLevelTask, data, mask, continuous=continuous)
             for unit in units:
                 msg = 'Queuing element %s for %s with %d job(s) split with %s' % (unit.id,
                                                                                   unit['Task'].getPathName(),

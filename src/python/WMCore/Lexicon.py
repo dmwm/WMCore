@@ -195,10 +195,8 @@ def procdataset(candidate):
     Check for processed dataset name.
     letters, numbers, dashes, underscores.
     """
-    if candidate == '' or not candidate:
-        return candidate
-    if candidate.startswith('None'):
-        raise AssertionError("Acquisition era cannot be None.")
+    if not candidate or candidate.startswith('None'):
+        raise AssertionError("ProcDataset cannot be empty or start with None.")
 
     commonCheck = check(r"%s" % PROCESSED_DS['re'], candidate, PROCESSED_DS['maxLength'])
     prodCheck = check(PROCDATASET_RE, candidate)
@@ -242,8 +240,8 @@ def acqname(candidate):
     Check for acquisition name.
     letters, numbers, underscores.
     """
-    if candidate == '' or not candidate:
-        return candidate
+    if not candidate:
+        raise AssertionError("AcqEra cannot be empty or None.")
     return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
 

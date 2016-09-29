@@ -115,6 +115,8 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, procdataset, 'Drop Table')
         self.assertRaises(AssertionError, procdataset, 'Alter Table')
         self.assertRaises(AssertionError, procdataset, 'CMSSW_3_0_0_pre3_IDEAL_30X_v1')
+        self.assertRaises(AssertionError, procdataset, '')
+        self.assertRaises(AssertionError, procdataset, None)
         longStr = 'a' * 100 + "-" + 'b' * 96 + "-v1"
         self.assertRaises(AssertionError, procdataset, longStr)
 
@@ -183,16 +185,32 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(procversion('88'))
         return
 
-    def testAcqName(self):
-        """
-        _testAcqName_
 
-        Test the acquisitionEra name verification
+    def testGoodAcqName(self):
+        """
+        _testGoodAcqName_
+
+        Test some valid AcquisitionEra names
+        """
+        self.assertTrue(acqname('a22'))
+        self.assertTrue(acqname('aForReals'))
+        self.assertTrue(acqname('Run1016B'))
+        self.assertTrue(acqname('CMSSW_8_0_16_patch1'))
+        return
+
+    def testBadAcqName(self):
+        """
+        _testBadAcqName_
+
+        Test some invalid AcquisitionEra names
         """
         self.assertRaises(AssertionError, acqname, '*Nothing')
         self.assertRaises(AssertionError, acqname, '1version')
-        self.assertTrue(acqname('a22'))
-        self.assertTrue(acqname('aForReals'))
+        self.assertRaises(AssertionError, acqname, '_version')
+        self.assertRaises(AssertionError, acqname, 'AcqEra Spaced')
+        self.assertRaises(AssertionError, acqname, '')
+        self.assertRaises(AssertionError, acqname, None)
+        self.assertRaises(AssertionError, acqname, 'Run2016B-Terrible')
         return
 
     def testGoodSearchstr(self):

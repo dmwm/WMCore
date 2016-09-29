@@ -88,10 +88,10 @@ class WorkQueueElementsSummary(object):
             return
         #pprint(elements)
         print("### summary for %s ###" % request )
-        print("  Prioty: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
+        print("  Priority: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
         
         sites = self.getPossibleSitesByRequest(request)
-        print("  Possble sites to run: %s" % list(sites))
+        print("  Possible sites to run: %s" % list(sites))
         
         higher = self.elementsWithHigherPriorityInSameSites(request)
         total = 0

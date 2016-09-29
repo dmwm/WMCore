@@ -14,10 +14,9 @@ def getOptions():
     parser = OptionParser()
     parser.set_usage("check-request-wq-status -r [request_name] -s [status]")
     
-    parser.add_option("-r", "--request", dest = "request",
+    parser.add_option("-r", "--request", dest = "request", default=None,
                       help = "resquest name")
-    
-    parser.add_option("-s", "--status", dest = "status", default="Available",
+    parser.add_option("-s", "--status", dest = "status", default=None,
                       help = "set to new status")
     
     (options, args) = parser.parse_args()
@@ -150,25 +149,29 @@ def reportByRequest(wqSummary, request, eleStatus, localQ):
         checkCreateWorkStatusFromLQ(localQ, request, possibleSites)
     
 def main():
-    
+    """
+    It retrieves GQ and LQ information regarding a specific request name
+    and or a status.
+    There are two optional arguments:
+      --request : a request name (no default value)
+      --status  : a workqueue element status (no default value)
+
+    If they are not provided, them fetch all GQ elements and make a summary
+    of them (quite expensive!).
+    """
     cfgObject = loadConfigurationFile(os.environ.get("WMAGENT_CONFIG", None))
     request, eleStatus = getOptions()
-    #request = "jen_a_ACDC_task_BPH-RunIIFall15DR76-00044__v1_T_160513_043933_6676"
-    #eleStatus = "Available"
-    ### get available Work from GQ
+
     teams = cfgObject.Agent.teamName.split(",")
-    
     if len(teams) != 1:
         print("No team of multiple teams are set %s" % teams)
         return
-    
     team = teams[0].strip()
     
     localQ = createWorkQueue(cfgObject)
     
-    # change the filter only filters TeamNam
-    gqElements = localQ.parent_queue.getElements(status=eleStatus, TeamName=team)
-    print("GQ: There are total %s elements in %s" % (len(gqElements), eleStatus))
+    gqElements = localQ.parent_queue.getElements(status=eleStatus, WorkflowName=request, TeamName=team)
+    print("GQ at %s: There are total %s elements in %s" % (localQ.parent_queue.queueUrl, len(gqElements), eleStatus))
          
     wqSummary = WorkQueueElementsSummary(gqElements)
     

@@ -39,6 +39,9 @@ WMStats.namespace('RequestDetailList');
             htmlstr += "<li><b>running:</b> " + reqSummary.getJobStatus("submitted.running", 0) + "</li>";
             htmlstr += "<li><b>failure:</b> " + reqSummary.getTotalFailure()  + "</li>";
             htmlstr += "<li><b>success:</b> " + reqSummary.getJobStatus("success", 0) + "</li>";
+            if (reqDoc.skipped) {
+        		htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.getSkippedDetail(), "Skipped Summary", siteStatusFormat) + "</li>";
+        	}
         }
         htmlstr += "</ul>";
         htmlstr += "</div>";

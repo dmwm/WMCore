@@ -198,6 +198,31 @@ WMStats.RequestStruct.prototype = {
         return null;
     },
     
+    getSkippedStatus: function () {
+    	if (this.skipped) {
+    		return this.skipped;
+    	} else {
+    		return false;
+    	}
+    },
+    
+    getSkippedDetail: function(fullTaskName) {
+    	var skippedTasks = {};
+    	if (this.skipped) {
+    		for (var task in this.tasks) {
+    			if (this.tasks[task].skipped) {
+    				var taskName = task;
+    				if (!fullTaskName){
+    					var taskList = task.split('/');
+    					taskName = taskList[taskList.length - 1];
+    				}
+    				skippedTasks[taskName] = this.tasks[task].skipped;
+        		}
+        	}
+        }
+        return skippedTasks;
+    },
+    
     updateFromCouchDoc: function (doc) {
         
         function _tasksUpdateFunction (baseObj, addObj, field) {
@@ -219,6 +244,7 @@ WMStats.RequestStruct.prototype = {
                 (field == 'sites' || field == 'status')){
                 this._addJobs(this[field], doc[field]);
             } else if (this[field] && field == 'tasks'){
+            	//Also task['skipped'] value will be updated here
                 this._addJobs(this[field], doc[field], true,  _tasksUpdateFunction);
             
             } else if (this[field] && field == 'output_progress') {
@@ -229,6 +255,8 @@ WMStats.RequestStruct.prototype = {
                         //TODO: need combine dataset separately
                     }
                 }
+            } else if (this[field] && field == 'skipped') {
+                this[field] = this[field] || doc[field]; 
             } else if (field == 'agent_url') {
                 if (this[field] === undefined) this[field] = [];
                 WMStats.Utils.addToSet(this[field], doc[field]);

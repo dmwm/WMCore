@@ -92,6 +92,9 @@ WMStats.namespace('RequestDetailList');
         if (reqDoc.sites) {
             htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.sites, "Sites", siteStatusFormat) + "</li>";
         }
+        if (reqDoc.skipped) {
+        	htmlstr += "<li>" + WMStats.Utils.expandFormat(reqDoc.getSkippedDetail(), "Skipped Summary", siteStatusFormat) + "</li>";
+        }
         htmlstr += "</ul>";
         htmlstr += "</div>";
         return htmlstr;

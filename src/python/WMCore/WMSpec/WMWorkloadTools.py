@@ -82,7 +82,6 @@ def _validateArgument(argument, value, argumentDefinition):
     """
     Validate a single argument against its definition in the spec
     """
-    dictArguments = ['AcquisitionEra', 'ProcessingString', 'ProcessingVersion', 'MaxRSS', 'MaxVSize']
     validNull = argumentDefinition["null"]
     if not validNull and value is None:
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
@@ -94,29 +93,47 @@ def _validateArgument(argument, value, argumentDefinition):
     except Exception:
         raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
 
-    validateFunction = argumentDefinition["validate"]
-    if validateFunction is not None:
+    _validateArgFunction(argument, value, argumentDefinition["validate"])
+    return value
+
+
+def _validateArgumentDict(argument, argValue, argumentDefinition):
+    """
+    Validate arguments that carry a dict value type
+    """
+    validNull = argumentDefinition["null"]
+    if not validNull and None in argValue.values():
+        raise WMSpecFactoryException("Argument %s can't be None" % argument)
+    elif all(val is None for val in argValue.values()):
+        return argValue
+
+    for val in argValue.values():
         try:
-            if argument in dictArguments and isinstance(value, dict):
-                validateArgumentDict(argument, value, validateFunction)
-            elif not validateFunction(value):
-                raise WMSpecFactoryException(
-                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+            # sigh.. LumiList has a peculiar type validation
+            if argument == 'LumiList':
+                val = argumentDefinition["type"](argValue)
+                break
+            val = argumentDefinition["type"](val)
+        except Exception:
+            raise WMSpecFactoryException("Argument: %s, value: %s type is incorrect in schema." % (argument, val))
+
+    _validateArgFunction(argument, argValue, argumentDefinition["validate"])
+    return argValue
+
+
+def _validateArgFunction(argument, value, valFunction):
+    """
+    Perform the validation function as in the argument definition
+    """
+    if valFunction:
+        try:
+            if not valFunction(value):
+                raise WMSpecFactoryException("Argument %s, value: %s doesn't pass the validation function." % (argument, value))
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
             raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
-    return value
-
-
-def validateArgumentDict(argument, argValues, valFunc):
-    """
-    Validate arguments that carry a dict value type
-    """
-    for value in argValues.values():
-        if not valFunc(value):
-            raise WMSpecFactoryException(
-                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+    return
 
 
 def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
@@ -137,6 +154,8 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
             continue
         elif optional and arguments[arg] == "":
             del arguments[arg]
+        elif isinstance(arguments[arg], dict):
+            arguments[arg] = _validateArgumentDict(arg, arguments[arg], argValue)
         else:
             arguments[arg] = _validateArgument(arg, arguments[arg], argValue)
     return

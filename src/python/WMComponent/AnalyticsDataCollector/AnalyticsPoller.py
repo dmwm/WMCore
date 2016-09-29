@@ -87,6 +87,7 @@ class AnalyticsPoller(BaseWorkerThread):
             logging.info("Getting FWJRJob Couch Data ...")
             
             fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSiteFromSummaryDB()
+            skippedInfoFromCouch = self.localCouchDB.getSkippedFilesSummaryByWorkflow()
             
             logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()
@@ -106,11 +107,13 @@ class AnalyticsPoller(BaseWorkerThread):
             # combine all the data from 3 sources
             logging.info("""Combining data from
                                    Job Couch(%s),
-                                   FWJR(%s), 
+                                   FWJR(%s),
+                                   WorkflowsWithSkippedFile(%s), 
                                    Batch Job(%s),
                                    Finished Tasks(%s),
                                    Local Queue(%s)  ...""" 
-                    % (len(jobInfoFromCouch), len(fwjrInfoFromCouch), len(batchJobInfo), len(finishedTasks), len(localQInfo)))
+                    % (len(jobInfoFromCouch), len(fwjrInfoFromCouch), len(skippedInfoFromCouch),
+                       len(batchJobInfo), len(finishedTasks), len(localQInfo)))
 
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
             combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
@@ -120,7 +123,8 @@ class AnalyticsPoller(BaseWorkerThread):
             
             logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
             requestDocs = convertToRequestCouchDoc(combinedRequests, fwjrInfoFromCouch, finishedTasks,
-                                                   self.agentInfo, uploadTime, self.summaryLevel)
+                                                   skippedInfoFromCouch, self.agentInfo, 
+                                                   uploadTime, self.summaryLevel)
 
 
             if self.plugin != None:

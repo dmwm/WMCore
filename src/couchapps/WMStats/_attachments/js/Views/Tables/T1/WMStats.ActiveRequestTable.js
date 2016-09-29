@@ -14,7 +14,12 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
              "defaultContent": 0,
              "width": "15px",
              "render": function (data, type, row, meta) {
-                            return WMStats.Utils.formatDetailButton("detail");
+             			  if (type === "display") {
+                             return WMStats.Utils.formatDetailButton("detail", row.skipped);
+                          }
+                          if (row.skipped) {
+                          	 return 1;
+                          }
                         }},
             {"title": "L", 
              "defaultContent": 0,

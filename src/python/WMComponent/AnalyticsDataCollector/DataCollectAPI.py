@@ -12,6 +12,7 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
 from WMCore.WorkQueue.WMBSHelper import freeSlots
+from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import emulatorHook
 
 
@@ -22,7 +23,8 @@ class LocalCouchDBData(object):
         self.couchURL = couchURL
         self.couchURLBase, self.dbName = splitCouchServiceURL(couchURL)
         self.jobCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/jobs", False)
-        self.fwjrsCouchDB = CouchServer(self.couchURLBase).connectDatabase(self.dbName + "/fwjrs", False)
+        fwjrDBname = "%s/fwjrs" % self.dbName
+        self.fwjrAPI = FWJRDBAPI(self.couchURLBase, fwjrDBname)
         self.summaryStatsDB = CouchServer(self.couchURLBase).connectDatabase(statSummaryDB, False)
         self.summaryLevel = summaryLevel
 
@@ -112,11 +114,7 @@ class LocalCouchDBData(object):
 
           'request_name2': ...
         """
-        options = {"group": True, "stale": "ok", "reduce": True}
-        # site of data should be relatively small (~1M) for put in the memory
-        # If not, find a way to stream
-        results = self.fwjrsCouchDB.loadView("FWJRDump", "outputByWorkflowName",
-                                             options)
+        results = self.fwjrAPI.outputByWorkflowName()
 
         # reformat the doc to upload to reqmon db
         data = {}
@@ -131,7 +129,30 @@ class LocalCouchDBData(object):
             return self.jobCouchDB.info()
         except Exception as ex:
             return {'error_message': str(ex)}
-
+        
+    def getSkippedFilesSummaryByWorkflow(self):
+        """
+        get skipped file summary
+        gets the data with following format and convert to
+        {u'rows': [{u'value': {u'events': 2468, u'lumis': 5}, u'key': 
+        [u'sryu_TaskChain_Data_wq_testt_160204_061048_5587', u'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD']}]}
+        
+        and covert to
+        {'sryu_TaskChain_Data_wq_testt_160204_061048_5587': 
+         {'tasks': {'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD : 
+                      {'skippedFiles':2}}}}
+        """
+        results = self.fwjrAPI.getFWJRWithSkippedFiles()
+        # reformat the doc to upload to reqmon db
+        data = {}
+        for x in results.get('rows', []):
+            data.setdefault(x['key'][0], {})
+            data[x['key'][0]].setdefault('tasks', {})
+            data[x['key'][0]]['tasks'][x['key'][1]] = x['value']
+            data[x['key'][0]]['skipped'] =  True
+    
+        return data
+        
 
 @emulatorHook
 class WMAgentDBData(object):
@@ -278,7 +299,8 @@ def combineAnalyticsData(a, b, combineFunc=None):
 
 
 def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
-                             agentInfo, uploadTime, summaryLevel):
+                             skippedInfoFromCouch, agentInfo, 
+                             uploadTime, summaryLevel):
     requestDocs = []
     for request, status in combinedRequests.items():
         doc = {}
@@ -287,6 +309,11 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
         doc['workflow'] = request
         doc['status'] = {}
         doc['sites'] = {}
+        
+        if request in skippedInfoFromCouch:
+            doc['skipped'] = skippedInfoFromCouch[request]['skipped']
+        else:
+            doc['skipped'] = False
         # this will set doc['status'], and doc['sites']
         if summaryLevel == 'task':
             if 'tasks' in status:
@@ -294,6 +321,10 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                 doc['tasks'] = tempData["tasks"]
                 doc['status'] = tempData['status']
                 doc['sites'] = tempData['sites']
+                if doc['skipped']:
+                    for task in skippedInfoFromCouch[request]['tasks']:
+                        doc['tasks'][task]["skipped"] = skippedInfoFromCouch[request]['tasks'][task]
+                        
             # TODO need to handle this correctly by task
             if 'inWMBS' in status:
                 doc['status']['inWMBS'] = status['inWMBS']

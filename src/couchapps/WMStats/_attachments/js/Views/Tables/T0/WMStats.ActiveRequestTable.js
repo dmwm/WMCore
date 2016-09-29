@@ -11,7 +11,12 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
             {"title": "D", 
              "defaultContent": 0,
              "render": function (data, type, row, meta) {
-                            return WMStats.Utils.formatDetailButton("detail");
+             		      if (type === "display") {
+                            return WMStats.Utils.formatDetailButton("detail", row.skipped);
+                          }
+                          if (row.skipped) {
+                          	return 1;
+                          }
                         }},
             {"title": "L", 
              "defaultContent": 0,
@@ -71,7 +76,8 @@ WMStats.ActiveRequestTable = function (requestData, containerDiv) {
                             var result = (reqSummary.getJobStatus("success") + reqSummary.getTotalFailure()) /
                                      totalJobs * 100;
                             return  (result.toFixed(1) + "%");
-                          }
+                         },
+              "type": "num-fmt"
             },
             { "defaultContent": 0,
               "title": "submitted", 

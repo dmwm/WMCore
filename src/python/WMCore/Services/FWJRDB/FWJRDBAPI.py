@@ -99,5 +99,17 @@ class FWJRDBAPI():
             return True
         else:
             return False
+        
+        
+    def outputByWorkflowName(self):
+        
+        options = {"group": True, "stale": "ok", "reduce": True}
+        # site of data should be relatively small (~1M) for put in the memory
+        # If not, find a way to stream
+        return self._getCouchView("outputByWorkflowName", options)
+        
     
+    def getFWJRWithSkippedFiles(self):
+        options = {"reduce": True, "group": True, "include_docs": False}
+        return self._getCouchView("skippedFileInfoByTask", options)
     

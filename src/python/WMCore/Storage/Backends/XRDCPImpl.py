@@ -8,6 +8,8 @@ Generic, will/should work with any site.
 
 """
 from __future__ import print_function
+
+import os
 import argparse
 
 from WMCore.Storage.Registry import registerStageOutImpl
@@ -77,12 +79,39 @@ class XRDCPImpl(StageOutImpl):
 
         useChecksum = (checksums != None and 'adler32' in checksums and not self.stageIn)
 
+        xrdcpExec = "xrdcp"
         if args.old:
-            copyCommand += "xrdcp-old "
-        else:
-            copyCommand += "xrdcp "
+            xrdcpExec = "xrdcp-old"
 
-        copyCommand += "--force --nopbar "
+        # check if xrdcp(-old) and xrdfs are in path
+        # fallback to xrootd 4.0.4 from COMP externals if not
+        xrootdInPath = False
+        if any(os.access(os.path.join(path, xrdcpExec), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
+            if any(os.access(os.path.join(path, "xrdfs"), os.X_OK) for path in os.environ["PATH"].split(os.pathsep)):
+                xrootdInPath = True
+
+        if not xrootdInPath:
+            # COMP software can be in many place, check all of them
+            cmsSoftDir = os.environ.get("VO_CMS_SW_DIR", None)
+            if not cmsSoftDir:
+                cmsSoftDir = os.environ.get("OSG_APP", None)
+                if cmsSoftDir:
+                    cmsSoftDir = os.path.join(cmsSoftDir, "cmssoft/cms")
+                else:
+                    cmsSoftDir = os.environ.get("CVMFS", None)
+
+            if cmsSoftDir:
+
+                initFiles = []
+                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/xrootd/4.0.4-comp/etc/profile.d/init.sh"))
+                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/libevent/2.0.22/etc/profile.d/init.sh"))
+                initFiles.append(os.path.join(cmsSoftDir, "COMP/slc6_amd64_gcc493/external/gcc/4.9.3/etc/profile.d/init.sh"))
+
+                if all(os.path.isfile(initFile) for initFile in initFiles):
+                    for initFile in initFiles:
+                        copyCommand += "source %s\n" % initFile
+
+        copyCommand += "%s --force --nopbar " % xrdcpExec
 
         if copyCommandOptions:
             copyCommand += "%s " % copyCommandOptions

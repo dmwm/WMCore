@@ -37,7 +37,7 @@ class TagCollector(object):
     def data(self):
         "Fetch data from tag collector or local cache"
         tstamp = time.time()
-        if  os.path.isfile(self.cache):
+        if  os.path.isfile(self.cache) and (tstamp - os.path.getmtime(self.cache)) < 3600:
             data = open(self.cache, 'r').read()
         else:
             params = {}

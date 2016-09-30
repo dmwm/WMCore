@@ -9,7 +9,7 @@ import signal
 import sys
 import threading
 import time
-from ConfigParser import ConfigParser
+fromit ConfigParser import ConfigParser
 from distutils.core import Command
 
 from setup_build import get_path_to_wmcore_root

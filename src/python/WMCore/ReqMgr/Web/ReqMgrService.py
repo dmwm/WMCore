@@ -24,7 +24,7 @@ from cherrypy import config as cherryconf
 
 # ReqMgrSrv modules
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
-from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort
+from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
@@ -167,7 +167,6 @@ def toString(data):
         return type(data)(map(toString, data))
     else:
         return data
-
 
 class ReqMgrService(TemplatedPage):
     """
@@ -322,7 +321,8 @@ class ReqMgrService(TemplatedPage):
             docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
-        misc_json = {'CMSSW Releases': releases(),
+        misc_json = {'RequestPriority': 5000,
+                     'CMSSW Releases': releases(),
                      'CMSSW architectures': architectures(),
                      'SubscriptionPriority': ['Low', 'Normal', 'High'],
                      'CustodialSubType': ['Move', 'Replica'],
@@ -351,7 +351,7 @@ class ReqMgrService(TemplatedPage):
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
                                     user=user(), user_dn=user_dn(), requests=toString(docs),
-                                    misc_table=json2table(misc_json, web_ui_names()),
+                                    misc_table=json2table(misc_json, web_ui_names(), "all_attributes"),
                                     misc_json=json2form(misc_json, indent=2, keep_first_value=True))
         return self.abs_page('assign', content)
 
@@ -456,9 +456,23 @@ class ReqMgrService(TemplatedPage):
                 filteredDoc = {}
                 for prop in visible_attrs:
                     filteredDoc[prop] = doc.get(prop, "")
+            
+            prop_value_map = {'CMSSW Releases': releases(),
+                              'SubscriptionPriority': ['Low', 'Normal', 'High'],
+                              'CustodialSubType': ['Move', 'Replica'],
+                              'NonCustodialSubType': ['Move', 'Replica'],
+                              'MergedLFNBase': lfn_bases(),
+                              'UnmergedLFNBase': lfn_unmerged_bases(),
+                              'Team': self.getTeams()}
+            
+            for prop in prop_value_map:
+                if prop in filteredDoc:
+                    # filteredDoc[prop shoulbe str
+                    filteredDoc[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
+                    
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
-                                        table=json2table(filteredDoc, web_ui_names(), visible_attrs),
+                                        table=json2table(filteredDoc, web_ui_names(), visible_attrs, True),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         doc=json.dumps(doc), time=time,
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())

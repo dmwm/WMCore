@@ -138,7 +138,6 @@ class ExecuteMaster:
         try:
             executor.report.setStepStartTime(stepName = executor.stepName)
             executionObject.execute()
-            executor.report.setStepStopTime(stepName = executor.stepName)
         except WMExecutionFailure as ex:
             executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
             error = True
@@ -149,6 +148,7 @@ class ExecuteMaster:
             logging.error(traceback.format_exc())
             executor.diagnostic(99109, executor, ex = ex)
             error = True
+        executor.report.setStepStopTime(stepName = executor.stepName)
         #TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 

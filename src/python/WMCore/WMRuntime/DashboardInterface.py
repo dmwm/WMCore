@@ -335,8 +335,8 @@ class DashboardInfo():
                                                         'TotalJobCPU', 0)
                 self.WrapperCPUTime += float(data['%d_ExeCPUTime'
                                                         % self.stepCount])
-
-        self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
+        if str('%d_ExeWCTime' % self.stepCount) in data.keys():
+            self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
         self.lastStep = helper.name()
 
         self.publish(data = data)

@@ -5,6 +5,7 @@ _WorkQueueTestCase_
 Unit tests for the WMBS File class.
 """
 
+import logging
 import os
 
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -43,7 +44,9 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
+        self.addCleanup(self.testInit.clearDatabase)
+        self.addCleanup(logging.debug, 'Cleanup called clearDatabase()')
         self.testInit.setSchema(customModules = self.schema,
                                 useDefault = False)
         self.testInit.setupCouch(self.queueDB, *self.couchApps)
@@ -61,11 +64,17 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.couchURL = os.environ.get("COUCHURL")
         couchServer = CouchServer(self.couchURL)
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)
-        
+
         self.localCouchMonitor = CouchMonitor(self.couchURL)
         self.localCouchMonitor.deleteReplicatorDocs()
+        self.addCleanup(self.localCouchMonitor.deleteReplicatorDocs)
+        self.addCleanup(logging.debug, 'Cleanup called deleteReplicatorDocs()')
+        self.addCleanup(self.testInit.tearDownCouch)
+        self.addCleanup(logging.debug, 'Cleanup called tearDownCouch()')
 
         self.workDir = self.testInit.generateWorkDir()
+        self.addCleanup(self.testInit.delWorkDir)
+        self.addCleanup(logging.debug, 'Cleanup called delWorkDir()')
 
         return
 
@@ -75,8 +84,6 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
 
         Drop all the WMBS tables.
         """
-        self.localCouchMonitor.deleteReplicatorDocs()
-        self.testInit.tearDownCouch()
-        self.testInit.clearDatabase()
-        self.testInit.delWorkDir()
-        super(WorkQueueTestCase, self).tearDown()
+
+        super(WorkQueueTestCase, self).tearDown()  # Left here in case it's needed by any of the sub-classes
+        return

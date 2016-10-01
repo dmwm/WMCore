@@ -6,12 +6,15 @@ Run the stage out commands in a nice non-blocking way
 
 """
 from __future__ import print_function
-import os
-import popen2
-import fcntl, select, sys
 
+import fcntl
+import os
+import select
+import sys
+from subprocess import Popen, PIPE
 
 from WMCore.Storage.StageOutError import StageOutError
+
 
 def makeNonBlocking(fd):
     """
@@ -37,18 +40,19 @@ def runCommand(command):
     Returns the exitCode
 
     """
-    child = popen2.Popen3(command, 1) # capture stdout and stderr from command
-    child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild
+    # capture stdout and stderr from command
+    child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    child.stdin.close()  # don't need to talk to child
+    outfile = child.stdout
     outfd = outfile.fileno()
-    errfile = child.childerr
+    errfile = child.stderr
     errfd = errfile.fileno()
-    makeNonBlocking(outfd)            # don't deadlock!
+    makeNonBlocking(outfd)  # don't deadlock!
     makeNonBlocking(errfd)
     outdata = errdata = ''
     outeof = erreof = 0
     while True:
-        ready = select.select([outfd,errfd],[],[]) # wait for input
+        ready = select.select([outfd, errfd], [], [])  # wait for input
         if outfd in ready[0]:
             try:
                 outchunk = outfile.read()
@@ -68,7 +72,7 @@ def runCommand(command):
             if errchunk == '': erreof = 1
             sys.stderr.write(errchunk)
         if outeof and erreof: break
-        select.select([],[],[],.1) # give a little time for buffers to fill
+        select.select([], [], [], .1)  # give a little time for buffers to fill
 
     err = child.wait()
     if os.WIFEXITED(err):
@@ -78,6 +82,7 @@ def runCommand(command):
     elif os.WIFSTOPPED(err):
         return os.WSTOPSIG(err)
     return err
+
 
 def runCommandWithOutput(command):
     """
@@ -89,19 +94,20 @@ def runCommandWithOutput(command):
     Returns the exitCode and the a string containing std out & error
 
     """
-    child = popen2.Popen3(command, 1) # capture stdout and stderr from command
-    child.tochild.close()             # don't need to talk to child
-    outfile = child.fromchild
+    # capture stdout and stderr from command
+    child = Popen(command, shell=True, bufsize=1, stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
+    child.stdin.close()  # don't need to talk to child
+    outfile = child.stdout
     outfd = outfile.fileno()
-    errfile = child.childerr
+    errfile = child.stderr
     errfd = errfile.fileno()
-    makeNonBlocking(outfd)            # don't deadlock!
+    makeNonBlocking(outfd)  # don't deadlock!
     makeNonBlocking(errfd)
     outdata = errdata = ''
     outeof = erreof = 0
     output = ''
     while True:
-        ready = select.select([outfd,errfd],[],[]) # wait for input
+        ready = select.select([outfd, errfd], [], [])  # wait for input
         if outfd in ready[0]:
             try:
                 outchunk = outfile.read()
@@ -123,7 +129,7 @@ def runCommandWithOutput(command):
             output += errchunk
             sys.stderr.write(errchunk)
         if outeof and erreof: break
-        select.select([],[],[],.1) # give a little time for buffers to fill
+        select.select([], [], [], .1)  # give a little time for buffers to fill
 
     err = child.wait()
     if os.WIFEXITED(err):
@@ -133,7 +139,6 @@ def runCommandWithOutput(command):
     elif os.WIFSTOPPED(err):
         err = os.WSTOPSIG(err)
     return err, output
-
 
 
 def execute(command):
@@ -152,10 +157,10 @@ def execute(command):
         msg = "Command threw exception"
         print("ERROR: Exception During Stage Out:\n")
         print(msg)
-        raise StageOutError(msg, Command = command, ExitCode = 60311)
+        raise StageOutError(msg, Command=command, ExitCode=60311)
     if exitCode:
         msg = "Command exited non-zero"
         print("ERROR: Exception During Stage Out:\n")
         print(msg)
-        raise StageOutError(msg, Command = command, ExitCode = exitCode)
+        raise StageOutError(msg, Command=command, ExitCode=exitCode)
     return

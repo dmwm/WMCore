@@ -7,14 +7,18 @@ Implementation of StageOutImpl interface for DCCPFNAL
 from __future__ import print_function
 
 import os
-import commands
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
-from WMCore.WMException import WMException
+try:
+    from commands import getoutput, getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getoutput, getstatusoutput
 
 _CheckExitCodeOption = True
+
 
 def pnfsPfn(pfn):
     """
@@ -39,7 +43,6 @@ def pnfsPfn(pfn):
         return filePath
 
 
-
 class DCCPFNALImpl(StageOutImpl):
     """
     _DCCPFNALImpl_
@@ -47,7 +50,6 @@ class DCCPFNALImpl(StageOutImpl):
     Implement interface for dcache door based dccp command
 
     """
-
 
     def createOutputDirectory(self, targetPFN):
         """
@@ -81,11 +83,11 @@ class DCCPFNALImpl(StageOutImpl):
             command += "fi\n"
             self.executeCommand(command)
         else:
-            targetdir= os.path.dirname(targetPFN)
-            checkdircmd="/bin/ls %s > /dev/null " % targetdir
-            print("Check dir existence : %s" %checkdircmd)
+            targetdir = os.path.dirname(targetPFN)
+            checkdircmd = "/bin/ls %s > /dev/null " % targetdir
+            print("Check dir existence : %s" % checkdircmd)
             try:
-                (checkdirexitCode, output) = commands.getstatusoutput(checkdircmd)
+                (checkdirexitCode, output) = getstatusoutput(checkdircmd)
             except Exception as ex:
                 msg = "Warning: Exception while invoking command:\n"
                 msg += "%s\n" % checkdircmd
@@ -95,7 +97,7 @@ class DCCPFNALImpl(StageOutImpl):
                 pass
             if checkdirexitCode:
                 mkdircmd = "/bin/mkdir -m 775 -p %s" % targetdir
-                print("=> creating the dir : %s" %mkdircmd)
+                print("=> creating the dir : %s" % mkdircmd)
                 try:
                     self.executeCommand(mkdircmd)
                 except Exception as ex:
@@ -107,7 +109,6 @@ class DCCPFNALImpl(StageOutImpl):
                     pass
             else:
                 print("=> dir already exists... do nothing.")
-
 
     def createSourceName(self, protocol, pfn):
         """
@@ -121,7 +122,7 @@ class DCCPFNALImpl(StageOutImpl):
 
         if pfn.find('/store/unmerged/') == -1:
             print("Translating PFN: %s\n To use dcache door" % pfn)
-            dcacheDoor = commands.getoutput(
+            dcacheDoor = getoutput(
                 "/opt/d-cache/dcap/bin/setenv-cmsprod.sh; /opt/d-cache/dcap/bin/select_RdCapDoor.sh")
             pfn = pfn.split("/store/")[1]
             pfn = "%s%s" % (dcacheDoor, pfn)
@@ -132,9 +133,7 @@ class DCCPFNALImpl(StageOutImpl):
 
         return pfn
 
-
-
-    def createStageOutCommand(self, sourcePFN, targetPFN, options = None, checksums = None):
+    def createStageOutCommand(self, sourcePFN, targetPFN, options=None, checksums=None):
         """
         _createStageOutCommand_
 
@@ -145,7 +144,6 @@ class DCCPFNALImpl(StageOutImpl):
         if getattr(self, 'stageIn', False):
             return self.buildStageInCommand(sourcePFN, targetPFN, options)
 
-
         if targetPFN.find('/lustre/unmerged') == -1:
             optionsStr = ""
             if options != None:
@@ -153,36 +151,36 @@ class DCCPFNALImpl(StageOutImpl):
             dirname = os.path.dirname(targetPFN)
             result = "#!/bin/sh\n"
             result += ". /opt/d-cache/dcap/bin/setenv-cmsprod.sh\n"
-            result += "dccp -o 86400  -d 255 -X -role=cmsprod %s %s %s" % ( optionsStr, sourcePFN, targetPFN)
+            result += "dccp -o 86400  -d 255 -X -role=cmsprod %s %s %s" % (optionsStr, sourcePFN, targetPFN)
 
             result += \
-"""
-EXIT_STATUS=$?
-echo "dccp exit status: $EXIT_STATUS"
-if [[ $EXIT_STATUS != 0 ]]; then
-   echo "Non-zero dccp Exit status!!!"
-   echo "Cleaning up failed file:"
-   /bin/rm -fv %s
-   exit 60311
-fi
-"""  % pnfsPfn(targetPFN)
+                """
+                EXIT_STATUS=$?
+                echo "dccp exit status: $EXIT_STATUS"
+                if [[ $EXIT_STATUS != 0 ]]; then
+                   echo "Non-zero dccp Exit status!!!"
+                   echo "Cleaning up failed file:"
+                   /bin/rm -fv %s
+                   exit 60311
+                fi
+                """ % pnfsPfn(targetPFN)
 
             #  //
             # //  CRC check
-            #//
+            # //
             result += \
-"""
-/opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s
-EXIT_STATUS=$?
-echo "CRC Check Exit status: $EXIT_STATUS"
-if [[ $EXIT_STATUS != 0 ]]; then
-   echo "Non-zero CRC Check Exit status!!!"
-   echo "Cleaning up failed file:"
-   /bin/rm -fv %s
-   exit 60311
-fi
+                """
+                /opt/d-cache/dcap/bin/check_dCachefilecksum.sh %s %s
+                EXIT_STATUS=$?
+                echo "CRC Check Exit status: $EXIT_STATUS"
+                if [[ $EXIT_STATUS != 0 ]]; then
+                   echo "Non-zero CRC Check Exit status!!!"
+                   echo "Cleaning up failed file:"
+                   /bin/rm -fv %s
+                   exit 60311
+                fi
 
-""" % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
+                """ % (pnfsPfn(targetPFN), sourcePFN, pnfsPfn(targetPFN))
 
             print("Executing:\n", result)
             return result
@@ -195,18 +193,16 @@ fi
                 result += " %s " % options
             result += " %s " % sourcePFN
             result += " %s " % targetPFN
-            result += "; sync; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            result += "; sync; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (
+            targetPFN, original_size)
             return result
 
-
-
-    def buildStageInCommand(self, sourcePFN, targetPFN, options = None):
+    def buildStageInCommand(self, sourcePFN, targetPFN, options=None):
         """
         _buildStageInCommand_
 
         Create normal dccp commad for staging in files.
         """
-
 
         if targetPFN.find('/lustre/unmerged') == -1:
             optionsStr = ""
@@ -216,43 +212,43 @@ fi
             result = "#!/bin/sh\n"
             result += "dccp %s %s %s" % (optionsStr, pnfsPfn(sourcePFN), targetPFN)
             result += \
-"""
-EXIT_STATUS=$?
-echo "dccp exit status: $EXIT_STATUS"
-if [[ $EXIT_STATUS != 0 ]]; then
-   echo "Non-zero dccp Exit status!!!"
-   echo "Cleaning up failed file:"
-   /bin/rm -fv %s
-   exit 60311
-fi
-"""  % targetPFN
+                """
+                EXIT_STATUS=$?
+                echo "dccp exit status: $EXIT_STATUS"
+                if [[ $EXIT_STATUS != 0 ]]; then
+                   echo "Non-zero dccp Exit status!!!"
+                   echo "Cleaning up failed file:"
+                   /bin/rm -fv %s
+                   exit 60311
+                fi
+                """ % targetPFN
 
             #  //
             # //  Size Check
-            #//
+            # //
             result += \
-"""
-DEST_SIZE=`dcsize %s | cut -d" " -f1`
-FILE_SIZE=`dcsize %s | cut -d" " -f1`
-if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
-    echo "dcsize command is not available or produced an invalid result."
-    echo "Trying stat command:"
-    DEST_SIZE=`stat -c %s %s`
-    FILE_SIZE=`stat -c %s %s`
-fi
-if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
-    echo "stat command is not available or produced an invalid result."
-    echo "Trying ls command:"
-    DEST_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
-    FILE_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
-fi
-if [ $FILE_SIZE != $DEST_SIZE ]; then
-    echo "Source and destination files do not have same file size."
-    echo "Cleaning up failed file:"
-    /bin/rm -fv %s
-    exit 60311
-fi
-""" % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
+                """
+                DEST_SIZE=`dcsize %s | cut -d" " -f1`
+                FILE_SIZE=`dcsize %s | cut -d" " -f1`
+                if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
+                    echo "dcsize command is not available or produced an invalid result."
+                    echo "Trying stat command:"
+                    DEST_SIZE=`stat -c %s %s`
+                    FILE_SIZE=`stat -c %s %s`
+                fi
+                if [[ $DEST_SIZE == "" || $FILE_SIZE == "" ]]; then
+                    echo "stat command is not available or produced an invalid result."
+                    echo "Trying ls command:"
+                    DEST_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
+                    FILE_SIZE=`/bin/ls -l %s | awk '{ print $5 }'`
+                fi
+                if [ $FILE_SIZE != $DEST_SIZE ]; then
+                    echo "Source and destination files do not have same file size."
+                    echo "Cleaning up failed file:"
+                    /bin/rm -fv %s
+                    exit 60311
+                fi
+                """ % (pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
        '%s', pnfsPfn(targetPFN), '%s', pnfsPfn(sourcePFN),
        pnfsPfn(targetPFN), pnfsPfn(sourcePFN),
        pnfsPfn(targetPFN))
@@ -268,9 +264,9 @@ fi
                 result += " %s " % options
             result += " %s " % sourcePFN
             result += " %s " % targetPFN
-            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (targetPFN,original_size)
+            result += "; DEST_SIZE=`/bin/ls -l %s | /bin/awk '{print $5}'` ; if [ $DEST_SIZE ] && [ '%s' == $DEST_SIZE ]; then exit 0; else echo \"Error: Size Mismatch between local and SE\"; exit 60311 ; fi " % (
+            targetPFN, original_size)
             return result
-
 
     def removeFile(self, pfnToRemove):
         """
@@ -282,14 +278,13 @@ fi
         if pfnToRemove.find('/store/unmerged/') == -1:
             pfnSplit = pfnToRemove.split("/store/", 1)[1]
             filePath = "/pnfs/cms/WAX/11/store/%s" % pfnSplit
-            command = "rm -fv %s" %filePath
+            command = "rm -fv %s" % filePath
             self.executeCommand(command)
         else:
             pfnSplit = pfnToRemove.split("/store/unmerged/", 1)[1]
             pfnToRemove = "/lustre/unmerged/%s" % pfnSplit
             command = "/bin/rm %s" % pfnToRemove
             self.executeCommand(command)
-
 
 
 registerStageOutImpl("dccp-fnal", DCCPFNALImpl)

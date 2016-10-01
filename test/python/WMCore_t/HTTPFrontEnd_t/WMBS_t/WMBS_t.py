@@ -1,28 +1,26 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-import unittest, os, logging, commands, random, threading
 
-from WMCore.Database.DBCore import DBInterface
-from WMCore.Database.DBFactory import DBFactory
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMBS.File import File
-from WMCore.WMBS.Fileset import Fileset
-from WMCore.WMBS.Workflow import Workflow
-from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMFactory import WMFactory
-from WMQuality.TestInit import TestInit
-from WMCore.DataStructs.Run import Run
-from WMCore.WMBS.Job      import Job
-from WMCore.WMBS.JobGroup import JobGroup
-from WMCore.JobStateMachine.ChangeState import ChangeState
+import threading
+import unittest
 
-from WMCore.Services.Requests import Requests, JSONRequests
-import urllib
 from nose.plugins.attrib import attr
 
-class WMBSServiceTest(unittest.TestCase):
+from WMCore.DAOFactory import DAOFactory
+from WMCore.DataStructs.Run import Run
+from WMCore.Services.Requests import Requests, JSONRequests
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Job import Job
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Subscription import Subscription
+from WMCore.WMBS.Workflow import Workflow
+from WMCore.WMFactory import WMFactory
+from WMQuality.TestInit import TestInit
 
+
+class WMBSServiceTest(unittest.TestCase):
     def setUp(self):
         """
         _setUp_
@@ -40,19 +38,19 @@ class WMBSServiceTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False )
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         myThread = threading.currentThread()
-        self.daofactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daofactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        locationAction = self.daofactory(classname = "Locations.New")
-        locationAction.execute(siteName = "test.site.ch")
-        locationAction.execute(siteName = "base.site.ch")
+        locationAction = self.daofactory(classname="Locations.New")
+        locationAction.execute(siteName="test.site.ch")
+        locationAction.execute(siteName="base.site.ch")
         testSubscription, testFileA, testFileB, testFileC = \
-           self.createSubscriptionWithFileABC()
+            self.createSubscriptionWithFileABC()
         self.createTestJob(testSubscription, 'TestJob1', testFileA)
         self.createTestJob(testSubscription, 'TestJob2', testFileB)
         self.createTestJob(testSubscription, 'TestJob3', testFileC)
@@ -70,11 +68,10 @@ class WMBSServiceTest(unittest.TestCase):
         factory = WMFactory("WMBS", "WMCore.WMBS")
         destroy = factory.loadObject(myThread.dialect + ".Destroy")
         myThread.transaction.begin()
-        destroyworked = destroy.execute(conn = myThread.transaction.conn)
+        destroyworked = destroy.execute(conn=myThread.transaction.conn)
         if not destroyworked:
             raise Exception("Could not complete WMBS tear down.")
         myThread.transaction.commit()
-
 
     def createSubscriptionWithFileABC(self):
         """"
@@ -83,30 +80,30 @@ class WMBSServiceTest(unittest.TestCase):
         Create a subscription where the input fileset has three files.  Also
         create a second subscription that has acquired two of the files.
         """
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Simon",
-                                name = "wf001", task = "Test")
+        testWorkflow = Workflow(spec="spec.xml", owner="Simon",
+                                name="wf001", task="Test")
         testWorkflow.create()
-        testWorkflow2 = Workflow(spec = "specBOGUS.xml", owner = "Simon",
-                                name = "wfBOGUS", task = "Test")
+        testWorkflow2 = Workflow(spec="specBOGUS.xml", owner="Simon",
+                                 name="wfBOGUS", task="Test")
         testWorkflow2.create()
 
-        testFileA = File(lfn = "/this/is/a/lfnA", size = 1024, events = 20,
-                         locations = set(["test.site.ch"]))
+        testFileA = File(lfn="/this/is/a/lfnA", size=1024, events=20,
+                         locations=set(["test.site.ch"]))
         testFileA.addRun(Run(1, *[45]))
 
-        testFileB = File(lfn = "/this/is/a/lfnB", size = 1024, events = 20,
-                         locations = set(["test.site.ch"]))
+        testFileB = File(lfn="/this/is/a/lfnB", size=1024, events=20,
+                         locations=set(["test.site.ch"]))
         testFileB.addRun(Run(1, *[46]))
 
-        testFileC = File(lfn = "/this/is/a/lfnC", size = 1024, events = 20,
-                         locations = set(["test.site.ch"]))
+        testFileC = File(lfn="/this/is/a/lfnC", size=1024, events=20,
+                         locations=set(["test.site.ch"]))
         testFileC.addRun(Run(2, *[48]))
 
         testFileA.create()
         testFileB.create()
         testFileC.create()
 
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
         testFileset.addFile(testFileA)
@@ -114,15 +111,15 @@ class WMBSServiceTest(unittest.TestCase):
         testFileset.addFile(testFileC)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
-        testSubscription2 = Subscription(fileset = testFileset,
-                                         workflow = testWorkflow2)
+        testSubscription2 = Subscription(fileset=testFileset,
+                                         workflow=testWorkflow2)
         testSubscription2.create()
         testSubscription2.acquireFiles([testFileA, testFileB])
 
-        #return (testSubscription, testFileset, testWorkflow, testFileA,
+        # return (testSubscription, testFileset, testWorkflow, testFileA,
         #        testFileB, testFileC)
 
         return (testSubscription, testFileA, testFileB, testFileC)
@@ -135,14 +132,14 @@ class WMBSServiceTest(unittest.TestCase):
         appropriate workflow, jobgroup and subscription.
         """
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
         testFiles = list(testFiles)
-        testJob = Job(name = jobName, files = testFiles)
+        testJob = Job(name=jobName, files=testFiles)
         testJob["couch_record"] = "somecouchrecord"
         testJob["location"] = "test.site.ch"
-        testJob.create(group = testJobGroup)
+        testJob.create(group=testJobGroup)
 
     def wmbsServiceSetup(self, argstring, kargs={}, returnType='text'):
 
@@ -153,6 +150,7 @@ class WMBSServiceTest(unittest.TestCase):
         results = request.get("/wmbs/%s/" % argstring, kargs)
 
         return results
+
     @attr('integration')
     def testAllMethods(self):
         pass
@@ -171,14 +169,15 @@ class WMBSServiceTest(unittest.TestCase):
     @attr('integration')
     def testJobsBySubs(self):
         print("\nTesting jobsbysubs service: Should return the jobs by given fileset and workflow and specified time")
-        param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'state_time': 0}
+        param = {"fileset_name": 'TestFileset', 'workflow_name': 'wf001', 'state_time': 0}
         print(self.wmbsServiceSetup('jobsbysubs', param))
 
     @attr('integration')
     def testJobCountBySubsAndRun(self):
         print("\nTesting jobcountbysubs service: Should return the job count by given subscription and run")
-        param = {"fileset_name": 'TestFileset', 'workflow_name':'wf001', 'run':1 }
+        param = {"fileset_name": 'TestFileset', 'workflow_name': 'wf001', 'run': 1}
         print(self.wmbsServiceSetup('jobcountbysubs', param))
+
 
 if __name__ == "__main__":
     unittest.main()

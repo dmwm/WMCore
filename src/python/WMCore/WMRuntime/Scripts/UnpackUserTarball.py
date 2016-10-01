@@ -6,7 +6,6 @@ Unpack the user tarball and put it's contents in the right place
 """
 from __future__ import print_function
 
-import commands
 import os
 import re
 import shutil
@@ -14,8 +13,14 @@ import subprocess
 import sys
 import tempfile
 import urllib
-from urllib import URLopener
 import urlparse
+from urllib import URLopener
+
+try:
+    from commands import getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getstatusoutput
 
 
 def setHttpProxy(url):
@@ -26,7 +31,7 @@ def setHttpProxy(url):
     if 'http_proxy' in os.environ:
         return os.environ['http_proxy']
 
-    status, output = commands.getstatusoutput('cmsGetFnConnect frontier://smallfiles')
+    status, output = getstatusoutput('cmsGetFnConnect frontier://smallfiles')
     if status:
         return None
 
@@ -37,6 +42,7 @@ def setHttpProxy(url):
         proxy = proxyList[0]
     os.environ['http_proxy'] = proxy
     return proxy
+
 
 def getRetriever(scheme):
     """
@@ -57,10 +63,11 @@ def getRetriever(scheme):
     else:
         print("Using %s as X509 certificate" % certfile)
         op = URLopener(None, key_file=certfile, cert_file=certfile)
-        op.addheader( 'Accept', 'application/octet-stream' )
+        op.addheader('Accept', 'application/octet-stream')
         retriever = op.retrieve
 
     return retriever
+
 
 def UnpackUserTarball():
     tarballs = []
@@ -89,8 +96,8 @@ def UnpackUserTarball():
                 if os.path.exists('TEMP_TARBALL.tgz'):
                     os.unlink('TEMP_TARBALL.tgz')
 
-        elif splitResult[0] in ['http','https'] and splitResult[1]:
-            retriever = getRetriever( splitResult[0] )
+        elif splitResult[0] in ['http', 'https'] and splitResult[1]:
+            retriever = getRetriever(splitResult[0])
             with tempfile.NamedTemporaryFile() as tempFile:
                 if setHttpProxy(tarball):
                     try:
@@ -120,6 +127,7 @@ def UnpackUserTarball():
             shutil.move(userFile, '..')
 
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(UnpackUserTarball())

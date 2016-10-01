@@ -9,14 +9,16 @@ to developers responsible for the test.
 """
 from __future__ import print_function
 
-
-
-
-
-import commands
 import os
 import unittest
+
 import WMCore.WMInit
+
+try:
+    from commands import getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getstatusoutput
 class Test:
     """
     _Test_
@@ -66,7 +68,7 @@ Test framework error! Did you use the proper test classes? """
             # FIXME: need to add something for oracle too.
             print('Cleaning database backends')
             command = os.path.join(WMCore.WMInit.getWMBASE(), '/standards/./cleanup_mysql.sh')
-            result = commands.getstatusoutput(command)
+            result = getstatusoutput(command)
             for entry in result:
                 print(str(entry))
 

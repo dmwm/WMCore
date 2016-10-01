@@ -9,13 +9,14 @@ code style.
 """
 from __future__ import print_function
 
-
-
-
-
-import commands
 import os
 import sys
+
+try:
+    from commands import getstatusoutput
+except ImportError:
+    # python3
+    from subprocess import getstatusoutput
 
 
 class Code:
@@ -28,7 +29,7 @@ class Code:
     code style.
     """
 
-    def __init__(self, script, report, baseDir, threshold, packages = {}):
+    def __init__(self, script, report, baseDir, threshold, packages={}):
         # location of the script to calculate the quality
         self.script = script
         # where the intermediate report should be written
@@ -43,27 +44,26 @@ class Code:
         # author to file/rate mappings for which a report will be filed.
         self.lowQuality = {}
 
-
     def run(self):
         """
         Runs the test script over the specified packages and records
         anomalies.
         """
 
-        print('Quality script: '+ self.script)
-        print('Report file:    '+ self.report)
-        print('Base dir:       '+ self.baseDir)
+        print('Quality script: ' + self.script)
+        print('Report file:    ' + self.report)
+        print('Base dir:       ' + self.baseDir)
 
         cont = raw_input('Are these values correct? ' + \
-            'Press "A" to abbort or any other key to proceed ')
+                         'Press "A" to abbort or any other key to proceed ')
         if cont == 'A':
             sys.exit(0)
 
         for packageDir in self.packages.keys():
             localPath = os.path.join(self.baseDir, packageDir)
             # execute the quality script which produces a codeQuality.txt file
-            command = self.script+' '+localPath
-            result = commands.getstatusoutput(command)
+            command = self.script + ' ' + localPath
+            result = getstatusoutput(command)
             for entry in result:
                 print(str(entry))
             # parse the code quality file for the rating:
@@ -123,12 +123,12 @@ class Code:
                     moduleName = ''
                     # do not include the actual file for style testing
                     # (only modules)
-                    for index in xrange(0, len(parts)-1):
+                    for index in xrange(0, len(parts) - 1):
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
                             if moduleName not in self.module and \
-                                index > pathCut + moduleCut:
+                                            index > pathCut + moduleCut:
                                 self.module[moduleName] = {}
                                 vote2.append(moduleName)
                     # now we need to find authors and let them vote.
@@ -150,7 +150,7 @@ class Code:
                     vote = 0
                     vote2 = []
             nl = logFile.readline()
-        # we are done voting
+            # we are done voting
 
     def preProcess(self):
         """
@@ -178,7 +178,7 @@ class Code:
                 moduleLength[len(parts)] = []
             moduleLength[len(parts)].append(moduleName)
         lengths = moduleLength.keys()
-        lengths.sort(reverse = True)
+        lengths.sort(reverse=True)
 
         for length in lengths:
             # FIXME: needs to be configurable.
@@ -188,7 +188,7 @@ class Code:
                     parts = moduleName.split('/')
                     # group all parts of same length.
                     if len(parts) == length:
-                        parent = moduleName.rsplit('/',1)[0]
+                        parent = moduleName.rsplit('/', 1)[0]
                         if parent not in parents:
                             parents[parent] = []
                         parents[parent].append([moduleName, self.module[moduleName]])
@@ -202,7 +202,6 @@ class Code:
                     if same:
                         for moduleName, developer in parents[parent]:
                             del self.module[moduleName]
-
 
     def generate(self, fileName):
         """
@@ -235,7 +234,7 @@ packages = {\\
         for moduleName in self.module.keys():
             # find the one with the most votes per module:
             # register this.
-            styleFile.writelines("        '"+moduleName+"':'"+self.module[moduleName]+"',\\\n")
+            styleFile.writelines("        '" + moduleName + "':'" + self.module[moduleName] + "',\\\n")
         styleFile.writelines('}\n')
         tail = """
 code = Code(qualityScript, qualityReport, WMCore.WMInit.getWMBASE(), threshold, packages)
@@ -245,7 +244,6 @@ code.summaryText()
         styleFile.writelines(tail)
         styleFile.close()
 
-
     def summaryText(self):
         """
         Prints a summary of the run
@@ -254,7 +252,7 @@ code.summaryText()
         print('\nReport Summary:\n')
         for author in self.lowQuality.keys():
             if len(self.lowQuality[author]) > 0:
-                print('Author: '+author)
+                print('Author: ' + author)
                 print('---------------------')
                 # do some sorting for readability
                 files = []
@@ -264,5 +262,5 @@ code.summaryText()
                     file2rating[fileRating[1]] = fileRating[0]
                 files.sort()
                 for fileRating in files:
-                    print(file2rating[fileRating]+' :: '+fileRating)
+                    print(file2rating[fileRating] + ' :: ' + fileRating)
                 print('\n\n')

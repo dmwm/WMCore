@@ -26,7 +26,7 @@ from cherrypy import config as cherryconf
 from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
 from WMCore.ReqMgr.Utils.url_utils import getdata
-from WMCore.ReqMgr.Tools.cms import releases, architectures
+from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
@@ -343,6 +343,7 @@ class ReqMgrService(TemplatedPage):
                      'ProcessingString': '',
                      'MergedLFNBase': lfn_bases(),
                      'UnmergedLFNBase': lfn_unmerged_bases(),
+                     'Dashboard': dashboardActivities(),
                      'Team': self.getTeams()}
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
@@ -463,6 +464,7 @@ class ReqMgrService(TemplatedPage):
                               'NonCustodialSubType': ['Move', 'Replica'],
                               'MergedLFNBase': lfn_bases(),
                               'UnmergedLFNBase': lfn_unmerged_bases(),
+                              'Dashboard': dashboardActivities(),
                               'Team': self.getTeams()}
             
             for prop in prop_value_map:

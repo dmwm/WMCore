@@ -27,7 +27,7 @@ from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
+from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
@@ -322,8 +322,10 @@ class ReqMgrService(TemplatedPage):
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         misc_json = {'RequestPriority': 5000,
-                     'CMSSW Releases': releases(),
-                     'CMSSW architectures': architectures(),
+                     'CMSSWVersion': releases(),
+                     'ScramArch': architectures(),
+                     'SiteWhitelist': SITE_CACHE.getData(),
+                     'SiteBlacklist': SITE_CACHE.getData(),
                      'SubscriptionPriority': ['Low', 'Normal', 'High'],
                      'CustodialSubType': ['Move', 'Replica'],
                      'NonCustodialSubType': ['Move', 'Replica'],
@@ -347,7 +349,7 @@ class ReqMgrService(TemplatedPage):
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,
-                                    sites=sites(),
+                                    sites=SITE_CACHE.getData(),
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
                                     user=user(), user_dn=user_dn(), requests=toString(docs),
@@ -456,23 +458,31 @@ class ReqMgrService(TemplatedPage):
                 filteredDoc = {}
                 for prop in visible_attrs:
                     filteredDoc[prop] = doc.get(prop, "")
-            
-            prop_value_map = {'CMSSW Releases': releases(),
+
+            listPNNs = PNN_CACHE.getData()
+            prop_value_map = {'CMSSWVersion': releases(),
+                              'SiteWhitelist': SITE_CACHE.getData(),
+                              'SiteBlacklist': SITE_CACHE.getData(),
                               'SubscriptionPriority': ['Low', 'Normal', 'High'],
+                              'CustodialSites': listPNNs,
                               'CustodialSubType': ['Move', 'Replica'],
+                              'NonCustodialSites': listPNNs,
                               'NonCustodialSubType': ['Move', 'Replica'],
+                              'AutoApproveSubscriptionSites': listPNNs,
                               'MergedLFNBase': lfn_bases(),
                               'UnmergedLFNBase': lfn_unmerged_bases(),
+                              'TrustPUSitelists': [True, False],
+                              'TrustSitelists': [True, False],                    
                               'Team': self.getTeams()}
             
+            selected = {}
             for prop in prop_value_map:
                 if prop in filteredDoc:
-                    # filteredDoc[prop shoulbe str
-                    filteredDoc[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
+                    filteredDoc[prop], selected[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
                     
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
-                                        table=json2table(filteredDoc, web_ui_names(), visible_attrs, True),
+                                        table=json2table(filteredDoc, web_ui_names(), visible_attrs, selected),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         doc=json.dumps(doc), time=time,
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())

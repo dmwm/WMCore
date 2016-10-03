@@ -11,6 +11,7 @@ Description: CMS modules
 import os
 import time
 
+from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 # CMS modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
@@ -82,14 +83,32 @@ def sites():
         raise Exception(msg)
     return sites
 
+# create a site cache and pnn cache 2 hour duration
+SITE_CACHE = MemoryCacheStruct(5200, sites)
+
+def pnns():
+    """
+    Returns all PhEDEx node names, excluding Buffer endpoints
+    """
+    try:
+        sitedb = SiteDBJSON()
+        pnns = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
+    except Exception as exc:
+        msg = "ERROR: Could not retrieve PNNs from SiteDB, reason: %s" % str(exc)
+        raise Exception(msg)
+    return pnns
+
+# create a site cache and pnn cache 2 hour duration
+PNN_CACHE= MemoryCacheStruct(5200, pnns)
+
 def site_white_list():
     "site white list, default all T1"
-    t1_sites = [s for s in sites() if s.startswith('T1_')]
+    t1_sites = [s for s in SITE_CACHE.getData() if s.startswith('T1_')]
     return t1_sites
 
 def site_black_list():
     "site black list, default all T3"
-    t3_sites = [s for s in sites() if s.startswith('T3_')]
+    t3_sites = [s for s in SITE_CACHE.getData() if s.startswith('T3_')]
     return t3_sites
 
 def lfn_bases():
@@ -135,9 +154,7 @@ def web_ui_names():
             "TimePerEvent": "TimePerEvent (seconds)",
             "OpenRunningTimeout": "OpenRunningTimeout (deprecated)",
             "SizePerEvent": "SizePerEvent (KBytes)",
-            "ScramArch": "Architecture",
             "Memory": "Memory (MBytes)",
-            "RequestString": "RequestString (optional)",
             "BlockCloseMaxSize": "BlockCloseMaxSize (Bytes)",
             "SoftTimeout": "SoftTimeout (seconds)",
             }

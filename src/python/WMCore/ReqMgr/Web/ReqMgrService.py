@@ -27,7 +27,7 @@ from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
 from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
 from WMCore.ReqMgr.Utils.url_utils import getdata
 from WMCore.ReqMgr.Tools.cms import releases, architectures
-from WMCore.ReqMgr.Tools.cms import web_ui_names, sites
+from WMCore.ReqMgr.Tools.cms import web_ui_names, sites, pnns
 from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
 from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
 
@@ -322,8 +322,10 @@ class ReqMgrService(TemplatedPage):
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         misc_json = {'RequestPriority': 5000,
-                     'CMSSW Releases': releases(),
-                     'CMSSW architectures': architectures(),
+                     'CMSSWVersion': releases(),
+                     'ScramArch': architectures(),
+                     'SiteWhitelist': sites(),
+                     'SiteBlacklist': sites(),
                      'SubscriptionPriority': ['Low', 'Normal', 'High'],
                      'CustodialSubType': ['Move', 'Replica'],
                      'NonCustodialSubType': ['Move', 'Replica'],
@@ -456,18 +458,23 @@ class ReqMgrService(TemplatedPage):
                 filteredDoc = {}
                 for prop in visible_attrs:
                     filteredDoc[prop] = doc.get(prop, "")
-            
-            prop_value_map = {'CMSSW Releases': releases(),
+
+            listPNNs = pnns()
+            prop_value_map = {'CMSSWVersion': releases(),
+                              'SiteWhitelist': sites(),
+                              'SiteBlacklist': sites(),
                               'SubscriptionPriority': ['Low', 'Normal', 'High'],
+                              'CustodialSites': listPNNs,
                               'CustodialSubType': ['Move', 'Replica'],
+                              'NonCustodialSites': listPNNs,
                               'NonCustodialSubType': ['Move', 'Replica'],
+                              'AutoApproveSubscriptionSites': listPNNs,
                               'MergedLFNBase': lfn_bases(),
                               'UnmergedLFNBase': lfn_unmerged_bases(),
                               'Team': self.getTeams()}
             
             for prop in prop_value_map:
                 if prop in filteredDoc:
-                    # filteredDoc[prop shoulbe str
                     filteredDoc[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
                     
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,

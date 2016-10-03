@@ -82,6 +82,20 @@ def sites():
         raise Exception(msg)
     return sites
 
+
+def pnns():
+    """
+    Returns all PhEDEx node names, excluding Buffer endpoints
+    """
+    try:
+        sitedb = SiteDBJSON()
+        pnns = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
+    except Exception as exc:
+        msg = "ERROR: Could not retrieve PNNs from SiteDB, reason: %s" % str(exc)
+        raise Exception(msg)
+    return pnns
+
+
 def site_white_list():
     "site white list, default all T1"
     t1_sites = [s for s in sites() if s.startswith('T1_')]
@@ -135,9 +149,7 @@ def web_ui_names():
             "TimePerEvent": "TimePerEvent (seconds)",
             "OpenRunningTimeout": "OpenRunningTimeout (deprecated)",
             "SizePerEvent": "SizePerEvent (KBytes)",
-            "ScramArch": "Architecture",
             "Memory": "Memory (MBytes)",
-            "RequestString": "RequestString (optional)",
             "BlockCloseMaxSize": "BlockCloseMaxSize (Bytes)",
             "SoftTimeout": "SoftTimeout (seconds)",
             }

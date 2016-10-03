@@ -90,12 +90,15 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected=False):
                         % (key, json.dumps(val))
             else:
                 sel = "<select name=\"%s\">" % key
+                MULTI_SELECTION_KEYS = ['SiteWhitelist', 'SiteBlacklist', 'AutoApproveSubscriptionSites']
+                if key in MULTI_SELECTION_KEYS:
+                    sel = "<select name=\"%s\" multiple>" % key
                 if selected and len(val) > 0:
                     selected_val = val[0]
                 else:
                     selected_val = None
                 values = sorted(val)
-                if  key in ['releases', 'software_releases', 'CMSSWVersion', 'ScramArch']:
+                if  key in ['CMSSWVersion', 'ScramArch']:
                     values.reverse()
                 for item in values:
                     if selected and selected_val == item:
@@ -278,6 +281,8 @@ def reorder_list(org_list, first):
     move the first in front of the list
     if not, add first to the list
     """
+    if first and isinstance(first, list):
+        first = first[0]
     new_list = list(org_list)
     try:
         i = new_list.index(first)
@@ -285,4 +290,3 @@ def reorder_list(org_list, first):
     except ValueError:
         new_list.insert(0, first)
     return new_list
-        

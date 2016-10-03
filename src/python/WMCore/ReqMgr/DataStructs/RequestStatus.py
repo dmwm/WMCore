@@ -22,9 +22,6 @@ REQUEST_STATE_TRANSITION = {
                  "acquired",
                  "aborted"],
                              
-    "running": ["completed",
-                "aborted"], # manual transition
-                             
     "running-open": ["running-closed",
                      "aborted"], # manual transition
                              
@@ -63,7 +60,6 @@ ACTIVE_STATUS = ["new",
                  "assignment-approved",
                  "assigned",
                  "acquired",
-                 "running",
                  "running-open",
                  "running-closed",
                  "failed",
@@ -92,7 +88,6 @@ ALLOWED_ACTIONS_FOR_STATUS = {
                                         "AutoApproveSubscriptionSites", "SubscriptionPriority"],
                  "assigned": ["RequestPriority"],
                  "acquired": ["RequestPriority"],
-                 "running": ["RequestPriority"],
                  "running-open": ["RequestPriority"],
                  "running-closed": ["RequestPriority"],
                  "failed": [],

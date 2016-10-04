@@ -15,7 +15,7 @@ from WMCore.ReqMgr.Auth import getWritePermission
 from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
-from WMCore.ReqMgr.Tools.cms import releases, architectures
+from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
 from WMCore.Lexicon import procdataset
 
 
@@ -183,6 +183,8 @@ def create_json_template_spec(specArgs):
             value = releases()
         elif key == "ScramArch":
             value = architectures()
+        elif prop == "Dashboard":
+            value = dashboardActivities()
         elif prop.get("optional", True):
             # if optional need to always have default value
             value = prop["default"]

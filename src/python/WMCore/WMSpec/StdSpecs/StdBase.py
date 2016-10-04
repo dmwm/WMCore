@@ -8,7 +8,8 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname, couchurl, block, procstring
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion
+from WMCore.Lexicon import cmsname, couchurl, block, procstring, activity
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -1014,7 +1015,7 @@ class StdBase(object):
                      "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
 
                      # dashboard activity
-                     "Dashboard": {"default": "", "type": str},
+                     "Dashboard": {"default": "production", "type": str, "validate": activity},
                      # team name
                      "Team": {"default": "", "type": str},
                      "PrepID": {"default": None, "null": True},

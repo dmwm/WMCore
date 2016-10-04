@@ -621,3 +621,12 @@ def primaryDatasetType(candidate):
         return True
     # to sync with the check() exception when it doesn't match
     raise AssertionError("Invalid primary dataset type : %s should be 'mc' or 'data' or 'test'" % candidate)
+
+
+def activity(candidate):
+    dashboardActivities = ['reprocessing', 'production', 'relval', 'tier0', 't0',
+                           'harvesting', 'storeresults', 'integration',
+                           'test', 'analysis']
+    if candidate in dashboardActivities:
+        return True
+    raise AssertionError("Invalid dashboard activity: %s should 'test'" % candidate)

@@ -5,7 +5,7 @@
 
 WMCore.createDataSource = function (dataUrl, dataSchema, type) {
 	
-	if (type == "Local") {
+	if (type == "NotLocal") {
 	   var myDataSource = new YAHOO.util.LocalDataSource(dataUrl);
 	} else {
 		var myDataSource = new YAHOO.util.XHRDataSource(dataUrl);

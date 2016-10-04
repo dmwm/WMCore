@@ -3,6 +3,7 @@ _WMConfigCache_t_
 
 Test class for the WMConfigCache
 """
+from __future__ import print_function, division
 
 import unittest
 import time

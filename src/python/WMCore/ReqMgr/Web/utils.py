@@ -95,8 +95,11 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                     sel = "<select class=\"width-100\" name=\"%s\" multiple>" % key
                 else:
                     sel = "<select class=\"width-100\" name=\"%s\">" % key
-    
-                values = sorted(val)
+                
+                if key in selected:    
+                    values = val
+                else:
+                    values = sorted(val)
                 if  key in ['CMSSWVersion', 'ScramArch']:
                     values.reverse()
                 for item in values:

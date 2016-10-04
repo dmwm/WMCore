@@ -21,6 +21,7 @@ from WMCore.WMSpec.WMStep import WMStepHelper
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
+
 class ExecuteMaster:
     """
     _ExecuteMaster_
@@ -51,7 +52,7 @@ class ExecuteMaster:
             self.toTaskDirectory()
             raise
         except Exception as ex:
-            msg =  "Encountered unhandled exception while starting monitors:\n"
+            msg = "Encountered unhandled exception while starting monitors:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
@@ -67,10 +68,10 @@ class ExecuteMaster:
                 if skipToStep and skipToStep != stepName:
                     # Then we continue until we get to the required step
                     continue
-                skipToStep = None # Reset this when we get to the right step
+                skipToStep = None  # Reset this when we get to the right step
                 executor = StepFactory.getStepExecutor(stepType)
                 result = self.doExecution(executor, step, wmbsJob)
-                if not result == None:
+                if result is not None:
                     skipToStep = result
             except WMException as ex:
                 msg = "Encountered error while running ExecuteMaster:\n"
@@ -86,13 +87,12 @@ class ExecuteMaster:
                 logging.error(msg)
                 break
 
-
         try:
             myThread.watchdogMonitor.notifyJobEnd(task)
         except WMException:
             self.toTaskDirectory()
         except Exception as ex:
-            msg =  "Encountered unhandled exception while ending the job:\n"
+            msg = "Encountered unhandled exception while ending the job:\n"
             msg += str(ex) + '\n'
             msg += str(traceback.format_exc()) + '\n'
             logging.error(msg)
@@ -117,7 +117,6 @@ class ExecuteMaster:
         # Tell the watchdog that we're starting the step
         myThread.watchdogMonitor.notifyStepStart(step)
 
-
         self.toStepDirectory(step)
         executor.initialise(step, job)
         executionObject = executor
@@ -125,56 +124,53 @@ class ExecuteMaster:
         if executor.emulationMode:
             executionObject = executor.emulator
 
-
         preOutcome = executionObject.pre()
-        if preOutcome != None:
+        if preOutcome is not None:
             logging.info("Pre Executor Task Change: %s" % preOutcome)
             executor.saveReport()
             self.toTaskDirectory()
-            myThread.watchdogMonitor.notifyStepEnd(step = step,
-                                                   stepReport = executor.report)
+            myThread.watchdogMonitor.notifyStepEnd(step=step,
+                                                   stepReport=executor.report)
             executor.saveReport()
             return preOutcome
         try:
-            executor.report.setStepStartTime(stepName = executor.stepName)
+            executor.report.setStepStartTime(stepName=executor.stepName)
             executionObject.execute()
         except WMExecutionFailure as ex:
-            executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
+            executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
             error = True
         except Exception as ex:
             logging.error("Exception occured when executing step")
             logging.error("Exception is %s" % ex)
             logging.error("Traceback: ")
             logging.error(traceback.format_exc())
-            executor.diagnostic(99109, executor, ex = ex)
+            executor.diagnostic(99109, executor, ex=ex)
             error = True
-        executor.report.setStepStopTime(stepName = executor.stepName)
-        #TODO: Handle generic Exception that indicates development/code errors
+        executor.report.setStepStopTime(stepName=executor.stepName)
+        # TODO: Handle generic Exception that indicates development/code errors
         executor.saveReport()
 
         postOutcome = executionObject.post()
-        if postOutcome != None:
+        if postOutcome is not None:
             logging.info("Post Executor Task Change: %s" % postOutcome)
             executor.saveReport()
             self.toTaskDirectory()
-            myThread.watchdogMonitor.notifyStepEnd(step = step,
-                                                   stepReport = executor.report)
+            myThread.watchdogMonitor.notifyStepEnd(step=step,
+                                                   stepReport=executor.report)
             executor.saveReport()
             return postOutcome
-
-
 
         self.toTaskDirectory()
 
         # Okay, we're done, set the job to successful
-        if not error and executor.report.getStepErrors(stepName = executor.stepName) == {}:
-            executor.report.setStepStatus(stepName = executor.stepName,
-                                          status = 0)
+        if not error and executor.report.getStepErrors(stepName=executor.stepName) == {}:
+            executor.report.setStepStatus(stepName=executor.stepName,
+                                          status=0)
         executor.saveReport()
 
         # Tell the watchdog that we're done with the step
-        myThread.watchdogMonitor.notifyStepEnd(step = step,
-                                               stepReport = executor.report)
+        myThread.watchdogMonitor.notifyStepEnd(step=step,
+                                               stepReport=executor.report)
         executor.saveReport()
 
         return None
@@ -192,8 +188,6 @@ class ExecuteMaster:
         stepSpace = taskSpace.stepSpace(stepName)
 
         os.chdir(stepSpace.location)
-
-
 
     def toTaskDirectory(self):
         """

@@ -263,3 +263,9 @@ def cms_groups():
     "Return list of CMS data-ops groups"
     groups = ["DATAOPS"]
     return groups
+
+def dashboardActivities():
+    "Return list of dashboard activities"
+    activity = ['reprocessing', 'production', 'relval', 'harvesting',
+                'storeresults', 'integration', 'test']
+    return activity

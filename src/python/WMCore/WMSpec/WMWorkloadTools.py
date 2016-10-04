@@ -79,60 +79,86 @@ def parsePileupConfig(mcPileup, dataPileup):
 
 
 def _validateArgument(argument, value, argumentDefinition):
-    dictArguments = ['AcquisitionEra', 'ProcessingString', 'ProcessingVersion', 'MaxRSS', 'MaxVSize']
-    validNull = argumentDefinition[argument]["null"]
+    """
+    Validate a single argument against its definition in the spec
+    """
+    validNull = argumentDefinition["null"]
     if not validNull and value is None:
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
     elif value is None:
         return value
 
     try:
-        value = argumentDefinition[argument]["type"](value)
+        value = argumentDefinition["type"](value)
     except Exception:
         raise WMSpecFactoryException("Argument: %s: value: %s type is incorrect in schema." % (argument, value))
 
-    validateFunction = argumentDefinition[argument]["validate"]
-    if validateFunction is not None:
+    _validateArgFunction(argument, value, argumentDefinition["validate"])
+    return value
+
+
+def _validateArgumentDict(argument, argValue, argumentDefinition):
+    """
+    Validate arguments that carry a dict value type
+    """
+    validNull = argumentDefinition["null"]
+    if not validNull and None in argValue.values():
+        raise WMSpecFactoryException("Argument %s can't be None" % argument)
+    elif all(val is None for val in argValue.values()):
+        return argValue
+
+    for val in argValue.values():
         try:
-            if argument in dictArguments and isinstance(value, dict):
-                validateArgumentDict(argument, value, validateFunction)
-            elif not validateFunction(value):
-                raise WMSpecFactoryException(
-                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+            # sigh.. LumiList has a peculiar type validation
+            if argument == 'LumiList':
+                val = argumentDefinition["type"](argValue)
+                break
+            val = argumentDefinition["type"](val)
+        except Exception:
+            raise WMSpecFactoryException("Argument: %s, value: %s type is incorrect in schema." % (argument, val))
+
+    _validateArgFunction(argument, argValue, argumentDefinition["validate"])
+    return argValue
+
+
+def _validateArgFunction(argument, value, valFunction):
+    """
+    Perform the validation function as in the argument definition
+    """
+    if valFunction:
+        try:
+            if not valFunction(value):
+                raise WMSpecFactoryException("Argument %s, value: %s doesn't pass the validation function." % (argument, value))
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
             raise WMSpecFactoryException("Validation failed: %s value: %s" % (argument, value))
-    return value
-
-
-def validateArgumentDict(argument, argValues, valFunc):
-    """
-    Validate arguments that carry a dict value type
-    """
-    for value in argValues.values():
-        if not valFunc(value):
-            raise WMSpecFactoryException(
-                    "Argument %s: value: %s doesn't pass the validation function." % (argument, value))
+    return
 
 
 def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
-    for argument in argumentDefinition:
-        optional = argumentDefinition[argument].get(optionKey, True)
-        if not optional and argument not in arguments:
-            msg = "Validation failed: %s is mandatory %s" % (argument, argumentDefinition[argument])
+    """
+    Check whether create or assign mandatory parameters were properly
+    set in the request schema.
+    """
+    for arg, argValue in argumentDefinition.iteritems():
+        optional = argValue.get(optionKey, True)
+        if not optional and arg not in arguments:
+            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argValue)
             raise WMSpecFactoryException(msg)
         # TODO this need to be done earlier then this function
         # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
         #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
-        elif argument not in arguments:
+        elif arg not in arguments:
             continue
-        elif optional and arguments[argument] == "":
-            del arguments[argument]
+        elif optional and arguments[arg] == "":
+            del arguments[arg]
+        elif isinstance(arguments[arg], dict):
+            arguments[arg] = _validateArgumentDict(arg, arguments[arg], argValue)
         else:
-            arguments[argument] = _validateArgument(argument, arguments[argument], argumentDefinition)
-        return
+            arguments[arg] = _validateArgument(arg, arguments[arg], argValue)
+    return
 
 
 def _validateInputDataset(arguments):
@@ -215,7 +241,7 @@ def validateSiteLists(arguments):
 def validateAutoGenArgument(arguments):
     autoGenArgs = ["TotalInputEvents", "TotalInputFiles", "TotalInputLumis", "TotalEstimatedJobs"]
     protectedArgs =set(autoGenArgs).intersection(set(arguments.keys()))
-        
+
     if len(protectedArgs) > 0:
         raise WMSpecFactoryException("Shouldn't set auto generated params %s: remove it" % list(protectedArgs))
     return

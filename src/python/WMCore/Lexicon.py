@@ -227,12 +227,23 @@ def userprocdataset(candidate):
 
 def procversion(candidate):
     """ Integers """
-    return check(r'^[0-9]+$', candidate)
+    if isinstance(candidate, dict):
+        for candi in candidate.values():
+            check(r'^[0-9]+$', candi)
+        return True
+    else:
+        return check(r'^[0-9]+$', candidate)
 
 
 def procstring(candidate):
     """ Identifier """
-    return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
+    # T0 uses empty string (or None?) for ProcessingString
+    if isinstance(candidate, dict):
+        for candi in candidate.values():
+            check(r'[a-zA-Z0-9_]{1,100}$', candi)
+        return True
+    else:
+        return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
 
 
 def acqname(candidate):
@@ -242,7 +253,12 @@ def acqname(candidate):
     """
     if not candidate:
         raise AssertionError("AcqEra cannot be empty or None.")
-    return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
+    if isinstance(candidate, dict):
+        for candi in candidate.values():
+            check(r'[a-zA-Z][a-zA-Z0-9_]*$', candi)
+        return True
+    else:
+        return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
 
 def primdataset(candidate):

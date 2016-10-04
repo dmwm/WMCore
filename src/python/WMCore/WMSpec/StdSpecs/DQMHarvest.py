@@ -66,6 +66,7 @@ class DQMHarvestWorkloadFactory(StdBase):
         specArgs = {"RequestType": {"default": "DQMHarvest"},
                     "InputDataset": {"default": None, "optional": False,
                                      "validate": dataset},
+                    "ConfigCacheID": {"optional": True, "validate": None, "null": True},
                     "UnmergedLFNBase": {"default": "/store/unmerged"},
                     "MergedLFNBase": {"default": "/store/data"},
                     "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,

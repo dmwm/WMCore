@@ -449,6 +449,7 @@ WMStats.ViewModel = (function (){
             summary.MinMergeSize = requestInfo.MinMergeSize;
             summary.MaxMergeSize = requestInfo.MaxMergeSize;
             summary.MaxMergeEvents = requestInfo.MaxMergeEvents;
+            summary.MaxRSS = requestInfo.MaxRSS;
             summary.MaxVSize = requestInfo.MaxVSize;
             summary.BlockCloseMaxWaitTime = requestInfo.BlockCloseMaxWaitTime;
             summary.BlockCloseMaxFiles = requestInfo.BlockCloseMaxFiles;

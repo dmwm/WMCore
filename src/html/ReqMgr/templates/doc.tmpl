@@ -97,9 +97,13 @@ function ChangeRequestStatus() {
     var inputs = \$('.visible_input');
     for(var i=0; i<inputs.length; i++) {
         var elem = inputs[i];
-        if(elem.value != doc[elem.name]) {
-            parameters[elem.name] = elem.value;
+        var values = \$(elem).val();
+        if (values === null || values.length === 0) {
+        	values = "";
+        }else if (values.length === 1) {
+        	values = values[0];
         }
+        parameters[elem.name] = values;
     }
     ajaxRequest('$base/data/request/$name', parameters, 'PUT');
 }

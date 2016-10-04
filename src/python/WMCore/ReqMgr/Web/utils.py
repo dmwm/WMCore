@@ -62,7 +62,7 @@ def json2form(jsondata, indent=2, keep_first_value=True):
                     jsondata[key] = val[0]
     return json.dumps(jsondata, indent=2)
 
-def json2table(jsondata, web_ui_map, visible_attrs=None, selected=False):
+def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
     """
     Convert input json dict into HTML table based on assumtion that
     input json is in a simple key:value form.
@@ -89,16 +89,18 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected=False):
                 sel = '<textarea name="%s" class="width-100">%s</textarea>' \
                         % (key, json.dumps(val))
             else:
-                sel = "<select name=\"%s\">" % key
-                if selected and len(val) > 0:
-                    selected_val = val[0]
+                
+                MULTI_SELECTION_KEYS = ['SiteWhitelist', 'SiteBlacklist', 'AutoApproveSubscriptionSites']
+                if key in MULTI_SELECTION_KEYS:
+                    sel = "<select class=\"width-100\" name=\"%s\" multiple>" % key
                 else:
-                    selected_val = None
+                    sel = "<select class=\"width-100\" name=\"%s\">" % key
+    
                 values = sorted(val)
-                if  key in ['releases', 'software_releases', 'CMSSWVersion', 'ScramArch']:
+                if  key in ['CMSSWVersion', 'ScramArch']:
                     values.reverse()
                 for item in values:
-                    if selected and selected_val == item:
+                    if key in selected and item in selected[key]:
                         sel += "<option value=\"%s\" selected=\"selected\">%s</option>" % (item, item)
                     else:
                         sel += "<option value=\"%s\">%s</option>" % (item, item)
@@ -272,17 +274,22 @@ def sort(docs, sortby):
     for doc in docs:
         yield doc
         
-def reorder_list(org_list, first):
+def reorder_list(org_list, selected):
     """
     if the first is in the list.
     move the first in front of the list
     if not, add first to the list
     """
+    if isinstance(selected, list) and len(selected) == 0:
+        return org_list, selected
+    if not isinstance(selected, list):
+        selected = [selected]
     new_list = list(org_list)
-    try:
-        i = new_list.index(first)
-        new_list[0], new_list[i] = new_list[i],  new_list[0]
-    except ValueError:
-        new_list.insert(0, first)
-    return new_list
-        
+    for item in selected:
+        try:
+            new_list.remove(item)
+        except ValueError:
+            pass
+    updated_list = list(selected)
+    updated_list.extend(new_list)
+    return updated_list, selected

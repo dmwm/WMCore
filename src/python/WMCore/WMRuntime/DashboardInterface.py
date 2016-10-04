@@ -314,30 +314,32 @@ class DashboardInfo():
         data['%d_ExeEnd' % self.stepCount]      = helper.name()
         data['%d_ExeExitCode' % self.stepCount] = stepReport.getStepExitCode(
                                                     stepName = helper.name())
+        data['%d_NCores' % self.stepCount] = helper.getNumberOfCores()
 
         if helper.name() == 'StageOut':
             data['%d_StageOutExitStatus' % self.stepCount] = int(
                         stepReport.stepSuccessful(stepName = helper.name()))
 
         times = stepReport.getTimes(stepName = helper.name())
-        if times['stopTime'] != None and times['startTime'] != None:
-            data['%d_ExeWCTime' % self.stepCount] = \
-                                       times['stopTime'] - times['startTime']
-            data['%d_NCores' % self.stepCount] = helper.getNumberOfCores()
-            self.maxCores = max(self.maxCores, helper.getNumberOfCores())
+        if times['stopTime'] is not None and times['startTime'] is not None:
+            data['%d_ExeWCTime' % self.stepCount] = times['stopTime'] - times['startTime']
+        else:
+            logging.error('Failed to retrieve start/end step time: %s', times)
+            data['%d_ExeWCTime' % self.stepCount] = 0
+        self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
 
         step = stepReport.retrieveStep(step = helper.name())
+        try:
+            data['%d_ExeCPUTime' % self.stepCount] = getattr(step.performance.cpu,
+                                                             'TotalJobCPU', 0)
+        except AttributeError:
+            msg = "Failed to retrieve cpu performance for step %s. Defaulting to 0" % helper.name()
+            logging.warn(msg)
+            data['%d_ExeCPUTime' % self.stepCount] = 0
+        self.WrapperCPUTime += float(data['%d_ExeCPUTime' % self.stepCount])
 
-        if hasattr(step, 'performance'):
-            if hasattr(step.performance, 'cpu'):
-                data['%d_ExeCPUTime' % self.stepCount] = \
-                                                getattr(step.performance.cpu,
-                                                        'TotalJobCPU', 0)
-                self.WrapperCPUTime += float(data['%d_ExeCPUTime'
-                                                        % self.stepCount])
-        if str('%d_ExeWCTime' % self.stepCount) in data.keys():
-            self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
         self.lastStep = helper.name()
+        self.maxCores = max(self.maxCores, helper.getNumberOfCores())
 
         self.publish(data = data)
 

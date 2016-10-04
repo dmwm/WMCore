@@ -9,13 +9,14 @@ import socket
 import subprocess
 import re
 
-from WMCore.WMSpec.WMStep     import WMStepHelper
+from WMCore.WMSpec.WMStep import WMStepHelper
 from WMCore.WMSpec.WMWorkload import getWorkloadFromTask
 from WMCore.Services.Dashboard.DashboardAPI import DashboardAPI
 from WMCore.Services.Dashboard.DashboardReporter import unicodeToStr
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
 
-def getSyncCE(default = socket.gethostname()):
+
+def getSyncCE(default=socket.gethostname()):
     """
     _getSyncCE_
 
@@ -38,23 +39,24 @@ def getSyncCE(default = socket.gethostname()):
     if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
         #  //
         # // OSG, Sync CE from Globus ID
-        #//
+        # //
         val = os.environ['GLOBUS_GRAM_JOB_CONTACT']
         try:
             host = val.split("https://", 1)[1]
             host = host.split(":")[0]
             result = host
-        except:
-            pass
+        except Exception:
+            logging.warning("Failed to parse GLOBUS_GRAM_JOB_CONTACT env var")
         return result
 
     if 'NORDUGRID_CE' in os.environ:
         #  //
         # // ARC, Sync CE from env. var. submitted with the job by JobSubmitter
-        #//
+        # //
         return os.environ['NORDUGRID_CE']
 
     return result
+
 
 def _commandWrapper(command, process):
     """
@@ -65,11 +67,12 @@ def _commandWrapper(command, process):
     """
     try:
         process['process'] = subprocess.Popen(command,
-                                          stdout = subprocess.PIPE,
-                                          stderr = subprocess.PIPE)
+                                              stdout=subprocess.PIPE,
+                                              stderr=subprocess.PIPE)
         process['stdout'], process['stderr'] = process['process'].communicate()
     except:
         pass
+
 
 def _executeCommand(command, timeout):
     """
@@ -81,8 +84,8 @@ def _executeCommand(command, timeout):
     """
 
     process = {'process': None, 'stdout': None, 'stderr': None}
-    thread = threading.Thread(target = _commandWrapper,
-                              args = (command,process))
+    thread = threading.Thread(target=_commandWrapper,
+                              args=(command, process))
     thread.start()
     thread.join(timeout)
     if thread.is_alive():
@@ -98,6 +101,7 @@ def _executeCommand(command, timeout):
         return None
     else:
         return process['stdout']
+
 
 def _parseDN(subject):
     """
@@ -118,6 +122,7 @@ def _parseDN(subject):
         except:
             pass
     return None
+
 
 def getUserProxyDN():
     """
@@ -146,7 +151,7 @@ def getUserProxyDN():
     return subject
 
 
-class DashboardInfo():
+class DashboardInfo(object):
     """
     An object to let you assemble the information needed for a Dashboard Report
 
@@ -158,33 +163,33 @@ class DashboardInfo():
 
         """
 
-        #Basic task/job objects
-        self.task         = task
-        self.workload     = getWorkloadFromTask(task)
-        self.job          = job
+        # Basic task/job objects
+        self.task = task
+        self.workload = getWorkloadFromTask(task)
+        self.job = job
 
-        #Dashboard server interface info
-        self.publisher    = None
+        # Dashboard server interface info
+        self.publisher = None
         self.destinations = {}
-        self.server       = dashboardUrl
+        self.server = dashboardUrl
 
-        #Job ids
+        # Job ids
         self.taskName = unicodeToStr('wmagent_%s' % self.workload.name())
-        self.jobName  = unicodeToStr('%s_%i' % (job['name'], job['retry_count']))
+        self.jobName = unicodeToStr('%s_%i' % (job['name'], job['retry_count']))
 
-        #Step counter
+        # Step counter
         self.stepCount = 0
 
-        #Job ending report stuff
-        self.jobSuccess     = 0
-        self.jobStarted     = False
-        self.failedStep     = None
-        self.lastStep       = None
-        self.maxCores       = 1     # Accumulated over individual steps
-        self.WrapperWCTime  = 0
+        # Job ending report stuff
+        self.jobSuccess = 0
+        self.jobStarted = False
+        self.failedStep = None
+        self.lastStep = None
+        self.maxCores = 1  # Accumulated over individual steps
+        self.WrapperWCTime = 0
         self.WrapperCPUTime = 0
 
-        #Utility
+        # Utility
         self.tsFormat = '%Y-%m-%d %H:%M:%S'
 
         return
@@ -196,14 +201,14 @@ class DashboardInfo():
         Fill with basic information upon job start, we shouldn't send anything
         until the first step starts.
         """
-        #Announce that the job is running
+        # Announce that the job is running
         data = {}
-        data['MessageType']       = 'JobStatus'
-        data['MessageTS']         = time.strftime(self.tsFormat, time.gmtime())
-        data['taskId']            = self.taskName
-        data['jobId']             = self.jobName
-        data['StatusValue']       = 'running'
-        data['StatusEnterTime']   = time.strftime(self.tsFormat, time.gmtime())
+        data['MessageType'] = 'JobStatus'
+        data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['StatusValue'] = 'running'
+        data['StatusEnterTime'] = time.strftime(self.tsFormat, time.gmtime())
         data['StatusValueReason'] = 'Job started execution in the WN'
         data['StatusDestination'] = getSyncCE()
 
@@ -214,7 +219,7 @@ class DashboardInfo():
             maxCores = max(maxCores, sh.getNumberOfCores())
         data['NCores'] = maxCores
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         return data
 
@@ -226,21 +231,21 @@ class DashboardInfo():
         """
 
         data = {}
-        data['MessageType']    = 'jobRuntime-jobEnd'
-        data['MessageTS']      = time.strftime(self.tsFormat, time.gmtime())
-        data['taskId']         = self.taskName
-        data['jobId']          = self.jobName
-        data['ExeEnd']         = self.lastStep
-        data['NCores']         = self.maxCores
+        data['MessageType'] = 'jobRuntime-jobEnd'
+        data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['ExeEnd'] = self.lastStep
+        data['NCores'] = self.maxCores
         data['WrapperCPUTime'] = self.WrapperCPUTime
-        data['WrapperWCTime']  = self.WrapperWCTime
-        data['JobExitCode']    = self.jobSuccess
+        data['WrapperWCTime'] = self.WrapperWCTime
+        data['JobExitCode'] = self.jobSuccess
         if self.failedStep:
             data['JobExitReason'] = 'Step %s failed in the WN' % self.failedStep
         else:
             data['JobExitReason'] = 'Job completed execution in the WN'
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         return data
 
@@ -257,34 +262,34 @@ class DashboardInfo():
 
         data = None
         if not self.jobStarted:
-            #It's the first step so let's send the exe that started and where
-            #That's what they request
+            # It's the first step so let's send the exe that started and where
+            # That's what they request
             data = {}
-            data['MessageType']       = 'jobRuntime-jobStart'
-            data['MessageTS']         = time.strftime(self.tsFormat,
-                                                      time.gmtime())
-            data['taskId']            = self.taskName
-            data['jobId']             = self.jobName
-            data['GridName']          = getUserProxyDN()
-            data['ExeStart']          = helper.name()
-            data['SyncCE']            = getSyncCE()
-            data['WNHostName']        = socket.gethostname()
+            data['MessageType'] = 'jobRuntime-jobStart'
+            data['MessageTS'] = time.strftime(self.tsFormat,
+                                              time.gmtime())
+            data['taskId'] = self.taskName
+            data['jobId'] = self.jobName
+            data['GridName'] = getUserProxyDN()
+            data['ExeStart'] = helper.name()
+            data['SyncCE'] = getSyncCE()
+            data['WNHostName'] = socket.gethostname()
 
-            self.publish(data = data)
+            self.publish(data=data)
             self.jobStarted = True
 
-        #Now let's send the step information
+        # Now let's send the step information
         tmp = {'jobStart': data}
 
         data = {}
         data['MessageType'] = 'jobRuntime-stepStart'
-        data['MessageTS']   = time.strftime(self.tsFormat, time.gmtime())
-        data['taskId']      = self.taskName
-        data['jobId']       = self.jobName
-        data['%d_stepName' % self.stepCount]    = helper.name()
-        data['%d_ExeStart' % self.stepCount]    = helper.name()
+        data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['%d_stepName' % self.stepCount] = helper.name()
+        data['%d_ExeStart' % self.stepCount] = helper.name()
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         data.update(tmp)
 
@@ -298,29 +303,29 @@ class DashboardInfo():
         """
         helper = WMStepHelper(step)
 
-        stepSuccess = stepReport.getStepExitCode(stepName = helper.name())
-        stepReport.setStepCounter(stepName = helper.name(), counter = self.stepCount)
+        stepSuccess = stepReport.getStepExitCode(stepName=helper.name())
+        stepReport.setStepCounter(stepName=helper.name(), counter=self.stepCount)
         if self.jobSuccess == 0:
             self.jobSuccess = int(stepSuccess)
         if int(stepSuccess) != 0:
             self.failedStep = helper.name()
 
         data = {}
-        data['MessageType']                     = 'jobRuntime-stepEnd'
-        data['MessageTS']                       = time.strftime(self.tsFormat,
-                                                         time.gmtime())
-        data['taskId']                          = self.taskName
-        data['jobId']                           = self.jobName
-        data['%d_ExeEnd' % self.stepCount]      = helper.name()
+        data['MessageType'] = 'jobRuntime-stepEnd'
+        data['MessageTS'] = time.strftime(self.tsFormat,
+                                          time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['%d_ExeEnd' % self.stepCount] = helper.name()
         data['%d_ExeExitCode' % self.stepCount] = stepReport.getStepExitCode(
-                                                    stepName = helper.name())
+            stepName=helper.name())
         data['%d_NCores' % self.stepCount] = helper.getNumberOfCores()
 
         if helper.name() == 'StageOut':
             data['%d_StageOutExitStatus' % self.stepCount] = int(
-                        stepReport.stepSuccessful(stepName = helper.name()))
+                stepReport.stepSuccessful(stepName=helper.name()))
 
-        times = stepReport.getTimes(stepName = helper.name())
+        times = stepReport.getTimes(stepName=helper.name())
         if times['stopTime'] is not None and times['startTime'] is not None:
             data['%d_ExeWCTime' % self.stepCount] = times['stopTime'] - times['startTime']
         else:
@@ -328,7 +333,7 @@ class DashboardInfo():
             data['%d_ExeWCTime' % self.stepCount] = 0
         self.WrapperWCTime += data['%d_ExeWCTime' % self.stepCount]
 
-        step = stepReport.retrieveStep(step = helper.name())
+        step = stepReport.retrieveStep(step=helper.name())
         try:
             data['%d_ExeCPUTime' % self.stepCount] = getattr(step.performance.cpu,
                                                              'TotalJobCPU', 0)
@@ -341,7 +346,7 @@ class DashboardInfo():
         self.lastStep = helper.name()
         self.maxCores = max(self.maxCores, helper.getNumberOfCores())
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         return data
 
@@ -353,17 +358,17 @@ class DashboardInfo():
         """
 
         data = {}
-        data['MessageType']    = 'jobRuntime-jobEnd'
-        data['MessageTS']      = time.strftime(self.tsFormat, time.gmtime())
-        data['taskId']         = self.taskName
-        data['jobId']          = self.jobName
-        data['ExeEnd']         = self.lastStep
+        data['MessageType'] = 'jobRuntime-jobEnd'
+        data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['ExeEnd'] = self.lastStep
         data['WrapperCPUTime'] = self.WrapperCPUTime
-        data['WrapperWCTime']  = self.WrapperWCTime
-        data['JobExitCode']    = 9999
-        data['JobExitReason']  = 'Job was killed in the WN'
+        data['WrapperWCTime'] = self.WrapperWCTime
+        data['JobExitCode'] = 9999
+        data['JobExitReason'] = 'Job was killed in the WN'
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         return data
 
@@ -377,17 +382,15 @@ class DashboardInfo():
         helper = WMStepHelper(step)
 
         data = {}
-        data['MessageType']                       = 'jobRuntime-stepKilled'
-        data['MessageTS']                         = time.strftime(
-                                                        self.tsFormat,
-                                                        time.gmtime())
-        data['taskId']                            = self.taskName
-        data['jobId']                             = self.jobName
-        data['%d_ExeEnd' % self.stepCount]        = helper.name()
+        data['MessageType'] = 'jobRuntime-stepKilled'
+        data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
+        data['taskId'] = self.taskName
+        data['jobId'] = self.jobName
+        data['%d_ExeEnd' % self.stepCount] = helper.name()
 
         self.lastStep = helper.name()
 
-        self.publish(data = data)
+        self.publish(data=data)
 
         return data
 

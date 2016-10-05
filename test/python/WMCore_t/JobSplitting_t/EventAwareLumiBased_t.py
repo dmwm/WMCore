@@ -50,7 +50,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
 
         Nothing to do...
         """
-        pass
+        passed()
 
 
     def createSubscription(self, nFiles, lumisPerFile, twoSites = False, nEventsPerFile = 100):

@@ -509,7 +509,7 @@ class BossAirAPI(WMConnectionBase):
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
-                logging.info("Running/changing/completing %i/%i/%i jobs in plugin %s.\n", len(localRunning), len(localChanges), len(localCompletes), plugin)
+                logging.info("Executing/changing/completing %i/%i/%i jobs in plugin %s.", len(localRunning), len(localChanges), len(localCompletes), plugin)
             except WMException:
                 raise
             except Exception as ex:
@@ -520,9 +520,9 @@ class BossAirAPI(WMConnectionBase):
                 raise BossAirException(msg)
 
         logging.info("About to change %i jobs", len(jobsToChange))
-        logging.debug("JobsToChange: %s\n", jobsToChange)
+        logging.debug("JobsToChange: %s", jobsToChange)
         logging.info("About to complete %i jobs", len(jobsToComplete))
-        logging.debug("JobsToComplete: %s\n", jobsToComplete)
+        logging.debug("JobsToComplete: %s", jobsToComplete)
 
         self._updateJobs(jobs=jobsToChange)
         self._complete(jobs=jobsToComplete)
@@ -682,7 +682,6 @@ class BossAirAPI(WMConnectionBase):
                         # Build a better job message
                         if killMsg:
                             reportedMsg = killMsg
-                            reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')
                         else:
                             reportedMsg = WM_JOB_ERROR_CODES[errorCode]
                             reportedMsg += '\n Job last known status was: %s' % job.get('globalState', 'Unknown')

@@ -209,7 +209,7 @@ class PyCondorPlugin(BasePlugin):
         self.sandbox = None
         self.scriptFile = None
         self.submitDir = None
-        self.removeTime = getattr(config.BossAir, 'removeTime', 60)
+        self.removeTime = getattr(config.BossAir, 'removeTime', 120)
         self.submitWMSMode = getattr(config.BossAir, 'submitWMSMode', False)
         self.errorThreshold = getattr(config.BossAir, 'submitErrorThreshold', 10)
         self.errorCount = 0
@@ -316,8 +316,7 @@ class PyCondorPlugin(BasePlugin):
             self.inputQueue.close()
             self.result.close()
         except:
-            # There's really not much we can do about this
-            pass
+            logging.error("Failed to close worker queues")
         for proc in self.pool:
             if terminate:
                 try:
@@ -497,23 +496,11 @@ class PyCondorPlugin(BasePlugin):
                             break
 
             # If we get a lot of errors in a row it's probably time to
-            # report this to the operators.
+            # stop the component
             if self.errorCount > self.errorThreshold:
-                try:
-                    msg = "Exceeded errorThreshold while submitting to condor. Check condor status."
-                    logging.error(msg)
-                    logging.error("Reporting to Alert system and continuing to process jobs")
-                    from WMCore.Alerts import API as alertAPI
-                    preAlert, sender = alertAPI.setUpAlertsMessaging(self,
-                                                                     compName="BossAirPyCondorPlugin")
-                    sendAlert = alertAPI.getSendAlert(sender=sender,
-                                                      preAlert=preAlert)
-                    sendAlert(6, msg=msg)
-                    sender.unregister()
-                    self.errorCount = 0
-                except:
-                    # There's nothing we can really do here
-                    pass
+                msg = "Exceeded errorThreshold while submitting to condor. Check condor status."
+                logging.error(msg)
+                raise BossAirPluginException(msg)
 
         # Remove JDL files unless commanded otherwise
         if self.deleteJDLFiles:
@@ -548,7 +535,6 @@ class PyCondorPlugin(BasePlugin):
         changeList = []
         completeList = []
         runningList = []
-        noInfoFlag = False
 
         # Get the job
         logging.debug("PyCondor is going to track %s jobs", len(jobs))
@@ -558,16 +544,10 @@ class PyCondorPlugin(BasePlugin):
         else:
             logging.debug("PyCondor retrieved %s classAds from condor schedd", len(jobInfo))
 
-        if len(jobInfo.keys()) == 0:
-            noInfoFlag = True
-
         # Now go over the jobs from WMBS and see what we have
         for job in jobs:
             if job['jobid'] not in jobInfo.keys():
-                if noInfoFlag:
-                    self.procJobNoInfo(job, changeList, completeList)
-                else:
-                    self.procCondorLog(job, changeList, completeList, runningList)
+                self.procJobNoInfo(job, changeList, completeList)
             else:
                 self.procClassAd(job, jobInfo.get(job['jobid']), changeList, completeList, runningList)
 
@@ -990,7 +970,7 @@ class PyCondorPlugin(BasePlugin):
             logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
         except:
             msg = "Query to condor schedd failed in PyCondorPlugin"
-            logging.debug(msg)
+            logging.error(msg)
             return None, None
         else:
             for jobAd in itobj:
@@ -1015,127 +995,21 @@ class PyCondorPlugin(BasePlugin):
 
         return jobInfo, schedd
 
-    def readCondorLog(self, job):
-        """
-        __readCondorLog
-
-        If schedd fails to give information about a job
-        Check the condor log file for this job
-        Extract Exit status
-
-        """
-        ### This should select the latest log file in the cache_dir
-        fmtime = 0
-        logFile = None
-        jobLogInfo = {}
-        if not os.path.exists(job['cache_dir']):
-            logging.info('%s does not exist.', job['cache_dir'])
-            return jobLogInfo
-
-        for joblog in os.listdir(job['cache_dir']):
-            if fnmatch.fnmatch(joblog, 'condor.*.*.log'):
-                _tmplogFile = os.path.join(job['cache_dir'], joblog)
-                _tmpfmtime = int(os.path.getmtime(_tmplogFile))
-                if _tmpfmtime > fmtime:
-                    fmtime = _tmpfmtime
-                    logFile = _tmplogFile
-
-        try:
-            logging.debug("Opening condor job log file: %s", logFile)
-            lastEvent = None
-            with open(logFile) as logfileobj:
-                for event in condor.read_events(logfileobj, 1):
-                    lastEvent = event
-        except:
-            logging.debug('Cannot open condor job log file %s', logFile)
-        else:
-            if lastEvent:
-                if all(key in lastEvent for key in ("TriggerEventTypeNumber", "QDate", "EnteredCurrentStatus",
-                                                    "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID")):
-                    tmpDict = {}
-                    _tmpStat = int(lastEvent["TriggerEventTypeNumber"])
-                    tmpDict["JobStatus"] = PyCondorPlugin.logToScheddExitCodeMap(_tmpStat)
-                    tmpDict["submitTime"] = int(lastEvent["QDate"])
-                    tmpDict["stateTime"] = int(lastEvent["EnteredCurrentStatus"])
-                    tmpDict["runningTime"] = int(lastEvent.get("JobStartDate", 0))
-                    tmpDict["runningCMSSite"] = lastEvent["MATCH_EXP_JOBGLIDEIN_CMSSite"]
-                    tmpDict["WMAgentID"] = int(lastEvent["WMAgent_JobID"])
-                    jobLogInfo[tmpDict["WMAgentID"]] = tmpDict
-                else:
-                    logging.debug('%s does not have all the classAds', str(logFile))
-            else:
-                logging.debug('%s is empty', str(logFile))
-
-        logging.info("Retrieved %i Info from Condor Job Log file %s", len(jobLogInfo), logFile)
-
-        return jobLogInfo
-
     def procJobNoInfo(self, job, changeList, completeList):
         """
         Process jobs where No ClassAd info is received from schedd
         """
         if job['status'] != 'Removed':
-            logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s", job['jobid'], job['status'])
+            logging.debug("No classAds retrieved, JobStatus for jobid=%i is %s", job['jobid'], job['status'])
             # If the job is not in removed, move it to removed
             job['status'] = 'Removed'
             job['status_time'] = int(time.time())
             changeList.append(job)
         elif time.time() - float(job['status_time']) > self.removeTime:
-            logging.debug("noInfoFlag is True and JobStatus for jobid=%i is %s", job['jobid'], job['status'])
+            logging.debug("No classAds retrieved, JobStatus for jobid=%i is %s", job['jobid'], job['status'])
             # If the job is in removed, and it's been missing for more
             # then self.removeTime, remove it.
             completeList.append(job)
-
-    def procCondorLog(self, job, changeList, completeList, runningList):
-        """
-        Process jobs where classad for jobs are not received
-        """
-        ### There could be multiple condor log files under the same cache_dir
-        ### Get the one that corresponds to [jobid] ==> WMAgent_JobID
-        jobLogInfo = self.readCondorLog(job)
-        jobAd = jobLogInfo.get(job['jobid'])
-        if jobAd is None:
-            ## If neither jobAd and no jobLog, assume job is complete
-            logging.debug("No job log Info for jobid=%i. Assume it is Complete. Check DB.", job['jobid'])
-            completeList.append(job)
-            return
-
-        jobStatus = int(jobAd.get('JobStatus', 0))
-        statName = PyCondorPlugin.exitCodeMap().get(jobStatus, 'Unknown')
-
-        if statName == "Unknown":
-            logging.info("JobLogInfo: jobid=%i in unknown state %i", job['jobid'], jobStatus)
-
-        # Get the global state
-        job['globalState'] = PyCondorPlugin.stateMap().get(statName)
-        logging.debug("JobLogInfo: JobStatus for jobid=%i is %s", job['jobid'], job['status'])
-        if statName != job['status']:
-            job['status'] = statName
-            job['status_time'] = 0
-            logging.debug("JobLogInfo: JobStatus for jobid=%i changed to %s", job['jobid'], job['status'])
-
-        # Check if we have a valid status time
-        # Do not catch exception here, Wait for next polling cycle
-        if not job['status_time']:
-            if job['status'] == 'Running':
-                job['status_time'] = int(jobAd.get('runningTime', 0))
-                job['location'] = jobAd.get('runningCMSSite', None)
-                if job['location'] is None:
-                    logging.warning('JobLogInfo: A job (%s) is running with no CMS site', str(jobAd))
-
-            elif job['status'] == 'Idle':
-                job['status_time'] = int(jobAd.get('submitTime', 0))
-            else:
-                job['status_time'] = int(jobAd.get('stateTime', 0))
-
-            changeList.append(job)
-
-        ## Add the job to Complete list if the status is Removed
-        if job['status'] == "Complete" or job['status'] == "Removed":
-            completeList.append(job)
-            return
-
-        runningList.append(job)
 
     def procClassAd(self, job, jobAd, changeList, completeList, runningList):
         """

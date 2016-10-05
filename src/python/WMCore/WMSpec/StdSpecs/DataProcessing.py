@@ -5,7 +5,7 @@ _DataProcessing_
 Base module for workflows with input.
 """
 
-from WMCore.Lexicon import dataset, couchurl, identifier, block
+from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList
 
@@ -65,9 +65,9 @@ class DataProcessing(StdBase):
                                        "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
                                                                                        "EventAwareLumiBased", "FileBased"],
                                        "attr" : "procJobSplitAlgo", "null" : False},
-                    "EventsPerJob" : {"default" : 1000, "type" : int,
+                    "EventsPerJob" : {"default" : None, "type" : int,
                                       "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "eventsPerJob", "null" : False},
+                                      "attr" : "eventsPerJob", "null" : True},
                     "LumisPerJob" : {"default" : 8, "type" : int,
                                      "optional" : True, "validate" : lambda x : x > 0,
                                      "attr" : "lumisPerJob", "null" : False},

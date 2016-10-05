@@ -16,7 +16,7 @@ from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.DataStructs.Subscription import Subscription
 from WMCore.DataStructs.Workflow import Workflow
-from WMCore.DataStructs.Run import Run
+fromit WMCore.DataStructs.Run import Run
 
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.Services.UUID import makeUUID

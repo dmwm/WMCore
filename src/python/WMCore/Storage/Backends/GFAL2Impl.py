@@ -28,8 +28,8 @@ class GFAL2Impl(StageOutImpl):
         # mixed environment with COMP and system python.
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"
-        self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-rm -vvv -t 600 %s '
-        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; printenv; date; gfal-copy -vvv -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
+        self.removeCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-rm -t 600 %s '
+        self.copyCommand = self.setups % '. $JOBSTARTDIR/startup_environment.sh; date; gfal-copy -t 2400 -T 2400 -p %(checksum)s %(options)s %(source)s %(destination)s'
 
 
     def createFinalPFN(self, pfn):
@@ -77,7 +77,6 @@ class GFAL2Impl(StageOutImpl):
         handle file remove using gfal-rm
 
         gfal-rm options used:
-          -vvv most verbose mode
           -t   global timeout for the execution of the command.
                Command is interrupted if time expires before it finishes
         """
@@ -93,7 +92,6 @@ class GFAL2Impl(StageOutImpl):
         Build a gfal-copy command
 
         gfal-copy options used:
-          -vvv most verbose mode
           -t   maximum time for the operation to terminate
           -T   global timeout for the transfer operation
           -p   if the destination directory does not exist, create it

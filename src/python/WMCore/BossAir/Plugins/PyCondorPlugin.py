@@ -924,6 +924,14 @@ class PyCondorPlugin(BasePlugin):
         # HighIO jobs
         jdl.append('+Requestioslots = %d\n' % job.get('highIOjob', 0))
 
+        # Job submission will fail, if ClassAd value is bigger than 128KB/131072 chars.
+        # Limit it up to 130000 characters.
+        for inputKey in ["input_lfn", "input_events", "input_first_event", "input_last_event",
+                         "input_lumiCount", "input_size"]:
+            if inputKey in job.keys() and job[inputKey] is not None and len(str(job[inputKey])) > 0:
+                jdl.append('+%s = "%s"\n' % (inputKey, job.get(inputKey, 'None')[:130000]))
+            else:
+                jdl.append('+%s = undefined' % inputKey)
         # Performance and resource estimates
         numberOfCores = job.get('numberOfCores', 1)
         requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000

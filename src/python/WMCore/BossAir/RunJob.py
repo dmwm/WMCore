@@ -64,6 +64,12 @@ class RunJob(dict):
         self.setdefault('inputDatasetLocations', None)
         self.setdefault('allowOpportunistic', False)
         self.setdefault('highIOjob', False)
+        self.setdefault('input_lfn', None)
+        self.setdefault('input_events', None)
+        self.setdefault('input_first_event', None)
+        self.setdefault('input_last_event', None)
+        self.setdefault('input_lumiCount', None)
+        self.setdefault('input_size', None)
 
         return
 

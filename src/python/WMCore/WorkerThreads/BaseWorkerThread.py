@@ -19,7 +19,7 @@ import sys
 from WMCore.Database.Transaction import Transaction
 from WMCore.Database.CMSCouch import CouchError
 from WMCore.Database.CouchUtils import CouchConnectionError
-from WMCore.WMFactory import WMFactory
+from WMCore.Services.LogDB.LogDB import LogDB
 
 from WMCore.Alerts import API as alertAPI
 
@@ -145,7 +145,6 @@ class BaseWorkerThread:
             if hasattr(self.component.config, "General") and \
                hasattr(self.component.config.General, "central_logdb_url") and \
                hasattr(self.component.config, "Agent"):
-                from WMCore.Services.LogDB.LogDB import LogDB
                 myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url, 
                                          self.component.config.Agent.hostName, logger=logging)
             else:

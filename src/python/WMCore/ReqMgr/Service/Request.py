@@ -457,6 +457,10 @@ class Request(RESTEntity):
         
         return report
 
+    def _handleAssignmentApprovedTransition(self, workload, request_args, dn):
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        return report
+        
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         
         req_status = request_args["RequestStatus"]
@@ -528,7 +532,10 @@ class Request(RESTEntity):
             
         else:
             req_status = request_args["RequestStatus"]
-            if len(request_args) > 1 and req_status == "assigned":
+            # assignment-approved only allow Priority update
+            if len(request_args) == 2 and req_status == "assignment-approved":
+                report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
+            elif len(request_args) > 1 and req_status == "assigned":
                 report = self._handleAssignmentStateTransition(workload, request_args, dn)
             elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
                 "cascade" in request_args:

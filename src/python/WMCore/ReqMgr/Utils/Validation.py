@@ -112,7 +112,10 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
             args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
             if (lambda x: (x >= 0 and x < 1e6))(args_without_status['RequestPriority']) is False:
                 raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
-            return workload, args_without_status
+            if request_args["RequestStatus"] == "assignment-approved":
+                return workload, request_args
+            else:
+                return workload, args_without_status
         elif 'cascade' in args_without_status:
             # status was already validated
             return workload, request_args

@@ -128,6 +128,24 @@ def parseError(error):
     return errorCondition, errorMsg
 
 
+def parseCondorLogs(logfile, extension):
+    """
+    Retrieve the last X lines of the log file
+    """
+    errLog = None
+    logOut = ''
+
+    logPaths = glob.glob(logfile)
+    if len(logPaths):
+        errLog = max(logPaths, key=lambda path: os.stat(path).st_mtime)
+    if errLog is not None and os.path.isfile(errLog):
+        logTail = BasicAlgos.tail(errLog, 50)
+        logOut += 'Adding end of condor.%s to error message:\n' % extension
+        logOut += ''.join(logTail)
+        logOut += '\n\n'
+    return logOut
+
+
 class PyCondorPlugin(BasePlugin):
     """
     _PyCondorPlugin_
@@ -583,16 +601,8 @@ class PyCondorPlugin(BasePlugin):
             logOutput = 'Could not find jobReport\n'
             # But we don't know exactly the condor id, so it will append
             # the last lines of the latest condor log in cache_dir
-            # TODO: Alan - how about we look at the .out or .err file instead of the .log?
-            genLogPath = os.path.join(job['cache_dir'], 'condor.*.*.log')
-            logPaths = glob.glob(genLogPath)
-            errLog = None
-            if len(logPaths):
-                errLog = max(logPaths, key=lambda path: os.stat(path).st_mtime)
-            if errLog is not None and os.path.isfile(errLog):
-                logTail = BasicAlgos.tail(errLog, 50)
-                logOutput += 'Adding end of condor.log to error message:\n'
-                logOutput += '\n'.join(logTail)
+            logOutput = parseCondorLogs(os.path.join(job['cache_dir'], 'condor.*.*.err'), 'err')
+            logOutput += parseCondorLogs(os.path.join(job['cache_dir'], 'condor.*.*.out'), 'out')
 
             condorReport = Report()
             if not os.path.isdir(job['cache_dir']):

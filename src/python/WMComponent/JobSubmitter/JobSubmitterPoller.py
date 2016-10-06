@@ -332,6 +332,26 @@ class JobSubmitterPoller(BaseWorkerThread):
             if newJob['type'] in ["Repack", "Merge", "Cleanup", "LogCollect"]:
                 highIOjob = True
 
+            # Get the input files information and prepare what will be added to JDL
+            tmpInputFiles = {"input_lfn": "",
+                             "input_events": "",
+                             "input_first_event": "",
+                             "input_last_event": "",
+                             "input_lumiCount": "",
+                             "input_size": ""}
+            if 'input_files' in loadedJob.keys():
+                if isinstance(loadedJob['input_files'], list):
+                    for inputFileDict in loadedJob['input_files']:
+                        for keyCheck in ['lfn', 'events', 'first_event', 'last_event', 'lumiCount', 'size']:
+                            tempKey = "input_%s" % keyCheck
+                            tmpInputFiles[tempKey] = "%s,%s" % (tmpInputFiles[tempKey], inputFileDict.get(keyCheck, None))
+                else:
+                    logging.warning("Loaded Job input_files is not a list. Type: %s, Content: %s",
+                                    type(loadedJob['input_files']), loadedJob['input_files'])
+            else:
+                for keyCheck in ['lfn', 'events', 'first_event', 'last_event', 'lumiCount', 'size']:
+                    tmpInputFiles["input_%s" % keyCheck] = None
+
             # Create a job dictionary object and put it in the cache (needs to be in sync with RunJob)
             jobInfo = {'id': jobID,
                        'requestName': newJob['request_name'],
@@ -361,7 +381,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'numberOfCores': loadedJob.get("numberOfCores", 1),  # may update it later
                        'inputDataset': loadedJob.get('inputDataset', None),
                        'inputDatasetLocations': loadedJob.get('inputDatasetLocations', None),
-                       'allowOpportunistic': loadedJob.get('allowOpportunistic', False)}
+                       'allowOpportunistic': loadedJob.get('allowOpportunistic', False),
+                       'input_lfn': tmpInputFiles.get('input_lfn', None),
+                       'input_events': tmpInputFiles.get('input_events', None),
+                       'input_first_event': tmpInputFiles.get('input_first_event', None),
+                       'input_last_event': tmpInputFiles.get('input_last_event', None),
+                       'input_lumiCount': tmpInputFiles.get('input_lumiCount', None),
+                       'input_size': tmpInputFiles.get('input_size', None)}
 
             self.jobDataCache[jobID] = jobInfo
 

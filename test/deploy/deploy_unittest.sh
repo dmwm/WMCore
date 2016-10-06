@@ -13,7 +13,7 @@
 # for running the test check the tutorial, https://github.com/dmwm/WMCore/wiki/Setup-wmcore-unittest
 ###
 DMWM_ARCH=slc6_amd64_gcc493
-VERSION=$(curl -s http://cmsrep.cern.ch/cmssw/comp/RPMS/$DMWM_ARCH/ | cut -d\> -f6 | cut -d\" -f2 | grep wmagent-dev | cut -d+ -f3 | rev | cut -d\- -f3- | rev | tail -1)
+REPURL=http://cmsrep.cern.ch/cmssw/repos/comp/$DMWM_ARCH/latest
 
 REPOSITORY=dmwm
 BRANCH=
@@ -50,6 +50,20 @@ update_src() {
     )
 }
 
+get_current_version() {
+    url=$1
+    while json=$(curl -sf $url/RPMS.json)
+    do
+        if v=$(echo "$json" | grep -m 1 wmagent-dev)
+        then
+            VERSION=$(echo $v | cut -d + -f 3 | cut -d \" -f 1)
+            return 0
+        fi
+        url=$url/parent
+    done
+    return 11
+}
+
 while [ $# -gt 0 ]
 do
     case "$1" in
@@ -61,6 +75,15 @@ do
     esac
     shift
 done
+
+if [ -z $VERSION ]
+then
+    if ! get_current_version $REPURL
+    then
+        echo "ERROR: Failed to identify wmagent-dev current version."
+        exit 11
+    fi
+fi
 
 if [ $UPDATE = "true" ]
 then

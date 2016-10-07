@@ -102,7 +102,11 @@ function ChangeRequestStatus() {
         }else if (values.length === 1) {
         	values = values[0];
         }
-        parameters[elem.name] = values;
+        try	{
+        	parameters[elem.name] = JSON.parse(values);
+        } catch(e) {
+        	parameters[elem.name] = values;
+        }
     }
     ajaxRequest('{{base}}/data/request/{{name}}', parameters, 'PUT');
 }

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# should be a bit nicer than before
+echo "WMAgent bootstrap : `date -u` : starting..."
+echo "WMAgent bootstrap : `date -u` :    Hostname: `hostname -f`"
+echo "WMAgent bootstrap : `date -u` :    Username: `id`"
+
 # On some sites we know there was some problems with environment cleaning
 # with using 'env -i'. To overcome this issue, whenever we start a job, we have
 # to save full current environment into file, and whenever it is needed we can load
@@ -10,8 +15,6 @@ sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
 mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
 
-# should be a bit nicer than before
-echo "WMAgent bootstrap : `date -u` : starting..."
 
 # We need to create the expected output file in advance just in case
 # some problem happens during the job bootstrap
@@ -96,8 +99,6 @@ python2 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 cd job
 export WMAGENTJOBDIR=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD/WMCore.zip:$PWD
-echo "WMAgent bootstrap : `date -u` :    Hostname: `hostname -f`"
-echo "WMAgent bootstrap : `date -u` :    Username: `id`"
 echo "WMAgent bootstrap : `date -u` : Environemnt:"
 env
 echo "WMAgent bootstrap : `date -u` : WMAgent is now running the job..."

@@ -59,7 +59,6 @@ glideInAcctGroup = "production"
 glideInAcctGroupUser = "cmsdataops"
 
 # DBS Information.
-localDBSUrl = "https://cmst0dbs.cern.ch:8443/cms_dbs_prod_tier0_writer/servlet/DBSServlet"
 localDBSVersion = "DBS_2_0_8"
 globalDBSUrl = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 globalDBSVersion = "DBS_2_0_8"
@@ -153,7 +152,6 @@ config.DBS3Upload.dbsUrl = "OVERWRITE_BY_SECRETS"
 config.DBS3Upload.primaryDatasetType = "mc"
 
 config.section_("DBSInterface")
-#config.DBSInterface.DBSUrl = localDBSUrl
 config.DBSInterface.DBSUrl = globalDBSUrl
 config.DBSInterface.DBSVersion = localDBSVersion
 config.DBSInterface.globalDBSUrl = globalDBSUrl
@@ -223,7 +221,7 @@ config.JobStatusLite.namespace = "WMComponent.JobStatusLite.JobStatusLite"
 config.JobStatusLite.componentDir  = config.General.workDir + "/JobStatusLite"
 config.JobStatusLite.logLevel = globalLogLevel
 config.JobStatusLite.pollInterval = 60
-config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 259200}
+config.JobStatusLite.stateTimeouts = {"Error": 300, "Running": 169200, "Pending": 432000}
 
 config.component_("JobUpdater")
 config.JobUpdater.namespace = "WMComponent.JobUpdater.JobUpdater"
@@ -536,13 +534,13 @@ config.AgentStatusWatcher.cpuBoundMetric = 160 # [column number in SSB] The sour
 config.AgentStatusWatcher.ioBoundMetric = 161 # [column number in SSB] The source of the information in SSB for IOBound
 config.AgentStatusWatcher.dashboard = "Dashboard URL"
 config.AgentStatusWatcher.centralWMStatsURL = "Central WMStats URL"
-config.AgentStatusWatcher.pendingSlotsSitePercent = 40 # [percent] Pending slots percent over site max running for a site
-config.AgentStatusWatcher.pendingSlotsTaskPercent = 30 # [percent] Pending slots percent over task max running for tasks
+config.AgentStatusWatcher.pendingSlotsSitePercent = 100 # [percent] Pending slots percent over site max running for a site
+config.AgentStatusWatcher.pendingSlotsTaskPercent = 90 # [percent] Pending slots percent over task max running for tasks
 config.AgentStatusWatcher.runningExpressPercent = 30 # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.runningRepackPercent = 10 # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.t1SitesCores = 30 # [percent] Only used for tier0 agent
 config.AgentStatusWatcher.forceSiteDown = [] # List of sites to be forced to Down status
-config.AgentStatusWatcher.onlySSB = True # Set thresholds for sites only in SSB (Force all other to zero/down)
+config.AgentStatusWatcher.onlySSB = False # Set thresholds for sites only in SSB (Force all other to zero/down)
 config.AgentStatusWatcher.enabled = True # switch to enable or not this component
 config.AgentStatusWatcher.agentPollInterval = 300
 config.AgentStatusWatcher.defaultAgentsNumByTeam = 5

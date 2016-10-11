@@ -25,7 +25,7 @@
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
 ### Usage: Example: sh deploy-wmagent.sh -w 1.0.19.patch2 -c HG1609a -t production -p "7099" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.0.18.pre2 -c HG1606e -t testbed-cmssrv113 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.0.21 -c HG1610f -t testbed-cmssrv214 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -154,7 +154,6 @@ else
   exit 1
 fi
 
-#DATA_SIZE=`df -h | grep '/data1' | awk '{print $2}'`
 DATA_SIZE=`lsblk -o SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
 if [[ -z $DATA_SIZE ]]; then
   DATA1=false
@@ -269,22 +268,19 @@ echo "Done!" && echo
 echo "*** Tweaking configuration ***"
 sed -i "s+team1,team2,cmsdataops+$TEAMNAME+" $MANAGE/config.py
 sed -i "s+Agent.agentNumber = 0+Agent.agentNumber = $AG_NUM+" $MANAGE/config.py
-sed -i "s+config.AgentStatusWatcher.onlySSB = True+config.AgentStatusWatcher.onlySSB = False+" $MANAGE/config.py
-sed -i "s+pendingSlotsSitePercent = 40+pendingSlotsSitePercent = 100+" $MANAGE/config.py
-sed -i "s+pendingSlotsTaskPercent = 30+pendingSlotsTaskPercent = 90+" $MANAGE/config.py
-if [[ "$TEAMNAME" == relval* ]]; then
+if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
   sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
   sed -i "s+MinWallTimeSecs': 3600, 'MaxWallTimeSecs': 162000+MinWallTimeSecs': 132000, 'MaxWallTimeSecs': 132000+" $MANAGE/config.py
-elif [[ "$TEAMNAME" == *testbed* ]]; then
+elif [[ "$TEAMNAME" == hlt ]]; then
+  sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
+  sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py
+elif [[ "$TEAMNAME" == *testbed* ]] || [[ "$TEAMNAME" == *dev* ]]; then
   GLOBAL_DBS_URL=https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader
   sed -i "s+{'default': 3, 'Merge': 4, 'Cleanup': 2, 'LogCollect': 1, 'Harvesting': 2}+0+" $MANAGE/config.py
   sed -i "s+DBSInterface.globalDBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.globalDBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
   sed -i "s+DBSInterface.DBSUrl = 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'+DBSInterface.DBSUrl = '$GLOBAL_DBS_URL'+" $MANAGE/config.py
-elif [[ "$TEAMNAME" == hlt ]]; then
-  sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
-  sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py
 fi
 
 if [[ "$HOSTNAME" == *fnal.gov ]]; then

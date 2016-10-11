@@ -117,6 +117,8 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                 val = '<input type="text" name="%s" value="%s" class="width-100" />' % (key, val)
             else:
                 val = '<textarea name="%s" class="width-100">%s</textarea>' % (key, val)
+        elif isinstance(val, (dict, list)):
+            val = '<textarea name="%s" class="width-100">%s</textarea>' % (key, json.dumps(val))
         else:
             val = '<input type="text" name="%s" value="%s" class="width-100" />' % (key, val)
         if  key in web_ui_map:

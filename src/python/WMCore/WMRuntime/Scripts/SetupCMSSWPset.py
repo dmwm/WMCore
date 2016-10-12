@@ -658,16 +658,15 @@ class SetupCMSSWPset(ScriptInterface):
         self.fixupProcess()
 
         try:
-            if int(self.step.data.application.multicore.numberOfCores) > 1:
-                numCores = int(self.step.data.application.multicore.numberOfCores)
-                options = getattr(self.process, "options", None)
-                if options == None:
-                    self.process.options = cms.untracked.PSet()
-                    options = getattr(self.process, "options")
-                options.numberOfThreads = cms.untracked.uint32(numCores)
-                options.numberOfStreams = cms.untracked.uint32(0)        # For now, same as numCores
-        except AttributeError:
-            print("No value for numberOfCores. Not setting")
+            numCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+            options = getattr(self.process, "options", None)
+            if options is None:
+                self.process.options = cms.untracked.PSet()
+                options = getattr(self.process, "options")
+            options.numberOfThreads = cms.untracked.uint32(numCores)
+            options.numberOfStreams = cms.untracked.uint32(0)
+        except AttributeError as ex:
+            print("Failed to override numberOfThreads: %s" % str(ex))
 
         psetTweak = getattr(self.step.data.application.command, "psetTweak", None)
         if psetTweak != None:

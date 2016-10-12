@@ -4,7 +4,7 @@ _Harvest_
 
 """
 import threading
-import os
+import logging
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.Services.UUID import makeUUID
@@ -39,7 +39,7 @@ class Harvest(JobFactory):
 
     """
 
-    def createJobsLocationWise(self, fileset, endOfRun, dqmHarvestUnit, goodRunList):
+    def createJobsLocationWise(self, fileset, endOfRun, dqmHarvestUnit, lumiMask, goodRunList):
 
         myThread = threading.currentThread()
         fileset.loadData(parentage = 0)
@@ -54,35 +54,35 @@ class Harvest(JobFactory):
             runSet = fileInfo.getRuns()
 
             if len(locSet) == 0:
-                msg = "File %s has no locations!" % fileInfo['lfn']
-                myThread.logger.error(msg)
+                logging.error("File %s has no locations!" % fileInfo['lfn'])
             if len(runSet) == 0:
-                msg = "File %s has no run information!" % fileInfo['lfn']
-                myThread.logger.error(msg)
+                logging.error("File %s has no run information!" % fileInfo['lfn'])
 
             # Populate a dictionary with [location][run] so we can split jobs according to those different combinations
             if locSet not in locationDict.keys():
                 locationDict[locSet] = {}
 
             fileInfo['runs'] = set()
-            # Handle jobs without lumiMask
-            if not goodRunList:
-                runDict[fileInfo['lfn']] = runSet
+            # Handle jobs with run whitelist/blacklist
+            if goodRunList:
+                runDict[fileInfo['lfn']] = set()
                 for run in runSet:
-                    if run.run in locationDict[locSet].keys():
-                        locationDict[locSet][run.run].append(fileInfo)
-                    else:
-                        locationDict[locSet][run.run] = [fileInfo]
-            else:
+                    if run.run in goodRunList:
+                        runDict[fileInfo['lfn']].add(run)
+                        if run.run in locationDict[locSet].keys():
+                            locationDict[locSet][run.run].append(fileInfo)
+                        else:
+                            locationDict[locSet][run.run] = [fileInfo]
+            elif lumiMask:
                 # it has lumiMask, thus we consider only good run/lumis
                 newRunSet = []
                 for run in runSet:
-                    if not isGoodRun(goodRunList, run.run):
+                    if not isGoodRun(lumiMask, run.run):
                         continue
                     # then loop over lumis
                     maskedLumis = []
                     for lumi in run.lumis:
-                        if not isGoodLumi(goodRunList, run.run, lumi):
+                        if not isGoodLumi(lumiMask, run.run, lumi):
                             continue
                         maskedLumis.append(lumi)
 
@@ -97,6 +97,14 @@ class Harvest(JobFactory):
                         locationDict[locSet][run.run] = [fileInfo]
                 if newRunSet:
                     runDict[fileInfo['lfn']] = newRunSet
+            else:
+                # no LumiList and no run white or black list
+                runDict[fileInfo['lfn']] = runSet
+                for run in runSet:
+                    if run.run in locationDict[locSet].keys():
+                        locationDict[locSet][run.run].append(fileInfo)
+                    else:
+                        locationDict[locSet][run.run] = [fileInfo]
 
         # create separate jobs for different locations
         self.newGroup()
@@ -186,6 +194,7 @@ class Harvest(JobFactory):
         _algorithm_
 
         """
+
         myThread = threading.currentThread()
 
         periodicInterval = kwargs.get("periodic_harvest_interval", 0)
@@ -193,7 +202,10 @@ class Harvest(JobFactory):
         dqmHarvestUnit = kwargs.get("dqmHarvestUnit", "byRun")
         runs = kwargs.get("runs", None)
         lumis = kwargs.get("lumis", None)
-        
+        runWhitelist = set(kwargs.get('runWhitelist', []))
+        runBlacklist = set(kwargs.get('runBlacklist', []))
+        goodRunList = runWhitelist.difference(runBlacklist)
+
         daoFactory = DAOFactory(package = "WMCore.WMBS",
                                 logger = myThread.logger,
                                 dbinterface = myThread.dbi)
@@ -204,9 +216,9 @@ class Harvest(JobFactory):
         fileset = self.subscription.getFileset()
         fileset.load()
 
-        goodRunList = {}
+        lumiMask = {}
         if runs and lumis:
-            goodRunList = buildLumiMask(runs, lumis)
+            lumiMask = buildLumiMask(runs, lumis)
 
         if periodicInterval and periodicInterval > 0:
 
@@ -217,7 +229,7 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating Periodic harvesting job")
-                self.createJobsLocationWise(fileset, False, dqmHarvestUnit, goodRunList)
+                self.createJobsLocationWise(fileset, False, dqmHarvestUnit, lumiMask, goodRunList)
 
         elif not fileset.open:
 
@@ -231,6 +243,6 @@ class Harvest(JobFactory):
 
             if triggerJob:
                 myThread.logger.debug("Creating EndOfRun harvesting job")
-                self.createJobsLocationWise(fileset, True, dqmHarvestUnit, goodRunList)
+                self.createJobsLocationWise(fileset, True, dqmHarvestUnit, lumiMask, goodRunList)
 
         return

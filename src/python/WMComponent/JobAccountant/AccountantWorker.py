@@ -512,7 +512,7 @@ class AccountantWorker(WMConnectionBase):
         if jobSuccess:
             logging.info("Job %d , handle successful job", jobID)
         else:
-            logging.error("Job %d , bad jobReport, failing job",  jobID)
+            logging.warning("Job %d , bad jobReport, failing job",  jobID)
 
         # make sure the task name is present in FWJR (recover from WMBS if needed)
         if len(fileList) > 0:

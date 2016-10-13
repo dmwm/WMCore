@@ -305,7 +305,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                 self.workQueue.doneWork(SubscriptionId = sub)
             except WorkQueueNoMatchingElements:
                 #Subscription wasn't known to WorkQueue, feel free to clean up
-                logging.info("Local WorkQueue knows nothing about this subscription: %s" % sub)
+                logging.debug("Local WorkQueue knows nothing about this subscription: %s" % sub)
                 pass
             except Exception as ex:
                 msg = "Error talking to workqueue: %s\n" % str(ex)

@@ -332,7 +332,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Now load the blocks
         try:
             loadedBlocks = self.dbsUtil.loadBlocks(blocksToLoad)
-            logging.info("Loaded blocks: %s", loadedBlocks)
+            logging.info("Loaded %d blocks.", len(loadedBlocks))
         except WMException:
             raise
         except Exception as ex:
@@ -352,7 +352,7 @@ class DBSUploadPoller(BaseWorkerThread):
             # Now we have to load files...
             try:
                 files = self.dbsUtil.loadFilesByBlock(blockname = blockname)
-                logging.info("Have %i files for block %s", (len(files), blockname))
+                logging.info("Have %i files for block %s", len(files), blockname)
             except WMException:
                 raise
             except Exception as ex:

@@ -6,7 +6,7 @@ _BasicAlgos_
 Python implementations of basic Linux functionality
 
 """
-
+import io
 import os
 import stat
 import time
@@ -59,9 +59,8 @@ def tail(filename, nLines = 20):
     A version of tail
     Adapted from code on http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
     """
-
-
-    f = open(filename, 'r')
+    # make sure only valid utf8 encoded chars will be passed along
+    f = io.open(filename, 'r', encoding='utf8', errors='ignore')
 
     assert nLines >= 0
     pos, lines = nLines+1, []
@@ -75,10 +74,11 @@ def tail(filename, nLines = 20):
             lines = list(f)
         pos *= 2
 
-
     f.close()
 
-    return lines[-nLines:]
+    text = "".join(lines[-nLines:])
+
+    return text
 
 
 def getFileInfo(filename):

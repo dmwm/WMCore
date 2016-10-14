@@ -74,7 +74,7 @@ class Exit50513(DiagnosticHandler):
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of SCRAM error log:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
 
         executor.report.addError(executor.step._internal_name,
                                  50513, "SCRAMScriptFailure", msg)
@@ -125,11 +125,11 @@ class CMSDefaultHandler(DiagnosticHandler):
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
         if os.path.exists(outLog):
             logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
 
         # If it exists, grab the SCRAM log
         errLog = os.path.join(os.path.dirname(jobRepXml),
@@ -138,7 +138,7 @@ class CMSDefaultHandler(DiagnosticHandler):
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 25)
             msg += '\n Adding last ten lines of SCRAM error log:\n'
-            msg += "".join(logTail)
+            msg += logTail
 
         # make sure the report has the error in it
         dummy = getattr(executor.report.report, "errors", None)  # Seems to do nothing
@@ -185,11 +185,11 @@ class CMSRunHandler(DiagnosticHandler):
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
         if os.path.exists(outLog):
             logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
 
         # make sure the report has the error in it
         errSection = getattr(executor.report.report, "errors", None)
@@ -235,7 +235,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, 10)
             addOn += '\nAdding last ten lines of CMSSW stderr:\n'
-            addOn += "".join(logTail)
+            addOn += logTail
         else:
             logging.error("No stderr from CMSSW")
             logging.error(os.listdir(os.path.basename(jobRepXml)))
@@ -243,7 +243,7 @@ class EDMExceptionHandler(DiagnosticHandler):
         if os.path.exists(outLog):
             logTail = BasicAlgos.tail(outLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg = '\n Adding last %s lines of CMSSW stdout:\n' % DEFAULT_TAIL_LINES_FROM_LOG
-            msg += "".join(logTail)
+            msg += logTail
 
         # Add the error we were sent
         ex = args.get('ExceptionInstance', None)

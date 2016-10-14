@@ -684,7 +684,7 @@ class CondorPlugin(BasePlugin):
             if errLog != None and os.path.isfile(errLog):
                 logTail = BasicAlgos.tail(errLog, 50)
                 logOutput += 'Adding end of condor.log to error message:\n'
-                logOutput += '\n'.join(logTail)
+                logOutput += logTail
             if not os.path.isdir(job['cache_dir']):
                 msg =  "Serious Error in Completing condor job with id %s!\n" % job.get('id', 'unknown')
                 msg += "Could not find jobCache directory - directory deleted under job: %s\n" % job['cache_dir']

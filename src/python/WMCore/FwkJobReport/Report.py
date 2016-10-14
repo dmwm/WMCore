@@ -256,7 +256,7 @@ class Report:
             for i in range(errorCount):
                 reportError = getattr(reportStep.errors, "error%i" % i)
                 jsonStep["errors"].append({"type": reportError.type,
-                                           "details": reportError.details,
+                                           "details": unicode(reportError.details, errors='ignore'),
                                            "exitCode": reportError.exitCode})
 
             jsonStep["cleanup"] = {}

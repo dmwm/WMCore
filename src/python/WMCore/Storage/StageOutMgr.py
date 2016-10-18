@@ -9,6 +9,10 @@ use this class as a basic API
 """
 from __future__ import print_function
 
+# If we don't import them, they cannot be ever used (bad PyCharm!)
+import WMCore.Storage.Backends
+import WMCore.Storage.Plugins
+
 from WMCore.WMException import WMException
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutError import StageOutInitError

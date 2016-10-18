@@ -214,6 +214,12 @@ def convertOutput(outputList):
         if "dataset" in outDict:
             outDict.update(combineDataset(outDict["dataset"]))
             del outDict["dataset"]
+            
+        if "location" in outDict and isinstance(outDict["location"], list):
+            if len(outDict["location"]) > 0:
+                outDict["location"] = outDict["location"][0]
+            else:
+                outDict["location"] = ""
         
         _validateTypeAndSetDefault(outDict, STEP_DEFAULT['output'][0])            
             

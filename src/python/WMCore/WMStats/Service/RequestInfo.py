@@ -71,12 +71,16 @@ class JobDetailInfo(RESTEntity):
     """
     This class need to move under WMStats server when wmstats server created
     """
-    def __init__(self, app, api, config, mount):
+    def __init__(self, app, api, config, mount, t0flag=False):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)
         wmstats_url = "%s/%s" % (self.config.couch_host, self.config.couch_wmstats_db)
         reqdb_url = "%s/%s" % (self.config.couch_host, self.config.couch_reqmgr_db)
-        self.wmstats = WMStatsReader(wmstats_url, reqdbURL=reqdb_url, reqdbCouchApp="ReqMgr")           
+        if t0flag:
+            couchAppName = "T0Request"
+        else:
+            couchAppName = "ReqMgr"
+        self.wmstats = WMStatsReader(wmstats_url, reqdbURL=reqdb_url, reqdbCouchApp=couchAppName)           
         
     def validate(self, apiobj, method, api, param, safe):
         args_length = len(param.args)

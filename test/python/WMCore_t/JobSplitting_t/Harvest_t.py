@@ -26,6 +26,40 @@ from WMQuality.TestInit import TestInit
 from WMQuality.Emulators import EmulatorSetup
 
 
+def createCommonFileset():
+    """
+    Create a simple fileset with 2 files at the same location
+    """
+    multipleFilesFileset = Fileset(name="TestFileset")
+
+    newFile = File("/some/file/test1", size=1000, events=100)
+    newFile.addRun(Run(1, *[1, 3, 4, 5, 6, 7]))
+    newFile.addRun(Run(2, *[1, 2, 4, 5, 6, 7]))
+    newFile.setLocation('T2_CH_CERN')
+    multipleFilesFileset.addFile(newFile)
+
+    newFile = File("/some/file/test2", size=2000, events=200)
+    newFile.addRun(Run(3, *[2, 8]))
+    newFile.addRun(Run(4, *[3, 8]))
+    newFile.setLocation('T2_CH_CERN')
+    multipleFilesFileset.addFile(newFile)
+
+    newFile = File("/some/file/test3", size=3000, events=300)
+    newFile.addRun(Run(5, *[10, 11, 12]))
+    newFile.addRun(Run(6, *[10, 11, 12]))
+    newFile.setLocation('T2_CH_CERN')
+    multipleFilesFileset.addFile(newFile)
+
+    newFile = File("/some/file/test4", size=4000, events=400)
+    newFile.addRun(Run(2, *[3, 8, 9]))
+    newFile.addRun(Run(3, *[3, 4, 5, 6]))
+    newFile.setLocation('T2_CH_CERN')
+    multipleFilesFileset.addFile(newFile)
+
+    multipleFilesFileset.create()
+    return multipleFilesFileset
+
+
 class HarvestTest(unittest.TestCase):
     """
     _HarvestTest_
@@ -57,15 +91,15 @@ class HarvestTest(unittest.TestCase):
         self.changer = ChangeState(config)
 
         myResourceControl = ResourceControl()
-        myResourceControl.insertSite("SomeSite", 10, 20, "SomeSE", "SomeCE")
-        myResourceControl.insertSite("SomeSite", 10, 20, "SomeSE2", "SomeCE")
-        myResourceControl.insertSite("SomeSite2", 10, 20, "SomeSE3", "SomeCE2")
+        myResourceControl.insertSite("T1_US_FNAL", 10, 20, "T1_US_FNAL_Disk", "T1_US_FNAL")
+        myResourceControl.insertSite("T1_US_FNAL", 10, 20, "T3_US_FNALLPC", "T1_US_FNAL")
+        myResourceControl.insertSite("T2_CH_CERN", 10, 20, "T2_CH_CERN", "T2_CH_CERN")
 
         self.fileset1 = Fileset(name = "TestFileset1")
         for fileNum in range(11):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
-            newFile.setLocation('SomeSE')
+            newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
 
         self.fileset1.create()
@@ -181,7 +215,7 @@ class HarvestTest(unittest.TestCase):
         for fileNum in range(12,24):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
-            newFile.setLocation('SomeSE')
+            newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
@@ -205,7 +239,7 @@ class HarvestTest(unittest.TestCase):
         for fileNum in range(26,36):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
-            newFile.setLocation('SomeSE')
+            newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
@@ -235,14 +269,14 @@ class HarvestTest(unittest.TestCase):
         for fileNum in range(38,48):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
-            newFile.setLocation('SomeSE')
+            newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
         # Then another location
         for fileNum in range(50,56):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(1,*[1]))
-            newFile.setLocation('SomeSE3')
+            newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
@@ -257,22 +291,22 @@ class HarvestTest(unittest.TestCase):
         firstJobLocation = jobGroups[0].getJobs()[0].getFileLocations()[0]
         secondJobLocation = jobGroups[0].getJobs()[1].getFileLocations()[0]
 
-        self.assertEqual(firstJobLocation, 'SomeSite', "First job location is not SomeSite")
-        self.assertEqual(secondJobLocation, 'SomeSite2', "Second job location is not SomeSite2")
+        self.assertEqual(firstJobLocation, 'T2_CH_CERN')
+        self.assertEqual(secondJobLocation, 'T1_US_FNAL')
 
         self.finishJobs(jobGroups)
 
         for fileNum in range(60,65):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(2,*[2]))
-            newFile.setLocation('SomeSE3')
+            newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
         for fileNum in range(70,75):
             newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
             newFile.addRun(Run(3,*[3]))
-            newFile.setLocation('SomeSE3')
+            newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
@@ -304,12 +338,12 @@ class HarvestTest(unittest.TestCase):
         newFile = File("/some/file/test1", size = 1000, events = 100)
         newFile.addRun(Run(1,*[1,3,4,5,6,7]))
         newFile.addRun(Run(2,*[1,2,4,5,6,7]))
-        newFile.setLocation('SomeSE')
+        newFile.setLocation('T1_US_FNAL_Disk')
         multipleFilesFileset.addFile(newFile)
         newFile = File("/some/file/test2", size = 1000, events = 100)
         newFile.addRun(Run(1,*[2,8]))
         newFile.addRun(Run(2,*[3,8]))
-        newFile.setLocation('SomeSE3')
+        newFile.setLocation('T2_CH_CERN')
         multipleFilesFileset.addFile(newFile)
         multipleFilesFileset.create()
 
@@ -345,7 +379,7 @@ class HarvestTest(unittest.TestCase):
 
         newFile = File("/some/file/test3", size = 1000, events = 100)
         newFile.addRun(Run(1,*range(9,15)))
-        newFile.setLocation('SomeSE3')
+        newFile.setLocation('T2_CH_CERN')
         multipleFilesFileset.addFile(newFile)
         multipleFilesFileset.commit()
 
@@ -399,6 +433,132 @@ class HarvestTest(unittest.TestCase):
             for lumiPair in runs[run]:
                 for lumi in range(lumiPair[0], lumiPair[1] + 1):
                     self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
+
+    def testMultiRunHarvesting(self):
+        """
+        _testMultiRunHarvesting_
+
+        Provided a fileset with a couple of files and different runs, create a
+        single job for all the runs at a specific location, which also adds a
+        baggage to the job (True) which is later on looked up by SetupCMSSWPSet.
+        """
+        multipleFilesFileset = createCommonFileset()
+        self.assertEqual(multipleFilesFileset.open, True)
+
+        harvestingWorkflow = Workflow(spec="spec.xml",
+                                      owner="amaltaro",
+                                      name="TestWorkflow",
+                                      task="Test")
+        harvestingWorkflow.create()
+
+        harvestSub = Subscription(fileset=multipleFilesFileset,
+                                  workflow=harvestingWorkflow,
+                                  split_algo="Harvest",
+                                  type="Harvesting")
+        harvestSub.create()
+
+        multipleFilesFileset.markOpen(False)
+        self.assertEqual(multipleFilesFileset.open, False, "Fileset should now be closed")
+
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSub)
+        jobGroups = jobFactory(dqmHarvestUnit="multiRun")
+        self.assertEqual(len(jobGroups), 1)
+
+        for jobGroup in jobGroups:
+            self.assertEqual(len(jobGroup.jobs), 1)
+            #for job in jobGroup.jobs:
+            #    baggage = job.getBaggage()
+            #    self.assertTrue(getattr(baggage, "multiRun", False), "It's supposed to be a multiRun job")
+
+    def testByRunHarvesting(self):
+        """
+        _testByRunHarvesting_
+        Provided a fileset with a couple of files and 4 different runs, create
+        one single job per run and location.
+        The multiRun baggage should be false in this case.
+        """
+        multipleFilesFileset = createCommonFileset()
+        self.assertEqual(multipleFilesFileset.open, True, "Fileset should be open!")
+
+        harvestingWorkflow = Workflow(spec="spec.xml",
+                                      owner="amaltaro",
+                                      name="TestWorkflow",
+                                      task="Test")
+        harvestingWorkflow.create()
+
+        harvestSub = Subscription(fileset=multipleFilesFileset,
+                                  workflow=harvestingWorkflow,
+                                  split_algo="Harvest",
+                                  type="Harvesting")
+        harvestSub.create()
+
+        multipleFilesFileset.markOpen(False)
+        self.assertEqual(multipleFilesFileset.open, False, "Fileset should now be closed")
+
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSub)
+        jobGroups = jobFactory()
+        self.assertEqual(len(jobGroups), 1, "Should have created 1 job group")
+
+        for jobGroup in jobGroups:
+            self.assertEqual(len(jobGroup.jobs), 6, "Should have created 6 jobs")
+            for job in jobGroup.jobs:
+                baggage = job.getBaggage()
+                self.assertFalse(getattr(baggage, "multiRun", False), "It's supposed to be a byRun job")
+
+    def testByRunAndRunWhitelist(self):
+        """
+        _testByRunAndRunWhitelist_
+
+        Create harvesting jobs by run for the runs provided in the RunWhitelist
+        """
+        multipleFilesFileset = createCommonFileset()
+        self.assertEqual(multipleFilesFileset.open, True)
+
+        harvestingWorkflow = Workflow(spec="spec.xml", owner="amaltaro",
+                                      name="TestWorkflow", task="Test")
+        harvestingWorkflow.create()
+
+        harvestSub = Subscription(fileset=multipleFilesFileset, workflow=harvestingWorkflow,
+                                  split_algo="Harvest", type="Harvesting")
+        harvestSub.create()
+
+        multipleFilesFileset.markOpen(False)
+        self.assertEqual(multipleFilesFileset.open, False, "Fileset should now be closed")
+
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSub)
+        jobGroups = jobFactory(runWhitelist=[1, 3])
+        self.assertEqual(len(jobGroups), 1, "One jobgroup per location")
+
+        for jobGroup in jobGroups:
+            self.assertEqual(len(jobGroup.jobs), 2)
+
+    def testByRunAndRunBlacklist(self):
+        """
+        _testByRunAndRunWhitelist_
+
+        Create harvesting jobs by run for the runs provided in the RunWhitelist
+        """
+        multipleFilesFileset = createCommonFileset()
+        self.assertEqual(multipleFilesFileset.open, True)
+
+        harvestingWorkflow = Workflow(spec="spec.xml", owner="amaltaro",
+                                      name="TestWorkflow", task="Test")
+        harvestingWorkflow.create()
+
+        harvestSub = Subscription(fileset=multipleFilesFileset, workflow=harvestingWorkflow,
+                                  split_algo="Harvest", type="Harvesting")
+        harvestSub.create()
+
+        multipleFilesFileset.markOpen(False)
+        self.assertEqual(multipleFilesFileset.open, False, "Fileset should now be closed")
+
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSub)
+        jobGroups = jobFactory(runWhitelist=[1, 2, 3, 4, 5], runBlacklist=[1, 3])
+        self.assertEqual(len(jobGroups), 1, "One jobgroup per location")
+
+        for jobGroup in jobGroups:
+            self.assertEqual(len(jobGroup.jobs), 3)
+
 
 if __name__ == '__main__':
     unittest.main()

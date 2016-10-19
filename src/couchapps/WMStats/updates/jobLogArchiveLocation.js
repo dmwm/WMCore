@@ -1,7 +1,6 @@
 function (doc, req) {
   if (!doc) {
-    doc = {};
-    doc._id = req.id;
+    return [null, 'ERROR'];
   };
   if (doc.logArchiveLFN === undefined) {
       doc.logArchiveLFN = {};

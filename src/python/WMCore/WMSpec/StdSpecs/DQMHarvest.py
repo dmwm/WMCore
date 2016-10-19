@@ -23,7 +23,11 @@ class DQMHarvestWorkloadFactory(StdBase):
         self.workload.setDashboardActivity("harvesting")
         self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
-        self.workload.setWorkQueueSplitPolicy("Dataset", "FileBased", {"files_per_job": 99999})
+        splitArgs = {"runs_per_job": 1}
+        if self.dqmHarvestUnit == "multiRun":
+            # then it should result in a single job in the end, very high number of runs
+            splitArgs['runs_per_job'] = 999999
+        self.workload.setWorkQueueSplitPolicy("Dataset", "Harvest", splitArgs)
 
         # also creates the logCollect job by default
         self.addDQMHarvestTask(uploadProxy=self.dqmUploadProxy,
@@ -129,13 +133,14 @@ class DQMHarvestWorkloadFactory(StdBase):
 
         harvestTaskCmsswHelper.setUserLFNBase("/")
 
-        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
-        harvestTask.addInputDataset(primary=self.inputPrimaryDataset,
-                                    processed=self.inputProcessedDataset,
-                                    tier=self.inputDataTier,
+        (inputPrimaryDataset, inputProcessedDataset, inputDataTier) = self.inputDataset[1:].split("/")
+        harvestTask.addInputDataset(name=self.inputDataset,
+                                    primary=inputPrimaryDataset,
+                                    processed=inputProcessedDataset,
+                                    tier=inputDataTier,
                                     dbsurl=self.dbsUrl,
                                     block_whitelist=self.blockWhitelist,
-                                    black_blacklist=self.blockBlacklist,
+                                    block_blacklist=self.blockBlacklist,
                                     run_whitelist=self.runWhitelist,
                                     run_blacklist=self.runBlacklist)
 

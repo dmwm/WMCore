@@ -12,6 +12,7 @@ from WMCore.REST.Format import JSONFormat
 
 from WMCore.WMStats.Service.MetaDataInfo import ServerInfo
 from WMCore.WMStats.Service.ActiveRequestJobInfo import ActiveRequestJobInfo
+from WMCore.WMStats.Service.RequestInfo import JobDetailInfo
 
 class T0RestApiHub(RESTApi):
     """
@@ -31,5 +32,6 @@ class T0RestApiHub(RESTApi):
         # only allows json format for return value
         self.formats =  [('application/json', JSONFormat())]
         self._add({"info": ServerInfo(app, self, config, mount),
-                   "requestcache": ActiveRequestJobInfo(app, self, config, mount)
+                   "requestcache": ActiveRequestJobInfo(app, self, config, mount),
+                   "jobdetail": JobDetailInfo(app, self, config, mount),
                   })

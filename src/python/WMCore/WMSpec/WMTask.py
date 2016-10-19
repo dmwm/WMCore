@@ -634,6 +634,7 @@ class WMTaskHelper(TreeHelper):
         in the task
 
         options should contain at least:
+          - name - dataset name
           - primary - primary dataset name
           - processed - processed dataset name
           - tier - data tier name
@@ -646,6 +647,7 @@ class WMTaskHelper(TreeHelper):
           - run_blacklist - list of blacklist runs
         """
         self.data.input.section_("dataset")
+        self.data.input.dataset.name = None
         self.data.input.dataset.dbsurl = None
         self.data.input.dataset.section_("blocks")
         self.data.input.dataset.blocks.whitelist = []
@@ -654,22 +656,15 @@ class WMTaskHelper(TreeHelper):
         self.data.input.dataset.runs.whitelist = []
         self.data.input.dataset.runs.blacklist = []
 
-        primary = options.get("primary", None)
-        processed = options.get("processed", None)
-        tier = options.get("tier", None)
+        try:
+            self.data.input.dataset.primary = options.pop('primary')
+            self.data.input.dataset.processed = options.pop('processed')
+            self.data.input.dataset.tier = options.pop('tier')
+        except KeyError:
+            raise RuntimeError("Primary, Processed and Tier must be set")
 
-        if primary is None or processed is None or tier is None:
-            msg = "Primary, Processed and Tier must be set"
-            raise RuntimeError(msg)
-
-        self.data.input.dataset.primary = primary
-        self.data.input.dataset.processed = processed
-        self.data.input.dataset.tier = tier
-
-        for opt, arg in options.items():
-            if opt in ['primary', 'processed', 'tier']:
-                continue
-            elif opt == 'block_blacklist':
+        for opt, arg in options.iteritems():
+            if opt == 'block_blacklist':
                 self.setInputBlockBlacklist(arg)
             elif opt == 'block_whitelist':
                 self.setInputBlockWhitelist(arg)
@@ -813,8 +808,12 @@ class WMTaskHelper(TreeHelper):
         """
 
         if hasattr(self.data.input, 'dataset'):
-            ds = getattr(self.data.input, 'dataset')
-            return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
+            if hasattr(self.data.input.dataset, 'name') and self.data.input.dataset.name:
+                return self.data.input.dataset.name
+            # TODO: Alan - remove these 3 lines below in ~HG1701
+            else:
+                ds = getattr(self.data.input, 'dataset')
+                return '/%s/%s/%s' % (ds.primary, ds.processed, ds.tier)
         return None
 
     def siteWhitelist(self):

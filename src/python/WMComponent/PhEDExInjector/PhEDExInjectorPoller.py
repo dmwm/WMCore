@@ -168,7 +168,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if self.blocksToRecover:
             logging.info("""PhEDExInjector Recovery:
                             previous injection call failed,
-                            check if files were injected to PhEDEx anyway""")
+                            checking if files were injected to PhEDEx anyway""")
             self.recoverInjectedFiles()
 
         self.injectFiles()
@@ -275,34 +275,17 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.sendAlert(7, msg=msg)
                 continue
 
-            maxDataset = 20
-            maxBlocks = 50
-            maxFiles = 5000
-            numberDatasets = 0
-            numberBlocks = 0
-            numberFiles = 0
-            injectData = {}
-            lfnList = []
             for dataset in uninjectedFiles[siteName]:
-
-                numberDatasets += 1
+                injectData = {}
+                lfnList = []
                 injectData[dataset] = uninjectedFiles[siteName][dataset]
 
                 for block in injectData[dataset]:
-                    numberBlocks += 1
-                    numberFiles += len(injectData[dataset][block]['files'])
                     for fileInfo in injectData[dataset][block]['files']:
                         lfnList.append(fileInfo['lfn'])
+                    logging.info("About to inject %d files for block %s",
+                                 len(injectData[dataset][block]['files']), block)
 
-                if numberDatasets >= maxDataset or numberBlocks >= maxBlocks or numberFiles >= maxFiles:
-                    self.injectFilesPhEDExCall(location, injectData, lfnList)
-                    numberDatasets = 0
-                    numberBlocks = 0
-                    numberFiles = 0
-                    injectData = {}
-                    lfnList = []
-
-            if injectData:
                 self.injectFilesPhEDExCall(location, injectData, lfnList)
 
         return
@@ -320,15 +303,15 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             injectRes = self.phedex.injectBlocks(location, xmlData)
         except HTTPException as ex:
             # HTTPException with status 400 assumed to be duplicate injection
-            # trigger later block recovery (investgation needed if not the case)
+            # trigger later block recovery (investigation needed if not the case)
             if ex.status == 400:
                 self.blocksToRecover.extend(self.createRecoveryFileFormat(injectData))
             logging.error("PhEDEx file injection failed with HTTPException: %s %s", ex.status, ex.result)
         except Exception as ex:
-            logging.error("PhEDEx file injection failed with Exception: %s", str(ex))
-            logging.debug("Traceback: %s", str(traceback.format_exc()))
+            msg = "PhEDEx file injection failed with Exception: %s" % str(ex)
+            logging.exception(msg)
         else:
-            logging.info("Injection result: %s", injectRes)
+            logging.debug("Injection result: %s", injectRes)
 
             if "error" in injectRes:
                 msg = "Error injecting data %s: %s" % (injectData, injectRes["error"])
@@ -388,20 +371,20 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             except HTTPException as ex:
                 logging.error("PhEDEx block close failed with HTTPException: %s %s", ex.status, ex.result)
             except Exception as ex:
-                logging.error("PhEDEx block close failed with Exception: %s", str(ex))
-                logging.debug("Traceback: %s", str(traceback.format_exc()))
+                msg = "PhEDEx block close failed with Exception: %s" % str(ex)
+                logging.exception(msg)
             else:
-                logging.info("Block closing result: %s", injectRes)
+                logging.debug("Block closing result: %s", injectRes)
 
-                if "error" not in injectRes:
-                    for datasetName in migratedBlocks[siteName]:
-                        for blockName in migratedBlocks[siteName][datasetName]:
-                            logging.debug("Closing block %s", blockName)
-                            self.setBlockClosed.execute(blockName)
-                else:
-                    msg = "Error injecting data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
+                if "error" in injectRes:
+                    msg = "Error closing blocks with data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
                     logging.error(msg)
                     self.sendAlert(6, msg=msg)
+                else:
+                    for datasetName in migratedBlocks[siteName]:
+                        for blockName in migratedBlocks[siteName][datasetName]:
+                            logging.info("Block closed in PhEDEx: %s", blockName)
+                            self.setBlockClosed.execute(blockName)
 
         return
 

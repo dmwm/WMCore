@@ -1,3 +1,7 @@
+1.0.21 to 1.0.21_cmsweb.patch1:
+  - Merge pull request #7316 from ticoann/1.0.21_cmsweb
+  - add JobDetail RESTApi for Tier0
+
 1.0.21 to 1.0.21:
   - Merge pull request #7270 from amaltaro/jobarchiver-patch2
   - Merge pull request #7278 from amaltaro/config-defaults3

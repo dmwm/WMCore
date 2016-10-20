@@ -49,31 +49,27 @@ class ResourceControl(WMConnectionBase):
     def changeSiteState(self, siteName, state):
         """
         _changeSiteState_
-        Set a site to some of the possible states,
-        if the state is Aborted we must do extra actions.
+        Set a site to some of the possible states and perform
+        proper actions with the jobs, according to the state
         """
+        state2ExitCode = {"Aborted": 71301,
+                          "Draining": 71302,
+                          "Down": 71303}
+        executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByState")
+        jobInfo = executingJobs.execute(state = 'executing')
+
+        if jobInfo:
+            bossAir = BossAirAPI(self.config, noSetup = True)
+            jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in state2ExitCode)
+
+            ercode = state2ExitCode.get(state, 71300)
+            bossAir.kill(jobtokill, errorCode=ercode)
+
+        # only now that jobs were updated by the plugin, we flip the site state
         setStateAction = self.wmbsDAOFactory(classname = "Locations.SetState")
         setStateAction.execute(siteName = siteName, state = state,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-
-        executingJobs = self.wmbsDAOFactory(classname = "Jobs.ListByState")
-        jobInfo = executingJobs.execute(state = 'executing')
-        if not jobInfo:
-            # then no jobs to look at
-            return
-        bossAir = BossAirAPI(self.config, noSetup = True)
-        jobtokill = bossAir.updateSiteInformation(jobInfo, siteName, state in ("Aborted","Draining","Down"))
-
-        if state == "Aborted":
-            ercode=71301
-        elif state == "Draining":
-            ercode=71302
-        elif state == "Down":
-            ercode=71303
-        else:
-            ercode=71300
-        bossAir.kill(jobtokill, errorCode=ercode)
         
         return
 

@@ -121,10 +121,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if node["kind"] in ["MSS", "Disk"]:
                 self.phedexNodes[node["kind"]].append(node["name"])
 
-        # initialize the alert framework (if available - config.Alert present)
-        #    self.sendAlert will be then be available
-        self.initAlerts(compName="PhEDExInjector")
-
         self.blocksToRecover = []
 
         return
@@ -272,7 +268,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if location == None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
-                self.sendAlert(7, msg=msg)
                 continue
 
             for dataset in uninjectedFiles[siteName]:
@@ -316,7 +311,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if "error" in injectRes:
                 msg = "Error injecting data %s: %s" % (injectData, injectRes["error"])
                 logging.error(msg)
-                self.sendAlert(6, msg=msg)
             else:
                 try:
                     self.setStatus.execute(lfnList, 1)
@@ -360,7 +354,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             if location == None:
                 msg = "Could not map SE %s to PhEDEx node." % siteName
                 logging.error(msg)
-                self.sendAlert(6, msg=msg)
                 continue
 
             xmlData = self.createInjectionSpec(migratedBlocks[siteName])
@@ -379,7 +372,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 if "error" in injectRes:
                     msg = "Error closing blocks with data %s: %s" % (migratedBlocks[siteName], injectRes["error"])
                     logging.error(msg)
-                    self.sendAlert(6, msg=msg)
                 else:
                     for datasetName in migratedBlocks[siteName]:
                         for blockName in migratedBlocks[siteName][datasetName]:
@@ -562,7 +554,6 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 msg = "Site %s doesn't appear to be valid to PhEDEx, " % site
                 msg += "skipping subscription: %s" % subInfo['id']
                 logging.error(msg)
-                self.sendAlert(7, msg=msg)
                 continue
 
             # Avoid custodial subscriptions to disk nodes

@@ -33,5 +33,5 @@ class T0RestApiHub(RESTApi):
         self.formats =  [('application/json', JSONFormat())]
         self._add({"info": ServerInfo(app, self, config, mount),
                    "requestcache": ActiveRequestJobInfo(app, self, config, mount),
-                   "jobdetail": JobDetailInfo(app, self, config, mount),
+                   "jobdetail": JobDetailInfo(app, self, config, mount, t0flag=True),
                   })

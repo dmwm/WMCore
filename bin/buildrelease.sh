@@ -31,8 +31,8 @@ if [ -z $TAG ]; then
 fi
 
 # Check whether this git branch is allowed to be tagged
-if ! echo ${GITBRANCH} | egrep -iq 'master|_wmagent|_crab' ; then
-  echo "ABORTING - Can only release from master / _crab / _wmagent branches: ${GITBRANCH}"
+if ! echo ${GITBRANCH} | egrep -iq 'master|_wmagent|_crab|_cmsweb' ; then
+  echo "ABORTING - Can only release from master / _crab / _wmagent / _cmsweb branches: ${GITBRANCH}"
   exit 4
 fi
 

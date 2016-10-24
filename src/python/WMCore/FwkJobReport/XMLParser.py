@@ -4,7 +4,7 @@ _XMLParser_
 
 Read the raw XML output from the cmsRun executable.
 """
-from __future__ import print_function
+from __future__ import print_function, division
 
 
 
@@ -433,8 +433,8 @@ def perfStoreHandler():
         try:
             readTotalMB = storageValues.get("Timing-%s-read-totalMegabytes" % readMethod, 0) \
                           + storageValues.get("Timing-%s-readv-totalMegabytes" % readMethod, 0)
-            readMSecs   = (storageValues.get("Timing-%s-read-totalMsecs" % readMethod, 0)\
-                           + storageValues.get("Timing-%s-readv-totalMsecs" % readMethod, 0))
+            readMSecs   = storageValues.get("Timing-%s-read-totalMsecs" % readMethod, 0) \
+                           + storageValues.get("Timing-%s-readv-totalMsecs" % readMethod, 0)
             totalReads  = storageValues.get("Timing-%s-read-numOperations" % readMethod, 0) \
                           + storageValues.get("Timing-%s-readv-numOperations" % readMethod, 0)
             readMaxMSec = max(storageValues.get("Timing-%s-read-maxMsecs" % readMethod, 0),
@@ -443,14 +443,14 @@ def perfStoreHandler():
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
             readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0)/\
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            readTotalT  = 1000 * storageValues.get("Timing-tstoragefile-read-totalMSecs", 0)
+            readTotalT  = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) // 1000
             readNOps    = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) * 1000
+            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) // 1000
             writeTotMB  = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
                           + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
 
             if readMSecs > 0:
-                readMBSec = readTotalMB/readMSecs
+                readMBSec = readTotalMB/readMSecs * 1000
             else:
                 readMBSec = 0
             if totalReads > 0:

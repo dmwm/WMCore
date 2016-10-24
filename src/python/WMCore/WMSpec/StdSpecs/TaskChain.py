@@ -525,9 +525,6 @@ class TaskChainWorkloadFactory(StdBase):
         baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType": {"default": "TaskChain", "optional": False,
                                     "attr": "requestType"},
-                    "GlobalTag": {"default": "GT_TC_V1", "type": str,
-                                  "optional": False, "validate": None,
-                                  "attr": "globalTag", "null": False},
                     # ConfigCacheID is not mandatory in the main dict for TaskChain
                     "ConfigCacheID": {"optional": True, "null": True},
                     "CouchURL": {"default": "http://localhost:5984", "type": str,

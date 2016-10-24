@@ -8,8 +8,8 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion
-from WMCore.Lexicon import cmsname, couchurl, block, procstring, activity
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
@@ -921,15 +921,15 @@ class StdBase(object):
                                          "attr": "priority"},
                      "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
                      "VoRole": {"default": "unknown", "attr": "owner_vorole"},
-                     "Campaign": {"default": ""},
-                     "AcquisitionEra": {"default": "FAKE", "validate": acqname, "assign_optional": False},
+                     "Campaign": {"optional": False},
+                     "AcquisitionEra": {"validate": acqname, "optional": False},
                      "CMSSWVersion": {"validate": cmsswversion,
                                       "optional": False, "attr": "frameworkVersion"},
                      "ScramArch": {"default": "slc5_amd64_gcc462", "optional": False},
-                     "GlobalTag": {"null": True},
+                     "GlobalTag": {"optional": False, "null": False},
                      "GlobalTagConnect": {"null": True},
-                     "ProcessingVersion": {"default": 1, "type": int, "assign_optional": False},
-                     "ProcessingString": {"default": "", "validate": procstring, "assign_optional": False},
+                     "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
+                     "ProcessingString": {"validate": procstring, "optional": False},
                      "LumiList": {"default": {}, "type": makeLumiList},
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},

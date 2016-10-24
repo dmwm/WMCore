@@ -5,7 +5,7 @@ _PromptReco_
 Standard PromptReco workflow.
 """
 
-from WMCore.Lexicon import dataset, couchurl, identifier, block
+from WMCore.Lexicon import dataset, couchurl, identifier, block, procstringT0
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool
 
@@ -167,6 +167,7 @@ class PromptRecoWorkloadFactory(StdBase):
                     "GlobalTag" : {"default" : None, "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
+                    "ProcessingString": {"default": "", "validate": procstringT0, "assign_optional": False},
                     "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
                                     "type" : makeList, "optional" : False,
                                     "validate" : None,

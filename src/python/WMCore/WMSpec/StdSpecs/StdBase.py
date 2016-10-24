@@ -1091,7 +1091,7 @@ class StdBase(object):
                     elif arg == "ScramArch":
                         schema[arg] = "sl6_amd64_gcc491"
                     else:
-                        schema[arg] = "fake"
+                        schema[arg] = "FAKE"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
                     schema[arg] = 1
                 else:  # A non-optional list or similar. Just copy.

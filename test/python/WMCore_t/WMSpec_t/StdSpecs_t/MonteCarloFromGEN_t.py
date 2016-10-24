@@ -85,8 +85,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
 
         outputDatasets = testWorkload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 2)
-        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterRECO-v1/RECO" in outputDatasets)
-        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterALCARECO-v1/ALCARECO" in outputDatasets)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterRECO-FAKE-v1/RECO" in outputDatasets)
+        self.assertTrue("/WaitThisIsNotMinimumBias/FAKE-FilterALCARECO-FAKE-v1/ALCARECO" in outputDatasets)
 
         productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
         splitting = productionTask.jobSplittingParameters()

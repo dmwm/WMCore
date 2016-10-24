@@ -283,18 +283,9 @@ class BlockTestCase(EmulatedUnitTestCase):
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
-        # invalid dataset name
-        # This test is throwing a DBS exception but continuing on:
-        # Message: DbsBadRequest: DBS Server Raised An Error
-        # ModuleName : WMCore.Services.DBS.DBSErrors
-        # MethodName : __init__
-        # ClassInstance : None
-        # FileName : .../WMCore/Services/DBS/DBSErrors.py
-        # ClassName : None
-        # LineNumber : 29
-        # ErrorNr : 1002
+        # dataset non existent
         processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
-        getFirstTask(processingSpec).data.input.dataset.primary = NOT_EXIST_DATASET
+        getFirstTask(processingSpec).data.input.dataset.name = "/MinimumBias/FAKE-Filter-v1/RECO"
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 

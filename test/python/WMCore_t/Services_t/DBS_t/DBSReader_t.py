@@ -161,7 +161,7 @@ class DBSReaderTest(EmulatedUnitTestCase):
         self.assertEqual(dataset['NumberOfLumis'], 7223)
 
         block = self.dbs.getDBSSummaryInfo(DATASET, BLOCK)
-        self.assertEqual(block['path'], '')
+        self.assertEqual(block['path'], DATASET)
         self.assertEqual(block['block'], BLOCK)
         self.assertEqual(block['NumberOfEvents'], 377)
         self.assertEqual(block['NumberOfBlocks'], 1)

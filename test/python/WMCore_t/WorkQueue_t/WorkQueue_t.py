@@ -14,6 +14,7 @@ import unittest
 from retry import retry
 
 from WMCore_t.WMSpec_t.StdSpecs_t.ReDigi_t import injectReDigiConfigs
+from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
 from WMCore_t.WMSpec_t.samples.MultiTaskProductionWorkload \
                                 import workload as MultiTaskProductionWorkload
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
@@ -812,7 +813,16 @@ class WorkQueueTest(WorkQueueTestCase):
     def testGlobalDatasetSplitting(self):
         """Dataset splitting at global level"""
 
-        # force global queue to split work on block
+        dqmHarvArgs = DQMHarvestWorkloadFactory.getTestArguments()
+        dqmHarvArgs["DQMConfigCacheID"] = createConfig(dqmHarvArgs["CouchDBName"])
+        factory = DQMHarvestWorkloadFactory()
+        dqmWorkload = factory.factoryWorkloadConstruction('dqmTest', dqmHarvArgs)
+        dqmWorkload.setSpecUrl((os.path.join(self.workDir, 'dqmTest.spec')))
+        dqmWorkload.setSiteWhitelist('T2_XX_SiteA')
+        dqmWorkload.setTrustLocationFlag()
+        dqmWorkload.save(dqmWorkload.specUrl())
+
+        # force global queue to split work on Dataset
         self.globalQueue.params['SplittingMapping']['DatasetBlock']['name'] = 'Dataset'
         self.globalQueue.params['SplittingMapping']['Block']['name'] = 'Dataset'
         self.globalQueue.params['SplittingMapping']['Dataset']['name'] = 'Dataset'
@@ -822,33 +832,24 @@ class WorkQueueTest(WorkQueueTestCase):
         totalBlocks = totalSpec * NBLOCKS_HICOMM
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
-            self.globalQueue.queueWork(self.processingSpec.specUrl())
+            self.globalQueue.queueWork(dqmWorkload.specUrl())
         self.globalQueue.processInboundWork()
         self.assertEqual(totalSpec, len(self.globalQueue))
 
         # pull to local
-        self.globalQueue.updateLocationInfo()
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA' : 1000}),
-                         totalSpec)
+        #self.globalQueue.updateLocationInfo()
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}), totalSpec)
         syncQueues(self.localQueue)
-        self.assertEqual(len(self.localQueue.status(status = 'Available')),
-                         totalBlocks) # 2 in local
+        self.assertEqual(len(self.localQueue.status(status = 'Available')), totalSpec)
         self.localQueue.updateLocationInfo()
-        work = self.localQueue.getWork({'T2_XX_SiteA' : 1000, 'T2_XX_SiteB' : 1000},
-                                       {})
-        self.assertEqual(len(work), totalBlocks)
-        # both refer to same wmspec
-        self.assertEqual(work[0]['RequestName'], work[1]['RequestName'])
-        self.assertNotEqual(work[0]['Inputs'], work[1]['Inputs'])
+        work = self.localQueue.getWork({'T2_XX_SiteA': 1000}, {})
+        self.assertEqual(len(work), 0)
         self.localQueue.doneWork([str(x.id) for x in work])
-        self.assertEqual(len(self.localQueue.status(status = 'Done')),
-                         totalBlocks)
+        self.assertEqual(len(self.localQueue.status(status = 'Done')), totalSpec)
         syncQueues(self.localQueue)
         # elements are not deleted untill request status is changed
-        self.assertEqual(len(self.localQueue.status(status = 'Done')),
-                         totalBlocks)
-        self.assertEqual(len(self.globalQueue.status(status = 'Done')),
-                         totalSpec)
+        self.assertEqual(len(self.localQueue.status(status = 'Done')), totalSpec)
+        self.assertEqual(len(self.globalQueue.status(status = 'Done')), totalSpec)
 
     def testResetWork(self):
         """Reset work in global to different child queue"""
@@ -1027,7 +1028,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                     'testProcessingInvalid.spec'))
-        getFirstTask(processingSpec).data.input.dataset.primary = Globals.NOT_EXIST_DATASET
+        getFirstTask(processingSpec).data.input.dataset.name = '/MinimumBias/FAKE-Filter-v1/RECO'
         processingSpec.save(processingSpec.specUrl())
         self.assertRaises(DBSReaderError, self.queue.queueWork, processingSpec.specUrl())
         self.queue.deleteWorkflows(processingSpec.name())

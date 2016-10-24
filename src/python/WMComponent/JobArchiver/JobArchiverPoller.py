@@ -10,14 +10,13 @@ import os
 import os.path
 import shutil
 import tarfile
-import traceback
 
 from Utils.IterTools import grouper
 from WMComponent.TaskArchiver.CleanCouchPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
-
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
+from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
 
 from WMCore.WMBS.Job import Job
 from WMCore.DAOFactory import DAOFactory
@@ -74,15 +73,9 @@ class JobArchiverPoller(BaseWorkerThread):
             msg = "Unhandled exception while setting up logDir and/or uploadPublishDir!\n"
             msg += str(ex)
             logging.error(msg)
-            try:
-                logging.debug("Directory: %s", self.logDir)
-                logging.debug("Config: %s", config)
-            except:
-                pass
             raise JobArchiverPollerException(msg)
 
         try:
-            from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
             self.workQueue = queueFromConfig(self.config)
         except Exception as ex:
             msg = "Could not load workQueue"
@@ -331,8 +324,7 @@ class JobArchiverPoller(BaseWorkerThread):
                 # workflow not known - free to cleanup
                 injected.append(name)
             except Exception as ex:
-                logging.error("Injection status checking failed, investigate: %s", str(ex))
-                logging.debug("Traceback: %s", traceback.format_exc())
+                logging.exception("Injection status checking failed, investigate: %s", str(ex))
 
         # Now, mark as injected those that returned True
         if len(injected) > 0:

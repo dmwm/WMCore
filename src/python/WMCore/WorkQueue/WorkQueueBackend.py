@@ -506,13 +506,13 @@ class WorkQueueBackend(object):
         options = {'group': True, 'reduce': True}
         if request:
             options.update(key=request)
-        data = self.db.loadView('WorkQueue', 'wmbsInjectStatusByRequest',
-                                options)
+        data = self.db.loadView('WorkQueue', 'wmbsInjectStatusByRequest', options)
         if request:
             if data['rows']:
                 injectionStatus = data['rows'][0]['value']
                 inboxElement = self.getInboxElements(WorkflowName=request)
-                return injectionStatus and not inboxElement[0].get('OpenForNewData', False)
+                requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
+                return injectionStatus and not requestOpen
             else:
                 raise WorkQueueNoMatchingElements("%s not found" % request)
         else:
@@ -520,7 +520,8 @@ class WorkQueueBackend(object):
             finalInjectionStatus = []
             for request in injectionStatus.keys():
                 inboxElements = self.getInboxElements(WorkflowName=request)
-                finalInjectionStatus.append({request: injectionStatus[request] and not inboxElement[0].get('OpenForNewData', False)})
+                requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
+                finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})
 
             return finalInjectionStatus
 

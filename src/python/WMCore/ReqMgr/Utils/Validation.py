@@ -12,7 +12,7 @@ from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_resubmission
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
@@ -129,7 +129,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     return workload, request_args
 
 
-def validate_request_create_args(request_args, config, *args, **kwargs):
+def validate_request_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
     """
     *arg and **kwargs are only for the interface
     validate post request
@@ -151,8 +151,8 @@ def validate_request_create_args(request_args, config, *args, **kwargs):
     # get the spec type and validate arguments
     spec = loadSpecByType(request_args["RequestType"])
     if request_args["RequestType"] == "Resubmission":
-        request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host,
-                                                             config.couch_reqmgr_db)
+        initialize_resubmission(request_args, config, reqmgr_db_service)
+        
     workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
                                                 request_args)
     return workload, request_args

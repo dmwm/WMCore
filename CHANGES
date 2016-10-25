@@ -1,3 +1,7 @@
+1.0.21 to 1.0.21.crab1:
+  - Merge pull request #7304 from amaltaro/registry-stageoutCrab
+  - Import the stage out plugins
+
 1.0.21 to 1.0.21:
   - Merge pull request #7270 from amaltaro/jobarchiver-patch2
   - Merge pull request #7278 from amaltaro/config-defaults3

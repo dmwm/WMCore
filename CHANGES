@@ -1,3 +1,47 @@
+1.0.21 to 1.0.22.pre3:
+  - Merge pull request #7310 from ticoann/only_assoc_logarchive
+  - Merge pull request #7189 from ticoann/fix_fwjr_performance_unit
+  - Merge pull request #7314 from amaltaro/phedex-logging
+  - fix the unittest
+  - Merge pull request #7317 from ticoann/add_cmsweb_branch
+  - Merge pull request #7318 from ticoann/t0_job_request
+  - fix tier0 job deatil flag
+  - add cmsweb branch
+  - Removed PhEDEx alert code
+  - Inject phedex data by dataset; improve logging
+  - Merge pull request #7303 from ticoann/add_t0_job_api
+  - only add document if the job doc exists
+  - Merge pull request #7269 from BrunoCoimbra/master
+  - 1.0.22.pre2
+  - Merge pull request #7240 from hufnagel/xrdcp-cvmfs-fallback
+  - Merge pull request #7286 from ticoann/fix_skipped_file_view
+  - Merge pull request #7287 from amaltaro/harvest-runlists
+  - Merge pull request #7288 from ticoann/filter_wmarchive_report
+  - Merge pull request #7290 from amaltaro/taskarchiver-logging1
+  - Merge pull request #7294 from juztas/submitSH
+  - Merge pull request #7302 from amaltaro/registry-stageout
+  - add JobDetail RESTApi for Tier0
+  - Merge pull request #7293 from amaltaro/more-unstable2
+  - Merge pull request #7283 from amaltaro/multicore-override3
+  - Import the stage out plugins
+  - TaskArchiver - demote annoying logging
+  - Improve submit.sh logging, exitCodes check a) Make sure script runtime is not less than set by a scheduler. Also it will force to sleep up to 5mins if this bootstrap script fails, which mainly means something is wrong with this WN or transferring files to it failed for unknown reason. Re-sending other jobs so fast to same worker node lead to same failure most often. if this MIN_JOB_RUNTIME_TIME_SECONDS is not set, will use 0. If Job exited 0 and bootstrap script also 0, it will not sleep any time and will exit. b) Improve logging and separate what is where... Also to addition print the condor job ad content for debug reasons and also print environment more nicely. c) output file variable is a string separated with spaces. Each of word is treated as a separate argument, so this shows a failure: [: -eq: unary operator expected
+  - Two more WorkQueue tests added to the unstable list
+  - fallback to cvmfs if xrdcp/xrdfs not in path
+  - fixes unit for performance data
+  - Added some unit tests
+  - Support run whitelist/blacklist in Harvest algo
+  - 1.0.22.pre1
+  - add location filter to wmarchive format
+  - only merge and successful job's skipped file will be reported
+  - Merge pull request #7282 from ticoann/move_import_in_function
+  - Always override the PSet number of threads
+  - move import due to DBS server dependency
+  - Merge pull request #7276 from ticoann/fix_taskchain_assignment
+  - Improve deploy_unittest.sh fix.
+  - fix task chain assign page
+  - Fix unittest deployment for the new pkgtools
+
 1.0.21 to 1.0.22.pre2:
   - Merge pull request #7240 from hufnagel/xrdcp-cvmfs-fallback
   - Merge pull request #7286 from ticoann/fix_skipped_file_view

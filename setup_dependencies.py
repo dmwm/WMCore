@@ -127,7 +127,7 @@ dependencies = {'wmc-rest':{
                         },
                 'crabclient':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.Credential', 'PSetTweaks', 'WMCore.Services.UserFileCache+',
-                                     'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+'],
+                                     'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+', 'WMCore.Services.DBS+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
                                     'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', 'WMCore.Services.EmulatorSwitch'],

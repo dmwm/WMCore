@@ -18,6 +18,7 @@ from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.Lexicon import sanitizeURL
 from WMCore.JobStateMachine.SummaryDB import updateSummaryDB
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
@@ -92,8 +93,10 @@ class ChangeState(WMObject, WMConnectionBase):
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
         self.jobTypeDAO = self.daofactory("Jobs.GetType")
         self.updateLocationDAO = self.daofactory("Jobs.UpdateLocation")
+        self.getWorkflowSpecDAO = self.daofactory("Workflow.GetSpecAndNameFromTask")
 
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
+        self.workflow_cache = {}
         return
 
     def _connectDatabases(self):
@@ -302,7 +305,19 @@ class ChangeState(WMObject, WMConnectionBase):
                 logging.debug("Updated job summary state history for job %s" % jobSummaryId)
 
             if job.get("fwjr", None):
+                cached_workflow = self.workflow_cache.setdefault(job['workflow'], {})
+                if job['task'] not in cached_workflow:
+                    workload = WMWorkloadHelper()
+                    workload.load(self.getWorkflowSpecDAO.execute(job['task'])[job['task']]['spec'])
+                    cached_workflow['campaign'] = workload.getCampaign()
+                    for task in workload.taskIterator():
+                        cached_workflow[task.getPathName()] = task.getPrepID()
+                    if job['task'] not in cached_workflow:
+                        logging.debug("Couldn't find the task in the cache after "
+                                      "it should have been added!")
 
+                fwjr = job['fwjr']
+                fwjr.setCampaign(cached_workflow.get('campaign', 'Unknown'))
                 # If there are too many input files, strip them out
                 # of the FWJR, as they should already
                 # be in the database

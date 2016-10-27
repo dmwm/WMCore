@@ -6,9 +6,9 @@ Pre-requisites:
 Script used during cmsweb-testbed validation (or a new agent validation).
 It will:
  1. clone the WMCore repository
- 2. fetch all templates available in WMCore/test/data/ReqMgr/requests/DMWMW
+ 2. fetch all templates available in WMCore/test/data/ReqMgr/requests/*
  3. create a new request for each of them (based on the parameters given
- in command line)
+ in the command line)
  4. assign workflows during creation time (also based on the parameters
  provided in command line)
 """
@@ -16,11 +16,23 @@ from __future__ import print_function
 
 import sys
 import os
+import pwd
 import shlex
 import json
 import argparse
 from subprocess import call
 from time import sleep
+
+
+def singleSite(jsonName):
+    """
+    Return True if json template name match a specific constraint,
+    meaning the workflow created has to be assigned to a single site
+    in the SiteWhitelist
+    """
+    if 'LHE' in jsonName or 'DQMHarvest' in jsonName:
+        return True
+    return False
 
 
 def main():
@@ -40,9 +52,10 @@ def main():
     parser.add_argument('-s', '--site', help='Site white list for assignment')
     parser.add_argument('-a', '--acqEra', help='AcquisitionEra for assignment')
     parser.add_argument('-p', '--procStr', help='ProcessingString for assignment')
-    parser.add_argument('-i', '--injectOnly', help='Only injects requests but do not assign them', action='store_true', default=False)
+    parser.add_argument('-i', '--injectOnly', help='Only injects requests but do not assign them', action='store_true',
+                        default=False)
     parser.add_argument('-d', '--dryRun', help='Simulation mode only', action='store_true', default=False)
-    parser.add_argument('-2', '--reqmgr2', help='Request Manager 2 injection', action='store_true', default=False)
+    parser.add_argument('-1', '--reqmgr1', help='Request Manager (one) injection', action='store_true', default=False)
     parser.set_defaults(mode='DMWM')
     parser.set_defaults(filename=None)
     parser.set_defaults(url='https://cmsweb-testbed.cern.ch')
@@ -51,8 +64,6 @@ def main():
     parser.set_defaults(acqEra='DMWM_TEST')
     parser.set_defaults(procStr='TEST_Alan_DS3')
     args = parser.parse_args()
-
-    cernTemplates = ['MonteCarlo_LHE.json', 'TaskChainZJetsLNu_LHE.json']
 
     if isinstance(args.site, basestring):
         args.site = args.site.split(',')
@@ -89,10 +100,10 @@ def main():
     blacklist = ['StoreResults.json']
     templates = [item for item in templates if item not in blacklist]
 
-    if args.reqmgr2:
-        reqMgrCommand = "reqmgr2.py"
-    else:
+    if args.reqmgr1:
         reqMgrCommand = "reqmgr.py"
+    else:
+        reqMgrCommand = "reqmgr2.py"
 
     for fname in templates:
         strComm = "python %s -u CMSWEB_TESTBED -f TEMPLATE.json -i " % reqMgrCommand
@@ -106,9 +117,10 @@ def main():
             strComm += "-g "
             # merge template name and current procStr, to avoid dups
             tmpProcStr = fname.replace('.json', '_') + args.procStr
+
             # assignment setup
             assignRequest = {"assignRequest": {}}
-            assignRequest['assignRequest']['SiteWhitelist'] = "T2_CH_CERN" if fname in cernTemplates else args.site
+            assignRequest['assignRequest']['SiteWhitelist'] = "T2_CH_CERN" if singleSite(fname) else args.site
             assignRequest['assignRequest']['Team'] = args.team
             assignRequest['assignRequest']['Dashboard'] = "integration"
             assignRequest['assignRequest']['AcquisitionEra'] = args.acqEra
@@ -126,9 +138,10 @@ def main():
             createRequest.update(assignRequest)
 
         # Hack to go around single, double quotes and format
-        with open("/tmp/alan.json", "w") as outfile:
+        tmpFile = '/tmp/%s.json' % pwd.getpwuid(os.getuid()).pw_name
+        with open(tmpFile, "w") as outfile:
             json.dump(createRequest, outfile)
-        configOver = json.loads(open("/tmp/alan.json").read())
+        configOver = json.loads(open(tmpFile).read())
 
         # Adapt parameters for final command
         strComm = strComm.replace("CMSWEB_TESTBED", args.url)

@@ -345,14 +345,14 @@ class TaskChainWorkloadFactory(StdBase):
                                               memoryReq=taskConf.get('Memory', None),
                                               taskConf=taskConf)
 
-        # this need to be called after setpuProcessingTask since it will overwrite some values
-        self._updateCommonParams(task, taskConf)
-
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
 
         # Do the output module merged/unmerged association
         self.setUpMergeTasks(task, outputMods, splitAlgorithm,
                              keepOutput, transientModules)
+
+        # this need to be called after setpuProcessingTask since it will overwrite some values
+        self._updateCommonParams(task, taskConf)
 
         return
 
@@ -424,14 +424,14 @@ class TaskChainWorkloadFactory(StdBase):
                                               memoryReq=taskConf.get("Memory", None),
                                               taskConf=taskConf)
 
-        # this need to be called after setpuProcessingTask since it will overwrite some values
-        self._updateCommonParams(task, taskConf)
-
         self.addLogCollectTask(task, 'LogCollectFor%s' % task.name())
         self.setUpMergeTasks(task, outputMods, splitAlgorithm,
                              keepOutput, transientModules)
 
         self.inputPrimaryDataset = currentPrimaryDataset
+
+        # this need to be called after setpuProcessingTask since it will overwrite some values
+        self._updateCommonParams(task, taskConf)
 
         return
 

@@ -229,15 +229,28 @@ def procversion(candidate):
     """ Integers """
     if isinstance(candidate, dict):
         for candi in candidate.values():
-            check(r'^[0-9]+$', candi)
+            check(r'^[0-9]+$', str(candi))
         return True
     else:
-        return check(r'^[0-9]+$', candidate)
+        return check(r'^[0-9]+$', str(candidate))
 
 
 def procstring(candidate):
     """ Identifier """
-    # T0 uses empty string (or None?) for ProcessingString
+    if not candidate:
+        raise AssertionError("ProcStr cannot be empty or None.")
+    if isinstance(candidate, dict):
+        for candi in candidate.values():
+            check(r'[a-zA-Z0-9_]{1,100}$', candi)
+        return True
+    else:
+        return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
+
+
+def procstringT0(candidate):
+    """
+    ProcessingString validation function for T0 specs
+    """
     if isinstance(candidate, dict):
         for candi in candidate.values():
             check(r'[a-zA-Z0-9_]{1,100}$', candi)

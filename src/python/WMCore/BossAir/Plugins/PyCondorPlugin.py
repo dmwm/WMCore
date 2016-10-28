@@ -141,7 +141,7 @@ def parseCondorLogs(logfile, extension):
     if errLog is not None and os.path.isfile(errLog):
         logTail = BasicAlgos.tail(errLog, 50)
         logOut += 'Adding end of condor.%s to error message:\n' % extension
-        logOut += ''.join(logTail)
+        logOut += logTail
         logOut += '\n\n'
     return logOut
 

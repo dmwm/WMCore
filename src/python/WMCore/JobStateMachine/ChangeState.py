@@ -159,18 +159,22 @@ class ChangeState(WMObject, WMConnectionBase):
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 
-        # 4. Document the state transition in couch
-        try:
-            self.recordInCouch(jobs, newstate, oldstate, updatesummary)
-        except Exception as ex:
-            logging.error("Error updating job in couch: %s" % str(ex))
-            logging.error(traceback.format_exc())
-
-        # 5. Report the job transition to the dashboard
+        # 4. Report the job transition to the dashboard
         try:
             self.reportToDashboard(jobs, newstate, oldstate)
         except Exception as ex:
             logging.error("Error reporting to the dashboard: %s" % str(ex))
+            logging.error(traceback.format_exc())
+
+        # 5. Document the state transition in couch
+        try:
+            self.recordInCouch(jobs, newstate, oldstate, updatesummary)
+        except UnicodeDecodeError as ex:
+            msg = "A critical error happened! Report it to developers. Error: %s" % str(ex)
+            logging.exception(msg)
+            raise
+        except Exception as ex:
+            logging.error("Error updating job in couch: %s" % str(ex))
             logging.error(traceback.format_exc())
 
         return

@@ -7,11 +7,8 @@ Test class for Basic Algorithms
 
 import os
 import os.path
-import hashlib
 import unittest
-import tempfile
 
-#from WMCore.Algorithms.BasicAlgos import *
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
@@ -19,8 +16,6 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 class testBasicAlgos(unittest.TestCase):
     """
     Test to see whether we can do Linux
-
-
     """
 
     def setUp(self):
@@ -33,7 +28,6 @@ class testBasicAlgos(unittest.TestCase):
 
         return
 
-
     def tearDown(self):
         """
         Do nothing
@@ -43,8 +37,6 @@ class testBasicAlgos(unittest.TestCase):
 
         return
 
-
-
     def test_tail(self):
         """
         _tail_
@@ -52,29 +44,19 @@ class testBasicAlgos(unittest.TestCase):
         Can we tail a file?
         """
 
-
-
         a = "a\nb\nc\nd\ne\nf\ng\nh\ni\nj\nk\nl\nm\nn\no\np\n"
 
         f = open('tmpfile.tmp', 'w')
         f.write(a)
         f.close()
 
+        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 10), "g\nh\ni\nj\nk\nl\nm\nn\no\np\n")
 
-
-        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 10),
-                         ['g\n', 'h\n', 'i\n', 'j\n', 'k\n',
-                          'l\n', 'm\n', 'n\n', 'o\n', 'p\n'])
-
-        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 2),
-                         ['o\n', 'p\n'])
-
+        self.assertEqual(BasicAlgos.tail('tmpfile.tmp', 2), "o\np\n")
 
         os.remove('tmpfile.tmp')
 
-
         return
-
 
     def test_fileInfo(self):
         """
@@ -89,7 +71,7 @@ class testBasicAlgos(unittest.TestCase):
         f.write(silly)
         f.close()
 
-        info = BasicAlgos.getFileInfo(filename = filename)
+        info = BasicAlgos.getFileInfo(filename=filename)
         self.assertEqual(info['Name'], filename)
         self.assertEqual(info['Size'], 34)
         return

@@ -22,6 +22,9 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.Lexicon import identifier
 
+ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
+    ["_id", "_rev", "Requestor", "ReqMgr2Only", "VoRole", "RequestTransition", "RequestStatus", "DN", 
+     "TotalEstimatedJobs", "TotalInputEvents", "TotalInputLumis", "TotalInputFiles"]
 
 def initialize_request_args(request, config, clone=False):
     """
@@ -70,6 +73,15 @@ def initialize_request_args(request, config, clone=False):
         if "InputDataset" in request:
             request["InputDatasets"] = [request["InputDataset"]]
 
+def initialize_resubmission(request_args, config, reqmgr_db_service):
+    request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host,
+                                                         config.couch_reqmgr_db)
+    requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
+    resubmission_args = requests.values()[0]
+    for arg in resubmission_args:
+        if (arg not in request_args) and (arg not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST):
+            request_args[arg] = resubmission_args[arg]
+    return request_args
 
 def generateRequestName(request):
     currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))

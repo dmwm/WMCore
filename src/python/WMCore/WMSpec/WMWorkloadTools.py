@@ -62,6 +62,17 @@ def strToBool(string):
         raise WMSpecFactoryException("Can't convert to bool: %s" % string)
 
 
+def safeStr(string):
+    """
+    _safeStr_
+
+    WMCore defined type used to more safely cast simple data types to string
+    """
+    if not isinstance(string, (tuple, list, set, dict)):
+        return str(string)
+    raise WMSpecFactoryException("We're not supposed to convert %s to string." % string)
+
+
 def parsePileupConfig(mcPileup, dataPileup):
     """
     _parsePileupConfig_

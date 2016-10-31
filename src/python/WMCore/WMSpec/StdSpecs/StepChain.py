@@ -67,8 +67,8 @@ class StepChainWorkloadFactory(StdBase):
         for k, v in arguments["Step1"].iteritems():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
-        if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
-            self.multicoreNCores = int(taskConf['Multicore'])
+        if taskConf['Multicore']:
+            self.multicoreNCores = taskConf['Multicore']
         self.inputPrimaryDataset = taskConf.get("PrimaryDataset", self.primaryDataset)
         self.blockBlacklist = taskConf["BlockBlacklist"]
         self.blockWhitelist = taskConf["BlockWhitelist"]
@@ -423,9 +423,8 @@ class StepChainWorkloadFactory(StdBase):
                     "PrepID": {"default": None, "type": str,
                                "optional": True, "validate": None,
                                "attr": "prepID", "null": True},
-                    "Multicore": {"default": None, "type": int,
-                                  "optional": True, "validate": lambda x: x > 0,
-                                  "null": False},
+                    "Multicore": {"default": 1, "type": int,
+                                  "validate": lambda x: x > 0},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

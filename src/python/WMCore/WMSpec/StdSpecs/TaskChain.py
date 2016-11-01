@@ -253,8 +253,8 @@ class TaskChainWorkloadFactory(StdBase):
             self.runBlacklist = taskConf["RunBlacklist"]
             self.runWhitelist = taskConf["RunWhitelist"]
 
-            if taskConf['Multicore'] and taskConf['Multicore'] != 'None':
-                self.multicoreNCores = int(taskConf['Multicore'])
+            if taskConf['Multicore']:
+                self.multicoreNCores = taskConf['Multicore']
 
             parentTask = None
             if parent in self.mergeMapping:
@@ -643,9 +643,8 @@ class TaskChainWorkloadFactory(StdBase):
                     "PrepID": {"default": None, "type": str,
                                "optional": True, "validate": None,
                                "attr": "prepID", "null": True},
-                    "Multicore": {"default": None, "type": int,
-                                  "optional": True, "validate": lambda x: x > 0,
-                                  "null": False},
+                    "Multicore": {"default": 1, "type": int,
+                                  "validate": lambda x: x > 0},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

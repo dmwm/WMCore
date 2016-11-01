@@ -76,7 +76,7 @@ class StdBase(object):
 
         # Definition of parameters that depend on the value of others
         if hasattr(self, "multicore") and self.multicore:
-            self.multicoreNCores = int(self.multicore)
+            self.multicoreNCores = self.multicore
             self.multicore = True
 
         return
@@ -973,8 +973,8 @@ class StdBase(object):
                      "EnableHarvesting": {"default": False, "type": strToBool},
                      "EnableNewStageout": {"default": False, "type": strToBool},
                      "IncludeParents": {"default": False, "type": strToBool},
-                     "Multicore": {"default": 1, "null": True,
-                                   "validate": lambda x: x == "auto" or (int(x) > 0)},
+                     "Multicore": {"default": 1, "type": int,
+                                   "validate": lambda x: x > 0},
                      # data location management
                      "TrustSitelists": {"default": False, "type": bool},
                      "TrustPUSitelists": {"default": False, "type": bool},

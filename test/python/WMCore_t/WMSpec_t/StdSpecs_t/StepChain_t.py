@@ -238,10 +238,14 @@ class StepChainTests(unittest.TestCase):
         request = json.load(open(self.jsonTemplate))
         testArguments = request['createRequest']
         testArguments.update({
+            "CMSSWVersion": "CMSSW_8_0_17",
+            "ScramArch": "slc6_amd64_gcc530",
             "CouchURL": os.environ["COUCHURL"],
             "ConfigCacheUrl": os.environ["COUCHURL"],
             "CouchDBName": "stepchain_t"
         })
+        testArguments["Step1"]["ScramArch"] = "slc6_amd64_gcc493"
+        testArguments['Step1']["CMSSWVersion"] = "CMSSW_8_0_1"
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
@@ -266,7 +270,7 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(testWorkload.getProcessingString(), "START70_V4")
         self.assertEqual(testWorkload.getProcessingVersion(), 1)
         self.assertEqual(testWorkload.getPrepID(), "Step-00")
-        self.assertEqual(sorted(testWorkload.getCMSSWVersions()), ['CMSSW_7_0_0_pre11', 'CMSSW_7_0_0_pre12'])
+        self.assertEqual(sorted(testWorkload.getCMSSWVersions()), ['CMSSW_8_0_1', 'CMSSW_8_0_17'])
 
         # test workload attributes
         self.assertEqual(testWorkload.processingString, "START70_V4")
@@ -312,8 +316,8 @@ class StepChainTests(unittest.TestCase):
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterA-START70_V4-v1/GEN-SIM' in outDsets)
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterD-START70_V4-v1/AODSIM' in outDsets)
         self.assertTrue('/RelValProdMinBias/CMSSW_7_0_0_pre11-FilterC-START70_V4-v1/GEN-SIM-RECO' in outDsets)
-        self.assertEqual(task.getSwVersion(), 'CMSSW_7_0_0_pre12')
-        self.assertEqual(task.getScramArch(), 'slc5_amd64_gcc481')
+        self.assertEqual(task.getSwVersion(), testArguments['Step1']["CMSSWVersion"])
+        self.assertEqual(task.getScramArch(), testArguments['Step1']["ScramArch"])
 
         step = task.getStep("cmsRun1")
         self.assertFalse(step.data.tree.parent)
@@ -323,8 +327,8 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(step.data.output.modules.RAWSIMoutput.dataTier, 'GEN-SIM')
         self.assertTrue(step.data.output.keep)
         self.assertEqual(sorted(step.data.tree.childNames), ['cmsRun2', 'logArch1', 'stageOut1'])
-        self.assertEqual(step.data.application.setup.cmsswVersion, 'CMSSW_7_0_0_pre12')
-        self.assertEqual(step.data.application.setup.scramArch, 'slc5_amd64_gcc481')
+        self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step1']["CMSSWVersion"])
+        self.assertEqual(step.data.application.setup.scramArch, testArguments['Step1']["ScramArch"])
         self.assertEqual(step.data.application.configuration.arguments.globalTag, 'START70_V4::All')
 
         step = task.getStep("cmsRun2")
@@ -335,8 +339,8 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(step.data.output.modules.RAWSIMoutput.dataTier, 'GEN-SIM-RAW')
         self.assertFalse(step.data.output.keep)
         self.assertEqual(step.data.tree.childNames, ["cmsRun3"])
-        self.assertEqual(step.data.application.setup.cmsswVersion, 'CMSSW_7_0_0_pre11')
-        self.assertEqual(step.data.application.setup.scramArch, 'slc5_amd64_gcc481')
+        self.assertEqual(step.data.application.setup.cmsswVersion, testArguments["CMSSWVersion"])
+        self.assertEqual(step.data.application.setup.scramArch, testArguments["ScramArch"])
         self.assertEqual(step.data.application.configuration.arguments.globalTag, 'START70_V4::All')
 
         step = task.getStep("cmsRun3")
@@ -349,8 +353,8 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(step.data.output.modules.AODSIMoutput.dataTier, 'AODSIM')
         self.assertTrue(step.data.output.keep)
         self.assertFalse(step.data.tree.childNames)
-        self.assertEqual(step.data.application.setup.cmsswVersion, 'CMSSW_7_0_0_pre11')
-        self.assertEqual(step.data.application.setup.scramArch, 'slc5_amd64_gcc481')
+        self.assertEqual(step.data.application.setup.cmsswVersion, testArguments["CMSSWVersion"])
+        self.assertEqual(step.data.application.setup.scramArch, testArguments["ScramArch"])
         self.assertEqual(step.data.application.configuration.arguments.globalTag, 'START70_V4::All')
 
         return
@@ -362,6 +366,16 @@ class StepChainTests(unittest.TestCase):
         factory = StepChainWorkloadFactory()
         request = json.load(open(self.jsonTemplate))
         testArguments = request['createRequest']
+        testArguments.update({
+            "CMSSWVersion": "CMSSW_8_0_17",
+            "ScramArch": "slc6_amd64_gcc530",
+            "CouchURL": os.environ["COUCHURL"],
+            "ConfigCacheUrl": os.environ["COUCHURL"],
+            "CouchDBName": "stepchain_t"
+        })
+        testArguments["Step1"]["ScramArch"] = "slc6_amd64_gcc493"
+        testArguments['Step1']["CMSSWVersion"] = "CMSSW_8_0_1"
+
         # Create a new DIGI step in Step3 and shift Step3 to Step4
         testArguments['Step4'] = copy(testArguments['Step3'])
         testArguments['Step3'] = {"GlobalTag": "START70_V4::All",
@@ -369,9 +383,6 @@ class StepChainTests(unittest.TestCase):
                                   "InputStep": "ProdMinBias",
                                   "StepName": "DIGIPROD2"}
         testArguments['StepChain'] = 4
-        testArguments.update({"CouchURL": os.environ["COUCHURL"],
-                              "ConfigCacheUrl": os.environ["COUCHURL"],
-                              "CouchDBName": "stepchain_t"})
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3', 'Step4']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]

@@ -23,8 +23,12 @@ from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.Lexicon import identifier
 
 ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
-    ["_id", "_rev", "Requestor", "ReqMgr2Only", "VoRole", "RequestTransition", "RequestStatus", "DN", 
-     "TotalEstimatedJobs", "TotalInputEvents", "TotalInputLumis", "TotalInputFiles"]
+    ["_id", "_rev", "Requestor", "ReqMgr2Only", "RequestTransition", "RequestStatus",
+     "RequestorDN", "MaxRSS", "MaxVSize", "IgnoredOutputModules", "TrustSitelists",
+     "TrustPUSitelists", "HardTimeout", "GracePeriod", "SoftTimeout", "MaxWaitTime", "Team",
+     "Teams", "SiteWhitelist", "SiteBlacklist", "EnableNewStageout", "DeleteFromSource",
+     "OutputDatasets", "Dashboard", "SoftwareVersions", "VoRole", "DN", "TotalEstimatedJobs",
+     "TotalInputEvents", "TotalInputLumis", "TotalInputFiles"]
 
 def initialize_request_args(request, config, clone=False):
     """

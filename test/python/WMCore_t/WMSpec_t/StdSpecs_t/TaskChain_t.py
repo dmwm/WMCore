@@ -193,8 +193,8 @@ class TaskChainTests(unittest.TestCase):
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
-            "CMSSWVersion": "CMSSW_3_5_8",
-            "ScramArch": "slc5_ia32_gcc434",
+            "CMSSWVersion": "CMSSW_8_0_17",
+            "ScramArch": "slc6_amd64_gcc530",
             "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "CouchURL": self.testInit.couchUrl,
@@ -218,7 +218,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeGENSIM",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "SplittingAlgo" : "LumiBased",
-                "CMSSWVersion" : "CMSSW_5_2_6",
+                "CMSSWVersion" : "CMSSW_8_0_18",
                 "GlobalTag" : "GR_39_P_V5:All",
                 "PrimaryDataset" : "PURelValTTBar",
                 "KeepOutput" : False
@@ -229,7 +229,7 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeGENSIM",
                 "ConfigCacheID" : processorDocs['DigiHLT'],
                 "SplittingAlgo" : "EventBased",
-                "CMSSWVersion" : "CMSSW_5_2_7",
+                "CMSSWVersion" : "CMSSW_8_0_18",
                 "GlobalTag" : "GR_40_P_V5:All",
                 "AcquisitionEra" : "ReleaseValidationNewConditions",
                 "ProcessingVersion" : 3,
@@ -452,8 +452,8 @@ class TaskChainTests(unittest.TestCase):
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "sfoulkes@fnal.gov",
-            "CMSSWVersion": "CMSSW_3_5_8",
-            "ScramArch": "slc5_ia32_gcc434",
+            "CMSSWVersion": "CMSSW_8_0_17",
+            "ScramArch": "slc6_amd64_gcc530",
             "ProcessingVersion": 1,
             "GlobalTag": "DefaultGlobalTag",
             "CouchURL": self.testInit.couchUrl,
@@ -475,8 +475,8 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeRAWDIGI",
                 "ConfigCacheID" : processorDocs['Reco'],
                 "GlobalTag" : "GlobalTagForReco",
-                "CMSSWVersion" : "CMSSW_3_1_2",
-                "ScramArch" : "CompatibleRECOArch",
+                "CMSSWVersion" : "CMSSW_8_0_18",
+                "ScramArch" : "slc6_amd64_gcc530",
                 "PrimaryDataset" : "ZeroBias",
                 "SplittingAlgo"  : "EventAwareLumiBased",
             },
@@ -486,8 +486,8 @@ class TaskChainTests(unittest.TestCase):
                 "InputFromOutputModule" : "writeALCA",
                 "ConfigCacheID" : processorDocs['ALCAReco'],
                 "GlobalTag" : "GlobalTagForALCAReco",
-                "CMSSWVersion" : "CMSSW_3_1_3",
-                "ScramArch" : "CompatibleALCAArch",
+                "CMSSWVersion" : "CMSSW_8_0_19",
+                "ScramArch" : "slc6_amd64_gcc530",
                 "SplittingAlgo"  : "EventAwareLumiBased",
             },
             "Task4" : {
@@ -641,8 +641,8 @@ class TaskChainTests(unittest.TestCase):
         arguments = {
             "AcquisitionEra": "ReleaseValidation",
             "Requestor": "alan.malta@cern.ch",
-            "CMSSWVersion": "CMSSW_3_5_8",
-            "ScramArch": "slc5_ia32_gcc434",
+            "CMSSWVersion": "CMSSW_8_0_17",
+            "ScramArch": "slc6_amd64_gcc530",
             "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
             "CouchURL": self.testInit.couchUrl,
@@ -659,7 +659,8 @@ class TaskChainTests(unittest.TestCase):
                 "LumisPerJob": 4,
                 "MCPileup": "/some/cosmics-mc-v1/GEN-SIM",
                 "DeterministicPileup": True,
-                "CMSSWVersion" : "CMSSW_5_2_6",
+                "CMSSWVersion" : "CMSSW_8_0_1",
+                "ScramArch": "slc6_amd64_gcc493",
                 "GlobalTag" : "GR_39_P_V5:All",
                 "PrimaryDataset" : "PURelValTTBar",
                 "AcquisitionEra": "CMSSW_5_2_6",
@@ -703,7 +704,7 @@ class TaskChainTests(unittest.TestCase):
 
 
     def buildMultithreadedTaskChain(self, filename):
-        """    d
+        """
         Build a TaskChain from several sources and customization
         """
 
@@ -717,16 +718,13 @@ class TaskChainTests(unittest.TestCase):
         arguments = testArguments
 
         # ... continuing with the request
-        for key in ['CMSSWVersion', 'ScramArch', 'GlobalTag', 'ProcessingVersion',
-                    'Multicore', 'Memory',
+        for key in ['GlobalTag', 'ProcessingVersion', 'Multicore', 'Memory',
                     'TaskChain', 'Task1', 'Task2', 'Task3']:
             arguments.update({key : request['createRequest'][key]})
 
-        for key in ['SiteBlacklist']:
-            arguments.update({key : request['assignRequest'][key]})
-
         # ... then some local overrides
-
+        arguments['CMSSWVersion'] = 'CMSSW_8_0_17'
+        arguments['ScramArch'] = 'slc6_amd64_gcc530'
         del arguments['ConfigCacheID']
         del arguments['ConfigCacheUrl']
         arguments.update({

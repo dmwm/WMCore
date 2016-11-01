@@ -8,13 +8,13 @@ import logging
 
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsswversion, cmsname
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname
 from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSURL, validateArgumentsCreate
-
+from WMCore.ReqMgr.Tools.cms import releases, architectures
 
 class StdBase(object):
     """
@@ -923,9 +923,10 @@ class StdBase(object):
                      "VoRole": {"default": "unknown", "attr": "owner_vorole"},
                      "Campaign": {"optional": False},
                      "AcquisitionEra": {"validate": acqname, "optional": False},
-                     "CMSSWVersion": {"validate": cmsswversion,
+                     "CMSSWVersion": {"validate": lambda x: x in releases(),
                                       "optional": False, "attr": "frameworkVersion"},
-                     "ScramArch": {"default": "slc5_amd64_gcc462", "optional": False},
+                     "ScramArch": {"validate": lambda x: x in architectures(),
+                                   "optional": False},
                      "GlobalTag": {"optional": False, "null": False},
                      "GlobalTagConnect": {"null": True},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
@@ -1089,7 +1090,7 @@ class StdBase(object):
                     elif arg == "CMSSWVersion":
                         schema[arg] = "CMSSW_7_6_2"
                     elif arg == "ScramArch":
-                        schema[arg] = "sl6_amd64_gcc491"
+                        schema[arg] = "slc6_amd64_gcc491"
                     else:
                         schema[arg] = "FAKE"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:

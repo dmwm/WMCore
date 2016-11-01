@@ -18,6 +18,7 @@ from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Credential.Proxy import Proxy
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
      convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
      diskUse, numberCouchProcess
@@ -140,6 +141,7 @@ class AgentStatusPoller(BaseWorkerThread):
           3. couchdb active tasks and its replications
           4. check the disk usage
           5. check the number of couch processes
+          6. check proxy and certificate validity
 
         :return: a dict with all the info collected
         """
@@ -196,6 +198,9 @@ class AgentStatusPoller(BaseWorkerThread):
         if agentInfo['down_components']:
             logging.info("List of agent components down: %s" % agentInfo['down_components'])
 
+        # Check agent proxy and certificate validity
+        collectProxyInfo(agentInfo)
+
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
@@ -233,5 +238,36 @@ class AgentStatusPoller(BaseWorkerThread):
 
         logging.debug("Available slots thresholds to pull work from GQ to LQ: %s", results['thresholdsGQ2LQ'])
         logging.debug("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])
+
+        return results
+
+    def collectProxyInfo(self, agentInfo):
+        """
+        Check validity of the agent proxy and certificate.
+        :return: a dict with certificate and proxy subject and dates
+        """
+
+        logging.info("Getting proxy info ...")
+
+        results = {'certInfo':  {'subject': "", 'dates': ""},
+                'proxyInfo': {'subject': "", 'dates': ""}}
+
+        results['certInfo']['subject'] = proxy.getSubjectFromCert(agentInfo['certLocation'])
+        results['certInfo']['dates'] = proxy.getDatesFromCert(agentInfo['certLocation'])
+
+        results['proxyInfo']['subject'] = proxy.getSubjectFromCert(agentInfo['certLocation'])
+        results['proxyInfo']['dates'] = proxy.getDatesFromCert(agentInfo['certLocation'])
+
+        if results['certInfo']['dates']['timeLeft'] < 72000:
+            logging.info("Agent certificate "+results['certInfo']['subject']+" is going to expire in "+str(results['certInfo']['dates']['timeLeft'])+" hours.")
+            agentInfo['certInfo'] = results['certInfo']
+            if agentInfo['status'] == "ok":
+                agentInfo['status'] = "warning"
+        
+        if results['proxyInfo']['dates']['timeLeft'] < 120:
+            logging.info("Agent proxy "+results['certInfo']['subject']+" is going to expire in "+str(esults['certInfo']['dates']['timeLeft'])+" hours.")
+            agentInfo['proxyInfo'] = results['proxyInfo']
+            if agentInfo['status'] == "ok":
+                agentInfo['status'] = "warning"
 
         return results

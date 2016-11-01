@@ -13,7 +13,8 @@ from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import makeList, makeLumiList, strToBool, checkDBSURL, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, strToBool,
+                                           checkDBSURL, validateArgumentsCreate, safeStr)
 
 
 class StdBase(object):
@@ -1017,7 +1018,7 @@ class StdBase(object):
                      # dashboard activity
                      "Dashboard": {"default": "production", "type": str, "validate": activity},
                      # team name
-                     "Team": {"default": "", "type": str},
+                     "Team": {"default": "", "type": safeStr, "assign_optional": False},
                      "PrepID": {"default": None, "null": True},
                      "RobustMerge": {"default": True, "type": bool}
                     }

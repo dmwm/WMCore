@@ -2,6 +2,8 @@
 "createRequest":
 {     
     "Comments": "MC extension wf. Automatic splitting, ~3l per job",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_1_20_patch2",
@@ -18,7 +20,7 @@
     "PrepID": "TEST-pp502Fall15-00013",
     "Group": "DATAOPS",
     "TimePerEvent": 98.4094,
-    "LheInputFiles": "False",
+    "LheInputFiles": false,
     "EventsPerLumi": 100,
     "Memory": 1250,
     "SizePerEvent": 414,

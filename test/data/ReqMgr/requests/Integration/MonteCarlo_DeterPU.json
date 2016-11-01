@@ -2,6 +2,8 @@
 "createRequest":
 {
     "Comments": "MC from scratch + DeterministiPU. Very low f.eff.",
+    "AcquisitionEra": "Integ_Test",
+    "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_16",
@@ -16,10 +18,10 @@
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "PrimaryDataset": "QCD_Pt-40toInf_fwdJet_bwdJet_Tune4C_2p76TeV-pythia8",
     "MCPileup": "/MinBias_TuneZ2star_8TeV-pythia6/Summer12-START50_V13-v3/GEN-SIM",
-    "DeterministicPileup": "True",
+    "DeterministicPileup": true,
     "PrepID": "FSQ-ppSpring2014-00007",
     "Group": "DATAOPS",
-    "LheInputFiles": "False",
+    "LheInputFiles": false,
     "Memory": 2300,
     "TimePerEvent": 57.6,
     "EventsPerLumi": 250,

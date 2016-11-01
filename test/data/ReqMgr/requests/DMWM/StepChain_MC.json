@@ -1,5 +1,5 @@
 {"createRequest": {
-    "Comments": "StepChain MC from scratch, 3 steps in the same job. 3 lumis per job",
+    "Comments": "StepChain MC from scratch, 3 steps in the same job. Drop GEN-SIM-RAW tier. 3 lumis per job",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_0_0_pre11",
@@ -34,16 +34,13 @@
         "GlobalTag": "START70_V4::All",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "ProdMinBias",
-        "LumisPerJob": 10,
-        "SplittingAlgo": "LumiBased",
+        "KeepOutput": false,
         "StepName": "DIGIPROD1"},
     "Step3": {
         "ConfigCacheID": "564b9ff125f090d3385206a0b460ed9b",
         "GlobalTag": "START70_V4::All",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "DIGIPROD1",
-        "LumisPerJob" : 10,
-        "SplittingAlgo": "LumiBased",
         "StepName": "RECOPROD1"},
     "StepChain": 3
     },

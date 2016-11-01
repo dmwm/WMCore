@@ -2,6 +2,8 @@
 "createRequest":
 {
     "Comments": "MC from scratch with very low f.eff. 2l per job",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_16",
@@ -19,7 +21,7 @@
     "Group": "DATAOPS",
     "TimePerEvent": 2.96425,
     "SplittingAlgo": "EventBased",
-    "LheInputFiles": "False",
+    "LheInputFiles": false,
     "EventsPerJob": 500,
     "EventsPerLumi": 250,
     "Memory": 2300,
@@ -33,7 +35,7 @@
     {
         "SplittingAlgo" : "EventBased",
         "events_per_job" : 500,
-        "include_parents" : "False"
+        "include_parents" : false
     }
 },
 "assignRequest":

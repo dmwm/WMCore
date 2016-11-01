@@ -100,15 +100,15 @@ class DQMHarvestTests(unittest.TestCase):
         # test workload properties
         self.assertEqual(testWorkload.getDashboardActivity(), "harvesting")
         self.assertEqual(testWorkload.getCampaign(), "Campaign-OVERRIDE-ME")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2015B")
-        self.assertEqual(testWorkload.getProcessingString(), "TEST_05Aug2015")
+        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2016B")
+        self.assertEqual(testWorkload.getProcessingString(), "23Sep2016")
         self.assertEqual(testWorkload.getProcessingVersion(), 1)
-        self.assertFalse(testWorkload.getPrepID(), "PrepId does not match")
-        self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_5_1'])
+        self.assertEqual(testWorkload.getPrepID(), "TEST-Harvest-ReReco-Run2016B-23Sep2016-0022")
+        self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_20'])
 
         # test workload attributes
-        self.assertEqual(testWorkload.processingString, "TEST_05Aug2015")
-        self.assertEqual(testWorkload.acquisitionEra, "Run2015B")
+        self.assertEqual(testWorkload.processingString, "23Sep2016")
+        self.assertEqual(testWorkload.acquisitionEra, "Run2016B")
         self.assertEqual(testWorkload.processingVersion, 1)
         self.assertEqual(sorted(testWorkload.lumiList.keys()), ['251643', '251721'])
         self.assertEqual(sorted(testWorkload.lumiList.values()), [[[1,15], [50,70]], [[50,100], [110,120]]])

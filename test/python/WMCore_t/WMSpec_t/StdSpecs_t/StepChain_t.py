@@ -14,7 +14,6 @@ from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
-
 def getTestFile(partialPath):
     """
     Returns the absolute path for the test json file
@@ -249,6 +248,7 @@ class StepChainTests(unittest.TestCase):
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
             testArguments[s]['ConfigCacheID'] = configDocs[s]
+            testArguments[s]['KeepOutput'] = True
 
         factory = StepChainWorkloadFactory()
 

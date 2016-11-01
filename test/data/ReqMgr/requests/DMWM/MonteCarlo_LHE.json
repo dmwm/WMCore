@@ -2,6 +2,8 @@
 "createRequest":
 {
     "Comments": "MC from scratch reading LHE files. 10l per job",
+    "AcquisitionEra": "DMWM_Test",
+    "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_5_3_16",
@@ -18,7 +20,7 @@
     "Group": "DATAOPS",
     "TimePerEvent": 0.00125161,
     "Memory": 2300,
-    "LheInputFiles": "True",
+    "LheInputFiles": true,
     "EventsPerJob": 500000,
     "EventsPerLumi": 50000,
     "SizePerEvent": 1,

@@ -933,10 +933,12 @@ class WMWorkloadHelper(PersistencyHelper):
                                   "EventBased": ["NumberOfEvents",
                                                  "NumberOfEventsPerLumi"],
                                   "LumiBased": ["NumberOfLumis"],
+                                  "Harvest": ["NumberOfRuns"],
                                   "EventAwareLumiBased": ["NumberOfEvents"]}
         SplitAlgoToArgMap = {"NumberOfFiles": "files_per_job",
                              "NumberOfEvents": "events_per_job",
                              "NumberOfLumis": "lumis_per_job",
+                             "NumberOfRuns": "runs_per_job",
                              "NumberOfEventsPerLumi": "events_per_lumi"}
         startPolicyArgs = {'SplittingAlgo': splitAlgo}
         startPolicyArgs.update(kwargs)

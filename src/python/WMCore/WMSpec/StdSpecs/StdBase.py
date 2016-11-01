@@ -344,8 +344,8 @@ class StdBase(object):
         else:
             if inputDataset != None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")
-                procTask.addInputDataset(primary=primary, processed=processed,
-                                         tier=tier, dbsurl=self.dbsUrl,
+                procTask.addInputDataset(name=self.inputDataset, primary=primary,
+                                         processed=processed, tier=tier, dbsurl=self.dbsUrl,
                                          block_blacklist=self.blockBlacklist,
                                          block_whitelist=self.blockWhitelist,
                                          run_blacklist=self.runBlacklist,

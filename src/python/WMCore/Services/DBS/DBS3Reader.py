@@ -384,7 +384,7 @@ class DBS3Reader(object):
             msg = "DBSReader.listDatasetSummary(%s, %s): No matching data"
             raise DBSReaderError(msg % (dataset, block))
         result = remapDBS3Keys(summary[0], stringify=True)
-        result['path'] = dataset if not block else ''
+        result['path'] = dataset if dataset else ''
         result['block'] = block if block else ''
         return result
 
@@ -417,8 +417,7 @@ class DBS3Reader(object):
 
         return blocks
 
-    def listFileBlocks(self, dataset, onlyClosedBlocks=False,
-                       blockName=None):
+    def listFileBlocks(self, dataset, onlyClosedBlocks=False, blockName=None):
         """
         _listFileBlocks_
 

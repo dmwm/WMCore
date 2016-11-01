@@ -32,7 +32,7 @@ class StoreResultsWorkloadFactory(StdBase):
         """
         StdBase.__call__(self, workloadName, arguments)
 
-        (self.inputPrimaryDataset, self.inputProcessedDataset, self.inputDataTier) = self.inputDataset[1:].split("/")
+        (inputPrimaryDataset, inputProcessedDataset, inputDataTier) = self.inputDataset[1:].split("/")
 
         workload = self.createWorkload()
         
@@ -59,9 +59,10 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
         
-        mergeTask.addInputDataset(primary = self.inputPrimaryDataset,
-                                  processed = self.inputProcessedDataset,
-                                  tier = self.inputDataTier,
+        mergeTask.addInputDataset(name=self.inputDataset,
+                                  primary = inputPrimaryDataset,
+                                  processed = inputProcessedDataset,
+                                  tier = inputDataTier,
                                   dbsurl = self.dbsUrl,
                                   block_blacklist = self.blockBlacklist,
                                   block_whitelist = self.blockWhitelist,
@@ -82,7 +83,7 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskCmsswHelper.setDataProcessingConfig("do_not_use", "merge")
         
         self.addOutputModule(mergeTask, "Merged",
-                             primaryDataset = self.inputPrimaryDataset,
+                             primaryDataset = inputPrimaryDataset,
                              dataTier = self.dataTier,
                              filterName = None,
                              forceMerged = True)

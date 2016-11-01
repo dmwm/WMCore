@@ -643,7 +643,7 @@ class TaskChainWorkloadFactory(StdBase):
                     "PrepID": {"default": None, "type": str,
                                "optional": True, "validate": None,
                                "attr": "prepID", "null": True},
-                    "Multicore": {"default": 1, "type": int,
+                    "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)

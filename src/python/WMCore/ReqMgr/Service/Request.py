@@ -463,9 +463,8 @@ class Request(RESTEntity):
         
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         
-        req_status = request_args["RequestStatus"]
-        if req_status == "assigned" and not request_args.get('Team', '').strip():
-            raise InvalidSpecParameterValue("Team must be set during workflow assignment: %s" % request_args)
+        if request_args.get('Team', '').strip() == '':
+            raise InvalidSpecParameterValue("A Team name must be set during workflow assignment")
             
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
             request_args['SoftTimeout'] = int(request_args['SoftTimeout'])

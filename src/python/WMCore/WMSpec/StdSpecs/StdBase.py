@@ -64,7 +64,7 @@ class StdBase(object):
                     if arguments[arg] is None:
                         setattr(self, argumentDefinition[arg]["attr"], arguments[arg])
                     else:
-                        value = argumentDefinition[arg]["type"](arguments[arg])
+                        value = arguments[arg]
                         setattr(self, argumentDefinition[arg]["attr"], value)
                         self.schema[arg] = value
                 elif argumentDefinition[arg]["optional"]:
@@ -412,6 +412,16 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         return outputModules
+    
+    def _getDictionaryParams(self, prop, key, default=None):
+        """
+        Support dictonary format for property definition.
+        acquisitionEra, processingString, processingVersion
+        """
+        if isinstance(prop, dict):
+            return prop.get(key, default)
+        else:
+            return prop
 
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
@@ -426,18 +436,23 @@ class StdBase(object):
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
         haveRunNumber = (self.runNumber != None and self.runNumber > 0)
-
-        processedDataset = "%s-" % self.acquisitionEra
+        
+        taskName = parentTask.name()
+        acqEra = self._getDictionaryParams(self.acquisitionEra, taskName)
+        procString = self._getDictionaryParams(self.processingString, taskName)
+        procVersion = self._getDictionaryParams(self.processingVersion, taskName, 1)
+        
+        processedDataset = "%s-" % acqEra
         if haveFilterName:
             processedDataset += "%s-" % filterName
         if haveProcString:
-            processedDataset += "%s-" % self.processingString
-        processedDataset += "v%i" % self.processingVersion
+            processedDataset += "%s-" % procString
+        processedDataset += "v%i" % procVersion
 
         if haveProcString:
-            processingLFN = "%s-v%i" % (self.processingString, self.processingVersion)
+            processingLFN = "%s-v%i" % (procString, procVersion)
         else:
-            processingLFN = "v%i" % self.processingVersion
+            processingLFN = "v%i" % procVersion
 
         if haveRunNumber:
             stringRunNumber = str(self.runNumber).zfill(9)
@@ -445,10 +460,10 @@ class StdBase(object):
             runLFN = "/".join(runSections)
 
         unmergedLFN = "%s/%s/%s/%s" % (self.unmergedLFNBase,
-                                       self.acquisitionEra,
+                                       acqEra,
                                        primaryDataset, dataTier)
         mergedLFN = "%s/%s/%s/%s" % (self.mergedLFNBase,
-                                     self.acquisitionEra,
+                                     acqEra,
                                      primaryDataset, dataTier)
 
         if haveFilterName:

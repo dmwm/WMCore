@@ -741,19 +741,15 @@ class WMWorkloadHelper(PersistencyHelper):
                     break
         return
 
-    def getAcquisitionEra(self):
+    def getAcquisitionEra(self, taskName=None):
         """
         _getAcquisitionEra_
 
         Get the acquisition era
         """
-
-        topTasks = self.getTopLevelTask()
-
-        if len(topTasks):
-            return topTasks[0].getAcquisitionEra()
-
-        return None
+        if taskName and isinstance(self.acquisitionEra, dict):
+            return self.acquisitionEra.get(taskName, None)
+        return self.acquisitionEra
 
     def getRequestType(self):
         """
@@ -768,31 +764,27 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return getattr(self.data.request.schema, "RequestType", None)
 
-    def getProcessingVersion(self):
+    def getProcessingVersion(self, taskName=None):
         """
         _getProcessingVersion_
 
         Get the processingVersion
         """
 
-        topTasks = self.getTopLevelTask()
+        if taskName and isinstance(self.processingVersion, dict):
+            return self.processingVersion.get(taskName, 0)
+        return self.processingVersion
 
-        if len(topTasks):
-            return topTasks[0].getProcessingVersion()
-        return 0
-
-    def getProcessingString(self):
+    def getProcessingString(self, taskName=None):
         """
         _getProcessingString_
 
         Get the processingString
         """
 
-        topTasks = self.getTopLevelTask()
-
-        if len(topTasks):
-            return topTasks[0].getProcessingString()
-        return None
+        if taskName and isinstance(self.processingString, dict):
+            return self.processingString.get(taskName, None)
+        return self.processingString
 
     def setValidStatus(self, validStatus):
         """

@@ -226,25 +226,6 @@ class WMWorkloadTest(unittest.TestCase):
         for key in ownerProps.keys():
             self.assertEqual(result[key], ownerProps[key])
 
-    def testE_Properties(self):
-        """
-        _Properties_
-
-        Check the values attached to the workloads general properties
-        """
-        name = "ThisIsASillyString"
-
-        workload = WMWorkloadHelper(WMWorkload("workload1"))
-        workload.setValidStatus(validStatus=name)
-        workload.setProcessingVersion(processingVersions=name)
-        workload.setAcquisitionEra(acquisitionEras=name)
-
-        self.assertEqual(workload.getValidStatus(), name)
-        self.assertEqual(workload.getProcessingVersion(), 0)
-        self.assertEqual(workload.getAcquisitionEra(), None)
-
-        return
-
     def testDbsUrl(self):
         """
         _testDbsUrl_
@@ -892,9 +873,21 @@ class WMWorkloadTest(unittest.TestCase):
         acquisitionEra = testWorkload.getAcquisitionEra()
         processingString = testWorkload.getProcessingString()
 
+        self.assertEqual(processingVersion, {'ProcessingTask': 2, 'SkimTask': 3}, 
+                         "Error: Wrong top level processing version")
+        self.assertEqual(acquisitionEra, {'ProcessingTask': 'TestAcqEra', 'SkimTask': 'TestAcqEraSkim'}, 
+                         "Error: Wrong top level acquisition era")
+        self.assertEqual(processingString, {'ProcessingTask': 'Test', 'SkimTask': 'SkimTest'}, 
+                         "Error: Wront top level processing string")
+        
+        processingVersion = testWorkload.getProcessingVersion('ProcessingTask')
+        acquisitionEra = testWorkload.getAcquisitionEra('SkimTask')
+        processingString = testWorkload.getProcessingString('ProcessingTask')
+        
         self.assertEqual(processingVersion, 2, "Error: Wrong top level processing version")
-        self.assertEqual(acquisitionEra, "TestAcqEra", "Error: Wrong top level acquisition era")
-        self.assertEqual(processingString, "Test", "Error: Wront top level processing string")
+        self.assertEqual(acquisitionEra,'TestAcqEraSkim', "Error: Wrong top level acquisition era")
+        self.assertEqual(processingString, 'Test', "Error: Wront top level processing string")
+        
         return
 
     def testSetSubscriptionInformation(self):

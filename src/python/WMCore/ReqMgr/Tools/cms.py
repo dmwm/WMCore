@@ -29,9 +29,10 @@ def next_status(status=None):
 
 class TagCollector(object):
     """
-    Class which provides interface to CMS TagCollector web-service
+    Class which provides interface to CMS TagCollector web-service.
+    Provides both Production and Development releases (anytype=1)
     """
-    def __init__(self, url="https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"):
+    def __init__(self, url="https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"):
         self.url = url
         self.cache = os.path.join(os.getcwd(), '.tagcollector')
 

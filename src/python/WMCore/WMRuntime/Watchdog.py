@@ -105,18 +105,6 @@ class Watchdog(threading.Thread):
                 if changedCores and origMaxRSS and (resources['memory'] != origMaxRSS):
                     args.pop('maxVSize', None)
                     args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
-                # Scale our timeouts according to the scaling of the cores.  *NOTE*
-                # the job ad contains the real scaling here - unfortunately, it uses
-                # ClassAd expressions and we can only parse values.  Something for the
-                # future.
-                # As the scaling is not perfectly linear (efficiency is closer to 95%),
-                # we add a somewhat-arbitrarily-chosen 60 minutes (timeouts are in seconds).
-                if changedCores:
-                    coreScaling = resources['cores'] / origCores
-                    if 'softTimeout' in args:
-                        args['softTimeout'] = int(args['softTimeout']/coreScaling) + 3600
-                    if 'hardTimeout' in args:
-                        args['hardTimeout'] = int(args['hardTimeout']/coreScaling) + 3600
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
                 for k, v in args.iteritems():

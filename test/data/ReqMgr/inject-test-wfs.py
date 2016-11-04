@@ -35,39 +35,10 @@ def singleSite(jsonName):
     return False
 
 
-def main():
+def cloneRepo():
     """
-    Util to create and assign requests based on the templates available
-    in WMCore repository.
-
-    NOTE: it will inject and assign ALL templates under DMWM or Integration folder
+    Clone the WMCore repository, if needed
     """
-    parser = argparse.ArgumentParser(description="Inject and/or assign requests in reqmgr/2")
-    parser.add_argument('-c', '--campaign', help='Campaign injected during the workflow creation', required=True)
-    parser.add_argument('-r', '--reqStr', help='Request string appended to the request name', required=True)
-    parser.add_argument('-m', '--mode', help='Uses either the DMWM or the Integration mode/templates')
-    parser.add_argument('-f', '--filename', help='Specifies a single file for injection (extesion must be included)')
-    parser.add_argument('-u', '--url', help='Url to inject the requests against')
-    parser.add_argument('-t', '--team', help='Team name of the agent for assignment')
-    parser.add_argument('-s', '--site', help='Site white list for assignment')
-    parser.add_argument('-a', '--acqEra', help='AcquisitionEra for assignment')
-    parser.add_argument('-p', '--procStr', help='ProcessingString for assignment')
-    parser.add_argument('-i', '--injectOnly', help='Only injects requests but do not assign them', action='store_true',
-                        default=False)
-    parser.add_argument('-d', '--dryRun', help='Simulation mode only', action='store_true', default=False)
-    parser.add_argument('-1', '--reqmgr1', help='Request Manager (one) injection', action='store_true', default=False)
-    parser.set_defaults(mode='DMWM')
-    parser.set_defaults(filename=None)
-    parser.set_defaults(url='https://cmsweb-testbed.cern.ch')
-    parser.set_defaults(team='testbed-vocms0230')
-    parser.set_defaults(site=["T1_US_FNAL", "T2_CH_CERN"])
-    parser.set_defaults(acqEra='DMWM_TEST')
-    parser.set_defaults(procStr='TEST_Alan_DS3')
-    args = parser.parse_args()
-
-    if isinstance(args.site, basestring):
-        args.site = args.site.split(',')
-
     if os.path.isdir('WMCore'):
         print("WMCore directory found. I'm not going to clone it again.")
         print("You have 5 secs to abort this operation or live with that forever...\n")
@@ -86,6 +57,95 @@ def main():
             print("Execution failed:", e)
             sys.exit(2)
 
+
+def parseArgs():
+    """
+    Well, parse the arguments passed in the command line :)
+    """
+    parser = argparse.ArgumentParser(description="Inject and/or assign requests in reqmgr/2")
+
+    parser.add_argument('-c', '--campaign', required=True,
+                        help='Campaign injected during the workflow creation')
+    parser.add_argument('-r', '--reqStr', required=True,
+                        help='Request string appended to the request name')
+    parser.add_argument('-m', '--mode', default='DMWM',
+                        help='Uses either the DMWM or the Integration mode/templates')
+    parser.add_argument('-f', '--filename',
+                        help='Specifies a single file for injection (extesion must be included)')
+    parser.add_argument('-u', '--url', default='https://cmsweb-testbed.cern.ch',
+                        help='Url to inject the requests against')
+    parser.add_argument('-t', '--team', default='testbed-vocms0230',
+                        help='Team name of the agent for assignment')
+    parser.add_argument('-s', '--site', default=["T1_US_FNAL", "T2_CH_CERN"],
+                        help='Site white list for assignment')
+    parser.add_argument('-a', '--acqEra', default='DMWM_TEST',
+                        help='AcquisitionEra for assignment')
+    parser.add_argument('-p', '--procStr', default='TEST_Alan_DS3',
+                        help='ProcessingString for assignment')
+    parser.add_argument('-v', '--procVer', default=11,
+                        help='ProcessingVersion for assignment')
+    parser.add_argument('-i', '--injectOnly', action='store_true', default=False,
+                        help='Only injects requests but do not assign them')
+    parser.add_argument('-d', '--dryRun', action='store_true', default=False,
+                        help='Simulation mode only')
+    parser.add_argument('-1', '--reqmgr1', action='store_true', default=False,
+                        help='Request Manager (one) injection')
+
+    args = parser.parse_args()
+
+    # sites argument could be "T1_US_FNAL,T2_CH_CERN" ...
+    if isinstance(args.site, basestring):
+        args.site = args.site.split(',')
+
+    return args
+
+
+def handleAssignment(args, fname, jsonData):
+    """
+    Tweak the assignment parameters, if needed.
+    We only overwrite assignment parameters that are already present
+    in the json template
+    """
+    assignRequest = {}
+    assignRequest.setdefault('Team', args.team)
+    assignRequest.setdefault('Dashboard', "integration")
+    assignRequest.setdefault('SiteWhitelist', "T2_CH_CERN" if singleSite(fname) else args.site)
+    if 'ProcessingVersion' in jsonData['assignRequest']:
+        assignRequest.setdefault('ProcessingVersion', args.procVer)
+    # merge template name and current procStr, to avoid dups
+    tmpProcStr = fname.replace('.json', '_') + args.procStr
+
+    # dict args for TaskChain
+    if jsonData['createRequest']['RequestType'] == "TaskChain":
+        if 'AcquisitionEra' in jsonData['assignRequest']:
+            assignRequest['AcquisitionEra'] = jsonData['assignRequest']['AcquisitionEra']
+            for task, _ in assignRequest['AcquisitionEra'].iteritems():
+                assignRequest['AcquisitionEra'][task] = jsonData['createRequest']['CMSSWVersion']
+        if 'ProcessingString' in jsonData['assignRequest']:
+            assignRequest['ProcessingString'] = jsonData['assignRequest']['ProcessingString']
+            for task, _ in assignRequest['ProcessingString'].iteritems():
+                assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
+    else:
+        if 'AcquisitionEra' in jsonData['assignRequest']:
+            assignRequest.setdefault('AcquisitionEra', args.acqEra)
+        if 'ProcessingString' in jsonData['assignRequest']:
+            assignRequest.setdefault('ProcessingString', tmpProcStr)
+
+    jsonData['assignRequest'].update(assignRequest)
+    return
+
+
+def main():
+    """
+    Util to create and assign requests based on the templates available
+    in WMCore repository.
+
+    NOTE: it will inject and assign ALL templates under DMWM or Integration folder
+    """
+    args = parseArgs()
+
+    cloneRepo()
+
     # Retrieve template names available and filter blacklisted
     os.chdir("WMCore/test/data/ReqMgr")
     wmcorePath = "requests/" + args.mode + "/"
@@ -100,67 +160,50 @@ def main():
     blacklist = ['StoreResults.json']
     templates = [item for item in templates if item not in blacklist]
 
-    if args.reqmgr1:
-        reqMgrCommand = "reqmgr.py"
-    else:
-        reqMgrCommand = "reqmgr2.py"
+    reqMgrCommand = "reqmgr.py" if args.reqmgr1 else "reqmgr2.py"
+
+    # Temporary place to write the tweaked templates
+    tmpFile = '/tmp/%s.json' % pwd.getpwuid(os.getuid()).pw_name
+    wfCounter = 0
 
     for fname in templates:
-        strComm = "python %s -u CMSWEB_TESTBED -f TEMPLATE.json -i " % reqMgrCommand
-        # create request setup
-        name = fname.split('.json')[0]
-        createRequest = {"createRequest": {}}
-        createRequest['createRequest']['Campaign'] = args.campaign
-        createRequest['createRequest']['RequestString'] = name + '_' + args.reqStr
+        print("Processing template ", fname)
+        strComand = "python %s -u %s -f %s -i " % (reqMgrCommand, args.url, tmpFile)
 
+        # read the original json template
+        with open(wmcorePath + fname) as fo:
+            jsonData = json.load(fo)
+
+        # tweak the create dict
+        createRequest = {}
+        createRequest['RequestString'] = fname.split('.json')[0] + '_' + args.reqStr
+        if 'Campaign' in jsonData['createRequest']:
+            createRequest['Campaign'] = args.campaign
+        jsonData['createRequest'].update(createRequest)
+
+        # apply assignment overrides
         if not args.injectOnly:
-            strComm += "-g "
-            # merge template name and current procStr, to avoid dups
-            tmpProcStr = fname.replace('.json', '_') + args.procStr
+            strComand += "-g "
+            handleAssignment(args, fname, jsonData)
 
-            # assignment setup
-            assignRequest = {"assignRequest": {}}
-            assignRequest['assignRequest']['SiteWhitelist'] = "T2_CH_CERN" if singleSite(fname) else args.site
-            assignRequest['assignRequest']['Team'] = args.team
-            assignRequest['assignRequest']['Dashboard'] = "integration"
-            assignRequest['assignRequest']['AcquisitionEra'] = args.acqEra
-            assignRequest['assignRequest']['ProcessingString'] = tmpProcStr
-
-            # assignment override for TaskChain
-            if fname.startswith("TaskChain"):
-                config = json.loads(open(wmcorePath + fname).read())
-                assignRequest['assignRequest']['AcquisitionEra'] = config['assignRequest']['AcquisitionEra']
-                assignRequest['assignRequest']['ProcessingString'] = config['assignRequest']['ProcessingString']
-                for task, _ in assignRequest['assignRequest']['AcquisitionEra'].iteritems():
-                    assignRequest['assignRequest']['AcquisitionEra'][task] = config['createRequest']['CMSSWVersion']
-                for task, _ in assignRequest['assignRequest']['ProcessingString'].iteritems():
-                    assignRequest['assignRequest']['ProcessingString'][task] = task + '_' + tmpProcStr
-            createRequest.update(assignRequest)
-
-        # Hack to go around single, double quotes and format
-        tmpFile = '/tmp/%s.json' % pwd.getpwuid(os.getuid()).pw_name
+        # Dump the modified json in a temp file and use just it
         with open(tmpFile, "w") as outfile:
-            json.dump(createRequest, outfile)
-        configOver = json.loads(open(tmpFile).read())
-
-        # Adapt parameters for final command
-        strComm = strComm.replace("CMSWEB_TESTBED", args.url)
-        strComm = strComm.replace("TEMPLATE.json", wmcorePath + fname)
-        strComm += "--json='" + json.dumps(configOver) + "'"
-        injectComm = shlex.split(strComm)
+            json.dump(jsonData, outfile)
 
         if args.dryRun:
-            print(injectComm)
+            print(strComand)
             continue
 
-        # Actually injects and assign request
-        retcode = call(injectComm)
+        # Inject and/or assign the request, for real
+        injectComand = shlex.split(strComand)
+        retcode = call(injectComand)
         if retcode == 0:
             print("%s request successfully created!" % fname)
+            wfCounter += 1
         else:
             print("%s request FAILED injection!" % fname)
 
-    print("\n%d templates should have been injected. Good job!" % len(templates))
+    print("\nInjected %d workflows out of %d templates. Good job!" % (wfCounter, len(templates)))
 
 
 if __name__ == '__main__':

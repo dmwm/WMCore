@@ -319,6 +319,12 @@ def setArgumentsWithDefault(arguments, argumentDefinition):
     for argument in argumentDefinition:
         if argument not in arguments and "default" in argumentDefinition[argument]:
             arguments[argument] = argumentDefinition[argument]["default"]
+            
+    # set the Campaign default value to the same as AcquisitionEra if Campaign is not specified
+    if not arguments.get("Campaign"):
+        if ("AcquisitionEra" in arguments) and isinstance(arguments["AcquisitionEra"], basestring):
+            arguments["Campaign"] = arguments["AcquisitionEra"]
+        
     return
 
 def loadSpecClassByType(specType):

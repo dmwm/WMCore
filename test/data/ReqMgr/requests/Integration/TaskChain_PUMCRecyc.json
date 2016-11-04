@@ -1,0 +1,83 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MaxRSS": {
+            "DigiFullPU_2017PU": 4580000, 
+            "RecoFullPU_2017PU": 9080000
+        }, 
+        "MaxVSize": 40000000, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "ProcessingString": {
+            "DigiFullPU_2017PU": "ProcessingString-OVERRIDE-ME", 
+            "RecoFullPU_2017PU": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "CMSSW_8_1_0", 
+        "CMSSWVersion": "CMSSW_8_1_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "TaskChain PU recycling with 4 cores; Proc dset set during assignment; Diff MaxRSS/Memory per task; Harvesting enabled", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "e2a5c7c675f60b4777564d5dd16b0dcd", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "EnableHarvesting": true, 
+        "GlobalTag": "81X_upgrade2017_realistic_v26", 
+        "Memory": 3000, 
+        "Multicore": 1, 
+        "ProcessingString": {
+            "DigiFullPU_2017PU": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017", 
+            "RecoFullPU_2017PU": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017"
+        }, 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "Requestor": "amaltaro", 
+        "ScramArch": "slc6_amd64_gcc530", 
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "e2a5c7c675f60b4777564d5dd157112a", 
+            "GlobalTag": "81X_upgrade2017_realistic_v26", 
+            "InputDataset": "/RelValH125GGgluonfusion_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM", 
+            "KeepOutput": true, 
+            "LumisPerJob": 10, 
+            "MCPileup": "/RelValMinBias_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM", 
+            "Memory": 4500, 
+            "Multicore": 4, 
+            "ProcessingString": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DigiFullPU_2017PU"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "e2a5c7c675f60b4777564d5dd15b240e", 
+            "GlobalTag": "81X_upgrade2017_realistic_v26", 
+            "InputFromOutputModule": "FEVTDEBUGHLToutput", 
+            "InputTask": "DigiFullPU_2017PU", 
+            "KeepOutput": true, 
+            "LumisPerJob": 10, 
+            "MCPileup": "/RelValMinBias_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM", 
+            "Memory": 9000, 
+            "Multicore": 4, 
+            "ProcessingString": "PU25ns_81X_upgrade2017_realistic_v26_HLT2017", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "RecoFullPU_2017PU"
+        }, 
+        "TaskChain": 2, 
+        "TimePerEvent": 0.1
+    }
+}

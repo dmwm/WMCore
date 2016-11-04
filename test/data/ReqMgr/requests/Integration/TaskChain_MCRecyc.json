@@ -1,0 +1,77 @@
+{
+    "assignRequest": {
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MaxRSS": {
+            "ALCAFull_2017": 1580000, 
+            "DigiFull_2017": 25080000, 
+            "RecoFull_2017": 6080000
+        }, 
+        "MaxVSize": 40000000, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "CMSSW_8_1_0", 
+        "CMSSWVersion": "CMSSW_8_1_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": ["MC with input and 3 tasks; Proc dset defined at creation; Diff LumisPerJob and MaxRSS per task",
+                    "Tasks inheriting values from main dict; Memory override in Task2; Memory/Multicore override in Task3"], 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMConfigCacheID": "02dc182efbf0ef24925e10488ed39af8", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "EnableHarvesting": true, 
+        "GlobalTag": "81X_upgrade2017_realistic_v26", 
+        "Memory": 2500, 
+        "Multicore": 4,
+        "PrepID": "TEST-H125GGgluonfusion_13",
+        "ProcessingString": "MainDict_WMCore_TEST", 
+        "ProcessingVersion": 19, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "Requestor": "amaltaro", 
+        "ScramArch": "slc6_amd64_gcc530", 
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "ConfigCacheID": "02dc182efbf0ef24925e10488ecd6302", 
+            "InputDataset": "/RelValH125GGgluonfusion_13/CMSSW_8_1_0-81X_upgrade2017_realistic_v26-v1/GEN-SIM", 
+            "LumisPerJob": 20, 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DigiFull_2017"
+        }, 
+        "Task2": {
+            "ConfigCacheID": "02dc182efbf0ef24925e10488ed2056c", 
+            "InputFromOutputModule": "FEVTDEBUGHLToutput", 
+            "InputTask": "DigiFull_2017", 
+            "LumisPerJob": 10, 
+            "Memory": 6000, 
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "RecoFull_2017"
+        }, 
+        "Task3": {
+            "ConfigCacheID": "02dc182efbf0ef24925e10488ed379ce", 
+            "InputFromOutputModule": "RECOSIMoutput", 
+            "InputTask": "RecoFull_2017", 
+            "LumisPerJob": 30, 
+            "Memory": 1500, 
+            "Multicore": 1, 
+            "ProcessingString": "Task3_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "ALCAFull_2017"
+        }, 
+        "TaskChain": 3, 
+        "TimePerEvent": 0.1
+    }
+}

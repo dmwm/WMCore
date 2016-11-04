@@ -1,8 +1,10 @@
 {
   "createRequest": {
-    "Comments": "TaskChain pre-mixing non-deterministic PU. Same setup as in RelVals, no input dataset.",
-    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": ["TaskChain creation of the premixing library with PU and no input dataset.",
+      "AcqEra/ProcStr overwritten at task level. Not send during assignment, including ProcVer"],
     "RequestString": "RequestString-OVERRIDE-ME",
+    "AcquisitionEra": "Integ_Test",
+    "ProcessingString": "Integ_ProcStr_TEST_TopLevel",
     "CMSSWVersion": "CMSSW_8_0_0",
     "GlobalTag": "80X_mcRun2_startup_v4",
     "RequestPriority": 210000,
@@ -20,10 +22,9 @@
     "TaskChain": 1,
     "Task1": {
       "AcquisitionEra": "CMSSW_8_0_0",
+      "ProcessingString": "Integ_ProcStr_TEST",
       "ConfigCacheID": "169c73eb9eb312ff4406454b2ae4a288",
       "GlobalTag": "80X_mcRun2_startup_v4",
-      "PrimaryDataset": "RelValPREMIXUP15_PU50",
-      "ProcessingString": "PU50ns_80X_mcRun2_startup_v4",
       "MCPileup": "/RelValMinBias_13/CMSSW_7_6_0_pre7-76X_mcRun2_asymptotic_v9_realBS-v1/GEN-SIM",
       "RequestNumEvents": 35000,
       "PrimaryDataset": "RelValPREMIXUP15_PU50",
@@ -36,8 +37,6 @@
   "assignRequest": {
     "SiteWhitelist": [],
     "Team": "Team-OVERRIDE-ME",
-    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
-    "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "MergedLFNBase": "/store/relval",
@@ -45,7 +44,6 @@
     "MinMergeSize": 2147483648,
     "MaxMergeSize": 4294967296,
     "MaxMergeEvents": 50000,
-    "ProcessingVersion": 1,
     "MaxRSS": 3072000,
     "MaxVSize": 20294967,
     "SoftTimeout": 129600,

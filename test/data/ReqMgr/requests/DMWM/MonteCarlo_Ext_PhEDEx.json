@@ -1,43 +1,32 @@
 { 
 "createRequest":
-{         
-    "Comments": "MC from scratch with 5l per job. Normal non-custodial Move to Disk (auto-approved) and custodial Replica to MSS FNAL",
+{     
+    "Comments": "MC extension wf; FacOps Custodial Replica to MSS; AnalysisOps NonCustodial Move to Disk auto-approved; Automatic splitting 3LpJ",
     "AcquisitionEra": "DMWM_Test",
     "ProcessingString": "DMWM_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_1_20_patch2",
     "GlobalTag": "MCRUN2_71_V1::All",
-    "RequestPriority": 300000,
-    "FilterEfficiency": 1.0,
+    "RequestPriority": 250000,
+    "FilterEfficiency": 1,
     "ScramArch": "slc6_amd64_gcc481",
     "RequestType": "MonteCarlo",
-    "RequestNumEvents": 10000,
-    "ConfigCacheID": "d40c8b483f276a75ce73bc1107156b7f",
+    "RequestNumEvents": 5000,
+    "ConfigCacheID": "ddd2e6e7b1e63afbffb9fa7b5d059ecd",
     "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "PrimaryDataset": "TTJets_13TeV-amcatnloFXFX-pythia8",
-    "PrepID": "TEST-RunIIWinter15wmLHE-00100",
+    "PrimaryDataset": "Pythia8_Dijet15_pp502_TuneCUETP8M1",
+    "PrepID": "TEST-pp502Fall15-00013",
     "Group": "DATAOPS",
-    "TimePerEvent": 28.7602,
-    "SplittingAlgo": "EventBased",
+    "TimePerEvent": 98.4094,
     "LheInputFiles": false,
-    "EventsPerJob": 500,
     "EventsPerLumi": 100,
-    "Memory": 1000,
-    "SizePerEvent": 3,
-    "FirstEvent": 1,
-    "FirstLumi": 1
+    "Memory": 1250,
+    "SizePerEvent": 414,
+    "FirstEvent": 10001,
+    "FirstLumi": 101
 }, 
-"changeSplitting":
-{
-    "Production" :
-    {
-        "SplittingAlgo" : "EventBased",
-        "events_per_job" : 500,
-        "include_parents" : false
-    }
-},
 "assignRequest":
 {
     "SiteWhitelist": [],

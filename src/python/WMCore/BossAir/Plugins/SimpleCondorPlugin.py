@@ -20,7 +20,7 @@ from WMCore.WMInit import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Credential.Proxy import Proxy
-from Utils.IterTools import grouper
+from Utils.IterTools import grouper, convertFromUnicodeToStr
 
 ##  python-condor stuff
 import htcondor
@@ -470,7 +470,7 @@ class SimpleCondorPlugin(BasePlugin):
         for param in params_to_add:
             if (param not in ad) and (param in htcondor.param) and (param not in params_to_skip):
                 ad[param] = classad.ExprTree(htcondor.param[param])
-
+        ad = convertFromUnicodeToStr(ad)
         return ad
 
     def getProcAds(self, jobList):
@@ -563,7 +563,8 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['REQUIRED_OS'] = "rhel6"
             else:
                 ad['REQUIRED_OS'] = "any"
-
+            
+            ad = convertFromUnicodeToStr(ad)
             classAds.append((ad,1))
 
         return classAds

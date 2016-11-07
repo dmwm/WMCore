@@ -253,10 +253,10 @@ def procstringT0(candidate):
     """
     if isinstance(candidate, dict):
         for candi in candidate.values():
-            check(r'[a-zA-Z0-9_]{1,100}$', candi)
+            check(r'^$|[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
-        return check(r'[a-zA-Z0-9_]{1,100}$', candidate)
+        return check(r'^$|[a-zA-Z0-9_]{1,100}$', candidate)
 
 
 def acqname(candidate):

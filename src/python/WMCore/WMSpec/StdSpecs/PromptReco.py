@@ -167,7 +167,7 @@ class PromptRecoWorkloadFactory(StdBase):
                     "GlobalTag" : {"default" : None, "type" : str,
                                    "optional" : False, "validate" : None,
                                    "attr" : "globalTag", "null" : False},
-                    "ProcessingString": {"default": "", "validate": procstringT0, "assign_optional": False},
+                    "ProcessingString": {"default": "", "validate": procstringT0},
                     "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
                                     "type" : makeList, "optional" : False,
                                     "validate" : None,

@@ -100,8 +100,12 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                     values = val
                 else:
                     values = sorted(val)
+
                 if  key in ['CMSSWVersion', 'ScramArch']:
                     values.reverse()
+                # when there is no value to be selected
+                if key in selected and not selected[key]:
+                    sel += "<option selected disabled>--select an option--</option>"
                 for item in values:
                     if key in selected and item in selected[key]:
                         sel += "<option value=\"%s\" selected=\"selected\">%s</option>" % (item, item)

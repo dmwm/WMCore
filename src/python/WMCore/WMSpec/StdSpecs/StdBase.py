@@ -994,9 +994,9 @@ class StdBase(object):
                      "Multicore": {"default": 1, "type": int,
                                    "validate": lambda x: x > 0},
                      # data location management
-                     "TrustSitelists": {"default": False, "type": bool},
-                     "TrustPUSitelists": {"default": False, "type": bool},
-                     "AllowOpportunistic": {"default": False, "type": bool},
+                     "TrustSitelists": {"default": False, "type": strToBool},
+                     "TrustPUSitelists": {"default": False, "type": strToBool},
+                     "AllowOpportunistic": {"default": False, "type": strToBool},
                      # from assignment: performance monitoring data
                      "MaxRSS": {"default": 2411724, "type": int, "validate": lambda x: x > 0},
                      "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
@@ -1024,7 +1024,7 @@ class StdBase(object):
                      "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
 
                      # should be True or False
-                     "DeleteFromSource": {"default": False, "type": bool},
+                     "DeleteFromSource": {"default": False, "type": strToBool},
 
                      # Block closing information
                      "BlockCloseMaxWaitTime": {"default": 66400, "type": int, "validate": lambda x: x > 0},
@@ -1037,7 +1037,7 @@ class StdBase(object):
                      # team name
                      "Team": {"default": "", "type": safeStr, "assign_optional": False},
                      "PrepID": {"default": None, "null": True},
-                     "RobustMerge": {"default": True, "type": bool}
+                     "RobustMerge": {"default": True, "type": strToBool}
                     }
 
         # Set defaults for the argument specification

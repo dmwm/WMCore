@@ -163,8 +163,6 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
         # specific case when user GUI returns empty string for optional arguments
         elif arg not in arguments:
             continue
-        elif optional and arguments[arg] == "":
-            del arguments[arg]
         elif isinstance(arguments[arg], dict):
             arguments[arg] = _validateArgumentDict(arg, arguments[arg], argValue)
         else:

@@ -105,9 +105,9 @@ dependencies = {'wmc-rest':{
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
-                                     'WMCore.Credential', 'WMCore.WorkerThreads', 'WMCore.Services.SiteDB+',
-                                     'WMCore.Services.PhEDEx+', 'WMCore.ACDC', 'WMCore.Alerts+',
-                                     'WMCore.Services.UserFileCache'],
+                                     'WMCore.Credential', 'WMCore.WorkerThreads',
+                                     'WMCore.ACDC', 'WMCore.Alerts+',
+                                     'WMCore.Services+'],
                         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
                                     'WMCore.Services.pycurl_manager', 'WMComponent.__init__'],
                         'systems': ['wmc-database'],

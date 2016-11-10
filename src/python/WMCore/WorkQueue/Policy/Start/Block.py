@@ -8,7 +8,6 @@ __all__ = []
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
 from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
 from WMCore import Lexicon
@@ -200,37 +199,7 @@ class Block(StartPolicyInterface):
             validBlocks.append(block)
         return validBlocks
 
-    def getMaskedBlocks(self, task, dbs, datasetPath):
-        """ Get the blocks which pass the lumi mask restrictions. For each block return the list of lumis
-            which were ok (given the lumi mask). The data structure returned is the following:
 
-            {
-                "block1" : {"file1" : LumiList(), "file5" : LumiList(), ...}
-                "block2" : {"file2" : LumiList(), "file7" : LumiList(), ...}
-            }
-
-        """
-        # Get the task mask as a LumiList object to make operations easier
-        maskedBlocks = {}
-        taskMask = task.getLumiMask()
-
-        # for performance reasons, we first get all the blocknames
-        blocks = [x['block_name'] for x in dbs.dbs.listBlocks(dataset=datasetPath)]
-
-        for block in blocks:
-            fileLumis = dbs.dbs.listFileLumis(block_name=block, validFileOnly=1)
-            for fileLumi in fileLumis:
-                lfn = fileLumi['logical_file_name']
-                runNumber = str(fileLumi['run_num'])
-                lumis = fileLumi['lumi_section_num']
-                fileMask = LumiList(runsAndLumis={runNumber: lumis})
-                commonMask = taskMask & fileMask
-                if commonMask:
-                    maskedBlocks.setdefault(block, {})
-                    maskedBlocks[block].setdefault(lfn, LumiList())
-                    maskedBlocks[block][lfn] += commonMask
-
-        return maskedBlocks
 
     def modifyPolicyForWorkAddition(self, inboxElement):
         """

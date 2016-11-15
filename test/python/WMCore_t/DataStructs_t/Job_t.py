@@ -150,19 +150,16 @@ class JobTest(unittest.TestCase):
         """
         test that setting/accessing the Job Baggage ConfigSection works
         """
-        setattr(self.dummyJob.baggage, "baggageContents", {"key":"value"})
+        self.dummyJob.addBaggageParameter("baggageContents", True)
+        self.dummyJob.addBaggageParameter("trustPUSitelists", False)
+        self.dummyJob.addBaggageParameter("skipPileupEvents", 20000)
 
+        baggage = self.dummyJob.getBaggage()
+        self.assertTrue(getattr(baggage, "baggageContents"))
+        self.assertFalse(getattr(baggage, "trustPUSitelists"))
+        self.assertEqual(getattr(baggage, "skipPileupEvents"), 20000)
+        self.assertFalse(hasattr(baggage, "IDontExist"))
 
-        try:
-            baggage = self.dummyJob.getBaggage()
-        except Exception as ex:
-            msg = "Error calling Job.getBaggage()\n"
-            msg += str(ex)
-            self.fail(msg)
-
-
-
-        self.assertTrue(hasattr(baggage, "baggageContents"))
 
 if __name__ == "__main__":
     unittest.main()

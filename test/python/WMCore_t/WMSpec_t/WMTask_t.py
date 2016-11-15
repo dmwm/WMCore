@@ -175,10 +175,10 @@ class WMTaskTest(unittest.TestCase):
                "Error: Wrong job splitting algorithm name.")
 
         algoParams = testTask.jobSplittingParameters(performance = False)
-        self.assertEqual(len(algoParams), 9,
+        self.assertEqual(len(algoParams), 10,
                          "Error: Wrong number of algo parameters.")
         algoParams = testTask.jobSplittingParameters()
-        self.assertEqual(len(algoParams), 10,
+        self.assertEqual(len(algoParams), 11,
                          "Error: Wrong number of algo parameters.")
 
         self.assertTrue("algorithm" in algoParams,
@@ -214,6 +214,37 @@ class WMTaskTest(unittest.TestCase):
                          "Error: Wrong memory requirement")
         self.assertEqual(algoParams["performance"]["sizePerEvent"], 512,
                          "Error: Wrong size per event")
+
+        return
+
+    def testTrustSitelists(self):
+        """
+        _testTrustSitelists_
+
+        Verify that we can set/get the proper TrustSitelists and TrustPUSitelists
+        flag.
+        Also make sure they are retrievable through job splitting parameters.
+        """
+        testTask = makeWMTask("TestTask")
+        testTask.setJobResourceInformation(timePerEvent=50, memoryReq=4000,
+                                           sizePerEvent=10)
+        splitArgs = testTask.jobSplittingParameters(performance=False)
+        self.assertFalse(splitArgs['trustSitelists'])
+        self.assertFalse(splitArgs['trustPUSitelists'])
+
+        testTask.setTrustSitelists(True, True)
+        trustlists = testTask.getTrustSitelists()
+        self.assertTrue(trustlists['trustlists'])
+        self.assertTrue(trustlists['trustPUlists'])
+
+        splitArgs = testTask.jobSplittingParameters(performance=False)
+        self.assertTrue(splitArgs['trustSitelists'])
+        self.assertTrue(splitArgs['trustPUSitelists'])
+
+        testTask.setTrustSitelists(False, False)
+        trustlists = testTask.getTrustSitelists()
+        self.assertFalse(trustlists['trustlists'])
+        self.assertFalse(trustlists['trustPUlists'])
 
         return
 

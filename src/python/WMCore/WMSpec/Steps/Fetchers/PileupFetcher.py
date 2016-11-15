@@ -6,7 +6,6 @@ of pileup files in the job sandbox for the dataset.
 from __future__ import print_function
 
 import datetime
-import json
 import os
 import shutil
 import time
@@ -16,25 +15,6 @@ import WMCore.WMSpec.WMStep as WMStep
 from WMCore.Services.DBS.DBSReader import DBSReader
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
-from WMCore.WorkQueue.WorkQueueUtils import makeLocationsList
-
-
-def mapSitetoPNN(sites):
-    """
-    Receives a list of site names, query resource control and return
-    a list of PNNs.
-    """
-    from WMCore.ResourceControl.ResourceControl import ResourceControl
-
-    if not len(sites):
-        return []
-
-    fakePNNs = []
-    rControl = ResourceControl()
-    for site in sites:
-        fakePNNs.extend(rControl.listSiteInfo(site)['pnn'])
-
-    return fakePNNs
 
 
 class PileupFetcher(FetcherInterface):
@@ -46,7 +26,7 @@ class PileupFetcher(FetcherInterface):
 
     """
 
-    def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader, fakeSites):
+    def _queryDbsAndGetPileupConfig(self, stepHelper, dbsReader):
         """
         Method iterates over components of the pileup configuration input
         and queries DBS. Then iterates over results from DBS.
@@ -70,10 +50,6 @@ class PileupFetcher(FetcherInterface):
         # only production PhEDEx is connected (This can be moved to init method
         phedex = PhEDEx()
         node_filter = set(['UNKNOWN', None])
-        # convert the siteWhitelist into SE list and add SEs to the pileup location list
-        fakePNNs = []
-        if fakeSites:
-            fakePNNs = mapSitetoPNN(fakeSites)
 
         resultDict = {}
         # iterate over input pileup types (e.g. "cosmics", "minbias")
@@ -96,7 +72,7 @@ class PileupFetcher(FetcherInterface):
 
                 blockReplicasInfo = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
                 for block in blockReplicasInfo:
-                    nodes = set(blockReplicasInfo[block]) - node_filter | set(fakePNNs)
+                    nodes = set(blockReplicasInfo[block]) - node_filter
                     blockDict[block]['PhEDExNodeNames'] = list(nodes)
                     blockDict[block]['FileList'] = sorted(blockDict[block]['FileList'])
 
@@ -141,24 +117,6 @@ class PileupFetcher(FetcherInterface):
             os.mkdir(directory)
         shutil.copyfile(src, dest)
 
-    def _updatePileupPNNs(self, stepHelper, fakeSites):
-        """
-        Update the workflow copy of the cached pileup file with PNNs
-        forced by TrustPUSitelists flag
-        """
-        fileName = self._getStepFilePath(stepHelper)
-        fakePNNs = mapSitetoPNN(fakeSites)
-        with open(fileName, 'r') as puO:
-            pileupData = json.load(puO)
-
-        for dummyPUType, blockDict in pileupData.iteritems():
-            for dummyBlockName, blockInfo in blockDict.iteritems():
-                blockInfo['PhEDExNodeNames'].extend([x for x in fakePNNs if x not in blockInfo])
-
-        encoder = JSONEncoder()
-        jsonPU = encoder.encode(pileupData)
-        self._writeFile(fileName, jsonPU)
-
     def _isCacheExpired(self, cacheFilePath, delta=24):
         """Is the cache expired? At delta hours (default 24) in the future.
         """
@@ -200,21 +158,13 @@ class PileupFetcher(FetcherInterface):
         fileName = self._getStepFilePath(stepHelper)
         self._copyFile(cacheFile, fileName)
 
-    def _createPileupConfigFile(self, helper, fakeSites=None):
+    def _createPileupConfigFile(self, helper):
         """
         Stores pileup JSON configuration file in the working
         directory / sandbox.
 
         """
-
-        if fakeSites is None:
-            fakeSites = []
-
         if self._isCacheValid(helper):
-            # we need to update the new sandbox json file in case TrustPUSitelists is on
-            if fakeSites:
-                self._updatePileupPNNs(helper, fakeSites)
-
             # if file already exist don't make a new dbs call and overwrite the file.
             # just return
             return
@@ -223,10 +173,9 @@ class PileupFetcher(FetcherInterface):
         # this should have been set in CMSSWStepHelper along with
         # the pileup configuration
         url = helper.data.dbsUrl
-
         dbsReader = DBSReader(url)
 
-        configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader, fakeSites)
+        configDict = self._queryDbsAndGetPileupConfig(helper, dbsReader)
 
         # create JSON and save into a file
         jsonPU = encoder.encode(configDict)
@@ -242,16 +191,10 @@ class PileupFetcher(FetcherInterface):
         wmTask is instance of WMTask.WMTaskHelper
 
         """
-        fakeSites = []
-
-        # check whether we need to overlook the PU data location
-        if wmTask.getTrustSitelists().get('trustPUlists'):
-            fakeSites = makeLocationsList(wmTask.siteWhitelist(), wmTask.siteBlacklist())
-
         for step in wmTask.steps().nodeIterator():
             helper = WMStep.WMStepHelper(step)
             # returns e.g. instance of CMSSWHelper
             # doesn't seem to be necessary ... strangely (some inheritance involved?)
             # typeHelper = helper.getTypeHelper()
             if hasattr(helper.data, "pileup"):
-                self._createPileupConfigFile(helper, fakeSites)
+                self._createPileupConfigFile(helper)

@@ -82,6 +82,40 @@ class StdBase(object):
 
         return
 
+    @staticmethod
+    def skimToDataTier():
+        """
+        Map physics skim to a data tier
+        """
+        skimMap = {'LogError': 'RAW-RECO',
+                   'LogErrorMonitor': 'USER',
+                   'ZElectron': 'RAW-RECO',
+                   'ZMu': 'RAW-RECO',
+                   'MuTau': 'RAW-RECO',
+                   'TopMuEG': 'RAW-RECO',
+                   'EcalActivity': 'RAW-RECO',
+                   'CosmicSP': 'RAW-RECO',
+                   'CosmicTP': 'RAW-RECO',
+                   'ZMM': 'RAW-RECO',
+                   'Onia': 'RECO',
+                   'HighPtJet': 'RAW-RECO',
+                   'D0Meson': 'RECO',
+                   'Photon': 'AOD',
+                   'ZEE': 'AOD',
+                   'BJet': 'AOD',
+                   'OniaCentral': 'RECO',
+                   'OniaPeripheral': 'RECO',
+                   'SingleTrack': 'AOD',
+                   'MinBias': 'AOD',
+                   'OniaUPC': 'RAW-RECO',
+                   'HighMET': 'RECO',
+                   'BPHSkim': 'USER',
+                   'PAMinBias': 'RAW-RECO',
+                   'PAZEE': 'RAW-RECO',
+                   'PAZMM': 'RAW-RECO'
+                  }
+        return skimMap
+
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
                                configDoc=None, couchURL=None,
                                couchDBName=None, configCacheUrl=None):
@@ -119,31 +153,7 @@ class StdBase(object):
                         outputModules[moduleLabel]['filterName'] = output['filterName']
 
                 for physicsSkim in scenarioArgs.get('PhysicsSkims', []):
-                    skimToDataTier = {'LogError': 'RAW-RECO',
-                                      'LogErrorMonitor': 'USER',
-                                      'ZElectron': 'RAW-RECO',
-                                      'ZMu': 'RAW-RECO',
-                                      'MuTau': 'RAW-RECO',
-                                      'TopMuEG': 'RAW-RECO',
-                                      'EcalActivity': 'RAW-RECO',
-                                      'CosmicSP': 'RAW-RECO',
-                                      'CosmicTP': 'RAW-RECO',
-                                      'ZMM': 'RAW-RECO',
-                                      'Onia': 'RECO',
-                                      'HighPtJet': 'RAW-RECO',
-                                      'D0Meson': 'RECO',
-                                      'Photon': 'AOD',
-                                      'ZEE': 'AOD',
-                                      'BJet': 'AOD',
-                                      'OniaCentral': 'RECO',
-                                      'OniaPeripheral': 'RECO',
-                                      'SingleTrack': 'AOD',
-                                      'MinBias': 'AOD',
-                                      'OniaUPC': 'RAW-RECO',
-                                      'HighMET': 'RECO',
-                                      'BPHSkim': 'USER'
-                                     }
-                    dataTier = skimToDataTier.get(physicsSkim, 'USER')
+                    dataTier = StdBase.skimToDataTier().get(physicsSkim, 'USER')
                     moduleLabel = "SKIMStream%s" % physicsSkim
                     outputModules[moduleLabel] = {'dataTier': dataTier,
                                                   'filterName': physicsSkim}

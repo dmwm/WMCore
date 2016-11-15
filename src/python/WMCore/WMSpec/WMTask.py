@@ -512,6 +512,7 @@ class WMTaskHelper(TreeHelper):
         splittingParams["siteWhitelist"] = self.siteWhitelist()
         splittingParams["siteBlacklist"] = self.siteBlacklist()
         splittingParams["trustSitelists"] = self.getTrustSitelists().get('trustlists')
+        splittingParams["trustPUSitelists"] = self.getTrustSitelists().get('trustPUlists')
 
         if "runWhitelist" not in splittingParams.keys() and self.inputRunWhitelist() != None:
             splittingParams["runWhitelist"] = self.inputRunWhitelist()

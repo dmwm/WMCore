@@ -43,7 +43,6 @@ class StdBase(object):
 
         # Internal parameters
         self.workloadName = None
-        self.multicoreNCores = None
         self.schema = None
         self.config_cache = {}
 
@@ -74,11 +73,6 @@ class StdBase(object):
                     self.schema[arg] = defaultValue
             except Exception as ex:
                 raise WMSpecFactoryException("parameter %s: %s" % (arg, str(ex)))
-
-        # Definition of parameters that depend on the value of others
-        if hasattr(self, "multicore") and self.multicore:
-            self.multicoreNCores = self.multicore
-            self.multicore = True
 
         return
 
@@ -369,10 +363,10 @@ class StdBase(object):
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
 
-        if self.multicore and useMulticore:
-            # if multicore, poke in the number of cores setting
-            procTaskCmsswHelper.setNumberOfCores(self.multicoreNCores)
-
+        if 'Multicore' in taskConf and taskConf['Multicore'] > 0:  # used for StepChain overrides
+            procTaskCmsswHelper.setNumberOfCores(taskConf['Multicore'])
+        else:
+            procTaskCmsswHelper.setNumberOfCores(self.multicore)
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(globalTag)

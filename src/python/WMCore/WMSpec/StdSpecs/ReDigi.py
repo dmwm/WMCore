@@ -115,6 +115,11 @@ class ReDigiWorkloadFactory(DataProcessing):
             outputMods[outputModuleName] = outputModule
 
         self.addMergeTasks(stepOneTask, "cmsRun3", outputMods)
+
+        if self.multicore:
+            stepTwoCmsswHelper.setNumberOfCores(self.multicore)
+            stepThreeCmsswHelper.setNumberOfCores(self.multicore)
+
         return
 
     def setupDependentProcessing(self, stepOneTask, outputMods):
@@ -185,6 +190,8 @@ class ReDigiWorkloadFactory(DataProcessing):
             outputMods[outputModuleName] = outputModule
 
         mergeTasks = self.addMergeTasks(stepOneTask, "cmsRun2", outputMods)
+        if self.multicore:
+            stepTwoCmsswHelper.setNumberOfCores(self.multicore)
 
         if self.stepThreeConfigCacheID is None:
             return
@@ -284,57 +291,41 @@ class ReDigiWorkloadFactory(DataProcessing):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "ReDigi", "optional" : True,
-                                      "attr" : "requestType"},
+        specArgs = {"RequestType" : {"default" : "ReDigi", "optional" : True},
                     "StepOneOutputModuleName" : {"default" : None, "type" : str,
-                                                 "optional" : True, "validate" : None,
-                                                 "attr" : "stepOneOutputModuleName", "null" : True},
+                                                 "optional" : True, "null" : True},
                     "StepTwoOutputModuleName" : {"default" : None, "type" : str,
-                                                 "optional" : True, "validate" : None,
-                                                 "attr" : "stepTwoOutputModuleName", "null" : True},
+                                                 "optional" : True, "null" : True},
                     "ConfigCacheID": {"default" : None, "optional": True, "null": True},
                     "StepOneConfigCacheID" : {"default" : None, "type" : str,
-                                              "optional" : False, "validate" : None,
-                                              "attr" : "stepOneConfigCacheID", "null" : True},
+                                              "optional" : False, "null" : True},
                     "StepTwoConfigCacheID" : {"default" : None, "type" : str,
-                                              "optional" : True, "validate" : None,
-                                              "attr" : "stepTwoConfigCacheID", "null" : True},
+                                              "optional" : True, "null" : True},
                     "StepThreeConfigCacheID" : {"default" : None, "type" : str,
-                                                "optional" : True, "validate" : None,
-                                                "attr" : "stepThreeConfigCacheID", "null" : True},
+                                                "optional" : True, "null" : True},
                     "KeepStepOneOutput" : {"default" : True, "type" : strToBool,
-                                           "optional" : True, "validate" : None,
-                                           "attr" : "keepStepOneOutput", "null" : False},
+                                           "optional" : True, "null" : False},
                     "KeepStepTwoOutput" : {"default" : True, "type" : strToBool,
-                                           "optional" : True, "validate" : None,
-                                           "attr" : "keepStepTwoOutput", "null" : False},
-                    "StepTwoTimePerEvent" : {"default" : 1, "type" : float,
-                                             "optional" : True, "validate" : lambda x : x > 0,
-                                             "attr" : "stepTwoTimePerEvent", "null" : False},
-                    "StepThreeTimePerEvent" : {"default" : 1, "type" : float,
-                                               "optional" : True, "validate" : lambda x : x > 0,
-                                               "attr" : "stepThreeTimePerEvent", "null" : False},
-                    "StepTwoSizePerEvent" : {"default" : None, "type" : float,
-                                             "optional" : True, "validate" : lambda x : x > 0,
-                                             "attr" : "stepTwoSizePerEvent", "null" : True},
-                    "StepThreeSizePerEvent" : {"default" : None, "type" : float,
-                                               "optional" : True, "validate" : lambda x : x > 0,
-                                               "attr" : "stepThreeSizePerEvent", "null" : True},
-                    "StepTwoMemory" : {"default" : None, "type" : float,
-                                       "optional" : True, "validate" : lambda x : x > 0,
-                                       "attr" : "stepTwoMemory", "null" : True},
-                    "StepThreeMemory" : {"default" : None, "type" : float,
-                                         "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "stepThreeMemory", "null" : True},
-                    "MCPileup" : {"default" : None, "type" : str,
+                                           "optional" : True, "null" : False},
+                    "StepTwoTimePerEvent" : {"type" : float, "optional" : True, "null" : True,
+                                             "validate" : lambda x : x > 0},
+                    "StepThreeTimePerEvent" : {"type" : float, "optional" : True, "null" : True,
+                                               "validate" : lambda x : x > 0},
+                    "StepTwoSizePerEvent" : {"default" : None, "type" : float, "null" : True,
+                                             "optional" : True, "validate" : lambda x : x > 0},
+                    "StepThreeSizePerEvent" : {"default" : None, "type" : float, "null" : True,
+                                               "optional" : True, "validate" : lambda x : x > 0},
+                    "StepTwoMemory" : {"default" : None, "type" : float, "null" : True,
+                                       "optional" : True, "validate" : lambda x : x > 0},
+                    "StepThreeMemory" : {"default" : None, "type" : float, "null" : True,
+                                         "optional" : True, "validate" : lambda x : x > 0},
+                    "MCPileup" : {"default" : None, "type" : str, "null" : True,
                                   "optional" : True, "validate" : dataset,
                                   "attr" : "mcPileup", "null" : True},
-                    "DataPileup" : {"default" : None, "type" : str,
-                                    "optional" : True, "validate" : dataset,
-                                    "attr" : "dataPileup", "null" : True},
+                    "DataPileup" : {"default" : None, "type" : str, "null" : True,
+                                    "optional" : True, "validate" : dataset},
                     "DeterministicPileup" : {"default" : False, "type" : strToBool,
-                                             "optional" : True, "validate" : None,
-                                             "attr" : "deterministicPileup", "null" : False}}
+                                             "optional" : True, "null" : False}}
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

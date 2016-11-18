@@ -921,8 +921,11 @@ class PyCondorPlugin(BasePlugin):
         else:
             jdl.append('+DESIRED_CMSDataLocations = undefined\n')
 
-        # HighIO jobs
-        jdl.append('+Requestioslots = %d\n' % job.get('highIOjob', 0))
+        # HighIO and repack jobs handling
+        highio = 1 if job['taskType'] in ["Merge", "Cleanup", "LogCollect"] else 0
+        repackjob = 1 if job['taskType'] == 'Repack' else 0
+        jdl.append('+Requestioslots = %d\n' % highio)
+        jdl.append('+RequestRepackslots = %d\n' % repackjob)
 
         # Performance and resource estimates
         numberOfCores = job.get('numberOfCores', 1)

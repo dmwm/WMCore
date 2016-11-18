@@ -526,8 +526,9 @@ class SimpleCondorPlugin(BasePlugin):
             else:
                 ad['DESIRED_CMSDataLocations'] = classad.Value.Undefined
 
-            # HighIO jobs
-            ad['Requestioslots'] = int(job.get('highIOjob', False))
+            # HighIO and repack jobs
+            ad['Requestioslots'] = 1 if job['taskType'] in ["Merge", "Cleanup", "LogCollect"] else 0
+            ad['RequestRepackslots'] = 1 if job['taskType'] == 'Repack' else 0
 
             # Performance and resource estimates
             numberOfCores = job.get('numberOfCores', 1)

@@ -327,11 +327,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                 numberOfCores = getattr(baggage, "numberOfCores", 1)
             loadedJob['numberOfCores'] = numberOfCores
 
-            # check if job should be submitted as highIO job
-            highIOjob = False
-            if newJob['type'] in ["Repack", "Merge", "Cleanup", "LogCollect"]:
-                highIOjob = True
-
             # Create a job dictionary object and put it in the cache (needs to be in sync with RunJob)
             jobInfo = {'id': jobID,
                        'requestName': newJob['request_name'],
@@ -341,7 +336,6 @@ class JobSubmitterPoller(BaseWorkerThread):
                        'priority': newJob['wf_priority'],
                        'taskID': newJob['task_id'],
                        'retry_count': newJob["retry_count"],
-                       'highIOjob': highIOjob,
                        'taskPriority': None,                                # update from the thresholds
                        'custom': {'location': None},                        # update later
                        'packageDir': batchDir,

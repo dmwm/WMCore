@@ -71,6 +71,7 @@ class JobFactory(WMObject):
         self.siteWhitelist = kwargs.get("siteWhitelist", [])
         self.siteBlacklist = kwargs.get("siteBlacklist", [])
         self.trustSitelists = kwargs.get("trustSitelists", False)
+        self.trustPUSitelists = kwargs.get("trustPUSitelists", False)
 
         # Every time we restart, re-zero the jobs
         self.nJobs = 0
@@ -136,6 +137,10 @@ class JobFactory(WMObject):
         if failedJob:
             self.currentJob["failedOnCreation"] = True
             self.currentJob["failedReason"] = failedReason
+
+        # Decides how the pileup data will be handled in runtime
+        if self.trustPUSitelists:
+            self.currentJob.addBaggageParameter("trustPUSitelists", self.trustPUSitelists)
 
         self.nJobs += 1
         for gen in self.generators:

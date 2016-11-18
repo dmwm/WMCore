@@ -12,7 +12,7 @@ import random
 import re
 import socket
 import traceback
-from json import JSONDecoder
+import json
 
 import FWCore.ParameterSet.Config as cms
 
@@ -405,10 +405,13 @@ class SetupCMSSWPset(ScriptInterface):
         If other pileup types are specified by the user, the method doesn't
         modify anything.
 
-        The method considers only files which are present on this local
-        PNN (PhEDExNodeName). The job will use only those. Dataset, divided into
-        blocks, may not have all blocks present on a particular SE. However,
-        all files belonging into a block will be present when reported by DBS.
+        The method considers only files which are present on this local PNN.
+        The job will use only those, unless it was told to trust the PU site
+        location (trustPUSitelists=True), in this case ALL the blocks/files
+        will be added to the PSet and files will be read via AAA.
+        Dataset, divided into blocks, may not have all blocks present on a
+        particular PNN. However, all files belonging into a block will be
+        present when reported by DBS.
 
         The structure of the pileupDict: PileupFetcher._queryDbsAndGetPileupConfig
 
@@ -418,6 +421,8 @@ class SetupCMSSWPset(ScriptInterface):
         each type of modules instances can have either "secsource"
         or "input" attribute, so need to probe both, one shall succeed.
         """
+        baggage = self.job.getBaggage()
+
         for m in modules:
             for pileupType in self.step.data.pileup.listSections_():
                 # there should be either "input" or "secsource" attributes
@@ -427,18 +432,16 @@ class SetupCMSSWPset(ScriptInterface):
                     continue
                 inputTypeAttrib.fileNames = cms.untracked.vstring()
                 if pileupType == requestedPileupType:
-                    # not all blocks may be stored on the local SE, loop over
-                    # all blocks and consider only files stored locally
                     eventsAvailable = 0
+                    useAAA = True if getattr(baggage, 'trustPUSitelists', False) else False
                     for blockName in sorted(pileupDict[pileupType].keys()):
                         blockDict = pileupDict[pileupType][blockName]
-                        if PhEDExNodeName in blockDict["PhEDExNodeNames"]:
+                        if PhEDExNodeName in blockDict["PhEDExNodeNames"] or useAAA:
                             eventsAvailable += int(blockDict.get('NumberOfEvents', 0))
                             for fileLFN in blockDict["FileList"]:
                                 # vstring does not support unicode
                                 inputTypeAttrib.fileNames.append(str(fileLFN['logical_file_name']))
                     if requestedPileupType == 'data':
-                        baggage = self.job.getBaggage()
                         if getattr(baggage, 'skipPileupEvents', None) is not None:
                             # For deterministic pileup, we want to shuffle the list the
                             # same for every job in the task and skip events
@@ -484,13 +487,9 @@ class SetupCMSSWPset(ScriptInterface):
         workingDir = self.stepSpace.location
         jsonPileupConfig = os.path.join(workingDir, "pileupconf.json")
         print("Pileup JSON configuration file: '%s'" % jsonPileupConfig)
-        # load the JSON config file into a Python dictionary
-        decoder = JSONDecoder()
         try:
-            f = open(jsonPileupConfig, 'r')
-            json = f.read()
-            pileupDict =  decoder.decode(json)
-            f.close()
+            with open(jsonPileupConfig) as jdata:
+                pileupDict = json.load(jdata)
         except IOError:
             m = "Could not read pileup JSON configuration file: '%s'" % jsonPileupConfig
             raise RuntimeError(m)

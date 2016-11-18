@@ -162,7 +162,7 @@ class StepChainWorkloadFactory(StdBase):
                                            globalTag=taskConf.get("GlobalTag", None),
                                            taskConf=taskConf)
 
-        lumiMask = taskConf.get("LumiList", self.workload.lumiList)
+        lumiMask = taskConf.get("LumiList", self.workload.getLumiList())
         if lumiMask:
             task.setLumiMask(lumiMask)
 

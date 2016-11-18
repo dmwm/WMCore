@@ -273,10 +273,10 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(sorted(testWorkload.getCMSSWVersions()), ['CMSSW_8_0_1', 'CMSSW_8_0_17'])
 
         # test workload attributes
-        self.assertEqual(testWorkload.processingString, "START70_V4")
-        self.assertEqual(testWorkload.acquisitionEra, "CMSSW_7_0_0_pre11")
-        self.assertEqual(testWorkload.processingVersion, 1)
-        self.assertFalse(testWorkload.lumiList, "Wrong lumiList")
+        self.assertEqual(testWorkload.getProcessingString(), "START70_V4")
+        self.assertEqual(testWorkload.getAcquisitionEra(), "CMSSW_7_0_0_pre11")
+        self.assertEqual(testWorkload.getProcessingVersion(), 1)
+        self.assertFalse(testWorkload.getLumiList(), "Wrong lumiList")
         self.assertEqual(testWorkload.data.policies.start.policyName, "MonteCarlo")
 
         # test workload tasks and steps

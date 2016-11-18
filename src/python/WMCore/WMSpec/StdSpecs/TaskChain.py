@@ -307,10 +307,10 @@ class TaskChainWorkloadFactory(StdBase):
         # sets the prepID  all the properties need to be set by
         # self.workload.setTaskPropertiesFromWorkload manually for the task
         task.setPrepID(taskConf.get("PrepID", self.workload.getPrepID()))
-        task.setAcquisitionEra(taskConf.get("AcquisitionEra", self.workload.acquisitionEra))
-        task.setProcessingString(taskConf.get("ProcessingString", self.workload.processingString))
-        task.setProcessingVersion(taskConf.get("ProcessingVersion", self.workload.processingVersion))
-        lumiMask = taskConf.get("LumiList", self.workload.lumiList)
+        task.setAcquisitionEra(taskConf.get("AcquisitionEra", self.workload.getAcquisitionEra()))
+        task.setProcessingString(taskConf.get("ProcessingString", self.workload.getProcessingString()))
+        task.setProcessingVersion(taskConf.get("ProcessingVersion", self.workload.getProcessingVersion()))
+        lumiMask = taskConf.get("LumiList", self.workload.getLumiList())
         if lumiMask:
             task.setLumiMask(lumiMask)
 

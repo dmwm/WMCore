@@ -17,7 +17,6 @@ from httplib import HTTPException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
@@ -211,8 +210,6 @@ class CleanCouchPoller(BaseWorkerThread):
             self.centralRequestDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL,
                                                           couchapp=self.config.AnalyticsDataCollector.RequestCouchApp)
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-            # TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
-            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
         else:
             # Tier0 case
             self.deletableState = "completed"
@@ -295,21 +292,12 @@ class CleanCouchPoller(BaseWorkerThread):
             if self.cleanAllLocalCouchDB(workflowName):
                 if self.useReqMgrForCompletionCheck:
                     try:
-                        # TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
-                        self.reqmgrSvc.updateRequestStatus(workflowName, archiveState)
-                        # And replace with this - remove all the excption
-                        # self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
-                    except HTTPException as ex:
-                        # If we get an HTTPException of 404 means reqmgr2 request
-                        if ex.status == 404:
-                            # try reqmgr2 call
-                            msg = "%s : reqmgr2 request: %s" % (workflowName, str(ex))
-                            logging.warning(msg)
-                            self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
-                        else:
-                            msg = "%s : fail to update status with HTTP error: %s" % (workflowName, str(ex))
-                            logging.error(msg)
-                            raise ex
+                        self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
+                    except Exception as ex:
+                        msg = "%s : fail to update status with HTTP error: %s" % (workflowName, str(ex))
+                        msg += traceback.format_exc()
+                        logging.error(msg)
+                        raise ex
 
                     updated += 1
                     logging.debug("status updated to %s %s", archiveState, workflowName)

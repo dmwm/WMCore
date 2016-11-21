@@ -316,49 +316,62 @@ class SimpleCondorPlugin(BasePlugin):
         Parameters:    excludeSite = False when moving to Normal
                        excludeSite = True when moving to Down, Draining or Aborted
         """
-        schedd = htcondor.Schedd()
-
+        sd = htcondor.Schedd()
+        jobIdToKill = []
         jobtokill = []
+        origSiteLists = set()
+
         try:
-            itobj = schedd.xquery('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
-                                  ['ClusterId', 'ProcId', 'DESIRED_Sites', 'ExtDESIRED_Sites'])
-        except Exception as ex:
-            logging.error("Failed to query condor schedd.")
-            logging.exception(ex)
-            return jobtokill
-        else:
-            jobInfo = {}
+            itobj = sd.xquery('WMAgent_AgentName =?= %s && JobStatus =?= 1' % classad.quote(self.agent),
+                              ['WMAgent_JobID', 'DESIRED_Sites', 'ExtDESIRED_Sites'])
+
             for jobAd in itobj:
-                gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
-                jobInfo[gridId] = jobAd
-            for job in jobs:
-                jobAd = jobInfo.get(job['gridid'], None)
-                if jobAd:
-                    desiredSites = jobAd.get('DESIRED_Sites').split(',')
-                    extDesiredSites = jobAd.get('ExtDESIRED_Sites').split(',')
-                    if excludeSite:
-                        # Remove siteName from DESIRED_Sites if job has it
-                        if siteName in desiredSites:
-                            if len(desiredSites) > 1:
-                                desiredSites.remove(siteName)
-                                desiredSites = ','.join(desiredSites)
-                                try:
-                                    schedd.edit([job['gridid']], 'DESIRED_Sites', classad.ExprTree('"%s"' % desiredSites))
-                                except Exception as ex:
-                                    logging.error("Failed to edit sites for job %s" % job['gridid'])
-                                    logging.exception(ex)
-                            else:
-                                jobtokill.append(job)
-                    else:
-                        # Add siteName to DESIRED_Sites if ExtDESIRED_Sites has it (moving back to Normal)
-                        if siteName not in desiredSites and siteName in extDesiredSites:
-                            desiredSites.append(siteName)
-                            desiredSites = ','.join(sorted(desiredSites))
-                            try:
-                                schedd.edit([job['gridid']], 'DESIRED_Sites', classad.ExprTree('"%s"' % desiredSites))
-                            except Exception as ex:
-                                logging.error("Failed to edit sites for job %s" % job['gridid'])
-                                logging.exception(ex)
+                jobAdId = jobAd.get('WMAgent_JobID')
+                desiredSites = jobAd.get('DESIRED_Sites')
+                extDesiredSites = jobAd.get('ExtDESIRED_Sites')
+                if excludeSite and siteName == desiredSites:
+                    jobIdToKill.append(jobAdId)
+                else:
+                    origSiteLists.add((desiredSites, extDesiredSites))
+            logging.info("Set of %d site list condor combinations", len(origSiteLists))
+        except Exception as ex:
+            msg = "Failed to query condor schedd: %s" % str(ex)
+            logging.exception(msg)
+            return jobtokill
+
+        with sd.transaction() as txn:
+            for siteStrings in origSiteLists:
+                desiredList = set([site.strip() for site in siteStrings[0].split(",")])
+                extDesiredList = set([site.strip() for site in siteStrings[1].split(",")])
+
+                if excludeSite and siteName not in desiredList:
+                    continue
+                elif not excludeSite and (siteName in desiredList or siteName not in extDesiredList):
+                    continue
+                elif excludeSite:
+                    desiredList.remove(siteName)
+                    extDesiredList.add(siteName)
+                else:  # well, then include
+                    desiredList.add(siteName)
+                    extDesiredList.remove(siteName)
+
+                # now put it back in the string format expected by condor
+                desiredList = ",".join(desiredList)
+                extDesiredList = ",".join(extDesiredList)
+
+                try:
+                    sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
+                                                                                 classad.quote(siteStrings[1])),
+                            "DESIRED_Sites", classad.quote(str(desiredList)))
+                    sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
+                                                                                 classad.quote(siteStrings[1])),
+                            "ExtDESIRED_Sites", classad.quote(str(extDesiredList)))
+                except RuntimeError as ex:
+                    msg = 'Failed to condor edit job sites. Could be that no jobs were in condor anymore: %s' % str(ex)
+                    logging.warning(msg)
+
+        # now update the list of jobs to be killed
+        jobtokill = [job for job in jobs if job['id'] in jobIdToKill]
 
         return jobtokill
 

@@ -726,6 +726,11 @@ class SetupCMSSWPset(ScriptInterface):
             self.process.source.numberEventsInLuminosityBlock = \
                 cms.untracked.uint32(self.step.data.application.configuration.eventsPerLumi)
 
+        # limit run time if desired
+        if hasattr(self.step.data.application.configuration, "maxSecondsUntilRampdown"):
+            self.process.maxSecondsUntilRampdown = cms.untracked.PSet(
+                    input = cms.untracked.int32(self.step.data.application.configuration.maxSecondsUntilRampdown))
+
         # accept an overridden TFC from the step
         if hasattr(self.step.data.application,'overrideCatalog'):
             print("Found a TFC override: %s" % self.step.data.application.overrideCatalog)

@@ -466,9 +466,9 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                         logging.debug("Deleting block %s from %s since it is fully transfered", blockName, location)
                         if location not in deletableEntries:
                             deletableEntries[location] = {}
-                            if dataset not in deletableEntries[location]:
-                                deletableEntries[location][dataset] = set()
-                                deletableEntries[location][dataset].add(blockName)
+                        if dataset not in deletableEntries[location]:
+                            deletableEntries[location][dataset] = set()
+                        deletableEntries[location][dataset].add(blockName)
 
         binds = []
         for blockName in skippableBlocks:

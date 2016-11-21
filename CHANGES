@@ -1,3 +1,16 @@
+1.0.21 to 1.0.21.crab4:
+  - Merge pull request #7405 from emaszs/autosplitting_push
+  - Changes needed for automatic splitting in CRAB3:
+  - 1.0.21.crab3
+  - Merge pull request #7380 from dciangot/fix_aso_deployment
+  - fix setup-dependencies for ASO deployment
+  - 1.0.21.crab2
+  - Merge pull request #7331 from emaszs/dbs_dep_fix
+  - Add DBS to CRABClient package dependencies
+  - 1.0.21.crab1
+  - Merge pull request #7304 from amaltaro/registry-stageoutCrab
+  - Import the stage out plugins
+
 1.0.21 to 1.0.21.crab3:
   - Merge pull request #7380 from dciangot/fix_aso_deployment
   - fix setup-dependencies for ASO deployment

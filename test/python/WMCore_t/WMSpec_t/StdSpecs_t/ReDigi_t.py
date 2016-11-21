@@ -22,6 +22,7 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
 
+
 def injectReDigiConfigs(configDatabase, combinedStepOne = False):
     """
     _injectReDigiConfigs_
@@ -751,6 +752,284 @@ class ReDigiTest(EmulatedUnitTestCase):
 
         self.verifyKeepAOD()
         return
+
+    def test1StepMemCoresSettings(self):
+        """
+        _test1StepMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps. Single step in a task.
+        """
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[2]
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        stepOne = testWorkload.getTask('StepOneProc')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = stepOne.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = stepOne.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", defaultArguments)
+        stepOne = testWorkload.getTask('StepOneProc')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = stepOne.getStepHelper(step)
+            if step in ('stageOut1', 'logArch1'):
+                self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+        perfParams = stepOne.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+    def test2StepDependCoresSettings(self):
+        """
+        _test2StepSepCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps. One step in each task/job
+        """
+        taskPaths = ('/TestWorkload/StepOneProc',
+                     '/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc')
+
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["KeepStepOneOutput"] = True
+        defaultArguments["KeepStepTwoOutput"] = True
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                if step in ('stageOut1', 'logArch1'):
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                else:
+                    self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+    def test2StepChainedCoresSettings(self):
+        """
+        _test2StepSepCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps. Two steps in the same task/job.
+        """
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["KeepStepOneOutput"] = False
+        defaultArguments["KeepStepTwoOutput"] = True
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        taskObj = testWorkload.getTask('StepOneProc')
+        for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
+            stepHelper = taskObj.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = taskObj.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        taskObj = testWorkload.getTask('StepOneProc')
+        for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
+            stepHelper = taskObj.getStepHelper(step)
+            if step in ('stageOut1', 'logArch1'):
+                self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+        perfParams = taskObj.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+    def test3StepsDependMemCoresSettings(self):
+        """
+        _test3StepsDependMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps. Each step in a different task/job.
+        """
+        taskPaths = ('/TestWorkload/StepOneProc',
+                     '/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc',
+                     '/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc')
+
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepStepOneOutput"] = True
+        defaultArguments["KeepStepTwoOutput"] = True
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                if step in ('stageOut1', 'logArch1'):
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                else:
+                    self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+    def test3StepsSemiChainedMemCoresSettings(self):
+        """
+        _test3StepsSemiChainedMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps. First and second steps in the same task/job,
+        third step in a separate task.
+        """
+        taskPaths = ('/TestWorkload/StepOneProc',
+                     '/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/StepThreeProc')
+
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepStepOneOutput"] = False
+        defaultArguments["KeepStepTwoOutput"] = True
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
+                if step == 'cmsRun2' and task == taskPaths[1]:
+                    continue
+                stepHelper = taskObj.getStepHelper(step)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
+                if step == 'cmsRun2' and task == taskPaths[1]:
+                    continue
+                stepHelper = taskObj.getStepHelper(step)
+                if step in ('stageOut1', 'logArch1'):
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                else:
+                    self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+    def test3StepsChainedMemCoresSettings(self):
+        """
+        _test3StepsChainedMemCoresSettings_
+
+        Make sure the multicore and memory seetings are properly propagated to
+        all tasks and steps
+        """
+        defaultArguments = ReDigiWorkloadFactory.getTestArguments()
+        defaultArguments["CouchURL"] = os.environ["COUCHURL"]
+        defaultArguments["CouchDBName"] = "redigi_t"
+        configs = injectReDigiConfigs(self.configDatabase)
+        defaultArguments["StepOneConfigCacheID"] = configs[0]
+        defaultArguments["StepTwoConfigCacheID"] = configs[1]
+        defaultArguments["StepThreeConfigCacheID"] = configs[2]
+        defaultArguments["KeepStepOneOutput"] = False
+        defaultArguments["KeepStepTwoOutput"] = False
+        defaultArguments["StepOneOutputModuleName"] = "RAWDEBUGoutput"
+        defaultArguments["StepTwoOutputModuleName"] = "RECODEBUGoutput"
+
+        factory = ReDigiWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload1", defaultArguments)
+        stepOne = testWorkload.getTask('StepOneProc')
+        for step in ['cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1']:
+            stepHelper = stepOne.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = stepOne.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", defaultArguments)
+        stepOne = testWorkload.getTask('StepOneProc')
+        for step in ['cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1']:
+            stepHelper = stepOne.getStepHelper(step)
+            if step in ['stageOut1', 'logArch1']:
+                self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+        perfParams = stepOne.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
 
 if __name__ == '__main__':
     unittest.main()

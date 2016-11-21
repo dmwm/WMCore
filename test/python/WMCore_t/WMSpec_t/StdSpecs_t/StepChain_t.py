@@ -115,6 +115,42 @@ def injectStepChainConfigMC(couchDatabase):
     return docMap
 
 
+def getSingleStepOverride():
+    " Return StepChain-specific dict for a single step "
+    args = {
+        "CouchURL": os.environ["COUCHURL"],
+        "CouchDBName": "stepchain_t",
+        "Step1": {
+            "GlobalTag": "PHYS14_25_V44",
+            "InputDataset": "/RSGravToGG_kMpl-01_M-5000_TuneCUEP8M1_13TeV-pythia8/RunIISpring15DR74-Asympt50ns_MCRUN2_74_V9A-v1/AODSIM",
+            "StepName": "StepOne"},
+        "StepChain": 1
+    }
+    return args
+
+def getThreeStepsOverride():
+    " Return StepChain-specific dict for a single step "
+    args = {
+        "CouchURL": os.environ["COUCHURL"],
+        "CouchDBName": "stepchain_t",
+        "Step1": {
+            "GlobalTag": "PHYS14_25_V44",
+            "InputDataset": "/RSGravToGG_kMpl-01_M-5000_TuneCUEP8M1_13TeV-pythia8/RunIISpring15DR74-Asympt50ns_MCRUN2_74_V9A-v1/AODSIM",
+            "StepName": "StepOne"},
+        "Step2": {
+            "GlobalTag": "PHYS14_25_V44",
+            "InputFromOutputModule": "RAWSIMoutput",
+            "InputStep": "StepOne",
+            "StepName": "StepTwo"},
+        "Step3": {
+            "GlobalTag": "PHYS14_25_V44",
+            "InputFromOutputModule": "RAWSIMoutput",
+            "InputStep": "StepTwo",
+            "StepName": "StepThree"},
+        "StepChain": 3
+    }
+    return args
+
 class StepChainTests(unittest.TestCase):
     """
     _StepChainTests_
@@ -432,6 +468,137 @@ class StepChainTests(unittest.TestCase):
         self.assertTrue(set(stepInputSection['inputOutputModule']), 'RAWSIMoutput')
         self.assertEqual(set(step4.data.output.modules.dictionary_().keys()), set(['AODSIMoutput', 'RECOSIMoutput']))
         self.assertEqual(step4.data.output.modules.AODSIMoutput.dictionary_()['dataTier'], 'AODSIM')
+
+    def test1StepMemCoresSettings(self):
+        """
+        _test1StepMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all steps. Single step in a task.
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        testArguments.update(getSingleStepOverride())
+        testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase),
+        if isinstance(testArguments['Step1']['ConfigCacheID'], tuple):
+            testArguments['Step1']['ConfigCacheID'] = testArguments['Step1']['ConfigCacheID'][0]
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        testArguments["Multicore"] = 6
+        testArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            if step in ('stageOut1', 'logArch1'):
+                self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), testArguments["Multicore"])
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
+
+        return
+
+    def test3StepsMemCoresSettingsA(self):
+        """
+        _test3StepsMemCoresSettingsA_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all steps. Three steps in the task.
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        testArguments.update(getThreeStepsOverride())
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        # Test Multicore/Memory settings at TOP level **only**
+        testArguments["Multicore"] = 6
+        testArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            if step in ('stageOut1', 'logArch1'):
+                self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), testArguments["Multicore"])
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
+
+    def test3StepsMemCoresSettingsB(self):
+        """
+        _test3StepsMemCoresSettingsB_
+
+        Mix Multicore settings at both step and request level and make sure they
+        are properly propagated to each step. Three steps in the task.
+        """
+        testArguments = StepChainWorkloadFactory.getTestArguments()
+        configDocs = injectStepChainConfigMC(self.configDatabase)
+        testArguments.update(getThreeStepsOverride())
+        for s in ['Step1', 'Step2', 'Step3']:
+            testArguments[s]['ConfigCacheID'] = configDocs[s]
+        testArguments['Step2']['KeepOutput'] = False
+
+        # Test Multicore/Memory settings at step level **only**
+        testArguments['Step1']["Multicore"] = 2
+        testArguments['Step3']["Multicore"] = 4
+        testArguments['Step1']["Memory"] = 2200.0
+        testArguments['Step3']["Memory"] = 4400.0
+        factory = StepChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('cmsRun2', 'stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+        self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfCores(), testArguments['Step1']["Multicore"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfCores(), testArguments['Step3']["Multicore"])
+
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
+
+        # Test mix of Multicore/Memory settings at both top and step level
+        testArguments["Multicore"] = 3
+        testArguments['Step1']["Multicore"] = 2
+        testArguments['Step3']["Multicore"] = 4
+        testArguments["Memory"] = 3300.0
+        testArguments['Step1']["Memory"] = 2200.0
+        testArguments['Step3']["Memory"] = 4400.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
+        prodTask = testWorkload.getTask('StepOne')
+        for step in ('stageOut1', 'logArch1'):
+            stepHelper = prodTask.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+        self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfCores(), testArguments['Step1']["Multicore"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun2').getNumberOfCores(), testArguments["Multicore"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfCores(), testArguments['Step3']["Multicore"])
+
+        perfParams = prodTask.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
+
+        return
 
 
 if __name__ == '__main__':

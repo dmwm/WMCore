@@ -253,9 +253,6 @@ class TaskChainWorkloadFactory(StdBase):
             self.runBlacklist = taskConf["RunBlacklist"]
             self.runWhitelist = taskConf["RunWhitelist"]
 
-            if taskConf['Multicore']:
-                self.multicoreNCores = taskConf['Multicore']
-
             parentTask = None
             if parent in self.mergeMapping:
                 parentTask = self.mergeMapping[parent][parentTaskModule(taskConf)]

@@ -128,6 +128,7 @@ def makeProcessingConfigs(couchDatabase):
     }
     return docMap
 
+
 def outputModuleList(task):
     """
     _outputModuleList_
@@ -140,6 +141,56 @@ def outputModuleList(task):
         mods = om.listSections_()
         result.extend([str(x) for x in mods])
     return result
+
+
+def createMultiGTArgs():
+    """
+    Return a dict of 4-tasks with multiple GTs
+    """
+    arguments = {
+        "AcquisitionEra": "ReleaseValidation",
+        "Requestor": "sfoulkes@fnal.gov",
+        "CMSSWVersion": "CMSSW_8_0_17",
+        "ScramArch": "slc6_amd64_gcc530",
+        "ProcessingVersion": 1,
+        "GlobalTag": "DefaultGlobalTag",
+        "SiteWhitelist": ["T1_CH_CERN", "T1_US_FNAL"],
+        "DashboardHost": "127.0.0.1",
+        "DashboardPort": 8884,
+        "TaskChain": 4,
+        "Task1": {
+            "TaskName": "DigiHLT",
+            "InputDataset": "/MinimumBias/Commissioning10-v4/GEN-SIM",
+            "SplittingAlgo": "EventAwareLumiBased",
+        },
+        "Task2": {
+            "TaskName": "Reco",
+            "InputTask": "DigiHLT",
+            "InputFromOutputModule": "writeRAWDIGI",
+            "GlobalTag": "GlobalTagForReco",
+            "CMSSWVersion": "CMSSW_8_0_18",
+            "ScramArch": "slc6_amd64_gcc530",
+            "PrimaryDataset": "ZeroBias",
+            "SplittingAlgo": "EventAwareLumiBased",
+        },
+        "Task3": {
+            "TaskName": "ALCAReco",
+            "InputTask": "Reco",
+            "InputFromOutputModule": "writeALCA",
+            "GlobalTag": "GlobalTagForALCAReco",
+            "CMSSWVersion": "CMSSW_8_0_19",
+            "ScramArch": "slc6_amd64_gcc530",
+            "SplittingAlgo": "EventAwareLumiBased",
+        },
+        "Task4": {
+            "TaskName": "Skims",
+            "InputTask": "Reco",
+            "InputFromOutputModule": "writeRECO",
+            "SplittingAlgo": "EventAwareLumiBased",
+        }
+    }
+    return arguments
+
 
 class TaskChainTests(unittest.TestCase):
     def setUp(self):
@@ -448,65 +499,19 @@ class TaskChainTests(unittest.TestCase):
         """
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(createMultiGTArgs())
         lumiDict = {"1":[[2,4], [8,50]], "2":[[100,200], [210,210]]}
-        arguments = {
-            "AcquisitionEra": "ReleaseValidation",
-            "Requestor": "sfoulkes@fnal.gov",
-            "CMSSWVersion": "CMSSW_8_0_17",
-            "ScramArch": "slc6_amd64_gcc530",
-            "ProcessingVersion": 1,
-            "GlobalTag": "DefaultGlobalTag",
-            "CouchURL": self.testInit.couchUrl,
-            "CouchDBName": self.testInit.couchDbName,
-            "SiteWhitelist" : ["T1_CH_CERN", "T1_US_FNAL"],
-            "DashboardHost": "127.0.0.1",
-            "DashboardPort": 8884,
-            "TaskChain" : 4,
-            "Task1" :{
-                "TaskName" : "DigiHLT",
-                "LumiList": lumiDict,
-                "ConfigCacheID" : processorDocs['DigiHLT'],
-                "InputDataset" : "/MinimumBias/Commissioning10-v4/GEN-SIM",
-                "SplittingAlgo"  : "EventAwareLumiBased",
-            },
-            "Task2" : {
-                "TaskName" : "Reco",
-                "InputTask" : "DigiHLT",
-                "InputFromOutputModule" : "writeRAWDIGI",
-                "ConfigCacheID" : processorDocs['Reco'],
-                "GlobalTag" : "GlobalTagForReco",
-                "CMSSWVersion" : "CMSSW_8_0_18",
-                "ScramArch" : "slc6_amd64_gcc530",
-                "PrimaryDataset" : "ZeroBias",
-                "SplittingAlgo"  : "EventAwareLumiBased",
-            },
-            "Task3" : {
-                "TaskName" : "ALCAReco",
-                "InputTask" : "Reco",
-                "InputFromOutputModule" : "writeALCA",
-                "ConfigCacheID" : processorDocs['ALCAReco'],
-                "GlobalTag" : "GlobalTagForALCAReco",
-                "CMSSWVersion" : "CMSSW_8_0_19",
-                "ScramArch" : "slc6_amd64_gcc530",
-                "SplittingAlgo"  : "EventAwareLumiBased",
-            },
-            "Task4" : {
-                "TaskName" : "Skims",
-                "InputTask" : "Reco",
-                "InputFromOutputModule" : "writeRECO",
-                "ConfigCacheID" : processorDocs['Skims'],
-                "SplittingAlgo"  : "EventAwareLumiBased",
-            }
-        }
-        testArguments.update(arguments)
+        testArguments["CouchURL"] = self.testInit.couchUrl
+        testArguments["CouchDBName"] = self.testInit.couchDbName
+        testArguments["Task1"]["LumiList"] = lumiDict
+        testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
+        testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
+        testArguments["Task3"]["ConfigCacheID"] = processorDocs['ALCAReco']
+        testArguments["Task4"]["ConfigCacheID"] =  processorDocs['Skims']
         arguments = testArguments
 
         factory = TaskChainWorkloadFactory()
-        try:
-            self.workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
-        except Exception as ex:
-            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
-            self.fail(msg)
+        self.workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
 
         testWMBSHelper = WMBSHelper(self.workload, "DigiHLT", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -562,34 +567,137 @@ class TaskChainTests(unittest.TestCase):
 
         return
 
+    def test1TaskMemCoresSettings(self):
+        """
+        _test1StepMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all steps. Single step in a task.
+        """
+        generatorDoc = makeGeneratorConfig(self.configDatabase)
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        arguments = {
+            "CouchURL": self.testInit.couchUrl,
+            "CouchDBName": self.testInit.couchDbName,
+            "TaskChain": 1,
+            "Task1": {
+                "TaskName": "TaskOne",
+                "ConfigCacheID": generatorDoc,
+                "RequestNumEvents": 10000,
+                "PrimaryDataset": "RelValTTBar",
+            },
+        }
+
+        testArguments.update(arguments)
+
+        factory = TaskChainWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestTaskChainWorkload", testArguments)
+        #print(testWorkload.listAllTaskPathNames())
+
+        taskPaths = ['/TestTaskChainWorkload/TaskOne', 
+            '/TestTaskChainWorkload/TaskOne/LogCollectForTaskOne', 
+            '/TestTaskChainWorkload/TaskOne/TaskOneMergewriteGENSIM', 
+            '/TestTaskChainWorkload/TaskOne/TaskOneMergewriteGENSIM/TaskOnewriteGENSIMMergeLogCollect', 
+            '/TestTaskChainWorkload/TaskOne/TaskOneCleanupUnmergedwriteGENSIM']
+
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            #print("%s has steps: %s" % (task, taskObj.listAllStepNames()))
+            if taskObj.taskType() in ('Production', 'Processing'):
+                for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                    stepHelper = taskObj.getStepHelper(step)
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                perfParams = taskObj.jobSplittingParameters()['performance']
+                self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+            elif taskObj.taskType() in ('LogCollect'):
+                stepHelper = taskObj.getStepHelper('logCollect1')
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+
+        # now play with cores at top level
+        testArguments['Multicore'] = 2
+        testWorkload = factory.factoryWorkloadConstruction("TestTaskChainWorkload", testArguments)
+
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            if taskObj.taskType() in ('Production', 'Processing'):
+                for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                    stepHelper = taskObj.getStepHelper(step)
+                    if step == 'cmsRun1':
+                        self.assertEqual(stepHelper.getNumberOfCores(), testArguments['Multicore'])
+                    else:
+                        self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                perfParams = taskObj.jobSplittingParameters()['performance']
+                self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+            elif taskObj.taskType() in ('LogCollect'):
+                stepHelper = taskObj.getStepHelper('logCollect1')
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+
+        # last but not least, play with cores at task level
+        testArguments['Task1']['Multicore'] = 2
+        testArguments.pop('Multicore', None)
+        testWorkload = factory.factoryWorkloadConstruction("TestTaskChainWorkload", testArguments)
+
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            if taskObj.taskType() in ('Production', 'Processing'):
+                for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                    stepHelper = taskObj.getStepHelper(step)
+                    if step == 'cmsRun1':
+                        self.assertEqual(stepHelper.getNumberOfCores(), testArguments['Task1']['Multicore'])
+                    else:
+                        self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                perfParams = taskObj.jobSplittingParameters()['performance']
+                self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+            elif taskObj.taskType() in ('LogCollect'):
+                stepHelper = taskObj.getStepHelper('logCollect1')
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+
+        return
+
     def testMultithreadedTaskChain(self):
         """
-        Test for multithreaded task chains where all steps run with the same
-        number of cores
+        Test multi-task TaskChain with default and multicore settings
         """
-
         arguments = self.buildMultithreadedTaskChain(self.differentNCores)
-        arguments['Task1']['Multicore'] = 4
-        arguments['Task2']['Multicore'] = 4
-        arguments['Task3']['Multicore'] = 4
+        arguments.pop('Multicore', None)
+        arguments.pop('Memory', None)
+        arguments['Task1'].pop('Multicore', None)
+        arguments['Task1'].pop('Memory', None)
+        arguments['Task2'].pop('Multicore', None)
+        arguments['Task2'].pop('Memory', None)
+        arguments['Task3'].pop('Multicore', None)
+        arguments['Task3'].pop('Memory', None)
+
         factory = TaskChainWorkloadFactory()
-        try:
-            self.workload = factory.factoryWorkloadConstruction("MultiChain", arguments)
-        except Exception as ex:
-            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
-            self.fail(msg)
+        testWorkload = factory.factoryWorkloadConstruction("MultiChain", arguments)
 
-        hlt = self.workload.getTaskByPath('/MultiChain/HLTD')
-        reco = self.workload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = self.workload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        hlt = testWorkload.getTaskByPath('/MultiChain/HLTD')
+        reco = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
 
-        hltStep = hlt.getStepHelper("cmsRun1")
-        recoStep = reco.getStepHelper("cmsRun1")
-        miniAODStep = miniAOD.getStepHelper("cmsRun1")
+        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(hlt.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
+        self.assertEqual(reco.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
+        self.assertEqual(miniAOD.jobSplittingParameters()['performance']['memoryRequirement'], 2300.0)
 
-        self.assertEqual(hltStep.getNumberOfCores(), 4)
-        self.assertEqual(recoStep.getNumberOfCores(), 4)
-        self.assertEqual(miniAODStep.getNumberOfCores(), 4)
+
+        # now all with 16 cores (and 8GB of memory) inherited from the top level
+        arguments['Multicore'] = 16
+        arguments['Memory'] = 8000
+        testWorkload = factory.factoryWorkloadConstruction("MultiChain", arguments)
+
+        hlt = testWorkload.getTaskByPath('/MultiChain/HLTD')
+        reco = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = testWorkload.getTaskByPath('/MultiChain/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+
+        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(hlt.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
+        self.assertEqual(reco.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
+        self.assertEqual(miniAOD.jobSplittingParameters()['performance']['memoryRequirement'], arguments['Memory'])
 
         return
 
@@ -600,33 +708,48 @@ class TaskChainTests(unittest.TestCase):
         """
 
         arguments = self.buildMultithreadedTaskChain(self.differentNCores)
-
         factory = TaskChainWorkloadFactory()
-        try:
-            self.workload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
-        except Exception as ex:
-            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
-            self.fail(msg)
+        testWorkload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
 
-        hlt = self.workload.getTaskByPath('/MultiChain2/HLTD')
-        reco = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
-        miniAOD = self.workload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+        hlt = testWorkload.getTaskByPath('/MultiChain2/HLTD')
+        reco = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
 
         hltMemory = hlt.jobSplittingParameters()['performance']['memoryRequirement']
         recoMemory = reco.jobSplittingParameters()['performance']['memoryRequirement']
         aodMemory = miniAOD.jobSplittingParameters()['performance']['memoryRequirement']
 
-        hltStep = hlt.getStepHelper("cmsRun1")
-        recoStep = reco.getStepHelper("cmsRun1")
-        miniAODStep = miniAOD.getStepHelper("cmsRun1")
+        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
+        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task2']['Multicore'])
+        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
 
-        self.assertEqual(hltStep.getNumberOfCores(), 4)
-        self.assertEqual(recoStep.getNumberOfCores(), 8)
-        self.assertEqual(miniAODStep.getNumberOfCores(), 1)
+        self.assertEqual(hltMemory, arguments['Memory'])
+        self.assertEqual(recoMemory, arguments['Task2']['Memory'])
+        self.assertEqual(aodMemory, arguments['Task3']['Memory'])
 
-        self.assertEqual(recoMemory, 8000.0)
-        self.assertEqual(aodMemory, 2000.0)
-        self.assertEqual(hltMemory, 4000.0)
+        # and test another mix of cores and memory
+        arguments['Task1']['Multicore'] = arguments.pop('Multicore', None)
+        arguments['Task1']['Memory'] = arguments.pop('Memory', None)
+        arguments['Task2'].pop('Multicore', None)
+        arguments['Task2'].pop('Memory', None)
+        arguments['Task3']['Multicore'] = 2
+        testWorkload = factory.factoryWorkloadConstruction("MultiChain2", arguments)
+
+        hlt = testWorkload.getTaskByPath('/MultiChain2/HLTD')
+        reco = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT')
+        miniAOD = testWorkload.getTaskByPath('/MultiChain2/HLTD/HLTDMergewriteRAWDIGI/RECODreHLT/RECODreHLTMergewriteALCA/MINIAODDreHLT')
+
+        hltMemory = hlt.jobSplittingParameters()['performance']['memoryRequirement']
+        recoMemory = reco.jobSplittingParameters()['performance']['memoryRequirement']
+        aodMemory = miniAOD.jobSplittingParameters()['performance']['memoryRequirement']
+
+        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task1']['Multicore'])
+        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), 1)
+        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
+
+        self.assertEqual(hltMemory, arguments['Task1']['Memory'])
+        self.assertEqual(recoMemory, 2300.0)
+        self.assertEqual(aodMemory, arguments['Task3']['Memory'])
 
         return
 

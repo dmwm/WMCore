@@ -67,8 +67,6 @@ class StepChainWorkloadFactory(StdBase):
         for k, v in arguments["Step1"].iteritems():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
-        if taskConf['Multicore']:
-            self.multicoreNCores = taskConf['Multicore']
         self.inputPrimaryDataset = taskConf.get("PrimaryDataset", self.primaryDataset)
         self.blockBlacklist = taskConf["BlockBlacklist"]
         self.blockWhitelist = taskConf["BlockWhitelist"]
@@ -117,9 +115,6 @@ class StepChainWorkloadFactory(StdBase):
                                            configCacheUrl=self.configCacheUrl,
                                            splitArgs=splitArguments, seeding=taskConf['Seeding'],
                                            totalEvents=taskConf['RequestNumEvents'],
-                                           timePerEvent=self.timePerEvent,
-                                           memoryReq=taskConf.get('Memory', None),
-                                           sizePerEvent=self.sizePerEvent,
                                            cmsswVersion=taskConf.get("CMSSWVersion", None),
                                            scramArch=taskConf.get("ScramArch", None),
                                            globalTag=taskConf.get("GlobalTag", None),
@@ -154,9 +149,6 @@ class StepChainWorkloadFactory(StdBase):
                                            configDoc=configCacheID, splitAlgo=splitAlgorithm,
                                            configCacheUrl=self.configCacheUrl,
                                            splitArgs=splitArguments,
-                                           timePerEvent=self.timePerEvent,
-                                           memoryReq=taskConf.get('Memory', None),
-                                           sizePerEvent=self.sizePerEvent,
                                            cmsswVersion=taskConf.get("CMSSWVersion", None),
                                            scramArch=taskConf.get("ScramArch", None),
                                            globalTag=taskConf.get("GlobalTag", None),
@@ -218,6 +210,12 @@ class StepChainWorkloadFactory(StdBase):
             childCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
             childCmsswStepHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
+            # multicore settings
+            if taskConf['Multicore'] > 0:
+                childCmsswStepHelper.setNumberOfCores(taskConf['Multicore'])
+            else:
+                childCmsswStepHelper.setNumberOfCores(self.multicore)
+
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
             if taskConf["PileupConfig"]:
@@ -271,16 +269,17 @@ class StepChainWorkloadFactory(StdBase):
         in getWorkloadArguments and getTaskArguments. It does type
         casting and assigns default values.
         """
+        baseArguments = self.getWorkloadArguments()
+        for argument in baseArguments:
+            if argument in taskConf:
+                taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
+
         taskArguments = self.getTaskArguments(firstTask, generator)
         for argument in taskArguments:
             if argument not in taskConf:
                 taskConf[argument] = taskArguments[argument]["default"]
             else:
                 taskConf[argument] = taskArguments[argument]["type"](taskConf[argument])
-        baseArguments = self.getWorkloadArguments()
-        for argument in baseArguments:
-            if argument in taskConf:
-                taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
 
         taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
 
@@ -423,7 +422,7 @@ class StepChainWorkloadFactory(StdBase):
                     "PrepID": {"default": None, "type": str,
                                "optional": True, "validate": None,
                                "attr": "prepID", "null": True},
-                    "Multicore": {"default": 1, "type": int,
+                    "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)

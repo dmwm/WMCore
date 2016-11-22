@@ -277,5 +277,47 @@ class MonteCarloFromGENTest(unittest.TestCase):
         splitting = productionTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])
 
+    def testMemCoresSettings(self):
+        """
+        _testMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps.
+        """
+        defaultArguments = MonteCarloFromGENWorkloadFactory.getTestArguments()
+        defaultArguments["ConfigCacheID"] = self.injectConfig()
+        defaultArguments["CouchDBName"] = "mclhe_t"
+        defaultArguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
+
+        factory = MonteCarloFromGENWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+
+        # test default values
+        taskObj = testWorkload.getTask('MonteCarloFromGEN')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = taskObj.getStepHelper(step)
+            self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = taskObj.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        # now test case where args are provided
+        defaultArguments["Multicore"] = 6
+        defaultArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
+        taskObj = testWorkload.getTask('MonteCarloFromGEN')
+        for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+            stepHelper = taskObj.getStepHelper(step)
+            if step == 'cmsRun1':
+                self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+            else:
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+        # then test Memory requirements
+        perfParams = taskObj.jobSplittingParameters()['performance']
+        self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
+
+        return
+
+
 if __name__ == '__main__':
     unittest.main()

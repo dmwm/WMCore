@@ -749,7 +749,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         if taskName and isinstance(self.acquisitionEra, dict):
             return self.acquisitionEra.get(taskName, None)
-        return self.acquisitionEra
+        return
 
     def getRequestType(self):
         """
@@ -773,7 +773,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if taskName and isinstance(self.processingVersion, dict):
             return self.processingVersion.get(taskName, 0)
-        return self.processingVersion
+        return
 
     def getProcessingString(self, taskName=None):
         """
@@ -784,7 +784,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if taskName and isinstance(self.processingString, dict):
             return self.processingString.get(taskName, None)
-        return self.processingString
+        return
 
     def setValidStatus(self, validStatus):
         """

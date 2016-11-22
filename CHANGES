@@ -1,3 +1,34 @@
+1.0.22 to 1.0.23.pre1:
+  - Merge pull request #7402 from ticoann/fix_reqmgr1
+  - Merge pull request #7400 from ticoann/fix_acquisition_era
+  - Merge pull request #7406 from ticoann/remove_reqmgr1_link
+  - Merge pull request #7395 from amaltaro/redigi-multicore
+  - remove the link to reqmgr1 from wmstats and reqmgr2
+  - Multicore/Memory unit tests added for StepChain
+  - Set numberOfCores for all tasks in a ReDigi
+  - treat all the request as reqmgr2
+  - fix acquisiton era, ect setting
+  - Merge pull request #7403 from johnhcasallasl/PhEDExInjectorPoller_Fix
+  - Merge pull request #7356 from amaltaro/condor-bulkEdit
+  - Fixes misindented lines in the PhEDExInjectorPoller
+  - Merge pull request #7319 from amaltaro/change-site-state
+  - Merge pull request #7391 from amaltaro/pileup-runtime
+  - Merge pull request #7378 from amaltaro/repack-slots
+  - Minor unit test change
+  - Change PU file list behavior during WMRuntime/TrustPUSitelists
+  - Allow jobs to request repack slots
+  - Merge pull request #7368 from amaltaro/inject-script-patch3
+  - Merge pull request #7392 from amaltaro/stdBase-skims
+  - Adapting inject-test script to required args
+  - Added physics skims for 2016 PA run; separate skim mapping
+  - Port fix to simple condor plugin
+  - Efficiently update the condor site lists
+  - Merge pull request #7382 from amaltaro/jobMask-oracle
+  - Merge pull request #7379 from dciangot/fix_aso_setup
+  - Fix for WMBS job mask in oracle
+  - fix setup-dependencies for ASO deployment
+  - Update/kill jobs first, then update site state
+
 1.0.21 to 1.0.22:
   - 1.0.22.pre10
   - Merge pull request #7374 from amaltaro/default-selected

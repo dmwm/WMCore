@@ -533,14 +533,12 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _handleRepackSettings_
 
-        Disable lazy-download for repacking (no benefit on streamer files).
+        Repacking small events is super inefficient reading directly from EOS.
         """
         print("Hardcoding read/cache strategies for repack")
         self.process.add_(
             cms.Service("SiteLocalConfigService",
-                        overrideSourceCacheHintDir = cms.untracked.string("storage-only"),
-                        overrideSourceReadHint = cms.untracked.string("read-ahead-buffered"),
-                        overrideSourceTTreeCacheSize = cms.untracked.uint32(20*1024*1024)
+                        overrideSourceCacheHintDir = cms.untracked.string("lazy-download")
                         )
             )
 
@@ -633,7 +631,7 @@ class SetupCMSSWPset(ScriptInterface):
             if funcName == "repack":
                 self.handleRepackSettings()
 
-            if funcName in ["repack", "merge", "alcaHarvesting" ]:
+            if funcName in ["merge", "alcaHarvesting" ]:
                 self.handleSingleCoreOverride()
 
             if socket.getfqdn().endswith("cern.ch"):

@@ -107,11 +107,11 @@ class DQMHarvestTests(unittest.TestCase):
         self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_20'])
 
         # test workload attributes
-        self.assertEqual(testWorkload.processingString, "23Sep2016")
-        self.assertEqual(testWorkload.acquisitionEra, "Run2016B")
-        self.assertEqual(testWorkload.processingVersion, 1)
-        self.assertEqual(sorted(testWorkload.lumiList.keys()), ['251643', '251721'])
-        self.assertEqual(sorted(testWorkload.lumiList.values()), [[[1,15], [50,70]], [[50,100], [110,120]]])
+        self.assertEqual(testWorkload.getProcessingString(), "23Sep2016")
+        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2016B")
+        self.assertEqual(testWorkload.getProcessingVersion(), 1)
+        self.assertEqual(sorted(testWorkload.getLumiList().keys()), ['251643', '251721'])
+        self.assertEqual(sorted(testWorkload.getLumiList().values()), [[[1,15], [50,70]], [[50,100], [110,120]]])
         self.assertEqual(testWorkload.data.policies.start.policyName, "Dataset")
 
         # test workload tasks and steps

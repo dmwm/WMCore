@@ -674,7 +674,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         self.updateLFNsAndDatasets()
         # set acquistionEra for workload (need to refactor)
-        self.acquisitionEra = acquisitionEras
+        self.data.properties.acquisitionEra = acquisitionEras
         return
 
     def setProcessingVersion(self, processingVersions):
@@ -690,7 +690,7 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setProcessingVersion(processingVersions)
 
         self.updateLFNsAndDatasets()
-        self.processingVersion = processingVersions
+        self.data.properties.processingVersion = processingVersions
         return
 
     def setProcessingString(self, processingStrings):
@@ -706,7 +706,7 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setProcessingString(processingStrings)
 
         self.updateLFNsAndDatasets()
-        self.processingString = processingStrings
+        self.data.properties.processingString = processingStrings
         return
 
     def setLumiList(self, lumiLists):
@@ -720,7 +720,7 @@ class WMWorkloadHelper(PersistencyHelper):
             task.setLumiMask(lumiLists, override=False)
 
         # set lumiList for workload (need to refactor)
-        self.lumiList = lumiLists
+        self.data.properties.lumiList = lumiLists
         return
 
     def setTaskProperties(self, requestArgs):
@@ -747,9 +747,9 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Get the acquisition era
         """
-        if taskName and isinstance(self.acquisitionEra, dict):
-            return self.acquisitionEra.get(taskName, None)
-        return self.acquisitionEra
+        if taskName and isinstance(self.data.properties.acquisitionEra, dict):
+            return self.data.properties.acquisitionEra.get(taskName, None)
+        return self.data.properties.acquisitionEra
 
     def getRequestType(self):
         """
@@ -771,9 +771,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the processingVersion
         """
 
-        if taskName and isinstance(self.processingVersion, dict):
-            return self.processingVersion.get(taskName, 0)
-        return self.processingVersion
+        if taskName and isinstance(self.data.properties.processingVersion, dict):
+            return self.data.properties.processingVersion.get(taskName, 0)
+        return self.data.properties.processingVersion
 
     def getProcessingString(self, taskName=None):
         """
@@ -782,10 +782,18 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the processingString
         """
 
-        if taskName and isinstance(self.processingString, dict):
-            return self.processingString.get(taskName, None)
-        return self.processingString
+        if taskName and isinstance(self.data.properties.processingString, dict):
+            return self.data.properties.processingString.get(taskName, None)
+        return self.data.properties.processingString
 
+    def getLumiList(self):
+        """
+        _getLumiList_
+
+        Get the LumitList from workload (task level should have the same lumiList)
+        """
+        return self.data.properties.lumiList
+    
     def setValidStatus(self, validStatus):
         """
         _setValidStatus_
@@ -1794,10 +1802,10 @@ class WMWorkloadHelper(PersistencyHelper):
               rely on coder's won't forget to call this at the end of
               self.buildWorkload()
         """
-        self.setAcquisitionEra(self.acquisitionEra)
-        self.setProcessingVersion(self.processingVersion)
-        self.setProcessingString(self.processingString)
-        self.setLumiList(self.lumiList)
+        self.setAcquisitionEra(self.getAcquisitionEra())
+        self.setProcessingVersion(self.getProcessingVersion())
+        self.setProcessingString(self.getProcessingString())
+        self.setLumiList(self.getLumiList())
         self.setPrepID(self.getPrepID())
         return
 

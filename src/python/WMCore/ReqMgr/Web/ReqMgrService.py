@@ -531,7 +531,7 @@ class ReqMgrService(TemplatedPage):
         dataset = kwargs.get('uinput', '')
         if not dataset:
             return {'error': 'no input dataset'}
-        url = 'https://cmsweb.cern.ch/reqmgr/rest/outputdataset/%s' % dataset
+        url = 'https://cmsweb.cern.ch/reqmgr2/data/request?outputdataset=%s' % dataset
         params = {}
         wdata = getdata(url, params)
         wdict = dict(date=time.ctime(), team='Team-A', status='Running', ID=genid(wdata))

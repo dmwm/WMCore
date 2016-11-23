@@ -11,7 +11,7 @@ Created on Apr 16, 2013
 
 import logging
 import threading
-import traceback
+
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -92,12 +92,12 @@ class JobUpdaterPoller(BaseWorkerThread):
             msg += str(ex)
             logging.exception(msg)
         except Exception as ex:
-            msg = "Caught unexpected exception in JobUpdater\n"
-            msg += str(ex)
-            msg += str(traceback.format_exc())
-            msg += "\n\n"
-            logging.error(msg)
-            raise JobUpdaterException(msg)
+            if 'Connection refused' in str(ex):
+                logging.warn("Failed to sync priorities. Trying in the next cycle")
+            else:
+                msg = "Caught unexpected exception in JobUpdater: %s\n" % str(ex)
+                logging.exception(msg)
+                raise JobUpdaterException(msg)
         
     def synchronizeJobPriority(self):
         """

@@ -21,6 +21,7 @@ from WMCore.WMException import WMException
 from WMCore.Database.CMSCouch import CouchConflictError
 from WMCore.Database.CouchUtils import CouchConnectionError
 
+
 class JobUpdaterException(WMException):
     """
     _JobUpdaterException_
@@ -28,6 +29,7 @@ class JobUpdaterException(WMException):
     A job updater exception-handling class for the JobUpdaterPoller
     """
     pass
+
 
 class JobUpdaterPoller(BaseWorkerThread):
     """
@@ -43,29 +45,28 @@ class JobUpdaterPoller(BaseWorkerThread):
         BaseWorkerThread.__init__(self)
         self.config = config
 
-        self.bossAir = BossAirAPI(config = self.config)
+        self.bossAir = BossAirAPI(config=self.config)
         self.reqmgr2 = ReqMgr(self.config.JobUpdater.reqMgr2Url)
         self.workqueue = WorkQueue(self.config.WorkQueueManager.couchurl,
                                    self.config.WorkQueueManager.dbname)
 
         myThread = threading.currentThread()
 
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
 
-        self.listWorkflowsDAO = self.daoFactory(classname = "Workflow.ListForJobUpdater")
-        self.updateWorkflowPrioDAO = self.daoFactory(classname = "Workflow.UpdatePriority")
-        self.executingJobsDAO = self.daoFactory(classname = "Jobs.GetNumberOfJobsForWorkflowTaskStatus")
+        self.listWorkflowsDAO = self.daoFactory(classname="Workflow.ListForJobUpdater")
+        self.updateWorkflowPrioDAO = self.daoFactory(classname="Workflow.UpdatePriority")
+        self.executingJobsDAO = self.daoFactory(classname="Jobs.GetNumberOfJobsForWorkflowTaskStatus")
 
-
-    def setup(self, parameters = None):
+    def setup(self, parameters=None):
         """
         _setup_
         """
         pass
 
-    def terminate(self, parameters = None):
+    def terminate(self, parameters=None):
         """
         _terminate_
 
@@ -73,7 +74,7 @@ class JobUpdaterPoller(BaseWorkerThread):
         """
         pass
 
-    def algorithm(self, parameters = None):
+    def algorithm(self, parameters=None):
         """
         _algorithm_
         """
@@ -98,7 +99,7 @@ class JobUpdaterPoller(BaseWorkerThread):
                 msg = "Caught unexpected exception in JobUpdater: %s\n" % str(ex)
                 logging.exception(msg)
                 raise JobUpdaterException(msg)
-        
+
     def synchronizeJobPriority(self):
         """
         _synchronizeJobPriority_
@@ -117,12 +118,12 @@ class JobUpdaterPoller(BaseWorkerThread):
                 try:
                     priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
                 except Exception as ex:
-                    logging.error("Couldn't retrieve the priority of request %s" % workflow)
-                    logging.error("Error: %s" % ex)
+                    logging.error("Couldn't retrieve the priority of request %s", workflow)
+                    logging.error("Error: %s", str(ex))
                     continue
             if priority != priorityCache[workflow]:
                 workflowsToUpdate[workflow] = priorityCache[workflow]
-        logging.info("Found %d workflows to update in workqueue" % len(workflowsToUpdate))
+        logging.info("Found %d workflows to update in workqueue", len(workflowsToUpdate))
         for workflow in workflowsToUpdate:
             self.workqueue.updatePriority(workflow, workflowsToUpdate[workflow])
 
@@ -136,8 +137,8 @@ class JobUpdaterPoller(BaseWorkerThread):
                 try:
                     priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
                 except Exception as ex:
-                    logging.error("Couldn't retrieve the priority of request %s" % workflow)
-                    logging.error("Error: %s" % ex)
+                    logging.error("Couldn't retrieve the priority of request %s", workflow)
+                    logging.error("Error: %s", str(ex))
                     continue
             requestPriority = int(priorityCache[workflow])
             if requestPriority != int(workflowEntry['workflow_priority']):
@@ -146,9 +147,9 @@ class JobUpdaterPoller(BaseWorkerThread):
                 # Check if there are executing jobs for this particular task
                 if self.executingJobsDAO.execute(workflow, workflowEntry['task']) > 0:
                     self.bossAir.updateJobInformation(workflow, workflowEntry['task'],
-                                                      requestPriority = priorityCache[workflow],
-                                                      taskPriority = workflowEntry['task_priority'])
+                                                      requestPriority=priorityCache[workflow],
+                                                      taskPriority=workflowEntry['task_priority'])
                 workflowsToUpdateWMBS[workflow] = priorityCache[workflow]
         if workflowsToUpdateWMBS:
-            logging.info("Updating %d workflows in WMBS." % len(workflowsToUpdateWMBS))
+            logging.info("Updating %d workflows in WMBS.", len(workflowsToUpdateWMBS))
             self.updateWorkflowPrioDAO.execute(workflowsToUpdateWMBS)

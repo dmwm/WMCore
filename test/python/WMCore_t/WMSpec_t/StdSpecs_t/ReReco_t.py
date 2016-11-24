@@ -570,5 +570,67 @@ class ReRecoTest(unittest.TestCase):
 
         return
 
+    def testMemCoresSettings(self):
+        """
+        _testMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps.
+        """
+        skimConfig = self.injectSkimConfig()
+        recoConfig = self.injectReRecoConfig()
+        dataProcArguments = ReRecoWorkloadFactory.getTestArguments()
+        dataProcArguments["ConfigCacheID"] = recoConfig
+        dataProcArguments.update({"SkimName1": "SomeSkim",
+                                  "SkimInput1": "RECOoutput",
+                                  "Skim1ConfigCacheID": skimConfig})
+        dataProcArguments["CouchURL"] = os.environ["COUCHURL"]
+        dataProcArguments["CouchDBName"] = "rereco_t"
+        dataProcArguments["EnableHarvesting"] = True
+        dataProcArguments["DQMConfigCacheID"] = recoConfig
+
+        factory = ReRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
+
+        # test default values
+        taskPaths = {'/TestWorkload/DataProcessing': ['cmsRun1', 'stageOut1', 'logArch1'],
+                     '/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim': ['cmsRun1', 'stageOut1', 'logArch1'],
+                     '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged': ['cmsRun1', 'upload1', 'logArch1']}
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in taskPaths[task]:
+                stepHelper = taskObj.getStepHelper(step)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            # FIXME: not sure whether we should set performance parameters to Harvest jobs?!?
+            if task == '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged':
+                continue
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        # now test case where args are provided
+        dataProcArguments["Multicore"] = 6
+        dataProcArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", dataProcArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in taskPaths[task]:
+                stepHelper = taskObj.getStepHelper(step)
+                if not task.endswith('DQMHarvestMerged') and step == 'cmsRun1':
+                    self.assertEqual(stepHelper.getNumberOfCores(), dataProcArguments["Multicore"])
+                elif step in ('stageOut1', 'upload1', 'logArch1'):
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                else:
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should be single-core" % task)
+            # FIXME: not sure whether we should set performance parameters to Harvest jobs?!?
+            if task == '/TestWorkload/DataProcessing/DataProcessingMergeDQMoutput/DataProcessingMergeDQMoutputEndOfRunDQMHarvestMerged':
+                continue
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], dataProcArguments["Memory"])
+
+        return
+
+
 if __name__ == '__main__':
     unittest.main()

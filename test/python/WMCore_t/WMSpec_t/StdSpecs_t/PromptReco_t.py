@@ -20,7 +20,6 @@ from WMCore.Configuration import ConfigSection
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer
 
-from nose.plugins.attrib import attr
 
 class PromptRecoTest(unittest.TestCase):
     def setUp(self):
@@ -390,7 +389,6 @@ class PromptRecoTest(unittest.TestCase):
 
         return
 
-    @attr("integration")
     def testPromptRecoWithSkims(self):
         """
         _testT1PromptRecoWithSkim_
@@ -474,36 +472,6 @@ class PromptRecoTest(unittest.TestCase):
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/AlcaSkim/unmerged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-        promptSkimWorkflow = Workflow(name="TestWorkload",
-                                      task="/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1")
-        promptSkimWorkflow.load()
-
-        self.assertEqual(len(promptSkimWorkflow.outputMap.keys()), 6,
-                         "Error: Wrong number of WF outputs.")
-
-        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
-                            "fakeSkimOut4", "fakeSkimOut5"]
-        for goldenOutputMod in goldenOutputMods:
-            mergedOutput = promptSkimWorkflow.outputMap[goldenOutputMod][0]["merged_output_fileset"]
-            unmergedOutput = promptSkimWorkflow.outputMap[goldenOutputMod][0]["output_fileset"]
-            mergedOutput.loadData()
-            unmergedOutput.loadData()
-
-            self.assertEqual(mergedOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
-                             "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
-            self.assertEqual(unmergedOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % goldenOutputMod,
-                             "Error: Unmerged output fileset is wrong: %s" % unmergedOutput.name)
-
-        logArchOutput = promptSkimWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
-        unmergedLogArchOutput = promptSkimWorkflow.outputMap["logArchive"][0]["output_fileset"]
-        logArchOutput.loadData()
-        unmergedLogArchOutput.loadData()
-
-        self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive",
-                         "Error: LogArchive output fileset is wrong.")
-        self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive",
-                         "Error: LogArchive output fileset is wrong.")
-
         goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM"]
         for goldenOutputMod in goldenOutputMods:
             mergeWorkflow = Workflow(name = "TestWorkload",
@@ -567,37 +535,6 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong.")
 
-        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
-                            "fakeSkimOut4", "fakeSkimOut5"]
-        for goldenOutputMod in goldenOutputMods:
-            mergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s" % goldenOutputMod)
-            mergeWorkflow.load()
-
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
-                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap.keys()))
-
-            mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
-            unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
-
-            mergedMergeOutput.loadData()
-            unmergedMergeOutput.loadData()
-
-            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
-                             "Error: Merged output fileset is wrong.")
-            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-Merged" % goldenOutputMod,
-                             "Error: Unmerged output fileset is wrong.")
-
-            logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
-            unmergedLogArchOutput = mergeWorkflow.outputMap["logArchive"][0]["output_fileset"]
-            logArchOutput.loadData()
-            unmergedLogArchOutput.loadData()
-
-            self.assertEqual(logArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
-            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod,
-                             "Error: LogArchive output fileset is wrong.")
-
         topLevelFileset = Fileset(name = "TestWorkload-Reco-SomeBlock")
         topLevelFileset.loadData()
 
@@ -622,14 +559,6 @@ class PromptRecoTest(unittest.TestCase):
 
         mergedRecoFileset = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/merged-Merged")
         mergedRecoFileset.loadData()
-
-        promptSkimSubscription = Subscription(fileset = mergedRecoFileset, workflow = promptSkimWorkflow)
-        promptSkimSubscription.loadData()
-
-        self.assertEqual(promptSkimSubscription["type"], "Skim",
-                         "Error: Wrong subscription type.")
-        self.assertEqual(promptSkimSubscription["split_algo"], "FileBased",
-                         "Error: Wrong split algorithm. %s" % promptSkimSubscription["split_algo"])
 
         unmergedOutputs = ["write_RECO", "write_AOD", "write_DQM"]
         for unmergedOutput in unmergedOutputs:
@@ -660,22 +589,6 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(mergeSubscription["type"], "Merge",
                              "Error: Wrong subscription type.")
             self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
-                             "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
-
-        unmergedOutputs = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
-                           "fakeSkimOut4", "fakeSkimOut5"]
-        for unmergedOutput in unmergedOutputs:
-            unmergedPromptSkim = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % unmergedOutput)
-            unmergedPromptSkim.loadData()
-            promptSkimMergeWorkflow = Workflow(name = "TestWorkload",
-                                               task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s" % unmergedOutput)
-            promptSkimMergeWorkflow.load()
-            mergeSubscription = Subscription(fileset = unmergedPromptSkim, workflow = promptSkimMergeWorkflow)
-            mergeSubscription.loadData()
-
-            self.assertEqual(mergeSubscription["type"], "Merge",
-                             "Error: Wrong subscription type.")
-            self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                              "Error: Wrong split algorithm. %s" % mergeSubscription["split_algo"])
 
         goldenOutputMods = ["write_RECO", "write_AOD", "write_DQM", "write_ALCARECO"]
@@ -710,22 +623,6 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
                              "Error: Wrong subscription type.")
 
-        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
-                           "fakeSkimOut4", "fakeSkimOut5"]
-        for goldenOutputMod in goldenOutputMods:
-            unmergedFileset = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-%s" % unmergedOutput)
-            unmergedFileset.loadData()
-            cleanupWorkflow = Workflow(name = "TestWorkload",
-                                               task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1CleanupUnmerged%s" % unmergedOutput)
-            cleanupWorkflow.load()
-            cleanupSubscription = Subscription(fileset = unmergedFileset, workflow = cleanupWorkflow)
-            cleanupSubscription.loadData()
-
-            self.assertEqual(cleanupSubscription["type"], "Cleanup",
-                             "Error: Wrong subscription type.")
-            self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
-                             "Error: Wrong split algorithm. %s" % cleanupSubscription["split_algo"])
-
         recoLogCollect = Fileset(name = "/TestWorkload/Reco/unmerged-logArchive")
         recoLogCollect.loadData()
         recoLogCollectWorkflow = Workflow(name = "TestWorkload",
@@ -745,19 +642,6 @@ class PromptRecoTest(unittest.TestCase):
                                                 task = "/TestWorkload/Reco/AlcaSkim/AlcaSkimLogCollect")
         alcaSkimLogCollectWorkflow.load()
         logCollectSub = Subscription(fileset = alcaSkimLogCollect, workflow = alcaSkimLogCollectWorkflow)
-        logCollectSub.loadData()
-
-        self.assertEqual(logCollectSub["type"], "LogCollect",
-                         "Error: Wrong subscription type.")
-        self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                         "Error: Wrong split algorithm.")
-
-        promptSkimLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/unmerged-logArchive")
-        promptSkimLogCollect.loadData()
-        promptSkimLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                                task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1LogCollect")
-        promptSkimLogCollectWorkflow.load()
-        logCollectSub = Subscription(fileset = promptSkimLogCollect, workflow = promptSkimLogCollectWorkflow)
         logCollectSub.loadData()
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
@@ -797,23 +681,55 @@ class PromptRecoTest(unittest.TestCase):
             self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algorithm.")
 
-        goldenOutputMods = ["fakeSkimOut1", "fakeSkimOut2", "fakeSkimOut3",
-                           "fakeSkimOut4", "fakeSkimOut5"]
-        for goldenOutputMod in goldenOutputMods:
-            promptSkimMergeLogCollect = Fileset(name = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/merged-logArchive" % goldenOutputMod)
-            promptSkimMergeLogCollect.loadData()
-            promptSkimMergeLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                                    task = "/TestWorkload/Reco/RecoMergewrite_RECO/TestSkim1/TestSkim1Merge%s/TestSkim1%sMergeLogCollect" % (goldenOutputMod, goldenOutputMod))
-            promptSkimMergeLogCollectWorkflow.load()
-            logCollectSubscription = Subscription(fileset = promptSkimMergeLogCollect, workflow = promptSkimMergeLogCollectWorkflow)
-            logCollectSubscription.loadData()
+        return
 
-            self.assertEqual(logCollectSub["type"], "LogCollect",
-                             "Error: Wrong subscription type.")
-            self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
-                             "Error: Wrong split algorithm.")
+    def testMemCoresSettings(self):
+        """
+        _testMemCoresSettings_
+
+        Make sure the multicore and memory setings are properly propagated to
+        all tasks and steps.
+        """
+        testArguments = PromptRecoWorkloadFactory.getTestArguments()
+        testArguments["CouchURL"] = os.environ["COUCHURL"]
+        testArguments["CouchDBName"] = "promptreco_t"
+        testArguments["EnableHarvesting"] = True
+
+        factory = PromptRecoWorkloadFactory()
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+
+        # test default values
+        taskPaths = ['/TestWorkload/Reco', '/TestWorkload/Reco/AlcaSkim']
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], 2300.0)
+
+        # now test case where args are provided
+        testArguments["Multicore"] = 6
+        testArguments["Memory"] = 4600.0
+        testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
+        for task in taskPaths:
+            taskObj = testWorkload.getTaskByPath(task)
+            for step in ('cmsRun1', 'stageOut1', 'logArch1'):
+                stepHelper = taskObj.getStepHelper(step)
+                if task == '/TestWorkload/Reco' and step == 'cmsRun1':
+                    self.assertEqual(stepHelper.getNumberOfCores(), testArguments["Multicore"])
+                elif step in ('stageOut1', 'logArch1'):
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                else:
+                    self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should be single-core" % task)
+            # then test Memory requirements
+            perfParams = taskObj.jobSplittingParameters()['performance']
+            self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
 
         return
+
+
 
 if __name__ == '__main__':
     unittest.main()

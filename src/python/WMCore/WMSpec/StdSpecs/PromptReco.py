@@ -75,7 +75,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
-
+                alcaTaskConf = {'Multicore': 1}
                 scenarioArgs = { 'globalTag' : self.globalTag,
                                  'skims' : self.alcaSkims,
                                  'primaryDataset' : self.inputPrimaryDataset }
@@ -93,7 +93,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                                                     "min_merge_size": self.minMergeSize,
                                                                     "max_merge_events": self.maxMergeEvents},
                                                        stepType = cmsswStepType,
-                                                       useMulticore = False)
+                                                       taskConf=alcaTaskConf)
                 if self.doLogCollect:
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)

@@ -260,8 +260,8 @@ class StdBase(object):
                             userSandbox=None, userFiles=[], primarySubType=None,
                             forceMerged=False, forceUnmerged=False,
                             configCacheUrl=None, timePerEvent=None, memoryReq=None,
-                            sizePerEvent=None, useMulticore=True, applySiteLists=True,
-                            cmsswVersion=None, scramArch=None, globalTag=None, taskConf={}):
+                            sizePerEvent=None, applySiteLists=True, cmsswVersion=None,
+                            scramArch=None, globalTag=None, taskConf=None):
         """
         _setupProcessingTask_
 
@@ -285,6 +285,7 @@ class StdBase(object):
         """
         # set default scenarioArgs to empty dictionary if it is None
         scenarioArgs = scenarioArgs or {}
+        taskConf = taskConf or {}
 
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")

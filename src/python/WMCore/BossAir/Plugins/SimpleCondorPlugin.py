@@ -467,6 +467,7 @@ class SimpleCondorPlugin(BasePlugin):
         # Required for global pool accounting
         ad['AcctGroup'] = self.acctGroup
         ad['AcctGroupUser'] = self.acctGroupUser
+        ad['AccountingGroup'] = "%s.%s" % (self.acctGroup, self.acctGroupUser)
 
         # Customized classAds for this plugin
         ad['DESIRED_Archs'] = "INTEL,X86_64"

@@ -564,7 +564,7 @@ class SimpleCondorPlugin(BasePlugin):
                 logging.error("Job priority %s not an int, using 0", priority)
                 priority = 0
 
-            ad['JobPrio'] = int(taskPriority + priority * self.maxTaskPriority)
+            ad['JobPrio'] = int(priority + taskPriority * self.maxTaskPriority)
 
             postJobPrio1 = -1 * len(job.get('potentialSites', []))
             postJobPrio2 = -1 * job['taskID']

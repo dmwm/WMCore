@@ -483,7 +483,7 @@ class SimpleCondorPlugin(BasePlugin):
         for param in params_to_add:
             if (param not in ad) and (param in htcondor.param) and (param not in params_to_skip):
                 ad[param] = classad.ExprTree(htcondor.param[param])
-        ad = convertFromUnicodeToStr(ad)
+        #ad = convertFromUnicodeToStr(ad)
         return ad
 
     def getProcAds(self, jobList):
@@ -578,7 +578,7 @@ class SimpleCondorPlugin(BasePlugin):
             else:
                 ad['REQUIRED_OS'] = "any"
             
-            ad = convertFromUnicodeToStr(ad)
+            #ad = convertFromUnicodeToStr(ad)
             classAds.append((ad,1))
 
         return classAds

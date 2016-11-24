@@ -254,7 +254,7 @@ def reportFailureToDashboard(exitCode, ad=None, stageOutReport=None):
         return exitCode
     params = {
         'MonitorID': ad['CRAB_ReqName'],
-        'MonitorJobID': '%d_https://glidein.cern.ch/%d/%s_%d' % (ad['CRAB_Id'], ad['CRAB_Id'],
+        'MonitorJobID': '%s_https://glidein.cern.ch/%s/%s_%s' % (ad['CRAB_Id'], ad['CRAB_Id'],
                                                                  ad['CRAB_ReqName'].replace("_", ":"), ad['CRAB_Retry']),
         'JobExitCode': exitCode
     }

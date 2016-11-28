@@ -323,13 +323,7 @@ class TaskChainTests(unittest.TestCase):
         self.assertRaises(WMSpecFactoryException, factory.validateSchema, arguments)
 
         arguments['Task4']['TransientOutputModules'].remove('writeAOD')
-        try:
-            self.workload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
-        except Exception as ex:
-            msg = "Error invoking TaskChainWorkloadFactory:\n%s" % str(ex)
-            import traceback
-            traceback.print_exc()
-            self.fail(msg)
+        self.workload = factory.factoryWorkloadConstruction("PullingTheChain", arguments)
 
         testWMBSHelper = WMBSHelper(self.workload, "GenSim", "SomeBlock", cachepath = self.testInit.testDir)
         testWMBSHelper.createTopLevelFileset()
@@ -488,6 +482,50 @@ class TaskChainTests(unittest.TestCase):
 
         return
 
+    def testTrustFlags(self):
+        """
+        _testTrustFlags_
+
+        Given a taskChain with 4 tasks, test whether TrustSitelists is set for
+        the top level tasks and TrustPUSitelists is properly set to all tasks.
+        """
+        processorDocs = makeProcessingConfigs(self.configDatabase)
+        testArguments = TaskChainWorkloadFactory.getTestArguments()
+        testArguments.update(createMultiGTArgs())
+        testArguments["CouchURL"] = self.testInit.couchUrl
+        testArguments["CouchDBName"] = self.testInit.couchDbName
+        testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
+        testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
+        testArguments["Task3"]["ConfigCacheID"] = processorDocs['ALCAReco']
+        testArguments["Task4"]["ConfigCacheID"] =  processorDocs['Skims']
+        arguments = testArguments
+
+        factory = TaskChainWorkloadFactory()
+        workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
+
+        for task in workload.getAllTasks():
+            flags = task.getTrustSitelists().values()
+            self.assertEqual(flags, [False, False])
+
+        # set both flags to true now
+        workload.setTrustLocationFlag(True, True)
+        for task in workload.getAllTasks():
+            flags = task.getTrustSitelists()
+            if task.isTopOfTree():
+                self.assertEqual(flags.values(), [True, True])
+            elif task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+                self.assertEqual(flags.values(), [False, False])
+            else:
+                self.assertFalse(flags['trustlists'])
+                self.assertTrue(flags['trustPUlists'])
+
+        # set both to false now
+        workload.setTrustLocationFlag(False, False)
+        for task in workload.getAllTasks(cpuOnly=True):
+            flags = task.getTrustSitelists().values()
+            self.assertEqual(flags, [False, False])
+        return
+
     def testMultipleGlobalTags(self):
         """
         _testMultipleGlobalTags_
@@ -592,7 +630,6 @@ class TaskChainTests(unittest.TestCase):
 
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestTaskChainWorkload", testArguments)
-        #print(testWorkload.listAllTaskPathNames())
 
         taskPaths = ['/TestTaskChainWorkload/TaskOne', 
             '/TestTaskChainWorkload/TaskOne/LogCollectForTaskOne', 
@@ -602,7 +639,6 @@ class TaskChainTests(unittest.TestCase):
 
         for task in taskPaths:
             taskObj = testWorkload.getTaskByPath(task)
-            #print("%s has steps: %s" % (task, taskObj.listAllStepNames()))
             if taskObj.taskType() in ('Production', 'Processing'):
                 for step in ('cmsRun1', 'stageOut1', 'logArch1'):
                     stepHelper = taskObj.getStepHelper(step)

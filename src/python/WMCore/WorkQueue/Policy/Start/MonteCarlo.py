@@ -30,6 +30,8 @@ class MonteCarlo(StartPolicyInterface):
         self.args.setdefault('MaxJobsPerElement', 1000)  # jobs per WQE
         self.args.setdefault('blowupFactor', 1.0) # Estimate of additional jobs following tasks.
                                                   # Total WQE tasks will be Jobs*(1+blowupFactor)
+        noInputUpdate = self.initialTask.getTrustSitelists().get('trustlists')
+        noPileupUpdate = self.initialTask.getTrustSitelists().get('trustPUlists')
 
         if not self.mask:
             self.mask = Mask(FirstRun = 1,
@@ -71,6 +73,8 @@ class MonteCarlo(StartPolicyInterface):
                                  NumberOfEvents = nEvents,
                                  Jobs = jobs,
                                  Mask = copy(mask),
+                                 NoInputUpdate=noInputUpdate,
+                                 NoPileupUpdate=noPileupUpdate,
                                  blowupFactor = self.args['blowupFactor'])
 
 

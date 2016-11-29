@@ -81,8 +81,6 @@ WMStats.Globals = function($){
     function getReqDetailPrefixReqMgr1 () {
         if (_dbVariants[dbname] == "tier1") {
             return "/reqmgr/view/details/";
-        } else if (_dbVariants[dbname] == "analysis") {
-            return "/an_reqmgr/view/details/";
         } else {
             return null;
         }
@@ -117,8 +115,6 @@ WMStats.Globals = function($){
     function getWorkloadSummaryDB() {
         if (_dbVariants[dbname] == "tier1") {
             return "workloadsummary";
-        } else if (_dbVariants[dbname] == "analysis") {
-            return "analysis_workloadsummary";
         } else if (_dbVariants[dbname] == "tier0") {
             return "t0_workloadsummary";
         }

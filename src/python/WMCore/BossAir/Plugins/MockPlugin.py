@@ -32,9 +32,9 @@ def processWorker(myinput, tmp):
                 continue
 
             taskName = targetDir.split('/')[5]
-            if jj['cache_dir'].count("Analysis/LogCollect") > 0:
+            if jj['cache_dir'].count("Production/LogCollect") > 0:
                 if lcreport is not None:
-                    lcreport.task = "/" + taskName + "/Analysis/LogCollect"
+                    lcreport.task = "/" + taskName + "/Production/LogCollect"
                     f = open(outfile, 'w')
                     logging.debug('Process worker is dumping the LogCollect report to ' + f.name)
                     pickle.dump(lcreport, f)
@@ -57,7 +57,7 @@ def processWorker(myinput, tmp):
                 report.logArch1.output.logArchive.files.file0.lfn = tmpname + '.root'
 
             #get target diretory and set task name
-            report.task = "/" + taskName + "/Analysis"
+            report.task = "/" + taskName + "/Production"
 
             #pickle the report again
             f = open(outfile, 'w')

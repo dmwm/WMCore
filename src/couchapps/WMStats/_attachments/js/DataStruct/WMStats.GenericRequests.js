@@ -272,7 +272,7 @@ WMStats.GenericRequests = function (data) {
     /*
      * Data structure for holding the request
      * it handles 3 types (not very robust and modular)
-     * TODO: remove dependencies from different data type. (tier0, analysis, reqmgr)
+     * TODO: remove dependencies from different data type. (tier0, reqmgr)
      * if possible
      * reqmgr_request, agent_request, tier0_request.
      */

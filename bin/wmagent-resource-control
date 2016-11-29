@@ -31,8 +31,7 @@ def getTaskTypes(tier0 = False):
                  "LogCollect",
                  "Skim",
                  "Production",
-                 "Processing",
-                 "Analysis"]
+                 "Processing"]
 
     if tier0:
         taskTypes.append("Repack")

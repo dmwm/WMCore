@@ -110,7 +110,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                                     "attr": "requestType"},
                     "PrimaryDataset": {"default": None, "type": str,
                                        "optional": True, "validate": primdataset,
-                                       "attr": "inputPrimaryDataset", "null": False},
+                                       "attr": "inputPrimaryDataset", "null": True},
                     "ConfigCacheUrl": {"default": None, "type": str,
                                        "optional": True, "validate": None,
                                        "attr": "configCacheUrl", "null": False},

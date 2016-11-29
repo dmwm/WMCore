@@ -857,14 +857,9 @@ class WMTaskHelper(TreeHelper):
 
         Get the input and pileup flag for 'trust site lists' in the task.
         """
-
         # handle backward compatibility for the request which doesn't contain trustPUlists
-        try:
-            trustPUlists = self.data.constraints.sites.trustPUlists
-        except AttributeError:
-            trustPUlists = False
-        return {'trustlists': self.data.constraints.sites.trustlists,
-                'trustPUlists': trustPUlists}
+        return {'trustlists': getattr(self.data.constraints.sites, 'trustlists', False),
+                'trustPUlists': getattr(self.data.constraints.sites, 'trustPUlists', False)}
 
     def setTrustSitelists(self, trustSitelists, trustPUSitelists):
         """

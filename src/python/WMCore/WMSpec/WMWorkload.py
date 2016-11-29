@@ -362,16 +362,19 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return [t for t in self.taskIterator() if t.taskType() == ttype]
 
-    def getAllTasks(self):
+    def getAllTasks(self, cpuOnly=False):
         """
         _getAllTasks_
 
-        Get all tasks from a workload
+        Get all tasks from a workload.
+        If cpuOnly flag is set to True, then don't return utilitarian tasks.
         """
         tasks = []
-        pathNames = self.listAllTaskPathNames()
-        for n in pathNames:
-            tasks.append(self.getTaskByPath(taskPath=n))
+        for n in self.listAllTaskPathNames():
+            task = self.getTaskByPath(taskPath=n)
+            if cpuOnly and task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+                continue
+            tasks.append(task)
 
         return tasks
 
@@ -1644,9 +1647,17 @@ class WMWorkloadHelper(PersistencyHelper):
 
         Set the input and the pileup flags in the top level tasks
         indicating that site lists should be used as location data
+
+        The input data flag has to be set only for top level tasks, otherwise
+        it affects where secondary jobs are meant to run.
+        The pileup flag has to be set for all the tasks in the workload.
         """
-        for task in self.getTopLevelTask():
-            task.setTrustSitelists(inputFlag, pileupFlag)
+        for task in self.getAllTasks(cpuOnly=True):
+            if task.isTopOfTree():
+                task.setTrustSitelists(inputFlag, pileupFlag)
+            else:
+                task.setTrustSitelists(False, pileupFlag)
+
         return
 
     def getTrustLocationFlag(self):
@@ -1654,8 +1665,8 @@ class WMWorkloadHelper(PersistencyHelper):
         _getTrustLocationFlag_
 
         Get a tuple with the inputFlag and the pileupFlag values from
-        the top level tasks that indicates whether the site lists should
-        be trusted as the location for input data or pileup data (or both)
+        the *top level* tasks that indicates whether the site lists should
+        be trusted as the location for input and/or for the pileup data.
         """
         for task in self.getTopLevelTask():
             return task.getTrustSitelists()

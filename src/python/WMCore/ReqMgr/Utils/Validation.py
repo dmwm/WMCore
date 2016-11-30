@@ -123,7 +123,12 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
         # validate the arguments against the spec argumentSpecdefinition
         # TODO: currently only assigned status allows any update other then Status update
         workload.validateArgumentForAssignment(args_without_status)
-
+    
+    # remove empty strings here since validation will remove for optional value then will take the default value
+    for arg, val in request_args.iteritems():
+        if val == "":
+            del request_args[arg]
+            
     # to update request_args with type conversion
     request_args.update(args_without_status)
     return workload, request_args

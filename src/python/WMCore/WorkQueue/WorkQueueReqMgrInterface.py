@@ -10,7 +10,6 @@ from operator import itemgetter
 from httplib import HTTPException
 
 from WMCore import Lexicon
-from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST
@@ -27,8 +26,6 @@ class WorkQueueReqMgrInterface(object):
             import logging
             kwargs['logger'] = logging
         self.logger = kwargs['logger']
-        # TODO: (reqmgr2Only - remove this line when reqmgr is replaced)
-        self.reqMgr = RequestManager(kwargs)
         # this will break all in one test
         self.reqMgr2 = ReqMgr(kwargs.get("reqmgr2_endpoint", None))
 
@@ -255,29 +252,13 @@ class WorkQueueReqMgrInterface(object):
         reqmgrStatus = self._workQueueToReqMgrStatus(status)
         if reqmgrStatus:  # only send known states
             try:
-                # TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
-                self.reqMgr.reportRequestStatus(request, reqmgrStatus)
-                # And replace with this (remove all Exceptins)
-                # self.reqMgr2.updateRequestStatus(request, reqmgrStatus)
-            except HTTPException as ex:
-                # If we get an HTTPException of 404 means reqmgr2 request
-                if ex.status == 404:
-                    # try reqmgr2 call
-                    msg = "%s : reqmgr2 request: %s" % (request, str(ex))
-                    self.logdb.post(request, msg, 'info')
-                    self.reqMgr2.updateRequestStatus(request, reqmgrStatus)
-                else:
-                    msg = "%s : fail to update status with HTTP error: %s" % (request, str(ex))
-                    self.logdb.post(request, msg, 'warning')
-                    raise ex
+                self.reqMgr2.updateRequestStatus(request, reqmgrStatus)
             except Exception as ex:
                 msg = "%s : fail to update status will try later: %s" % (request, str(ex))
+                msg += traceback.format_exc()
                 self.logdb.post(request, msg, 'warning')
                 raise ex
-
-    def markAcquired(self, request, url=None):
-        """Mark request acquired"""
-        self.reqMgr.putWorkQueue(request, url)
+        return
 
     def _workQueueToReqMgrStatus(self, status):
         """Map WorkQueue Status to that reported to ReqMgr"""

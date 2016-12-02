@@ -34,7 +34,6 @@ from WMCore.WMException                          import WMException
 from WMCore.WorkQueue.WorkQueue                  import localQueue
 from WMCore.WorkQueue.WorkQueueExceptions        import WorkQueueNoMatchingElements
 from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
-from WMCore.Services.RequestManager.RequestManager import RequestManager
 from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
@@ -99,8 +98,6 @@ class TaskArchiverPoller(BaseWorkerThread):
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
             
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-            #TODO: remove this when reqmgr2 replace reqmgr completely (reqmgr2Only)
-            self.reqmgrSvc = RequestManager({'endpoint': self.config.TaskArchiver.ReqMgrServiceURL})
 
         #Load the cleanout state ID and save it
         stateIDDAO = self.daoFactory(classname = "Jobs.GetStateID")
@@ -256,22 +253,12 @@ class TaskArchiverPoller(BaseWorkerThread):
                             self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
                         else:
                             try:
-                                #TODO: try reqmgr1 call if it fails (reqmgr2Only - remove this line when reqmgr is replaced)
-                                logging.info("Updating status to '%s' in both oracle and couchdb ..." % newState)
-                                self.reqmgrSvc.updateRequestStatus(workflow, newState)
-                                #And replace with this - remove all the excption
-                                #self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                            except httplib.HTTPException as ex:
-                                # If we get an HTTPException of 404 means reqmgr2 request
-                                if ex.status == 404:
-                                    # try reqmgr2 call
-                                    msg = "%s : reqmgr2 request: %s" % (workflow, str(ex))
-                                    logging.warning(msg)
-                                    self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                                else:
-                                    msg = "%s : fail to update status %s  with HTTP error: %s" % (workflow, newState, str(ex))
-                                    logging.error(msg)
-                                    raise ex
+                                self.reqmgr2Svc.updateRequestStatus(workflow, newState)
+                            except Exception as ex:
+                                msg = "%s : fail to update status %s  with HTTP error: %s" % (workflow, newState, str(ex))
+                                msg += traceback.format_exc()
+                                logging.error(msg)
+                                raise ex
                             
                         logging.info("status updated to '%s' : %s" % (newState, workflow))
                     

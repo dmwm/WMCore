@@ -1,5 +1,7 @@
 from __future__ import print_function, division
 import time
+import traceback
+import logging
 
 class MemoryCacheStruct(object):
     """
@@ -27,10 +29,16 @@ class MemoryCacheStruct(object):
             return True
         return False
     
-    def getData(self):
+    def getData(self, noFail=True):
         if self.isDataExpired():
-            self.data = self.func(**self.kwargs)
-            self.lastUpdate = int(time.time())
+            try:
+                self.data = self.func(**self.kwargs)
+                self.lastUpdate = int(time.time())
+            except Exception as ex:
+                if noFail:
+                    logging.error(traceback.format_exc())
+                else:
+                    raise
         return self.data
 
         

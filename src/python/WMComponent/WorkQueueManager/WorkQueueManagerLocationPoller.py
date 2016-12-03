@@ -15,12 +15,13 @@ class WorkQueueManagerLocationPoller(BaseWorkerThread):
     """
     Polls for location updates
     """
-    def __init__(self, queue):
+    def __init__(self, queue, config):
         """
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
         self.queue = queue
+        self.config = config
 
     def setup(self, parameters):
         """

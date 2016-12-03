@@ -323,7 +323,7 @@ class WorkQueue(WorkQueueBase):
         return self.backend.updateElements(*ids, Status='Available',
                                            ChildQueueUrl=None, WMBSUrl=None)
 
-    def getWork(self, jobSlots, siteJobCounts):
+    def getWork(self, jobSlots, siteJobCounts, excludeWorkflows=[]):
         """
         Get available work from the queue, inject into wmbs & mark as running
 
@@ -336,7 +336,7 @@ class WorkQueue(WorkQueueBase):
         if not self.backend.isAvailable():
             self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
-        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts)
+        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts, excludeWorkflows=excludeWorkflows)
 
         if not matches:
             return results
@@ -500,6 +500,21 @@ class WorkQueue(WorkQueueBase):
         return self.setStatus('Done', elementIDs=elementIDs,
                               SubscriptionId=SubscriptionId,
                               WorkflowName=WorkflowName)
+        
+    def killWMBSWorkflow(self, workflow):
+        # import inside function since GQ doesn't need this.
+        from WMCore.WorkQueue.WMBSHelper import killWorkflow
+        myThread = threading.currentThread()
+        myThread.dbi = self.conn.dbi
+        myThread.logger = self.logger
+        success = True
+        try:
+            killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
+        except Exception as ex:
+            success = False
+            self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
+            self.logger.error('It will be retried in the next loop')
+        return success
 
     def cancelWork(self, elementIDs=None, SubscriptionId=None, WorkflowName=None, elements=None):
         """Cancel work - delete in wmbs, delete from workqueue db, set canceled in inbox
@@ -527,17 +542,9 @@ class WorkQueue(WorkQueueBase):
             badWfsCancel = []
             if self.params['PopulateFilesets']:
                 self.logger.info("Canceling work for workflow(s): %s" % (requestNames))
-                from WMCore.WorkQueue.WMBSHelper import killWorkflow
                 for workflow in requestNames:
-                    try:
-                        myThread = threading.currentThread()
-                        myThread.dbi = self.conn.dbi
-                        myThread.logger = self.logger
-                        killWorkflow(workflow, self.params["JobDumpConfig"], self.params["BossAirConfig"])
-                    except Exception as ex:
-                        self.logger.error('Aborting %s wmbs subscription failed: %s' % (workflow, str(ex)))
+                    if not self.killWMBSWorkflow(workflow):
                         badWfsCancel.append(workflow)
-                        self.logger.error('It will be retried in the next loop')
             # now we remove any wf that failed to be cancelled (and its inbox elements)
             requestNames -= set(badWfsCancel)
             for wf in badWfsCancel:

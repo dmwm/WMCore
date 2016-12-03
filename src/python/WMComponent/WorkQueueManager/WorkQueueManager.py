@@ -53,24 +53,28 @@ class WorkQueueManager(Harness):
 
             # pull work from parent queue
             myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerWorkPoller(queueFromConfig(self.config)),
+                                WorkQueueManagerWorkPoller(queueFromConfig(self.config),
+                                                           self.config),
                                 pollInterval)
 
             # inject acquired work into wmbs
             myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerWMBSFileFeeder(queueFromConfig(self.config)),
+                                WorkQueueManagerWMBSFileFeeder(queueFromConfig(self.config),
+                                                               self.config),
                                 pollInterval)
 
         ### general functions
 
         # Data location updates
         myThread.workerThreadManager.addWorker(
-                                    WorkQueueManagerLocationPoller(queueFromConfig(self.config)),
+                                    WorkQueueManagerLocationPoller(queueFromConfig(self.config),
+                                                                   self.config),
                                     pollInterval)
 
         # Clean finished work & apply end policies
         myThread.workerThreadManager.addWorker(
-                                WorkQueueManagerCleaner(queueFromConfig(self.config)),
+                                WorkQueueManagerCleaner(queueFromConfig(self.config),
+                                                        self.config),
                                 pollInterval)
 
         return

@@ -77,8 +77,10 @@ class DashboardMonitor(WMRuntimeMonitor):
         destHost = args.get('destinationHost', None)
         destPort = args.get('destinationPort', None)
         dashboardUrl = '%s:%s' % (destHost, str(destPort))
+        cores = args.get('cores', 0)
 
-        self.dashboardInfo = DashboardInfo(task=task, job=job, dashboardUrl=dashboardUrl)
+        self.dashboardInfo = DashboardInfo(task, job, dashboardUrl=dashboardUrl,
+                                           overrideCores=cores)
 
     def jobStart(self, task):
         """

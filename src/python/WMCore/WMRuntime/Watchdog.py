@@ -102,9 +102,12 @@ class Watchdog(threading.Thread):
                 # Hence, we simply remove it if we change anything about the memory.
                 # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
                 # off the top so watchdog triggers before HTCondor does.
-                if changedCores and origMaxRSS and (resources['memory'] != origMaxRSS):
-                    args.pop('maxVSize', None)
-                    args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
+                # Add the new number of cores to the args such that DashboardInterface can see it
+                if changedCores:
+                    args['cores'] = resources['cores']
+                    if origMaxRSS:
+                        args.pop('maxVSize', None)
+                        args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
                 for k, v in args.iteritems():

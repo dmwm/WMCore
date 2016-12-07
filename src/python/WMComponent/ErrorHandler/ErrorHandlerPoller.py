@@ -217,7 +217,15 @@ class ErrorHandlerPoller(BaseWorkerThread):
                 if times is not None:
                     startTime = times['startTime']
                     stopTime = times['stopTime']
-
+                    
+                # correct the location if the original location is different from recorded in wmbs
+                # WARNING: we are not updating job location in wmbs only updating in couchdb by doing this.
+                # If location in wmbs needs to be updated, it should happen in JobAccountant.
+                locationFromFWJR = report.getSiteName()
+                if locationFromFWJR:
+                    job["location"] = locationFromFWJR
+                    job["site_cms_name"] = locationFromFWJR
+                
                 if startTime is None or stopTime is None:
                     # We have no information to make a decision, keep going.
                     logging.debug("No start, stop times for steps for job %i" % job['id'])

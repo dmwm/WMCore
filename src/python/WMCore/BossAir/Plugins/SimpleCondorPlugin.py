@@ -484,7 +484,6 @@ class SimpleCondorPlugin(BasePlugin):
         for param in params_to_add:
             if (param not in ad) and (param in htcondor.param) and (param not in params_to_skip):
                 ad[param] = classad.ExprTree(htcondor.param[param])
-        ad = convertFromUnicodeToStr(ad)
         return ad
 
     def getProcAds(self, jobList):
@@ -496,7 +495,7 @@ class SimpleCondorPlugin(BasePlugin):
         """
         classAds = []
         for job in jobList:
-            ad = classad.ClassAd()
+            ad = {}
 
             ad['Iwd'] = job['cache_dir']
             ad['TransferInput'] = "%s,%s/%s,%s" % (job['sandbox'], job['packageDir'],
@@ -580,6 +579,9 @@ class SimpleCondorPlugin(BasePlugin):
                 ad['REQUIRED_OS'] = "any"
             
             ad = convertFromUnicodeToStr(ad)
-            classAds.append((ad,1))
+            condorAd = classad.ClassAd()
+            for k, v in ad.iteritems():
+                condorAd[k] = v
+            classAds.append((condorAd, 1))
 
         return classAds

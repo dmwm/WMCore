@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import hashlib
 import json
 import types
@@ -242,6 +244,10 @@ class JSONFormat(RESTFormat):
             except GeneratorExit:
                 etag.invalidate()
                 trailer = None
+                raise
+            except Exception as exp:
+                print("ERROR, json.dumps failed to serialize %s, type %s\nException: %s" \
+                        % (obj, type(obj), str(exp)))
                 raise
             finally:
                 if trailer:

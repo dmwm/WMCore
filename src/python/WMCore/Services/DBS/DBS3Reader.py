@@ -646,8 +646,7 @@ class DBS3Reader(object):
 
             for name, node in blocksInfo.iteritems():
                 valid_nodes = set(node) - node_filter
-                if valid_nodes:  # dont add if only 'UNKNOWN' or None
-                    locations[name] = list(valid_nodes)
+                locations[name] = list(valid_nodes)
         else:
             try:
                 blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(block=fileBlockNames, complete='y')
@@ -658,11 +657,10 @@ class DBS3Reader(object):
 
             for name, nodes in blocksInfo.iteritems():
                 valid_nodes = set(nodes) - node_filter
-                if valid_nodes:  # dont add if only 'UNKNOWN' or None then get with dbs
-                    locations[name] = list(valid_nodes)
+                locations[name] = list(valid_nodes)
 
         # returning single list if a single block is passed
-        if singleBlockName is not None:
+        if singleBlockName:
             return locations[singleBlockName]
 
         return locations

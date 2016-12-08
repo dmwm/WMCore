@@ -157,7 +157,7 @@ class DashboardInfo(object):
 
     """
 
-    def __init__(self, task, job, dashboardUrl=None):
+    def __init__(self, task, job, dashboardUrl=None, overrideCores=0):
         """
         Init some stuff
 
@@ -185,7 +185,7 @@ class DashboardInfo(object):
         self.jobStarted = False
         self.failedStep = None
         self.lastStep = None
-        self.maxCores = 1  # Accumulated over individual steps
+        self.maxCores = overrideCores  # Accumulated over individual steps
         self.WrapperWCTime = 0
         self.WrapperCPUTime = 0
 
@@ -212,12 +212,13 @@ class DashboardInfo(object):
         data['StatusValueReason'] = 'Job started execution in the WN'
         data['StatusDestination'] = getSyncCE()
 
-        # Inspect the tasks steps and figure out how many cores we will use
-        maxCores = 1
-        for stepName in self.task.listAllStepNames():
-            sh = self.task.getStepHelper(stepName)
-            maxCores = max(maxCores, sh.getNumberOfCores())
-        data['NCores'] = maxCores
+        # If number of cores is not overriden from the watchdog, then find the
+        # highest number of cores among all the steps and send it to dashboard
+        if self.maxCores == 0:
+            for stepName in self.task.listAllStepNames():
+                sh = self.task.getStepHelper(stepName)
+                self.maxCores = max(self.maxCores, sh.getNumberOfCores())
+        data['NCores'] = self.maxCores
 
         self.publish(data=data)
 
@@ -278,9 +279,10 @@ class DashboardInfo(object):
             self.publish(data=data)
             self.jobStarted = True
 
-        # Now let's send the step information
+        # Save the jobStart data for unit tests
         tmp = {'jobStart': data}
 
+        # Now let's send the step information
         data = {}
         data['MessageType'] = 'jobRuntime-stepStart'
         data['MessageTS'] = time.strftime(self.tsFormat, time.gmtime())
@@ -292,7 +294,6 @@ class DashboardInfo(object):
         self.publish(data=data)
 
         data.update(tmp)
-
         return data
 
     def stepEnd(self, step, stepReport):
@@ -344,7 +345,6 @@ class DashboardInfo(object):
         self.WrapperCPUTime += float(data['%d_ExeCPUTime' % self.stepCount])
 
         self.lastStep = helper.name()
-        self.maxCores = max(self.maxCores, helper.getNumberOfCores())
 
         self.publish(data=data)
 

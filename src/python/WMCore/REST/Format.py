@@ -243,8 +243,11 @@ class JSONFormat(RESTFormat):
                 etag.invalidate()
                 trailer = None
                 raise
+            except Exception as exp:
+                print("ERROR, json.dumps failed to serialize %s, type %s\nException: %s" \
+                        % (obj, type(obj), str(exp)))
+                raise
             finally:
-                print("ERROR, json.dumps failed to serialize %s, type %s" % (obj, type(obj)))
                 if trailer:
                     etag.update(trailer)
                     yield trailer

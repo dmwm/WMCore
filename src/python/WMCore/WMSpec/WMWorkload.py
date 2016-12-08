@@ -372,7 +372,7 @@ class WMWorkloadHelper(PersistencyHelper):
         tasks = []
         for n in self.listAllTaskPathNames():
             task = self.getTaskByPath(taskPath=n)
-            if cpuOnly and task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            if cpuOnly and task.taskType() in ["Cleanup", "LogCollect"]:
                 continue
             tasks.append(task)
 

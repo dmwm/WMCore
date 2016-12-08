@@ -244,6 +244,7 @@ class JSONFormat(RESTFormat):
                 trailer = None
                 raise
             finally:
+                print("ERROR, json.dumps failed to serialize %s, type %s" % (obj, type(obj)))
                 if trailer:
                     etag.update(trailer)
                     yield trailer

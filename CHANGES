@@ -1,3 +1,79 @@
+1.0.22 to 1.0.23:
+  - Merge pull request #7362 from amaltaro/pycondor-resizeJob
+  - Merge pull request #7363 from amaltaro/environ-resizeJobs
+  - Merge pull request #7448 from amaltaro/deletedBlock
+  - Merge pull request #7450 from ticoann/change_performance_precision
+  - Merge pull request #7390 from amaltaro/simpleCondor-unicode
+  - change the precision
+  - Ported resizable jobs feature to SimpleCondor plugin
+  - Dynamically resize jobs in PyCondor
+  - Return empty location if block is not complete anywhere
+  - Propagate the new number of cores down to the dashboard interface
+  - Remove timeout tweaks from the watchdog
+  - Allow runtime environment to resize the cores in the job
+  - 1.0.23.pre3
+  - Merge pull request #7430 from dciangot/ASO_pj_split
+  - Merge pull request #7437 from amaltaro/montecarlo-trust
+  - Accept Trust flags for MonteCarlo WQ policy
+  - Merge pull request #7412 from hufnagel/repack-lazy
+  - Merge pull request #7433 from amaltaro/trustPU-allTasks
+  - Taskchain unit test for trust flags
+  - Set TrustPU flag in all tasks
+  - Merge pull request #7426 from amaltaro/mcfromgen-primdset
+  - Merge pull request #7425 from amaltaro/eventaware-webui
+  - Update ASO couch deploy script
+  - Allow PrimaryDataset default to be None for MCFromGEN
+  - Fix splitting parameter for EventAware algo
+  - Merge pull request #7423 from hufnagel/simplecondorplugin-acct-group
+  - Merge pull request #7420 from hufnagel/simplecondorplugin-priority
+  - SimpleCondorPlugin misses an acct group classad for submits
+  - fix wrong equation for JobPrio calculation in SimpleCondorPlugin
+  - 1.0.23.pre2
+  - Merge pull request #7083 from matz-e/automatic-splitting
+  - Merge pull request #7409 from amaltaro/promptReco-multicore
+  - Merge pull request #7414 from amaltaro/jobUpdater-refused
+  - Pylint fixes
+  - Don.t crash JobUpdater if http fails with connection refused
+  - Merge pull request #7417 from amaltaro/kill-executable
+  - Merge pull request #7416 from amaltaro/deploy-1021patch3
+  - Make kill script executable
+  - Selective crontab for testbed/dev agent deployment
+  - Multicore unittest added; fixed previous one
+  - Fix multicore settings for PromptReco
+  - switch repack to lazy-download and multi-core
+  - 1.0.23.pre1
+  - Merge pull request #7402 from ticoann/fix_reqmgr1
+  - Merge pull request #7400 from ticoann/fix_acquisition_era
+  - Merge pull request #7406 from ticoann/remove_reqmgr1_link
+  - Merge pull request #7395 from amaltaro/redigi-multicore
+  - remove the link to reqmgr1 from wmstats and reqmgr2
+  - Multicore/Memory unit tests added for StepChain
+  - Set numberOfCores for all tasks in a ReDigi
+  - treat all the request as reqmgr2
+  - fix acquisiton era, ect setting
+  - Merge pull request #7403 from johnhcasallasl/PhEDExInjectorPoller_Fix
+  - Merge pull request #7356 from amaltaro/condor-bulkEdit
+  - Fixes misindented lines in the PhEDExInjectorPoller
+  - Merge pull request #7319 from amaltaro/change-site-state
+  - Merge pull request #7391 from amaltaro/pileup-runtime
+  - Merge pull request #7378 from amaltaro/repack-slots
+  - Minor unit test change
+  - Change PU file list behavior during WMRuntime/TrustPUSitelists
+  - Allow jobs to request repack slots
+  - Merge pull request #7368 from amaltaro/inject-script-patch3
+  - Merge pull request #7392 from amaltaro/stdBase-skims
+  - Adapting inject-test script to required args
+  - Added physics skims for 2016 PA run; separate skim mapping
+  - Port fix to simple condor plugin
+  - Efficiently update the condor site lists
+  - Condor classAd doesn.t like unicode
+  - Merge pull request #7382 from amaltaro/jobMask-oracle
+  - Merge pull request #7379 from dciangot/fix_aso_setup
+  - Fix for WMBS job mask in oracle
+  - fix setup-dependencies for ASO deployment
+  - Changes needed for automatic splitting in CRAB3:
+  - Update/kill jobs first, then update site state
+
 1.0.22 to 1.0.23.pre3:
   - Merge pull request #7430 from dciangot/ASO_pj_split
   - Merge pull request #7437 from amaltaro/montecarlo-trust

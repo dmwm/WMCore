@@ -26,7 +26,6 @@ from Utils.IterTools import grouper, convertFromUnicodeToStr
 import htcondor
 import classad
 
-
 class SimpleCondorPlugin(BasePlugin):
     """
     _SimpleCondorPlugin_
@@ -105,6 +104,7 @@ class SimpleCondorPlugin(BasePlugin):
         self.defaultTaskPriority = getattr(config.BossAir, 'defaultTaskPriority', 0)
         self.maxTaskPriority = getattr(config.BossAir, 'maxTaskPriority', 1e7)
         self.jobsPerSubmit = getattr(config.JobSubmitter, 'jobsPerSubmit', 200)
+        self.extraMem = getattr(config.JobSubmitter, 'extraMemoryPerCore', 500)
 
         # Required for global pool accounting
         self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
@@ -454,9 +454,11 @@ class SimpleCondorPlugin(BasePlugin):
         ad['UserLogUseXML'] = True
         ad['JobNotification'] = 0
         ad['Cmd'] = self.scriptFile
+        # Investigate whether we should pass the absolute path for Out and Err ads,
+        # just as we did for UserLog. There may be issues, more info on WMCore #7362
         ad['Out'] = classad.ExprTree('strcat("condor.", ClusterId, ".", ProcId, ".out")')
         ad['Err'] = classad.ExprTree('strcat("condor.", ClusterId, ".", ProcId, ".err")')
-        ad['UserLog'] = classad.ExprTree('strcat("condor.", ClusterId, ".", ProcId, ".log")')
+        ad['UserLog'] = classad.ExprTree('strcat(Iwd, "/condor.", ClusterId, ".", ProcId, ".log")')
 
         ad['WMAgent_AgentName'] = self.agent
 
@@ -477,6 +479,9 @@ class SimpleCondorPlugin(BasePlugin):
 
         ad['Rank'] = 0.0
         ad['TransferIn'] = False
+
+        ad['JobMachineAttrs'] = "GLIDEIN_CMSSite"
+        ad['JobAdInformationAttrs'] = "JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite"
 
         # TODO: remove when 8.5.7 is deployed
         params_to_add = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
@@ -503,9 +508,6 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Arguments'] = "%s %i" % (os.path.basename(job['sandbox']), job['id'])
 
             ad['TransferOutput'] = "Report.%i.pkl" % job["retry_count"]
-
-            ad['JobMachineAttrs'] = "GLIDEIN_CMSSite"
-            ad['JobAdInformationAttrs'] = "JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite"
 
             sites = ','.join(sorted(job.get('possibleSites')))
             ad['DESIRED_Sites'] = sites
@@ -543,34 +545,57 @@ class SimpleCondorPlugin(BasePlugin):
             ad['Requestioslots'] = 1 if job['taskType'] in ["Merge", "Cleanup", "LogCollect"] else 0
             ad['RequestRepackslots'] = 1 if job['taskType'] == 'Repack' else 0
 
-            # Performance and resource estimates
-            numberOfCores = job.get('numberOfCores', 1)
-            ad['RequestCpus'] = numberOfCores
-            ad['RequestMemory'] = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
-            ad['RequestDisk'] = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20*1000*1000*numberOfCores
-            ad['MaxWallTimeMins'] = int(job['estimatedJobTime'])/60.0 if job.get('estimatedJobTime', None) else 12*6
+            # Performance and resource estimates (including JDL magic tweaks)
+            origCores = job.get('numberOfCores', 1)
+            estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60
+            estimatedMinsSingleCore = estimatedMins * origCores
+            # For now, assume a 15 minute job startup overhead -- condor will round this up further
+            ad['EstimatedSingleCoreMins'] = estimatedMinsSingleCore
+            ad['OriginalMaxWallTimeMins'] = estimatedMins
+            ad['MaxWallTimeMins'] = classad.ExprTree('WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins')
 
-            taskPriority = job.get('taskPriority', self.defaultTaskPriority)
-            try:
-                taskPriority = int(taskPriority)
-            except ValueError:
-                logging.error("Job taskPriority %s not an int, using default", taskPriority)
-                taskPriority = self.defaultTaskPriority
+            requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
+            ad['OriginalMemory'] = requestMemory
+            ad['ExtraMemory'] = self.extraMem
+            ad['RequestMemory'] = classad.ExprTree('OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)')
 
-            priority = job.get('priority', 0)
-            try:
-                priority = int(priority)
-            except ValueError:
-                logging.error("Job priority %s not an int, using 0", priority)
-                priority = 0
+            requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20 * 1000 * 1000 * origCores
+            ad['RequestDisk'] = requestDisk
 
+            # Set up JDL for multithreaded jobs.
+            # By default, RequestCpus will evaluate to whatever CPU request was in the workflow.
+            # If the job is labelled as resizable, then the logic is more complex:
+            # - If the job is running in a slot with N cores, this should evaluate to N
+            # - If the job is being matched against a machine, match all available CPUs, provided
+            # they are between min and max CPUs.
+            # - Otherwise, just use the original CPU count.
+            ad['MinCores'] = int(job.get('minCores', max(1, origCores/2)))
+            ad['MaxCores'] = max(int(job.get('maxCores', origCores)), origCores)
+            ad['OriginalCpus'] = origCores
+            # Prefer slots that are closest to our MaxCores without going over.
+            # If the slot size is _greater_ than our MaxCores, we prefer not to
+            # use it - we might unnecessarily fragment the slot.
+            ad['Rank'] = classad.ExprTree('isUndefined(Cpus) ? 0 : ifThenElse(Cpus > MaxCores, -Cpus, Cpus)')
+            # Record the number of CPUs utilized at match time.  We'll use this later
+            # for monitoring and accounting.  Defaults to 0; once matched, it'll
+            # put an attribute in the job  MATCH_EXP_JOB_GLIDEIN_Cpus = 4
+            ad['JOB_GLIDEIN_Cpus'] = "$$(Cpus:0)"
+            # Make sure the resize request stays within MinCores and MaxCores.
+            ad['RequestResizedCpus'] = classad.ExprTree('(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)')
+            # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
+            # values.  Otherwise, we just report the original CPU request
+            ad['JobCpus'] = classad.ExprTree('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) && (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
+
+            # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
+            # Otherwise, we use either the cores in the running job (if available) or the original cores.
+            ad['RequestCpus'] = classad.ExprTree('WMCore_ResizeJob ? (!isUndefined(Cpus) ? RequestResizedCpus : JobCpus) : OriginalCpus')
+            ad['WMCore_ResizeJob'] = bool(job.get('resizeJob', False))
+
+            taskPriority = int(job.get('taskPriority', self.defaultTaskPriority))
+            priority = int(job.get('priority', 0))
             ad['JobPrio'] = int(priority + taskPriority * self.maxTaskPriority)
-
-            postJobPrio1 = -1 * len(job.get('potentialSites', []))
-            postJobPrio2 = -1 * job['taskID']
-
-            ad['PostJobPrio1'] = int(postJobPrio1)
-            ad['PostJobPrio2'] = int(postJobPrio2)
+            ad['PostJobPrio1'] = int(-1 * len(job.get('potentialSites', [])))
+            ad['PostJobPrio2'] = int(-1 * job['taskID'])
 
             # Add OS requirements for jobs
             if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):

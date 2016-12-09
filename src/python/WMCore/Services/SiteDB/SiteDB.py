@@ -272,19 +272,3 @@ class SiteDBJSON(SiteDBAPI):
                 continue
             mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
         return mapping
-    #TODO remove this when all DBS origin_site_name is converted to PNN
-    def checkAndConvertSENameToPNN(self, seNameOrPNN):
-        """
-        check whether argument is sename
-        if it is convert to PNN
-        if not just return argument
-        """
-        if isinstance(seNameOrPNN, basestring):
-            seNameOrPNN = [seNameOrPNN]
-        newList = []
-        for se in seNameOrPNN:
-            if not pnn_regex.match(se):
-                newList.extend(self.seToPNNs(se))
-            else:
-                newList.append(se)
-        return newList

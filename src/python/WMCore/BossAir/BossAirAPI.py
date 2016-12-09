@@ -545,20 +545,16 @@ class BossAirAPI(WMConnectionBase):
         Complete jobs using plugin functions
         Requires jobs in RunJob format
         """
-
         if len(jobs) < 1:
-            # Nothing to do
             return
 
         # We should be insulated from bad plugins by track()
         jobsToComplete = {}
-        idsToComplete = []
 
         for job in jobs:
             if not job['plugin'] in jobsToComplete.keys():
                 jobsToComplete[job['plugin']] = []
             jobsToComplete[job['plugin']].append(job)
-            idsToComplete.append(job['id'])
 
         try:
             for plugin in jobsToComplete.keys():
@@ -575,10 +571,27 @@ class BossAirAPI(WMConnectionBase):
             # If the complete code fails, label the jobs as finished anyway
             # We want to avoid cyclic repetition of failed jobs
             # If they don't have a FWJR, the Accountant will catch it.
-            existingTransaction = self.beginTransaction()
-            self.completeDAO.execute(jobs=idsToComplete, conn=self.getDBConn(),
-                                     transaction=self.existingTransaction())
-            self.commitTransaction(existingTransaction)
+            self._completeKill(jobs)
+
+        return
+
+
+    def _completeKill(self, jobs):
+        """
+        __completeKill_
+
+        Mark jobs killed in BossAir as completed
+        Requires jobs in RunJob format
+        """
+        if len(jobs) < 1:
+            return
+
+        idsToComplete = [job['id'] for job in jobs]
+
+        existingTransaction = self.beginTransaction()
+        self.completeDAO.execute(jobs=idsToComplete, conn=self.getDBConn(),
+                                 transaction=self.existingTransaction())
+        self.commitTransaction(existingTransaction)
 
         return
 
@@ -700,7 +713,7 @@ class BossAirAPI(WMConnectionBase):
                     raise BossAirException(msg)
                 finally:
                     # Even if kill fails, complete the jobs
-                    self._complete(jobs=jobsToKill[plugin])
+                    self._completeKill(jobs=jobsToKill[plugin])
         return
 
 

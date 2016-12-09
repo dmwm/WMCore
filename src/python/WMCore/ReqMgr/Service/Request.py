@@ -536,7 +536,7 @@ class Request(RESTEntity):
                 report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
             elif len(request_args) > 1 and req_status == "assigned":
                 report = self._handleAssignmentStateTransition(workload, request_args, dn)
-            elif len(request_args) == 2 and req_status in ["closed-out", "announced"] and \
+            elif len(request_args) == 2 and req_status in ["rejected", "aborted", "closed-out", "announced"] and \
                 "cascade" in request_args:
                 report = self._handleCascadeUpdate(workload, request_args, dn)
             elif len(request_args) == 1:

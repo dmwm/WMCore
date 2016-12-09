@@ -189,18 +189,6 @@ class PyCondorPlugin(BasePlugin):
 
         return exitCodeMap
 
-    @staticmethod
-    def logToScheddExitCodeMap(x):
-        """
-        JobStatus shows the last status of the job
-        Get TriggerEventTypeNumber which is the current status of the job
-        Map it back to Schedd Status
-        Mapping done using the exit codes from condor website,
-        https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
-        """
-        logExitCode = {0: 1, 1: 1, 2: 0, 3: 2, 4: 3, 5: 4, 6: 2, 7: 0, 8: 0, 9: 4, 10: 0, 11: 1, 12: 5, 13: 2}
-        return logExitCode.get(x, 100)
-
     def __init__(self, config):
 
         self.config = config

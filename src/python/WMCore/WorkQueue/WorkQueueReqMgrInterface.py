@@ -153,7 +153,7 @@ class WorkQueueReqMgrInterface(object):
                     continue
                 request = request[ele['RequestName']]
                 if request['RequestStatus'] in ('failed', 'completed', 'announced',
-                                                'epic-FAILED', 'closed-out', 'rejected'):
+                                                'closed-out', 'rejected'):
                     # requests can be done in reqmgr but running in workqueue
                     # if request has been closed but agent cleanup actions
                     # haven't been run (or agent has been retired)
@@ -195,9 +195,7 @@ class WorkQueueReqMgrInterface(object):
         """Delete work from queue that is finished in ReqMgr"""
         finished = []
         for element in elements:
-            if element.inEndState() and self._workQueueToReqMgrStatus(element['Status']) in ('aborted', 'failed', 'completed',
-                                                                                             'announced', 'epic-FAILED',
-                                                                                             'closed-out', 'rejected'):
+            if element.inEndState():
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
 

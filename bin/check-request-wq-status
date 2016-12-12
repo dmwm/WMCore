@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function, division
 import os
-from optparse import OptionParser
-from pprint import pprint
+from argparse import ArgumentParser
+from pprint import pprint, pformat
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import WorkQueueElementsSummary
 from WMCore.WorkQueue.WMBSHelper import freeSlots
@@ -10,18 +10,17 @@ from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 from WMCore.WorkQueue.WorkQueueUtils import queueFromConfig
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
+
 def getOptions():
-    parser = OptionParser()
-    parser.set_usage("check-request-wq-status -r [request_name] -s [status]")
+    parser = ArgumentParser()
+
+    parser.add_argument("-r", "--request", help="A specific request name")
+    parser.add_argument("-s", "--status", help="A specific workqueue status")
+    parser.add_argument("-g", "--global", action='store_true', dest='wqGlobal',
+                        help="Use it to get an overview of global WQ")
+    args = parser.parse_args()
     
-    parser.add_option("-r", "--request", dest = "request", default=None,
-                      help = "resquest name")
-    parser.add_option("-s", "--status", dest = "status", default=None,
-                      help = "set to new status")
-    
-    (options, args) = parser.parse_args()
-    
-    return options.request, options.status
+    return args
 
 def getAcceptableSites(ele):
     
@@ -160,29 +159,39 @@ def main():
     of them (quite expensive!).
     """
     cfgObject = loadConfigurationFile(os.environ.get("WMAGENT_CONFIG", None))
-    request, eleStatus = getOptions()
+    args = getOptions()
 
     teams = cfgObject.Agent.teamName.split(",")
     if len(teams) != 1:
-        print("No team of multiple teams are set %s" % teams)
+        print("No team or multiple teams are set %s" % teams)
         return
     team = teams[0].strip()
     
     localQ = createWorkQueue(cfgObject)
     
-    gqElements = localQ.parent_queue.getElements(status=eleStatus, WorkflowName=request, TeamName=team)
-    print("GQ at %s: There are total %s elements in %s" % (localQ.parent_queue.queueUrl, len(gqElements), eleStatus))
-         
+    gqElements = localQ.parent_queue.getElements(status=args.status, WorkflowName=args.request, TeamName=team)
+    print("### GQ at %s: There are a total of %s elements in %s" % (localQ.parent_queue.queueUrl,
+                                                                    len(gqElements), args.status or '*'))
+
     wqSummary = WorkQueueElementsSummary(gqElements)
-    
-    if request:
-        requests = [request]
+
+    if args.wqGlobal:
+        eleSum, jobSum = wqSummary.getGlobalStatusSummary(args.status)
+        print("### Total amount of elements in each status: %s" % eleSum)
+        print("### Total top level jobs expected in each status: %s" % jobSum)
+
+        uniSites, posSites = wqSummary.getGlobalSiteStatusSummary(args.status)
+        print("### Unique estimated jobs per site (Jobs/len(sites):\n%s" % pformat(uniSites))
+        print("### Possible estimated jobs per site (sites = Jobs):\n%s" % pformat(posSites))
+
+    if args.request:
+        requests = [args.request]
     else:
         requests = set()
         for ele in gqElements:
             requests.add(ele["RequestName"])
     for request in requests:
-        reportByRequest(wqSummary, request, eleStatus, localQ)
+        reportByRequest(wqSummary, request, args.status, localQ)
         print("\n\n")
         
 if __name__ == '__main__':

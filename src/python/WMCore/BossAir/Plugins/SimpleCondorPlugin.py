@@ -36,45 +36,37 @@ class SimpleCondorPlugin(BasePlugin):
     @staticmethod
     def stateMap():
         """
-        For a given name, return a global state
+        For a given condor status mapped, return a global state used by the agent
+        NOTE: these keys are populated into bl_status table.
         """
-        stateMap = {'1': 'Pending', #Idle
-                    '2': 'Running', #Running
-                    '3': 'Error', #Removed
-                    '4': 'Complete', #Completed
-                    '5': 'Running', #Held
-                    '6': 'Running', #Transfering output
-                    '7': 'Error', #Suspended
-                    '100': 'Error'} #Unknown
+        stateMap = {'New': 'Pending',
+                    'Idle': 'Pending',
+                    'Running': 'Running',
+                    'Removed': 'Error',
+                    'Completed': 'Complete',
+                    'Held': 'Error',
+                    'TransferOutput': 'Running',
+                    'Suspended': 'Error',
+                    'Unknown': 'Error'}
 
         return stateMap
 
     @staticmethod
     def exitCodeMap():
         """
-        Exit Codes and their meaing
+        HTCondor mapping from the numerical value to its english meaning.
         https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
         """
         exitCodeMap = {0: "Unknown",
                        1: "Idle",
                        2: "Running",
                        3: "Removed",
-                       4: "Complete",
-                       5: "Held"}
+                       4: "Completed",
+                       5: "Held",
+                       6: "TransferOutput",
+                       7: "Suspended"}
 
         return exitCodeMap
-
-    @staticmethod
-    def logToScheddExitCodeMap(x):
-        """
-        JobStatus shows the last status of the job
-        Get TriggerEventTypeNumber which is the current status of the job
-        Map it back to Schedd Status
-        Mapping done using the exit codes from condor website,
-        https://htcondor-wiki.cs.wisc.edu/index.cgi/wiki?p=MagicNumbers
-        """
-        logExitCode = {0: 1, 1: 1, 2: 0, 3: 2, 4: 3, 5: 4, 6: 2, 7: 0, 8: 0, 9: 4, 10: 0, 11: 1, 12: 5, 13: 2}
-        return logExitCode.get(x, 100)
 
     def __init__(self, config):
         BasePlugin.__init__(self, config)
@@ -161,7 +153,7 @@ class SimpleCondorPlugin(BasePlugin):
                 logging.debug("Finish: Submitting jobs using Condor Python SubmitMany")
                 for index,job in enumerate(jobsReady):
                     job['gridid'] = "%s.%s" % (clusterId, index)
-                    job['status'] = '1'
+                    job['status'] = 'Idle'
                     successfulJobs.append(job)
 
         # We must return a list of jobs successfully submitted and a list of jobs failed
@@ -178,7 +170,7 @@ class SimpleCondorPlugin(BasePlugin):
         Second, the jobs that need to be changed
         Third, the jobs that need to be completed
         """
-
+        jobInfo = {}
         changeList = []
         completeList = []
         runningList = []
@@ -192,23 +184,18 @@ class SimpleCondorPlugin(BasePlugin):
         try:
             itobj = schedd.xquery("WMAgent_AgentName == %s" % classad.quote(self.agent),
                                   ['ClusterId', 'ProcId', 'JobStatus', 'MATCH_EXP_JOBGLIDEIN_CMSSite'])
+            for jobAd in itobj:
+                gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
+                jobStatus = SimpleCondorPlugin.exitCodeMap().get(jobAd.get('JobStatus'), 'Unknown')
+                location = jobAd.get('MATCH_EXP_JOBGLIDEIN_CMSSite', None)
+                jobInfo[gridId] = (jobStatus, location)
         except Exception as ex:
             logging.error("Query to condor schedd failed in SimpleCondorPlugin.")
             logging.error("Returning empty lists for all job types...")
             logging.exception(ex)
             return runningList, changeList, completeList
-        else:
-            logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
-            jobInfo = {}
-            for jobAd in itobj:
-                gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
-                jobStatus = str(jobAd.get('JobStatus', 100))
-                if jobStatus not in SimpleCondorPlugin.stateMap():
-                    jobStatus = '100'
-                location = jobAd.get('MATCH_EXP_JOBGLIDEIN_CMSSite', None)
-                jobInfo[gridId] = (jobStatus, location)
 
-            logging.debug("SimpleCondorPlugin retrieved %s classAds from condor schedd", len(jobInfo))
+        logging.debug("Finished retrieving %d classAds from Condor", len(jobInfo))
 
         # now go over the jobs and see what we have
         for job in jobs:
@@ -216,7 +203,7 @@ class SimpleCondorPlugin(BasePlugin):
             # if the schedd doesn't know a job, consider it complete
             # doing any further checks is not cost effective
             if job['gridid'] not in jobInfo:
-                (newStatus, location) = ('4', None)
+                (newStatus, location) = ('Completed', None)
             else:
                 (newStatus,location) = jobInfo[job['gridid']]
 
@@ -224,7 +211,7 @@ class SimpleCondorPlugin(BasePlugin):
             if newStatus != job['status']:
 
                 # update location info for Idle->Running transition
-                if newStatus == '2' and job['status'] == '1':
+                if newStatus == 'Running' and job['status'] == 'Idle':
                     if location:
                         job['location'] = location
                         logging.debug("JobAdInfo: Job location for jobid=%i gridid=%s changed to %s", job['jobid'], job['gridid'], location)
@@ -234,10 +221,10 @@ class SimpleCondorPlugin(BasePlugin):
                 logging.debug("JobAdInfo: Job status for jobid=%i gridid=%s changed to %s", job['jobid'], job['gridid'], job['status'])
                 changeList.append(job)
 
-            job['globalState'] = SimpleCondorPlugin.stateMap()[newStatus]
+            job['globalState'] = SimpleCondorPlugin.stateMap().get(newStatus)
 
             # stop tracking finished jobs
-            if job['globalState'] in [ 'Complete', 'Error' ]:
+            if job['globalState'] in ['Complete', 'Error']:
                 completeList.append(job)
             else:
                 runningList.append(job)

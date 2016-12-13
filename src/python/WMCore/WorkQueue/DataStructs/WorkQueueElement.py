@@ -259,11 +259,11 @@ class WorkQueueElement(dict):
             return a & b
 
     def possibleSites(self):
-
-        if self.get('NoLocationUpdate'):
-            return self['SiteWhitelist']
-
+        """Return a site list that passes data location constraints"""
         possibleSites = set()
+
+        if self['NoInputUpdate'] and self['NoPileupUpdate']:
+            return self['SiteWhitelist']
 
         if self['SiteWhitelist']:
             possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
@@ -271,11 +271,9 @@ class WorkQueueElement(dict):
         if self['Inputs'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites,
                                                           set([y for x in self['Inputs'].values() for y in x]))
-
         if self['ParentFlag'] and self['NoInputUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites,
                                                           set([y for x in self['ParentData'].values() for y in x]))
-
         if self['PileupData'] and self['NoPileupUpdate'] is False:
             possibleSites = self.intersectionWithEmptySet(possibleSites,
                                                           set([y for x in self['PileupData'].values() for y in x]))

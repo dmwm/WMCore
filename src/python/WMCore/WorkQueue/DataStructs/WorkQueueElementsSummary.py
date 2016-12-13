@@ -18,7 +18,7 @@ class WorkQueueElementsSummary(object):
             elementsByRequest[ele["RequestName"]].append(ele)
             
         self.wqResultsByRequest = {}
-        for reqName, wqElements in elementsByRequest.items():
+        for reqName, wqElements in elementsByRequest.iteritems():
             self.wqResultsByRequest[reqName] = WorkQueueElementResult(Elements=wqElements)
     
     def elementsWithHigherPriorityInSameSites(self, requestName, returnFormat="dict"):
@@ -78,7 +78,72 @@ class WorkQueueElementsSummary(object):
             return self.wqResultsByRequest.get(requestName, None)
         else:
             return self.wqResultsByRequest
-    
+
+    def getGlobalStatusSummary(self, status=None):
+        """
+        Goes through all the request/workqueue elements and print a total overview of:
+         *) amount of workqueue elements and
+         *) top level jobs in each status
+        """
+        numberOfWQESummary = {}
+        numberOfJobsSummary = {}
+        for reqName in self.wqResultsByRequest:
+            for elem in self.wqResultsByRequest[reqName]['Elements']:
+                numberOfWQESummary.setdefault(elem['Status'], 0)
+                numberOfWQESummary[elem['Status']] += 1
+
+                numberOfJobsSummary.setdefault(elem['Status'], 0)
+                numberOfJobsSummary[elem['Status']] += elem['Jobs']
+
+        if status:
+            numberOfWQESummary = {status: numberOfWQESummary.get(status, 0)}
+            numberOfJobsSummary = {status: numberOfJobsSummary.get(status, 0)}
+
+        return numberOfWQESummary, numberOfJobsSummary
+
+    def getGlobalSiteStatusSummary(self, status=None):
+        """
+        Goes through all the request/workqueue elements that are active
+        and print a total overview of:
+         *) unique top level jobs per site and per status and (distributed)
+         *) possible top level jobs per site and per status (maxxed)
+
+        If status is provided, then skip any workqueue element not in the
+        given status. Otherwise filter only active workqueue status.
+        """
+        activeStatus = ['Available', 'Negotiating', 'Acquired', 'Running']
+
+        uniqueJobsSummary = {}
+        possibleJobsSummary = {}
+        for st in activeStatus:
+            uniqueJobsSummary.setdefault(st, {})
+            possibleJobsSummary.setdefault(st, {})
+
+        for reqName in self.wqResultsByRequest:
+            for elem in self.wqResultsByRequest[reqName]['Elements']:
+                if elem['Status'] not in activeStatus:
+                    continue
+
+                possibleSites = elem.possibleSites()
+                try:
+                    jobsPerSite = int(elem['Jobs']/len(possibleSites))
+                except ZeroDivisionError:
+                    possibleSites = ['None']
+                    jobsPerSite = elem['Jobs']
+
+                for site in possibleSites:
+                    uniqueJobsSummary[elem['Status']].setdefault(site, 0)
+                    possibleJobsSummary[elem['Status']].setdefault(site, 0)
+
+                    uniqueJobsSummary[elem['Status']][site] += jobsPerSite
+                    possibleJobsSummary[elem['Status']][site] += elem['Jobs']
+
+        if status:
+            uniqueJobsSummary = {status: uniqueJobsSummary.get(status, 0)}
+            possibleJobsSummary = {status: possibleJobsSummary.get(status, 0)}
+
+        return uniqueJobsSummary, possibleJobsSummary
+
     def printSummary(self, request, detail=False):
         
         wqResult = self.getWQElementResultsByRequest(request)
@@ -88,10 +153,10 @@ class WorkQueueElementsSummary(object):
             return
         #pprint(elements)
         print("### summary for %s ###" % request )
-        print("  Prioty: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
+        print("  Priority: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
         
         sites = self.getPossibleSitesByRequest(request)
-        print("  Possble sites to run: %s" % list(sites))
+        print("  Possible sites to run: %s" % list(sites))
         
         higher = self.elementsWithHigherPriorityInSameSites(request)
         total = 0

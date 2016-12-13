@@ -404,7 +404,7 @@ class SimpleCondorPlugin(BasePlugin):
         schedd = htcondor.Schedd()
 
         try:
-            schedd.act(htcondor.JobAction.Remove, "WMAgent_RequestName == %s" % classad.quote(workflow))
+            schedd.act(htcondor.JobAction.Remove, "WMAgent_RequestName == %s" % classad.quote(str(workflow)))
         except RuntimeError:
             logging.warn("Error while killing jobs on the schedd: WMAgent_RequestName=%s", workflow)
 
@@ -425,8 +425,8 @@ class SimpleCondorPlugin(BasePlugin):
         if 'taskPriority' in kwargs and 'requestPriority' in kwargs:
             newPriority = int(kwargs['requestPriority']) + int(kwargs['taskPriority'] * self.maxTaskPriority)
             try:
-                constraint = "WMAgent_SubTaskName =?= %s" % classad.quote(task)
-                constraint += " && WMAgent_RequestName =?= %s" % classad.quote(workflow)
+                constraint = "WMAgent_SubTaskName =?= %s" % classad.quote(str(task))
+                constraint += " && WMAgent_RequestName =?= %s" % classad.quote(str(workflow))
                 constraint += " && JobPrio =!= %d" % newPriority
                 schedd.edit(constraint, 'JobPrio', classad.Literal(newPriority))
             except Exception as ex:

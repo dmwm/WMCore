@@ -630,24 +630,17 @@ class DBS3Reader(object):
             blocksInfo = {}
             try:
                 for block in fileBlockNames:
+                    blocksInfo.setdefault(block, [])
+                    # there should be only one element with a single origin site string ...
                     for blockInfo in self.dbs.listBlockOrigin(block_name=block):
-                        if blockInfo:
-                            # TODO remove this line when all DBS origin_site_name is converted to PNN
-                            blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
-                            # upto this
-                            blocksInfo[block] = blockInfo['origin_site_name']
+                        # TODO remove this line when all DBS origin_site_name is converted to PNN
+                        blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
+                        # upto this
+                        blocksInfo[block].append(blockInfo['origin_site_name'])
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
                 msg += "%s\n" % formatEx3(ex)
                 raise DBSReaderError(msg)
-
-            if not blocksInfo:  # no data location from dbs
-                return list()
-
-            for name, node in blocksInfo.iteritems():
-                valid_nodes = set(node) - node_filter
-                if valid_nodes:  # dont add if only 'UNKNOWN' or None
-                    locations[name] = list(valid_nodes)
         else:
             try:
                 blocksInfo = self.phedex.getReplicaPhEDExNodesForBlocks(block=fileBlockNames, complete='y')
@@ -656,10 +649,9 @@ class DBS3Reader(object):
                 msg += "%s\n" % str(ex)
                 raise Exception(msg)
 
-            for name, nodes in blocksInfo.iteritems():
-                valid_nodes = set(nodes) - node_filter
-                if valid_nodes:  # dont add if only 'UNKNOWN' or None then get with dbs
-                    locations[name] = list(valid_nodes)
+        for block in fileBlockNames:
+            valid_nodes = set(blocksInfo.get(block, [])) - node_filter
+            locations[block] = list(valid_nodes)
 
         # returning single list if a single block is passed
         if singleBlockName is not None:

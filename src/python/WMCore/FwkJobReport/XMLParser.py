@@ -443,9 +443,9 @@ def perfStoreHandler():
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
             readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0)/\
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            readTotalT  = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) // 1000
+            readTotalT  = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) / 1000
             readNOps    = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) // 1000
+            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) / 1000
             writeTotMB  = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
                           + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
 

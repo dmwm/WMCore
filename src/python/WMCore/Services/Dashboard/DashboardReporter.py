@@ -69,7 +69,7 @@ class DashboardReporter(WMObject):
             workflow -> Name of the workflow
             name -> unique name of the job
             retry_count -> retry count of the job
-            taskType -> Workflow type (analysis, production, etc...)
+            taskType -> Workflow type (production, etc...)
             jobType -> Job type (merge, processing, etc...)
             *NEventsToprocess -> Number of events the job will process
         Additionally the job should carry information about the task according

@@ -341,7 +341,6 @@ if __name__ == "__main__":
 
     if hasattr(wmagentConfig, "reqmgr"):
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.workloadDBName, "ReqMgr")
-        # wmstatDBName is set to use specfic client {'wmstats': 'tier1', 'tier0_wmstats': 'tier0', 'analysis_wmstats': 'analysis' }
         # which needs to be changed in wmagent for prompt skiming deployment script
         installCouchApp(wmagentConfig.reqmgr.couchUrl, wmagentConfig.reqmgr.wmstatDBName, "WMStats")
         if options.cron:

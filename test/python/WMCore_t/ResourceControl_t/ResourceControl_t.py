@@ -670,9 +670,9 @@ class ResourceControlTest(EmulatedUnitTestCase):
 
     def testInsertAllSEs(self):
         """
-        _testInsertAllSEs_
+        _testInsertAllPNNs_
 
-        Test to see if we can insert all SEs and Thresholds at once
+        Test to see if we can insert all PNNs and Thresholds at once
         Depending on the WMCore.Services.SiteDB interface
         """
         self.createConfig()
@@ -680,7 +680,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         resControlPath = os.path.join(getTestBase(), "../../bin/wmagent-resource-control")
         env = os.environ
         env['PYTHONPATH'] = ":".join(sys.path)
-        cmdline = [resControlPath, "--add-all-sites", "--plugin=CondorPlugin", "--pending-slots=100", "--running-slots=500" , "--emulator"]
+        cmdline = [resControlPath, "--add-all-sites", "--plugin=PyCondorPlugin", "--pending-slots=100", "--running-slots=500" , "--emulator"]
         retval = subprocess.Popen( cmdline,
                                    stdout = subprocess.PIPE,
                                    stderr = subprocess.STDOUT,
@@ -698,7 +698,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         result = myResourceControl.listThresholdsForSubmit()
         self.assertTrue('T1_US_FNAL' in result.keys())
         for x in result.keys():
-            self.assertEqual(len(result[x]['thresholds']), 8)
+            self.assertEqual(len(result[x]['thresholds']), 7)
             self.assertEqual(result[x]['total_pending_slots'], 100)
             self.assertEqual(result[x]['total_running_slots'], 500)
             for taskType, thresh in result[x]['thresholds'].items():
@@ -764,7 +764,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         self.assertEqual(len(result), 1)
         self.assertTrue('CERN' in result)
         for x in result:
-            self.assertEqual(len(result[x]['thresholds']), 10)
+            self.assertEqual(len(result[x]['thresholds']), 9)
             self.assertEqual(result[x]['total_pending_slots'], 500)
             self.assertEqual(result[x]['total_running_slots'], -1)
             for taskType, thresh in result[x]['thresholds'].items():

@@ -46,5 +46,9 @@ def _wmAgentConfig(configFile):
     config.section_("BossAir")
     config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
     config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+    
+    #TaskArchive setup (JobSubmitter needs this)
+    config.component_("TaskArchiver")
+    config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
     saveConfigurationFile(config, configFile)

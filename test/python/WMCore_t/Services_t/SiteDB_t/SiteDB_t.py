@@ -15,7 +15,7 @@ class SiteDBTest(EmulatedUnitTestCase):
     Unit tests for SiteScreening module
     """
 
-    def  __init__(self, methodName='runTest'):
+    def __init__(self, methodName='runTest'):
         super(SiteDBTest, self).__init__(methodName=methodName)
 
     def setUp(self):
@@ -112,28 +112,6 @@ class SiteDBTest(EmulatedUnitTestCase):
         """
         result = self.mySiteDB.cmsNametoList("T1_US*", "SE")
         self.assertItemsEqual(result, [u'cmsdcadisk01.fnal.gov'])
-
-    def testCheckAndConvertSENameToPNN(self):
-        """
-        Test the conversion of SE name to PNN for single
-        and multiple sites/PNNs using checkAndConvertSENameToPNN
-        """
-
-        fnalSE = u'cmsdcadisk01.fnal.gov'
-        purdueSE = u'srm.rcac.purdue.edu'
-        fnalPNNs = [u'T1_US_FNAL_Buffer', u'T1_US_FNAL_MSS', u'T1_US_FNAL_Disk']
-        purduePNN = [u'T2_US_Purdue']
-
-        pnnList = fnalPNNs + purduePNN
-        seList = [fnalSE, purdueSE]
-
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(fnalSE), fnalPNNs)
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN([fnalSE]), fnalPNNs)
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(purdueSE), purduePNN)
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN([purdueSE]), purduePNN)
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(seList), purduePNN + fnalPNNs)
-        self.assertItemsEqual(self.mySiteDB.checkAndConvertSENameToPNN(pnnList), pnnList)
-        return
 
     def testPNNstoPSNs(self):
         """

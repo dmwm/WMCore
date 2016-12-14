@@ -110,9 +110,6 @@ class ResubmitBlock(StartPolicyInterface):
             if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
-                # TODO remove this line when all DBS origin_site_name is converted to PNN
-                block["locations"] = self.siteDB.checkAndConvertSENameToPNN(block["locations"])
-                # upto this
                 dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             validBlocks.append(dbsBlock)
         else:
@@ -145,9 +142,6 @@ class ResubmitBlock(StartPolicyInterface):
             if task.getTrustSitelists().get('trustlists'):
                 dbsBlock["Sites"] = self.sites
             else:
-                # TODO remove this line when all DBS origin_site_name is converted to PNN
-                block["locations"] = self.siteDB.checkAndConvertSENameToPNN(block["locations"])
-                # upto this
                 dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(block["locations"])
             dbsBlock['ACDC'] = acdcInfo
             if dbsBlock['NumberOfFiles']:
@@ -171,9 +165,6 @@ class ResubmitBlock(StartPolicyInterface):
         if task.getTrustSitelists().get('trustlists'):
             dbsBlock["Sites"] = self.sites
         else:
-            # TODO remove this line when all DBS origin_site_name is converted to PNN
-            acdcBlock["locations"] = self.siteDB.checkAndConvertSENameToPNN(acdcBlock["locations"])
-            # upto this
             dbsBlock["Sites"] = self.siteDB.PNNstoPSNs(acdcBlock["locations"])
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:

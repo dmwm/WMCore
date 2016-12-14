@@ -15,7 +15,6 @@ from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 from Utils.IterTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 
 
 def remapDBS3Keys(data, stringify=False, **others):
@@ -65,7 +64,6 @@ class DBS3Reader(object):
 
         # connection to PhEDEx (Use default endpoint url)
         self.phedex = PhEDEx(responseType="json")
-        self.siteDB = SiteDB()
 
     def _getLumiList(self, blockName=None, lfns=None, validFileOnly=1):
         """
@@ -633,9 +631,6 @@ class DBS3Reader(object):
                     blocksInfo.setdefault(block, [])
                     # there should be only one element with a single origin site string ...
                     for blockInfo in self.dbs.listBlockOrigin(block_name=block):
-                        # TODO remove this line when all DBS origin_site_name is converted to PNN
-                        blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
-                        # upto this
                         blocksInfo[block].append(blockInfo['origin_site_name'])
             except dbsClientException as ex:
                 msg = "Error in DBS3Reader: self.dbs.listBlockOrigin(block_name=%s)\n" % fileBlockNames
@@ -812,9 +807,6 @@ class DBS3Reader(object):
                 return list()
 
             for blockInfo in blocksInfo:
-                # TODO remove this line when all DBS origin_site_name is converted to PNN
-                blockInfo['origin_site_name'] = self.siteDB.checkAndConvertSENameToPNN(blockInfo['origin_site_name'])
-                # upto this
                 locations.update(blockInfo['origin_site_name'])
 
             locations.difference_update(['UNKNOWN', None])  # remove entry when SE name is 'UNKNOWN'

@@ -7,7 +7,6 @@ import socket
 import traceback
 import threading
 from operator import itemgetter
-from httplib import HTTPException
 
 from WMCore import Lexicon
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
@@ -80,7 +79,7 @@ class WorkQueueReqMgrInterface(object):
             return 0
 
         try:
-            workLoads = self.getAvailableRequests(queue.params['Teams'])
+            workLoads = self.getAvailableRequests()
         except Exception as ex:
             traceMsg = traceback.format_exc()
             msg = "Error contacting RequestManager: %s" % traceMsg
@@ -162,10 +161,12 @@ class WorkQueueReqMgrInterface(object):
                         if (now - float(ele.updatetime)) > queue.params['reqmgrCompleteGraceTime']:
                             # have to check all elements are at least running and are old enough
                             request_elements = queue.statusInbox(WorkflowName=request['RequestName'])
-                            if not any([x for x in request_elements if x['Status'] != 'Running' and not x.inEndState()]):
+                            if not any(
+                                    [x for x in request_elements if x['Status'] != 'Running' and not x.inEndState()]):
                                 last_update = max([float(x.updatetime) for x in request_elements])
                                 if (now - last_update) > queue.params['reqmgrCompleteGraceTime']:
-                                    self.logger.info("Finishing request %s as it is done in reqmgr" % request['RequestName'])
+                                    self.logger.info(
+                                        "Finishing request %s as it is done in reqmgr" % request['RequestName'])
                                     queue.doneWork(WorkflowName=request['RequestName'])
                                     continue
                     else:
@@ -185,9 +186,8 @@ class WorkQueueReqMgrInterface(object):
 
                 uptodate_elements.append(ele)
             except Exception as ex:
-                msg = 'Error talking to ReqMgr about request "%s": %s'
-                traceMsg = traceback.format_exc()
-                self.logger.error(msg % (ele['RequestName'], traceMsg))
+                msg = 'Error talking to ReqMgr about request "%s": %s' % (ele['RequestName'], str(ex))
+                self.logger.exception(msg)
 
         return uptodate_elements
 
@@ -201,9 +201,9 @@ class WorkQueueReqMgrInterface(object):
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
 
-    def getAvailableRequests(self, teams):
+    def getAvailableRequests(self):
         """
-        Get available requests for the given teams and sort by team and priority
+        Get available requests and sort by team and priority
         returns [(team, request_name, request_spec_url)]
         """
 

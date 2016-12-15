@@ -2,19 +2,20 @@ import json
 
 from WMCore.Services.Service import Service
 
-class ReqMgr(Service):
 
+class ReqMgr(Service):
     """
     API for dealing with retrieving information from RequestManager dataservice
 
     """
 
-    def __init__(self, url, header = {}):
+    def __init__(self, url, header=None):
         """
         responseType will be either xml or json
         """
 
         httpDict = {}
+        header = header or {}
         # url is end point
         httpDict['endpoint'] = "%s/data" % url
 
@@ -29,36 +30,32 @@ class ReqMgr(Service):
         # This is only for the unittest: never set it true unless it is unittest
         self._noStale = False
 
-    def _getResult(self, callname, clearCache=True,
-                   args=None, verb="GET", encoder=json.loads,
-                   decoder=json.loads,
-                   contentType=None):
+    def _getResult(self, callname, clearCache=True, args=None, verb="GET",
+                   encoder=json.loads, decoder=json.loads, contentType=None):
         """
         _getResult_
-        
         """
         result = ''
         file = callname.replace("/", "_")
         if clearCache:
             self.clearCache(file, args, verb)
 
-        f = self.refreshCache(file, callname, args, encoder = encoder,
-                              verb = verb, contentType = contentType)
+        f = self.refreshCache(file, callname, args, encoder=encoder,
+                              verb=verb, contentType=contentType)
         result = f.read()
         f.close()
 
         if result and decoder:
             result = decoder(result)
-            
-        return result['result']    
-    
+
+        return result['result']
+
     def _createQuery(self, queryDict):
         """
         _createQuery
         :param queryDict: is the format of {name: values} fair. value can be sting, int or list
         :type queryDict: dict
         :returns: url query string
-        
         """
         if self._noStale:
             args = "_nostale=true&"
@@ -68,15 +65,15 @@ class ReqMgr(Service):
             if isinstance(values, basestring) or isinstance(values, int):
                 values = [values]
             for val in values:
-                args +='%s=%s&' % (name, val)
-        
+                args += '%s=%s&' % (name, val)
+
         return args.rstrip('&')
 
     def getRequestByNames(self, names):
 
         """
         _getRequestByNames_
-        
+
         :param names: list or sting of request name(s)
         :type statusList: list, str
         :returns:  list of dict or list of request names depending on the detail value
@@ -87,17 +84,16 @@ class ReqMgr(Service):
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
                                                                     'inputMode': 'couchDB'}}]
         TODO: need proper error handling if status is not 200 from orignal reporting.
-
         """
-        
+
         query = self._createQuery({'name': names})
         callname = 'request?%s' % query
-        return self._getResult(callname, verb = "GET")
+        return self._getResult(callname, verb="GET")
 
     def getRequestByStatus(self, statusList, detail=True):
         """
         _getRequestByStatus_
-        
+
         :param statusList: list of status
         :type statusList: list
         :param detail: boolean of request list.
@@ -111,43 +107,43 @@ class ReqMgr(Service):
                                                                     'inputMode': 'couchDB'}}]
         TODO: need proper error handling if status is not 200 from orignal reporting.
         """
-        
+
         query = self._createQuery({'status': statusList, 'detail': detail})
         callname = 'request?%s' % query
-        return  self._getResult(callname, verb = "GET")
-        
+        return self._getResult(callname, verb="GET")
+
     def getRequestTasks(self, name):
 
         """
         _getRequestTasks_
-        
+
         :param name: request name
         :type string: str
         :returns:  list of dict or list of request names depending on the detail value
          -- {result:[{requestTask}, {requestTask}]}
         """
-        
+
         callname = 'splitting/%s' % name
-        return self._getResult(callname, verb = "GET")
+        return self._getResult(callname, verb="GET")
 
     def getConfig(self, name):
 
         """
         _getConfig_
-        
+
         :param name: request name
         :type string: str
         :returns:  list of dict or list of request names depending on the detail value
          -- {result:[config_string]}
         """
-        
+
         callname = 'workload_config/%s' % name
-        return self._getResult(callname, verb = "GET")
+        return self._getResult(callname, verb="GET")
 
     def insertRequests(self, requestDict):
         """
         _insertRequests_
-        
+
         :param requestDict: request argument dictionary
         :type requestDict: dict
         :returns:  list of dictionary -- [{'test_RequestString-OVERRIDE-ME_141125_142331_4966': {'BlockBlacklist': [],
@@ -163,7 +159,7 @@ class ReqMgr(Service):
     def updateRequestStatus(self, request, status):
         """
         _updateRequestStatus_
-        
+
         :param request: request(workflow name)
         :type reqeust: str
         :param status: status of workflow to update (i.e. 'assigned')
@@ -176,11 +172,11 @@ class ReqMgr(Service):
                                                                     'inputMode': 'couchDB'}}]
         TODO: need proper error handling if status is not 200 from orignal reporting.
         """
-        
+
         status = {"RequestStatus": status}
         status["RequestName"] = request
         return self["requests"].put('request', status)[0]['result']
-    
+
     def updateRequestStats(self, request, stats):
         """
         put initial stats for request
@@ -188,8 +184,7 @@ class ReqMgr(Service):
                                'input_events': 100, 'input_num_files': 100}
         specific to ReqMgr app. not implemented for T0
         """
-        #TODO: add stats validation here
-        
+        # TODO: add stats validation here
         self.updateRequestProperty(request, stats)
 
     def updateRequestProperty(self, request, propDict):
@@ -204,22 +199,19 @@ class ReqMgr(Service):
                                                                     'CMSSWVersion': 'CMSSW_4_4_2_patch2',
                                                                     ....
                                                                     '_id': 'test_RequestString-OVERRIDE-ME_141125_142331_4966',
-                                                                    'inputMode': 'couchDB'}}]                                                 
+                                                                    'inputMode': 'couchDB'}}]
         """
         propDict["RequestName"] = request
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
-    
-    
+
     def getAbortedAndForceCompleteRequestsFromMemoryCache(self):
         """
         _getAbortedAndForceCompleteRequestsFromMemoryCache_
-        
         """
         # imports here to avoid the dependency not using this function
         from WMCore.Cache.GenericDataCache import MemoryCacheStruct
-        
-        #TODO remove "aborted-completed status when state transition happens in reqmgr2
+
+        # TODO remove "aborted-completed status when state transition happens in reqmgr2
         maskStates = ["aborted", "aborted-completed", "force-complete"]
-        return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, 
-                                            kwargs={'statusList': maskStates, "detail": False})
-        
+        return MemoryCacheStruct(expire=0, func=self.getRequestByStatus,
+                                 kwargs={'statusList': maskStates, "detail": False})

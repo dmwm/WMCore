@@ -8,14 +8,13 @@ import zlib
 from traceback import format_exc
 
 import cherrypy
-import xml.sax.saxutils
 
 from WMCore.REST.Error import RESTError, ExecutionError, report_rest_error
 
 try:
-  from cherrypy.lib import httputil
-except:
-  from cherrypy.lib import http as httputil
+    from cherrypy.lib import httputil
+except ImportError:
+    from cherrypy.lib import http as httputil
 
 def vary_by(header):
     """Add 'Vary' header for `header`."""
@@ -34,7 +33,7 @@ def is_iterable(obj):
     else:
         return True
 
-class RESTFormat:
+class RESTFormat(object):
     def __call__(self, stream, etag):
         """Main entry point for generating output for `stream` using `etag`
         object to generate ETag header. Returns a generator function for

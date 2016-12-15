@@ -1,3 +1,42 @@
+1.0.21 to 1.0.21.patch4:
+  - Merge pull request #7471 from ticoann/1.0.21_wmagent
+  - change the precision
+  - Merge pull request #7470 from amaltaro/bundle2-1021
+  - Take2 - return empty location if block is not complete anywhere
+  - Accept Trust flags for MonteCarlo WQ policy
+  - Allow jobs to request repack slots
+  - Merge pull request #7407 from ticoann/1.0.21_wmagent_reqmgr2
+  - treat all the request as reqmgr2
+  - Merge pull request #7399 from amaltaro/pileup-runtime1021
+  - Change PU file list behavior during WMRuntime/TrustPUSitelists
+  - 1.0.21.patch3
+  - Merge pull request #7389 from amaltaro/couple-condor-1021
+  - Merge pull request #7386 from amaltaro/jobMask-oracle-1021
+  - Efficiently update the condor site lists
+  - Update/kill jobs first, then update site state
+  - Fix for WMBS job mask in oracle
+  - Merge pull request #7354 from amaltaro/dqmHarvest-policy1021
+  - Fix type in DQMHarvest; correct GQ stats accounting
+  - 1.0.21.patch2
+  - Merge pull request #7323 from ticoann/1.0.21_wmagent
+  - Merge pull request #7326 from amaltaro/phedex-logging-1021
+  - Removed PhEDEx alert code
+  - Inject phedex data by dataset; improve logging
+  - only add document if the job doc exists
+  - 1.0.21.patch1
+  - Merge pull request #7299 from amaltaro/wmagent1021-bundle1
+  - Added some unit tests
+  - Support run whitelist/blacklist in Harvest algo
+  - Import the stage out plugins
+  - fallback to cvmfs if xrdcp/xrdfs not in path
+  - temp fix for encoding error
+  - Improve submit.sh logging, exitCodes check a) Make sure script runtime is not less than set by a scheduler. Also it will force to sleep up to 5mins if this bootstrap script fails, which mainly means something is wrong with this WN or transferring files to it failed for unknown reason. Re-sending other jobs so fast to same worker node lead to same failure most often. if this MIN_JOB_RUNTIME_TIME_SECONDS is not set, will use 0. If Job exited 0 and bootstrap script also 0, it will not sleep any time and will exit. b) Improve logging and separate what is where... Also to addition print the condor job ad content for debug reasons and also print environment more nicely. c) output file variable is a string separated with spaces. Each of word is treated as a separate argument, so this shows a failure: [: -eq: unary operator expected
+  - TaskArchiver - demote annoying logging
+  - add location filter to wmarchive format
+  - only merge and successful job's skipped file will be reported
+  - Always override the PSet number of threads
+  - fixes unit for performance data
+
 1.0.21 to 1.0.21.patch3:
   - Merge pull request #7389 from amaltaro/couple-condor-1021
   - Merge pull request #7386 from amaltaro/jobMask-oracle-1021

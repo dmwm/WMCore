@@ -146,16 +146,13 @@ def loadJobDefinition():
 
     try:
         job = package[index]
-    except Exception as ex:
-        msg = "Failed to extract Job %i\n" % (index)
-        msg += str(ex)
+    except Exception:
+        msg = "Failed to extract job index %i " % index
+        msg += "from the jobPackage directory: %s\n" % package.get('directory')
+        msg += "Found a total of %d indexes in the JobPackage.\n" % len(package)
         createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
         raise BootstrapException(msg)
-    diagnostic = """
-    Job Index = %s
-    Job Instance = %s
-    """ % (index, job)
-    logging.info(diagnostic)
+    logging.info("Job Index = %s\nJob Instance = %s\n", index, job)
 
     return job
 

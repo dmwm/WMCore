@@ -10,3 +10,4 @@ WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testResetWork
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testWMBSInjectionStatus
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testEndPolicyNegotiating
 WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testMultipleTeams
+WMCore_t.WorkQueue_t.WorkQueue_t.WorkQueueTest:testGlobalBlockSplitting

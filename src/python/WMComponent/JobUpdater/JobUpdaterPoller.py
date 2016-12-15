@@ -115,7 +115,8 @@ class JobUpdaterPoller(BaseWorkerThread):
         for workflow, priority in workflowsToCheck:
             if workflow not in priorityCache:
                 try:
-                    priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
+                    result = self.reqmgr2.getRequestByNames(workflow)[0]
+                    priorityCache[workflow] = result[workflow]['RequestPriority']
                 except Exception as ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)
@@ -134,7 +135,8 @@ class JobUpdaterPoller(BaseWorkerThread):
             workflow = workflowEntry['name']
             if workflow not in priorityCache:
                 try:
-                    priorityCache[workflow] = self.reqmgr2.getRequestByNames(workflow)[workflow]['RequestPriority']
+                    result = self.reqmgr2.getRequestByNames(workflow)[0]
+                    priorityCache[workflow] = result[workflow]['RequestPriority']
                 except Exception as ex:
                     logging.error("Couldn't retrieve the priority of request %s" % workflow)
                     logging.error("Error: %s" % ex)

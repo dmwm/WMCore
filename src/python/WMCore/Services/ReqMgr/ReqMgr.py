@@ -50,11 +50,7 @@ class ReqMgr(Service):
         if result and decoder:
             result = decoder(result)
             
-        data = result['result']    
-        if len(data) == 0:
-            return []
-        else:
-            return data
+        return result['result']    
     
     def _createQuery(self, queryDict):
         """

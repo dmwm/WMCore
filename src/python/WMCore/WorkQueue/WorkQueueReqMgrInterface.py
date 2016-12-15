@@ -151,7 +151,7 @@ class WorkQueueReqMgrInterface(object):
                     msg = 'Failed to get request "%s" from ReqMgr2. Will try again later.' % ele['RequestName']
                     self.logger.warning(msg)
                     continue
-                request = request[ele['RequestName']]
+                request = request[0][ele['RequestName']]
                 if request['RequestStatus'] in ('failed', 'completed', 'announced',
                                                 'epic-FAILED', 'closed-out', 'rejected'):
                     # requests can be done in reqmgr but running in workqueue
@@ -201,41 +201,17 @@ class WorkQueueReqMgrInterface(object):
                 finished.append(element['RequestName'])
         return queue.deleteWorkflows(*finished)
 
-    def _getRequestsByTeamsAndStatus(self, status, teams=[]):
-        """
-        TODO: now it assumes one team per requests - check whether this assumption is correct
-        Check whether we actually use the team for this.
-        Also switch to byteamandstatus couch call instead of
-        """
-        requests = self.reqMgr2.getRequestByStatus(status)
-        # Then sort by Team name then sort by Priority
-        # https://docs.python.org/2/howto/sorting.html
-        if teams and len(teams) > 0:
-            results = {}
-            for reqName, value in requests.items():
-                if value["Teams"][0] in teams:
-                    results[reqName] = value
-            return results
-        else:
-            return requests
-
     def getAvailableRequests(self, teams):
         """
         Get available requests for the given teams and sort by team and priority
         returns [(team, request_name, request_spec_url)]
         """
 
-        tempResults = self._getRequestsByTeamsAndStatus("assigned", teams).values()
+        tempResults = self.reqMgr2.getRequestByStatus("assigned")
         filteredResults = []
-        for request in tempResults:
-            if "Teams" in request and len(request["Teams"]) == 1:
+        for requests in tempResults:
+            for request in requests.values():
                 filteredResults.append(request)
-                self.logdb.delete(request["RequestName"], "error", this_thread=True)
-            else:
-                msg = "no team or more than one team (%s) are assigined: %s" % (
-                    request.get("Teams", None), request["RequestName"])
-                self.logger.error(msg)
-                self.logdb.post(request["RequestName"], msg, 'error')
         filteredResults.sort(key=itemgetter('RequestPriority'), reverse=True)
         filteredResults.sort(key=lambda r: r["Teams"][0])
 
@@ -315,7 +291,7 @@ class WorkQueueReqMgrInterface(object):
             return 0
 
         try:
-            requests = self._getRequestsByTeamsAndStatus("running-open", queue.params['Teams']).keys()
+            requests = self.reqMgr2.getRequestByStatus("running-open", detail=False)
         except Exception as ex:
             traceMsg = traceback.format_exc()
             msg = "Error contacting RequestManager: %s" % traceMsg

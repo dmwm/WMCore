@@ -1,3 +1,28 @@
+1.0.23 to 1.1.0.pre1:
+  - Merge pull request #7442 from ticoann/kill_jobs_for_aborted
+  - Merge pull request #7436 from amaltaro/analysis-no-no
+  - Merge pull request #7449 from ticoann/fix_site_report
+  - Merge pull request #7458 from amaltaro/originSite2PNNs
+  - Merge pull request #7465 from stiegerb/stiegerb_stompamq_8_12_2016
+  - Adding StompAMQ interface
+  - Remove origin_site_name conversion from SE to PNN
+  - fix unittest
+  - Merge pull request #7459 from amaltaro/simpleCondor-states
+  - fix aborted and force complete request not killing the jobs
+  - fix site location when location changed
+  - Merge pull request #7455 from amaltaro/complete-killedJobs
+  - Merge pull request #7237 from amaltaro/check-request-wq
+  - Merge pull request #7457 from amaltaro/noBlocks-tmdb
+  - Merge pull request #7456 from amaltaro/simpleCondor-moreUnicode
+  - Functions to parse global wqe and make simple summaries
+  - Fetch data only for a specific request in WorkQueue summary util
+  - Removed scheddLog mapping; updated stateMap to string status
+  - Take2 - return empty location if block is not complete anywhere
+  - Missing places in SimpleCondor still using unicode
+  - Dont complete the same job twice in BossAir
+  - Fix resource control unit tests
+  - Complete removal of Analysis task/code in WMCore
+
 1.0.22 to 1.0.23:
   - Merge pull request #7362 from amaltaro/pycondor-resizeJob
   - Merge pull request #7363 from amaltaro/environ-resizeJobs

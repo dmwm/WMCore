@@ -271,6 +271,7 @@ class TestInit(object):
         config.component_("TaskArchiver")
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
         config.TaskArchiver.ReqMgrSeviceURL = "request manager service url"
+        config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 
         return config
 

@@ -52,9 +52,7 @@ class ReqMgr(Service):
             
         data = result['result']    
         if len(data) == 0:
-            return {}
-        elif len(data) == 1:
-            return data[0]
+            return []
         else:
             return data
     
@@ -100,7 +98,7 @@ class ReqMgr(Service):
         callname = 'request?%s' % query
         return self._getResult(callname, verb = "GET")
 
-    def getRequestByStatus(self, statusList):
+    def getRequestByStatus(self, statusList, detail=True):
         """
         _getRequestByStatus_
         
@@ -118,7 +116,7 @@ class ReqMgr(Service):
         TODO: need proper error handling if status is not 200 from orignal reporting.
         """
         
-        query = self._createQuery({'status': statusList})
+        query = self._createQuery({'status': statusList, 'detail': detail})
         callname = 'request?%s' % query
         return  self._getResult(callname, verb = "GET")
         
@@ -215,4 +213,17 @@ class ReqMgr(Service):
         propDict["RequestName"] = request
         return self["requests"].put('request/%s' % request, propDict)[0]['result']
     
+    
+    def getAbortedAndForceCompleteRequestsFromMemoryCache(self):
+        """
+        _getAbortedAndForceCompleteRequestsFromMemoryCache_
+        
+        """
+        # imports here to avoid the dependency not using this function
+        from WMCore.Cache.GenericDataCache import MemoryCacheStruct
+        
+        #TODO remove "aborted-completed status when state transition happens in reqmgr2
+        maskStates = ["aborted", "aborted-completed", "force-complete"]
+        return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, 
+                                            kwargs={'statusList': maskStates, "detail": False})
         

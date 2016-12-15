@@ -28,6 +28,7 @@ from WMCore.DataStructs.JobPackage            import JobPackage
 from WMCore.FwkJobReport.Report               import Report
 from WMCore.WMException                       import WMException
 from WMCore.BossAir.BossAirAPI                import BossAirAPI
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 
 
 class JobSubmitterPollerException(WMException):
@@ -108,7 +109,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-
+        
+        self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+        self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
         return
 
     def getPackageCollection(self, sandboxDir):
@@ -230,16 +233,23 @@ class JobSubmitterPoller(BaseWorkerThread):
            self.refreshPollingCount >= self.skipRefreshCount:
             newJobs = self.listJobsAction.execute()
             self.refreshPollingCount = 0
+            abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
             logging.info("Found %s new jobs to be submitted.", len(newJobs))
         else:
             self.refreshPollingCount += 1
             newJobs = []
             dbJobs = self.cachedJobIDs
+            abortedAndForceCompleteRequests = []
             logging.info("Skipping cache update to be submitted. (%s job in cache)" % len(dbJobs))
         
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:
+            # whether newJob belongs to aborted or force-complete workflow, and skip it if it is.
+            if (newJob['request_name'] in abortedAndForceCompleteRequests) and \
+               (newJob['type'] not in ['LogCollect', "Cleanup"]):
+                continue
+            
             jobID = newJob['id']
             dbJobs.add(jobID)
             if jobID in self.cachedJobIDs:
@@ -371,10 +381,27 @@ class JobSubmitterPoller(BaseWorkerThread):
         # We need to remove any jobs from the cache that were not returned in
         # the last call to the database.
         jobIDsToPurge = self.cachedJobIDs - dbJobs
-        self.cachedJobIDs -= jobIDsToPurge
+        self._purgeJobsFromCache(jobIDsToPurge)
 
+        logging.info("Done pruning killed jobs, moving on to submit.")
+        return
+        
+    def removeAbortedForceCompletedWorkflowFromCache(self):
+        abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+        jobIDsToPurge = set() 
+        for jobID, jobInfo in self.jobDataCache.iteritems():
+            if (jobInfo['requestName'] in abortedAndForceCompleteRequests) and \
+               (jobInfo['taskType'] not in ['LogCollect', "Cleanup"]):
+                jobIDsToPurge.add(jobID)
+        self._purgeJobsFromCache(jobIDsToPurge)
+        return
+    
+    def _purgeJobsFromCache(self, jobIDsToPurge):
+        
         if len(jobIDsToPurge) == 0:
             return
+        
+        self.cachedJobIDs -= jobIDsToPurge
 
         for jobid in jobIDsToPurge:
             self.jobDataCache.pop(jobid, None)
@@ -382,10 +409,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 if self.cachedJobs[jobPrio].pop(jobid, None):
                     # then the jobid was found, go to the next one
                     break
-
-        logging.info("Done pruning killed jobs, moving on to submit.")
-        return
-
+        return  
+        
     def _handleSubmitFailedJobs(self, badJobs, exitCode):
         """
         __handleSubmitFailedJobs_
@@ -472,6 +497,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
+        
     def assignJobLocations(self):
         """
         _assignJobLocations_
@@ -663,6 +689,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             myThread = threading.currentThread()
             self.getThresholds()
             self.refreshCache()
+            self.removeAbortedForceCompletedWorkflowFromCache()
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
         except WMException:

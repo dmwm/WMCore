@@ -6,10 +6,12 @@ File       : cms.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: CMS modules
 """
+from __future__ import (division, print_function)
 
 # system modules
 import os
 import time
+from collections import defaultdict
 
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 # CMS modules
@@ -69,6 +71,15 @@ class TagCollector(object):
         for row in self.data():
             arr.append(row['name'])
         return list(set(arr))
+    
+    def releases_by_architecture(self):
+        "returns CMS architectures and realease in dictionary format"
+        arch_dict = defaultdict(list)
+        for row in self.data():
+            for item in row['project']:
+                arch_dict[row['name']].append(item['label'])
+        return arch_dict
+        
 
 # initialize TagCollector instance to be used in this module
 TC = TagCollector()
@@ -78,11 +89,11 @@ def sites():
     try:
         # Download a list of all the sites from SiteDB, uses v2 API.
         sitedb = SiteDBJSON()
-        sites = sorted(sitedb.getAllCMSNames())
+        site_list = sorted(sitedb.getAllCMSNames())
     except Exception as exc:
         msg = "ERROR: Could not retrieve sites from SiteDB, reason: %s" % str(exc)
         raise Exception(msg)
-    return sites
+    return site_list
 
 # create a site cache and pnn cache 2 hour duration
 SITE_CACHE = MemoryCacheStruct(5200, sites)
@@ -93,11 +104,11 @@ def pnns():
     """
     try:
         sitedb = SiteDBJSON()
-        pnns = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
+        pnn_list = sorted(sitedb.getAllPhEDExNodeNames(excludeBuffer=True))
     except Exception as exc:
         msg = "ERROR: Could not retrieve PNNs from SiteDB, reason: %s" % str(exc)
         raise Exception(msg)
-    return pnns
+    return pnn_list
 
 # create a site cache and pnn cache 2 hour duration
 PNN_CACHE= MemoryCacheStruct(5200, pnns)

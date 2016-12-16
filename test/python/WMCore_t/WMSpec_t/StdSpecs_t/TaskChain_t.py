@@ -513,7 +513,7 @@ class TaskChainTests(unittest.TestCase):
             flags = task.getTrustSitelists()
             if task.isTopOfTree():
                 self.assertEqual(flags.values(), [True, True])
-            elif task.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
+            elif task.taskType() in ["Cleanup", "LogCollect"]:
                 self.assertEqual(flags.values(), [False, False])
             else:
                 self.assertFalse(flags['trustlists'])

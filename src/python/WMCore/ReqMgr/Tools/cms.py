@@ -6,10 +6,12 @@ File       : cms.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: CMS modules
 """
+from __future__ import (division, print_function)
 
 # system modules
 import os
 import time
+from collections import defaultdict
 
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 # CMS modules
@@ -69,6 +71,15 @@ class TagCollector(object):
         for row in self.data():
             arr.append(row['name'])
         return list(set(arr))
+    
+    def releases_by_architecture(self):
+        "returns CMS architectures and realease in dictionary format"
+        arch_dict = defaultdict(list)
+        for row in self.data():
+            for item in row['project']:
+                arch_dict[row['name']].append(item['label'])
+        return arch_dict
+        
 
 # initialize TagCollector instance to be used in this module
 TC = TagCollector()

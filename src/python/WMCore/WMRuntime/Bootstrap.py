@@ -5,35 +5,28 @@ _TaskSpace_
 Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
-
-
-
-
 import inspect
 import pickle
 import os
 import os.path
-import logging
 import threading
-import sys
 import socket
+import logging
 from logging.handlers import RotatingFileHandler
 
-from WMCore.WMException        import WMException
-from WMCore.WMRuntime          import TaskSpace
-from WMCore.WMRuntime          import StepSpace
-from WMCore                    import WMLogging
+from WMCore.WMException import WMException
+from WMCore.WMRuntime import TaskSpace
+from WMCore.WMRuntime import StepSpace
 from WMCore.WMRuntime.Watchdog import Watchdog
 
 from WMCore.DataStructs.JobPackage import JobPackage
-from WMCore.WMSpec.WMWorkload      import WMWorkloadHelper
-
-from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError, SiteLocalConfig
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 import WMCore.FwkJobReport.Report as Report
+from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig, SiteConfigError
 
 
 class BootstrapException(WMException):
-    #TODO: make awesome
+    """ An awesome exception """
     pass
 
 
@@ -51,25 +44,23 @@ def getSyncCE():
     if 'GLOBUS_GRAM_JOB_CONTACT' in os.environ:
         #  //
         # // OSG, Sync CE from Globus ID
-        #//
+        # //
         val = os.environ['GLOBUS_GRAM_JOB_CONTACT']
         try:
             host = val.split("https://", 1)[1]
             host = host.split(":")[0]
             result = host
-        except:
-            pass
+        except Exception:
+            logging.warn("Failed to extract SynCE from globus")
         return result
 
     if 'NORDUGRID_CE' in os.environ:
         #  //
         # // ARC, Sync CE from env. var. submitted with the job by JobSubmitter
-        #//
+        # //
         return os.environ['NORDUGRID_CE']
 
     return result
-
-
 
 
 def establishTaskSpace(**args):
@@ -81,6 +72,7 @@ def establishTaskSpace(**args):
     """
     return TaskSpace.TaskSpace(**args)
 
+
 def establishStepSpace(**args):
     """
     _establishStepSpace_
@@ -89,6 +81,7 @@ def establishStepSpace(**args):
 
     """
     return StepSpace.StepSpace(**args)
+
 
 def locateWMSandbox():
     """
@@ -112,6 +105,7 @@ def locateWMSandbox():
     wmsandboxLoc = wmsandboxLoc.replace("__init__.py", "")
     return wmsandboxLoc
 
+
 def loadJobDefinition():
     """
     _loadJobDefinition_
@@ -131,7 +125,7 @@ def loadJobDefinition():
     except Exception as ex:
         msg = "Failed to load JobPackage:%s\n" % packageLoc
         msg += str(ex)
-        createErrorReport(exitCode = 11001, errorType = "JobPackageError", errorDetails = msg)
+        createErrorReport(exitCode=11001, errorType="JobPackageError", errorDetails=msg)
         raise BootstrapException(msg)
 
     try:
@@ -139,25 +133,23 @@ def loadJobDefinition():
     except ImportError as ex:
         msg = "Failed to import WMSandbox.JobIndex module\n"
         msg += str(ex)
-        createErrorReport(exitCode = 11002, errorType = "JobIndexError", errorDetails = msg)
+        createErrorReport(exitCode=11002, errorType="JobIndexError", errorDetails=msg)
         raise BootstrapException(msg)
 
     index = WMSandbox.JobIndex.jobIndex
 
     try:
         job = package[index]
-    except Exception as ex:
-        msg = "Failed to extract Job %i\n" % (index)
-        msg += str(ex)
-        createErrorReport(exitCode = 11003, errorType = "JobExtractionError", errorDetails = msg)
+    except Exception:
+        msg = "Failed to extract job index %i " % index
+        msg += "from the jobPackage directory: %s\n" % package.get('directory')
+        msg += "Found a total of %d indexes in the JobPackage.\n" % len(package)
+        createErrorReport(exitCode=11003, errorType="JobExtractionError", errorDetails=msg)
         raise BootstrapException(msg)
-    diagnostic = """
-    Job Index = %s
-    Job Instance = %s
-    """ % (index, job)
-    logging.info(diagnostic)
+    logging.info("Job Index = %s\nJob Instance = %s\n", index, job)
 
     return job
+
 
 def loadWorkload():
     """
@@ -175,8 +167,6 @@ def loadWorkload():
     return WMWorkloadHelper(wmWorkload)
 
 
-
-
 def loadTask(job):
     """
     _loadTask_
@@ -190,27 +180,27 @@ def loadTask(job):
     try:
         task = workload.getTaskByPath(job['task'])
     except KeyError as ex:
-        msg =  "Task name not in job object"
+        msg = "Task name not in job object"
         msg += str(ex)
-        createErrorReport(exitCode = 11103, errorType = "TaskNotInJob", errorDetails = msg,
-                          logLocation = "Report.%i.pkl" % job['retry_count'])
+        createErrorReport(exitCode=11103, errorType="TaskNotInJob", errorDetails=msg,
+                          logLocation="Report.%i.pkl" % job['retry_count'])
         raise BootstrapException(msg)
     except Exception as ex:
         msg = "Error looking up task %s\n" % job['task']
         msg += str(ex)
-        createErrorReport(exitCode = 11101, errorType = "TaskLookupError", errorDetails = msg,
-                          logLocation = "Report.%i.pkl" % job['retry_count'])
+        createErrorReport(exitCode=11101, errorType="TaskLookupError", errorDetails=msg,
+                          logLocation="Report.%i.pkl" % job['retry_count'])
         raise BootstrapException(msg)
-    if task == None:
+    if task is None:
         msg = "Unable to look up task %s from Workload\n" % job['task']
         msg += "Task name not matched"
-        createErrorReport(exitCode = 11102, errorType = "TaskNotFound", errorDetails = msg,
-                          logLocation = "Report.%i.pkl" % job['retry_count'])
+        createErrorReport(exitCode=11102, errorType="TaskNotFound", errorDetails=msg,
+                          logLocation="Report.%i.pkl" % job['retry_count'])
         raise BootstrapException(msg)
     return task
 
 
-def createInitialReport(job, task, logLocation):
+def createInitialReport(job, logLocation):
     """
     _createInitialReport_
 
@@ -223,20 +213,19 @@ def createInitialReport(job, task, logLocation):
         # For now, assume that we did this on purpose
         msg = "Couldn't find SiteConfig"
         logging.error(msg)
-        #TODO: Make less goatballs for testing purposes
+        # TODO: Make less goatballs for testing purposes
         return
 
-    report  = Report.Report()
+    report = Report.Report()
 
-
-    report.data.WMAgentJobID   = job.get('id', None)
+    report.data.WMAgentJobID = job.get('id', None)
     report.data.WMAgentJobName = job.get('name', None)
-    report.data.pnn            = siteCfg.localStageOut.get('phedex-node', 'Unknown')
-    report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
-    report.data.hostName       = socket.gethostname()
-    report.data.ceName         = getSyncCE()
-    report.data.completed      = False
-    report.setTaskName(taskName = job.get('task', 'TaskNotFound'))
+    report.data.pnn = siteCfg.localStageOut.get('phedex-node', 'Unknown')
+    report.data.siteName = getattr(siteCfg, 'siteName', 'Unknown')
+    report.data.hostName = socket.gethostname()
+    report.data.ceName = getSyncCE()
+    report.data.completed = False
+    report.setTaskName(taskName=job.get('task', 'TaskNotFound'))
 
     # Not so fond of this, but we have to put the master
     # report way up at the top so it's returned if the
@@ -247,9 +236,8 @@ def createInitialReport(job, task, logLocation):
     return
 
 
-
-def createErrorReport(exitCode, errorType, errorDetails = None,
-                      logLocation = "Report.0.pkl"):
+def createErrorReport(exitCode, errorType, errorDetails=None,
+                      logLocation="Report.0.pkl"):
     """
     _createErrorReport_
 
@@ -258,35 +246,29 @@ def createErrorReport(exitCode, errorType, errorDetails = None,
     sticks the error in there.
     """
 
-
     try:
         siteCfg = loadSiteLocalConfig()
     except SiteConfigError:
         # For now, assume that we did this on purpose
         msg = "Couldn't find SiteConfig"
         logging.error(msg)
-        #TODO: Make this not suck goatballs when you are just running tests
+        # TODO: Make this not suck goatballs when you are just running tests
         return
-    report  = Report.Report()
+    report = Report.Report()
 
+    report.data.pnn = siteCfg.localStageOut.get('phedex-node', 'Unknown')
+    report.data.siteName = getattr(siteCfg, 'siteName', 'Unknown')
+    report.data.hostName = socket.gethostname()
+    report.data.ceName = getSyncCE()
+    report.data.completed = False
 
-    report.data.pnn         = siteCfg.localStageOut.get('phedex-node', 'Unknown')
-    report.data.siteName       = getattr(siteCfg, 'siteName', 'Unknown')
-    report.data.hostName       = socket.gethostname()
-    report.data.ceName         = getSyncCE()
-    report.data.completed      = False
-
-
-    report.addError(stepName = 'CRITICAL', exitCode = exitCode,
-                    errorType = errorType, errorDetails = errorDetails)
+    report.addError(stepName='CRITICAL', exitCode=exitCode,
+                    errorType=errorType, errorDetails=errorDetails)
 
     reportPath = os.path.join(os.getcwd(), '../', logLocation)
     report.save(reportPath)
 
     return
-
-
-
 
 
 def setupLogging(logDir):
@@ -304,9 +286,9 @@ def setupLogging(logDir):
         logHandler.setFormatter(logFormatter)
         logging.getLogger().addHandler(logHandler)
         logging.getLogger().setLevel(logging.INFO)
-        #This is left in as a reminder for debugging purposes
-        #SQLDEBUG turns your log files into horrible messes
-        #logging.getLogger().setLevel(logging.SQLDEBUG)
+        # This is left in as a reminder for debugging purposes
+        # SQLDEBUG turns your log files into horrible messes
+        # logging.getLogger().setLevel(logging.SQLDEBUG)
 
         myThread = threading.currentThread()
         myThread.logger = logging.getLogger()
@@ -324,7 +306,7 @@ def setupMonitoring(logPath):
 
     """
     try:
-        monitor = Watchdog(logPath = logPath)
+        monitor = Watchdog(logPath=logPath)
         myThread = threading.currentThread
         myThread.watchdogMonitor = monitor
         return monitor

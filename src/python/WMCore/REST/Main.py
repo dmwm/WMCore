@@ -12,7 +12,6 @@ import sys, os, errno, re, os.path, subprocess, socket, time
 import cherrypy, logging, thread, traceback
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
-from cStringIO import StringIO
 from optparse import OptionParser
 from cherrypy import Application
 from cherrypy.lib import profiler
@@ -20,6 +19,10 @@ from cherrypy._cplogging import LogManager
 from subprocess import Popen, PIPE
 from glob import glob
 from signal import *
+try:
+    from cStringIO import StringIO
+except ImportError: # python3
+    from io import StringIO
 
 #: Terminal controls to switch to "OK" status message colour.
 COLOR_OK = "\033[0;32m"

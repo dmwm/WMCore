@@ -53,8 +53,12 @@ import json
 import logging
 import os
 import time
-from cStringIO import StringIO
 from httplib import HTTPException
+try:
+    from cStringIO import StringIO
+except ImportError: # python3
+    from io import StringIO
+
 
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException

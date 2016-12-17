@@ -13,7 +13,11 @@ import urllib2
 import logging
 import traceback
 
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError: # python3
+    from io import StringIO
+
 from mimetypes import guess_type
 from gzip import GzipFile
 from functools import reduce

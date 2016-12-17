@@ -2,16 +2,38 @@
 #-*- coding: utf-8 -*-
 #pylint: disable=
 """
-File       : utils.py
+File       : XMLUtils.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: Set of utilities for RequestManager code
 """
 
+from __future__ import (division, print_function)
 # system modules
+import re
 import cStringIO as StringIO
 import xml.etree.cElementTree as ET
 
+int_number_pattern = re.compile(r'(^[0-9-]$|^[0-9-][0-9]*$)')
+float_number_pattern = re.compile(r'(^[-]?\d+\.\d*$|^\d*\.{1,1}\d+$)')
 
+def adjust_value(value):
+    """
+    Change null value to None.
+    """
+    pat_float   = float_number_pattern
+    pat_integer = int_number_pattern
+    if  isinstance(value, str):
+        if  value == 'null' or value == '(null)':
+            return None
+        elif pat_float.match(value):
+            return float(value)
+        elif pat_integer.match(value):
+            return int(value)
+        else:
+            return value
+    else:
+        return value
+    
 def xml_parser(data, prim_key, tags=None):
     "Generic XML parser"
     if  isinstance(data, basestring):

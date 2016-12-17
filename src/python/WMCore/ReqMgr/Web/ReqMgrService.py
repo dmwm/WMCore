@@ -3,10 +3,9 @@
 
 """
 web server.
+__author__ = "Valentin Kuznetsov"
 """
 from __future__ import print_function
-
-__author__ = "Valentin Kuznetsov"
 
 # system modules
 import os
@@ -137,12 +136,14 @@ def user():
     except:
         return 'testuser'
 
+
 def user_dn():
     "Return user DN"
     try:
         return cherrypy.request.user['dn']
     except:
         return '/CN/bla/foo'
+
 
 def check_scripts(scripts, resource, path):
     """
@@ -156,6 +157,7 @@ def check_scripts(scripts, resource, path):
                 resource.update({script: spath})
     return scripts
 
+
 # code taken from
 # http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
 def toString(data):
@@ -167,6 +169,7 @@ def toString(data):
         return type(data)(map(toString, data))
     else:
         return data
+
 
 class ReqMgrService(TemplatedPage):
     """
@@ -213,13 +216,13 @@ class ReqMgrService(TemplatedPage):
         cherryconf.update({'tools.encode.on': True,
                            'tools.gzip.on': True,
                            'tools.gzip.mime_types': mime_types,
-                           })
+                          })
         self._cache = {}
 
         # initialize access to reqmgr2 APIs
         self.reqmgr_url = config.reqmgr.reqmgr2_url
         self.reqmgr = ReqMgr(self.reqmgr_url)
-        # only gets current view (This might cause to reponse time much longer, 
+        # only gets current view (This might cause to reponse time much longer,
         # If upto date view is not needed overwrite Fale)
         self.reqmgr._noStale = True
 
@@ -245,7 +248,7 @@ class ReqMgrService(TemplatedPage):
         base, uri = self.reqmgr_url.split('://')
         base_url = '%s://%s' % (base, uri.split('/')[0])
         self.wmstatsurl = cdict.get('wmstats_url', '%s/wmstatsserver' % base_url)
-        if  not self.wmstatsurl:
+        if not self.wmstatsurl:
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
         self.team_cache = []
 
@@ -254,10 +257,10 @@ class ReqMgrService(TemplatedPage):
         teams = self.team_cache
         url = '%s/data/teams' % self.wmstatsurl
         params = {}
-        headers = {'Accept':'application/json'}
+        headers = {'Accept': 'application/json'}
         try:
             data = getdata(url, params, headers)
-            if  'error' in data:
+            if 'error' in data:
                 print("WARNING: fail to get teams from %s" % url)
                 print(data)
             teams = data.get('result', [])
@@ -414,8 +417,7 @@ class ReqMgrService(TemplatedPage):
         self.update_scripts()
         code = self.sdict.get(script, '')
         if code.find('def genobjs(jsondict)') == -1:
-            return self.error(
-                "Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
+            return self.error("Improper python snippet, your code should start with <b>def genobjs(jsondict)</b> function")
         exec (code)  # code snippet must starts with genobjs function
         return [r for r in genobjs(jsondict)]
 
@@ -435,7 +437,7 @@ class ReqMgrService(TemplatedPage):
         tasks = self.reqmgr.getRequestTasks(rid)
         if len(doc) == 1:
             try:
-                doc = doc[rid]
+                doc = doc[0][rid]
             except:
                 pass
             name = doc.get('RequestName', 'NA')
@@ -446,15 +448,15 @@ class ReqMgrService(TemplatedPage):
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
             filterout_attrs = get_protected_properties()
-            
-            #extend filterout list with "RequestStatus" since it is passed separately
+
+            # extend filterout list with "RequestStatus" since it is passed separately
             filterout_attrs.append("RequestStatus")
-            
+
             if visible_attrs == "all_attributes":
                 filteredDoc = doc
                 for prop in filterout_attrs:
                     if prop in filteredDoc:
-                        del filteredDoc[prop]                    
+                        del filteredDoc[prop]
             else:
                 filteredDoc = {}
                 for prop in visible_attrs:
@@ -473,15 +475,15 @@ class ReqMgrService(TemplatedPage):
                               'MergedLFNBase': lfn_bases(),
                               'UnmergedLFNBase': lfn_unmerged_bases(),
                               'TrustPUSitelists': [True, False],
-                              'TrustSitelists': [True, False],                    
+                              'TrustSitelists': [True, False],
                               'Dashboard': dashboardActivities(),
                               'Team': self.getTeams()}
-            
+
             selected = {}
             for prop in prop_value_map:
                 if prop in filteredDoc:
                     filteredDoc[prop], selected[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
-                    
+
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs, selected),

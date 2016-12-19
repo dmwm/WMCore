@@ -199,8 +199,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForData(dbs, data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoInputUpdate', False):
                         continue
                     if sorted(locations) != sorted(element['Inputs'][data]):
@@ -231,8 +229,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoInputUpdate', False):
                         continue
                     for pData in element['ParentData']:
@@ -263,8 +259,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoPileupUpdate', False):
                         continue
                     for pData in element['PileupData']:

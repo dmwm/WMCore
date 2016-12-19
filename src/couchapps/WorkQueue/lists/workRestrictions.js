@@ -77,16 +77,6 @@ function(head, req) {
                 continue;
             }
 
-            // Don't check anything if trustSitelists AND trustPUSitelists is enabled
-            if (ele['NoLocationUpdate'] && ele["SiteWhitelist"].indexOf(site) !== -1) {
-                if (first !== true) {
-                    send(",");
-                }
-                send(toJSON(row["doc"])); // need whole document, id etc...
-                first = false; // from now on prepend "," to output
-                break; // we have work, move to the next element
-            }
-
             // Input data location restrictions
             // don't check input data location if trustSitelists is enabled
             var noInputSite = false;

@@ -72,8 +72,6 @@ class WorkQueueElement(dict):
         self.setdefault('OpenForNewData', False)
         # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
         self.setdefault('TimestampFoundNewData', 0)
-        # TODO: being deprecated as of 29/03/2016. Trust initial input and pileup location or not
-        # self.setdefault('NoLocationUpdate', False)
         # Trust initial input dataset location only or not
         self.setdefault('NoInputUpdate', False)
         # Trust initial pileup dataset location only or not
@@ -225,10 +223,6 @@ class WorkQueueElement(dict):
             return False
         if site in self['SiteBlacklist']:
             return False
-        # Trust both input and pileup location (TrustSitelists+TrustPUSiteliss flag)
-        # provided the site whitelist is empty or it's whitelisted
-        if self.get('NoLocationUpdate'):
-            return True
 
         # input data restrictions (TrustSitelists flag)
         if self['NoInputUpdate'] is False:

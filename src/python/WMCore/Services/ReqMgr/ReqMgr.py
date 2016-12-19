@@ -100,7 +100,7 @@ class ReqMgr(Service):
         callname = 'request?%s' % query
         return self._getResult(callname, verb = "GET")
 
-    def getRequestByStatus(self, statusList):
+    def getRequestByStatus(self, statusList, detail=True):
         """
         _getRequestByStatus_
         
@@ -118,7 +118,7 @@ class ReqMgr(Service):
         TODO: need proper error handling if status is not 200 from orignal reporting.
         """
         
-        query = self._createQuery({'status': statusList})
+        query = self._createQuery({'status': statusList, 'detail': detail})
         callname = 'request?%s' % query
         return  self._getResult(callname, verb = "GET")
         

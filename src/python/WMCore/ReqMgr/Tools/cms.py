@@ -9,16 +9,14 @@ Description: CMS modules
 from __future__ import (division, print_function)
 
 # system modules
-import os
-import time
-from collections import defaultdict
-
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 # CMS modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-from WMCore.ReqMgr.Utils.url_utils import getdata
-from WMCore.ReqMgr.Utils.utils import xml_parser
+from WMCore.Services.TagCollector.TagCollector import TagCollector
+
+# initialize TagCollector instance to be used in this module
+TC = TagCollector()
 
 def next_status(status=None):
     "Return next ReqMgr status for given status"
@@ -28,61 +26,6 @@ def next_status(status=None):
         else:
             return 'N/A'
     return REQUEST_STATE_LIST
-
-class TagCollector(object):
-    """
-    Class which provides interface to CMS TagCollector web-service.
-    Provides both Production and Development releases (anytype=1)
-    """
-    def __init__(self, url="https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"):
-        self.url = url
-        self.cache = os.path.join(os.getcwd(), '.tagcollector')
-
-    def data(self):
-        "Fetch data from tag collector or local cache"
-        tstamp = time.time()
-        if  os.path.isfile(self.cache) and (tstamp - os.path.getmtime(self.cache)) < 3600:
-            data = open(self.cache, 'r').read()
-        else:
-            params = {}
-            data = getdata(self.url, params, verbose=1, jsondecoder=False)
-            with open(self.cache, 'w') as ostream:
-                ostream.write(data)
-        pkey = 'architecture'
-        for row in xml_parser(data, pkey):
-            yield row[pkey]
-
-    def releases(self, arch=None):
-        "Yield CMS releases known in tag collector"
-        arr = []
-        for row in self.data():
-            if  arch:
-                if  arch == row['name']:
-                    for item in row['project']:
-                        arr.append(item['label'])
-            else:
-                for item in row['project']:
-                    arr.append(item['label'])
-        return list(set(arr))
-
-    def architectures(self):
-        "Yield CMS architectures known in tag collector"
-        arr = []
-        for row in self.data():
-            arr.append(row['name'])
-        return list(set(arr))
-    
-    def releases_by_architecture(self):
-        "returns CMS architectures and realease in dictionary format"
-        arch_dict = defaultdict(list)
-        for row in self.data():
-            for item in row['project']:
-                arch_dict[row['name']].append(item['label'])
-        return arch_dict
-        
-
-# initialize TagCollector instance to be used in this module
-TC = TagCollector()
 
 def sites():
     "Return known CMS site list from SiteDB"

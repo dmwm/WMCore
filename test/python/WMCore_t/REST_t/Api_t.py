@@ -17,6 +17,8 @@ from WMCore.REST.Error import InvalidObject
 from WMCore.REST.Format import RawFormat
 from WMCore.REST.Tools import tools
 
+from nose.plugins.attrib import attr
+
 gif_bytes = ('GIF89a\x01\x00\x01\x00\x82\x00\x01\x99"\x1e\x00\x00\x00\x00\x00'
              '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
              '\x00,\x00\x00\x00\x00\x01\x00\x01\x00\x02\x03\x02\x08\t\x00;')
@@ -72,6 +74,7 @@ class Root(RESTApi):
                     "image":  Image(app, self, config, mount),
                     "multi":  Multi(app, self, config, mount) })
 
+@attr('singledocker')
 class Tester(webtest.WebCase):
 
     def setUp(self):

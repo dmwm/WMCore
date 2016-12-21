@@ -315,7 +315,7 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None):
+    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None, excludeWorkflows=[]):
         """
         Get work which is available to be run
 
@@ -365,7 +365,9 @@ class WorkQueueBackend(object):
         # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
-            sortedElements.append(element)
+            # filter out exclude list from abvaling 
+            if element['RequestName'] not in excludeWorkflows:
+                sortedElements.append(element)
             
         # sort elements to get them in priority first and timestamp order
         sortedElements.sort(key=lambda element: element['CreationTime'])

@@ -13,20 +13,24 @@ import random
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WorkQueue.WMBSHelper import freeSlots
 from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr 
 
 class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
     """
     Polls for Work
     """
-    def __init__(self, queue):
+    def __init__(self, queue, config):
         """
         Initialise class members
         """
         BaseWorkerThread.__init__(self)
 
         self.queue = queue
-
-        self.previousWorkList = []
+        self.config = config
+        self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+        # state lists which shouldn't be populated in wmbs. (To prevent creating work before WQE status updated)
+        self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
+        
 
     def setup(self, parameters):
         """
@@ -58,8 +62,10 @@ class WorkQueueManagerWMBSFileFeeder(BaseWorkerThread):
 
         for site in resources:
             self.queue.logger.info("I need %d jobs on site %s" % (resources[site], site))
-
-        self.previousWorkList = self.queue.getWork(resources, jobCounts)
+        
+        abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+        
+        previousWorkList = self.queue.getWork(resources, jobCounts, excludeWorkflows=abortedAndForceCompleteRequests)
         self.queue.logger.info("%s of units of work acquired for file creation"
-                               % len(self.previousWorkList))
+                               % len(previousWorkList))
         return

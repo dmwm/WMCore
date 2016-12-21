@@ -435,7 +435,7 @@ class ReqMgrService(TemplatedPage):
         tasks = self.reqmgr.getRequestTasks(rid)
         if len(doc) == 1:
             try:
-                doc = doc[rid]
+                doc = doc[0][rid]
             except:
                 pass
             name = doc.get('RequestName', 'NA')

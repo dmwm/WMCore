@@ -239,8 +239,6 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if workflow in abortedWorkflows:
                         #TODO: remove when reqmgr2-wmstats deployed
                         newState = "aborted-completed"
-                    elif workflow in forceCompleteWorkflows:
-                        newState = "completed"
                     else:
                         newState = None
                         

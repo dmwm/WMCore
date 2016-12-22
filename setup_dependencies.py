@@ -12,7 +12,7 @@ dependencies = {'wmc-rest':{
                         },
                 'wmc-base':{
                         'bin': ['wmc-dist-patch', 'wmc-dist-unpatch'],
-                        'packages' : ['Utils', 'WMCore.DataStructs'],
+                        'packages' : ['Utils', 'WMCore.DataStructs', 'WMCore.Cache'],
                         'modules': ['WMCore.WMFactory', 'WMCore.WMException', 'WMCore.Configuration',
                                     'WMCore.WMExceptions', 'WMCore.WMFactory', 'WMCore.Lexicon',
                                     'WMCore.WMBase', 'WMCore.WMLogging', 'WMCore.Algorithms.Permissions'],
@@ -24,7 +24,7 @@ dependencies = {'wmc-rest':{
                         },
                 'wmc-database':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.GroupUser', 'WMCore.DataStructs', 'WMCore.Database',
-                                    'WMCore.Algorithms', 'WMCore.Services', 'WMCore.Cache'],
+                                    'WMCore.Algorithms', 'WMCore.Services'],
                         'modules': ['WMCore.WMConnectionBase', 'WMCore.DAOFactory', 'WMCore.WMInit'],
                         'systems':['wmc-base']
                         },
@@ -75,8 +75,8 @@ dependencies = {'wmc-rest':{
                                    ],
                           },
                 'workqueue':{
-                        'packages': ['WMCore.WorkQueue+', 'WMCore.Wrappers+',
-                                     'WMCore.Services+',
+                        'packages': ['WMCore.GlobalWorkQueue+', 'WMCore.WorkQueue+',
+                                     'WMCore.Wrappers+', 'WMCore.Services+',
                                      'WMCore.WMSpec', 'WMCore.WMSpec.Steps', 'WMCore.WMSpec.Steps.Templates',
                                      'WMCore.ACDC', 'WMCore.GroupUser', 'WMCore.Alerts'],
                         'modules' : ['WMCore.Algorithms.__init__', 'WMCore.Algorithms.Permissions',
@@ -86,7 +86,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.ReqMgr.__init__', 'WMCore.ReqMgr.DataStructs.__init__',
                                      'WMCore.ReqMgr.DataStructs.RequestStatus',
                                      'WMCore.ReqMgr.DataStructs.RequestType'],
-                        'systems': ['wmc-base'],
+                        'systems': ['wmc-rest', 'wmc-database'],
                         'statics': ['src/couchapps/WorkQueue+'],
                         },
                 'wmagent':{

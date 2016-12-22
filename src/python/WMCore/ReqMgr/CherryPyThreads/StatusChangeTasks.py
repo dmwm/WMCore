@@ -2,11 +2,12 @@
 Created on May 19, 2015
 
 '''
+from __future__ import (division, print_function)
 
+from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
-from WMCore.ReqMgr.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
 class StatusChangeTasks(CherryPyPeriodicTask):
 
@@ -38,7 +39,7 @@ class StatusChangeTasks(CherryPyPeriodicTask):
             requests = testbedWMStats.getRequestByStatus([status], 
                                                 jobInfoFlag = True, legacyFormat = True)
             
-            self.logger.info("checking %s workflows: %d" % (status, len(requests)))
+            self.logger.info("checking %s workflows: %d", status, len(requests))
             
             if len(requests) > 0:
             
@@ -54,6 +55,6 @@ class StatusChangeTasks(CherryPyPeriodicTask):
                             reqdbWriter.updateRequestStatus(requestName, nextStatus)
                         numOfArchived += 1
                 
-                self.logger.info("Total %s-archieved: %d" % (status, numOfArchived))  
+                self.logger.info("Total %s-archieved: %d", status, numOfArchived)  
                   
         return

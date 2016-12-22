@@ -3,7 +3,7 @@ Created on Jul 31, 2014
 
 @author: sryu
 '''
-from __future__ import print_function
+from __future__ import print_function, division
 import cherrypy
 import traceback
 from WMCore.WMLogging import getTimeRotatingLogger
@@ -101,7 +101,8 @@ class SequentialTaskBase(object):
             except Exception as ex:
                 #log the excpeiotn and break. 
                 #SequencialTasks are interconnected between functions  
-                self.logger.error(str(ex))
+                trace = traceback.format_exc()
+                self.logger.error("%s:\n %s" % (str(ex), trace))
                 break
             
     def setCallSequence(self):

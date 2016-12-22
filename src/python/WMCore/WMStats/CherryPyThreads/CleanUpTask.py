@@ -1,8 +1,8 @@
 from __future__ import (division, print_function)
 
 import traceback
+from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
-from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
 class CleanUpTask(CherryPyPeriodicTask):
     """

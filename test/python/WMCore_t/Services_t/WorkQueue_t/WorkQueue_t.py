@@ -1,15 +1,17 @@
 #!/usr/bin/env python
+from __future__ import print_function, division
 import unittest
+import time
 
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-class WorkQueueTest(unittest.TestCase):
+class WorkQueueTest(EmulatedUnitTestCase):
     """
     Test WorkQueue Service client
     It will start WorkQueue RESTService
@@ -23,8 +25,7 @@ class WorkQueueTest(unittest.TestCase):
         """
         _setUp_
         """
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
-                                    siteDB = True, requestMgr = True)
+        super(WorkQueueTest, self).setUp()
 
         self.specGenerator = WMSpecGenerator("WMSpecs")
         #self.configFile = EmulatorSetup.setupWMAgentConfig()
@@ -49,8 +50,8 @@ class WorkQueueTest(unittest.TestCase):
         Drop all the WMBS tables.
         """
         self.testInit.tearDownCouch()
-        EmulatorHelper.resetEmulators()
         self.specGenerator.removeSpecs()
+        super(WorkQueueTest, self).tearDown()
 
 
     def testWorkQueueService(self):
@@ -58,7 +59,8 @@ class WorkQueueTest(unittest.TestCase):
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
         globalQ = globalQueue(DbName = 'workqueue_t',
-                              QueueURL = self.testInit.couchUrl)
+                              QueueURL = self.testInit.couchUrl,
+                              UnittestFlag = True)
         self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
@@ -67,10 +69,10 @@ class WorkQueueTest(unittest.TestCase):
         #This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 10, 'request_name': specName}])
+                         [{'total_jobs': 334, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueues(), [])
         self.assertEqual(wqApi.getJobStatusByRequest(),
-            [{'status': 'Available', 'jobs': 10, 'request_name': specName}])
+            [{'status': 'Available', 'jobs': 334, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueuesByRequest(), [])
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
@@ -85,7 +87,8 @@ class WorkQueueTest(unittest.TestCase):
         specName = "RerecoSpec"
         specUrl = self.specGenerator.createReRecoSpec(specName, "file")
         globalQ = globalQueue(DbName = 'workqueue_t',
-                              QueueURL = self.testInit.couchUrl)
+                              QueueURL = self.testInit.couchUrl,
+                              UnittestFlag = True)
         localQ = localQueue(DbName = 'local_workqueue_t',
                             QueueURL = self.testInit.couchUrl,
                             CacheDir = self.testInit.testDir,
@@ -102,8 +105,14 @@ class WorkQueueTest(unittest.TestCase):
         storedElements = globalQ.backend.getElementsForWorkflow(specName)
         for element in storedElements:
             self.assertEqual(element['Priority'], 100)
-        self.assertTrue(localQ.pullWork({'T2_XX_SiteA' : 10}) > 0)
-        localQ.processInboundWork(continuous = False)
+        numWorks = localQ.pullWork({'T2_XX_SiteA' : 10})    
+        self.assertTrue(numWorks > 0)
+        # replicate from GQ to LQ manually
+        localQ.backend.pullFromParent(continuous=False)
+        # wait until replication is done
+        time.sleep(2)
+        
+        localQ.processInboundWork(continuous=False)
         storedElements = localQ.backend.getElementsForWorkflow(specName)
         for element in storedElements:
             self.assertEqual(element['Priority'], 100)
@@ -115,12 +124,39 @@ class WorkQueueTest(unittest.TestCase):
         storedElements = localQ.backend.getElementsForWorkflow(specName)
         for element in storedElements:
             self.assertEqual(element['Priority'], 500)
-        self.assertEqual(localApi.getAvailableWorkflows(), set([(specName, 500)]))
+        availableWF = localApi.getAvailableWorkflows()
+        self.assertEqual(availableWF, set([(specName, 500)]))
         # Attempt to update an inexistent workflow in the queue
         try:
             globalApi.updatePriority('NotExistent', 2)
-        except:
-            self.fail('No exception should be raised.')
+        except Exception as ex:
+            self.fail('No exception should be raised.: %s' % str(ex))
+            
+    def testCompletedWorkflow(self):
+        # test getWork
+        specName = "RerecoSpec"
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        globalQ = globalQueue(DbName = 'workqueue_t',
+                              QueueURL = self.testInit.couchUrl,
+                              UnittestFlag = True)
+        self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
+
+        wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
+        #overwrite default - can't test with stale view
+        wqApi.defaultOptions =  {'reduce' : True, 'group' : True}
+        #This only checks minimum client call not exactly correctness of return
+        # values.
+        self.assertEqual(wqApi.getTopLevelJobsByRequest(),
+                         [{'total_jobs': 334, 'request_name': specName}])
+        self.assertEqual(wqApi.getChildQueues(), [])
+        self.assertEqual(wqApi.getJobStatusByRequest(),
+            [{'status': 'Available', 'jobs': 334, 'request_name': specName}])
+        data = wqApi.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey' : [specName], 'endkey' : [specName, {}],
+                                 'reduce' : False})
+        elements = [x['id'] for x in data.get('rows', [])]
+        wqApi.updateElements(*elements, Status = 'Canceled')
+        self.assertEqual(len(wqApi.getCompletedWorkflow(stale=False)), 1)
 
 if __name__ == '__main__':
 

@@ -20,6 +20,8 @@ can_lint = False
 can_coverage = False
 can_nose = False
 
+NEEDS_OWN_SLICE = ['Api_t']
+
 sys.setrecursionlimit(10000) # Eliminates recursion exceptions with nose
 
 try:
@@ -216,19 +218,29 @@ if can_nose:
             for id in testIds.keys():
                 if int(id) >= int(self.testMinimumIndex) and int(id) <= int(self.testMaximumIndex):
                     # generate a stable ID for sorting
-                    if len(testIds[id]) == 3:
-                        testName = "%s%s" % (testIds[id][1], testIds[id][2])
-                        testHash = hashlib.md5( testName ).hexdigest()
-                        hashSnip = testHash[:7]
-                        hashInt  = int( hashSnip, 16 )
-                    else:
-                        hashInt = id
+                    if int(self.testCurrentSlice) < int(self.testTotalSlices):  # testCurrentSlice is 0-indexed
+                        if len(testIds[id]) == 3:
+                            if testIds[id][1] in NEEDS_OWN_SLICE:
+                                print('%s needs own slice' % testIds[id][1])
+                                continue
+                            testName = "%s%s" % (testIds[id][1], testIds[id][2])
+                            testHash = hashlib.md5(testName).hexdigest()
+                            hashSnip = testHash[:7]
+                            hashInt = int(hashSnip, 16)
+                        else:
+                            print('No hash found, using ID number %s' % id)
+                            hashInt = id
 
-                    if ( hashInt % int(self.testTotalSlices) ) == int(self.testCurrentSlice):
-                        for path in pathList:
-                            if path in testIds[id][0]:
-                                myIds.append( str(id) )
-                                break
+                        if (hashInt % int(self.testTotalSlices)) == int(self.testCurrentSlice):
+                            for path in pathList:
+                                if path in testIds[id][0]:
+                                    myIds.append(str(id))
+                                    break
+                    else:
+                        if testIds[id][1] == NEEDS_OWN_SLICE[int(self.testCurrentSlice) - int(self.testTotalSlices)]:
+                            print('Filling extra slice with %s %s' % (testIds[id][1], testIds[id][1]))
+                            myIds.append(str(id))  # TODO: allow for multiple dedicated slices
+
             myIds = sorted( myIds )
             print("Out of %s cases, we will run %s" % (totalCases, len(myIds)))
             if not myIds:

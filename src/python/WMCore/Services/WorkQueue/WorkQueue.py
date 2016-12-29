@@ -1,5 +1,5 @@
 import json
-
+from collections import defaultdict
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -107,7 +107,7 @@ class WorkQueue(object):
                 "options" : json.dumps(optionsArg)}
         for ele in elementIds:
             thisuri = uri + ele + "?" + urllib.urlencode(data)
-            answer = self.db.makeRequest(uri = thisuri, type = 'PUT')
+            self.db.makeRequest(uri = thisuri, type = 'PUT')
         return
 
     def getAvailableWorkflows(self):
@@ -181,3 +181,39 @@ class WorkQueue(object):
                 couchdb.bulkDeleteByIDs(ids)
                 deleted += len(ids)
         return deleted
+
+    def getElementsStatusAndJobsByWorkflow(self, inboxFlag=False, stale=True):
+        """Get the number of elements and jobs by status and workflow"""
+        if inboxFlag:
+            db = self.inboxDB
+        else:
+            db = self.db
+        options = {'reduce' : True, 'group_level': 2}
+        if stale:
+            options['stale'] = 'update_after'
+        data = db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'reduce' : True, 'group_level': 2})
+        result = defaultdict(dict)
+        for x in data.get('rows', []):
+            result[x['key'][0]][x['key'][1]] = {'NumOfElements': x['value']['count'], 
+                                                'Jobs': x['value']['totalJobs']}
+        return result
+    
+    def _getCompletedWorkflowList(self, data):
+        completedWFs = []
+        for workflow in data:
+            completed = True
+            for status in data[workflow]:
+                if status not in ['Done', 'Failed', 'Canceled']:
+                    completed = False
+            if completed:
+                completedWFs.append(workflow)
+        return completedWFs
+    
+    def getCompletedWorkflow(self, stale=True):
+        """
+        only checks workqueue db not inbox db. 
+        since inbox db will be cleaned up first when workflow is completed
+        """
+        data = self.getElementsStatusAndJobsByWorkflow(stale)
+        return self._getCompletedWorkflowList(data)

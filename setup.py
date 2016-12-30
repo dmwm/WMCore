@@ -6,12 +6,11 @@ from __future__ import print_function
 
 import os
 import os.path
-from distutils.core import setup, Command
+from distutils.core import Command, setup
 from os.path import join as pjoin
 
-from setup_build import BuildCommand, InstallCommand
-from setup_build import get_path_to_wmcore_root, list_packages, list_static_files
-from setup_test import LintCommand, ReportCommand, CoverageCommand, TestCommand
+from setup_build import BuildCommand, InstallCommand, get_path_to_wmcore_root, list_packages, list_static_files
+from setup_test import CoverageCommand, TestCommand
 
 
 class CleanCommand(Command):
@@ -19,20 +18,20 @@ class CleanCommand(Command):
     user_options = []
 
     def initialize_options(self):
-        self._clean_me = []
+        self.cleanMes = []
         for root, dummyDirs, files in os.walk('.'):
             for f in files:
                 if f.endswith('.pyc'):
-                    self._clean_me.append(pjoin(root, f))
+                    self.cleanMes.append(pjoin(root, f))
 
     def finalize_options(self):
         pass
 
     def run(self):
-        for clean_me in self._clean_me:
+        for cleanMe in self.cleanMes:
             try:
-                os.unlink(clean_me)
-            except:
+                os.unlink(cleanMe)
+            except Exception:
                 pass
 
 
@@ -90,7 +89,7 @@ class EnvCommand(Command):
 
 # Need all the packages we want to build by default, this will be overridden in sub-system builds.
 # Since it's a lot of code determine it by magic.
-default_packages = list_packages(['src/python/Utils',
+DEFAULT_PACKAGES = list_packages(['src/python/Utils',
                                   'src/python/WMCore',
                                   'src/python/WMComponent',
                                   'src/python/WMQuality',
@@ -100,8 +99,6 @@ setup(name='wmcore',
       version='1.0',
       maintainer_email='hn-cms-wmDevelopment@cern.ch',
       cmdclass={'deep_clean': CleanCommand,
-                'lint': LintCommand,
-                'report': ReportCommand,
                 'coverage': CoverageCommand,
                 'test': TestCommand,
                 'env': EnvCommand,
@@ -109,5 +106,5 @@ setup(name='wmcore',
                 'install_system': InstallCommand},
       # base directory for all our packages
       package_dir={'': 'src/python/'},  # % get_path_to_wmcore_root()},
-      packages=default_packages,
+      packages=DEFAULT_PACKAGES,
       data_files=list_static_files())

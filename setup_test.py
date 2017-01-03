@@ -18,7 +18,7 @@ from setup_build import get_path_to_wmcore_root
 can_coverage = False
 can_nose = False
 
-NEEDS_OWN_SLICE = ['Api_t']
+NEEDS_OWN_SLICE = ['Api_t', 'Simple_t']
 
 sys.setrecursionlimit(10000)  # Eliminates recursion exceptions with nose
 

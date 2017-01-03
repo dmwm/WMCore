@@ -5,16 +5,13 @@ _DBSReader_
 Readonly DBS Interface
 
 """
-import urlparse
 
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMCore.Services.EmulatorSwitch import emulatorHook
 
 
-@emulatorHook
 def DBSReader(endpoint, **kwargs):
     """Function to find and instantiate desired DBSReader object"""
-    
+
     msg = ''
     try:
         dbs = _getDBS3Reader(endpoint, **kwargs)
@@ -29,5 +26,6 @@ def DBSReader(endpoint, **kwargs):
 def _getDBS3Reader(endpoint, **kwargs):
     from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
     return DBSReader(endpoint, **kwargs)
+
 
 __all__ = [DBSReader]

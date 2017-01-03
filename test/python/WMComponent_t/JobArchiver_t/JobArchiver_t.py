@@ -37,8 +37,9 @@ from WMCore.JobStateMachine.ChangeState import ChangeState
 from nose.plugins.attrib import attr
 
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-class JobArchiverTest(unittest.TestCase):
+class JobArchiverTest(EmulatedUnitTestCase):
     """
     TestCase for TestJobArchiver module
     """
@@ -52,7 +53,7 @@ class JobArchiverTest(unittest.TestCase):
         """
 
         myThread = threading.currentThread()
-
+        super(JobArchiverTest, self).setUp()
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -71,7 +72,7 @@ class JobArchiverTest(unittest.TestCase):
 
         self.nJobs = 10
 
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
+        EmulatorHelper.setEmulators(phedex = True, dbs = False,
                                     siteDB = True, requestMgr = False)
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
@@ -86,6 +87,7 @@ class JobArchiverTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
         EmulatorSetup.deleteConfig(self.configFile)
+        super(JobArchiverTest, self).tearDown()
 
         return
 

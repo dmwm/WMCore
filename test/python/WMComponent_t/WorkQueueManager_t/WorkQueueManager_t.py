@@ -49,8 +49,8 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
     def setUp(self):
         WorkQueueTestCase.setUp(self)
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
-                                    siteDB = True, requestMgr = False)
+        EmulatorHelper.setEmulators(phedex = True, dbs = False,
+                                    siteDB = False, requestMgr = False)
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
         EmulatorHelper.resetEmulators()

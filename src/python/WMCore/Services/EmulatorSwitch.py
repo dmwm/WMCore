@@ -9,7 +9,6 @@ class EmulatorHelper(object):
     """
     #DO not change default values
     PhEDEx = None
-    DBSReader = None
     SiteDBJSON = None
     RequestManager = None
 
@@ -20,15 +19,6 @@ class EmulatorHelper(object):
             from WMQuality.Emulators.PhEDExClient.PhEDEx \
                 import PhEDEx as PhEDExEmulator
             return PhEDExEmulator
-
-        if clsName == 'DBSReader':
-            if 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader/' in args:
-                from WMQuality.Emulators.DBSClient.DBS3Reader \
-                    import DBS3Reader as DBSEmulator
-            else:
-                from WMQuality.Emulators.DBSClient.DBSReader \
-                    import DBSReader as DBSEmulator
-            return DBSEmulator
 
         if clsName == 'SiteDBJSON':
             from WMQuality.Emulators.SiteDBClient.SiteDB \
@@ -43,14 +33,12 @@ class EmulatorHelper(object):
     @staticmethod
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
         EmulatorHelper.PhEDEx = phedex
-        EmulatorHelper.DBSReader = dbs
         EmulatorHelper.SiteDBJSON = siteDB
         EmulatorHelper.RequestManager = requestMgr
 
     @staticmethod
     def resetEmulators():
         EmulatorHelper.PhEDEx = None
-        EmulatorHelper.DBSReader = None
         EmulatorHelper.SiteDBJSON = None
         EmulatorHelper.RequestManager = None
 

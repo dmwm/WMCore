@@ -18,14 +18,17 @@ from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-class PileupFetcherTest(unittest.TestCase):
+class PileupFetcherTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         Initialize the database and couch.
 
         """
+        super(PileupFetcherTest, self).setUp()
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -35,7 +38,6 @@ class PileupFetcherTest(unittest.TestCase):
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
         self.testDir = self.testInit.generateWorkDir()
-        EmulatorHelper.setEmulators(dbs = True)
 
     def tearDown(self):
         """
@@ -44,7 +46,7 @@ class PileupFetcherTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        EmulatorHelper.resetEmulators()
+        super(PileupFetcherTest, self).tearDown()  # Left here in case it's needed by any of the sub-classes
 
     def injectGenerationConfig(self):
         """

@@ -4,11 +4,13 @@ _SiteDBClient_
 
 Emulating SiteDB
 """
+
+import logging
 import re
 
 pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
 
-class SiteDBJSON(object):
+class SiteDBJSON(dict):
     """
     API for dealing with retrieving information from SiteDB
     """
@@ -93,6 +95,7 @@ class SiteDBJSON(object):
                            ]
 
     def __init__(self, config={}):
+        self['logger'] = logging.getLogger(self.__class__.__name__)
         pass
 
     def _people(self, username=None, clearCache=False):

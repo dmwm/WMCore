@@ -261,7 +261,7 @@ class SiteDBJSON(SiteDBAPI):
             pnns.update(pnn_list)
         return list(pnns)
 
-    def PSNtoPNNMap(self, psn_pattern=''):
+    def PSNtoPNNMap(self, psn_pattern='', include_dummies=True):
         if not isinstance(psn_pattern, str):
             raise TypeError('psn_pattern arg must be of type str')
 
@@ -271,4 +271,10 @@ class SiteDBJSON(SiteDBAPI):
             if not psn_pattern.match(entry['psn_name']):
                 continue
             mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
+
+        if include_dummies:
+            no_pnn_psn_names = set([psn for psn in self.getAllCMSNames()
+                                    if psn_pattern.match(psn)])
+            no_pnn_psn_names.difference_update(mapping.iterkeys())
+            mapping.update((k, set([k+'_Dummy'])) for k in no_pnn_psn_names)
         return mapping

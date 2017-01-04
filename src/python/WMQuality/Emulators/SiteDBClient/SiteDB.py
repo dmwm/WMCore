@@ -99,19 +99,13 @@ class SiteDBJSON(dict):
         pass
 
     def _people(self, username=None, clearCache=False):
-        if username:
-            return filter(lambda x: x['username'] == username, self._people_data)
-        else:
-            return self._people_data
+        raise NotImplementedError
 
     def _sitenames(self, sitename=None, clearCache=False):
-        if sitename:
-            return filter(lambda x: x['site_name'] == sitename, self._sitenames_data)
-        else:
-            return self._sitenames_data
+        raise NotImplementedError
 
     def _siteresources(self, clearCache=False):
-        return self._siteresources_data
+        raise NotImplementedError
 
     def _dataProcessing(self, pnn=None, psn=None, clearCache=False):
         """
@@ -120,25 +114,14 @@ class SiteDBJSON(dict):
         In case a PNN is provided, then it returns only the PSN(s) it maps to.
         """
 
-        mapping = self._dataProcessing_data
-        if pnn:
-            mapping = [item['psn_name'] for item in mapping if item['phedex_name'] == pnn]
-        elif psn:
-            mapping = [item['phedex_name'] for item in mapping if item['psn_name'] == psn]
-        return mapping
+        raise NotImplementedError
 
     def dnUserName(self, dn):
         """
         Convert DN to Hypernews name. Clear cache between trys
         in case user just registered or fixed an issue with SiteDB
         """
-        try:
-            userinfo = filter(lambda x: x['dn'] == dn, self._people())[0]
-            username = userinfo['username']
-        except (KeyError, IndexError):
-            userinfo = filter(lambda x: x['dn'] == dn, self._people(clearCache=True))[0]
-            username = userinfo['username']
-        return username
+        raise NotImplementedError
 
     def cmsNametoCE(self, cmsName):
         """
@@ -151,7 +134,7 @@ class SiteDBJSON(dict):
         """
         Convert CMS name (also pattern) to list of SEs
         """
-        return self.cmsNametoList(cmsName, 'SE')
+        raise NotImplementedError
 
     def getAllCENames(self):
         """
@@ -160,10 +143,7 @@ class SiteDBJSON(dict):
         Get all CE names from SiteDB
         This is so that we can easily add them to ResourceControl
         """
-        siteresources = self._siteresources()
-        ceList = filter(lambda x: x['type'] == 'CE', siteresources)
-        ceList = map(lambda x: x['fqdn'], ceList)
-        return ceList
+        raise NotImplementedError
 
     def getAllSENames(self):
         """
@@ -172,10 +152,7 @@ class SiteDBJSON(dict):
         Get all SE names from SiteDB
         This is so that we can easily add them to ResourceControl
         """
-        siteresources = self._siteresources()
-        seList = filter(lambda x: x['type'] == 'SE', siteresources)
-        seList = map(lambda x: x['fqdn'], seList)
-        return seList
+        raise NotImplementedError
 
     def getAllCMSNames(self):
         """
@@ -184,135 +161,67 @@ class SiteDBJSON(dict):
         Get all the CMSNames from siteDB
         This will allow us to add them in resourceControl at once
         """
-        sitenames = self._sitenames()
-        cmsnames = filter(lambda x: x['type'] == 'cms', sitenames)
-        cmsnames = map(lambda x: x['alias'], cmsnames)
-        return cmsnames
+        raise NotImplementedError
 
     def cmsNametoList(self, cmsname_pattern, kind):
         """
         Convert CMS name pattern T1*, T2* to a list of CEs or SEs.
         """
-        cmsname_pattern = cmsname_pattern.replace('*', '.*')
-        cmsname_pattern = cmsname_pattern.replace('%', '.*')
-        cmsname_pattern = re.compile(cmsname_pattern)
-
-        sitenames = filter(lambda x: x['type'] == 'cms' and cmsname_pattern.match(x['alias']),
-                           self._sitenames())
-        sitenames = set(map(lambda x: x['site_name'], sitenames))
-        siteresources = filter(lambda x: x['site_name'] in sitenames, self._siteresources())
-        hostlist = filter(lambda x: x['type'] == kind, siteresources)
-        hostlist = map(lambda x: x['fqdn'], hostlist)
-
-        return hostlist
+        raise NotImplementedError
 
     def ceToCMSName(self, ce):
         """
         Convert SE name to the CMS Site they belong to,
         this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
         """
-        try:
-            siteresources = filter(lambda x: x['fqdn'] == ce, self._siteresources())
-        except IndexError:
-            return None
-        siteNames = []
-        for resource in siteresources:
-            siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        cmsname = filter(lambda x: x['type'] == 'cms', siteNames)
-        return [x['alias'] for x in cmsname]
+        raise NotImplementedError
 
     def seToCMSName(self, se):
         """
         Convert SE name to the CMS Site they belong to
         """
-        try:
-            siteresources = filter(lambda x: x['fqdn'] == se, self._siteresources())
-        except IndexError:
-            return None
-        siteNames = []
-        for resource in siteresources:
-            siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        cmsname = filter(lambda x: x['type'] == 'cms', siteNames)
-        return [x['alias'] for x in cmsname]
+        raise NotImplementedError
 
     def seToPNNs(self, se):
         """
         Convert SE name to the PNN they belong to,
         this is not a 1-to-1 relation but 1-to-many, return a list of pnns
         """
-        try:
-            siteresources = filter(lambda x: x['fqdn'] == se, self._siteresources())
-        except IndexError:
-            return None
-        siteNames = []
-        for resource in siteresources:
-            siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        pnns = filter(lambda x: x['type'] == 'phedex', siteNames)
-        return [x['alias'] for x in pnns]
+        raise NotImplementedError
 
     def cmsNametoPhEDExNode(self, cmsName):
         """
         Convert CMS name to list of Phedex Nodes
         """
-        sitenames = self._sitenames()
-        try:
-            sitename = filter(lambda x: x['type'] == 'cms' and x['alias'] == cmsName, sitenames)[0]['site_name']
-        except IndexError:
-            return None
-        phedexnames = filter(lambda x: x['type'] == 'phedex' and x['site_name'] == sitename, sitenames)
-        phedexnames = map(lambda x: x['alias'], phedexnames)
-        return phedexnames
+        raise NotImplementedError
 
     def PNNtoPSN(self, pnn):
         """
         Emulator to convert PhEDEx node name to Processing Site Name(s)
         """
-        return self._dataProcessing(pnn=pnn)
+        raise NotImplementedError
 
     def PSNtoPNN(self, psn):
         """
         Emulator to convert Processing Site Name to PhEDEx Node Name(s)
         """
-        return self._dataProcessing(psn=psn)
+        raise NotImplementedError
 
     def PNNstoPSNs(self, pnns):
         """
         Emulator to convert list of PhEDEx node names to Processing Site Name(s)
         """
-        psns = set()
-        for pnn in pnns:
-            if pnn == "T0_CH_CERN_Export" or pnn.endswith("_MSS") or pnn.endswith("_Buffer"):
-                continue
-            psn_list = self.PNNtoPSN(pnn)
-            psns.update(psn_list)
-            if not psn_list:
-                self["logger"].warning("No PSNs for PNN: %s" % pnn)
-        return list(psns)
+        raise NotImplementedError
 
     def PSNstoPNNs(self, psns):
         """
         Emulator to convert list of Processing Site Names to PhEDEx Node Names
         """
-        pnns = set()
-        for psn in psns:
-            pnn_list = self.PSNtoPNN(psn)
-            if not pnn_list:
-                self["logger"].warning("No PNNs for PSN: %s" % psn)
-            pnns.update(pnn_list)
-        return list(pnns)
+        raise NotImplementedError
 
     def PSNtoPNNMap(self, psn_pattern=''):
         """
         PSN to PNN map
         """
-        if not isinstance(psn_pattern, str):
-            raise TypeError('psn_pattern arg must be of type str')
-
-        mapping = {}
-        psn_pattern = re.compile(psn_pattern)  # .replace('*', '.*').replace('%', '.*'))
-        for entry in self._dataProcessing():
-            if not psn_pattern.match(entry['psn_name']):
-                continue
-            mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
-        return mapping
+        raise NotImplementedError
 

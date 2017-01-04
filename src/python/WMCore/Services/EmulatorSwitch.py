@@ -9,7 +9,6 @@ class EmulatorHelper(object):
     """
     #DO not change default values
     PhEDEx = None
-    DBSReader = None
     SiteDBJSON = None
     RequestManager = None
 
@@ -20,15 +19,6 @@ class EmulatorHelper(object):
             from WMQuality.Emulators.PhEDExClient.PhEDEx \
                 import PhEDEx as PhEDExEmulator
             return PhEDExEmulator
-
-        if clsName == 'DBSReader':
-            if 'https://cmsweb.cern.ch/dbs/prod/global/DBSReader/' in args:
-                from WMQuality.Emulators.DBSClient.DBS3Reader \
-                    import DBS3Reader as DBSEmulator
-            else:
-                from WMQuality.Emulators.DBSClient.DBSReader \
-                    import DBSReader as DBSEmulator
-            return DBSEmulator
 
         if clsName == 'SiteDBJSON':
             from WMQuality.Emulators.SiteDBClient.SiteDB \
@@ -42,20 +32,20 @@ class EmulatorHelper(object):
 
     @staticmethod
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
+        if dbs:
+            raise NotImplementedError("There is no DBS emulator anymore. Use the Mock DBS emulator.")
         EmulatorHelper.PhEDEx = phedex
-        EmulatorHelper.DBSReader = dbs
         EmulatorHelper.SiteDBJSON = siteDB
         EmulatorHelper.RequestManager = requestMgr
 
     @staticmethod
     def resetEmulators():
         EmulatorHelper.PhEDEx = None
-        EmulatorHelper.DBSReader = None
         EmulatorHelper.SiteDBJSON = None
         EmulatorHelper.RequestManager = None
 
     @staticmethod
-    def getClass(cls, *args):
+    def getClass(wrappedClass, *args):
         """
         if emulator flag is set return emulator class
         otherwise return original class.
@@ -63,23 +53,23 @@ class EmulatorHelper(object):
             and EMULATOR_CONFIG environment variable is set,
         r
         """
-        emFlag = getattr(EmulatorHelper, cls.__name__)
+        emFlag = getattr(EmulatorHelper, wrappedClass.__name__)
         if emFlag:
-            return EmulatorHelper.getEmulatorClass(cls.__name__, *args)
+            return EmulatorHelper.getEmulatorClass(wrappedClass.__name__, *args)
         elif emFlag == None:
             try:
                 from WMQuality.Emulators import emulatorSwitch
-            except:
+            except ImportError:
                 # if emulatorSwitch class is not imported don't use
                 # emulator
-                setattr(EmulatorHelper, cls.__name__, False)
+                setattr(EmulatorHelper, wrappedClass.__name__, False)
             else:
-                envFlag = emulatorSwitch(cls.__name__)
-                setattr(EmulatorHelper, cls.__name__, envFlag)
+                envFlag = emulatorSwitch(wrappedClass.__name__)
+                setattr(EmulatorHelper, wrappedClass.__name__, envFlag)
                 if envFlag:
-                    return EmulatorHelper.getEmulatorClass(cls.__name__, *args)
+                    return EmulatorHelper.getEmulatorClass(wrappedClass.__name__, *args)
         # if emulator flag is False, return original class
-        return cls
+        return wrappedClass
 
 def emulatorHook(cls):
     """

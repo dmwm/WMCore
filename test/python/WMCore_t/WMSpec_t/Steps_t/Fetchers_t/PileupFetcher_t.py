@@ -14,28 +14,30 @@ import WMCore.WMSpec.WMStep as WMStep
 import WMCore.WMSpec.WMTask as WMTask
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.Services.DBS.DBSReader import DBSReader
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-class PileupFetcherTest(unittest.TestCase):
+
+class PileupFetcherTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         Initialize the database and couch.
 
         """
+        super(PileupFetcherTest, self).setUp()
+
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("pileupfetcher_t", "ConfigCache")
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("pileupfetcher_t")
         self.testDir = self.testInit.generateWorkDir()
-        EmulatorHelper.setEmulators(dbs = True)
 
     def tearDown(self):
         """
@@ -44,7 +46,7 @@ class PileupFetcherTest(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        EmulatorHelper.resetEmulators()
+        super(PileupFetcherTest, self).tearDown()  # Left here in case it's needed by any of the sub-classes
 
     def injectGenerationConfig(self):
         """
@@ -94,15 +96,15 @@ class PileupFetcherTest(unittest.TestCase):
         # configuration with actual DBS results, the structure of pileupDict:
         #    {"pileupTypeA": {"BlockA": {"FileList": [], "StorageElementNames": []},
         #                     "BlockB": {"FileList": [], "StorageElementName": []}, ....}
-        for pileupType, datasets  in inputArgs.items():
+        for pileupType, datasets in inputArgs.items():
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
 
             for dataset in datasets:
-                dbsFileBlocks = reader.listFileBlocks(dataset = dataset)
+                dbsFileBlocks = reader.listFileBlocks(dataset=dataset)
                 for dbsFileBlockName in dbsFileBlocks:
-                    fileList = [] # list of files in the block (dbsFile["LogicalFileName"])
-                    storageElemNames = set() # list of StorageElementName
+                    fileList = []  # list of files in the block (dbsFile["LogicalFileName"])
+                    storageElemNames = set()  # list of StorageElementName
                     # each DBS block has a list under 'StorageElementList', iterate over
                     storageElements = reader.listFileBlockLocation(dbsFileBlockName)
                     for storElem in storageElements:
@@ -148,8 +150,10 @@ class PileupFetcherTest(unittest.TestCase):
 
     def testPileupFetcherOnMC(self):
         pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
-        pileupMcArgs["PileupConfig"] = {"cosmics": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
-                                        "minbias": ["/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
+        pileupMcArgs["PileupConfig"] = {"cosmics": [
+            "/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
+                                        "minbias": [
+                                            "/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
         pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
         pileupMcArgs["CouchDBName"] = "pileupfetcher_t"
         pileupMcArgs["ConfigCacheID"] = self.injectGenerationConfig()
@@ -174,6 +178,7 @@ class PileupFetcherTest(unittest.TestCase):
                 creator._makePathonPackage(taskPath)
                 fetcher(task)
                 self._queryPileUpConfigFile(pileupMcArgs, task, taskPath)
+
 
 if __name__ == "__main__":
     unittest.main()

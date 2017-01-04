@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #pylint: disable=W0102, C0301
-# W0102: We want to pass blank lists by default
 # for the whitelist and the blacklist
 # C0301: I'm ignoring this because breaking up error messages is painful
 """
@@ -290,6 +289,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             # also check if there is at least one site left to run the job
             if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
+                newJob['fileLocations'] = loadedJob.get('fileLocations', [])
+                newJob['siteWhitelist'] = loadedJob.get('siteWhitelist', [])
+                newJob['siteBlacklist'] = loadedJob.get('siteBlacklist', [])
                 badJobs[71101].append(newJob)
                 continue
             else:
@@ -427,7 +429,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
             elif exitCode in [71101]:
                 # there is no possible site 
-                if "fileLocations" in job:
+                if job.get("fileLocations"):
                     job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
                                          ": file locations: " + ', '.join(job['fileLocations']) +
                                          ": site white list: " + ', '.join(job['siteWhitelist']) +

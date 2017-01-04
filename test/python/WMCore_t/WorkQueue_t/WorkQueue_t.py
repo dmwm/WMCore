@@ -104,7 +104,7 @@ class WorkQueueTest(WorkQueueTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True)
+        super(WorkQueueTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=True, mockSiteDB=True)
 
     def setupConfigCacheAndAgrs(self):
         self.rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
@@ -139,7 +139,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=True, requestMgr=False)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False)
         # undo any customizations
         Globals.GlobalParams.resetParams()
 

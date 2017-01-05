@@ -103,6 +103,8 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
             #if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
             args_only_status["RequestStatus"] = request_args["RequestStatus"]
+            if 'cascade' in request_args:
+                args_only_status["cascade"] = request_args["cascade"]
             return  workload, args_only_status 
     else:
         args_without_status = request_args
@@ -116,9 +118,6 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
                 return workload, request_args
             else:
                 return workload, args_without_status
-        elif 'cascade' in args_without_status:
-            # status was already validated
-            return workload, request_args
     elif len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
         # validate the arguments against the spec argumentSpecdefinition
         # TODO: currently only assigned status allows any update other then Status update

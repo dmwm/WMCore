@@ -9,7 +9,6 @@ def monitorDocFromRequestSchema(schema):
     prun and convert
     """
     doc = {}
-    #from basic field in WMCore.RequestManager.DataStructs.RequestSchema
     doc["_id"] = schema['RequestName']
     doc["workflow"] = schema['RequestName']
     doc["requestor"] = schema['Requestor']

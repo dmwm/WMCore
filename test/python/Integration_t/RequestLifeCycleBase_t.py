@@ -2,7 +2,7 @@
 """Base class for integration test for request lifecycle"""
 from __future__ import print_function
 
-from WMCore.Services.RequestManager.RequestManager import RequestManager
+from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Cache.WMConfigCache import ConfigCache
 from WMCore.WMBase import getTestBase
@@ -32,7 +32,7 @@ class RequestLifeCycleBase_t():
     request_name = None
     workqueue = None
     endpoint = os.environ.get('REQMGRBASEURL', 'https://localhost:8443')
-    reqmgr = RequestManager({'endpoint' : endpoint + '/reqmgr/reqMgr'})
+    reqmgr = ReqMgr(endpoint + '/reqmgr2')
     team = 'TestTeam'
     _failure_detected = False
 
@@ -101,7 +101,7 @@ class RequestLifeCycleBase_t():
         tries = 0
         while True:
             try:
-                self.__class__.request = self.__class__.reqmgr.makeRequest(**self.__class__.requestParams)['WMCore.RequestManager.DataStructs.Request.Request']
+                self.__class__.request = self.__class__.reqmgr.makeRequest(**self.__class__.requestParams)['WMCore.ReqMgr.DataStructs.Request']
                 self.__class__.request_name = self.__class__.request['RequestName']
                 break
             except:

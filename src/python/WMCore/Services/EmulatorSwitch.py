@@ -9,7 +9,7 @@ class EmulatorHelper(object):
     """
     #DO not change default values
     PhEDEx = None
-    RequestManager = None
+    ReqMgr = None
 
     @staticmethod
     def getEmulatorClass(clsName, *args):
@@ -19,22 +19,22 @@ class EmulatorHelper(object):
                 import PhEDEx as PhEDExEmulator
             return PhEDExEmulator
 
-        if clsName == 'RequestManager':
-            from WMQuality.Emulators.RequestManagerClient.RequestManager \
-                import RequestManager as RequestManagerEmulator
-            return RequestManagerEmulator
+        if clsName == 'ReqMgr':
+            from WMQuality.Emulators.ReqMgrClient.ReqMgr \
+                import ReqMgr as ReqMgrEmulator
+            return ReqMgrEmulator
 
     @staticmethod
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
         if dbs or siteDB:
             raise NotImplementedError("There are no DBS or SiteDB emulators anymore. Use the mock-based emulators.")
         EmulatorHelper.PhEDEx = phedex
-        EmulatorHelper.RequestManager = requestMgr
+        EmulatorHelper.ReqMgr = requestMgr
 
     @staticmethod
     def resetEmulators():
         EmulatorHelper.PhEDEx = None
-        EmulatorHelper.RequestManager = None
+        EmulatorHelper.ReqMgr = None
 
     @staticmethod
     def getClass(wrappedClass, *args):

@@ -19,8 +19,8 @@ from WMCore.Agent.Configuration import loadConfigurationFile
 from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
 from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
 
-from WMQuality.Emulators.RequestManagerClient.RequestManager \
-    import RequestManager as fakeReqMgr
+from WMQuality.Emulators.ReqMgrClient.ReqMgr \
+    import ReqMgr as fakeReqMgr
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 from WMCore.Services.EmulatorSwitch import EmulatorHelper

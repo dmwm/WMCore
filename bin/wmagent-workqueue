@@ -54,7 +54,7 @@ def createOptionParser():
                            help = "Interactive console.")
     myOptParser.add_option("--reqmgr", dest = "requestmanager",
                            default = False, action = "store_true",
-                           help = "Synchronize with RequestManager")
+                           help = "Synchronize with ReqMgr2")
     myOptParser.add_option("--deleteCascade", dest = "deleteCascade",
                            default = False, action = "store_true",
                            help = "delete LQ GQ.")

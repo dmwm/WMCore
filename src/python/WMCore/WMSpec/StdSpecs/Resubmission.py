@@ -25,17 +25,9 @@ class ResubmissionWorkloadFactory(StdBase):
         Build a resubmission workload from a previous
         workload, it loads the workload and truncates it.
         """
-        #TODO remove the dependency on reqmgr1
-        if originalRequestURL == None:
-            # reqmgr1 call (Due to reqmgr2 dependency imports here
-            from WMCore.HTTPFrontEnd.RequestManager.ReqMgrWebTools import loadWorkload
-            from WMCore.RequestManager.RequestDB.Interface.Request.GetRequest import getRequestByName
-            originalRequest = getRequestByName(self.originalRequestName)
-            helper = loadWorkload(originalRequest)
-        else:
-            # reqmgr2 call
-            helper = WMWorkloadHelper()
-            helper.loadSpecFromCouch(originalRequestURL, self.originalRequestName)
+
+        helper = WMWorkloadHelper()
+        helper.loadSpecFromCouch(originalRequestURL, self.originalRequestName)
 
         helper.truncate(self.workloadName, self.initialTaskPath,
                         self.acdcServer, self.acdcDatabase,

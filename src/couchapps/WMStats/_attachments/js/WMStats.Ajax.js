@@ -4,13 +4,8 @@ WMStats.namespace("Ajax");
 WMStats.Ajax = (function($){
     var reqMgrFuncs = {
         putRequest: function(requestArgs) {
-        	var reqMgr2Flag = WMStats.ActiveRequestModel.getData().getData(requestArgs.OriginalRequestName).ReqMgr2Only;
         	var uri = "/reqmgr2/data/request";
-        	var verb = "POST";
-        	if (!reqMgr2Flag) {
-        		uri = "/reqmgr/reqMgr/request";
-        		verb = "PUT";
-        	} 
+        	var verb = "POST"; 
             $.ajax(uri, 
                    {type: verb,
                     //accept: {json: "application/json"},
@@ -21,12 +16,8 @@ WMStats.Ajax = (function($){
                     processData: false,
                     success: function(data, textStatus, jqXHR) {
                     	 	var reqInfo = {};
-                    	 	if (!reqMgr2Flag) {
-                            	reqInfo.name = data["WMCore.RequestManager.DataStructs.Request.Request"].RequestName;
-                            } else {
-                            	reqInfo.name = data.result[0].request;
-                            } 
-                            reqInfo.reqmgr2Only = reqMgr2Flag;
+                    	 	reqInfo.name = data.result[0].request;
+                            reqInfo.reqmgr2Only = true;
                             $(WMStats.Globals.Event).triggerHandler(WMStats.CustomEvents.RESUBMISSION_SUCCESS, reqInfo);
                             },
                     error: function(jqXHR, textStatus, errorThrown){

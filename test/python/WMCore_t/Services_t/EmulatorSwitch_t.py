@@ -13,8 +13,7 @@ class EmulatorSwitch_t(unittest.TestCase):
         from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
         phedexJSON = PhEDEx(responseType='json')
         self.assertTrue(hasattr(phedexJSON, '_testNonExistentInEmulator'))
-        EmulatorHelper.setEmulators(phedex=True, dbs=False,
-                                    siteDB=True, requestMgr=False)
+        EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=False, requestMgr=False)
         phedexJSON2 = PhEDEx(responseType='json')
         self.assertFalse(hasattr(phedexJSON2, '_testNonExistentInEmulator'))
         EmulatorHelper.resetEmulators()

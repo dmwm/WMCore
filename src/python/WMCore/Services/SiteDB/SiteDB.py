@@ -6,17 +6,13 @@ API for dealing with interpreting information from SiteDB
 
 """
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
-from WMCore.Services.EmulatorSwitch import emulatorHook
 
 import re
 
 #TODO remove this when all DBS origin_site_name is converted to PNN
 pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
 
-# emulator hook is used to swap the class instance
-# when emulator values are set.
-# Look WMCore.Services.EmulatorSwitch module for the values
-@emulatorHook
+
 class SiteDBJSON(SiteDBAPI):
 
     """

@@ -17,36 +17,27 @@ class EmulatorSetupTest(unittest.TestCase):
     A test of a emulator set up
     """
 
-    def setUp(self):
-        self.globalDBS = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
-
     def testEmulator(self):
         """
         The the remaining old-style emulators
         """
 
-        EmulatorHelper.setEmulators(True, False, True, True)
+        EmulatorHelper.setEmulators(True, False, False, True)
         self.assertEqual(PhEDEx().wrapped.__module__,
                          'WMQuality.Emulators.PhEDExClient.PhEDEx')
-        self.assertEqual(SiteDBJSON().wrapped.__module__,
-                         'WMQuality.Emulators.SiteDBClient.SiteDB')
         self.assertEqual(RequestManager().wrapped.__module__,
                          'WMQuality.Emulators.RequestManagerClient.RequestManager')
 
         self.assertEqual(PhEDEx().__class__.__name__, 'PhEDEx')
-        self.assertEqual(SiteDBJSON().__class__.__name__, 'SiteDBJSON')
         self.assertEqual(RequestManager().__class__.__name__, 'RequestManager')
 
         EmulatorHelper.resetEmulators()
         self.assertEqual(PhEDEx().wrapped.__module__,
                          'WMCore.Services.PhEDEx.PhEDEx')
-        self.assertEqual(SiteDBJSON().wrapped.__module__,
-                         'WMCore.Services.SiteDB.SiteDB')
         self.assertEqual(RequestManager().wrapped.__module__,
                          'WMCore.Services.RequestManager.RequestManager')
 
         self.assertEqual(PhEDEx().__class__.__name__, 'PhEDEx')
-        self.assertEqual(SiteDBJSON().__class__.__name__, 'SiteDBJSON')
         self.assertEqual(RequestManager().__class__.__name__, 'RequestManager')
 
 

@@ -62,7 +62,7 @@ class JobArchiverTest(EmulatedUnitTestCase):
         self.nJobs = 10
 
         EmulatorHelper.setEmulators(phedex=True, dbs=False,
-                                    siteDB=True, requestMgr=False)
+                                    siteDB=False, requestMgr=False)
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return

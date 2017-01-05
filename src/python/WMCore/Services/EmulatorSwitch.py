@@ -9,7 +9,6 @@ class EmulatorHelper(object):
     """
     #DO not change default values
     PhEDEx = None
-    SiteDBJSON = None
     RequestManager = None
 
     @staticmethod
@@ -20,11 +19,6 @@ class EmulatorHelper(object):
                 import PhEDEx as PhEDExEmulator
             return PhEDExEmulator
 
-        if clsName == 'SiteDBJSON':
-            from WMQuality.Emulators.SiteDBClient.SiteDB \
-                import SiteDBJSON as SiteDBEmulator
-            return SiteDBEmulator
-
         if clsName == 'RequestManager':
             from WMQuality.Emulators.RequestManagerClient.RequestManager \
                 import RequestManager as RequestManagerEmulator
@@ -32,16 +26,14 @@ class EmulatorHelper(object):
 
     @staticmethod
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
-        if dbs:
-            raise NotImplementedError("There is no DBS emulator anymore. Use the Mock DBS emulator.")
+        if dbs or siteDB:
+            raise NotImplementedError("There are no DBS or SiteDB emulators anymore. Use the mock-based emulators.")
         EmulatorHelper.PhEDEx = phedex
-        EmulatorHelper.SiteDBJSON = siteDB
         EmulatorHelper.RequestManager = requestMgr
 
     @staticmethod
     def resetEmulators():
         EmulatorHelper.PhEDEx = None
-        EmulatorHelper.SiteDBJSON = None
         EmulatorHelper.RequestManager = None
 
     @staticmethod

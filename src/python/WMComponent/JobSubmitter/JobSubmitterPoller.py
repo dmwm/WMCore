@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0102, C0301
+#pylint: disable=C0301
 # for the whitelist and the blacklist
 # C0301: I'm ignoring this because breaking up error messages is painful
 """
@@ -87,15 +87,12 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.exists(self.packageDir):
                 os.makedirs(self.packageDir)
-        except Exception as ex:
+        except OSError as ex:
             msg = "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
-            try:
-                logging.debug("PackageDir: %s", self.packageDir)
-                logging.debug("Config: %s", config)
-            except:
-                pass
+            logging.debug("PackageDir: %s", self.packageDir)
+            logging.debug("Config: %s", config)
             raise JobSubmitterPollerException(msg)
 
 
@@ -108,7 +105,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-        
+
         self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
         self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
         return
@@ -239,8 +236,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             newJobs = []
             dbJobs = self.cachedJobIDs
             abortedAndForceCompleteRequests = []
-            logging.info("Skipping cache update to be submitted. (%s job in cache)" % len(dbJobs))
-        
+            logging.info("Skipping cache update to be submitted. (%s job in cache)", len(dbJobs))
+
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:
@@ -248,7 +245,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if (newJob['request_name'] in abortedAndForceCompleteRequests) and \
                (newJob['type'] not in ['LogCollect', "Cleanup"]):
                 continue
-            
+
             jobID = newJob['id']
             dbJobs.add(jobID)
             if jobID in self.cachedJobIDs:
@@ -387,7 +384,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
-        
+ 
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
         jobIDsToPurge = set() 

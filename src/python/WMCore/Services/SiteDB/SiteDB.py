@@ -32,7 +32,7 @@ class SiteDBJSON(SiteDBAPI):
         filename = 'site-names.json'
         sitenames = self.getJSON('site-names', filename=filename, clearCache=clearCache)
         if sitename:
-            sitenames = filter(lambda x: x[u'site_name'] == sitename, sitenames)
+            sitenames = [x for x in sitenames if x[u'site_name'] == sitename]
         return sitenames
 
     def _siteresources(self, clearCache=False):
@@ -59,10 +59,10 @@ class SiteDBJSON(SiteDBAPI):
         in case user just registered or fixed an issue with SiteDB
         """
         try:
-            userinfo = filter(lambda x: x['dn'] == dn, self._people())[0]
+            userinfo = [x for x in self._people() if x['dn'] == dn][0]
             username = userinfo['username']
         except (KeyError, IndexError):
-            userinfo = filter(lambda x: x['dn'] == dn, self._people(clearCache=True))[0]
+            userinfo = [x for x in self._people(clearCache=True) if x['dn'] == dn][0]
             username = userinfo['username']
         return username
 
@@ -72,10 +72,10 @@ class SiteDBJSON(SiteDBAPI):
         in case user just registered or fixed an issue with SiteDB
         """
         try:
-            userinfo = filter(lambda x: x['username'] == username, self._people())[0]
+            userinfo = [x for x in self._people() if x['username'] == username][0]
             userdn = userinfo['dn']
         except (KeyError, IndexError):
-            userinfo = filter(lambda x: x['username'] == username, self._people(clearCache=True))[0]
+            userinfo = [x for x in self._people(clearCache=True) if x['username'] == username][0]
             userdn = userinfo['dn']
         return userdn
 
@@ -100,8 +100,7 @@ class SiteDBJSON(SiteDBAPI):
         This is so that we can easily add them to ResourceControl
         """
         siteresources = self._siteresources()
-        ceList = filter(lambda x: x['type'] == 'CE', siteresources)
-        ceList = map(lambda x: x['fqdn'], ceList)
+        ceList = [x['fqdn'] for x in siteresources if x['type'] == 'CE']
         return ceList
 
     def getAllSENames(self):
@@ -112,8 +111,7 @@ class SiteDBJSON(SiteDBAPI):
         This is so that we can easily add them to ResourceControl
         """
         siteresources = self._siteresources()
-        seList = filter(lambda x: x['type'] == 'SE', siteresources)
-        seList = map(lambda x: x['fqdn'], seList)
+        seList = [x['fqdn'] for x in siteresources if x['type'] == 'SE']
         return seList
 
     def getAllCMSNames(self):
@@ -124,8 +122,7 @@ class SiteDBJSON(SiteDBAPI):
         This will allow us to add them in resourceControl at once
         """
         sitenames = self._sitenames()
-        cmsnames = filter(lambda x: x['type'] == 'psn', sitenames)
-        cmsnames = map(lambda x: x['alias'], cmsnames)
+        cmsnames = [x['alias'] for x in sitenames if x['type'] == 'psn']
         return cmsnames
 
     def getAllPhEDExNodeNames(self, excludeBuffer=False):
@@ -136,10 +133,9 @@ class SiteDBJSON(SiteDBAPI):
         This will allow us to add them in resourceControl at once
         """
         sitenames = self._sitenames()
-        node_names = filter(lambda x: x['type'] == 'phedex', sitenames)
-        node_names = map(lambda x: x['alias'], node_names)
+        node_names = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
-            node_names = filter(lambda x: not x.endswith("_Buffer"), node_names)
+            node_names = [x for x in node_names if not x.endswith("_Buffer")]
         return node_names
 
     def cmsNametoList(self, cmsname_pattern, kind):
@@ -150,12 +146,10 @@ class SiteDBJSON(SiteDBAPI):
         cmsname_pattern = cmsname_pattern.replace('%', '.*')
         cmsname_pattern = re.compile(cmsname_pattern)
 
-        sitenames = filter(lambda x: x[u'type'] == 'psn' and cmsname_pattern.match(x[u'alias']),
-                           self._sitenames())
-        sitenames = set(map(lambda x: x['site_name'], sitenames))
-        siteresources = filter(lambda x: x['site_name'] in sitenames, self._siteresources())
-        hostlist = filter(lambda x: x['type'] == kind, siteresources)
-        hostlist = map(lambda x: x['fqdn'], hostlist)
+        sitenames = set([x['site_name'] for x in self._sitenames() if x[u'type'] == 'psn'
+                         and cmsname_pattern.match(x[u'alias'])])
+        siteresources = [x for x in self._siteresources() if x['site_name'] in sitenames]
+        hostlist = [x['fqdn'] for x in siteresources if x['type'] == kind]
 
         return hostlist
 
@@ -165,13 +159,13 @@ class SiteDBJSON(SiteDBAPI):
         this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
         """
         try:
-            siteresources = filter(lambda x: x['fqdn'] == ce, self._siteresources())
+            siteresources = [x for x in self._siteresources() if x['fqdn'] == ce]
         except IndexError:
             return None
         siteNames = []
         for resource in siteresources:
             siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        cmsname = filter(lambda x: x['type'] == 'cms', siteNames)
+        cmsname = [x for x in siteNames if x['type'] == 'cms']
         return [x['alias'] for x in cmsname]
 
     def seToCMSName(self, se):
@@ -180,13 +174,13 @@ class SiteDBJSON(SiteDBAPI):
         this is not a 1-to-1 relation but 1-to-many, return a list of cms site alias
         """
         try:
-            siteresources = filter(lambda x: x['fqdn'] == se, self._siteresources())
+            siteresources = [x for x in self._siteresources() if x['fqdn'] == se]
         except IndexError:
             return None
         siteNames = []
         for resource in siteresources:
             siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        cmsname = filter(lambda x: x['type'] == 'cms', siteNames)
+        cmsname = [x for x in siteNames if x['type'] == 'cms']
         return [x['alias'] for x in cmsname]
 
     def seToPNNs(self, se):
@@ -195,13 +189,13 @@ class SiteDBJSON(SiteDBAPI):
         this is not a 1-to-1 relation but 1-to-many, return a list of pnns
         """
         try:
-            siteresources = filter(lambda x: x['fqdn'] == se, self._siteresources())
+            siteresources = [x for x in self._siteresources() if  x['fqdn'] == se]
         except IndexError:
             return None
         siteNames = []
         for resource in siteresources:
             siteNames.extend(self._sitenames(sitename=resource['site_name']))
-        pnns = filter(lambda x: x['type'] == 'phedex', siteNames)
+        pnns = [x for x in siteNames if x['type'] == 'phedex']
         return [x['alias'] for x in pnns]
 
 
@@ -211,11 +205,10 @@ class SiteDBJSON(SiteDBAPI):
         """
         sitenames = self._sitenames()
         try:
-            sitename = filter(lambda x: x['type'] == 'cms' and x['alias'] == cmsName, sitenames)[0]['site_name']
+            sitename = [x for x in sitenames if x['type'] == 'cms' and x['alias'] == cmsName][0]['site_name']
         except IndexError:
             return None
-        phedexnames = filter(lambda x: x['type'] == 'phedex' and x['site_name'] == sitename, sitenames)
-        phedexnames = map(lambda x: x['alias'], phedexnames)
+        phedexnames = [x['alias'] for x in sitenames if x['type'] == 'phedex' and x['site_name'] == sitename]
         return phedexnames
 
 

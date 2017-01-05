@@ -9,9 +9,6 @@ from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 
 import re
 
-#TODO remove this when all DBS origin_site_name is converted to PNN
-pnn_regex = re.compile(r'^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)')
-
 
 class SiteDBJSON(SiteDBAPI):
 
@@ -37,7 +34,7 @@ class SiteDBJSON(SiteDBAPI):
 
     def _siteresources(self, clearCache=False):
         filename = 'site-resources.json'
-        return self.getJSON('site-resources', filename=filename)
+        return self.getJSON('site-resources', filename=filename, clearCache=clearCache)
 
     def _dataProcessing(self, pnn=None, psn=None, clearCache=False):
         """
@@ -84,7 +81,6 @@ class SiteDBJSON(SiteDBAPI):
         Convert CMS name (also pattern) to list of CEs
         """
         raise NotImplementedError
-        #return self.cmsNametoList(cmsName, 'CE')
 
     def cmsNametoSE(self, cmsName):
         """
@@ -133,21 +129,21 @@ class SiteDBJSON(SiteDBAPI):
         This will allow us to add them in resourceControl at once
         """
         sitenames = self._sitenames()
-        node_names = [x['alias'] for x in sitenames if x['type'] == 'phedex']
+        nodeNames = [x['alias'] for x in sitenames if x['type'] == 'phedex']
         if excludeBuffer:
-            node_names = [x for x in node_names if not x.endswith("_Buffer")]
-        return node_names
+            nodeNames = [x for x in nodeNames if not x.endswith("_Buffer")]
+        return nodeNames
 
-    def cmsNametoList(self, cmsname_pattern, kind):
+    def cmsNametoList(self, cmsnamePattern, kind):
         """
         Convert CMS name pattern T1*, T2* to a list of CEs or SEs.
         """
-        cmsname_pattern = cmsname_pattern.replace('*', '.*')
-        cmsname_pattern = cmsname_pattern.replace('%', '.*')
-        cmsname_pattern = re.compile(cmsname_pattern)
+        cmsnamePattern = cmsnamePattern.replace('*', '.*')
+        cmsnamePattern = cmsnamePattern.replace('%', '.*')
+        cmsnamePattern = re.compile(cmsnamePattern)
 
         sitenames = set([x['site_name'] for x in self._sitenames() if x[u'type'] == 'psn'
-                         and cmsname_pattern.match(x[u'alias'])])
+                         and cmsnamePattern.match(x[u'alias'])])
         siteresources = [x for x in self._siteresources() if x['site_name'] in sitenames]
         hostlist = [x['fqdn'] for x in siteresources if x['type'] == kind]
 
@@ -232,9 +228,9 @@ class SiteDBJSON(SiteDBAPI):
         for pnn in pnns:
             if pnn == "T0_CH_CERN_Export" or pnn.endswith("_MSS") or pnn.endswith("_Buffer"):
                 continue
-            psn_list = self.PNNtoPSN(pnn)
-            psns.update(psn_list)
-            if not psn_list:
+            psnList = self.PNNtoPSN(pnn)
+            psns.update(psnList)
+            if not psnList:
                 self["logger"].warning("No PSNs for PNN: %s" % pnn)
         return list(psns)
 
@@ -244,20 +240,20 @@ class SiteDBJSON(SiteDBAPI):
         """
         pnns = set()
         for psn in psns:
-            pnn_list = self.PSNtoPNN(psn)
-            if not pnn_list:
+            pnnList = self.PSNtoPNN(psn)
+            if not pnnList:
                 self["logger"].warning("No PNNs for PSN: %s" % psn)
-            pnns.update(pnn_list)
+            pnns.update(pnnList)
         return list(pnns)
 
-    def PSNtoPNNMap(self, psn_pattern=''):
-        if not isinstance(psn_pattern, str):
+    def PSNtoPNNMap(self, psnPattern=''):
+        if not isinstance(psnPattern, str):
             raise TypeError('psn_pattern arg must be of type str')
 
         mapping = {}
-        psn_pattern = re.compile(psn_pattern)  # .replace('*', '.*').replace('%', '.*'))
+        psnPattern = re.compile(psnPattern)  # .replace('*', '.*').replace('%', '.*'))
         for entry in self._dataProcessing():
-            if not psn_pattern.match(entry['psn_name']):
+            if not psnPattern.match(entry['psn_name']):
                 continue
             mapping.setdefault(entry['psn_name'], set()).add(entry['phedex_name'])
         return mapping

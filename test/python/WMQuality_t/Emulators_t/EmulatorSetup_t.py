@@ -9,7 +9,6 @@ import unittest
 from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.RequestManager.RequestManager import RequestManager
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 
 
 class EmulatorSetupTest(unittest.TestCase):

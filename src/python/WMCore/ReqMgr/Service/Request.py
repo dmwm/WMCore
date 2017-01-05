@@ -528,7 +528,6 @@ class Request(RESTEntity):
 
         if "RequestStatus" not in request_args:
             report = self._handleNoStatusUpdate(workload, request_args)
-            
         else:
             req_status = request_args["RequestStatus"]
             # assignment-approved only allow Priority update
@@ -536,11 +535,11 @@ class Request(RESTEntity):
                 report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
             elif len(request_args) > 1 and req_status == "assigned":
                 report = self._handleAssignmentStateTransition(workload, request_args, dn)
-            elif len(request_args) == 2 and req_status in ["rejected", "aborted", "closed-out", "announced"] and \
-                "cascade" in request_args:
+            elif req_status in ["rejected", "aborted", "closed-out", "announced"] and \
+                request_args.get("cascade", False):
                 report = self._handleCascadeUpdate(workload, request_args, dn)
             elif len(request_args) == 1:
-                # If status chnage is to aborted, force-complete, rejected, ignore other argument
+                # otherwise just ignore any other arguments
                 report = self._handleOnlyStateTransition(workload, req_status, dn)
             else:
                 raise InvalidSpecParameterValue(

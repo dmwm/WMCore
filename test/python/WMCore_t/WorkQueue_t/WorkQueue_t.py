@@ -25,7 +25,6 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Lexicon import sanitizeURL
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.WMBS.Job import Job
@@ -143,7 +142,6 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         If we dont have a wmspec file create one
         """
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False)
         # undo any customizations
         Globals.GlobalParams.resetParams()
 
@@ -308,7 +306,6 @@ class WorkQueueTest(WorkQueueTestCase):
         super(WorkQueueTest, self).tearDown()
         # Delete WMBSAgent config file
         EmulatorSetup.deleteConfig(self.configFile)
-        EmulatorHelper.resetEmulators()
 
     def createWQReplication(self, parentQURL, childURL):
         wqfilter = 'WorkQueue/queueFilter'

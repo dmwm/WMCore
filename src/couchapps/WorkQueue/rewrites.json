@@ -3,7 +3,8 @@
    "to": "_list/elementsDetail/elementsDetailByWorkflowAndStatus",
    "method": "GET",
    "query": {"startkey": [":request"],
-             "endkey": [":request", {}]
+             "endkey": [":request", {}],
+             "reduce": "false"
             }
   },
 

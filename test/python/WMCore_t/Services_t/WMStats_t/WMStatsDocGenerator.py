@@ -8,7 +8,6 @@ NUM_OF_JOBS_PER_REQUEST = 11
 def generate_reqmgr_schema(number=NUM_OF_REQUEST):
     """
     generate the request with following structure
-      #from basic field in WMCore.RequestManager.DataStructs.RequestSchema
     doc["_id"] = schema['RequestName']
     doc["workflow"] = schema['RequestName']
     doc["requestor"] = schema['Requestor']

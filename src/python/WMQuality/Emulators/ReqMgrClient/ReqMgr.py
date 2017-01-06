@@ -1,7 +1,7 @@
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
-from WMCore.RequestManager.RequestDB.Settings.RequestStatus import NextStatus
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition
 
-class RequestManager(dict):
+class ReqMgr(dict):
 
     def __init__(self, *args, **kwargs):
         """
@@ -76,7 +76,7 @@ class RequestManager(dict):
         self.status[reqName] = 'acquired'
 
     def reportRequestStatus(self, name, status):
-        if status not in NextStatus[self.status[name]]:
+        if not check_allowed_transition(self.status[name], status):
             raise RuntimeError("Invalid status move: %s" % status)
         self.status[name] = status
 

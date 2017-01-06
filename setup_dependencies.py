@@ -44,21 +44,6 @@ dependencies = {'wmc-rest':{
                                 'src/templates/WMCore/WebTools',
                                 'src/templates/WMCore/WebTools/Masthead',]
                         },
-                'reqmgr':{
-                        'packages': ['WMCore.RequestManager+',
-                                     'WMCore.HTTPFrontEnd',
-                                     'WMCore.HTTPFrontEnd.RequestManager+',
-                                     'WMCore.Services.RequestManager',
-                                     'WMCore.Services+',
-                                     'WMCore.ACDC'],
-
-                        'systems':['wmc-web', 'wmc-runtime'],
-                        'statics': ['src/templates/WMCore/WebTools/RequestManager',
-                                    'src/html/RequestManager',
-                                    'src/couchapps/ReqMgr+',
-                                    'src/couchapps/ConfigCache+',
-                                    'src/couchapps/WMStats+'],
-                        },
                 'reqmgr2':{
                         'packages': ['WMCore.ReqMgr+',
                                      'WMCore.WMDataMining+',
@@ -120,7 +105,7 @@ dependencies = {'wmc-rest':{
                                     'WMCore.Services.EmulatorSwitch'],
                         },
                 'crabserver':{
-                        'packages': ['WMCore.Credential', 'WMCore.Services+', 'WMCore.RequestManager+',
+                        'packages': ['WMCore.Credential', 'WMCore.Services+',
                                      'WMCore.WMSpec+', 'WMCore.HTTPFrontEnd+', 'WMCore.ACDC'],
                         'modules' : ['WMCore.DataStructs.LumiList'],
                         'systems' : ['wmc-rest', 'wmc-database'],

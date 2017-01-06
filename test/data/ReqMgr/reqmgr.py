@@ -113,8 +113,7 @@ class ReqMgrClient(RESTClient):
             print(data)
             sys.exit(1)
         data = json.loads(data)
-        # ReqMgr returns dictionary with key: 'WMCore.RequestManager.DataStructs.Request.Request'
-        # print data
+
         requestName = data.values()[0]["RequestName"] 
         logging.info("Create request '%s' succeeded." % requestName)
         return requestName
@@ -341,8 +340,7 @@ class ReqMgrClient(RESTClient):
             print(data)  
             sys.exit(1)
         data = json.loads(data)
-        # ReqMgr returns dictionary with key: 'WMCore.RequestManager.DataStructs.Request.Request'
-        # print data
+
         newRequestName = data.values()[0]["RequestName"] 
         logging.info("Clone request succeeded: original request name: '%s' "
                      "new request name: '%s'" % (requestName, newRequestName))

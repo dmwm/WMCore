@@ -9,7 +9,6 @@ import unittest
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
 
@@ -31,12 +30,9 @@ class WorkQueueManagerTest(WorkQueueTestCase):
 
     def setUp(self):
         WorkQueueTestCase.setUp(self)
-        EmulatorHelper.setEmulators(phedex=True, dbs=False,
-                                    siteDB=False, requestMgr=False)
 
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
-        EmulatorHelper.resetEmulators()
 
     def getConfig(self):
         """

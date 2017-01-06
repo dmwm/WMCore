@@ -2,14 +2,9 @@ import json
 import logging
 from xml.dom.minidom import parseString
 
-from WMCore.Services.EmulatorSwitch import emulatorHook
 from WMCore.Services.Service import Service
 
 
-# emulator hook is used to swap the class instance
-# when emulator values are set.
-# Look WMCore.Services.EmulatorSwitch module for the values
-@emulatorHook
 class PhEDEx(Service):
 
     """

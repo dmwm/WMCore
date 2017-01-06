@@ -61,8 +61,6 @@ class JobArchiverTest(EmulatedUnitTestCase):
 
         self.nJobs = 10
 
-        EmulatorHelper.setEmulators(phedex=True, dbs=False,
-                                    siteDB=False, requestMgr=False)
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
         return
@@ -71,7 +69,6 @@ class JobArchiverTest(EmulatedUnitTestCase):
         """
         Database deletion
         """
-        EmulatorHelper.resetEmulators()
         self.testInit.clearDatabase(modules=["WMCore.WMBS"])
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()

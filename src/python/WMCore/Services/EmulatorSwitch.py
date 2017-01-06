@@ -8,16 +8,10 @@ class EmulatorHelper(object):
     WARNNING: This is not multi thread safe.
     """
     #DO not change default values
-    PhEDEx = None
     ReqMgr = None
 
     @staticmethod
     def getEmulatorClass(clsName, *args):
-
-        if clsName == 'PhEDEx':
-            from WMQuality.Emulators.PhEDExClient.PhEDEx \
-                import PhEDEx as PhEDExEmulator
-            return PhEDExEmulator
 
         if clsName == 'ReqMgr':
             from WMQuality.Emulators.ReqMgrClient.ReqMgr \
@@ -26,14 +20,12 @@ class EmulatorHelper(object):
 
     @staticmethod
     def setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=False):
-        if dbs or siteDB:
-            raise NotImplementedError("There are no DBS or SiteDB emulators anymore. Use the mock-based emulators.")
-        EmulatorHelper.PhEDEx = phedex
+        if dbs or siteDB or phedex:
+            raise NotImplementedError("There are no DBS, PhEDEx, or SiteDB emulators anymore. Use the mock-based emulators.")
         EmulatorHelper.ReqMgr = requestMgr
 
     @staticmethod
     def resetEmulators():
-        EmulatorHelper.PhEDEx = None
         EmulatorHelper.ReqMgr = None
 
     @staticmethod

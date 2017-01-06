@@ -25,7 +25,7 @@ BLOCKS_PER_DATASET = 2
 FILES_PER_BLOCK = 5
 FILES_PER_DATASET = BLOCKS_PER_DATASET * FILES_PER_BLOCK
 
-mockData = {}
+MOCK_DATA = {}
 
 
 class MockPhEDExApi(object):
@@ -146,7 +146,7 @@ class MockPhEDExApi(object):
                  {"name": "T2_CH_CERN", "kind": "Disk", "se": "srm-eoscms.cern.ch", "technology": "Disk", "id": 8},
                  {"name": "T3_CO_Uniandes", "kind": "Disk", "se": "moboro.uniandes.edu.co", "technology": "DPM",
                   "id": 9}
-                 ]
+                ]
 
         for node in nodes:
             nodeMappings["phedex"]["node"].append(node)
@@ -161,7 +161,7 @@ class MockPhEDExApi(object):
         def _blockInfoGenerator(blockList):
 
             for block in blockList:
-                if type(block) == dict:
+                if isinstance(block, dict):
                     block = block['Name']
                 dataset = self.dataBlocks.getDatasetName(block)
                 # TODO needs to add correct file numbers
@@ -198,7 +198,7 @@ class MockPhEDExApi(object):
                 blocks.append({"bytes": "10438786614", "files": FILES_PER_BLOCK, "is_open": "n", "name": block,
                                "id": "454370",
                                "subscription": [{'node': x + '_MSS', "suspended": "n"} for x in locations]
-                               })
+                              })
 
         data = {'phedex': {"request_timestamp": 1254850198.15418,
                            'dataset': []}}
@@ -247,10 +247,10 @@ class MockPhEDExApi(object):
                 signature = item
 
             try:
-                if mockData[self.url][signature] == 'Raises HTTPError':
+                if MOCK_DATA[self.url][signature] == 'Raises HTTPError':
                     raise HTTPError
                 else:
-                    return mockData[self.url][signature]
+                    return MOCK_DATA[self.url][signature]
             except KeyError:
                 raise KeyError("PhEDEx mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %
                                (item, args, kwargs, self.url))

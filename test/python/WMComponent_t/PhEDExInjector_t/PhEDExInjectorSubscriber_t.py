@@ -33,8 +33,7 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(PhEDExInjectorSubscriberTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=False,
-                                                           mockSiteDB=True)
+        super(PhEDExInjectorSubscriberTest, self).__init__(methodName=methodName)
 
     def setUp(self):
         """
@@ -46,7 +45,7 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         super(PhEDExInjectorSubscriberTest, self).setUp()
         self.phedexURL = "https://bogus.cern.ch/bogus"
         self.dbsURL = "https://bogus.cern.ch/bogus"
-        EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=False)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False)
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()

@@ -43,15 +43,14 @@ class EmulatedUnitTestCase(unittest.TestCase):
             self.addCleanup(self.dbsPatcher2.stop)
 
         if self.mockPhEDEx:
-            self.phedexPatcher = mock.patch('WMCore.Services.PhEDEx.PhEDEx.PhEDEx', new=MockPhEDExApi)
-            self.phedexPatcher2 = mock.patch('WMCore.WorkQueue.WorkQueue.PhEDEx', new=MockPhEDExApi)
-            self.phedexPatcher3 = mock.patch('WMCore.Services.DBS.DBS3Reader.PhEDEx', new=MockPhEDExApi)
-            self.phedexPatcher.start()
-            self.phedexPatcher2.start()
-            self.phedexPatcher3.start()
-            self.addCleanup(self.phedexPatcher.stop)
-            self.addCleanup(self.phedexPatcher2.stop)
-            self.addCleanup(self.phedexPatcher3.stop)
+            self.phedexPatchers = []
+            patchPhedexAt = ['WMCore.Services.PhEDEx.PhEDEx.PhEDEx', 'WMCore.WorkQueue.WorkQueue.PhEDEx',
+                             'WMCore.Services.DBS.DBS3Reader.PhEDEx',
+                             'WMComponent.PhEDExInjector.PhEDExInjectorPoller.PhEDEx']
+            for module in patchPhedexAt:
+                self.phedexPatchers.append(mock.patch(module, new=MockPhEDExApi))
+                self.phedexPatchers[-1].start()
+                self.addCleanup(self.phedexPatchers[-1].stop)
 
         if self.mockSiteDB:
             self.siteDBPatcher = mock.patch.object(SiteDBAPI, 'getJSON', new=mockGetJSON)

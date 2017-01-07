@@ -188,11 +188,10 @@ class WorkQueue(object):
             db = self.inboxDB
         else:
             db = self.db
-        options = {'reduce' : True, 'group_level': 2}
+        options = {'reduce': True, 'group_level': 2}
         if stale:
             options['stale'] = 'update_after'
-        data = db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
-                                {'reduce' : True, 'group_level': 2})
+        data = db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus', options)
         result = defaultdict(dict)
         for x in data.get('rows', []):
             result[x['key'][0]][x['key'][1]] = {'NumOfElements': x['value']['count'], 
@@ -217,3 +216,27 @@ class WorkQueue(object):
         """
         data = self.getElementsStatusAndJobsByWorkflow(stale)
         return self._getCompletedWorkflowList(data)
+
+    def getJobsByStatus(self, inboxFlag=False, group=True):
+        """
+        Returns some stats for the workqueue elements in each status, like:
+         1. total number of expected Jobs
+         2. count of elements
+         3. minimum number of expected Jobs in an element
+         4. maximum number of expected Jobs in an element
+         5. sum of the squares of the expected Job in each element
+
+        Provide group=False in order to get a final summary of all the elements.
+        """
+        if inboxFlag:
+            db = self.inboxDB
+        else:
+            db = self.db
+        options = {'reduce': True, 'group': group, 'stale': 'update_after'}
+
+        data = db.loadView('WorkQueue', 'jobsByStatus', options)
+        result = {}
+        for x in data.get('rows', []):
+            result[x['key']] = x['value']
+
+        return result

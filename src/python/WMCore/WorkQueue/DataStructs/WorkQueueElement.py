@@ -72,8 +72,6 @@ class WorkQueueElement(dict):
         self.setdefault('OpenForNewData', False)
         # When was the last time we found new data (not the same as when new data was split), e.g. An open block was found
         self.setdefault('TimestampFoundNewData', 0)
-        # TODO: being deprecated as of 29/03/2016. Trust initial input and pileup location or not
-        # self.setdefault('NoLocationUpdate', False)
         # Trust initial input dataset location only or not
         self.setdefault('NoInputUpdate', False)
         # Trust initial pileup dataset location only or not
@@ -123,21 +121,21 @@ class WorkQueueElement(dict):
         if self._id:
             return self._id
         # Assume md5 is good enough for now
-        hash = md5()
+        myhash = md5()
         spacer = ';'  # character not present in any field
-        hash.update(self['RequestName'] + spacer)
+        myhash.update(self['RequestName'] + spacer)
         # Task will be None in global inbox
-        hash.update(repr(self['TaskName']) + spacer)
-        hash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
+        myhash.update(repr(self['TaskName']) + spacer)
+        myhash.update(",".join(sorted(self['Inputs'].keys())) + spacer)
         # Check repr is reproducible - should be
         if self['Mask']:
-            hash.update(",".join(["%s=%s" % (x, y) for x, y in self['Mask'].items()]) + spacer)
+            myhash.update(",".join(["%s=%s" % (x, y) for x, y in self['Mask'].items()]) + spacer)
         else:
-            hash.update("None" + spacer)
+            myhash.update("None" + spacer)
         # Check ACDC is deterministic and all params relevant
-        hash.update(",".join(["%s=%s" % (x, y) for x, y in self['ACDC'].items()]) + spacer)
-        hash.update(repr(self['Dbs']) + spacer)
-        self._id = hash.hexdigest()
+        myhash.update(",".join(["%s=%s" % (x, y) for x, y in self['ACDC'].items()]) + spacer)
+        myhash.update(repr(self['Dbs']) + spacer)
+        self._id = myhash.hexdigest()
         return self._id
 
     @id.setter
@@ -225,10 +223,6 @@ class WorkQueueElement(dict):
             return False
         if site in self['SiteBlacklist']:
             return False
-        # Trust both input and pileup location (TrustSitelists+TrustPUSiteliss flag)
-        # provided the site whitelist is empty or it's whitelisted
-        if self.get('NoLocationUpdate'):
-            return True
 
         # input data restrictions (TrustSitelists flag)
         if self['NoInputUpdate'] is False:

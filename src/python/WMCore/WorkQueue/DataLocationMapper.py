@@ -29,7 +29,7 @@ def isGlobalDBS(dbs):
         if info and info.get('InstanceName') == 'GLOBAL':
             return True
         return False
-    except Exception as ex:
+    except Exception:
         # determin whether this is dbs3
         dbs.dbs.serverinfo()
 
@@ -72,7 +72,8 @@ class DataLocationMapper(object):
 
         validLocationFrom = ('subscription', 'location')
         if self.params['locationFrom'] not in validLocationFrom:
-            msg = "Invalid value for locationFrom '%s' valid values %s" % (self.params['locationFrom'], validLocationFrom)
+            msg = "Invalid value for locationFrom '%s' valid values %s" % (
+                self.params['locationFrom'], validLocationFrom)
             raise ValueError(msg)
 
         if self.params.get('phedex'):
@@ -80,8 +81,8 @@ class DataLocationMapper(object):
         if self.params.get('sitedb'):
             self.sitedb = self.params['sitedb']
 
-    def __call__(self, dataItems, fullResync=False, dbses={},
-                 datasetSearch=False):
+    def __call__(self, dataItems, fullResync=False, dbses=None, datasetSearch=False):
+        dbses = dbses or {}
         result = {}
 
         # do a full resync every fullRefreshInterval interval
@@ -92,7 +93,7 @@ class DataLocationMapper(object):
         dataByDbs = self.organiseByDbs(dataItems)
 
         for dbs, dataItems in dataByDbs.items():
-            # if global use phedex, else use dbs            
+            # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
                                                               datasetSearch)
@@ -133,7 +134,7 @@ class DataLocationMapper(object):
                         else:
                             result[block['name']].update(nodes)
                 except Exception as ex:
-                    logging.error('Error getting block location from phedex for %s: %s' % (dataItem, str(ex)))
+                    logging.error('Error getting block location from phedex for %s: %s', dataItem, str(ex))
         else:
             raise RuntimeError("shouldn't get here")
 
@@ -157,7 +158,7 @@ class DataLocationMapper(object):
                     phedexNodeNames = dbs.listFileBlockLocation(dataItem, dbsOnly=True)
                 result[dataItem].update(phedexNodeNames)
             except Exception as ex:
-                logging.error('Error getting block location from dbs for %s: %s' % (dataItem, str(ex)))
+                logging.error('Error getting block location from dbs for %s: %s', dataItem, str(ex))
 
         # convert the sets to lists
         for name, nodes in result.items():
@@ -199,8 +200,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForData(dbs, data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoInputUpdate', False):
                         continue
                     if sorted(locations) != sorted(element['Inputs'][data]):
@@ -231,8 +230,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoInputUpdate', False):
                         continue
                     for pData in element['ParentData']:
@@ -263,8 +260,6 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
             for data, locations in dataMapping.items():
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
-                    if element.get('NoLocationUpdate', False):
-                        continue
                     if element.get('NoPileupUpdate', False):
                         continue
                     for pData in element['PileupData']:

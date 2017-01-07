@@ -156,6 +156,10 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                  'reduce' : False})
         elements = [x['id'] for x in data.get('rows', [])]
         wqApi.updateElements(*elements, Status = 'Canceled')
+        # load this view once again to make sure it will be updated in the next assert..
+        data = wqApi.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
+                                {'startkey' : [specName], 'endkey' : [specName, {}],
+                                 'reduce' : False})
         self.assertEqual(len(wqApi.getCompletedWorkflow(stale=False)), 1)
 
 if __name__ == '__main__':

@@ -23,8 +23,7 @@ class WorkQueueElementResult(dict):
                             sum([x['EventsWritten'] for x in self['Elements']]))
             self.setdefault('FilesProcessed',
                             sum([x['FilesProcessed'] for x in self['Elements']]))
-            self.setdefault('Jobs',
-                            sum([x['Jobs'] for x in self['Elements'] if x['Jobs'] != None]))
+            self.setdefault('Jobs', sum([x['Jobs'] for x in self['Elements']]))
             self.setdefault('PercentComplete',
                             int(sum([x['PercentComplete'] for x in self['Elements']],
                                 0.0) / len(self['Elements'])))
@@ -140,14 +139,13 @@ class WorkQueueElementResult(dict):
     def getMaxJobElement(self):
         maxJobElement = self['Elements'][0]
         for x in self['Elements']:
-            if x['Jobs'] != None and x['Jobs'] > maxJobElement['Jobs']:
+            if x['Jobs'] > maxJobElement['Jobs']:
                 maxJobElement = x
         return maxJobElement
     
     def getMinJobElement(self):
         minJobElement = self['Elements'][0]
         for x in self['Elements']:
-            if x['Jobs'] != None and x['Jobs'] < minJobElement['Jobs']:
+            if x['Jobs'] < minJobElement['Jobs']:
                 minJobElement = x
         return minJobElement
-    

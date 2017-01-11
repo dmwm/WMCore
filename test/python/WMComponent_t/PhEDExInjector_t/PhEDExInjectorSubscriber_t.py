@@ -33,8 +33,9 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
     """
 
     def __init__(self, methodName='runTest'):
-        super(PhEDExInjectorSubscriberTest, self).__init__(methodName=methodName, mockDBS=True, mockPhEDEx=False,
-                                                           mockSiteDB=True)
+        super(PhEDExInjectorSubscriberTest, self).__init__(methodName=methodName)
+        self.blockAName = None
+        self.blockBName = None
 
     def setUp(self):
         """
@@ -46,15 +47,15 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         super(PhEDExInjectorSubscriberTest, self).setUp()
         self.phedexURL = "https://bogus.cern.ch/bogus"
         self.dbsURL = "https://bogus.cern.ch/bogus"
-        EmulatorHelper.setEmulators(phedex=True, dbs=False, siteDB=False)
+        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False)
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        self.testInit.setSchema(customModules = ["WMComponent.DBS3Buffer",
-                                                 "WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMComponent.DBS3Buffer",
+                                               "WMCore.WMBS"],
+                                useDefault=False)
 
         self.testFilesA = []
         self.testFilesB = []
@@ -105,42 +106,42 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         """
         myThread = threading.currentThread()
 
-        buffer3Factory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                   logger = myThread.logger,
-                                   dbinterface = myThread.dbi)
-        insertWorkflow = buffer3Factory(classname = "InsertWorkflow")
+        buffer3Factory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                    logger=myThread.logger,
+                                    dbinterface=myThread.dbi)
+        insertWorkflow = buffer3Factory(classname="InsertWorkflow")
         insertWorkflow.execute("BogusRequestA", "BogusTask",
                                0, 0, 0, 0)
         insertWorkflow.execute("BogusRequestB", "BogusTask",
                                0, 0, 0, 0)
 
         checksums = {"adler32": "1234", "cksum": "5678"}
-        testFileA = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  checksums = checksums,
-                                  locations = set(["srm-cms.cern.ch"]))
-        testFileA.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                               appFam = "RECO", psetHash = "GIBBERISH",
-                               configContent = "MOREGIBBERISH")
+        testFileA = DBSBufferFile(lfn=makeUUID(), size=1024, events=10,
+                                  checksums=checksums,
+                                  locations=set(["srm-cms.cern.ch"]))
+        testFileA.setAlgorithm(appName="cmsRun", appVer="CMSSW_2_1_8",
+                               appFam="RECO", psetHash="GIBBERISH",
+                               configContent="MOREGIBBERISH")
         testFileA.setDatasetPath(self.testDatasetA)
         testFileA.addRun(Run(2, *[45]))
         testFileA.create()
 
-        testFileB = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  checksums = checksums,
-                                  locations = set(["srm-cms.cern.ch"]))
-        testFileB.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                               appFam = "RECO", psetHash = "GIBBERISH",
-                               configContent = "MOREGIBBERISH")
+        testFileB = DBSBufferFile(lfn=makeUUID(), size=1024, events=10,
+                                  checksums=checksums,
+                                  locations=set(["srm-cms.cern.ch"]))
+        testFileB.setAlgorithm(appName="cmsRun", appVer="CMSSW_2_1_8",
+                               appFam="RECO", psetHash="GIBBERISH",
+                               configContent="MOREGIBBERISH")
         testFileB.setDatasetPath(self.testDatasetA)
         testFileB.addRun(Run(2, *[45]))
         testFileB.create()
 
-        testFileC = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  checksums = checksums,
-                                  locations = set(["srm-cms.cern.ch"]))
-        testFileC.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                               appFam = "RECO", psetHash = "GIBBERISH",
-                               configContent = "MOREGIBBERISH")
+        testFileC = DBSBufferFile(lfn=makeUUID(), size=1024, events=10,
+                                  checksums=checksums,
+                                  locations=set(["srm-cms.cern.ch"]))
+        testFileC.setAlgorithm(appName="cmsRun", appVer="CMSSW_2_1_8",
+                               appFam="RECO", psetHash="GIBBERISH",
+                               configContent="MOREGIBBERISH")
         testFileC.setDatasetPath(self.testDatasetA)
         testFileC.addRun(Run(2, *[45]))
         testFileC.create()
@@ -149,22 +150,22 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         self.testFilesA.append(testFileB)
         self.testFilesA.append(testFileC)
 
-        testFileD = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  checksums = checksums,
-                                  locations = set(["srm-cms.cern.ch"]))
-        testFileD.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                               appFam = "RECO", psetHash = "GIBBERISH",
-                               configContent = "MOREGIBBERISH")
+        testFileD = DBSBufferFile(lfn=makeUUID(), size=1024, events=10,
+                                  checksums=checksums,
+                                  locations=set(["srm-cms.cern.ch"]))
+        testFileD.setAlgorithm(appName="cmsRun", appVer="CMSSW_2_1_8",
+                               appFam="RECO", psetHash="GIBBERISH",
+                               configContent="MOREGIBBERISH")
         testFileD.setDatasetPath(self.testDatasetB)
         testFileD.addRun(Run(2, *[45]))
         testFileD.create()
 
-        testFileE = DBSBufferFile(lfn = makeUUID(), size = 1024, events = 10,
-                                  checksums = checksums,
-                                  locations = set(["srm-cms.cern.ch"]))
-        testFileE.setAlgorithm(appName = "cmsRun", appVer = "CMSSW_2_1_8",
-                               appFam = "RECO", psetHash = "GIBBERISH",
-                               configContent = "MOREGIBBERISH")
+        testFileE = DBSBufferFile(lfn=makeUUID(), size=1024, events=10,
+                                  checksums=checksums,
+                                  locations=set(["srm-cms.cern.ch"]))
+        testFileE.setAlgorithm(appName="cmsRun", appVer="CMSSW_2_1_8",
+                               appFam="RECO", psetHash="GIBBERISH",
+                               configContent="MOREGIBBERISH")
         testFileE.setDatasetPath(self.testDatasetB)
         testFileE.addRun(Run(2, *[45]))
         testFileE.create()
@@ -172,58 +173,58 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         self.testFilesB.append(testFileD)
         self.testFilesB.append(testFileE)
 
-        uploadFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                   logger = myThread.logger,
-                                   dbinterface = myThread.dbi)
-        datasetAction = uploadFactory(classname = "NewDataset")
-        createAction = uploadFactory(classname = "CreateBlocks")
+        uploadFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                   logger=myThread.logger,
+                                   dbinterface=myThread.dbi)
+        datasetAction = uploadFactory(classname="NewDataset")
+        createAction = uploadFactory(classname="CreateBlocks")
 
-        datasetAction.execute(datasetPath = self.testDatasetA)
-        datasetAction.execute(datasetPath = self.testDatasetB)
+        datasetAction.execute(datasetPath=self.testDatasetA)
+        datasetAction.execute(datasetPath=self.testDatasetB)
 
         self.blockAName = self.testDatasetA + "#" + makeUUID()
         self.blockBName = self.testDatasetB + "#" + makeUUID()
 
-        newBlockA = DBSBufferBlock(name = self.blockAName,
-                                   location = "srm-cms.cern.ch",
-                                   datasetpath = None)
+        newBlockA = DBSBufferBlock(name=self.blockAName,
+                                   location="srm-cms.cern.ch",
+                                   datasetpath=None)
         newBlockA.setDataset(self.testDatasetA, 'data', 'VALID')
         newBlockA.status = 'Closed'
 
-        newBlockB = DBSBufferBlock(name = self.blockBName,
-                                   location = "srm-cms.cern.ch",
-                                   datasetpath = None)
+        newBlockB = DBSBufferBlock(name=self.blockBName,
+                                   location="srm-cms.cern.ch",
+                                   datasetpath=None)
         newBlockB.setDataset(self.testDatasetB, 'data', 'VALID')
         newBlockB.status = 'Closed'
 
-        createAction.execute(blocks = [newBlockA, newBlockB])
+        createAction.execute(blocks=[newBlockA, newBlockB])
 
-        bufferFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                   logger = myThread.logger,
-                                   dbinterface = myThread.dbi)
+        bufferFactory = DAOFactory(package="WMComponent.DBS3Buffer",
+                                   logger=myThread.logger,
+                                   dbinterface=myThread.dbi)
 
-        setBlock = bufferFactory(classname = "DBSBufferFiles.SetBlock")
+        setBlock = bufferFactory(classname="DBSBufferFiles.SetBlock")
         setBlock.execute(testFileA["lfn"], self.blockAName)
         setBlock.execute(testFileB["lfn"], self.blockAName)
         setBlock.execute(testFileC["lfn"], self.blockAName)
         setBlock.execute(testFileD["lfn"], self.blockBName)
         setBlock.execute(testFileE["lfn"], self.blockBName)
 
-        fileStatus = bufferFactory(classname = "DBSBufferFiles.SetStatus")
+        fileStatus = bufferFactory(classname="DBSBufferFiles.SetStatus")
         fileStatus.execute(testFileA["lfn"], "GLOBAL")
         fileStatus.execute(testFileB["lfn"], "GLOBAL")
         fileStatus.execute(testFileC["lfn"], "GLOBAL")
         fileStatus.execute(testFileD["lfn"], "GLOBAL")
         fileStatus.execute(testFileE["lfn"], "GLOBAL")
 
-        phedexStatus = bufferFactory(classname = "DBSBufferFiles.SetPhEDExStatus")
+        phedexStatus = bufferFactory(classname="DBSBufferFiles.SetPhEDExStatus")
         phedexStatus.execute(testFileA["lfn"], 1)
         phedexStatus.execute(testFileB["lfn"], 1)
         phedexStatus.execute(testFileC["lfn"], 1)
         phedexStatus.execute(testFileD["lfn"], 1)
         phedexStatus.execute(testFileE["lfn"], 1)
 
-        associateWorkflow = buffer3Factory(classname = "DBSBufferFiles.AssociateWorkflowToFile")
+        associateWorkflow = buffer3Factory(classname="DBSBufferFiles.AssociateWorkflowToFile")
         associateWorkflow.execute(testFileA["lfn"], "BogusRequestA", "BogusTask")
         associateWorkflow.execute(testFileB["lfn"], "BogusRequestA", "BogusTask")
         associateWorkflow.execute(testFileC["lfn"], "BogusRequestA", "BogusTask")
@@ -231,9 +232,9 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         associateWorkflow.execute(testFileE["lfn"], "BogusRequestB", "BogusTask")
 
         # Make the desired subscriptions
-        insertSubAction = buffer3Factory(classname = "NewSubscription")
-        datasetA = DBSBufferDataset(path = self.testDatasetA)
-        datasetB = DBSBufferDataset(path = self.testDatasetB)
+        insertSubAction = buffer3Factory(classname="NewSubscription")
+        datasetA = DBSBufferDataset(path=self.testDatasetA)
+        datasetB = DBSBufferDataset(path=self.testDatasetB)
         workload = WMWorkloadHelper()
         workload.load(os.path.join(getTestBase(), 'WMComponent_t/PhEDExInjector_t/specs/TestWorkload.pkl'))
         insertSubAction.execute(datasetA.exists(), workload.getSubscriptionInformation()[self.testDatasetA])
@@ -275,11 +276,13 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
             self.assertEqual(subInfo["priority"], "normal", "Wrong priority for subscription")
             if site == "T1_UK_RAL_MSS" or site == "T3_CO_Uniandes":
                 self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n",
+                                 "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             elif site == "T1_US_FNAL_MSS":
                 self.assertEqual(subInfo["custodial"], "y", "Wrong custodiality for dataset A at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "n", "Wrong requestOnly for dataset A at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "n",
+                                 "Wrong requestOnly for dataset A at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "y", "Wrong subscription type for dataset A at %s" % subInfo["node"])
             else:
                 self.fail("Dataset A was subscribed  to a wrong site %s" % site)
@@ -296,15 +299,18 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
             self.assertEqual(subInfo["priority"], "high", "Wrong priority for subscription")
             if site == "T1_UK_RAL_MSS" or site == "T2_CH_CERN":
                 self.assertEqual(subInfo["custodial"], "n", "Wrong custodiality for dataset B at %s" % subInfo["node"])
-                self.assertEqual(subInfo["request_only"], "y", "Wrong requestOnly for dataset B at %s" % subInfo["node"])
+                self.assertEqual(subInfo["request_only"], "y",
+                                 "Wrong requestOnly for dataset B at %s" % subInfo["node"])
                 self.assertEqual(subInfo["move"], "n", "Wrong subscription type for dataset B at %s" % subInfo["node"])
             else:
                 self.fail("Dataset B was subscribed to a wrong site %s" % site)
 
         myThread = threading.currentThread()
-        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset_subscription where subscribed = 1")[0].fetchall()
+        result = myThread.dbi.processData("SELECT COUNT(*) FROM dbsbuffer_dataset_subscription where subscribed = 1")[
+            0].fetchall()
         self.assertEqual(result[0][0], 5, "Not all datasets were marked as subscribed")
-        result = myThread.dbi.processData("SELECT site FROM dbsbuffer_dataset_subscription where subscribed = 0")[0].fetchall()
+        result = myThread.dbi.processData("SELECT site FROM dbsbuffer_dataset_subscription where subscribed = 0")[
+            0].fetchall()
         self.assertEqual(result[0][0], "T1_IT_CNAF", "A non-valid CMS site was subscribed")
 
         # Reset and run again and make sure that no duplicate subscriptions are created
@@ -314,6 +320,7 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         self.assertEqual(len(subscriptions[self.testDatasetB]), 2)
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

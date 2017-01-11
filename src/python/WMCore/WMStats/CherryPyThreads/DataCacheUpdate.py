@@ -29,7 +29,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
                                           reqdbCouchApp="ReqMgr")
                 jobData = wmstatsDB.getActiveData(jobInfoFlag = True)
                 DataCache.setlatestJobData(jobData)
-                self.logger.info("DataCache is updated: %s" % len(jobData))
+                self.logger.info("DataCache is updated: %s", len(jobData))
         except Exception as ex:
             self.logger.error(str(ex))
         return

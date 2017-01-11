@@ -54,10 +54,10 @@ class PeriodicWorker(Thread):
         self.duration = duration
         self.logger = logger
         try: 
-            name = func.__class__.__name__
-            print(name)
-        except:
             name = func.__name__
+            print(name)
+        except AttributeError:
+            name = func.__class__.__name__
             print(name)
         Thread.__init__(self, name=name)
         cherrypy.engine.subscribe('start', self.start, priority = 100)

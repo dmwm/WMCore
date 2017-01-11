@@ -49,11 +49,11 @@ class CouchDBCleanup(CherryPyPeriodicTask):
             try:
                 deleted = acdcService.removeFilesetsByCollectionName(req)
                 if deleted == None:
-                    self.logger.warning("request alread deleted %s" % req)
+                    self.logger.warning("request alread deleted %s", req)
                 else:
                     total += len(deleted)
-                    self.logger.info("request %s deleted" % req)
-            except:
-                self.logger.error("request deleted failed: will try again %s" % req)
-        self.logger.info("total %s requests deleted" % total)        
+                    self.logger.info("request %s deleted", req)
+            except Exception as ex:
+                self.logger.error("request deleted failed: will try again %s: %s", req, str(ex))
+        self.logger.info("total %s requests deleted", total)        
         return

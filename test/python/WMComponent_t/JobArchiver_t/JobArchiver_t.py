@@ -16,7 +16,6 @@ from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset

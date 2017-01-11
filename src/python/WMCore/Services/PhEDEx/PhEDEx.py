@@ -6,7 +6,6 @@ from WMCore.Services.Service import Service
 
 
 class PhEDEx(Service):
-
     """
     API for dealing with retrieving information from PhEDEx DataService
 
@@ -14,7 +13,7 @@ class PhEDEx(Service):
     https://cmsweb.cern.ch/phedex/datasvc/doc
     """
 
-    def __init__(self, dict = None, responseType = "json", secure = True):
+    def __init__(self, dict=None, responseType="json", secure=True):
         """
         responseType will be either xml or json
         """
@@ -30,8 +29,8 @@ class PhEDEx(Service):
         dict.setdefault('cacheduration', 0)
         Service.__init__(self, dict)
 
-    def _getResult(self, callname, clearCache = False,
-                   args = None, verb = "POST"):
+    def _getResult(self, callname, clearCache=False,
+                   args=None, verb="POST"):
         """
         _getResult_
 
@@ -44,9 +43,9 @@ class PhEDEx(Service):
         # make base file name from call name.
         file = callname.replace("/", "_")
         if clearCache:
-            self.clearCache(file, args, verb = verb)
+            self.clearCache(file, args, verb=verb)
 
-        f = self.refreshCache(file, callname, args, verb = verb)
+        f = self.refreshCache(file, callname, args, verb=verb)
         result = f.read()
         f.close()
 
@@ -55,7 +54,7 @@ class PhEDEx(Service):
 
         return result
 
-    def injectBlocks(self, node, xmlData, strict = 1):
+    def injectBlocks(self, node, xmlData, strict=1):
 
         """
         _injectBlocksToPhedex_
@@ -75,7 +74,7 @@ class PhEDEx(Service):
         args['data'] = xmlData
         args['strict'] = strict
 
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args=args, verb="POST")
 
     def subscribe(self, subscription, xmlData):
         """
@@ -101,7 +100,7 @@ class PhEDEx(Service):
         args['group'] = subscription.group
         args['request_only'] = subscription.request_only
 
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args=args, verb="POST")
 
     def delete(self, deletion, xmlData):
         """
@@ -123,7 +122,7 @@ class PhEDEx(Service):
         args['rm_subscriptions'] = deletion.subscriptions
         args['comments'] = deletion.comments
 
-        return self._getResult(callname, args = args, verb = "POST")
+        return self._getResult(callname, args=args, verb="POST")
 
     def updateRequest(self, requestId, decision, nodes):
         """
@@ -131,14 +130,14 @@ class PhEDEx(Service):
 
         Update a request approving/disapproving it.
         """
-        if type(nodes) == str:
+        if isinstance(nodes, basestring):
             nodes = [nodes]
         args = {}
         args['decision'] = decision.lower()
         args['request'] = requestId
         args['node'] = nodes
 
-        return self._getResult('updaterequest', args = args, verb = "POST")
+        return self._getResult('updaterequest', args=args, verb="POST")
 
     def getReplicaInfoForBlocks(self, **kwargs):
         """
@@ -164,7 +163,7 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        return self._getResult(callname, args = kwargs)
+        return self._getResult(callname, args=kwargs)
 
     def getReplicaInfoForFiles(self, **args):
         """
@@ -193,7 +192,7 @@ class PhEDEx(Service):
         group          group name.  default is to return replicas for any group.
         lfn            logical file nam
         """
-        return self._getResult("filereplicas", args = args)
+        return self._getResult("filereplicas", args=args)
 
     def subscriptions(self, **kwargs):
         """
@@ -219,7 +218,7 @@ class PhEDEx(Service):
         """
 
         callname = 'subscriptions'
-        return self._getResult(callname, args = kwargs, verb="GET")
+        return self._getResult(callname, args=kwargs, verb="GET")
 
     def getSubscriptionMapping(self, *dataItems, **kwargs):
         """
@@ -240,10 +239,10 @@ class PhEDEx(Service):
         inputs = defaultdict(set)
         result = defaultdict(set)
 
-        kwargs.setdefault('suspended', 'n') # active subscriptions by default
-        kwargs['collapse'] = 'n'            # queries for block level subscriptions as well
+        kwargs.setdefault('suspended', 'n')  # active subscriptions by default
+        kwargs['collapse'] = 'n'  # queries for block level subscriptions as well
 
-        dataItems = list(set(dataItems)) # force unique items
+        dataItems = list(set(dataItems))  # force unique items
         datasetsOnly = set()
         # get dict of dataset : (blocks or dataset)
         for item in dataItems:
@@ -269,29 +268,28 @@ class PhEDEx(Service):
                         # dataset level subscription
                         nodes = [x['node'] for x in dset['subscription']
                                  if kwargs['suspended'] == 'either' or \
-                                            x['suspended'] == kwargs['suspended']]
+                                 x['suspended'] == kwargs['suspended']]
                         # update locations for all items in this dataset
                         for item in items:
                             result[item].update(nodes)
                         if dsname in datasetsOnly:
                             result[dsname].update(nodes)
 
-                    #if we have a block we must check for block level subscription also
+                    # if we have a block we must check for block level subscription also
                     # combine with original query when can give both dataset and block
                     if 'block' in dset:
                         for block in dset['block']:
                             nodes = [x['node'] for x in block['subscription']
                                      if kwargs['suspended'] == 'either' or \
-                                        x['suspended'] == kwargs['suspended']]
+                                     x['suspended'] == kwargs['suspended']]
                             # update locations for this block and/or dataset
                             if dsname in datasetsOnly:
                                 result[dsname].update(nodes)
                             if block['name'] in items:
                                 result[block['name']].update(nodes)
             except Exception as ex:
-                logging.error('Error looking up phedex subscription for %s: %s' % (dsname, str(ex)))
+                logging.error('Error looking up phedex subscription for %s: %s', dsname, str(ex))
         return result
-
 
     def getNodeMap(self):
         """
@@ -305,8 +303,7 @@ class PhEDEx(Service):
           technology - Node technology, e.g. 'Castor'
           id         - Node id
         """
-        return self._getResult("nodes", args = None)
-
+        return self._getResult("nodes", args=None)
 
     def getBestNodeName(self, se, nodeNameMap=None):
         """
@@ -315,7 +312,7 @@ class PhEDEx(Service):
         Convert SE to Name giving back one of the following types:
         Buffer, MSS, and Disk (in order). See 2817
         """
-        if nodeNameMap==None:
+        if nodeNameMap == None:
             nodeNameMap = self.getNodeMap()
         nodeList = nodeNameMap['phedex']['node']
         ret = None
@@ -328,7 +325,6 @@ class PhEDEx(Service):
                 elif node['kind'] == 'Disk' and ret == None:
                     ret = node['name']
         return ret
-
 
     def getNodeNames(self, se):
         """
@@ -358,7 +354,7 @@ class PhEDEx(Service):
         return None
 
     def getNodeTFC(self, node):
-        data = self._getResult('tfc', args = {'node':node}, verb="GET")
+        data = self._getResult('tfc', args={'node': node}, verb="GET")
         return data
 
     def getAuth(self, ability):
@@ -368,7 +364,7 @@ class PhEDEx(Service):
         Determine whether or not the users has permissions to perform the
         given ability.
         """
-        data = self._getResult('auth', args = {'ability':ability}, verb="GET")
+        data = self._getResult('auth', args={'ability': ability}, verb="GET")
         node = data['phedex']['auth'][0].get('node', None)
 
         if node:
@@ -376,16 +372,19 @@ class PhEDEx(Service):
         else:
             return False
 
-    def getPFN(self, nodes=[], lfns=[], destination=None, protocol='srmv2', custodial='n'):
+    def getPFN(self, nodes=None, lfns=None, destination=None, protocol='srmv2', custodial='n'):
         """
         Get the PFN for an LFN on a node. Return a dict with a tuple of the input as the key
         and the pfn as the value.
         """
+        nodes = nodes or []
+        lfns = lfns or []
+
         input_dict = {'node': nodes, 'lfn': lfns, 'protocol': protocol, 'custodial': custodial}
         if destination:
             input_dict['destination'] = destination
 
-        data = self._getResult('lfn2pfn', args = input_dict, verb = 'GET')
+        data = self._getResult('lfn2pfn', args=input_dict, verb='GET')
         result_dict = {}
 
         if self.responseType == "json":
@@ -397,7 +396,6 @@ class PhEDEx(Service):
             for mapping in phedex_dom.getElementsByTagName("mapping"):
                 key = (mapping.getAttribute('node'), mapping.getAttribute('lfn'))
                 result_dict[key] = mapping.getAttribute('pfn')
-
 
         return result_dict
 
@@ -426,7 +424,7 @@ class PhEDEx(Service):
         ** when both 'block' and 'dataset' are present, they form a logical disjunction (ie. or)
         """
         callname = 'requestlist'
-        return self._getResult(callname, args = kwargs, verb = "GET")
+        return self._getResult(callname, args=kwargs, verb="GET")
 
     def getTransferRequests(self, **kwargs):
         """
@@ -446,13 +444,13 @@ class PhEDEx(Service):
         ** without any input, the default "create_since" is set to 24 hours ago
         """
         callname = 'transferrequests'
-        return self._getResult(callname, args = kwargs, verb = "GET")
+        return self._getResult(callname, args=kwargs, verb="GET")
 
     def _testNonExistentInEmulator(self):
         # This is a dummy function to use in unittests to make sure the right class is
         # instantiated
         pass
-    
+
     def getInjectedFiles(self, blockFileDict):
         """
         take dict of the input
@@ -464,7 +462,7 @@ class PhEDEx(Service):
         """
         injectedFiles = []
         for block in blockFileDict:
-            result = self._getResult('data', args = {'block' : block}, verb = 'GET')
+            result = self._getResult('data', args={'block': block}, verb='GET')
             for dbs in result['phedex']['dbs']:
                 for dataset in dbs['dataset']:
                     blockChunk = dataset['block']
@@ -473,7 +471,7 @@ class PhEDEx(Service):
                             if fileInfo['lfn'] in blockFileDict[block]:
                                 injectedFiles.append(fileInfo['lfn'])
         return injectedFiles
-    
+
     def getReplicaSEForBlocks(self, **kwargs):
         """
         _blockreplicasSE_
@@ -500,20 +498,20 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        response = self._getResult(callname, args = kwargs)
-        
+        response = self._getResult(callname, args=kwargs)
+
         blockSE = dict()
 
         blocksInfo = response['phedex']['block']
         if not blocksInfo:
             return {}
-        
+
         for blockInfo in blocksInfo:
             se = set()
             for replica in blockInfo['replica']:
                 se.add(replica['se'])
             blockSE[blockInfo['name']] = list(se)
-        
+
         return blockSE
 
     def getReplicaPhEDExNodesForBlocks(self, **kwargs):
@@ -542,7 +540,7 @@ class PhEDEx(Service):
         """
 
         callname = 'blockreplicas'
-        response = self._getResult(callname, args = kwargs)
+        response = self._getResult(callname, args=kwargs)
 
         blockNodes = dict()
 

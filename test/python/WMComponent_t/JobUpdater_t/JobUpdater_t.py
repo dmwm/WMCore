@@ -38,18 +38,17 @@ class JobUpdaterTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMCore.BossAir"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS", "WMCore.BossAir"],
+                                useDefault=False)
         self.testInit.setupCouch('workqueue_t', 'WorkQueue')
         self.testInit.setupCouch('workqueue_inbox_t', 'WorkQueue')
-        self.testDir = self.testInit.generateWorkDir(deleteOnDestruction = False)
+        self.testDir = self.testInit.generateWorkDir(deleteOnDestruction=False)
 
         myThread = threading.currentThread()
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = logging,
-                                     dbinterface = myThread.dbi)
-        self.listWorkflows = self.daoFactory(classname = "Workflow.ListForSubmitter")
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=logging,
+                                     dbinterface=myThread.dbi)
+        self.listWorkflows = self.daoFactory(classname="Workflow.ListForSubmitter")
         self.configFile = EmulatorSetup.setupWMAgentConfig()
 
     def tearDown(self):
@@ -95,8 +94,8 @@ class JobUpdaterTest(unittest.TestCase):
         config.BossAir.nCondorProcesses = 1
         config.BossAir.section_('MockPlugin')
         config.BossAir.MockPlugin.fakeReport = os.path.join(getTestBase(),
-                                                         'WMComponent_t/JobAccountant_t/fwjrs',
-                                                         'MergedSkimSuccess.pkl')
+                                                            'WMComponent_t/JobAccountant_t/fwjrs',
+                                                            'MergedSkimSuccess.pkl')
 
         # WorkQueue
         config.component_('WorkQueueManager')
@@ -112,10 +111,10 @@ class JobUpdaterTest(unittest.TestCase):
 
         Stuff WMBS with workflows
         """
-        workflow = Workflow(spec = 'spec.xml', name = 'ReRecoTest_v0Emulator',
-                            task = '/ReRecoTest_v0Emulator/Test', priority = 10)
+        workflow = Workflow(spec='spec.xml', name='ReRecoTest_v0Emulator',
+                            task='/ReRecoTest_v0Emulator/Test', priority=10)
         workflow.create()
-        inputFileset = Fileset(name = 'TestFileset')
+        inputFileset = Fileset(name='TestFileset')
         inputFileset.create()
         subscription = Subscription(inputFileset, workflow)
         subscription.create()

@@ -47,7 +47,7 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         try:
             shutil.rmtree(self.cacheDir)
             self.specGenerator.removeSpecs()
-        except:
+        except Exception:
             pass
 
     def createReRecoSpec(self, numOfSpec, kind="spec"):

@@ -5,7 +5,7 @@ A system can depend on packages or other systems.
 If a package ends with a + include all subpackages.
 """
 dependencies = {'wmc-rest':{
-                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
+                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch', 'wmc-httpd'],
                         'packages' : ['WMCore.REST'],
                         'modules': ['WMCore.Configuration'],
                         'systems':['wmc-base']
@@ -90,7 +90,7 @@ dependencies = {'wmc-rest':{
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
-                                     'WMCore.Credential', 'WMCore.WorkerThreads', 
+                                     'WMCore.Credential', 'WMCore.WorkerThreads',
                                      'WMCore.ACDC', 'WMCore.Alerts+',
                                      'WMCore.Services+'],
                         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',

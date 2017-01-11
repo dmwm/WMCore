@@ -7,7 +7,6 @@ from __future__ import print_function
 import unittest
 
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 class SiteDBTest(EmulatedUnitTestCase):
@@ -23,18 +22,7 @@ class SiteDBTest(EmulatedUnitTestCase):
         Setup for unit tests
         """
         super(SiteDBTest, self).setUp()
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=True)
         self.mySiteDB = SiteDBJSON()
-
-
-    def tearDown(self):
-        """
-        _tearDown_
-        """
-        super(SiteDBTest, self).tearDown()
-        EmulatorHelper.resetEmulators()
-        return
-
 
     def testCmsNametoPhEDExNode(self):
         """

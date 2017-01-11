@@ -28,12 +28,6 @@ class WorkQueueManagerTest(WorkQueueTestCase):
         self.schema = []
         self.couchApps = ["WorkQueue"]
 
-    def setUp(self):
-        WorkQueueTestCase.setUp(self)
-
-    def tearDown(self):
-        WorkQueueTestCase.tearDown(self)
-
     def getConfig(self):
         """
         _createConfig_

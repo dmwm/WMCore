@@ -2,7 +2,7 @@
 """
     WorkQueue tests
 """
-from __future__ import (absolute_import, print_function, division)
+from __future__ import absolute_import, division, print_function
 
 import cProfile
 import pstats
@@ -12,7 +12,6 @@ import unittest
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
 
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import SITES as DUMMY_SITES
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
@@ -29,7 +28,6 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         If we dont have a wmspec file create one
         """
 
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False, requestMgr=True)
         WorkQueueTestCase.setUp(self)
 
         self.cacheDir = tempfile.mkdtemp()
@@ -51,7 +49,6 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
             self.specGenerator.removeSpecs()
         except:
             pass
-        EmulatorHelper.resetEmulators()
 
     def createReRecoSpec(self, numOfSpec, kind="spec"):
         specs = []

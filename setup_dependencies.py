@@ -101,8 +101,8 @@ dependencies = {'wmc-rest':{
                 'crabcache':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
                         'systems': ['wmc-rest'],
-                        'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service', 'WMCore.Services.pycurl_manager',
-                                    'WMCore.Services.EmulatorSwitch'],
+                        'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service',
+                                    'WMCore.Services.pycurl_manager', ],
                         },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+',
@@ -115,7 +115,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+', 'WMCore.Services.DBS+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
-                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', 'WMCore.Services.EmulatorSwitch'],
+                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager',],
                         },
                 'crabtaskworker':{
                         'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',

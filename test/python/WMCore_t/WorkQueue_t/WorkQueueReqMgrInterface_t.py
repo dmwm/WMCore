@@ -4,27 +4,14 @@
 WorkQueueRegMgrInterface test
 """
 
-import os
-import logging
-import threading
 import unittest
-import time
-import shutil
-import WMCore.WMInit
-from subprocess import Popen, PIPE
-import types
-
-from WMCore.Agent.Configuration import loadConfigurationFile
-
-from WMCore.WorkQueue.WorkQueue import WorkQueue, globalQueue, localQueue
-from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
-
-from WMQuality.Emulators.ReqMgrClient.ReqMgr \
-    import ReqMgr as fakeReqMgr
 
 from WMCore_t.WorkQueue_t.WorkQueueTestCase import WorkQueueTestCase
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
+
+from WMCore.WorkQueue.WorkQueue import globalQueue, localQueue
 from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
+from WMQuality.Emulators.DataBlockGenerator.Globals import GlobalParams
+from WMQuality.Emulators.ReqMgrClient.ReqMgr import ReqMgr as fakeReqMgr
 
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
@@ -42,8 +29,6 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
     def setUp(self):
         WorkQueueTestCase.setUp(self)
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
-                                    siteDB = True, requestMgr = False)
         GlobalParams.resetParams()
         self.globalQCouchUrl = "%s/%s" % (self.testInit.couchUrl, self.globalQDB)
         self.localQCouchUrl =  "%s/%s" % (self.testInit.couchUrl,
@@ -51,7 +36,6 @@ class WorkQueueReqMgrInterfaceTest(WorkQueueTestCase):
 
     def tearDown(self):
         WorkQueueTestCase.tearDown(self)
-        EmulatorHelper.resetEmulators()
         GlobalParams.resetParams()
 
     def getConfig(self):

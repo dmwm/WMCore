@@ -15,7 +15,6 @@ from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.Services.UUID import makeUUID
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
@@ -47,7 +46,6 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         super(PhEDExInjectorSubscriberTest, self).setUp()
         self.phedexURL = "https://bogus.cern.ch/bogus"
         self.dbsURL = "https://bogus.cern.ch/bogus"
-        EmulatorHelper.setEmulators(phedex=False, dbs=False, siteDB=False)
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
@@ -71,7 +69,6 @@ class PhEDExInjectorSubscriberTest(EmulatedUnitTestCase):
         Delete the database.
         """
         self.testInit.clearDatabase()
-        EmulatorHelper.resetEmulators()
         super(PhEDExInjectorSubscriberTest, self).tearDown()
 
     def createConfig(self):

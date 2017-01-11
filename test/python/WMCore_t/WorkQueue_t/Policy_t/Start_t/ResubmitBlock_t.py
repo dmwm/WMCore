@@ -18,7 +18,6 @@ from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
 from WMCore.GroupUser.User import makeUser
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.ResubmitBlock import ResubmitBlock
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoWorkError, WorkQueueWMSpecError
@@ -79,7 +78,6 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         super(ResubmitBlockTest, self).tearDown()
 
         self.testInit.tearDownCouch()
-        EmulatorHelper.resetEmulators()
         return
 
     def getProcessingACDCSpec(self, splittingAlgo='LumiBased', splittingArgs=None, setLocationFlag=False):

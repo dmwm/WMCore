@@ -11,7 +11,6 @@ import pstats
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from .WorkQueueTestCase import WorkQueueTestCase
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
 
 class WorkQueueProfileTest(WorkQueueTestCase):
     """
@@ -29,8 +28,6 @@ class WorkQueueProfileTest(WorkQueueTestCase):
         using emulator generated spec which doesn't include
         couchDB access and cmssw access
         """
-        EmulatorHelper.setEmulators(phedex = True, dbs = True,
-                                    siteDB = True, requestMgr = True)
         WorkQueueTestCase.setUp(self)
 
         self.cacheDir = tempfile.mkdtemp()
@@ -50,7 +47,6 @@ class WorkQueueProfileTest(WorkQueueTestCase):
             self.specGenerator.removeSpecs()
         except:
             pass
-        EmulatorHelper.resetEmulators()
 
     def createReRecoSpec(self, numOfSpec, type = "spec"):
         specs = []

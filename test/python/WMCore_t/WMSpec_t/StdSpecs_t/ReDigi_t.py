@@ -5,22 +5,18 @@ _ReDigi_t_
 Unit tests for the ReDigi workflow.
 """
 
-import unittest
 import os
-import threading
+import unittest
 
+from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-
-from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMSpec.StdSpecs.ReDigi import ReDigiWorkloadFactory
-
-from WMQuality.TestInitCouchApp import TestInitCouchApp
-from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.Services.EmulatorSwitch import EmulatorHelper
+from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import PILEUP_DATASET
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
 def injectReDigiConfigs(configDatabase, combinedStepOne = False):
@@ -103,7 +99,6 @@ class ReDigiTest(EmulatedUnitTestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
-        EmulatorHelper.resetEmulators()
         super(ReDigiTest, self).tearDown()
         return
 

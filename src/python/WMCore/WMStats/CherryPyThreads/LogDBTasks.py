@@ -3,8 +3,10 @@ Created on Aug 13, 2014
 
 @author: sryu
 '''
+from __future__ import (division, print_function)
+
+from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.WMStats.CherryPyThreads.CherryPyPeriodicTask import CherryPyPeriodicTask
 
 class LogDBTasks(CherryPyPeriodicTask):
 

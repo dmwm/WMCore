@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0102, C0301
-# W0102: We want to pass blank lists by default
+#pylint: disable=C0301
 # for the whitelist and the blacklist
 # C0301: I'm ignoring this because breaking up error messages is painful
 """
@@ -88,15 +87,12 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             if not os.path.exists(self.packageDir):
                 os.makedirs(self.packageDir)
-        except Exception as ex:
+        except OSError as ex:
             msg = "Error while trying to create packageDir %s\n!"
             msg += str(ex)
             logging.error(msg)
-            try:
-                logging.debug("PackageDir: %s", self.packageDir)
-                logging.debug("Config: %s", config)
-            except:
-                pass
+            logging.debug("PackageDir: %s", self.packageDir)
+            logging.debug("Config: %s", config)
             raise JobSubmitterPollerException(msg)
 
 
@@ -109,7 +105,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-        
+
         self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
         self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
         return
@@ -240,8 +236,8 @@ class JobSubmitterPoller(BaseWorkerThread):
             newJobs = []
             dbJobs = self.cachedJobIDs
             abortedAndForceCompleteRequests = []
-            logging.info("Skipping cache update to be submitted. (%s job in cache)" % len(dbJobs))
-        
+            logging.info("Skipping cache update to be submitted. (%s job in cache)", len(dbJobs))
+
         logging.info("Determining possible sites for new jobs...")
         jobCount = 0
         for newJob in newJobs:
@@ -249,7 +245,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             if (newJob['request_name'] in abortedAndForceCompleteRequests) and \
                (newJob['type'] not in ['LogCollect', "Cleanup"]):
                 continue
-            
+
             jobID = newJob['id']
             dbJobs.add(jobID)
             if jobID in self.cachedJobIDs:
@@ -290,6 +286,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             # also check if there is at least one site left to run the job
             if len(possibleLocations) == 0:
                 newJob['name'] = loadedJob['name']
+                newJob['fileLocations'] = loadedJob.get('fileLocations', [])
+                newJob['siteWhitelist'] = loadedJob.get('siteWhitelist', [])
+                newJob['siteBlacklist'] = loadedJob.get('siteBlacklist', [])
                 badJobs[71101].append(newJob)
                 continue
             else:
@@ -385,7 +384,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
-        
+ 
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
         jobIDsToPurge = set() 
@@ -427,7 +426,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
             elif exitCode in [71101]:
                 # there is no possible site 
-                if "fileLocations" in job:
+                if job.get("fileLocations"):
                     job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
                                          ": file locations: " + ', '.join(job['fileLocations']) +
                                          ": site white list: " + ', '.join(job['siteWhitelist']) +

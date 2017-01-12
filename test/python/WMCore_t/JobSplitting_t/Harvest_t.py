@@ -76,15 +76,15 @@ class HarvestTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
 
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"])
+        self.testInit.setSchema(customModules=["WMCore.WMBS"])
 
-        self.splitterFactory = SplitterFactory(package = "WMCore.JobSplitting")
+        self.splitterFactory = SplitterFactory(package="WMCore.JobSplitting")
 
         myThread = threading.currentThread()
         self.myThread = myThread
-        daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = logging,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.WMBS",
+                                logger=logging,
+                                dbinterface=myThread.dbi)
         self.WMBSFactory = daoFactory
 
         config = self.getConfig()
@@ -95,22 +95,22 @@ class HarvestTest(unittest.TestCase):
         myResourceControl.insertSite("T1_US_FNAL", 10, 20, "T3_US_FNALLPC", "T1_US_FNAL")
         myResourceControl.insertSite("T2_CH_CERN", 10, 20, "T2_CH_CERN", "T2_CH_CERN")
 
-        self.fileset1 = Fileset(name = "TestFileset1")
+        self.fileset1 = Fileset(name="TestFileset1")
         for fileNum in range(11):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(1,*[1]))
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(1, *[1]))
             newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
 
         self.fileset1.create()
 
-        workflow1 = Workflow(spec = "spec.xml", owner = "hufnagel", name = "TestWorkflow1", task="Test")
+        workflow1 = Workflow(spec="spec.xml", owner="hufnagel", name="TestWorkflow1", task="Test")
         workflow1.create()
 
-        self.subscription1  = Subscription(fileset = self.fileset1,
-                                           workflow = workflow1,
-                                           split_algo = "Harvest",
-                                           type = "Harvesting")
+        self.subscription1 = Subscription(fileset=self.fileset1,
+                                          workflow=workflow1,
+                                          split_algo="Harvest",
+                                          type="Harvesting")
 
         self.subscription1.create()
         self.configFile = EmulatorSetup.setupWMAgentConfig()
@@ -137,16 +137,16 @@ class HarvestTest(unittest.TestCase):
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.socket     = os.getenv("DBSOCK")
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
 
         # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL', None)
-        config.JobStateMachine.couchDBName     = 'wmagent_jobdump'
+        config.JobStateMachine.couchurl = os.getenv('COUCHURL', None)
+        config.JobStateMachine.couchDBName = 'wmagent_jobdump'
 
         return config
 
-    def finishJobs(self, jobGroups, subscription = None):
+    def finishJobs(self, jobGroups, subscription=None):
         """
         _finishJobs_
 
@@ -173,11 +173,12 @@ class HarvestTest(unittest.TestCase):
         """
         self.assertEqual(self.fileset1.open, True, "Fileset is closed. Shouldn't")
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
 
         jobGroups = jobFactory()
 
-        self.assertEqual(len(jobGroups), 0 , "We got 1 or more jobGroups with an open fileset and no periodic configuration")
+        self.assertEqual(len(jobGroups), 0,
+                         "We got 1 or more jobGroups with an open fileset and no periodic configuration")
 
         self.fileset1.markOpen(False)
         self.assertEqual(self.fileset1.open, False, "Fileset is opened, why?")
@@ -186,10 +187,11 @@ class HarvestTest(unittest.TestCase):
         # we don't want to fire another jobs while previous are running (output is integrating whatever  input)
         # TODO : The above one we can do when all is done. Not priority
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
         jobGroups = jobFactory()
 
-        self.assertEqual(len(jobGroups), 1 , "Harvest jobsplitter didn't create a single jobGroup after the fileset was closed")
+        self.assertEqual(len(jobGroups), 1,
+                         "Harvest jobsplitter didn't create a single jobGroup after the fileset was closed")
 
         return
 
@@ -201,60 +203,62 @@ class HarvestTest(unittest.TestCase):
         self.assertEqual(self.fileset1.open, True, "Fileset is not open, not testing periodic here")
         # Test timeout (5s for this first test)
         # there should be no acquired files, if there are, shouldn't be a job
-        #self.subscription1.acquireFiles(self.subscription1.availableFiles().pop())
+        # self.subscription1.acquireFiles(self.subscription1.availableFiles().pop())
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 3)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=3)
 
-        self.assertEqual(len(jobGroups), 1 , "Didn't created the first periodic job when there were acquired files")
+        self.assertEqual(len(jobGroups), 1, "Didn't created the first periodic job when there were acquired files")
 
         # For the whole thing to work, faking the first job finishing, and putting the files as complete
         self.finishJobs(jobGroups)
 
         # Adding more of files, so we have new stuff to process
-        for fileNum in range(12,24):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(1,*[1]))
+        for fileNum in range(12, 24):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(1, *[1]))
             newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
         # Testing that it doesn't create a job unless the delay is past
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
-        self.assertEqual(len(jobGroups), 0 , "Created one or more job, when there were non-acquired file and the period is not passed by")
+        self.assertEqual(len(jobGroups), 0,
+                         "Created one or more job, when there were non-acquired file and the period is not passed by")
 
         time.sleep(2)
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
-        self.assertEqual(len(jobGroups), 1 , "Didn't created one or more job, and there weren't and the period is passed by")
+        self.assertEqual(len(jobGroups), 1,
+                         "Didn't created one or more job, and there weren't and the period is passed by")
 
         # Finishing out previous jobs
         self.finishJobs(jobGroups)
 
         # Adding more of files, so we have new stuff to process
-        for fileNum in range(26,36):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(1,*[1]))
+        for fileNum in range(26, 36):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(1, *[1]))
             newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
         # Trying to create another job just afterwards, it shouldn't, because it should respect the configured delay
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
-        self.assertEqual(len(jobGroups), 0 , "Created one or more job, there are new files, but the delay is not past")
+        self.assertEqual(len(jobGroups), 0, "Created one or more job, there are new files, but the delay is not past")
 
         time.sleep(2)
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
-        self.assertEqual(len(jobGroups), 1 , "Didn't created one or more job, there are new files and the delay is past")
+        self.assertEqual(len(jobGroups), 1, "Didn't created one or more job, there are new files and the delay is past")
 
         # Last check is whether the job gets all the files or not
 
@@ -266,16 +270,16 @@ class HarvestTest(unittest.TestCase):
         self.finishJobs(jobGroups)
 
         # Adding files for the first location
-        for fileNum in range(38,48):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(1,*[1]))
+        for fileNum in range(38, 48):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(1, *[1]))
             newFile.setLocation('T1_US_FNAL_Disk')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
         # Then another location
-        for fileNum in range(50,56):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(1,*[1]))
+        for fileNum in range(50, 56):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(1, *[1]))
             newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
@@ -283,10 +287,10 @@ class HarvestTest(unittest.TestCase):
         # We should have jobs in both locations
         time.sleep(2)
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
-        self.assertEqual(len(jobGroups[0].getJobs()), 2 , "We didn't get 2 jobs for 2 locations")
+        self.assertEqual(len(jobGroups[0].getJobs()), 2, "We didn't get 2 jobs for 2 locations")
 
         firstJobLocation = jobGroups[0].getJobs()[0].getFileLocations()[0]
         secondJobLocation = jobGroups[0].getJobs()[1].getFileLocations()[0]
@@ -296,31 +300,31 @@ class HarvestTest(unittest.TestCase):
 
         self.finishJobs(jobGroups)
 
-        for fileNum in range(60,65):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(2,*[2]))
+        for fileNum in range(60, 65):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(2, *[2]))
             newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
-        for fileNum in range(70,75):
-            newFile = File("/some/file/name%d" % fileNum, size = 1000, events = 100)
-            newFile.addRun(Run(3,*[3]))
+        for fileNum in range(70, 75):
+            newFile = File("/some/file/name%d" % fileNum, size=1000, events=100)
+            newFile.addRun(Run(3, *[3]))
             newFile.setLocation('T2_CH_CERN')
             self.fileset1.addFile(newFile)
         self.fileset1.commit()
 
         time.sleep(2)
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = self.subscription1)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=self.subscription1)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
 
         # This is one of the most "complicated" tests so worth to comment, 4 jobs should be created
         # 1 - all previous files from SomeSE and run = 1 (a lot, like ~45)
         # 2 - Few files from SomeSE3, Run = 1
         # 3 - Few files from SomeSE3, Run = 2
         # 4 - Few files from SomeSE3, Run = 3
-        self.assertEqual(len(jobGroups[0].getJobs()), 4 , "We didn't get 4 jobs for adding 2 different runs to SomeSE3")
+        self.assertEqual(len(jobGroups[0].getJobs()), 4, "We didn't get 4 jobs for adding 2 different runs to SomeSE3")
 
         return
 
@@ -333,37 +337,37 @@ class HarvestTest(unittest.TestCase):
         Note that in this test run are splitted between sites,
         in real life that MUST NOT happen we still don't support that.
         """
-        multipleFilesFileset = Fileset(name = "TestFileset")
+        multipleFilesFileset = Fileset(name="TestFileset")
 
-        newFile = File("/some/file/test1", size = 1000, events = 100)
-        newFile.addRun(Run(1,*[1,3,4,5,6,7]))
-        newFile.addRun(Run(2,*[1,2,4,5,6,7]))
+        newFile = File("/some/file/test1", size=1000, events=100)
+        newFile.addRun(Run(1, *[1, 3, 4, 5, 6, 7]))
+        newFile.addRun(Run(2, *[1, 2, 4, 5, 6, 7]))
         newFile.setLocation('T1_US_FNAL_Disk')
         multipleFilesFileset.addFile(newFile)
-        newFile = File("/some/file/test2", size = 1000, events = 100)
-        newFile.addRun(Run(1,*[2,8]))
-        newFile.addRun(Run(2,*[3,8]))
+        newFile = File("/some/file/test2", size=1000, events=100)
+        newFile.addRun(Run(1, *[2, 8]))
+        newFile.addRun(Run(2, *[3, 8]))
         newFile.setLocation('T2_CH_CERN')
         multipleFilesFileset.addFile(newFile)
         multipleFilesFileset.create()
 
-        harvestingWorkflow = Workflow(spec = "spec.xml",
-                                      owner = "hufnagel",
-                                      name = "TestWorkflow",
+        harvestingWorkflow = Workflow(spec="spec.xml",
+                                      owner="hufnagel",
+                                      name="TestWorkflow",
                                       task="Test")
         harvestingWorkflow.create()
 
-        harvestSub  = Subscription(fileset = multipleFilesFileset,
-                                   workflow = harvestingWorkflow,
-                                   split_algo = "Harvest",
-                                   type = "Harvesting")
+        harvestSub = Subscription(fileset=multipleFilesFileset,
+                                  workflow=harvestingWorkflow,
+                                  split_algo="Harvest",
+                                  type="Harvesting")
         harvestSub.create()
 
-        jobFactory = self.splitterFactory(package = "WMCore.WMBS", subscription = harvestSub)
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobFactory = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSub)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
         self.assertEqual(len(jobGroups), 1, "A single job group was not created")
         self.assertEqual(len(jobGroups[0].getJobs()), 4,
-                             "Four jobs were not created")
+                         "Four jobs were not created")
 
         for job in jobGroups[0].getJobs():
             runs = job['mask'].getRunAndLumis()
@@ -377,15 +381,15 @@ class HarvestTest(unittest.TestCase):
 
         self.finishJobs(jobGroups, harvestSub)
 
-        newFile = File("/some/file/test3", size = 1000, events = 100)
-        newFile.addRun(Run(1,*range(9,15)))
+        newFile = File("/some/file/test3", size=1000, events=100)
+        newFile.addRun(Run(1, *range(9, 15)))
         newFile.setLocation('T2_CH_CERN')
         multipleFilesFileset.addFile(newFile)
         multipleFilesFileset.commit()
 
         time.sleep(2)
 
-        jobGroups = jobFactory(periodic_harvest_interval = 2)
+        jobGroups = jobFactory(periodic_harvest_interval=2)
         self.assertEqual(len(jobGroups), 1, "A single job group was not created")
         self.assertEqual(len(jobGroups[0].getJobs()), 4, "Four jobs were not created")
 
@@ -399,28 +403,28 @@ class HarvestTest(unittest.TestCase):
                 for lumi in range(lumiPair[0], lumiPair[1] + 1):
                     self.assertTrue((run, lumi) in ll, "All of %s not in %s" % (lumiPair, ll))
 
-        harvestingWorkflowSib = Workflow(spec = "spec.xml",
-                                         owner = "hufnagel",
-                                         name = "TestWorkflowSib",
+        harvestingWorkflowSib = Workflow(spec="spec.xml",
+                                         owner="hufnagel",
+                                         name="TestWorkflowSib",
                                          task="TestSib")
         harvestingWorkflowSib.create()
 
-        harvestSubSib  = Subscription(fileset = multipleFilesFileset,
-                                      workflow = harvestingWorkflowSib,
-                                      split_algo = "Harvest",
-                                      type = "Harvesting")
+        harvestSubSib = Subscription(fileset=multipleFilesFileset,
+                                     workflow=harvestingWorkflowSib,
+                                     split_algo="Harvest",
+                                     type="Harvesting")
         harvestSubSib.create()
 
-        jobFactorySib = self.splitterFactory(package = "WMCore.WMBS", subscription = harvestSubSib)
+        jobFactorySib = self.splitterFactory(package="WMCore.WMBS", subscription=harvestSubSib)
 
         multipleFilesFileset.markOpen(False)
 
-        jobGroups = jobFactorySib(periodic_harvest_sibling = True)
+        jobGroups = jobFactorySib(periodic_harvest_sibling=True)
         self.assertEqual(len(jobGroups), 0, "A single job group was created")
-                
+
         self.finishJobs(jobGroups, harvestSub)
 
-        jobGroups = jobFactorySib(periodic_harvest_sibling = True)
+        jobGroups = jobFactorySib(periodic_harvest_sibling=True)
         self.assertEqual(len(jobGroups), 1, "A single job group was not created")
         self.assertEqual(len(jobGroups[0].getJobs()), 4, "Four jobs were not created")
 
@@ -466,9 +470,10 @@ class HarvestTest(unittest.TestCase):
 
         for jobGroup in jobGroups:
             self.assertEqual(len(jobGroup.jobs), 1)
-            #for job in jobGroup.jobs:
-            #    baggage = job.getBaggage()
-            #    self.assertTrue(getattr(baggage, "multiRun", False), "It's supposed to be a multiRun job")
+            for job in jobGroup.jobs:
+                baggage = job.getBaggage()
+                self.assertTrue(getattr(baggage, "multiRun", False), "It's supposed to be a multiRun job")
+                self.assertEqual(getattr(baggage, "runLimits", ""), "-1-6")
 
     def testByRunHarvesting(self):
         """

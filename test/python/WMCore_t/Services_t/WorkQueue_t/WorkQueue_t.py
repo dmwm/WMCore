@@ -71,8 +71,10 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
                          [{'total_jobs': 334, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueues(), [])
-        self.assertEqual(wqApi.getJobStatusByRequest(),
-            [{'status': 'Available', 'jobs': 334, 'request_name': specName}])
+        result = wqApi.getElementsCountAndJobsByWorkflow()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[specName]['Available']['Jobs'], 334)
+
         self.assertEqual(wqApi.getChildQueuesByRequest(), [])
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
@@ -149,8 +151,9 @@ class WorkQueueTest(EmulatedUnitTestCase):
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
                          [{'total_jobs': 334, 'request_name': specName}])
         self.assertEqual(wqApi.getChildQueues(), [])
-        self.assertEqual(wqApi.getJobStatusByRequest(),
-            [{'status': 'Available', 'jobs': 334, 'request_name': specName}])
+        result = wqApi.getElementsCountAndJobsByWorkflow()
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[specName]['Available']['Jobs'], 334)
         data = wqApi.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                 {'startkey' : [specName], 'endkey' : [specName, {}],
                                  'reduce' : False})

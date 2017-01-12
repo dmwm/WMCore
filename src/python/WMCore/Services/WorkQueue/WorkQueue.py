@@ -53,15 +53,6 @@ class WorkQueue(object):
         return [{'request_name': x['key'][0],
                  'wmbs_url': x['key'][1]} for x in data.get('rows', [])]
 
-    def getJobStatusByRequest(self):
-        """
-        This service only provided by global queue
-        """
-        data = self.db.loadView('WorkQueue', 'jobStatusByRequest',
-                                self.defaultOptions)
-        return [{'request_name': x['key'][0], 'status': x['key'][1],
-                 'jobs': x['value']} for x in data.get('rows', [])]
-
     def getJobInjectStatusByRequest(self):
         """
         This service only provided by global queue
@@ -183,7 +174,7 @@ class WorkQueue(object):
                 deleted += len(ids)
         return deleted
 
-    def getElementsStatusAndJobsByWorkflow(self, inboxFlag=False, stale=True):
+    def getElementsCountAndJobsByWorkflow(self, inboxFlag=False, stale=True):
         """Get the number of elements and jobs by status and workflow"""
         if inboxFlag:
             db = self.inboxDB
@@ -192,11 +183,11 @@ class WorkQueue(object):
         options = {'reduce': True, 'group_level': 2}
         if stale:
             options['stale'] = 'update_after'
-        data = db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus', options)
+        data = db.loadView('WorkQueue', 'jobStatusByRequest', options)
         result = defaultdict(dict)
         for x in data.get('rows', []):
             result[x['key'][0]][x['key'][1]] = {'NumOfElements': x['value']['count'],
-                                                'Jobs': x['value']['totalJobs']}
+                                                'Jobs': x['value']['sum']}
         return result
 
     def _getCompletedWorkflowList(self, data):
@@ -206,6 +197,7 @@ class WorkQueue(object):
             for status in data[workflow]:
                 if status not in ['Done', 'Failed', 'Canceled']:
                     completed = False
+                    break
             if completed:
                 completedWFs.append(workflow)
         return completedWFs
@@ -215,7 +207,7 @@ class WorkQueue(object):
         only checks workqueue db not inbox db.
         since inbox db will be cleaned up first when workflow is completed
         """
-        data = self.getElementsStatusAndJobsByWorkflow(stale)
+        data = self.getElementsCountAndJobsByWorkflow(stale)
         return self._getCompletedWorkflowList(data)
 
     def getJobsByStatus(self, inboxFlag=False, group=True):

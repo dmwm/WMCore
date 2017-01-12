@@ -38,7 +38,7 @@ class WorkQueueElement(dict):
         self.setdefault('ParentData', {})
         self.setdefault('ParentFlag', False)
         # 0 jobs are valid where we need to accept all blocks (only dqm etc subscriptions will run)
-        self.setdefault('Jobs', None)
+        self.setdefault('Jobs', 0)
         self.setdefault('WMSpec', None)
         self.setdefault('SiteWhitelist', [])
         self.setdefault('SiteBlacklist', [])

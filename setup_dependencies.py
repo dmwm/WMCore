@@ -5,7 +5,7 @@ A system can depend on packages or other systems.
 If a package ends with a + include all subpackages.
 """
 dependencies = {'wmc-rest':{
-                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch','wmc-httpd'],
+                        'bin': ['wmc-dist-patch', 'wmc-dist-unpatch', 'wmc-httpd'],
                         'packages' : ['WMCore.REST'],
                         'modules': ['WMCore.Configuration'],
                         'systems':['wmc-base']
@@ -90,7 +90,7 @@ dependencies = {'wmc-rest':{
                         },
                 'asyncstageout':{
                         'packages': ['WMCore.Agent+', 'WMCore.Storage+',
-                                     'WMCore.Credential', 'WMCore.WorkerThreads', 
+                                     'WMCore.Credential', 'WMCore.WorkerThreads',
                                      'WMCore.ACDC', 'WMCore.Alerts+',
                                      'WMCore.Services+'],
                         'modules': ['WMQuality.TestInitCouchApp', 'WMCore.Services.Service',
@@ -101,8 +101,8 @@ dependencies = {'wmc-rest':{
                 'crabcache':{
                         'packages': ['WMCore.Wrappers+', 'WMCore.Services.UserFileCache+'],
                         'systems': ['wmc-rest'],
-                        'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service', 'WMCore.Services.pycurl_manager',
-                                    'WMCore.Services.EmulatorSwitch'],
+                        'modules': ['WMCore.Services.Requests', 'WMCore.Services.Service',
+                                    'WMCore.Services.pycurl_manager', ],
                         },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+',
@@ -115,7 +115,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.Services.SiteDB+', 'WMCore.Services.PhEDEx+', 'WMCore.Services.DBS+'],
                         'systems': ['wmc-base'],
                         'modules': ['WMCore.FwkJobReport.FileInfo', 'WMCore.Services.Requests', 'WMCore.DataStructs.LumiList',
-                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager', 'WMCore.Services.EmulatorSwitch'],
+                                    'WMCore.Services.Service', 'WMCore.Services.pycurl_manager',],
                         },
                 'crabtaskworker':{
                         'packages':['WMCore.WorkQueue', 'WMCore.Credential', 'WMCore.Algorithms+', 'WMCore.WMSpec+',

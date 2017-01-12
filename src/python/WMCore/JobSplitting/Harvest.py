@@ -172,6 +172,14 @@ class Harvest(JobFactory):
         if endOfRun:
             self.currentJob.addBaggageParameter("runIsComplete", True)
         self.mergeLumiRange(self.currentJob['mask']['runAndLumis'])
+
+        # now calculate the minimum and maximum run number, it has to go to the root name
+        minRun = min(self.currentJob['mask']['runAndLumis'].keys())
+        maxRun = max(self.currentJob['mask']['runAndLumis'].keys())
+
+        self.currentJob.addBaggageParameter("multiRun", True)
+        self.currentJob.addBaggageParameter("runLimits", "-%s-%s" % (minRun, maxRun))
+
         return
 
     def mergeLumiRange(self, runLumis):

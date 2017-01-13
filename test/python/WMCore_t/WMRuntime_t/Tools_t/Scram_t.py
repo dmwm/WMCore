@@ -10,7 +10,7 @@ Copyright (c) 2012 evansde77. All rights reserved.
 import unittest
 import os
 from WMQuality.TestInit import TestInit
-from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS
 
 class Scram_t(unittest.TestCase):
     def setUp(self):
@@ -98,6 +98,11 @@ class Scram_t(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(s.lastExecuted, comm)
 
+    def testArchMap(self):
+        self.assertItemsEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
+        self.assertItemsEqual(OS_TO_ARCH['rhel7'], ['slc7'])
+        self.assertItemsEqual(ARCH_TO_OS['slc6'], ['rhel6'])
+        self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
 
 if __name__ == '__main__':
     unittest.main()

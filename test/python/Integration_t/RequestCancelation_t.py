@@ -3,6 +3,7 @@ from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t
 
 import time
 import unittest
+import nose
 from nose.plugins.attrib import attr
 
 

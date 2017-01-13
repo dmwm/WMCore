@@ -26,7 +26,7 @@ def recordException(fn):
     return wrapped
 
 
-class RequestLifeCycleBase_t():
+class RequestLifeCycleBase_t(object):
 
     request = None
     request_name = None

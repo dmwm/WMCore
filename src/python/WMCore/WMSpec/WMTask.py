@@ -203,7 +203,7 @@ class WMTaskHelper(TreeHelper):
         setattr(self.data.steps, "topStepName", stepName)
         return
 
-    def listAllStepNames(self):
+    def listAllStepNames(self, cmsRunOnly=False):
         """
         _listAllStepNames_
 
@@ -211,7 +211,10 @@ class WMTaskHelper(TreeHelper):
         """
         step = self.steps()
         if step:
-            return step.allNodeNames()
+            stepNames = step.allNodeNames()
+            if cmsRunOnly:
+                stepNames = [step for step in stepNames if step.startswith("cmsRun")]
+            return stepNames
         else:
             return []
 
@@ -1268,13 +1271,15 @@ class WMTaskHelper(TreeHelper):
                 IDs.append(ID)
         return IDs
 
-    def setProcessingVersion(self, procVer, parentProcessingVersion=0):
+    def setProcessingVersion(self, procVer, parentProcessingVersion=0, stepChain=False):
         """
         _setProcessingVersion_
 
         Set the task processing version
         """
-        if isinstance(procVer, dict):
+        if isinstance(procVer, dict) and stepChain:
+            taskProcVer = self._getStepValue(procVer)
+        elif isinstance(procVer, dict):
             taskProcVer = procVer.get(self.name(), parentProcessingVersion)
             if taskProcVer is None:
                 for taskname in procVer:
@@ -1285,7 +1290,7 @@ class WMTaskHelper(TreeHelper):
 
         self.data.parameters.processingVersion = int(taskProcVer)
         for task in self.childTaskIterator():
-            task.setProcessingVersion(procVer, taskProcVer)
+            task.setProcessingVersion(procVer, taskProcVer, stepChain)
         return
 
     def getProcessingVersion(self):
@@ -1296,13 +1301,15 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingVersion', 0)
 
-    def setProcessingString(self, procString, parentProcessingString=None):
+    def setProcessingString(self, procString, parentProcessingString=None, stepChain=False):
         """
         _setProcessingString_
 
         Set the task processing string
         """
-        if isinstance(procString, dict):
+        if isinstance(procString, dict) and stepChain:
+            taskProcString = self._getStepValue(procString)
+        elif isinstance(procString, dict):
             taskProcString = procString.get(self.name(), parentProcessingString)
             if taskProcString is None:
                 for taskname in procString:
@@ -1314,7 +1321,7 @@ class WMTaskHelper(TreeHelper):
         self.data.parameters.processingString = taskProcString
 
         for task in self.childTaskIterator():
-            task.setProcessingString(procString, taskProcString)
+            task.setProcessingString(procString, taskProcString, stepChain)
         return
 
     def getProcessingString(self):
@@ -1355,13 +1362,35 @@ class WMTaskHelper(TreeHelper):
 
         return
 
-    def setAcquisitionEra(self, era, parentAcquisitionEra=None):
+    def _getStepValue(self, keyDict):
+        """
+        __getStepValue_
+
+        Maps this taskName - in somehow a hacky way - to a 'StepName' value
+        that should exist in a StepChain request. Used only on tasks that have
+        output module
+        :param keyDict: a dict with either AcqEra/ProcStr/ProcVer key/value pairs,
+        where the key corresponds to the StepName
+        """
+        value = None
+        if self.taskType() == "Merge":
+            extractedTaskName = self.name().split("Merge")[0]
+            value = keyDict.get(extractedTaskName)
+        elif self.taskType() in ["Production", "Processing"]:
+            value = keyDict.get(self.name())
+
+        return value
+
+    def setAcquisitionEra(self, era, parentAcquisitionEra=None, stepChain=False):
         """
         _setAcquistionEra_
 
         Set the task acquisition era
         """
-        if isinstance(era, dict):
+
+        if isinstance(era, dict) and stepChain:
+            taskEra = self._getStepValue(era)
+        elif isinstance(era, dict):
             taskEra = era.get(self.name(), parentAcquisitionEra)
             if taskEra is None:
                 # We cannot properly set AcqEra for ACDC of TaskChain Merge
@@ -1376,7 +1405,7 @@ class WMTaskHelper(TreeHelper):
         self.data.parameters.acquisitionEra = taskEra
 
         for task in self.childTaskIterator():
-            task.setAcquisitionEra(era, taskEra)
+            task.setAcquisitionEra(era, taskEra, stepChain)
         return
 
     def getAcquisitionEra(self):
@@ -1503,7 +1532,46 @@ class WMTaskHelper(TreeHelper):
         return (getattr(self.data, 'mergedLFNBase', "/store/data"),
                 getattr(self.data, 'unmergedLFNBase', "/store/unmerged"))
 
-    def updateLFNsAndDatasets(self, runNumber=None):
+    def _getKeyValue(self, keyname, stepname, values):
+        if keyname not in values:
+            return
+        elif isinstance(values[keyname], basestring):
+            return values[keyname]
+        elif isinstance(values[keyname], dict):
+            return values[keyname].get(stepname)
+
+    def _updateLFNsStepChain(self, stepName, dictValues, stepMapping):
+        """
+        __updateLFNsStepChain_
+
+        Helper function needed for a proper StepChain LFN/ProcessedDataset handling
+
+        :param stepName: is the cmsRun name (cmsRun1, cmsRun2, ...)
+        :param dictValues: part of the arguments provided during assignment
+        :param stepMapping: built during StepChain creation
+        :return: a single string for each of those 3 properties
+        """
+        reqStepName = None
+        for reqStep, values in stepMapping.iteritems():
+            if stepName == values[1]:
+                reqStepName = reqStep
+        if not reqStepName:
+            # I have no idea which cmsRun is that...
+            return None, None, None
+
+        era = self._getKeyValue('AcquisitionEra', reqStepName, dictValues)
+        if not era:
+            era = self.getAcquisitionEra()
+        procstr = self._getKeyValue('ProcessingString', reqStepName, dictValues)
+        if not procstr:
+            procstr = self.getProcessingString()
+        procver = self._getKeyValue('ProcessingVersion', reqStepName, dictValues)
+        if not procver:
+            procver = self.getProcessingVersion()
+
+        return era, procstr, procver
+
+    def updateLFNsAndDatasets(self, runNumber=None, dictValues=None, stepMapping=None):
         """
         _updateLFNsAndDatasets_
 
@@ -1512,37 +1580,42 @@ class WMTaskHelper(TreeHelper):
         version or merged/unmerged lfn base.
         """
         mergedLFNBase, unmergedLFNBase = self._getLFNBase()
-
         taskType = self.taskType()
+
         for stepName in self.listAllStepNames():
             stepHelper = self.getStepHelper(stepName)
 
             if stepHelper.stepType() == "CMSSW":
+                if dictValues and stepMapping:
+                    # if it's a StepChain, then cast a dark spell on it
+                    acqera, procstr, procver = self._updateLFNsStepChain(stepName, dictValues, stepMapping)
+                else:
+                    acqera = self.getAcquisitionEra()
+                    procstr = self.getProcessingString()
+                    procver = self.getProcessingVersion()
+
                 for outputModuleName in stepHelper.listOutputModules():
                     outputModule = stepHelper.getOutputModule(outputModuleName)
                     filterName = getattr(outputModule, "filterName", None)
-                    if self.getProcessingString():
-                        processingEra = "%s-v%i" % (self.getProcessingString(), self.getProcessingVersion())
+
+                    if procstr:
+                        processingEra = "%s-v%i" % (procstr, procver)
                     else:
-                        processingEra = "v%i" % self.getProcessingVersion()
+                        processingEra = "v%i" % procver
                     if filterName:
-                        processedDataset = "%s-%s-%s" % (self.getAcquisitionEra(),
-                                                         filterName,
-                                                         processingEra)
-                        processingString = "%s-%s" % (filterName,
-                                                      processingEra)
+                        processedDataset = "%s-%s-%s" % (acqera, filterName, processingEra)
+                        processingString = "%s-%s" % (filterName, processingEra)
                     else:
-                        processedDataset = "%s-%s" % (self.getAcquisitionEra(),
-                                                      processingEra)
+                        processedDataset = "%s-%s" % (acqera, processingEra)
                         processingString = processingEra
 
                     unmergedLFN = "%s/%s/%s/%s/%s" % (unmergedLFNBase,
-                                                      self.getAcquisitionEra(),
+                                                      acqera,
                                                       getattr(outputModule, "primaryDataset"),
                                                       getattr(outputModule, "dataTier"),
                                                       processingString)
                     mergedLFN = "%s/%s/%s/%s/%s" % (mergedLFNBase,
-                                                    self.getAcquisitionEra(),
+                                                    acqera,
                                                     getattr(outputModule, "primaryDataset"),
                                                     getattr(outputModule, "dataTier"),
                                                     processingString)

@@ -110,26 +110,42 @@ def handleAssignment(args, fname, jsonData):
     assignRequest.setdefault('Team', args.team)
     assignRequest.setdefault('Dashboard', "integration")
     assignRequest.setdefault('SiteWhitelist', "T2_CH_CERN" if singleSite(fname) else args.site)
-    if 'ProcessingVersion' in jsonData['assignRequest']:
-        assignRequest.setdefault('ProcessingVersion', args.procVer)
     # merge template name and current procStr, to avoid dups
     tmpProcStr = fname.replace('.json', '_') + args.procStr
+    if 'AcquisitionEra' in jsonData['assignRequest']:
+        assignRequest.setdefault('AcquisitionEra', args.acqEra)
+    if 'ProcessingString' in jsonData['assignRequest']:
+        assignRequest.setdefault('ProcessingString', tmpProcStr)
+    if 'ProcessingVersion' in jsonData['assignRequest']:
+        assignRequest.setdefault('ProcessingVersion', args.procVer)
 
     # dict args for TaskChain
     if jsonData['createRequest']['RequestType'] == "TaskChain":
         if 'AcquisitionEra' in jsonData['assignRequest']:
-            assignRequest['AcquisitionEra'] = jsonData['assignRequest']['AcquisitionEra']
-            for task, _ in assignRequest['AcquisitionEra'].iteritems():
-                assignRequest['AcquisitionEra'][task] = jsonData['createRequest']['CMSSWVersion']
+            if isinstance(jsonData['assignRequest']['AcquisitionEra'], dict):
+                assignRequest['AcquisitionEra'] = jsonData['assignRequest']['AcquisitionEra']
+                for task, _ in assignRequest['AcquisitionEra'].iteritems():
+                    # lookup this task name
+                    for i in range(1, jsonData['createRequest']['TaskChain'] + 1):
+                        if jsonData['createRequest']['Task%d' % i]['TaskName'] == task:
+                            assignRequest['AcquisitionEra'][task] = jsonData['createRequest']['Task%d' % i].get(
+                                'AcquisitionEra', jsonData['createRequest']['AcquisitionEra'])
+                            break
         if 'ProcessingString' in jsonData['assignRequest']:
-            assignRequest['ProcessingString'] = jsonData['assignRequest']['ProcessingString']
-            for task, _ in assignRequest['ProcessingString'].iteritems():
-                assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
-    else:
-        if 'AcquisitionEra' in jsonData['assignRequest']:
-            assignRequest.setdefault('AcquisitionEra', args.acqEra)
-        if 'ProcessingString' in jsonData['assignRequest']:
-            assignRequest.setdefault('ProcessingString', tmpProcStr)
+            if isinstance(jsonData['assignRequest']['ProcessingString'], dict):
+                assignRequest['ProcessingString'] = jsonData['assignRequest']['ProcessingString']
+                for task, _ in assignRequest['ProcessingString'].iteritems():
+                    assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
+        if 'ProcessingVersion' in jsonData['assignRequest']:
+            if isinstance(jsonData['assignRequest']['ProcessingVersion'], dict):
+                assignRequest['ProcessingVersion'] = jsonData['assignRequest']['ProcessingVersion']
+                for task, _ in assignRequest['ProcessingVersion'].iteritems():
+                    # lookup this task name
+                    for i in range(1, jsonData['createRequest']['TaskChain'] + 1):
+                        if jsonData['createRequest']['Task%d' % i]['TaskName'] == task:
+                            assignRequest['ProcessingVersion'][task] = jsonData['createRequest']['Task%d' % i].get(
+                                'ProcessingVersion', jsonData['createRequest']['ProcessingVersion'])
+                            break
 
     jsonData['assignRequest'].update(assignRequest)
     return

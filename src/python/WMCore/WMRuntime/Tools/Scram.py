@@ -25,9 +25,6 @@ sample usage:
 
 """
 
-
-
-
 import os
 import os.path
 import sys
@@ -43,6 +40,7 @@ for arch, oses in ARCH_TO_OS.iteritems():
             OS_TO_ARCH[osName] = []
         OS_TO_ARCH[osName].append(arch)
 
+
 def testWriter(func, *args):
     """
     _testWriter_
@@ -51,6 +49,7 @@ def testWriter(func, *args):
     echo the commands written to the subprocess.
 
     """
+
     def newWriter(*args):
         newWriter.__name__ = func.__name__
         newWriter.__doc__ = func.__doc__
@@ -59,14 +58,14 @@ def testWriter(func, *args):
         line = args[1]
         escapedLine = "echo \"%s\"\n" % line
         func(subproc, escapedLine)
+
     return newWriter
 
 
 #  //
 # // Interceptable function to push commands to the subshell, used to
-#//  enable test mode.
+# //  enable test mode.
 procWriter = lambda s, l: s.stdin.write(l)
-
 
 
 class Scram:
@@ -104,7 +103,7 @@ class Scram:
             # dont actually try to call a non-existent scram binary in test mode
             self.command = "/bin/echo"
 
-        #buffers for debug/error reporting
+        # buffers for debug/error reporting
         self.stdout = None
         self.stderr = None
         self.code = None
@@ -126,9 +125,6 @@ class Scram:
             result += """if [ "$?" -ne "0" ]; then exit 2; fi\n"""
         return result
 
-
-
-
     def project(self):
         """
         _project_
@@ -142,7 +138,7 @@ class Scram:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
-            )
+        )
 
         # send commands to the subshell utilising the process writer method
         self.procWriter(proc, self.library_path)
@@ -152,7 +148,7 @@ class Scram:
         self.procWriter(proc, "exit 0")
 
         self.projectArea = "%s/%s" % (self.directory, self.version)
-        self.stdout, self.stderr =  proc.communicate()
+        self.stdout, self.stderr = proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = "%s project CMSSW %s" % (
             self.command, self.version)
@@ -162,9 +158,6 @@ class Scram:
             if not os.path.exists(self.projectArea):
                 os.makedirs(self.projectArea)
         return proc.returncode
-
-
-
 
     def runtime(self):
         """
@@ -185,7 +178,7 @@ class Scram:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 stdin=subprocess.PIPE,
-                )
+            )
         except Exception as ex:
             msg = "Error thrown while invoking subprocess for scram runtime\n"
             msg += "%s\n" % str(ex)
@@ -200,7 +193,6 @@ class Scram:
         self.procWriter(proc, "%s ru -sh\n" % self.command)
         self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 4; fi\n""")
         self.procWriter(proc, "eval `%s ru -sh`\n" % self.command)
-
 
         self.stdout, self.stderr = proc.communicate()
         if proc.returncode == 0:
@@ -224,9 +216,8 @@ class Scram:
         self.lastExecuted = "eval `%s ru -sh`" % self.command
         return proc.returncode
 
-
-    def __call__(self, command, hackLdLibPath = True,
-                 logName = "scramOutput.log", runtimeDir = None, cleanEnv = True):
+    def __call__(self, command, hackLdLibPath=True,
+                 logName="scramOutput.log", runtimeDir=None, cleanEnv=True):
         """
         _operator(command)_
 
@@ -242,7 +233,7 @@ class Scram:
         executeIn = runtimeDir
         if runtimeDir == None:
             executeIn = self.projectArea
-        #if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
+        # if the caller passed a filename and not a filehandle and if the logfile does not exist then create one
         if isinstance(logName, basestring) and not os.path.exists(logName):
             f = open(logName, 'w')
             f.write('Log for recording SCRAM command-line output\n')
@@ -266,20 +257,20 @@ class Scram:
         for varName in self.runtimeEnv:
             self.procWriter(proc, 'export %s=%s\n' % (varName, self.runtimeEnv[varName]))
             if varName == "CMSSW_RELEASE_BASE":
-                rtCmsswBase = self.runtimeEnv[varName].replace('\"','')
+                rtCmsswBase = self.runtimeEnv[varName].replace('\"', '')
             if varName == "SCRAM_ARCH":
-                rtScramArch = self.runtimeEnv[varName].replace('\"','')
+                rtScramArch = self.runtimeEnv[varName].replace('\"', '')
 
-        if os.environ.get('VO_CMS_SW_DIR', None ) != None:
-            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n'%os.environ['VO_CMS_SW_DIR'])
+        if os.environ.get('VO_CMS_SW_DIR', None) != None:
+            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s\n' % os.environ['VO_CMS_SW_DIR'])
         if os.environ.get('OSG_APP', None) != None:
-            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n'%os.environ['OSG_APP'])
+            self.procWriter(proc, 'export VO_CMS_SW_DIR=%s/cmssoft/cms\n' % os.environ['OSG_APP'])
         if os.environ.get('CMS_PATH', None) != None:
-            self.procWriter(proc, 'export CMS_PATH=%s\n'%os.environ['CMS_PATH'])
+            self.procWriter(proc, 'export CMS_PATH=%s\n' % os.environ['CMS_PATH'])
         if os.environ.get('_CONDOR_JOB_AD'):
-            self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n'%os.environ['_CONDOR_JOB_AD'])
+            self.procWriter(proc, 'export _CONDOR_JOB_AD=%s\n' % os.environ['_CONDOR_JOB_AD'])
         if os.environ.get('_CONDOR_MACHINE_AD'):
-            self.procWriter(proc, 'export _CONDOR_MACHINE_AD=%s\n'%os.environ['_CONDOR_MACHINE_AD'])
+            self.procWriter(proc, 'export _CONDOR_MACHINE_AD=%s\n' % os.environ['_CONDOR_MACHINE_AD'])
 
         if hackLdLibPath:
             self.procWriter(proc, self.library_path)
@@ -301,17 +292,16 @@ class Scram:
                 # reset python path for DMWM python (scram will have changed env to point at its own)
                 self.procWriter(proc, "export PYTHONPATH==%s:$PYTHONPATH\n" % ":".join(sys.path)[1:])
 
-        logging.info("    Invoking command: %s" % command)
+        logging.info("    Invoking command: %s", command)
         self.procWriter(proc, "%s\n" % command)
-        self.procWriter(proc,"""if [ "$?" -ne "0" ]; then exit 5; fi\n""")
+        self.procWriter(proc, """if [ "$?" -ne "0" ]; then exit 5; fi\n""")
         self.stdout, self.stderr = proc.communicate()
         self.code = proc.returncode
         self.lastExecuted = command
-        #close the logfile if one has been created from the name. Let the caller close it if he passed a file object.
+        # close the logfile if one has been created from the name. Let the caller close it if he passed a file object.
         if isinstance(logName, basestring):
             logFile.close()
         return self.code
-
 
     def diagnostic(self):
         """

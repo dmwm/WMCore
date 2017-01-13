@@ -34,6 +34,14 @@ import sys
 import subprocess
 import logging
 
+ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
+
+OS_TO_ARCH = {}
+for arch, oses in ARCH_TO_OS.iteritems():
+    for osName in oses:
+        if osName not in OS_TO_ARCH:
+            OS_TO_ARCH[osName] = []
+        OS_TO_ARCH[osName].append(arch)
 
 def testWriter(func, *args):
     """

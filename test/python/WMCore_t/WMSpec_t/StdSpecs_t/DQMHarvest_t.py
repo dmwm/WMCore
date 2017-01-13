@@ -4,7 +4,6 @@
 _DQMHarvest_t_
 """
 
-import json
 import os
 import unittest
 
@@ -13,13 +12,33 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
-
-def getTestFile(partialPath):
-    """
-    Returns the absolute path for the test json file
-    """
-    normPath = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
-    return os.path.join(normPath, partialPath)
+REQUEST = {
+    "AcquisitionEra": "Run2016F",
+    "CMSSWVersion": "CMSSW_8_0_20",
+    "Campaign": "Campaign-OVERRIDE-ME",
+    "Comments": "Harvest all 37 runs in byRun mode (separate jobs)",
+    "CouchURL": os.environ["COUCHURL"],
+    "ConfigCacheUrl": os.environ["COUCHURL"],
+    "CouchDBName": "dqmharvest_t",
+    "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135",
+    "DQMHarvestUnit": "byRun",
+    "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
+    "InputDataset": "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO",
+    "Memory": 1000,
+    "Multicore": 1,
+    "PrepID": "TEST-Harvest-ReReco-Run2016F-v1-NoBPTX-23Sep2016-0001",
+    "ProcessingString": "23Sep2016",
+    "ProcessingVersion": 1,
+    "RequestPriority": 999999,
+    "RequestString": "RequestString-OVERRIDE-ME",
+    "RequestType": "DQMHarvest",
+    "Requestor": "amaltaro",
+    "ScramArch": "slc6_amd64_gcc530",
+    "SizePerEvent": 1600,
+    "TimePerEvent": 1
+}
 
 
 class DQMHarvestTests(unittest.TestCase):
@@ -45,7 +64,6 @@ class DQMHarvestTests(unittest.TestCase):
         self.configDatabase = couchServer.connectDatabase("dqmharvest_t")
         self.testInit.generateWorkDir()
         self.workload = None
-        self.jsonTemplate = getTestFile('data/ReqMgr/requests/DMWM/DQMHarvesting.json')
 
         return
 
@@ -82,15 +100,10 @@ class DQMHarvestTests(unittest.TestCase):
         Build a DQMHarvest workload
         """
         testArguments = DQMHarvestWorkloadFactory.getTestArguments()
-        # Read in the request
-        request = json.load(open(self.jsonTemplate))
-        testArguments.update(request['createRequest'])
+        testArguments.update(REQUEST)
         testArguments.update({
-            "CouchURL": os.environ["COUCHURL"],
-            "ConfigCacheUrl": os.environ["COUCHURL"],
-            "CouchDBName": "dqmharvest_t",
             "DQMConfigCacheID": self.injectDQMHarvestConfig(),
-            "LumiList": {"251643": [[1, 15], [50,70]], "251721": [[50,100], [110,120]]}
+            "LumiList": {"251643": [[1, 15], [50, 70]], "251721": [[50, 100], [110, 120]]}
         })
         testArguments.pop("ConfigCacheID", None)
 
@@ -100,18 +113,13 @@ class DQMHarvestTests(unittest.TestCase):
         # test workload properties
         self.assertEqual(testWorkload.getDashboardActivity(), "harvesting")
         self.assertEqual(testWorkload.getCampaign(), "Campaign-OVERRIDE-ME")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2016B")
+        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2016F")
         self.assertEqual(testWorkload.getProcessingString(), "23Sep2016")
         self.assertEqual(testWorkload.getProcessingVersion(), 1)
-        self.assertEqual(testWorkload.getPrepID(), "TEST-Harvest-ReReco-Run2016B-23Sep2016-0022")
+        self.assertEqual(testWorkload.getPrepID(), "TEST-Harvest-ReReco-Run2016F-v1-NoBPTX-23Sep2016-0001")
         self.assertEqual(testWorkload.getCMSSWVersions(), ['CMSSW_8_0_20'])
-
-        # test workload attributes
-        self.assertEqual(testWorkload.getProcessingString(), "23Sep2016")
-        self.assertEqual(testWorkload.getAcquisitionEra(), "Run2016B")
-        self.assertEqual(testWorkload.getProcessingVersion(), 1)
         self.assertEqual(sorted(testWorkload.getLumiList().keys()), ['251643', '251721'])
-        self.assertEqual(sorted(testWorkload.getLumiList().values()), [[[1,15], [50,70]], [[50,100], [110,120]]])
+        self.assertEqual(sorted(testWorkload.getLumiList().values()), [[[1, 15], [50, 70]], [[50, 100], [110, 120]]])
         self.assertEqual(testWorkload.data.policies.start.policyName, "Dataset")
 
         # test workload tasks and steps
@@ -139,13 +147,8 @@ class DQMHarvestTests(unittest.TestCase):
         Build a DQMHarvest workload without a DQM config doc
         """
         testArguments = DQMHarvestWorkloadFactory.getTestArguments()
-        # Read in the request
-        request = json.load(open(self.jsonTemplate))
-        testArguments.update(request['createRequest'])
+        testArguments.update(REQUEST)
         testArguments.update({
-            "CouchURL": os.environ["COUCHURL"],
-            "ConfigCacheUrl": os.environ["COUCHURL"],
-            "CouchDBName": "dqmharvest_t",
             "ConfigCacheID": self.injectDQMHarvestConfig()
         })
         testArguments.pop("DQMConfigCacheID", None)

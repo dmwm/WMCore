@@ -1,8 +1,10 @@
 {
   "createRequest": {
-    "Comments": "ReDigi with a BAD datatier that will fail assignment",
+    "Comments": "ReDigi with a BAD [GEN-SIM-ALAN] datatier that will fail assignment",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
+    "AcquisitionEra": "Integ_Test",
+    "ProcessingString": "Integ_ProcStr_TEST",
     "CMSSWVersion": "CMSSW_8_0_3_patch2",
     "GlobalTag": "80X_mcRun2_asymptotic_2016_v3",
     "RequestPriority": 900000,
@@ -41,8 +43,6 @@
   "assignRequest": {
     "SiteWhitelist": "SiteWhitelist-OVERRIDE-ME",
     "Team": "Team-OVERRIDE-ME",
-    "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME",
-    "ProcessingString": "ProcessingString-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
     "TrustSitelists": true,

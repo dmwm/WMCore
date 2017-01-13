@@ -1,7 +1,7 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain data with 2 tasks and 2 runs. Transient output RAW at task1. Harvesting enabled in multiRun mode",
+    "Comments": "TaskChain data with 126 lumis in a LumiList (from 2 blocks and 2 runs); Transient output RAW at task1. Harvesting enabled in multiRun mode",
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
@@ -26,12 +26,12 @@
     "TaskChain": 2,
     "Task1": {"AcquisitionEra": "CMSSW_7_2_0",
         "InputDataset": "/JetHT/Run2012C-v1/RAW",
-        "RunWhitelist": [202205, 202209],
         "ConfigCacheID": "ed714597d139244a243cfef287c16c34",
         "GlobalTag": "GR_H_V41A",
         "KeepOutput": true,
         "ProcessingString": "RelVal_TEST_multiRunHarvesting",
-        "TransientOutputModules": ["RAWoutput"], 
+        "TransientOutputModules": ["RAWoutput"],
+        "LumiList": {"202205": [[1, 30], [90, 110]], "202209": [[2, 11], [36, 50], [76, 125]]},
         "LumisPerJob": 4,
         "SplittingAlgo": "LumiBased",
         "TaskName": "HLTD"},

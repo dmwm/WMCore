@@ -1,0 +1,98 @@
+{
+    "assignRequest": {
+        "AcquisitionEra": "AcquisitionEra-OVERRIDE-ME", 
+        "Dashboard": "Dashboard-OVERRIDE-ME", 
+        "GracePeriod": 300, 
+        "MaxRSS": {
+            "DIGIPROD1": 1200000, 
+            "ProdMinBias": 1500000, 
+            "RECOPROD1": 2000000
+        }, 
+        "MaxVSize": 40000000, 
+        "MergedLFNBase": "/store/backfill/1", 
+        "ProcessingString": {
+            "DIGIPROD1": "ProcessingString-OVERRIDE-ME", 
+            "ProdMinBias": "ProcessingString-OVERRIDE-ME", 
+            "RECOPROD1": "ProcessingString-OVERRIDE-ME"
+        }, 
+        "ProcessingVersion": 19, 
+        "SiteBlacklist": [], 
+        "SiteWhitelist": [
+            "SiteWhitelist-OVERRIDE-ME"
+        ], 
+        "SoftTimeout": 129600, 
+        "Team": "Team-OVERRIDE-ME", 
+        "UnmergedLFNBase": "/store/unmerged"
+    }, 
+    "createRequest": {
+        "AcquisitionEra": "CMSSW_8_1_0", 
+        "CMSSWVersion": "CMSSW_8_1_0", 
+        "Campaign": "Campaign-OVERRIDE-ME", 
+        "Comments": "TaskChain MC from scratch; 2l in Task1; diff Memory/MaxRSS requirements; diff ProcStr; LumiBased splitting", 
+        "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
+        "CouchDBName": "reqmgr_config_cache", 
+        "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
+        "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
+        "EnableHarvesting": false, 
+        "GlobalTag": "81X_mcRun1_realistic_v5", 
+        "Group": "DATAOPS", 
+        "IncludeParents": false, 
+        "Memory": 2300, 
+        "ProcessingString": {
+            "DIGIPROD1": "81X_mcRun1_realistic_v5", 
+            "ProdMinBias": "81X_mcRun1_realistic_v5", 
+            "RECOPROD1": "81X_mcRun1_realistic_v5"
+        }, 
+        "ProcessingVersion": 1, 
+        "RequestPriority": 600000, 
+        "RequestString": "RequestString-OVERRIDE-ME", 
+        "RequestType": "TaskChain", 
+        "Requestor": "amaltaro", 
+        "ScramArch": "slc6_amd64_gcc530", 
+        "SizePerEvent": 1234, 
+        "SubRequestType": "RelVal", 
+        "Task1": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c393476d2d", 
+            "EventsPerJob": 200, 
+            "LumisPerJob": 100, 
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "KeepOutput": true, 
+            "Memory": 1200, 
+            "PrimaryDataset": "RelValProdMinBias", 
+            "ProcessingString": "Task1_WMCore_TEST", 
+            "RequestNumEvents": 9000, 
+            "Seeding": "AutomaticSeeding", 
+            "SplittingAlgo": "EventBased", 
+            "TaskName": "ProdMinBias"
+        }, 
+        "Task2": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c393491320", 
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "ProdMinBias", 
+            "KeepOutput": true, 
+            "LumisPerJob": 10, 
+            "Memory": 1500, 
+            "ProcessingString": "Task2_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "DIGIPROD1"
+        }, 
+        "Task3": {
+            "AcquisitionEra": "CMSSW_8_1_0", 
+            "ConfigCacheID": "fd79406f016da454e5ac53c3934a46df", 
+            "GlobalTag": "81X_mcRun1_realistic_v5", 
+            "InputFromOutputModule": "RAWSIMoutput", 
+            "InputTask": "DIGIPROD1", 
+            "KeepOutput": true, 
+            "LumisPerJob": 10, 
+            "Memory": 2000, 
+            "ProcessingString": "Task3_WMCore_TEST", 
+            "SplittingAlgo": "LumiBased", 
+            "TaskName": "RECOPROD1"
+        }, 
+        "TaskChain": 3, 
+        "TimePerEvent": 0.10000000000000001
+    }
+}

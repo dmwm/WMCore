@@ -3,6 +3,7 @@ from Integration_t.RequestLifeCycleBase_t import RequestLifeCycleBase_t
 
 import time
 import unittest
+import nose
 from nose.plugins.attrib import attr
 
 
@@ -31,8 +32,8 @@ class RequestCancellation_t(RequestLifeCycleBase_t, unittest.TestCase):
             raise nose.SkipTest
         start = time.time()
         while True:
-            request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
-                    x['request_name'] == self.__class__.request_name]
+            request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
+                    x == self.__class__.request_name]
             # request deleted from wq shortly after finishing, so may not appear here
             if not request or request == [x for x in request if x['status'] in ('Canceled')]:
                 break

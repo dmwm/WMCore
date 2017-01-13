@@ -26,7 +26,7 @@ def recordException(fn):
     return wrapped
 
 
-class RequestLifeCycleBase_t():
+class RequestLifeCycleBase_t(object):
 
     request = None
     request_name = None
@@ -144,8 +144,8 @@ class RequestLifeCycleBase_t():
                 self.__class__.workqueue = WorkQueue(workqueue[0])
                 self.__class__.request = self.__class__.reqmgr.getRequest(self.__class__.request_name)
                 self.assertTrue(self.__class__.request['RequestStatus'] in ('acquired', 'running'))
-                request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
-                    x['request_name'] == self.__class__.request_name]
+                request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
+                    x == self.__class__.request_name]
                 if [x for x in request if x['status'] in ('Available', 'Negotiating', 'Acquired', 'Running')]:
                     break
             if start + (60 * 20) < time.time():
@@ -162,8 +162,8 @@ class RequestLifeCycleBase_t():
             raise nose.SkipTest
         start = time.time()
         while True:
-            request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
-                        x['request_name'] == self.__class__.request_name]
+            request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
+                        x == self.__class__.request_name]
             if [x for x in request if x['status'] in ('Acquired', 'Running')]:
                 break
             if start + (60 * 20) < time.time():
@@ -177,8 +177,8 @@ class RequestLifeCycleBase_t():
         """Request running"""
         start = time.time()
         while True:
-            request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
-                    x['request_name'] == self.__class__.request_name]
+            request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
+                    x == self.__class__.request_name]
             childQueue = [x for x in self.__class__.workqueue.getChildQueuesByRequest() if \
                     x['request_name'] == self.__class__.request_name]
             if request and 'Running' in [x['status'] for x in request]:
@@ -194,8 +194,8 @@ class RequestLifeCycleBase_t():
         """Request completed in workqueue"""
         start = time.time()
         while True:
-            request = [x for x in self.__class__.workqueue.getJobStatusByRequest() if \
-                    x['request_name'] == self.__class__.request_name]
+            request = [x for x in self.__class__.workqueue.getElementsCountAndJobsByWorkflow() if \
+                    x == self.__class__.request_name]
             # request deleted from wq shortly after finishing, so may not appear here
             if not request or request == [x for x in request if x['status'] in ('Done', 'Failed', 'Canceled')]:
                 break

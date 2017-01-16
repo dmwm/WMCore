@@ -16,6 +16,7 @@ import threading
 import time
 import traceback
 
+from WMCore import Lexicon
 from WMCore.Alerts import API as alertAPI
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
@@ -35,14 +36,15 @@ from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.ACDC.DataCollectionService import DataCollectionService
 from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
 from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
 
 from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerError
 
-from WMCore import Lexicon
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
 
 
 #  //
@@ -98,6 +100,8 @@ class WorkQueue(WorkQueueBase):
                                         self.params['InboxDbName'],
                                         self.params['ParentQueueCouchUrl'], self.params.get('QueueURL'),
                                         logger=self.logger)
+        self.workqueueDS = WorkQueueDS(self.params['CouchUrl'], self.params['DbName'],
+                                       self.params['InboxDbName'])
         if self.params.get('ParentQueueCouchUrl'):
             try:
                 if self.params.get('ParentQueueInboxCouchDBName'):
@@ -1150,3 +1154,29 @@ class WorkQueue(WorkQueueBase):
             return self.parent_queue.getWMBSInjectStatus(workflowName)
         else:
             return self.backend.getWMBSInjectStatus(workflowName)
+
+    def monitorWorkQueue(self, status=None):
+        """
+        Uses the workqueue data-service to retrieve a few basic information
+        regarding all the elements in the queue.
+        """
+        status = status or []
+        results = {}
+        start = int(time.time())
+        results['workByStatus'] = self.workqueueDS.getJobsByStatus()
+        results['workByStatusAndPriority'] = self.workqueueDS.getJobsByStatusAndPriority()
+        results['workByAgentAndStatus'] = self.workqueueDS.getChildQueuesAndStatus()
+        results['workByAgentAndPriority'] = self.workqueueDS.getChildQueuesAndPriority()
+
+        # now the heavy procesing for the site information
+        elements = self.workqueueDS.getElementsByStatus(status)
+        uniSites, posSites = getGlobalSiteStatusSummary(elements)
+        results['uniqueJobsPerSiteAAA'] = uniSites
+        results['possibleJobsPerSiteAAA'] = posSites
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, dataLocality=True)
+        results['uniqueJobsPerSite'] = uniSites
+        results['possibleJobsPerSite'] = posSites
+
+        end = int(time.time())
+        results["total_query_time"] = end - start
+        return results

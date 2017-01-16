@@ -9,7 +9,6 @@ from __future__ import print_function
 import os
 import pickle
 import random
-import re
 import socket
 import traceback
 import json
@@ -153,6 +152,30 @@ def fixupFirstLumi(process):
     if not hasattr(process.source, "firstLuminosityBlock"):
         process.source.firstLuminosityBlock = cms.untracked.uint32(1)
     return
+
+def isCMSSWSupported(thisCMSSW, supportedCMSSW):
+    """
+    _isCMSSWSupported_
+
+    Function used to validate whether the CMSSW release to be used supports
+    a feature not available in all releases.
+    :param thisCMSSW: release to be used in this job
+    :param allowedCMSSW: first (lower) release that started supporting this
+    feature. Only the first 2 digits are supported.
+    """
+    if not thisCMSSW or not supportedCMSSW:
+        print("You must provide the CMSSW version being used by this job and a supported version")
+        return False
+
+    thisCMSSW = thisCMSSW.split('_', 3)
+    supportedCMSSW = supportedCMSSW.split('_', 3)
+    if thisCMSSW[1] > supportedCMSSW[1]:
+        return True
+    if thisCMSSW[1] == supportedCMSSW[1]:
+        if thisCMSSW[2] >= supportedCMSSW[2]:
+            return True
+
+    return False
 
 class SetupCMSSWPset(ScriptInterface):
     """
@@ -518,15 +541,28 @@ class SetupCMSSWPset(ScriptInterface):
         be tweaked with the dataset name in order to store it
         properly in the DQMGUI, others tweaks can be added as well
         """
+        if not hasattr(self.process, "dqmSaver"):
+            return
+
         baggage = self.job.getBaggage()
         runIsComplete = getattr(baggage, "runIsComplete", False)
-        if hasattr(self.process, "dqmSaver"):
-            self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
-            if hasattr(self.step.data.application.configuration, "pickledarguments"):
-                args = pickle.loads(self.step.data.application.configuration.pickledarguments)
-                datasetName = args.get('datasetName', None)
-                if datasetName is not None:
-                    self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
+        multiRun = getattr(baggage, "multiRun", False)
+        runLimits = getattr(baggage, "runLimits", "")
+        cmsswVersion = self.step.data.application.setup.cmsswVersion
+
+        self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
+        if multiRun and isCMSSWSupported(cmsswVersion, "CMSSW_8_0_X"):
+            self.process.dqmSaver.forceRunNumber = cms.untracked.int32(999999)
+        if hasattr(self.step.data.application.configuration, "pickledarguments"):
+            args = pickle.loads(self.step.data.application.configuration.pickledarguments)
+            datasetName = args.get('datasetName', None)
+            if datasetName:
+                if multiRun:
+                    # then change the dataset name in order to get a different root file name
+                    datasetName = datasetName.rsplit('/', 1)
+                    datasetName[0] += runLimits
+                    datasetName = "/".join(datasetName)
+                self.process.dqmSaver.workflow = cms.untracked.string(datasetName)
         return
 
     def handleRepackSettings(self):
@@ -566,7 +602,7 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
         Enable lazy-download for all merge jobs
         """
-        cmsswVersion = os.environ.get('CMSSW_VERSION', "")
+        cmsswVersion = self.step.data.application.setup.cmsswVersion
         if cmsswVersion.startswith("CMSSW_7_5") and False:
             print("Using fastCloning/lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
@@ -582,22 +618,10 @@ class SetupCMSSWPset(ScriptInterface):
         _handleCondorStatusService_
 
         Enable CondorStatusService for CMSSW releases that support it.
-
         """
-        result = re.match("CMSSW_([0-9]+)_([0-9]+)_([0-9]+).*", os.environ.get('CMSSW_VERSION', ""))
+        cmsswVersion = self.step.data.application.setup.cmsswVersion
 
-        addCondorStatusService = False
-        if result:
-            try:
-                if int(result.group(1)) >= 8:
-                    addCondorStatusService = True
-                elif int(result.group(1)) == 7:
-                    if int(result.group(2)) >= 6:
-                        addCondorStatusService = True
-            except ValueError:
-                pass
-
-        if addCondorStatusService:
+        if isCMSSWSupported(cmsswVersion, "CMSSW_7_6_X"):
             print("Tag chirp updates from CMSSW with _%s_" % self.step.data._internal_name)
             self.process.add_(cms.Service("CondorStatusService",
                                           tag=cms.untracked.string("_%s_" % self.step.data._internal_name)))

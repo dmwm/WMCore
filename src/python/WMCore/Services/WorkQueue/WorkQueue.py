@@ -30,17 +30,40 @@ class WorkQueue(object):
         return [{'request_name': x['key'],
                  'total_jobs': x['value']} for x in data.get('rows', [])]
 
-    def getChildQueues(self):
-        """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'childQueues', self.defaultOptions)
-        return [x['key'] for x in data.get('rows', [])]
+    def getChildQueuesAndStatus(self, stale=True):
+        """
+        Returns some stats for the workqueue elements in each ChildQueue and their status.
+         1. total number of expected Jobs (sum)
+         2. count of elements (count)
+         3. minimum number of expected Jobs in an element
+         4. maximum number of expected Jobs in an element
+         5. sum of the squares of the expected Job in each element
+        """
+        options = {'reduce': True, 'group_level': 2}
+        if stale:
+            options['stale'] = 'update_after'
 
-    def getChildQueuesByRequest(self):
-        """Get data items we have work in the queue for"""
-        data = self.db.loadView('WorkQueue', 'childQueuesByRequest',
-                                self.defaultOptions)
-        return [{'request_name': x['key'][0],
-                 'local_queue': x['key'][1]} for x in data.get('rows', [])]
+        data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndStatus', options)
+        result = {}
+        for x in data.get('rows', []):
+            result[x['key'][0]] = {x['key'][1]: x['value']}
+
+        return result
+
+    def getChildQueuesAndPriority(self, stale=True):
+        """
+        Returns some stats for the workqueue elements in each ChildQueue and their priority.
+        """
+        options = {'reduce': True, 'group_level': 2}
+        if stale:
+            options['stale'] = 'update_after'
+
+        data = self.db.loadView('WorkQueue', 'jobsByChildQueueAndPriority', options)
+        result = {}
+        for x in data.get('rows', []):
+            result[x['key'][0]] = {x['key'][1]: x['value']}
+
+        return result
 
     def getWMBSUrl(self):
         """Get data items we have work in the queue for"""
@@ -231,5 +254,51 @@ class WorkQueue(object):
         result = {}
         for x in data.get('rows', []):
             result[x['key']] = x['value']
+
+        return result
+
+    def getJobsByStatusAndPriority(self, stale=True):
+        """
+        Returns some stats for the workqueue elements in each status and their priority.
+         1. total number of expected Jobs (sum)
+         2. count of elements (count)
+         3. minimum number of expected Jobs in an element
+         4. maximum number of expected Jobs in an element
+         5. sum of the squares of the expected Job in each element
+
+        Provide group=False in order to get a final summary of all the elements.
+        """
+        options = {'reduce': True, 'group_level': 2}
+        if stale:
+            options['stale'] = 'update_after'
+
+        data = self.db.loadView('WorkQueue', 'jobsByStatusAndPriority', options)
+        result = {}
+        for x in data.get('rows', []):
+            result[x['key'][0]] = {x['key'][1]: x['value']}
+
+        return result
+
+    def getElementsByStatus(self, status, inboxFlag=False, stale=True):
+        """
+        _getElementsByStatus_
+
+        Returns the whole elements in workqueue that match the list of status given.
+        """
+        if isinstance(status, basestring):
+            status = [status]
+
+        options = {'stale': 'update_after'} if stale else {}
+        options['include_docs'] = True
+
+        db = self.inboxDB if inboxFlag else self.db
+
+        data = db.loadView('WorkQueue', 'elementsByStatus', options, status)
+        result = {}
+        for x in data.get('rows', []):
+            # doc may have been deleted already
+            if x['doc']:
+                result.setdefault(x['key'], [])
+                result[x['key']].append(x['doc'])
 
         return result

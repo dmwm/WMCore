@@ -216,12 +216,13 @@ class WorkQueueElement(dict):
                     PercentSuccess=self['PercentSuccess'])
 
     def passesSiteRestriction(self, site):
-        """Takes account of white & black list, and input data to work out
-        if site can run the work"""
+        """
+        _passesSiteRestriction_
+
+        Given a site name, checks whether it passes the site and data restrictions.
+        """
         # Site list restrictions
-        if self['SiteWhitelist'] and site not in self['SiteWhitelist']:
-            return False
-        if site in self['SiteBlacklist']:
+        if site in self['SiteBlacklist'] or site not in self['SiteWhitelist']:
             return False
 
         # input data restrictions (TrustSitelists flag)
@@ -229,11 +230,10 @@ class WorkQueueElement(dict):
             for locations in self['Inputs'].values():
                 if site not in locations:
                     return False
-        # Parent data as well (also consider the TrustSitelists flag)
-        if self['ParentFlag'] and self['NoInputUpdate'] is False:
-            for locations in self['ParentData'].values():
-                if site not in locations:
-                    return False
+            if self['ParentFlag']:
+                for locations in self['ParentData'].values():
+                    if site not in locations:
+                        return False
 
         # pileup data restrictions (TrustPUSitelists flag)
         if self['NoPileupUpdate'] is False:
@@ -243,33 +243,23 @@ class WorkQueueElement(dict):
 
         return True
 
-    def intersectionWithEmptySet(self, a, b):
-        """
-        interaction of 2 sets but if one of the set is empty returns union
-        """
-        if len(a) == 0 or len(b) == 0:
-            return a | b
-        else:
-            return a & b
-
     def possibleSites(self):
-        """Return a site list that passes data location constraints"""
-        possibleSites = set()
+        """
+        _possibleSites_
 
+        Checks the site and data restrictions and return a list of possible sites
+        to work on this element.
+        """
         if self['NoInputUpdate'] and self['NoPileupUpdate']:
             return self['SiteWhitelist']
 
-        if self['SiteWhitelist']:
-            possibleSites = self.intersectionWithEmptySet(possibleSites, set(self['SiteWhitelist']))
+        possibleSites = set(self['SiteWhitelist']) - set(self['SiteBlacklist'])
 
         if self['Inputs'] and self['NoInputUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites,
-                                                          set([y for x in self['Inputs'].values() for y in x]))
+            possibleSites = possibleSites.intersection(set([y for x in self['Inputs'].values() for y in x]))
         if self['ParentFlag'] and self['NoInputUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites,
-                                                          set([y for x in self['ParentData'].values() for y in x]))
+            possibleSites = possibleSites.intersection(set([y for x in self['ParentData'].values() for y in x]))
         if self['PileupData'] and self['NoPileupUpdate'] is False:
-            possibleSites = self.intersectionWithEmptySet(possibleSites,
-                                                          set([y for x in self['PileupData'].values() for y in x]))
+            possibleSites = possibleSites.intersection(set([y for x in self['PileupData'].values() for y in x]))
 
         return list(possibleSites)

@@ -524,7 +524,7 @@ class WorkQueueBackend(object):
             injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
             finalInjectionStatus = []
             for request in injectionStatus.keys():
-                inboxElements = self.getInboxElements(WorkflowName=request)
+                inboxElement = self.getInboxElements(WorkflowName=request)
                 requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
                 finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})
 

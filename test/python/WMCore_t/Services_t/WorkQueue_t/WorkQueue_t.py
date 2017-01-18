@@ -62,7 +62,7 @@ class WorkQueueTest(EmulatedUnitTestCase):
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
                               UnittestFlag=True)
-        self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
+        self.assertTrue(globalQ.queueWork(specUrl, specName, "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
         # overwrite default - can't test with stale view
@@ -71,12 +71,13 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
                          [{'total_jobs': 334, 'request_name': specName}])
-        self.assertEqual(wqApi.getChildQueues(), [])
+        # work still available, so no childQueue
+        self.assertEqual(wqApi.getChildQueuesAndStatus().keys(), [None])
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
         self.assertEqual(result[specName]['Available']['Jobs'], 334)
 
-        self.assertEqual(wqApi.getChildQueuesByRequest(), [])
+        self.assertEqual(wqApi.getChildQueuesAndPriority()[None].keys(), [8000])
         self.assertEqual(wqApi.getWMBSUrl(), [])
         self.assertEqual(wqApi.getWMBSUrlByRequest(), [])
 
@@ -142,7 +143,7 @@ class WorkQueueTest(EmulatedUnitTestCase):
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
                               UnittestFlag=True)
-        self.assertTrue(globalQ.queueWork(specUrl, "RerecoSpec", "teamA") > 0)
+        self.assertTrue(globalQ.queueWork(specUrl, specName, "teamA") > 0)
 
         wqApi = WorkQueueDS(self.testInit.couchUrl, 'workqueue_t')
         # overwrite default - can't test with stale view
@@ -151,7 +152,10 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
                          [{'total_jobs': 334, 'request_name': specName}])
-        self.assertEqual(wqApi.getChildQueues(), [])
+        results = wqApi.getJobsByStatusAndPriority()
+        self.assertEqual(results.keys(), ['Available'])
+        self.assertEqual(results['Available'].keys(), [8000])
+        self.assertTrue(results['Available'][8000]['sum'], 334)
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
         self.assertEqual(result[specName]['Available']['Jobs'], 334)
@@ -165,6 +169,7 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                  {'startkey': [specName], 'endkey': [specName, {}],
                                   'reduce': False})
         self.assertEqual(len(wqApi.getCompletedWorkflow(stale=False)), 1)
+        self.assertEqual(wqApi.getJobsByStatusAndPriority().keys(), ['Canceled'])
 
 
 if __name__ == '__main__':

@@ -198,7 +198,7 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         for dbs, dataMapping in dataLocations.items():
             modified = []
             for data, locations in dataMapping.items():
-                elements = self.backend.getElementsForData(dbs, data)
+                elements = self.backend.getElementsForData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
                         continue

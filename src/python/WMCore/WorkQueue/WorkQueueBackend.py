@@ -189,27 +189,28 @@ class WorkQueueBackend(object):
 
         if elementIDs:
             if elementFilters or status or returnIdOnly:
-                raise ValueError("Can't specify extra filters (or return id's) when using element id's with getElements()")
+                raise ValueError(
+                    "Can't specify extra filters (or return id's) when using element id's with getElements()")
             elements = [CouchWorkQueueElement(db, i).load() for i in elementIDs]
         else:
             options = {'include_docs': True, 'filter': elementFilters, 'idOnly': returnIdOnly, 'reduce': False}
             # filter on workflow or status if possible
-            filter = 'elementsByWorkflow'
+            filterName = 'elementsByWorkflow'
             if WorkflowName:
                 key.append(WorkflowName)
             elif status:
-                filter = 'elementsByStatus'
+                filterName = 'elementsByStatus'
                 key.append(status)
             elif elementFilters.get('SubscriptionId'):
                 key.append(elementFilters['SubscriptionId'])
-                filter = 'elementsBySubscription'
+                filterName = 'elementsBySubscription'
             # add given params to filters
             if status:
                 options['filter']['Status'] = status
             if WorkflowName:
                 options['filter']['RequestName'] = WorkflowName
 
-            view = db.loadList('WorkQueue', 'filter', filter, options, key)
+            view = db.loadList('WorkQueue', 'filter', filterName, options, key)
             view = json.loads(view)
             if returnIdOnly:
                 return view
@@ -300,7 +301,7 @@ class WorkQueueBackend(object):
             i.delete()
             specs[i['RequestName']] = None
         answer = elements[0]._couch.commit()
-        result, failures = formatReply(answer, *elements)
+        _, failures = formatReply(answer, *elements)
         msg = 'Couch error deleting element: "%s", error "%s", reason "%s"'
         for failed in failures:
             # only count delete as failed if document still exists
@@ -315,7 +316,7 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None, excludeWorkflows=[]):
+    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None, excludeWorkflows=None):
         """
         Get work which is available to be run
 
@@ -328,6 +329,7 @@ class WorkQueueBackend(object):
         """
         self.logger.info("Getting available work from %s/%s" %
                          (sanitizeURL(self.server.url)['url'], self.db.name))
+        excludeWorkflows = excludeWorkflows or []
         elements = []
         sortedElements = []
 
@@ -365,14 +367,14 @@ class WorkQueueBackend(object):
         # priority.
         for i in result:
             element = CouchWorkQueueElement.fromDocument(self.db, i)
-            # filter out exclude list from abvaling 
+            # filter out exclude list from abvaling
             if element['RequestName'] not in excludeWorkflows:
                 sortedElements.append(element)
-            
+
         # sort elements to get them in priority first and timestamp order
         sortedElements.sort(key=lambda element: element['CreationTime'])
-        sortedElements.sort(key = lambda x: x['Priority'], reverse = True)
-         
+        sortedElements.sort(key=lambda x: x['Priority'], reverse=True)
+
         for element in sortedElements:
             prio = element['Priority']
 
@@ -382,7 +384,6 @@ class WorkQueueBackend(object):
             for site in sites:
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
-                    prio = element['Priority']
                     curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
                     self.logger.debug("Job Count: %s, site: %s threshods: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
@@ -419,7 +420,7 @@ class WorkQueueBackend(object):
         return [{'dbs_url': x['key'][0],
                  'name': x['key'][1]} for x in data.get('rows', [])]
 
-    def getElementsForData(self, dbs, data):
+    def getElementsForData(self, data):
         """Get active elements for this dbs & data combo"""
         elements = self.db.loadView('WorkQueue', 'elementsByData', {'key': data, 'include_docs': True})
         return [CouchWorkQueueElement.fromDocument(self.db,
@@ -524,7 +525,7 @@ class WorkQueueBackend(object):
             injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
             finalInjectionStatus = []
             for request in injectionStatus.keys():
-                inboxElements = self.getInboxElements(WorkflowName=request)
+                inboxElement = self.getInboxElements(WorkflowName=request)
                 requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
                 finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})
 

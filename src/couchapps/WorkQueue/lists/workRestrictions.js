@@ -73,7 +73,7 @@ function(head, req) {
             }
 
             //skip if not in whitelist
-            if (ele["SiteWhitelist"].length != 0 && ele["SiteWhitelist"].indexOf(site) === -1) {
+            if (ele["SiteWhitelist"].indexOf(site) === -1) {
                 continue;
             }
 

@@ -250,3 +250,13 @@ WMStats.Utils.getInputDatasets = function(reqDoc) {
   		return inputDatasets;
   	}
 };
+
+WMStats.Utils.formatStateTransition = function(stateTransition) {
+	
+	var transFunc = function(item, i) {
+		return "<b>" + item.status + "</b>: " + WMStats.Utils.utcClock(new Date(item.update_time * 1000));
+	};
+	
+  	return WMStats.Utils.expandFormat(stateTransition, "detail", transFunc);
+  	
+};

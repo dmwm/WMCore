@@ -44,27 +44,29 @@ class WorkQueueReqMgrInterface(object):
         """Synchronize WorkQueue and RequestManager"""
         msg = ''
         try:  # pull in new work
+            self.logger.info("queueing new work")
             work = self.queueNewRequests(queue)
             msg += "New Work: %d\n" % work
-        except Exception:
-            self.logger.exception("Error caught during RequestManager pull")
+        except Exception as ex:
+            errorMsg = "Error caught during RequestManager pull"
+            self.logger.exception("%s: %s",  errorMsg, str(ex))
 
         try:  # get additional open-running work
+            self.logger.info("adding new element to open requests")
             extraWork = self.addNewElementsToOpenRequests(queue)
             msg += "Work added: %d\n" % extraWork
-        except Exception:
-            self.logger.exception("Error caught during RequestManager split")
+        except Exception as ex:
+            errorMsg = "Error caught during RequestManager split"
+            self.logger.exception("%s: %s",  errorMsg, str(ex))
 
         try:  # report back to ReqMgr
-            uptodate_elements = self.report(queue)
-            msg += "Updated ReqMgr status for: %s\n" % ", ".join([x['RequestName'] for x in uptodate_elements])
-        except Exception:
-            self.logger.exception("Error caught during RequestManager update")
-        else:
-            try:  # Delete finished requests from WorkQueue
-                self.deleteFinishedWork(queue, uptodate_elements)
-            except Exception:
-                self.logger.exception("Error caught during work deletion")
+            self.logger.info("cancel aborted requests")
+            count = self.cancelWork(queue)
+            self.logger.info("finised canceling requests")
+            msg += "Work canceled: %s " % count
+        except Exception as ex:
+            errorMsg = "Error caught during canceling the request"
+            self.logger.exception("%s: %s",  errorMsg, str(ex))
 
         queue.backend.recordTaskActivity('reqmgr_sync', msg)
 
@@ -120,17 +122,23 @@ class WorkQueueReqMgrInterface(object):
                 self.logdb.post(reqName, msg, 'error')
                 continue
 
-            try:
-                self.reportRequestStatus(reqName, "acquired")
-            except Exception as ex:
-                self.logger.warning("Unable to update ReqMgr state: %s" % str(ex))
-                self.logger.warning('Will try again later')
-
             self.logger.info('%s units(s) queued for "%s"' % (units, reqName))
             work += units
 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
         return work
+    
+    def cancelWork(self, queue):
+        requests = self.reqMgr2.getRequestByStatus(['aborted', 'force-complete'], detail=False)
+        count = 0
+        for req in requests:
+            try:
+                queue.cancelWork(req)
+                count += 1
+            except Exception as ex:
+                msg = 'Error to cancel the request "%s": %s' % (req, str(ex))
+                self.logger.exception(msg)
+        return count
 
     def report(self, queue):
         """Report queue status to ReqMgr."""
@@ -224,6 +232,7 @@ class WorkQueueReqMgrInterface(object):
         if message:
             self.logdb.post(request, str(message), 'info')
         reqmgrStatus = self._workQueueToReqMgrStatus(status)
+        
         if reqmgrStatus:  # only send known states
             try:
                 self.reqMgr2.updateRequestStatus(request, reqmgrStatus)

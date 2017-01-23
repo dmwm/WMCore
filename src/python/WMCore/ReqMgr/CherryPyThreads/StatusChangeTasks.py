@@ -5,9 +5,64 @@ Created on May 19, 2015
 from __future__ import (division, print_function)
 
 from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
-from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfoCollection
+
+def moveForwardStatus(reqDBWriter, wfStatusDict):
+    
+    for status, nextStatus in AUTO_TRANSITION.iteritems():
+        requests = reqDBWriter.getRequestByStatus([status])
+        for wf in requests:
+            stateFromGQ = wfStatusDict.get(wf, None)
+            if stateFromGQ is None:
+                continue
+            elif stateFromGQ == status:
+                continue
+            elif stateFromGQ == "failed" and status == "assigned":
+                reqDBWriter.updateRequestStatus(wf, stateFromGQ)
+                print("%s in %s moved to %s" % (wf, status, stateFromGQ))
+                continue
+            
+            try:
+                i = nextStatus.index(stateFromGQ)
+            except ValueError:
+                # No state change needed
+                continue
+            # special case for aborted workflow - aborted-completed instead of completed
+            if status == "aborted" and i == 0:
+                reqDBWriter.updateRequestStatus(wf, "aborted-completed")
+                print("%s in %s moved to %s" % (wf, status, "aborted-completed"))
+            else:
+                for j in range(i+1):
+                    reqDBWriter.updateRequestStatus(wf, nextStatus[j])
+                    print("%s in %s moved to %s" % (wf, status, nextStatus[j]))
+    return
+
+def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
+    '''
+    Handle the case when request is aborted/rejected before elements are created in GQ
+    '''
+    statusTransition = {"aborted": ["aborted-completed", "aborted-archived"],
+                        "rejected": ["rejected-archived"]}
+    
+    for status, nextStatusList in statusTransition.items():
+        requests = reqDBWriter.getRequestByStatus([status])
+        count = 0
+        for wf in requests:
+            # check whether wq elements exists for given request
+            # if not, it means 
+            if wf not in wfStatusDict:
+                for nextStatus in nextStatusList: 
+                    reqDBWriter.updateRequestStatus(wf, nextStatus)
+                    count +=0
+        print("Total %s-archived: %d", (status, count))
+    
+    return
+            
+            
+
 
 class StatusChangeTasks(CherryPyPeriodicTask):
 
@@ -19,42 +74,21 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         """
         sets the list of functions which
         """
-        self.concurrentTasks = [{'func': self.moveToArchived, 'duration': config.checkStatusDuration}]
+        self.concurrentTasks = [{'func': self.advanceStatus, 'duration': config.checkStatusDuration}]
 
-    def moveToArchived(self, config):
+    def advanceStatus(self, config):
         """
         gather active data statistics
         """
         
-        testbedWMStats = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url)
-        reqdbWriter = RequestDBWriter(config.reqmgrdb_url)
+        wmstatsService = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url)
+        reqDBWriter = RequestDBWriter(config.reqmgrdb_url)
+        gqService = WorkQueue(config.workqueue_url)
         
-         
+        wfStatus = gqService.getWorkflowStatusFromWQE()
         
-        statusTransition = {"aborted": ["aborted-completed", "aborted-archived"],
-                            "rejected": ["rejected-archived"]}
-        
-        for status, nextStatusList in statusTransition.items():
-            
-            requests = testbedWMStats.getRequestByStatus([status], 
-                                                jobInfoFlag = True, legacyFormat = True)
-            
-            self.logger.info("checking %s workflows: %d", status, len(requests))
-            
-            if len(requests) > 0:
-            
-                requestCollection = RequestInfoCollection(requests)
-                
-                requestsDict = requestCollection.getData()
-                numOfArchived = 0
-                
-                for requestName, requestInfo in requestsDict.items():
-                    
-                    if requestInfo.getJobSummary().getTotalJobs() == 0:
-                        for nextStatus in nextStatusList: 
-                            reqdbWriter.updateRequestStatus(requestName, nextStatus)
-                        numOfArchived += 1
-                
-                self.logger.info("Total %s-archieved: %d", status, numOfArchived)  
+        moveForwardStatus(reqDBWriter, wfStatus)
+        moveToArchivedForNoJobs(wmstatsService, reqDBWriter) 
                   
         return
+                    

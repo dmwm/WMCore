@@ -23,6 +23,7 @@ REQUEST_STATE_TRANSITION = {
                  "aborted"],
 
     "running-open": ["running-closed",
+                     "force-complete",  # manual transition
                      "aborted"],  # manual transition
 
     "running-closed": ["force-complete",  # manual transition
@@ -102,6 +103,17 @@ ALLOWED_ACTIONS_FOR_STATUS = {
     "aborted-archived": [],
     "rejected-archived": [],
 }
+
+# transition controlled by ReqMgr2 automatically
+# aborted to completed instead of aborted-completed 
+# since workqueue mapping doesn't have aborted-completed status. 
+# but it need to be converted to aborted-completed whenever update db
+AUTO_TRANSITION = {"assigned": ["acquired", "running-open", "running-closed", "completed"], 
+                   "acquired": ["running-open", "running-closed", "completed"],
+                   "running-open": ["running-closed", "completed"],
+                   "aborted": ["completed"],
+                   "running-closed": ["completed"],
+                   "force-complete": ["completed"]}
 
 # list of destiantion states which doesn't allow any additional arguement update
 STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.iteritems() if len(val) == 0]

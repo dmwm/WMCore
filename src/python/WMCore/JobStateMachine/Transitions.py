@@ -14,7 +14,7 @@ class Transitions(dict):
         self.setdefault('new', ['created', 'createfailed', 'killed'])
         self.setdefault('created', ['executing', 'submitfailed', 'createfailed', 'killed'])
         self.setdefault('executing', ['complete', 'jobfailed', 'killed'])
-        self.setdefault('complete', ['jobfailed', 'success'])
+        self.setdefault('complete', ['jobfailed', 'success', 'cleanout'])
         self.setdefault('createfailed', ['createcooloff', 'retrydone', 'killed'])
         self.setdefault('submitfailed', ['submitcooloff', 'retrydone', 'killed'])
         self.setdefault('jobfailed', ['jobcooloff', 'retrydone', 'killed'])
@@ -28,6 +28,7 @@ class Transitions(dict):
         self.setdefault('jobpaused', ['created', 'retrydone', 'killed'])
         self.setdefault('createpaused', ['created', 'retrydone', 'killed'])
         self.setdefault('submitpaused', ['created', 'retrydone', 'killed'])
+        self.setdefault('cleanout', [])
 
     def states(self):
         """

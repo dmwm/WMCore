@@ -54,11 +54,11 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
     """
     _killWorkflow_
 
-    Kill a workflow that is already executing inside the agent.  This will
-    mark all incomplete jobs as failed and files that belong to all
-    non-cleanup and non-logcollect subscriptions as failed.  The name of the
-    JSM couch database and the URL to the database must be passed in as well
-    so the state transitions are logged.
+    Kill a workflow that is already executing inside the agent.  This will:
+        1. mark all available, acquired and failed files as completed
+        2. mark all incomplete jobs as failed
+    The name of the JSM couch database and the URL to the database must be
+    passed in as well so the state transitions are logged.
     """
     myThread = threading.currentThread()
     daoFactory = DAOFactory(package="WMCore.WMBS",
@@ -82,17 +82,16 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
         killableJobs = []
         for liveJob in liveJobs:
             if liveJob["state"].lower() == 'executing':
-                # Then we need to kill this on the batch system
                 liveWMBSJob = Job(id=liveJob["id"])
                 liveWMBSJob.update(liveJob)
                 killableJobs.append(liveJob)
-        # Now kill them
+        # Now condor_rm them
         try:
             logging.info("Killing %d jobs for workflow: %s", len(killableJobs), workflowName)
             bossAir.kill(jobs=killableJobs, workflowName=workflowName)
         except BossAirException as ex:
             # Something's gone wrong. Jobs not killed!
-            logging.error("Error while trying to kill running jobs in workflow!\n")
+            logging.error("Error while trying to kill executing jobs in workflow!\n")
             logging.error(str(ex))
             trace = getattr(ex, 'traceback', '')
             logging.error(trace)
@@ -101,16 +100,14 @@ def killWorkflow(workflowName, jobCouchConfig, bossAirConfig=None):
 
     liveWMBSJobs = defaultdict(list)
     for liveJob in liveJobs:
-        if liveJob["state"] == "killed":
-            # Then we've killed it already
-            continue
-        liveWMBSJob = Job(id=liveJob["id"])
-        liveWMBSJob.update(liveJob)
-        liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
+        if liveJob["state"] != "killed":
+            liveWMBSJob = Job(id=liveJob["id"])
+            liveWMBSJob.update(liveJob)
+            liveWMBSJobs[liveJob["state"]].append(liveWMBSJob)
 
     for state, jobsByState in liveWMBSJobs.items():
-        if len(jobsByState) > 100 and state != "executing":
-            # if there are to many jobs skip the couch and dashboard update
+        if len(jobsByState) > 10000 and state not in ("executing", "complete"):
+            # if there are too many jobs skip the couch and dashboard update
             # TODO: couch and dashboard need to be updated or parallel.
             changeState.check("killed", state)
             changeState.persist(jobsByState, "killed", state)

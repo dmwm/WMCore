@@ -431,69 +431,13 @@ class WMWorkloadHelper(PersistencyHelper):
         self.data.tasks.tasklist.remove(taskName)
         return
 
-    def setSiteWildcardsLists(self, siteWhitelist, siteBlacklist, wildcardDict):
-        """
-        _setSiteWildcardsLists_
-
-        Given a whitelist and a blacklist that contain wildcards, and a
-        list of wildcards, assign the whitelist and the blacklist so that
-        they have the proper sites and not the wildcard symbols.
-
-        Expects a wildcardDict containing all available wildcard symbols as keys
-        and the list of sites corresponding to those keys as values.
-
-        e.g.
-        {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
-        'US*': ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
-        'T1*': ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL']}
-        """
-        newWhiteList = self.removeWildcardsFromList(siteList=siteWhitelist, wildcardDict=wildcardDict)
-        newBlackList = self.removeWildcardsFromList(siteList=siteBlacklist, wildcardDict=wildcardDict)
-
-        for site in newWhiteList:
-            if '*' in site:
-                msg = "Invalid wildcard site %s in site whitelist!" % site
-                raise WMWorkloadException(msg)
-        for site in newBlackList:
-            if '*' in site:
-                msg = "Invalid wildcard site %s in site blacklist!" % site
-                raise WMWorkloadException(msg)
-
-        self.setSiteWhitelist(siteWhitelist=newWhiteList)
-        self.setSiteBlacklist(siteBlacklist=newBlackList)
-
-        return
-
-    def removeWildcardsFromList(self, siteList, wildcardDict={}):
-        """
-        _removeWildcardsFromList_
-
-        Given a list of sites, remove any of the wildcards
-        that are in site.wildcards and replace them with the
-        sites that you picked out of SiteDB.
-        """
-
-        deleteKeys = []
-        for s in siteList:
-            if s in wildcardDict.keys():
-                deleteKeys.append(s)
-
-        for s in deleteKeys:
-            keyList = wildcardDict[s]
-            for site in keyList:
-                if site not in siteList:
-                    siteList.append(site)
-            siteList.remove(s)
-
-        return siteList
-
     def setSiteWhitelist(self, siteWhitelist):
         """
         _setSiteWhitelist_
 
         Set the site white list for the top level tasks in the workload.
         """
-        if not isinstance(siteWhitelist, type([])):
+        if not isinstance(siteWhitelist, list):
             siteWhitelist = [siteWhitelist]
 
         taskIterator = self.taskIterator()
@@ -1173,59 +1117,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return taskList
 
-    def setSubscriptionInformationWildCards(self, wildcardDict, custodialSites=None,
-                                            nonCustodialSites=None, autoApproveSites=None,
-                                            custodialSubType="Replica", nonCustodialSubType="Replica",
-                                            custodialGroup="DataOps", nonCustodialGroup="DataOps",
-                                            priority="Low", primaryDataset=None,
-                                            useSkim = False, isSkim = False,
-                                            dataTier=None, deleteFromSource=False):
-        """
-        _setSubscriptionInformationWildCards_
-
-        Set the given subscription information for all datasets
-        in the workload that match the given primary dataset (if any), site lists can have wildcards.
-        See WMWorkload.WMWorkloadHelper.setSiteWildcardsLists for details on the wildcardDict
-        """
-
-        if custodialSites and not isinstance(custodialSites, type([])):
-            custodialSites = [custodialSites]
-        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
-            nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and not isinstance(autoApproveSites, type([])):
-            autoApproveSites = [autoApproveSites]
-
-        newCustodialList = self.removeWildcardsFromList(siteList=custodialSites, wildcardDict=wildcardDict)
-        newNonCustodialList = self.removeWildcardsFromList(siteList=nonCustodialSites, wildcardDict=wildcardDict)
-        newAutoApproveList = self.removeWildcardsFromList(siteList=autoApproveSites, wildcardDict=wildcardDict)
-
-        for site in newCustodialList:
-            if '*' in site:
-                msg = "Invalid wildcard site %s in custodial site list!" % site
-                raise WMWorkloadException(msg)
-        for site in newNonCustodialList:
-            if '*' in site:
-                msg = "Invalid wildcard site %s in non custodial site list!" % site
-                raise WMWorkloadException(msg)
-        for site in newAutoApproveList:
-            if '*' in site:
-                msg = "Invalid wildcard site %s in auto approval site list!" % site
-                raise WMWorkloadException(msg)
-
-        self.setSubscriptionInformation(custodialSites=newCustodialList,
-                                        nonCustodialSites=newNonCustodialList,
-                                        autoApproveSites=newAutoApproveList,
-                                        custodialSubType=custodialSubType,
-                                        nonCustodialSubType=nonCustodialSubType,
-                                        custodialGroup=custodialGroup,
-                                        nonCustodialGroup=nonCustodialGroup,
-                                        priority=priority,
-                                        primaryDataset=primaryDataset,
-                                        useSkim=useSkim,
-                                        isSkim=isSkim,
-                                        dataTier=dataTier,
-                                        deleteFromSource=deleteFromSource)
-
     def setSubscriptionInformation(self, initialTask=None, custodialSites=None,
                                    nonCustodialSites=None, autoApproveSites=None,
                                    custodialSubType="Replica", nonCustodialSubType="Replica",
@@ -1240,11 +1131,11 @@ class WMWorkloadHelper(PersistencyHelper):
         in the workload that match the given primaryDataset (if any)
         """
 
-        if custodialSites and not isinstance(custodialSites, type([])):
+        if custodialSites and not isinstance(custodialSites, list):
             custodialSites = [custodialSites]
-        if nonCustodialSites and not isinstance(nonCustodialSites, type([])):
+        if nonCustodialSites and not isinstance(nonCustodialSites, list):
             nonCustodialSites = [nonCustodialSites]
-        if autoApproveSites and not isinstance(autoApproveSites, type([])):
+        if autoApproveSites and not isinstance(autoApproveSites, list):
             autoApproveSites = [autoApproveSites]
 
         if initialTask:
@@ -1699,7 +1590,7 @@ class WMWorkloadHelper(PersistencyHelper):
             # TODO raise proper exception
             raise Exception("not all the key is specified %s" % keys)
 
-    def updateArguments(self, kwargs, wildcardSites={}):
+    def updateArguments(self, kwargs):
         """
         set up all the argument related to assigning request.
         args are validated before update.
@@ -1730,9 +1621,8 @@ class WMWorkloadHelper(PersistencyHelper):
         setAssignArgumentsWithDefault(kwargs, argumentDefinition, assignParams)
 
         if self._checkKeys(kwargs, siteParams):
-            self.setSiteWildcardsLists(siteWhitelist=kwargs["SiteWhitelist"],
-                                       siteBlacklist=kwargs["SiteBlacklist"],
-                                       wildcardDict=wildcardSites)
+            self.setSiteWhitelist(kwargs["SiteWhitelist"])
+            self.setSiteBlacklist(kwargs["SiteBlacklist"])
             self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
                                       pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
 
@@ -1767,16 +1657,15 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set phedex subscription information
         if self._checkKeys(kwargs, phedexParams):
-            self.setSubscriptionInformationWildCards(wildcardDict=wildcardSites,
-                                                     custodialSites=kwargs["CustodialSites"],
-                                                     nonCustodialSites=kwargs["NonCustodialSites"],
-                                                     autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                                     custodialSubType=kwargs["CustodialSubType"],
-                                                     nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                                     custodialGroup=kwargs["CustodialGroup"],
-                                                     nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                                     priority=kwargs["SubscriptionPriority"],
-                                                     deleteFromSource=kwargs["DeleteFromSource"])
+            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                            nonCustodialSites=kwargs["NonCustodialSites"],
+                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                            custodialSubType=kwargs["CustodialSubType"],
+                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                            custodialGroup=kwargs["CustodialGroup"],
+                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                            priority=kwargs["SubscriptionPriority"],
+                                            deleteFromSource=kwargs["DeleteFromSource"])
 
         # Block closing information
         if self._checkKeys(kwargs, blockCloseParams):

@@ -127,15 +127,12 @@ def jobrange(candidate):
 
 def cmsname(candidate):
     """
-    Check candidate as a (partial) CMS name. Should pass:
-        T2
-        T2_UK
-        T2_UK_SGrid
-        T2_UK_SGrid_Bristol
+    Candidate must pass the CMS name pattern. Thus:
+     * good candidates: T2_UK_SGrid or T2_UK_SGrid_Bristol
+     * bad candidates: T2, T2_UK
     """
-    # remove any trailing _'s
     candidate = candidate.rstrip('_')
-    return check("^T[0-3%]((_[A-Z]{2}(_[A-Za-z0-9]+)*)?)$", candidate)
+    return check("^T[0-3]_[A-Z]{2}((_[A-Za-z0-9]+)+)$", candidate)
 
 
 def countrycode(candidate):

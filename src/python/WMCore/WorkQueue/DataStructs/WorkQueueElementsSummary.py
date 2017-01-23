@@ -3,9 +3,88 @@ WorkQueueElementsSummary
 
 """
 from __future__ import (print_function, division)
-from pprint import pprint
 from collections import defaultdict
+
 from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult
+
+
+def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
+    """
+    _getGlobalSiteStatusSummary_
+
+    Given a dict with workqueue elements keyed by status, such as this format:
+    {u'Canceled': [{u'Inputs': {}, u'Jobs': 18,...}, {u'Jobs': 11,...}],
+     u'Running': [{'Priority': 190000,..}, ...]}
+
+    Creates a summary of jobs and number of wq elements in each status
+    distributed among the sites whitelisted. There are 2 job distribution:
+     *) unique top level jobs per site and per status and (equally
+        distributed among all sites)
+     *) possible top level jobs per site and per status (consider all
+        jobs can run in a single location)
+
+    If status is provided, then skip any workqueue element not in the
+    given status. Otherwise filter only active workqueue status.
+
+    If dataLocality is set to True, then it considers only sites that pass
+    the data location constraint.
+    """
+    if status and isinstance(status, basestring):
+        activeStatus = [status]
+    elif status and isinstance(status, (list, tuple)):
+        activeStatus = status
+    else:
+        activeStatus = elements.keys()
+
+    uniqueJobsSummary = {}
+    possibleJobsSummary = {}
+
+    for st in activeStatus:
+        uniqueJobsSummary.setdefault(st, {})
+        possibleJobsSummary.setdefault(st, {})
+        for elem in elements.get(st, []):
+            elem = elem['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']
+            if dataLocality:
+                possibleSites = getPossibleSites(elem)
+            else:
+                possibleSites = list(set(elem['SiteWhitelist']) - set(elem['SiteBlacklist']))
+
+            try:
+                jobsPerSite = elem['Jobs'] / len(possibleSites)
+            except ZeroDivisionError:
+                possibleSites = ['NoPossibleSite']
+                jobsPerSite = elem['Jobs']
+
+            for site in possibleSites:
+                uniqueJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
+                possibleJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
+
+                uniqueJobsSummary[st][site]['Jobs'] += jobsPerSite
+                uniqueJobsSummary[st][site]['NumElems'] += 1
+                possibleJobsSummary[st][site]['Jobs'] += elem['Jobs']
+                possibleJobsSummary[st][site]['NumElems'] += 1
+
+    return uniqueJobsSummary, possibleJobsSummary
+
+
+def getPossibleSites(elem):
+    """
+    Function replicated from: WMCore/WorkQueue/DataStructs/WorkQueueElement.py
+    Return a site list that passes data location constraints in this element
+    """
+    if elem['NoInputUpdate'] and elem['NoPileupUpdate']:
+        return elem['SiteWhitelist']
+
+    possibleSites = set(elem['SiteWhitelist']) - set(elem['SiteBlacklist'])
+
+    if elem['Inputs'] and elem['NoInputUpdate'] is False:
+        possibleSites = possibleSites.intersection(set([y for x in elem['Inputs'].values() for y in x]))
+    if elem['ParentFlag'] and elem['NoInputUpdate'] is False:
+        possibleSites = possibleSites.intersection(set([y for x in elem['ParentData'].values() for y in x]))
+    if elem['PileupData'] and elem['NoPileupUpdate'] is False:
+        possibleSites = possibleSites.intersection(set([y for x in elem['PileupData'].values() for y in x]))
+    return list(possibleSites)
+
 
 class WorkQueueElementsSummary(object):
     """Class to hold the status of a related group of WorkQueueElements"""
@@ -29,8 +108,6 @@ class WorkQueueElementsSummary(object):
         priority = self.wqResultsByRequest[requestName]['Priority']
         creationTime = self.wqResultsByRequest[requestName]['Elements'][0]['CreationTime']
         
-        # this will include all the possible sites on the requests
-        # TODO: when different blocks are located in different site it need to handled
         sites = self.getPossibleSitesByRequest(requestName)
         
         sortedElements = []    
@@ -79,71 +156,6 @@ class WorkQueueElementsSummary(object):
         else:
             return self.wqResultsByRequest
 
-    def getGlobalStatusSummary(self, status=None):
-        """
-        Goes through all the request/workqueue elements and print a total overview of:
-         *) amount of workqueue elements and
-         *) top level jobs in each status
-        """
-        numberOfWQESummary = {}
-        numberOfJobsSummary = {}
-        for reqName in self.wqResultsByRequest:
-            for elem in self.wqResultsByRequest[reqName]['Elements']:
-                numberOfWQESummary.setdefault(elem['Status'], 0)
-                numberOfWQESummary[elem['Status']] += 1
-
-                numberOfJobsSummary.setdefault(elem['Status'], 0)
-                numberOfJobsSummary[elem['Status']] += elem['Jobs']
-
-        if status:
-            numberOfWQESummary = {status: numberOfWQESummary.get(status, 0)}
-            numberOfJobsSummary = {status: numberOfJobsSummary.get(status, 0)}
-
-        return numberOfWQESummary, numberOfJobsSummary
-
-    def getGlobalSiteStatusSummary(self, status=None):
-        """
-        Goes through all the request/workqueue elements that are active
-        and print a total overview of:
-         *) unique top level jobs per site and per status and (distributed)
-         *) possible top level jobs per site and per status (maxxed)
-
-        If status is provided, then skip any workqueue element not in the
-        given status. Otherwise filter only active workqueue status.
-        """
-        activeStatus = ['Available', 'Negotiating', 'Acquired', 'Running']
-
-        uniqueJobsSummary = {}
-        possibleJobsSummary = {}
-        for st in activeStatus:
-            uniqueJobsSummary.setdefault(st, {})
-            possibleJobsSummary.setdefault(st, {})
-
-        for reqName in self.wqResultsByRequest:
-            for elem in self.wqResultsByRequest[reqName]['Elements']:
-                if elem['Status'] not in activeStatus:
-                    continue
-
-                possibleSites = elem.possibleSites()
-                try:
-                    jobsPerSite = int(elem['Jobs']/len(possibleSites))
-                except ZeroDivisionError:
-                    possibleSites = ['None']
-                    jobsPerSite = elem['Jobs']
-
-                for site in possibleSites:
-                    uniqueJobsSummary[elem['Status']].setdefault(site, 0)
-                    possibleJobsSummary[elem['Status']].setdefault(site, 0)
-
-                    uniqueJobsSummary[elem['Status']][site] += jobsPerSite
-                    possibleJobsSummary[elem['Status']][site] += elem['Jobs']
-
-        if status:
-            uniqueJobsSummary = {status: uniqueJobsSummary.get(status, 0)}
-            possibleJobsSummary = {status: possibleJobsSummary.get(status, 0)}
-
-        return uniqueJobsSummary, possibleJobsSummary
-
     def printSummary(self, request, detail=False):
         
         wqResult = self.getWQElementResultsByRequest(request)
@@ -151,7 +163,6 @@ class WorkQueueElementsSummary(object):
         if wqResult is None:
             print("No WQ element exist for the status given")
             return
-        #pprint(elements)
         print("### summary for %s ###" % request )
         print("  Priority: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
         

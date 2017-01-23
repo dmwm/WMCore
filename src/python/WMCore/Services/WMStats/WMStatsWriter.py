@@ -36,6 +36,19 @@ def monitorDocFromRequestSchema(schema):
     return doc
 
 
+def convertToServiceCouchDoc(wqInfo, wqURL):
+    """
+    Convert services generic info into a proper couch doc.
+    """
+    wqDoc = {}
+    wqDoc.update(wqInfo)
+    wqDoc['_id'] = wqURL
+    wqDoc['agent_url'] = wqURL
+    wqDoc['timestamp'] = int(time.time())
+    wqDoc['type'] = "agent_info"
+    return wqDoc
+
+
 class WMStatsWriter(WMStatsReader):
 
     def __init__(self, couchURL, appName="WMStats", reqdbURL=None, reqdbCouchApp="ReqMgr"):

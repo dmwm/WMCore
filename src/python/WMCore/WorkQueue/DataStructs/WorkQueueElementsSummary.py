@@ -6,6 +6,7 @@ from __future__ import (print_function, division)
 from collections import defaultdict
 
 from WMCore.WorkQueue.DataStructs.WorkQueueElementResult import WorkQueueElementResult
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 
 
 def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
@@ -45,17 +46,17 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
         for elem in elements.get(st, []):
             elem = elem['WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement']
             if dataLocality:
-                possibleSites = getPossibleSites(elem)
+                commonSites = possibleSites(elem)
             else:
-                possibleSites = list(set(elem['SiteWhitelist']) - set(elem['SiteBlacklist']))
+                commonSites = list(set(elem['SiteWhitelist']) - set(elem['SiteBlacklist']))
 
             try:
-                jobsPerSite = elem['Jobs'] / len(possibleSites)
+                jobsPerSite = elem['Jobs'] / len(commonSites)
             except ZeroDivisionError:
-                possibleSites = ['NoPossibleSite']
+                commonSites = ['NoPossibleSite']
                 jobsPerSite = elem['Jobs']
 
-            for site in possibleSites:
+            for site in commonSites:
                 uniqueJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
                 possibleJobsSummary[st].setdefault(site, {'Jobs': 0, 'NumElems': 0})
 
@@ -65,25 +66,6 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
                 possibleJobsSummary[st][site]['NumElems'] += 1
 
     return uniqueJobsSummary, possibleJobsSummary
-
-
-def getPossibleSites(elem):
-    """
-    Function replicated from: WMCore/WorkQueue/DataStructs/WorkQueueElement.py
-    Return a site list that passes data location constraints in this element
-    """
-    if elem['NoInputUpdate'] and elem['NoPileupUpdate']:
-        return elem['SiteWhitelist']
-
-    possibleSites = set(elem['SiteWhitelist']) - set(elem['SiteBlacklist'])
-
-    if elem['Inputs'] and elem['NoInputUpdate'] is False:
-        possibleSites = possibleSites.intersection(set([y for x in elem['Inputs'].values() for y in x]))
-    if elem['ParentFlag'] and elem['NoInputUpdate'] is False:
-        possibleSites = possibleSites.intersection(set([y for x in elem['ParentData'].values() for y in x]))
-    if elem['PileupData'] and elem['NoPileupUpdate'] is False:
-        possibleSites = possibleSites.intersection(set([y for x in elem['PileupData'].values() for y in x]))
-    return list(possibleSites)
 
 
 class WorkQueueElementsSummary(object):
@@ -120,8 +102,8 @@ class WorkQueueElementsSummary(object):
                     if element['CreationTime'] > creationTime:
                         continue
                     if len(sites) > 0:
-                        possibleSites = element.possibleSites()
-                        if len(set(possibleSites) & sites) > 0:
+                        commonSites = possibleSites(element)
+                        if len(set(commonSites) & sites) > 0:
                             sortedElements.append(element)
                     else:
                         sortedElements.append(element)
@@ -147,7 +129,7 @@ class WorkQueueElementsSummary(object):
         # TODO: when different blocks are located in different site it need to handled
         sites = set()
         for ele in self.wqResultsByRequest[requestName]['Elements']:
-            sites = sites | set(ele.possibleSites())
+            sites = sites | set(possibleSites(ele))
         return sites
         
     def getWQElementResultsByRequest(self, requestName = None):

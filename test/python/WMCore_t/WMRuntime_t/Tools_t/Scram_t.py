@@ -10,7 +10,8 @@ Copyright (c) 2012 evansde77. All rights reserved.
 import unittest
 import os
 from WMQuality.TestInit import TestInit
-from WMCore.WMRuntime.Tools.Scram import Scram
+from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS
+
 
 class Scram_t(unittest.TestCase):
     def setUp(self):
@@ -26,16 +27,15 @@ class Scram_t(unittest.TestCase):
         instantiate a Scram instance in test mode.
         """
         try:
-            s = Scram(
-                initialise = "/bin/date",
-                architecture = "slc5_amd64_gcc454",
-                version = "CMSSW_X_Y_Z",
-                test = True
+            Scram(
+                initialise="/bin/date",
+                architecture="slc5_amd64_gcc454",
+                version="CMSSW_X_Y_Z",
+                test=True
             )
         except Exception as ex:
             msg = "Failed to instantiate Scram in test mode:\n %s " % str(ex)
             self.fail(msg)
-
 
     def testB(self):
         """
@@ -43,16 +43,14 @@ class Scram_t(unittest.TestCase):
         limited what we can test here since we dont have scram etc in unittest env
         """
         try:
-            s = Scram(
-                initialise = "/bin/date",
-                architecture = "slc5_amd64_gcc454",
-                version = "CMSSW_X_Y_Z"
+            Scram(
+                initialise="/bin/date",
+                architecture="slc5_amd64_gcc454",
+                version="CMSSW_X_Y_Z"
             )
         except Exception as ex:
             msg = "Failed to instantiate Scram:\n %s " % str(ex)
             self.fail(msg)
-
-
 
     def testC(self):
         """
@@ -60,11 +58,11 @@ class Scram_t(unittest.TestCase):
 
         """
         s = Scram(
-            initialise = "/bin/date",
-            architecture = "slc5_amd64_gcc454",
-            version = "CMSSW_X_Y_Z",
-            directory = self.testDir,
-            test = True
+            initialise="/bin/date",
+            architecture="slc5_amd64_gcc454",
+            version="CMSSW_X_Y_Z",
+            directory=self.testDir,
+            test=True
 
         )
 
@@ -97,6 +95,12 @@ class Scram_t(unittest.TestCase):
 
         self.assertEqual(status, 0)
         self.assertEqual(s.lastExecuted, comm)
+
+    def testArchMap(self):
+        self.assertItemsEqual(OS_TO_ARCH['rhel6'], ['slc5', 'slc6'])
+        self.assertItemsEqual(OS_TO_ARCH['rhel7'], ['slc7'])
+        self.assertItemsEqual(ARCH_TO_OS['slc6'], ['rhel6'])
+        self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
 
 
 if __name__ == '__main__':

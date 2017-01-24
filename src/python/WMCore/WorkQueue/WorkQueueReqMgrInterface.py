@@ -285,10 +285,6 @@ class WorkQueueReqMgrInterface(object):
         """Add new elements to open requests which are in running-open state, only works adding new blocks from the input dataset"""
         self.logger.info("Checking Request Manager for open requests and closing old ones")
 
-        # First close any open inbox element which hasn't found anything new in a while
-        queue.closeWork()
-        self.report(queue)
-
         work = 0
         requests = []
 

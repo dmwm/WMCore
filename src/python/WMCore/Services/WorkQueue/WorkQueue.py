@@ -5,6 +5,53 @@ from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 
+def convertWQElementsStatusToWFStatus(elementsStatusSet):
+    '''
+    Defined Workflow status from its WorkQeuueElement status.
+    :param: elementsStatusSet - dictionary of {request_name: set of all WQE status of this request, ...}
+    :returns: request status 
+    
+    Here is the mapping between request status and it GQE status
+    1. acquired:  if all the GQEs are either Available or Negotiating -  Work is still in GQ but not LQ
+    2. running-open: if at least one of the GQEs are in Acquired status - at least some work is in LQ
+    3. running-closed: if all the GQEs are in Running or complted status 
+                       no Available Negotiating or Acquired status. all the work is in WMBS db (in agents)
+    4. completed: if all the GQEs are in 'Done', 'Canceled' status. 
+                   - all work is finsed in wmbs (excluding cleanup, logcollect)
+    5. failed: if all the GQEs are in Failed status - this is not currently possible. failed status directly updated from GQ  
+    
+    CancelRequest status treated as transient status.               
+    '''
+    if len(elementsStatusSet) == 0:
+        return None
+    
+    available = set(["Available", "Negotiating"])
+    acquired = set(["Acquired"])
+    running = set(["Running"])
+    completed = set(['Done', 'Canceled'])
+    failed = set(["Failed"])
+    
+    if elementsStatusSet <= available:
+        # if all the elements are Available status.
+        return "acquired"
+    elif elementsStatusSet <= completed:
+        # if all the elements are Done or Canceled status
+        return "completed"
+    elif elementsStatusSet <= failed:
+        # if all the elements are in Failed staus
+        return "failed"
+    elif acquired <= elementsStatusSet:
+        # if one of the elements are in Acquired status
+        return "running-open"
+    elif running <= elementsStatusSet:
+        # if one of the elements in running status but no elements are 
+        # Acquired or Assigned status
+        return "running-closed"
+    else:
+        # transitional status. Negociating status won't be changed.
+        return None
+
+
 # TODO: this could be derived from the Service class to use client side caching
 class WorkQueue(object):
     """
@@ -212,27 +259,35 @@ class WorkQueue(object):
             result[x['key'][0]][x['key'][1]] = {'NumOfElements': x['value']['count'],
                                                 'Jobs': x['value']['sum']}
         return result
-
-    def _getCompletedWorkflowList(self, data):
-        completedWFs = []
+    
+    
+    def _retrieveWorkflowStatus(self, data):
+        workflowsStatus = {}
+        
         for workflow in data:
-            completed = True
-            for status in data[workflow]:
-                if status not in ['Done', 'Failed', 'Canceled']:
-                    completed = False
-                    break
-            if completed:
-                completedWFs.append(workflow)
-        return completedWFs
+            statusSet = set(data[workflow].keys())
+            status = convertWQElementsStatusToWFStatus(statusSet)
+            if status:
+                workflowsStatus[workflow] = status
+        return workflowsStatus
+    
+    
+    def getWorkflowStatusFromWQE(self, stale=True):
+        """
+        only checks workqueue db not inbox db.
+        returns and list of workflows by request status
+        """
+        data = self.getElementsCountAndJobsByWorkflow(stale=stale)
+        return self._retrieveWorkflowStatus(data)
 
     def getCompletedWorkflow(self, stale=True):
         """
         only checks workqueue db not inbox db.
         since inbox db will be cleaned up first when workflow is completed
         """
-        data = self.getElementsCountAndJobsByWorkflow(stale)
-        return self._getCompletedWorkflowList(data)
-
+        workflowStatus = self.getWorkflowStatusFromWQE(stale=stale)
+        return [wf for wf, status in workflowStatus.iteritems() if status == "completed"]
+    
     def getJobsByStatus(self, inboxFlag=False, group=True):
         """
         Returns some stats for the workqueue elements in each status, like:

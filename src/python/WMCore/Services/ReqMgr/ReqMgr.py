@@ -36,11 +36,11 @@ class ReqMgr(Service):
         _getResult_
         """
         result = ''
-        file = callname.replace("/", "_")
+        cfile = callname.replace("/", "_")
         if clearCache:
-            self.clearCache(file, args, verb)
+            self.clearCache(cfile, args, verb)
 
-        f = self.refreshCache(file, callname, args, encoder=encoder,
+        f = self.refreshCache(cfile, callname, args, encoder=encoder,
                               verb=verb, contentType=contentType)
         result = f.read()
         f.close()
@@ -212,6 +212,6 @@ class ReqMgr(Service):
         from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
         # TODO remove "aborted-completed status when state transition happens in reqmgr2
-        maskStates = ["aborted", "aborted-completed", "force-complete"]
+        maskStates = ["aborted", "force-complete"]
         return MemoryCacheStruct(expire=0, func=self.getRequestByStatus,
                                  kwargs={'statusList': maskStates, "detail": False})

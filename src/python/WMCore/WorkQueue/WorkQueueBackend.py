@@ -152,8 +152,8 @@ class WorkQueueBackend(object):
             else:
                 newUnitsInserted.append(unit)
             unit.save()
+            unit._couch.commit(all_or_nothing=True)
 
-        unit._couch.commit(all_or_nothing=True)
         return newUnitsInserted
 
     def createWork(self, spec, **kwargs):
@@ -165,7 +165,7 @@ class WorkQueueBackend(object):
                        'RequestName': spec.name(),
                        'StartPolicy': spec.startPolicyParameters(),
                        'EndPolicy': spec.endPolicyParameters(),
-                       'OpenForNewData': True
+                       'OpenForNewData': False
                       })
         unit = CouchWorkQueueElement(self.inbox, elementParams=kwargs)
         unit.id = spec.name()
@@ -385,7 +385,7 @@ class WorkQueueBackend(object):
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
                     curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
-                    self.logger.debug("Job Count: %s, site: %s threshods: %s" % (curJobCount, site, thresholds[site]))
+                    self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site
                         break

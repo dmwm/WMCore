@@ -319,9 +319,10 @@ class ReqMgrService(TemplatedPage):
             kwds.update({'status': 'assignment-approved'})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
-        data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for val in data.values():
-            docs.append(request_attr(val, attrs))
+        dataResult = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
+        for data in dataResult:
+            for val in data.values():
+                docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         misc_json = {'RequestPriority': 5000,
@@ -376,9 +377,10 @@ class ReqMgrService(TemplatedPage):
         kwds.update({'_nostale': True})
         docs = []
         attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
-        data = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
-        for val in data.values():
-            docs.append(request_attr(val, attrs))
+        dataResult = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
+        for data in dataResult:
+            for val in data.values():
+                docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')
@@ -516,10 +518,11 @@ class ReqMgrService(TemplatedPage):
             kwds = {}
         if 'status' not in kwds:
             kwds.update({'status': 'acquired'})
-        results = self.reqmgr.getRequestByStatus(kwds['status'])
+        dataResult = self.reqmgr.getRequestByStatus(kwds['status'])
         docs = []
-        for doc in results.values():
-            docs.append(request_attr(doc))
+        for data in dataResult:
+            for doc in data.values():
+                docs.append(request_attr(doc))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')

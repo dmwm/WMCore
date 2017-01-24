@@ -6,7 +6,6 @@ from __future__ import (division, print_function)
 
 from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
-from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
@@ -45,6 +44,7 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
     Handle the case when request is aborted/rejected before elements are created in GQ
     '''
     statusTransition = {"aborted": ["aborted-completed", "aborted-archived"],
+                        "aborted-completed": ["aborted-archived"],
                         "rejected": ["rejected-archived"]}
     
     for status, nextStatusList in statusTransition.items():
@@ -56,7 +56,7 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
             if wf not in wfStatusDict:
                 for nextStatus in nextStatusList: 
                     reqDBWriter.updateRequestStatus(wf, nextStatus)
-                    count +=0
+                    count += 1
         print("Total %s-archived: %d", (status, count))
     
     return
@@ -81,14 +81,13 @@ class StatusChangeTasks(CherryPyPeriodicTask):
         gather active data statistics
         """
         
-        wmstatsService = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url)
         reqDBWriter = RequestDBWriter(config.reqmgrdb_url)
         gqService = WorkQueue(config.workqueue_url)
         
-        wfStatus = gqService.getWorkflowStatusFromWQE()
+        wfStatusDict = gqService.getWorkflowStatusFromWQE()
         
-        moveForwardStatus(reqDBWriter, wfStatus)
-        moveToArchivedForNoJobs(wmstatsService, reqDBWriter) 
+        moveForwardStatus(reqDBWriter, wfStatusDict)
+        moveToArchivedForNoJobs(reqDBWriter, wfStatusDict) 
                   
         return
                     

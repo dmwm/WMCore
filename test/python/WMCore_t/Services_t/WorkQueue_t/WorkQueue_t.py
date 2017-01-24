@@ -6,7 +6,7 @@ import time
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.WorkQueue.WorkQueue import localQueue
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
-
+from WMCore.Services.WorkQueue.WorkQueue import convertWQElementsStatusToWFStatus
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -170,6 +170,56 @@ class WorkQueueTest(EmulatedUnitTestCase):
                                   'reduce': False})
         self.assertEqual(len(wqApi.getCompletedWorkflow(stale=False)), 1)
         self.assertEqual(wqApi.getJobsByStatusAndPriority().keys(), ['Canceled'])
+
+    def testConvertWQElementsStatusToWFStatus(self):
+        """
+        _testConvertWQElementsStatusToWFStatus_
+
+        Check that a set of all the workqueue element status in a request
+        properly maps to a single state to trigger the ReqMgr request transition.
+        """
+        # workflows acquired by global_workqueue (nothing acquired by agents so far)
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available"])), "acquired")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating"])), "acquired")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating"])), "acquired")
+
+        # workflows not completely acquired yet by the agents
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired"])), "running-open")
+
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Available", "Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Negotiating", "Acquired", "Running", "Done", "CancelRequested", "Canceled"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done", "CancelRequested"])), "running-open")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Acquired", "Running", "Done", "CancelRequested", "Canceled"])), "running-open")
+
+        # workflows completely acquired by the agents
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "CancelRequested"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "CancelRequested", "Canceled"])), "running-closed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Running", "Done", "Canceled"])), "running-closed")
+
+        # workflows completed/aborted/force-completed, thus existent elements
+        #  but no more active workqueue elements in the system
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done"])), "completed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Canceled"])), "completed")
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Done", "Canceled"])), "completed")
+
+        # workflows failed
+        self.assertEqual(convertWQElementsStatusToWFStatus(set(["Failed"])), "failed")
+
+        # workflows in a temporary state, nothing to do with them yet
+        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["Done", "CancelRequested"])))
+        self.assertIsNone(convertWQElementsStatusToWFStatus(set(["CancelRequested"])))
 
 
 if __name__ == '__main__':

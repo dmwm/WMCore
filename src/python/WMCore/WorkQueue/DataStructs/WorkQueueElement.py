@@ -10,6 +10,31 @@ STATES = ('Available', 'Negotiating', 'Acquired', 'Running',
           'Done', 'Failed', 'CancelRequested', 'Canceled')
 
 
+def possibleSites(element):
+    """
+    _possibleSites_
+
+    Checks the site and data restrictions and return a list of possible sites
+    to work on this element.
+    """
+    # check if the whole document was provide
+    elem = element.get('WMCore.WorkQueue.DataStructs.WorkQueueElement.WorkQueueElement', element)
+
+    if elem['NoInputUpdate'] and elem['NoPileupUpdate']:
+        return elem['SiteWhitelist']
+
+    commonSites = set(elem['SiteWhitelist']) - set(elem['SiteBlacklist'])
+
+    if elem['Inputs'] and elem['NoInputUpdate'] is False:
+        commonSites = commonSites.intersection(set([y for x in elem['Inputs'].values() for y in x]))
+    if elem['ParentFlag'] and elem['NoInputUpdate'] is False:
+        commonSites = commonSites.intersection(set([y for x in elem['ParentData'].values() for y in x]))
+    if elem['PileupData'] and elem['NoPileupUpdate'] is False:
+        commonSites = commonSites.intersection(set([y for x in elem['PileupData'].values() for y in x]))
+
+    return list(commonSites)
+
+
 class WorkQueueElement(dict):
     """Class to represent a WorkQueue element"""
 
@@ -242,24 +267,3 @@ class WorkQueueElement(dict):
                     return False
 
         return True
-
-    def possibleSites(self):
-        """
-        _possibleSites_
-
-        Checks the site and data restrictions and return a list of possible sites
-        to work on this element.
-        """
-        if self['NoInputUpdate'] and self['NoPileupUpdate']:
-            return self['SiteWhitelist']
-
-        possibleSites = set(self['SiteWhitelist']) - set(self['SiteBlacklist'])
-
-        if self['Inputs'] and self['NoInputUpdate'] is False:
-            possibleSites = possibleSites.intersection(set([y for x in self['Inputs'].values() for y in x]))
-        if self['ParentFlag'] and self['NoInputUpdate'] is False:
-            possibleSites = possibleSites.intersection(set([y for x in self['ParentData'].values() for y in x]))
-        if self['PileupData'] and self['NoPileupUpdate'] is False:
-            possibleSites = possibleSites.intersection(set([y for x in self['PileupData'].values() for y in x]))
-
-        return list(possibleSites)

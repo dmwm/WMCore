@@ -6,7 +6,7 @@
 import unittest
 import itertools
 
-from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import WorkQueueElement, possibleSites
 
 RequestNames = ['test', 'test2', '', 'abcdefg']
 TaskNames = [None, '', 'task1', 'task2', 'abcdfg']
@@ -188,41 +188,41 @@ class WorkQueueElementTest(unittest.TestCase):
         """
         # test element ala MonteCarlo
         ele = WorkQueueElement(SiteWhitelist=["T1_IT_CNAF", "T2_DE_DESY"])
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
 
         # test element with InputDataset but no location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": []}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset and no match location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_US_FNAL", "T2_CH_CERN"]}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset and valid location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_US_FNAL", "T2_CH_CERN", "T2_DE_DESY"]}
-        self.assertEqual(ele.possibleSites(), ["T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T2_DE_DESY"])
 
         # test element with InputDataset and ParentData with no location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_US_FNAL", "T2_CH_CERN", "T2_DE_DESY"]}
         ele['ParentFlag'] = True
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": []}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset and ParentData with no match location
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": ["T1_IT_CNAF"]}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset and ParentData with valid location
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": ["T1_US_FNAL", "T2_DE_DESY"]}
-        self.assertEqual(ele.possibleSites(), ["T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T2_DE_DESY"])
 
         # test element with InputDataset, PileupData and ParentData with no location
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_US_FNAL", "T2_CH_CERN", "T2_DE_DESY"]}
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": ["T2_DE_DESY"]}
         ele['PileupData'] = {"/MY/DATASET/NAME": []}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset, PileupData and ParentData with no match location
         ele['PileupData'] = {"/MY/DATASET/NAME": ["T1_IT_CNAF", "T2_CH_CERN"]}
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
         # test element with InputDataset, PileupData and ParentData with valid location
         ele['PileupData'] = {"/MY/DATASET/NAME": ["T1_IT_CNAF", "T2_DE_DESY"]}
-        self.assertEqual(ele.possibleSites(), ["T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T2_DE_DESY"])
 
     def testPossibleSitesLocationFlags(self):
         """
@@ -233,41 +233,41 @@ class WorkQueueElementTest(unittest.TestCase):
         # test element with InputDataset and no location, but input flag on
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": []}
         ele['NoInputUpdate'] = True
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and one match, but input flag on
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_IT_CNAF", "T2_CH_CERN"]}
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and one match, but pu flag on
         ele['NoInputUpdate'] = False
         ele['NoPileupUpdate'] = True
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF"])
         # test element with InputDataset and one match, but both flags on
         ele['NoInputUpdate'] = True
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
 
         # test element with InputDataset and ParentData and no location, but both flags on
         ele['ParentFlag'] = True
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": []}
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and ParentData and no location, but input flag on
         ele['NoPileupUpdate'] = False
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset and ParentData and no location, but pileup flag on
         ele['NoInputUpdate'] = False
         ele['NoPileupUpdate'] = True
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
 
         # test element with InputDataset, PileupData and ParentData with no location, but pileup flag on
         ele['Inputs'] = {"/MY/BLOCK/NAME#73e99a52": ["T1_US_FNAL", "T2_CH_CERN", "T2_DE_DESY"]}
         ele['ParentData'] = {"/MY/BLOCK2/NAME#002590494c06": ["T2_DE_DESY"]}
         ele['PileupData'] = {"/MY/DATASET/NAME": []}
-        self.assertEqual(ele.possibleSites(), ["T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T2_DE_DESY"])
         # test element with InputDataset, PileupData and ParentData with no location, but both flags on
         ele['NoInputUpdate'] = True
-        self.assertEqual(ele.possibleSites(), ["T1_IT_CNAF", "T2_DE_DESY"])
+        self.assertEqual(possibleSites(ele), ["T1_IT_CNAF", "T2_DE_DESY"])
         # test element with InputDataset, PileupData and ParentData with no location, but input flag on
         ele['NoPileupUpdate'] = False
-        self.assertEqual(ele.possibleSites(), [])
+        self.assertEqual(possibleSites(ele), [])
 
 
 if __name__ == '__main__':

@@ -14,6 +14,7 @@ from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WorkQueue.DataStructs.CouchWorkQueueElement import CouchWorkQueueElement, fixElementConflicts
+from WMCore.WorkQueue.DataStructs.WorkQueueElement import possibleSites
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
 
 
@@ -316,7 +317,8 @@ class WorkQueueBackend(object):
             except CouchNotFoundError:
                 pass
 
-    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None, excludeWorkflows=None):
+    def availableWork(self, thresholds, siteJobCounts, teams=None, wfs=None,
+                      excludeWorkflows=None, numElems=9999999):
         """
         Get work which is available to be run
 
@@ -326,9 +328,16 @@ class WorkQueueBackend(object):
         Assumes site_job_counts is a dictionary-of-dictionaries; keys are the site
         name and task priorities.  The value is the number of jobs running at that
         priority.
+
+        It will pull work until it reaches the number of elements configured (numElems).
+        Since it's also used for calculating free resources, default it to "infinity"
+
+        Note: this method will be called with no limit of work elements when it's simply
+        calculating the resources available (based on what is in LQ), before it gets work
+        from GQ
         """
-        self.logger.info("Getting available work from %s/%s" %
-                         (sanitizeURL(self.server.url)['url'], self.db.name))
+        self.logger.info("Getting up to %d available work from %s", numElems, self.queueUrl)
+
         excludeWorkflows = excludeWorkflows or []
         elements = []
         sortedElements = []
@@ -376,8 +385,15 @@ class WorkQueueBackend(object):
         sortedElements.sort(key=lambda x: x['Priority'], reverse=True)
 
         for element in sortedElements:
-            prio = element['Priority']
+            if numElems <= 0:
+                self.logger.info("Reached the maximum number of elements to be pulled: %d", len(elements))
+                break
 
+            if not possibleSites(element):
+                self.logger.info("No possible sites for %s with doc id %s", element['RequestName'], element.id)
+                continue
+
+            prio = element['Priority']
             possibleSite = None
             sites = thresholds.keys()
             random.shuffle(sites)
@@ -391,6 +407,7 @@ class WorkQueueBackend(object):
                         break
 
             if possibleSite:
+                numElems -= 1
                 self.logger.debug("Possible site exists %s" % str(possibleSite))
                 elements.append(element)
                 if possibleSite not in siteJobCounts:
@@ -398,7 +415,7 @@ class WorkQueueBackend(object):
                 siteJobCounts[possibleSite][prio] = siteJobCounts[possibleSite].setdefault(prio, 0) + \
                                                     element['Jobs'] * element.get('blowupFactor', 1.0)
             else:
-                self.logger.info("No possible site for %s with doc id %s", element['RequestName'], element.id)
+                self.logger.info("No available resources for %s with doc id %s", element['RequestName'], element.id)
 
         return elements, thresholds, siteJobCounts
 
@@ -554,7 +571,6 @@ class WorkQueueBackend(object):
 
         if len(workflowNames) == 0:
             return deleted
-
         options = {}
         options["stale"] = "update_after"
         options["reduce"] = False

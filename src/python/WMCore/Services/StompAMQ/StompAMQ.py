@@ -69,14 +69,13 @@ class StompAMQ(object):
     def __init__(self, username, password,
                  producer='CMS_WMCore_StompAMQ',
                  topic='/topic/cms.jobmon.wmagent',
-                 host_and_ports=None):
+                 host_and_ports=None, verbose=0):
         self._host_and_ports = host_and_ports or [('agileinf-mb.cern.ch', 61213)]
         self._username = username
         self._password = password
         self._producer = producer
         self._topic = topic
-
-        self._logger = logging.getLogger(__name__)
+        self.verbose = verbose
 
     def send(self, data):
         """
@@ -95,7 +94,7 @@ class StompAMQ(object):
             conn.start()
             conn.connect(username=self._username, passcode=self._password, wait=True)
         except stomp.exception.ConnectFailedException as exc:
-            self._logger.error("Connection to %s failed %s", repr(self._host_and_ports), str(exc))
+            print("ERROR: Connection to %s failed %s" % (repr(self._host_and_ports), str(exc)))
             return []
 
         # If only a single notification, put it in a list
@@ -111,7 +110,7 @@ class StompAMQ(object):
         if conn.is_connected():
             conn.disconnect()
 
-        self._logger.info('Sent %d docs to %s', len(successfully_sent), repr(self._host_and_ports))
+        print('Sent %d docs to %s' % (len(successfully_sent), repr(self._host_and_ports)))
         return successfully_sent
 
     def _send_single(self, conn, notification):
@@ -130,11 +129,12 @@ class StompAMQ(object):
                       headers=notification,
                       body=json.dumps(body),
                       ack='auto')
-            self._logger.debug('Notification %s sent', str(notification))
+            if  self.verbose:
+                print('Notification %s sent' % str(notification))
             return body
         except Exception as exc:
-            self._logger.error('Notification: %s not send, error: %s',
-                          str(notification), str(exc))
+            print('ERROR: Notification: %s not send, error: %s' % \
+                          (str(notification), str(exc)))
             return None
 
 

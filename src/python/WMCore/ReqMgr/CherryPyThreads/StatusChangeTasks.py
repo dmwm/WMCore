@@ -57,7 +57,7 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
                 for nextStatus in nextStatusList: 
                     reqDBWriter.updateRequestStatus(wf, nextStatus)
                     count += 1
-        print("Total %s-archived: %d", (status, count))
+        print("Total %s-archived: %d" % (status, count))
     
     return
             

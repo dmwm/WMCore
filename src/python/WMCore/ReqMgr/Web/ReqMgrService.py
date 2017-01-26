@@ -426,7 +426,12 @@ class ReqMgrService(TemplatedPage):
     @expose
     def config(self, name):
         "Fetch config for given request name"
-        return self.reqmgr.getConfig(name).replace('\n', '<br/>')
+        result = self.reqmgr.getConfig(name)
+        if len(result) == 1:
+            result = result[0]
+        else:
+            result = 'Configuration not found for: %s' % name
+        return result.replace('\n', '<br/>')
 
     @expose
     def fetch(self, rid):

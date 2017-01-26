@@ -124,6 +124,7 @@ class WorkQueue(WorkQueueBase):
         self.params.setdefault("GlobalDBS",
                                "https://cmsweb.cern.ch/dbs/prod/global/DBSReader")
         self.params.setdefault('QueueDepth', 1)  # when less than this locally
+        self.params.setdefault('WorkPerCycle', 100)
         self.params.setdefault('LocationRefreshInterval', 600)
         self.params.setdefault('FullLocationRefreshInterval', 7200)
         self.params.setdefault('TrackLocationOrSubscription', 'location')
@@ -337,10 +338,13 @@ class WorkQueue(WorkQueueBase):
         siteJobCounts is a dict format of {site: {prio: jobs}}
         """
         results = []
+        numElems = self.params['WorkPerCycle']
         if not self.backend.isAvailable():
             self.logger.warning('Backend busy or down: skipping fetching of work')
             return results
-        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts, excludeWorkflows=excludeWorkflows)
+
+        matches, _, _ = self.backend.availableWork(jobSlots, siteJobCounts,
+                                                   excludeWorkflows=excludeWorkflows, numElems=numElems)
 
         if not matches:
             return results
@@ -775,8 +779,8 @@ class WorkQueue(WorkQueueBase):
         return (resources, jobCounts)
 
     def getAvailableWorkfromParent(self, resources, jobCounts, printFlag=False):
-
-        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Teams'])
+        numElems = self.params['WorkPerCycle']
+        work, _, _ = self.parent_queue.availableWork(resources, jobCounts, self.params['Teams'], numElems=numElems)
 
         if not work:
             msg = 'No available work in parent queue.'

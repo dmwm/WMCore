@@ -8,7 +8,7 @@ Unittest for WMWorkload class
 import os
 import unittest
 
-from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper, WMWorkloadException
+from WMCore.WMSpec.WMWorkload import WMWorkload, WMWorkloadHelper
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 import WMCore_t.WMSpec_t.TestWorkloads as TestSpecs
@@ -200,10 +200,7 @@ class WMWorkloadTest(unittest.TestCase):
         workload2 = WMWorkloadHelper(WMWorkload("workload2"))
         workload2.load(self.persistFile)
 
-        self.assertEqual(
-            workload.listAllTaskNames(),
-            workload2.listAllTaskNames()
-        )
+        self.assertEqual(workload.listAllTaskNames(), workload2.listAllTaskNames())
         # probably need to flesh this out a bit more
 
     def testD_Owner(self):
@@ -873,21 +870,21 @@ class WMWorkloadTest(unittest.TestCase):
         acquisitionEra = testWorkload.getAcquisitionEra()
         processingString = testWorkload.getProcessingString()
 
-        self.assertEqual(processingVersion, {'ProcessingTask': 2, 'SkimTask': 3}, 
+        self.assertEqual(processingVersion, {'ProcessingTask': 2, 'SkimTask': 3},
                          "Error: Wrong top level processing version")
-        self.assertEqual(acquisitionEra, {'ProcessingTask': 'TestAcqEra', 'SkimTask': 'TestAcqEraSkim'}, 
+        self.assertEqual(acquisitionEra, {'ProcessingTask': 'TestAcqEra', 'SkimTask': 'TestAcqEraSkim'},
                          "Error: Wrong top level acquisition era")
-        self.assertEqual(processingString, {'ProcessingTask': 'Test', 'SkimTask': 'SkimTest'}, 
+        self.assertEqual(processingString, {'ProcessingTask': 'Test', 'SkimTask': 'SkimTest'},
                          "Error: Wront top level processing string")
-        
+
         processingVersion = testWorkload.getProcessingVersion('ProcessingTask')
         acquisitionEra = testWorkload.getAcquisitionEra('SkimTask')
         processingString = testWorkload.getProcessingString('ProcessingTask')
-        
+
         self.assertEqual(processingVersion, 2, "Error: Wrong top level processing version")
-        self.assertEqual(acquisitionEra,'TestAcqEraSkim', "Error: Wrong top level acquisition era")
+        self.assertEqual(acquisitionEra, 'TestAcqEraSkim', "Error: Wrong top level acquisition era")
         self.assertEqual(processingString, 'Test', "Error: Wront top level processing string")
-        
+
         return
 
     def testSetSubscriptionInformation(self):
@@ -906,15 +903,15 @@ class WMWorkloadTest(unittest.TestCase):
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
             self.assertEqual(datasetSub["CustodialSites"], ["CMSSite_1"],
-                              "Wrong custodial sites for %s" % outputDataset)
+                             "Wrong custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_2"],
-                              "Wrong non-custodial sites for %s" % outputDataset)
+                             "Wrong non-custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["AutoApproveSites"], [], "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEqual(datasetSub["Priority"], "Low", "Wrong priority for %s" % outputDataset)
             self.assertEqual(datasetSub["CustodialSubType"], "Replica",
-                              "Wrong custodial subscription type for %s" % outputDataset)
+                             "Wrong custodial subscription type for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSubType"], "Replica",
-                              "Wrong custodial subscription type for %s" % outputDataset)
+                             "Wrong custodial subscription type for %s" % outputDataset)
 
         testWorkload.setSubscriptionInformation(custodialSites=["CMSSite_1", "CMSSite_2"],
                                                 nonCustodialSites=["CMSSite_3"],
@@ -924,16 +921,16 @@ class WMWorkloadTest(unittest.TestCase):
         for outputDataset in outputDatasets:
             datasetSub = subInformation[outputDataset]
             self.assertEqual(set(datasetSub["CustodialSites"]), set(["CMSSite_1", "CMSSite_2"]),
-                              "Wrong custodial sites for %s" % outputDataset)
+                             "Wrong custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSites"], ["CMSSite_3"],
-                              "Wrong non-custodial sites for %s" % outputDataset)
+                             "Wrong non-custodial sites for %s" % outputDataset)
             self.assertEqual(datasetSub["AutoApproveSites"], ["CMSSite_2"],
-                              "Wrong auto-approve sites for %s" % outputDataset)
+                             "Wrong auto-approve sites for %s" % outputDataset)
             self.assertEqual(datasetSub["Priority"], "Normal", "Wrong priority for %s" % outputDataset)
             self.assertEqual(datasetSub["CustodialSubType"], "Move",
-                              "Wrong custodial subscription type for %s" % outputDataset)
+                             "Wrong custodial subscription type for %s" % outputDataset)
             self.assertEqual(datasetSub["NonCustodialSubType"], "Move",
-                              "Wrong custodial subscription type for %s" % outputDataset)
+                             "Wrong custodial subscription type for %s" % outputDataset)
         return
 
     def testValidatePhEDExSubscription(self):
@@ -1502,8 +1499,8 @@ class WMWorkloadTest(unittest.TestCase):
         skimTask.setSplittingAlgorithm("FileBased", files_per_job=1)
         skimTask.applyTemplates()
 
-        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag=
-                                    "GLOBALTAG", scramArch="SomeSCRAMArch")
+        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
+                                    scramArch="SomeSCRAMArch")
 
         def verifyParams(initialTask=None):
             """
@@ -1612,80 +1609,6 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertTrue(hasattr(testWorkload.data.tasks.ProcessingTask.tree.children.MergeTask, 'watchdog'))
         return
 
-    def test_parseSiteWildcards(self):
-        """
-        _parseSiteWildcards_
-
-        Parse the methods by which we add wildcards to the site
-        whitelist/blacklist
-        """
-
-        testWorkload = WMWorkloadHelper(WMWorkload("TestWorkload"))
-        procTask = testWorkload.newTask("ProcessingTask")
-        procTask.setTaskType("Processing")
-
-        siteList = ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL',
-                    'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT']
-        wildcardSites = {'T2*': ['T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
-                         'US*': ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'],
-                         'T1*': ['T1_US_FNAL', 'T1_CH_CERN', 'T1_UK_RAL']}
-
-        # Test full set
-        testWorkload.setSiteWildcardsLists(siteWhitelist=['US*', 'T1*'],
-                                           siteBlacklist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
-                         siteList.sort())
-
-        # Test one subset
-        testWorkload.setSiteWildcardsLists(siteWhitelist=['US*'],
-                                           siteBlacklist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
-                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'].sort())
-
-        # Test one subset plus one site
-        testWorkload.setSiteWildcardsLists(siteWhitelist=['US*', 'T1_UK_RAL'],
-                                           siteBlacklist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.whitelist.sort(),
-                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT', 'T1_UK_RAL'].sort())
-
-        # Repeat above with blacklist
-        # Test full set
-        testWorkload.setSiteWildcardsLists(siteBlacklist=['US*', 'T1*'],
-                                           siteWhitelist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
-                         siteList.sort())
-
-        # Test one subset
-        testWorkload.setSiteWildcardsLists(siteBlacklist=['US*'],
-                                           siteWhitelist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
-                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT'].sort())
-
-        # Test one subset plus one site
-        testWorkload.setSiteWildcardsLists(siteBlacklist=['US*', 'T1_UK_RAL'],
-                                           siteWhitelist=[],
-                                           wildcardDict=wildcardSites)
-        self.assertEqual(testWorkload.data.tasks.ProcessingTask.constraints.sites.blacklist.sort(),
-                         ['T1_US_FNAL', 'T2_US_UCSD', 'T2_US_UNL', 'T2_US_CIT', 'T1_UK_RAL'].sort())
-
-
-        # Test an invalid
-        raises = False
-        try:
-            testWorkload.setSiteWildcardsLists(siteBlacklist=['T3*'],
-                                               siteWhitelist=[],
-                                               wildcardDict=wildcardSites)
-        except WMWorkloadException as ex:
-            raises = True
-            self.assertTrue("Invalid wildcard site T3* in site blacklist!" in str(ex))
-        self.assertTrue(raises)
-        return
-
     def test_getCMSSWVersion(self):
         """
         _getCMSSWVersion_
@@ -1700,8 +1623,8 @@ class WMWorkloadTest(unittest.TestCase):
         procTaskCmssw.setStepType("CMSSW")
         procTask.applyTemplates()
 
-        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag=
-                                    "GLOBALTAG", scramArch="SomeSCRAMArch")
+        testWorkload.setCMSSWParams(cmsswVersion="CMSSW_1_1_1", globalTag="GLOBALTAG",
+                                    scramArch="SomeSCRAMArch")
 
         self.assertEqual(testWorkload.getCMSSWVersions(), ["CMSSW_1_1_1"])
         return
@@ -1839,8 +1762,10 @@ class WMWorkloadTest(unittest.TestCase):
         """
         testWorkload = self.makeTestWorkload()[0]
 
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Should be False, I did not set you yet.")
-        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Should be False, I did not set you yet.")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'),
+                         "Should be False, I did not set you yet.")
+        self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'),
+                         "Should be False, I did not set you yet.")
         testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
         self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True now")
         self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True now")
@@ -1849,9 +1774,11 @@ class WMWorkloadTest(unittest.TestCase):
         self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False now")
         testWorkload.setTrustLocationFlag(inputFlag=False, pileupFlag=True)
         self.assertFalse(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should still be False")
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be True once again")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustPUlists'),
+                        "Bad job!! You should be True once again")
         testWorkload.setTrustLocationFlag(inputFlag=True, pileupFlag=False)
-        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'), "Bad job!! You should be True once again")
+        self.assertTrue(testWorkload.getTrustLocationFlag().get('trustlists'),
+                        "Bad job!! You should be True once again")
         self.assertFalse(testWorkload.getTrustLocationFlag().get('trustPUlists'), "Bad job!! You should be False again")
         return
 

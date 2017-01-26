@@ -463,9 +463,11 @@ class Request(RESTEntity):
         
     def _handleAssignmentStateTransition(self, workload, request_args, dn):
         
-        if request_args.get('Team', '').strip() == '':
+        if 'Team' not in request_args or not request_args['Team'].strip():
             raise InvalidSpecParameterValue("A Team name must be set during workflow assignment")
-            
+        if 'SiteWhitelist' not in request_args or not request_args['SiteWhitelist']:
+            raise InvalidSpecParameterValue("A non-empty SiteWhitelist must be set at assignment")
+
         if ('SoftTimeout' in request_args) and ('GracePeriod' in request_args):
             request_args['SoftTimeout'] = int(request_args['SoftTimeout'])
             #TODO: not sure why GracePeriod when passed from web ingerface but convert here

@@ -6,10 +6,10 @@ General test of Lexicon
 
 """
 
-import logging
 import unittest
 
 from WMCore.Lexicon import *
+
 
 class LexiconTest(unittest.TestCase):
     def testDBSUser(self):
@@ -25,7 +25,7 @@ class LexiconTest(unittest.TestCase):
         u9 = '/O=GermanGrid/OU=RWTH/CN=Maarten Thomas'
         u10 = 'cmsdataops@cmssrv44.fnal.gov'
         u11 = '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ceballos/CN=488892/CN=Guillelmo Gomez Ceballos'
-        for test_u in [u1, u2, u3, u4, u5, u6, u7,u8,u9, u10,u11]:
+        for test_u in [u1, u2, u3, u4, u5, u6, u7, u8, u9, u10, u11]:
             assert DBSUser(test_u), 'valid search not validated'
 
         u10 = 'Fred Bloggs'
@@ -45,7 +45,7 @@ class LexiconTest(unittest.TestCase):
         ds7 = '/Higgs/*/*'
         ds8 = '/*/blah-v2/*'
         ds9 = '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW'
-        ds10 ='/*'
+        ds10 = '/*'
         ds11 = '/*QCD'
         ds12 = '/QCD*/Summer*'
         ds13 = '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-*'
@@ -94,10 +94,10 @@ class LexiconTest(unittest.TestCase):
 
         for test_ds in [ds1, ds2, ds3, ds4, ds5]:
             self.assertRaises(AssertionError, searchblock, test_ds)
-            
+
     def testPublishdatasetname(self):
         assert publishdatasetname('pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0CandProducerPAT'), \
-                  'valid publishdatasetname not validated'
+            'valid publishdatasetname not validated'
         # shouldn't contain .
         self.assertRaises(AssertionError, publishdatasetname, 'withdot.pre3_IDEAL_30X_v1')
 
@@ -109,7 +109,7 @@ class LexiconTest(unittest.TestCase):
         assert procdataset('CMSSW_3_0_0_pre3_IDEAL_30X-my_filter-my_string-v1'), 'valid procdataset not validated'
         longStr = 'a' * 99 + "-" + 'b' * 96 + "-v1"
         assert procdataset(longStr), 'valid procdataset %s length fail' % len(longStr)
-        
+
     def testBadProcdataset(self):
         # Check that invalid Procdataset raise an exception
         self.assertRaises(AssertionError, procdataset, 'Drop Table')
@@ -126,7 +126,7 @@ class LexiconTest(unittest.TestCase):
                   'StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e']
         for ds in dsList:
             self.assertTrue(userprocdataset(ds))
-        longStr = 'a' * 99 + '-' + 'b' * 66 + '-' +'c'* 32
+        longStr = 'a' * 99 + '-' + 'b' * 66 + '-' + 'c' * 32
         assert userprocdataset(longStr), 'valid userdataset %s length fail' % len(longStr)
 
     def testBadUserProcDataset(self):
@@ -135,8 +135,8 @@ class LexiconTest(unittest.TestCase):
                   'tracker-pog-Summer09-MC_31X_V3_SD_ZeroBias-v1_Full_v0#CandProducerPAT-6b5c47aa1f79fc09d5b81a20702e3621']
         for ds in dsList:
             self.assertRaises(AssertionError, userprocdataset, ds)
-        #201 length
-        longStr = 'a' * 100 + '-' + 'b' * 66 + '-' +'c'* 32
+        # 201 length
+        longStr = 'a' * 100 + '-' + 'b' * 66 + '-' + 'c' * 32
         self.assertRaises(AssertionError, userprocdataset, longStr)
 
     def testGoodPrimdataset(self):
@@ -146,32 +146,33 @@ class LexiconTest(unittest.TestCase):
         assert primdataset('RelVal160pre14SingleMuMinusPt10'), 'valid primdataset not validated'
         longStr = 'a' * 99
         assert primdataset(longStr), 'valid primdataset %s length failed' % len(longStr)
-        
+
     def testBadPrimdataset(self):
         # Check that invalid Primdataset raise an exception
         self.assertRaises(AssertionError, primdataset, 'Drop Table')
         self.assertRaises(AssertionError, primdataset, 'Alter Table')
         longStr = 'a' * 100
         self.assertRaises(AssertionError, primdataset, longStr)
-        
+
     def testGoodBlock(self):
-        
-        bList = ["/ZPrimeToTTJets_M500GeV_W5GeV_TuneZ2star_8TeV-madgraph-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER#620a38a9-29ba-4af4-b650-e2ba07d133f3",
-                 "/DoubleMu/aburgmei-Run2012A_22Jan2013_v1_RHembedded_trans1_tau121_ptelec1_17elec2_8_v4-f456bdbb960236e5c696adfe9b04eaae/USER#1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
+
+        bList = [
+            "/ZPrimeToTTJets_M500GeV_W5GeV_TuneZ2star_8TeV-madgraph-tauola/StoreResults-Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3_bugfix_v1-99bd99199697666ff01397dad5652e9e/USER#620a38a9-29ba-4af4-b650-e2ba07d133f3",
+            "/DoubleMu/aburgmei-Run2012A_22Jan2013_v1_RHembedded_trans1_tau121_ptelec1_17elec2_8_v4-f456bdbb960236e5c696adfe9b04eaae/USER#1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
         for bk in bList:
             assert block(bk), "validation failed"
         longStr = "/" + 'a' * 99 + "/" + 'a' * 199 + "/" + 'A' * 99 + "#" + 'a' * 99
         assert block(longStr), 'valid block %s length failed' % len(longStr)
 
     def testBadBlock(self):
-        
+
         bList = ["/ZPrimeToTTJets/StoreResults-Summer12_DR53X-P",
                  "/DoubleMu/aburgme/USER1f1eee22-cdee-0f1b-271b-77a7f559e7dd"]
         for bk in bList:
             self.assertRaises(AssertionError, block, bk)
         longStr = "/" + 'a' * 100 + "/" + 'a' * 200 + "/" + 'a' * 99 + "#" + 'a' * 99
         self.assertRaises(AssertionError, block, longStr)
-        
+
     def testProcVersion(self):
         """
         _testProcVersion_
@@ -184,7 +185,6 @@ class LexiconTest(unittest.TestCase):
         self.assertTrue(procversion('1'))
         self.assertTrue(procversion('88'))
         return
-
 
     def testGoodAcqName(self):
         """
@@ -216,7 +216,8 @@ class LexiconTest(unittest.TestCase):
     def testGoodSearchstr(self):
         # Check that valid searchstr work
         assert searchstr('/store/mc/Fall08/BBJets250to500-madgraph/*'), 'valid search string not validated'
-        assert searchstr('/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW#cfc0a501-e845-4576-af8a-f811165d82d9'), 'valid search string not validated'
+        assert searchstr(
+            '/QCD_EMenriched_Pt30to80/Summer08_IDEAL_V11_redigi_v2/GEN-SIM-RAW#cfc0a501-e845-4576-af8a-f811165d82d9'), 'valid search string not validated'
         assert searchstr('STREAMER'), 'valid search string not validated'
 
     def testBadSearchstr(self):
@@ -271,11 +272,7 @@ class LexiconTest(unittest.TestCase):
         assert cmsname('T0_CH_CERN'), 'valid CMS name not validated'
         assert cmsname('T2_UK_SGrid_Bristol'), 'valid CMS name not validated'
         assert cmsname('T2_FR_CCIN2P3'), 'valid CMS name not validated'
-
-    def testPartialCMSName(self):
-        # Check that partial names work
-        for i in ['T%', 'T2','T2_', 'T2_UK', 'T2_UK_', 'T2_UK_SGrid', 'T2_UK_SGrid_']:
-            assert cmsname(i), 'partial CMS name (%s) not validated' % i
+        assert cmsname('T3_US_FNAL_LPC_Cloud'), 'valid CMS name not validated'
 
     def testBadCMSName(self):
         # Check that invalid names raise an exception
@@ -284,7 +281,7 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, cmsname, 'T2_UK_SGrid_Bris-tol')
         self.assertRaises(AssertionError, cmsname, 'D2_UK_SGrid_Bristol')
         self.assertRaises(AssertionError, cmsname, 'T2asjkjhadshjkdashjkasdkjhdas')
-        #self.assertRaises(AssertionError, cmsname, 'T2_UK')
+        self.assertRaises(AssertionError, cmsname, 'T2_UK')
 
     def testGoodIdentifier(self):
         for ok in ['__wil.1.am__', '.']:
@@ -322,7 +319,7 @@ class LexiconTest(unittest.TestCase):
                    'http://luke:skywalker@localhost:7654/some_db/some_doc',
                    'https://cmsreqmgr.cern.ch/couchdb/db1/doc',
                    'http://1.2.3.4:5184/somedb/some_dir/doc',
-                   'http://iam.anexternal.host:5184/somedb/some_doc/some_doc' ]:
+                   'http://iam.anexternal.host:5184/somedb/some_doc/some_doc']:
             assert couchurl(ok)
 
     def testBadCouchUrl(self):
@@ -385,7 +382,7 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/unmerged/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/himc/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
-        lfn(lfnA)        
+        lfn(lfnA)
         lfnA = '/store/backfill/1/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
         lfn(lfnA)
         lfnA = '/store/backfill/1/t0temp/data/Run2010A/Cosmics/RECO/v4/000/143/316/0000/F65F4AFE-14AC-DF11-B3BE-00215E21F32E.root'
@@ -417,7 +414,6 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/lhe/10860/mysecondary/0001/LQToUE_BetaHalf_vector_YM-MLQ300LG0KG0.lhe.xz'
         lfn(lfnA)
 
-
         # All these cases should fail
         lfnA = '/storeA/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
@@ -441,7 +437,6 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/000/Iamralph/000/1000/a_X-2.root'
         self.assertRaises(AssertionError, lfn, lfnA)
-
 
         # All these cases should fail
         lfnA = '/storeA/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1/1000/a_X-2.root'
@@ -523,7 +518,6 @@ class LexiconTest(unittest.TestCase):
         lfnA = '/store/temp/lustre/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX;-1'
         self.assertRaises(AssertionError, lfn, lfnA)
 
-
         lfnA = '/Store/temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
         self.assertRaises(AssertionError, lfn, lfnA)
         lfnA = '/store/Temp/acquisition_10-A/MuElectron-10_100/RAW-RECO/vX-1'
@@ -538,7 +532,6 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, lfn, lfnA)
 
         return
-
 
     def testUserLFN(self):
         """
@@ -569,7 +562,6 @@ class LexiconTest(unittest.TestCase):
         userLfnBase(lfnA)
 
         return
-
 
     def testLFNParser(self):
         """
@@ -685,7 +677,7 @@ class LexiconTest(unittest.TestCase):
         host = "test.com"
         user = "abc"
         passwd = "^cba$"
-        port  = "9999"
+        port = "9999"
         url = "%s://%s:%s@%s:%s" % (proto, user, passwd, host, port)
         urlDict = sanitizeURL(url)
         self.assertEqual(urlDict['url'], "%s://%s:%s" % (proto, host, port))
@@ -739,7 +731,6 @@ class LexiconTest(unittest.TestCase):
         sanitizedError = "DB failure: %s" % (dbUrl2)
         self.assertEqual(replaceToSantizeURL(errorMsg), sanitizedError)
 
-
     def testSplitCouchServiceURL(self):
 
         urlSplit = splitCouchServiceURL("https://cmsweb-dev.cern.ch:8888/workqueue")
@@ -769,7 +760,7 @@ class LexiconTest(unittest.TestCase):
         """
         Test the validateUrl function for some use case of DBS 3
         """
-        #Good http(s) urls
+        # Good http(s) urls
         for url in ['https://cmsweb.cern.ch/dbs/prod/global/DBSReader',
                     'https://mydbs.mydomain.de:8443',
                     'http://localhost',
@@ -780,22 +771,23 @@ class LexiconTest(unittest.TestCase):
                     'http://[2001:0db8:85a3:08d3:1319:8a2e:0370:7344]:8443/']:
             validateUrl(url)
 
-        #Bad http(s) urls
+        # Bad http(s) urls
         for url in ['ftp://dangerous.download.this',
                     'https:/notvalid.url',
                     'http://-NiceTry',
                     'https://NiceTry; DROP Table;--',
                     'http://123123104122',
                     'http://.www.google.com',
-                    'http://[2001:0db8:85a3:08d3:1319:8a2z:0370:7344]/',]:
+                    'http://[2001:0db8:85a3:08d3:1319:8a2z:0370:7344]/', ]:
             self.assertRaises(AssertionError, validateUrl, url)
-            
+
     def testPrimaryDatasetType(self):
         self.assertRaises(AssertionError, primaryDatasetType, "MC")
         self.assertTrue(primaryDatasetType("mc"), "mc should be allowed")
         self.assertTrue(primaryDatasetType("data"), "data should be allowed")
         self.assertTrue(primaryDatasetType("cosmic"), "data should be allowed")
         self.assertTrue(primaryDatasetType("test"), "test should be allowed")
+
 
 if __name__ == "__main__":
     unittest.main()

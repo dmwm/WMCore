@@ -105,9 +105,17 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-
-        self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
-        self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
+        
+        self.useReqMgrForCompletionCheck = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
+        
+        if self.useReqMgrForCompletionCheck:
+            # only set up this when reqmgr is used (not Tier0)
+            self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
+            self.abortedAndForceCompleteWorkflowCache = self.reqmgr2Svc.getAbortedAndForceCompleteRequestsFromMemoryCache()
+        else:
+            # Tier0 Case - just for the clarity (This private variable shouldn't be used
+            self.abortedAndForceCompleteWorkflowCache = None
+            
         return
 
     def getPackageCollection(self, sandboxDir):
@@ -229,7 +237,14 @@ class JobSubmitterPoller(BaseWorkerThread):
            self.refreshPollingCount >= self.skipRefreshCount:
             newJobs = self.listJobsAction.execute()
             self.refreshPollingCount = 0
-            abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+            
+            if self.useReqMgrForCompletionCheck:
+                # if reqmgr is used (not Tier0 Agent) get the aborted/forceCompleted record
+                abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
+            else:
+                #T0Agent
+                abortedAndForceCompleteRequests = []
+                
             logging.info("Found %s new jobs to be submitted.", len(newJobs))
         else:
             self.refreshPollingCount += 1
@@ -688,7 +703,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             myThread = threading.currentThread()
             self.getThresholds()
             self.refreshCache()
-            self.removeAbortedForceCompletedWorkflowFromCache()
+            
+            if self.useReqMgrForCompletionCheck:
+                # only runs when reqmgr is used (not Tier0)
+                self.removeAbortedForceCompletedWorkflowFromCache()
+            
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
         except WMException:

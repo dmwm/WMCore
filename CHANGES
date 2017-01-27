@@ -1,3 +1,173 @@
+1.0.23 to 1.1.0.pre8:
+  - Merge pull request #7554 from amaltaro/stats-null
+  - _stats builtin reduce function requires a number
+  - 1.1.0.pre7
+  - Merge pull request #7538 from amaltaro/sitewhitelist
+  - Merge pull request #7549 from amaltaro/limit-workPulled
+  - Merge pull request #7550 from amaltaro/getConfig-format
+  - Pylint stuff
+  - Fix getConfig in ReqMgr2 UI
+  - Limit the number of elements acquired per cycle by LQ
+  - Merge pull request #7546 from amaltaro/possibleSites-function
+  - Merge pull request #7548 from vkuznet/remove-logger-stompamq
+  - Remove logger from StompAMQ which is not visible within spark framework, python logger is not dumped into spark java logger
+  - Merge pull request #7545 from amaltaro/wqStatusTransition-tests
+  - Merge pull request #7547 from amaltaro/agent-team-globalwq
+  - Merge pull request #7527 from ericvaandering/arch_map
+  - pylint fixes
+  - Add another mandatory field for agentInfo docs
+  - Fix unittests
+  - Make possibleSites a function for WorkQueueElements
+  - Unit tests for conversion from WQ to ReqMgr status
+  - Fix unittests and pylint
+  - Make SiteWhitelist mandatory during assignment; remove site wildcards; updated cmsname Lexicon
+  - 1.1.0.pre6
+  - Merge pull request #7542 from ticoann/fix_aborted_archived
+  - Merge pull request #7541 from ticoann/fix_gq_report
+  - Merge pull request #7539 from ticoann/reqmgr2_web_fix
+  - fixes reqmgr2 web interface
+  - fix aborted-completed to aborted-archived
+  - add mendatory down_components field.
+  - 1.1.0.pre5
+  - Merge pull request #7528 from ticoann/complete_wf
+  - move status change to reqmgr2 from workqueue
+  - Merge pull request #7531 from amaltaro/gq-monitoring
+  - Merge pull request #7533 from ticoann/display_status_transition
+  - Merge pull request #7530 from amaltaro/gq-monit-patch2
+  - Fixed workqueue unit tests
+  - Added workqueue views for childQueue, priority and status
+  - Global Workqueue thread for monitoring
+  - Merge pull request #7532 from amaltaro/wqelement-methods
+  - Unit tests fix
+  - add state transition information in wmstats
+  - WorkQueueElement must have non-empty SiteWhitelist to be worked on
+  - 1.1.0.pre4
+  - Merge pull request #7525 from amaltaro/multirun-999999
+  - Merge pull request #7524 from ticoann/change_complete_view
+  - Merge pull request #7481 from amaltaro/inject-test-patch3
+  - Pylint
+  - Build a map of scram arch to required OS and vice versa
+  - pylint fix
+  - use different view form complete workflow check
+  - Pylint fixes
+  - Remove emulatorHelper and Switch and all references
+  - Merge pull request #7365 from amaltaro/templates-patch3
+  - Merge pull request #7526 from ticoann/mask_fix
+  - Fix specs unittests
+  - Adapt last templates to use the new required args during creation
+  - fix task and step chain mask
+  - Added multirun unittest; pylint fixes
+  - Change harvest multiRun based output file convention - run 999999
+  - Merge pull request #7523 from ericvaandering/remove_emulatorhelper
+  - Merge pull request #7496 from ticoann/gq_refactor
+  - Merge pull request #7504 from ticoann/fix_site_log
+  - Merge pull request #7519 from amaltaro/jobs-by-status
+  - pylint fixes
+  - Set default Jobs to 0
+  - WorkQueue view to get elements stats by Status
+  - Pylint fixes
+  - Remove emulatorHelper and Switch and all references
+  - Merge pull request #7518 from ericvaandering/remove_old_phedex
+  - Pylint fixes
+  - Remove the last of the emulators
+  - More changes to handle the new json templates in 7365
+  - pylynt fix
+  - Merge pull request #7520 from amaltaro/clean-wmstats-jsviews
+  - Merge pull request #7514 from ericvaandering/kill_phedex_emulator
+  - Move GQ cronjob to cherrypy thread
+  - Remove the latest javascript WMStats views
+  - Merge pull request #7486 from amaltaro/nolocationupdate-clear
+  - Pylint fixes
+  - Turn off Phedex emulator
+  - Merge pull request #7516 from ticoann/fix_wq_rewrite
+  - fix rewrite rule
+  - Fix test json file; pylint fixes
+  - Remove deprecated workqueue argument: NoLocationUpdate
+  - 1.1.0.pre3
+  - Merge pull request #7474 from ticoann/remove_reqmgr
+  - remove reqmgr code base
+  - Merge pull request #7511 from ericvaandering/remove_old_sitedb
+  - Easy pylint fixes
+  - Convert map/filter to list comphrension to please pylint
+  - Remove old SiteDB emulator and fix unit tests
+  - pylint fix
+  - fix the job report when ther is no possible matching site
+  - Merge pull request #7508 from amaltaro/cascade-fix
+  - Merge pull request #7510 from ericvaandering/stable_tests
+  - Merge pull request #7506 from ericvaandering/wq_with_mock_sitedb
+  - API is no longer unstable (I think). Storage one is
+  - Remove emulator code
+  - Pylint fixes for WorkQueue_t
+  - Turn of old SiteDB emulator for WQ
+  - Fix cascade status transition
+  - Merge pull request #7502 from ericvaandering/new_remove_dbs_emulators
+  - Pylint fixes and clean up interfaces including Rename cls to wrappedClass
+  - Remove old-stye DBS emulators and DBS emulator hook and switch two more things to use EmulatedUnitTest
+  - Merge pull request #7501 from ericvaandering/remove_simplet
+  - Move Simple_t into another slice
+  - Merge pull request #7500 from ericvaandering/add_logger
+  - Add a logger to (old) SiteDB emulator to match Service.py
+  - Merge pull request #7498 from ticoann/unstable_test
+  - Merge pull request #7497 from ericvaandering/goes_to_11
+  - Reformat code for pylint and get rid of pylint from setup
+  - Run certain paths outside of normal slice structure Specify which paths cannot be run with other tests for some reason. Put those tests into slice nSlice, nSlice+1, ...
+  - add 4 more test
+  - Merge pull request #7492 from ticoann/wqe_summary_view
+  - add unittest
+  - add couch view to check wqe summary
+  - Merge pull request #7462 from ticoann/change_wq_report
+  - change complete status report
+  - Merge pull request #7484 from ticoann/tagcollector_service
+  - move TagCollect class under Service
+  - 1.1.0.pre2
+  - Merge pull request #7477 from amaltaro/wqInterface-diffType
+  - Merge pull request #7461 from ticoann/cascade_abort_reject
+  - Merge pull request #7452 from amaltaro/harvest-trust
+  - Fix unit test
+  - Allow harvesting tasks to have the trust flags
+  - Merge pull request #7482 from ticoann/unstable_list_update
+  - Merge pull request #7480 from ticoann/tag_collector
+  - add one wq unstable list
+  - pylint fix
+  - Merge pull request #7476 from amaltaro/jobExtractionError
+  - Merge pull request #7479 from vkuznet/fix-json-error2
+  - Pylint fixes
+  - Fix pylint bold warnings
+  - Update WorkQueue Interface code for getting work by status
+  - add method for tag collector
+  - Pylint fixes
+  - Hadle json.dumps failures in human readable form
+  - Merge pull request #7478 from ticoann/add_unstable_test
+  - add one unstable test
+  - Improve JobExtractionError message
+  - Merge pull request #7475 from amaltaro/assign-reqName
+  - Print request name with the assignment args
+  - 1.1.0.pre1
+  - Merge pull request #7442 from ticoann/kill_jobs_for_aborted
+  - Merge pull request #7436 from amaltaro/analysis-no-no
+  - Merge pull request #7449 from ticoann/fix_site_report
+  - Merge pull request #7458 from amaltaro/originSite2PNNs
+  - Merge pull request #7465 from stiegerb/stiegerb_stompamq_8_12_2016
+  - Adding StompAMQ interface
+  - Remove origin_site_name conversion from SE to PNN
+  - fix unittest
+  - Merge pull request #7459 from amaltaro/simpleCondor-states
+  - fix aborted and force complete request not killing the jobs
+  - fix site location when location changed
+  - Merge pull request #7455 from amaltaro/complete-killedJobs
+  - Merge pull request #7237 from amaltaro/check-request-wq
+  - Merge pull request #7457 from amaltaro/noBlocks-tmdb
+  - Merge pull request #7456 from amaltaro/simpleCondor-moreUnicode
+  - Functions to parse global wqe and make simple summaries
+  - Fetch data only for a specific request in WorkQueue summary util
+  - Removed scheddLog mapping; updated stateMap to string status
+  - add cascade rejected and aborted
+  - Take2 - return empty location if block is not complete anywhere
+  - Missing places in SimpleCondor still using unicode
+  - Dont complete the same job twice in BossAir
+  - Fix resource control unit tests
+  - Complete removal of Analysis task/code in WMCore
+
 1.0.23 to 1.1.0.pre7:
   - Merge pull request #7538 from amaltaro/sitewhitelist
   - Merge pull request #7549 from amaltaro/limit-workPulled

@@ -585,8 +585,10 @@ class SimpleCondorPlugin(BasePlugin):
             ad['PostJobPrio2'] = int(-1 * job['taskID'])
 
             # Add OS requirements for jobs
-            if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):
+            if job.get('scramArch', '').startswith("slc6_"):
                 ad['REQUIRED_OS'] = "rhel6"
+            elif job.get('scramArch', '').startswith("slc7_"):
+                ad['REQUIRED_OS'] = "rhel7"
             else:
                 ad['REQUIRED_OS'] = "any"
             

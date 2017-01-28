@@ -11,7 +11,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        CherryPyPeriodicTask.__init__(self, config)
+        super(DataCacheUpdate, self).__init__(config, enableLogDB=True)
 
     def setConcurrentTasks(self, config):
         """

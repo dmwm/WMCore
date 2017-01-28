@@ -10,7 +10,7 @@ import logging
 import threading
 
 # project modules
-from WMCore.Services.LogDB.LogDBBackend import LogDBBackend, clean_entry
+from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
 from WMCore.Lexicon import splitCouchServiceURL
 
 
@@ -34,6 +34,7 @@ class LogDB(object):
         self.logger = logger if logger else logging.getLogger()
         self.url = url if url else 'https://cmsweb.cern.ch/couchdb/wmstats_logdb'
         self.identifier = identifier if identifier else 'unknown'
+        self.default_user = "HEARTBEAT"
 
         try:
             self.thread_name = kwds.pop('thread_name')
@@ -52,9 +53,11 @@ class LogDB(object):
         return "<LogDB(url=%s, identifier=%s, agent=%d)>" \
                 % (self.url, self.identifier, self.agent)
 
-    def post(self, request, msg, mtype="comment"):
+    def post(self, request=None, msg="", mtype="comment"):
         """Post new entry into LogDB for given request"""
         try:
+            if request == None:
+                request = self.default_user
             if  self.user_pat.match(self.identifier):
                 res = self.backend.user_update(request, msg, mtype)
             else:
@@ -65,11 +68,17 @@ class LogDB(object):
         self.logger.debug("LogDB post request, res=%s", res)
         return res
 
-    def get(self, request, mtype="comment"):
+    def get(self, request=None, mtype=None):
         """Retrieve all entries from LogDB for given request"""
         res = []
         try:
-            for row in self.backend.get(request, mtype).get('rows', []):
+            if request == None:
+                request = self.default_user
+            if self.user_pat.match(self.identifier):
+                agent = False
+            else:
+                agent = True
+            for row in self.backend.get(request, mtype, agent=agent).get('rows', []):
                 request = row['doc']['request']
                 identifier = row['doc']['identifier']
                 thr = row['doc']['thr']
@@ -96,13 +105,15 @@ class LogDB(object):
         self.logger.debug("LogDB get_all_requests request, res=%s", res)
         return res
 
-    def delete(self, request, mtype=None, this_thread=False):
+    def delete(self, request=None, mtype=None, this_thread=False):
         """
         Delete entry in LogDB for given request
         if mtype == None - delete all the log for that request
         mtype != None - only delete specified mtype
         """
         try:
+            if request == None:
+                request = self.default_user
             res = self.backend.delete(request, mtype, this_thread)
         except Exception as exc:
             self.logger.error("LogDBBackend delete API failed, error=%s" % str(exc))

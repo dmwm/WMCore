@@ -1,7 +1,7 @@
 {
   "createRequest": {
     "Comments": ["TaskChain creation of the premixing library with PU and no input dataset.",
-      "AcqEra/ProcStr overwritten at task level. Not send during assignment, including ProcVer"],
+                 "AcqEra/ProcStr overwritten at task level and not set during assignment, including ProcVer"],
     "RequestString": "RequestString-OVERRIDE-ME",
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST_TopLevel",

@@ -1,5 +1,5 @@
 {"createRequest": {
-    "Comments": "StepChain ReDigi with 3 steps. PU for the 1st step. EventAware 50 evts per job (2 lumis)",
+    "Comments": "StepChain ReDigi with 3 steps; PU for the 1st step; Keep only MINIAODSIM; EventAware 50 evts per job (2 lumis)",
     "Campaign": "Campaign-OVERRIDE-ME",
     "RequestString": "RequestString-OVERRIDE-ME",
     "CMSSWVersion": "CMSSW_7_2_0_patch1",
@@ -24,6 +24,7 @@
         "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
         "RunWhitelist": [],
         "RunBlacklist": [],
+        "KeepOutput": false,
         "BlockWhitelist": ["/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4","/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4"],
         "BlockBlacklist": [],
         "MCPileup": "/MinBias_TuneA2MB_13TeV-pythia8/Fall13-POSTLS162_V1-v1/GEN-SIM",
@@ -36,6 +37,7 @@
         "GlobalTag": "PHYS14_25_V3",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "DIGI",
+        "KeepOutput": false,
         "LumisPerJob": 4,
         "SplittingAlgo": "LumiBased",
         "StepName": "RECO"},

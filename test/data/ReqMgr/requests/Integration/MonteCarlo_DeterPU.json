@@ -29,6 +29,7 @@
         "EventsPerJob": 120, 
         "FilterEfficiency": 0.85268792179999997, 
         "GlobalTag": "MCRUN2_71_V1::All",
+        "Group": "DATAOPS",
         "MCPileup": "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM",
         "Memory": 1000, 
         "PrepID": "TEST-EXO-RunIISummer15wmLHEGS-03608", 

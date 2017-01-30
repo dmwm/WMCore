@@ -249,7 +249,7 @@ class Requests(dict):
             try:
                 response, result = conn.request(uri, method=verb,
                                                         body=encoded_data, headers=headers)
-            except AttributeError as ex:
+            except AttributeError:
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
                 conn.connections = {}
@@ -328,7 +328,6 @@ class Requests(dict):
                 break
         else:
             idir = tempfile.mkdtemp(prefix='.wmcore_cache_')
-            # object to store temporary directory - cleaned up on destruction
             self['deleteCacheOnExit'] = TempDirectory(idir)
             return idir
 
@@ -560,13 +559,22 @@ class JSONRequests(Requests):
         else:
             return {}
 
-
 class TempDirectory(object):
-    """Directory that cleans up after itself"""
+    """
+    Directory that cleans up after itself
+
+    Except this doesn't work, python __del__ is NOT a destructor
+
+    Leaving it anyways, since it might work sometimes
+
+    """
 
     def __init__(self, idir):
         self.dir = idir
 
     def __del__(self):
-        if shutil:
+        try:
+            # it'll likely fail, but give it a try
             shutil.rmtree(self.dir, ignore_errors=True)
+        except:
+            pass

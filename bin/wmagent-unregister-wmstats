@@ -16,11 +16,11 @@ if __name__ == "__main__":
     wmagentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
     
     parser = OptionParser()
-    parser.set_usage("wmagent-unregister-wmstats [agent_url:port]")
+    parser.set_usage("wmagent-unregister-wmstats [agent_url]")
     
     (options, args) = parser.parse_args()
     if not args:
-        agentUrl = ("%s:%s" % (wmagentConfig.Agent.hostName, wmagentConfig.WMBSService.Webtools.port))
+        agentUrl = ("%s" % wmagentConfig.Agent.hostName)
     else:
         agentUrl = args[0]
     

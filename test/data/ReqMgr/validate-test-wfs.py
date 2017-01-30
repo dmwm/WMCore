@@ -124,16 +124,16 @@ def getDbsInfo(dataset, baseUrl):
         dbsUrl = baseUrl + "/dbs/prod/global/DBSReader/"
 
     dbsOutput = {}
-    dbsOutput[dataset] = {"blockorigin": [], "filesummaries": []}
+    dbsOutput[dataset] = {"blockorigin": [], "filesummaries": [], "outputconfigs": []}
     for api in dbsOutput[dataset]:
         fullUrl = dbsUrl + api + "?" + urllib.urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         dbsOutput[dataset][api] = data
+
     # Separate query for prep_id, since we want any access_type
     fullUrl = dbsUrl + "datasets?" + urllib.urlencode({'dataset': dataset})
     fullUrl += "&dataset_access_type=*&detail=True"
     data = json.loads(getContent(fullUrl))
-    # if dataset is not available in DBS ...
     dbsOutput[dataset]["prep_id"] = data[0]["prep_id"] if data else ''
     return dbsOutput
 
@@ -143,12 +143,17 @@ def getDqmInfo(url):
     Fetch all the data from the DQMGui
     """
     global cachedDqmgui
+
     dqmguiUrl = url + "/data/json/samples"
     # check whether we have this data in cache
     if cachedDqmgui is None:
         cachedDqmgui = {}
     if url not in cachedDqmgui:
-        cachedDqmgui[url] = json.loads(getContent(dqmguiUrl))
+        try:
+            cachedDqmgui[url] = json.loads(getContent(dqmguiUrl))
+        except Exception:
+            print("Failed to fetch data from DQM GUI")
+            cachedDqmgui[url]['samples'] = []
     return cachedDqmgui[url]['samples']
 
 
@@ -178,7 +183,7 @@ def harvesting(workload, outDsets):
                         print(item)
 
 
-def compareLists(d1, d2, d3=[], key=None):
+def compareLists(d1, d2, d3=None, key=None):
     """
     Receives list of data from different sources and compare them.
 
@@ -189,28 +194,29 @@ def compareLists(d1, d2, d3=[], key=None):
     # just to make comparison easier when the third list is not provided
     if not d3:
         d3 = d2
-    if isinstance(d1, list):
-        if len(d1) != len(d2) or len(d1) != len(d3):
-            return outcome
-        if set(d1) ^ set(d2) or set(d1) ^ set(d3):
-            return outcome
-    elif isinstance(d1, dict):
-        if len(d1) != len(d2) or len(d1) != len(d3):
-            return outcome
-        try:
+
+    try:
+        if isinstance(d1, list):
+            if len(d1) != len(d2) or len(d1) != len(d3):
+                return outcome
+            if set(d1) ^ set(d2) or set(d1) ^ set(d3):
+                return outcome
+        elif isinstance(d1, dict):
+            if len(d1) != len(d2) or len(d1) != len(d3):
+                return outcome
             for dset in d1:
                 if d1[dset][key] != d2[dset][key] or d1[dset][key] != d3[dset][key]:
                     return outcome
-        except KeyError:
+        else:
+            print("Data type is neither a list nor dict: %s" % type(d1))
             return outcome
-    else:
-        print("Data type is neither a list nor dict: %s" % type(d1))
-        return outcome
+    except KeyError:
+        pass
 
     return 'ok'
 
 
-def compareSpecial(d1, d2, d3=[], key=None):
+def compareSpecial(d1, d2, key=None):
     """
     Make special comparisons that requires iterating over all blocks and etc
     """
@@ -231,7 +237,8 @@ def compareSpecial(d1, d2, d3=[], key=None):
                         if d1[dset][block][key] != d2[dset][block][key]:
                             return outcome
     except KeyError:
-        return outcome
+        pass
+
     return 'ok'
 
 
@@ -280,7 +287,7 @@ def handleReqMgr(reqName, reqmgrUrl):
         reqmgrOutDsets = getReqMgrOutput(reqName, reqmgrUrl)
 
     ### Handle harvesting case
-    print(" - Comments: %s" % reqmgrOut['Comments'])
+    print(" - Comments: %s" % reqmgrOut.get('Comments', ''))
     harvesting(reqmgrOut, reqmgrOutDsets)
     if reqmgrOut['RequestType'] == 'DQMHarvest':
         print("There is nothing else that we can validate here...\n")
@@ -351,10 +358,10 @@ def handleDBS(reqmgrOutDsets, cmswebUrl):
         # Get information from 3 DBS Apis
         dbsOutput = getDbsInfo(dset, cmswebUrl)
         dbsInfo.setdefault(dset, {})
+        dbsInfo[dset].setdefault('prep_id', dbsOutput[dset]['prep_id'])
+        for item in dbsOutput[dset]['outputconfigs']:
+            dbsInfo[dset].setdefault('release', item['release_version'])
         for item in dbsOutput[dset]['filesummaries']:
-            # hack while https://github.com/dmwm/DBS/issues/513 is not fixed
-            if item is None:
-                continue
             dbsInfo[dset].setdefault('dsetSize', item['file_size'])
             dbsInfo[dset].setdefault('numBlocks', item['num_block'])
             dbsInfo[dset].setdefault('numFiles', item['num_file'])

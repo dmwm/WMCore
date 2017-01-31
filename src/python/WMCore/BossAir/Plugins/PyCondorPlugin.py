@@ -997,7 +997,7 @@ class PyCondorPlugin(BasePlugin):
 
 
         # Add OS requirements for jobs
-        if job.get('scramArch', '').startswith("slc6_"):
+        if job.get('scramArch', '').startswith("slc6_") or job.get('scramArch', '').startswith("slc5_"):
             jdl.append('+REQUIRED_OS = "rhel6"\n')
         elif job.get('scramArch', '').startswith("slc7_"):
             jdl.append('+REQUIRED_OS = "rhel7"\n')

@@ -11,6 +11,7 @@ Submit jobs for execution.
 import logging
 import threading
 import os.path
+from collections import defaultdict, Counter
 from operator import itemgetter
 try:
     import cPickle as pickle
@@ -530,6 +531,8 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobsToUncache = []
         jobsCount = 0
         exitLoop = False
+        jobSubmitLogBySites = defaultdict(Counter)
+        jobSubmitLogByPriority = defaultdict(Counter)
 
         # iterate over jobs from the highest to the lowest prio
         for jobPrio in sorted(self.cachedJobs, reverse=True):
@@ -543,13 +546,13 @@ class JobSubmitterPoller(BaseWorkerThread):
                 jobid = job['id']
                 jobType = job['type']
                 possibleSites = job['possibleLocations']
-
+                jobSubmitLogByPriority[jobPrio]['Total'] += 1
                 # now look for sites with free pending slots
                 for siteName in possibleSites:
                     if siteName not in self.currentRcThresholds:
                         logging.warn("Have a job for %s which is not in the resource control", siteName)
                         continue
-
+                    
                     try:
                         totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
                         totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
@@ -569,14 +572,17 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # check if site has free pending slots AND free pending task slots
                     if totalPendingJobs >= totalPendingSlots or taskPendingJobs >= taskPendingSlots:
+                        jobSubmitLogBySites[siteName]["NoPendingSlot"] += 1
                         logging.debug("Found a job for %s which has no free pending slots", siteName)
                         continue
                     # check if site overall thresholds have free slots
                     if totalPendingJobs + totalRunningJobs >= totalPendingSlots + totalRunningSlots:
+                        jobSubmitLogBySites[siteName]["NoRunningSlot"] += 1
                         logging.debug("Found a job for %s which has no free overall slots", siteName)
                         continue
                     # finally, check whether task has free overall slots
                     if taskPendingJobs + taskRunningJobs >= taskPendingSlots + taskRunningSlots:
+                        jobSubmitLogBySites[siteName]["NoTaskSlot"] += 1
                         logging.debug("Found a job for %s which has no free task slots", siteName)
                         continue
 
@@ -603,7 +609,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Get this job in place to be submitted by the plugin
                     jobsToSubmit[package].append(cachedJob)
-
+                    
+                    jobSubmitLogBySites[siteName]["submitted"] += 1
+                    jobSubmitLogByPriority[jobPrio]['submitted'] += 1
                     # found a site to submit this job, so go to the next job
                     break
 
@@ -616,8 +624,11 @@ class JobSubmitterPoller(BaseWorkerThread):
         for prio, jobid in jobsToUncache:
             self.cachedJobs[prio].pop(jobid)
             self.cachedJobIDs.remove(jobid)
-
+            
+        logging.info("Site submission report: %s", dict(jobSubmitLogBySites))
+        logging.info("Priority submission report: %s", dict(jobSubmitLogByPriority))
         logging.info("Have %s packages to submit.", len(jobsToSubmit))
+        logging.info("Have %s jobs to submit.", jobsCount)
         logging.info("Done assigning site locations.")
         return jobsToSubmit
 

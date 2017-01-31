@@ -445,7 +445,7 @@ def initAgentInfo(config):
     agentInfo['agent_team'] = config.Agent.teamName
     agentInfo['agent'] = config.Agent.agentName
     # temporarly add port for the split test
-    agentInfo['agent_url'] = ("%s:%s" % (config.Agent.hostName, config.WMBSService.Webtools.port))
+    agentInfo['agent_url'] = "%s" % config.Agent.hostName
     return agentInfo
 
 

@@ -494,30 +494,23 @@ class Request(RESTEntity):
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         return report
 
-    def _handleCascadeUpdate(self, workload, request_args, dn):
-        
+    def _handleOnlyStateTransition(self, workload, request_args, dn):
         """
-        only closed-out and announced has this option
+        It handles only the state transition, ignoring all the other arguments.
+        Special handling needed if a request is aborted or force completed.
         """
         req_status = request_args["RequestStatus"]
-        # check whehter it is casecade option
-        if request_args["cascade"]:
-            cascade_list = self._retrieveResubmissionChildren(workload.name())
-            for req_name in cascade_list:
-                self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
-        # update original workflow status
-        report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
-        return report
-    
-    def _handleOnlyStateTransition(self, workload, req_status, dn):
-        """
-        It handles only the state transition. Special handling needed if a
-        request is aborted or force completed.
-        """
+        cascade = request_args.get("cascade", False)
+
         if req_status in ["aborted", "force-complete"]:
             # cancel the workflow first
             self.gq_service.cancelWorkflow(workload.name())
-        #update the request status in couchdb   
+        if req_status in ["rejected", "aborted", "closed-out", "announced"] and cascade:
+            cascade_list = self._retrieveResubmissionChildren(workload.name())
+            for req_name in cascade_list:
+                self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)
+
+        # then update original workflow status in couchdb
         report = self.reqmgr_db_service.updateRequestStatus(workload.name(), req_status, dn)
         return report
     
@@ -537,12 +530,8 @@ class Request(RESTEntity):
                 report = self._handleAssignmentApprovedTransition(workload, request_args, dn)
             elif len(request_args) > 1 and req_status == "assigned":
                 report = self._handleAssignmentStateTransition(workload, request_args, dn)
-            elif req_status in ["rejected", "aborted", "closed-out", "announced"] and \
-                request_args.get("cascade", False):
-                report = self._handleCascadeUpdate(workload, request_args, dn)
-            elif len(request_args) == 1:
-                # otherwise just ignore any other arguments
-                report = self._handleOnlyStateTransition(workload, req_status, dn)
+            elif len(request_args) == 1 or (len(request_args) == 2 and "cascade" in request_args):
+                report = self._handleOnlyStateTransition(workload, request_args, dn)
             else:
                 raise InvalidSpecParameterValue(
                     "can't update value except transition to assigned status: %s" % request_args)

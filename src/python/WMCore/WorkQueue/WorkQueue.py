@@ -347,12 +347,14 @@ class WorkQueue(WorkQueueBase):
         for match in matches:
             blockName, dbsBlock = None, None
             if self.params['PopulateFilesets']:
+                self.logger.info('XXXX: start match')
                 if match['RequestName'] not in wmspecCache:
                     wmspec = self.backend.getWMSpec(match['RequestName'])
                     wmspecCache[match['RequestName']] = wmspec
                 else:
                     wmspec = wmspecCache[match['RequestName']]
-
+                
+                self.logger.info('XXXX: start dbs call')
                 try:
                     if match['StartPolicy'] == 'Dataset':
                         # actually returns dataset name and dataset info
@@ -367,11 +369,12 @@ class WorkQueue(WorkQueueBase):
                     continue
 
                 try:
+                    self.logger.info('XXXX: start wmbsPreperation')
                     match['Subscription'] = self._wmbsPreparation(match,
                                                                   wmspec,
                                                                   blockName,
                                                                   dbsBlock)
-                    self.logdb.delete(wmspec.name(), "error", this_thread=True)
+                    self.logger.info('XXXX: end wmbsPreperation')
                 except Exception as ex:
                     msg = "%s, %s: \ncreating subscription failed in LQ: \n%s" % (wmspec.name(), blockName, str(ex))
                     self.logger.error(msg)
@@ -381,7 +384,7 @@ class WorkQueue(WorkQueueBase):
             results.append(match)
 
         del wmspecCache  # remove cache explicitly
-        self.logger.info('Injected %s units into WMBS' % len(results))
+        self.logger.info('XXXX: Injected %s units into WMBS', len(results))
         return results
 
     def _getDBSDataset(self, match):
@@ -438,21 +441,23 @@ class WorkQueue(WorkQueueBase):
     def _wmbsPreparation(self, match, wmspec, blockName, dbsBlock):
         """Inject data into wmbs and create subscription. """
         from WMCore.WorkQueue.WMBSHelper import WMBSHelper
-        self.logger.info("Adding WMBS subscription for %s" % match['RequestName'])
+        self.logger.info("XXXX: Adding WMBS subscription for %s" % match['RequestName'])
 
         mask = match['Mask']
         wmbsHelper = WMBSHelper(wmspec, match['TaskName'], blockName, mask, self.params['CacheDir'])
 
         sub, match['NumOfFilesAdded'] = wmbsHelper.createSubscriptionAndAddFiles(block=dbsBlock)
-        self.logger.info("Created top level subscription %s for %s with %s files" % (sub['id'],
+        self.logger.info("XXXX: Created top level subscription %s for %s with %s files" % (sub['id'],
                                                                                      match['RequestName'],
                                                                                      match['NumOfFilesAdded']))
         # update couch with wmbs subscription info
         match['SubscriptionId'] = sub['id']
         match['Status'] = 'Running'
         # do update rather than save to avoid conflicts from other thread writes
+        self.logger.info("XXXX: wqe update starts %s", match.id)
         self.backend.updateElements(match.id, Status='Running', SubscriptionId=sub['id'],
                                     NumOfFilesAdded=match['NumOfFilesAdded'])
+        self.logger.info("XXXX: wqe update ends %s", match.id) 
 
         return sub
 
@@ -868,7 +873,6 @@ class WorkQueue(WorkQueueBase):
                     if (currentTime - max(newDataFoundTime, lastUpdate)) > openRunningTimeout:
                         workflowsToClose.append(element.id)
                     # if it is successful remove previous error
-                    self.logdb.delete(element.id, "error", this_thread=True)
                 else:
                     msg = "ChildElement is empty for element id %s: investigate" % element.id
                     self.logdb.post(element.id, msg, "error")

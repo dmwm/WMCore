@@ -1,6 +1,6 @@
 from __future__ import division, print_function
 
-from Utils.IterTools import nestedDictUpdate
+from Utils.IteratorTools import nestedDictUpdate
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
@@ -416,4 +416,3 @@ class WMStatsReader(object):
             
             
         return jobInfoDoc
-    

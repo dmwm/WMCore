@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-Unittests for PSetTweaks module
-
+Unittests for IteratorTools functions
 """
 
 from __future__ import division, print_function
@@ -9,13 +8,12 @@ from __future__ import division, print_function
 import itertools
 import unittest
 
-from Utils.IterTools import grouper
-from Utils.IterTools import flattenList
+from Utils.IteratorTools import grouper, flattenList
 
 
-class IterToolsTest(unittest.TestCase):
+class IteratorToolsTest(unittest.TestCase):
     """
-    unittest for IterTools functions
+    unittest for IteratorTools functions
     """
 
     def testGrouper(self):

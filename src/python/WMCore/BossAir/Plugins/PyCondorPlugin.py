@@ -20,7 +20,6 @@ import multiprocessing
 import glob
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMException import WMException
@@ -28,7 +27,6 @@ from WMCore.WMInit import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Algorithms import SubprocessAlgos
-from Utils.IterTools import grouper
 
 ##  python-condor stuff
 import htcondor as condor

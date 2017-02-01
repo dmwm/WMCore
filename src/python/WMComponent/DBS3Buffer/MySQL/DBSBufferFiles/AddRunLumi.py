@@ -6,8 +6,6 @@ MySQL implementation of AddRunLumi
 """
 
 
-
-
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddRunLumi(DBFormatter):

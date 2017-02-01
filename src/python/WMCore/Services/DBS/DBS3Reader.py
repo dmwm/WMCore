@@ -12,7 +12,7 @@ from dbs.apis.dbsClient import DbsApi
 from dbs.exceptions.dbsClientException import dbsClientException
 
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 from WMCore.Services.DBS.DBSErrors import DBSReaderError, formatEx3
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 

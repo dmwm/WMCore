@@ -21,7 +21,7 @@ from subprocess import Popen, PIPE
 from WMCore.DAOFactory        import DAOFactory
 from WMCore.WMSpec.WMWorkload               import WMWorkload, WMWorkloadHelper
 from WMCore.WMException import WMException
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 
 
 def createDirectories(dirList):

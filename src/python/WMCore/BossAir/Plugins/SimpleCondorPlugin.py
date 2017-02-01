@@ -16,7 +16,7 @@ import classad
 import htcondor
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-from Utils.IterTools import convertFromUnicodeToStr, grouper
+from Utils.IteratorTools import convertFromUnicodeToStr, grouper
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory

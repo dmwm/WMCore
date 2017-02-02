@@ -28,14 +28,13 @@ _TweakOutputModules = [
     "fastCloning",
     "sortBaskets",
     "dropMetaData",
-    #"outputCommands", #this is just a huge pile of stuff which we probably shouldnt be setting anyways
+    # "outputCommands", #this is just a huge pile of stuff which we probably shouldnt be setting anyways
     "SelectEvents.SelectEvents",
     "dataset.dataTier",
     "dataset.filterName",
     # TODO: support dataset.* here
 
-
-    ]
+]
 
 _TweakParams = [
     # options
@@ -49,12 +48,10 @@ _TweakParams = [
     "process.options.FailModule",
     "process.options.IgnoreCompletely",
 
-    #config metadata
+    # config metadata
     "process.configurationMetadata.name",
     "process.configurationMetadata.version",
     "process.configurationMetadata.annotation",
-
-
 
     # source
     "process.source.maxEvents",
@@ -101,16 +98,18 @@ _TweakParams = [
     "process.RandomNumberGeneratorService.*.initialSeed",
     "process.GlobalTag.globaltag",
 
-    ]
+]
+
 
 class WMTweakMaskError(Exception):
-
-    def __init__(self, mask = None, msg = "Cannot set process from job mask"):
+    def __init__(self, mask=None, msg="Cannot set process from job mask"):
+        super(WMTweakMaskError, self).__init__()
         self.mask = mask
         self.message = msg
 
     def __str__(self):
         return "Error: %s \n Mask: %s" % (self.message, str(self.mask))
+
 
 def lfnGroup(job):
     """
@@ -124,7 +123,8 @@ def lfnGroup(job):
     lfnGroup = modifier + str(job.get("counter", 0) / 1000).zfill(4)
     return lfnGroup
 
-def hasParameter(pset, param, nopop = False):
+
+def hasParameter(pset, param, nopop=False):
     """
     _hasParameter_
 
@@ -138,7 +138,7 @@ def hasParameter(pset, param, nopop = False):
     """
     params = param.split(".")
     if not nopop:
-        params.pop(0) # first param is the pset we have the reference to
+        params.pop(0)  # first param is the pset we have the reference to
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
@@ -148,7 +148,8 @@ def hasParameter(pset, param, nopop = False):
         return True
     return False
 
-def getParameter(pset, param, nopop = False):
+
+def getParameter(pset, param, nopop=False):
     """
     _getParameter_
 
@@ -160,13 +161,14 @@ def getParameter(pset, param, nopop = False):
     """
     params = param.split(".")
     if not nopop:
-        params.pop(0) # first param is the pset we have the reference to
+        params.pop(0)  # first param is the pset we have the reference to
     lastParam = pset
     for param in params:
         lastParam = getattr(lastParam, param, None)
         if lastParam == None:
             return None
     return lastParam.value()
+
 
 def setParameter(process, param, value):
     """
@@ -182,7 +184,7 @@ def setParameter(process, param, value):
 
     """
     params = param.split('.')
-    params.pop(0) # first is process object
+    params.pop(0)  # first is process object
     lastPSet = process
     for pset in params:
         lastPSet = getattr(lastPSet, pset, None)
@@ -196,8 +198,6 @@ def setParameter(process, param, value):
     return
 
 
-
-
 def expandParameter(process, param):
     """
     _expandParameter_
@@ -208,9 +208,9 @@ def expandParameter(process, param):
     """
     params = param.split('.')
     params.pop(0)
-    lastResults = {"process" : process}
+    lastResults = {"process": process}
     finalResults = {}
-    for i  in range(0, len(params)):
+    for _ in range(0, len(params)):
         pset = params.pop(0)
         if pset == "*":
             newResults = {}
@@ -238,11 +238,11 @@ def expandParameter(process, param):
 
             lastResults = newResults
 
-
-
     return finalResults
 
-listParams = lambda x: [ y for y in x.parameters_()  ]
+
+listParams = lambda x: [y for y in x.parameters_()]
+
 
 class TweakMaker:
     """
@@ -254,8 +254,9 @@ class TweakMaker:
     within the output modules
 
     """
-    def __init__(self, processParams = _TweakParams,
-                 outmodParams = _TweakOutputModules):
+
+    def __init__(self, processParams=_TweakParams,
+                 outmodParams=_TweakOutputModules):
 
         self.processLevel = processParams
         self.outModLevel = outmodParams
@@ -264,12 +265,11 @@ class TweakMaker:
         tweak = PSetTweak()
         # handle process parameters
         processParams = []
-        [ processParams.extend( expandParameter(process, param).keys())
-          for param in self.processLevel]
+        [processParams.extend(expandParameter(process, param).keys())
+         for param in self.processLevel]
 
-
-        [ tweak.addParameter(param, getParameter(process, param))
-          for param in processParams if hasParameter(process, param) ]
+        [tweak.addParameter(param, getParameter(process, param))
+         for param in processParams if hasParameter(process, param)]
 
         # output modules
         tweak.addParameter('process.outputModules_', [])
@@ -285,8 +285,8 @@ class TweakMaker:
                                      param,
                                      True))
 
-
         return tweak
+
 
 def makeTweak(process):
     """
@@ -301,8 +301,7 @@ def makeTweak(process):
     return maker(process)
 
 
-
-def applyTweak(process, tweak, fixup = None):
+def applyTweak(process, tweak, fixup=None):
     """
     _applyTweak_
 
@@ -321,8 +320,8 @@ def applyTweak(process, tweak, fixup = None):
         setParameter(process, param, value)
 
 
-childParameters = lambda p, x: [ i for i in  x._internal_settings if i not in x._internal_children]
-childSections = lambda s : [ getattr(s, x) for x in s._internal_children ]
+childParameters = lambda p, x: [i for i in x._internal_settings if i not in x._internal_children]
+childSections = lambda s: [getattr(s, x) for x in s._internal_children]
 
 
 class ConfigSectionDecomposer:
@@ -335,11 +334,11 @@ class ConfigSectionDecomposer:
     May turn out to be generally useful for ConfigSections
 
     """
+
     def __init__(self):
         self.configSects = []
         self.parameters = {}
         self.queue = []
-
 
     def __call__(self, configSect):
         """
@@ -358,7 +357,6 @@ class ConfigSectionDecomposer:
             paramVal = getattr(configSect, par)
             self.parameters[paramName] = paramVal
 
-
         map(self, childSections(configSect))
         self.queue.pop(-1)
 
@@ -375,6 +373,7 @@ def decomposeConfigSection(csect):
     decomposer(csect)
 
     return decomposer.parameters
+
 
 def makeTaskTweak(stepSection):
     """
@@ -395,6 +394,7 @@ def makeTaskTweak(stepSection):
                     result.addParameter("process.GlobalTag.DBParameters.transactionId", args['globalTagTransaction'])
 
     return result
+
 
 def makeJobTweak(job):
     """
@@ -420,7 +420,7 @@ def makeJobTweak(job):
                 result.addParameter("process.source.firstLuminosityBlock",
                                     job['mask']['FirstLumi'])
             else:
-                #We don't have lumi information in the mask, raise an exception
+                # We don't have lumi information in the mask, raise an exception
                 raise WMTweakMaskError(job['mask'],
                                        "No first lumi information provided")
             continue
@@ -434,18 +434,18 @@ def makeJobTweak(job):
         if len(secondaryFiles) > 0:
             result.addParameter("process.source.secondaryFileNames", secondaryFiles)
     elif not lheInput:
-        #First event parameter should be set from whatever the mask says,
-        #That should have the added protection of not going over 2^32 - 1
-        #If there is nothing in the mask, then we fallback to the counter method
-        if job['mask'].get('FirstEvent',None) != None:
+        # First event parameter should be set from whatever the mask says,
+        # That should have the added protection of not going over 2^32 - 1
+        # If there is nothing in the mask, then we fallback to the counter method
+        if job['mask'].get('FirstEvent', None) != None:
             result.addParameter("process.source.firstEvent",
                                 job['mask']['FirstEvent'])
         else:
-            #No first event information in the mask, raise and error
+            # No first event information in the mask, raise and error
             raise WMTweakMaskError(job['mask'],
                                    "No first event information provided in the mask")
 
-    mask =  job['mask']
+    mask = job['mask']
 
     # event limits
     maxEvents = mask.getMaxEvents()
@@ -465,7 +465,7 @@ def makeJobTweak(job):
     if firstRun != None:
         result.addParameter("process.source.firstRun", firstRun)
     elif not len(primaryFiles):
-        #Then we have a MC job, we need to set firstRun to 1
+        # Then we have a MC job, we need to set firstRun to 1
         logging.debug("MCFakeFile initiated without job FirstRun - using one.")
         result.addParameter("process.source.firstRun", 1)
 
@@ -488,12 +488,10 @@ def makeJobTweak(job):
         return result
 
     baggageParams = decomposeConfigSection(procSection)
-    for k,v in baggageParams.items():
-        result.addParameter(k,v)
-
+    for k, v in baggageParams.items():
+        result.addParameter(k, v)
 
     return result
-
 
 
 def makeOutputTweak(outMod, job):
@@ -515,8 +513,7 @@ def makeOutputTweak(outMod, job):
         lfn = "%s/%s/%s.root" % (lfnBase, lfnGroup(job), modName)
         result.addParameter("process.%s.logicalFileName" % modName, lfn)
 
-
-    #TODO: Nice standard way to meddle with the other parameters in the
+    # TODO: Nice standard way to meddle with the other parameters in the
     #      output module based on the settings in the section
 
     return result
@@ -611,5 +608,3 @@ def resizeResources(resources):
     if machineMemory > 0 and 'memory' in resources:
         resources['memory'] = machineMemory
     print("Resizing job.  Resulting resources: %s" % resources)
-
-

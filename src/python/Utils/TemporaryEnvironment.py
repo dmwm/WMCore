@@ -20,10 +20,10 @@ def tmpEnv(**environ):
 
     :param environ: Environment variables to set
     """
-    old_environ = dict(os.environ)
+    oldEnviron = dict(os.environ)
     os.environ.update(environ)
     try:
         yield
     finally:
         os.environ.clear()
-        os.environ.update(old_environ)
+        os.environ.update(oldEnviron)

@@ -12,7 +12,7 @@ class UpdateAuxDBTasks(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        CherryPyPeriodicTask.__init__(self, config)
+        super(UpdateAuxDBTasks, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

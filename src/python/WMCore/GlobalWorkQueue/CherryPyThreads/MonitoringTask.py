@@ -7,7 +7,7 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter, convertToServic
 
 class MonitoringTask(CherryPyPeriodicTask):
     def __init__(self, rest, config):
-        CherryPyPeriodicTask.__init__(self, config)
+        super(MonitoringTask, self).__init__(config, enableLogDB=True)
         self.centralWMStats = WMStatsWriter(config.queueParams['WMStatsCouchUrl'])
 
     def setConcurrentTasks(self, config):

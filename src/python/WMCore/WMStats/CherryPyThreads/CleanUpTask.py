@@ -12,7 +12,7 @@ class CleanUpTask(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        CherryPyPeriodicTask.__init__(self, config)
+        super(CleanUpTask, self).__init__(config, enableLogDB=True)
         self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url, 
                               reqdbCouchApp=config.reqdb_couch_app)
 

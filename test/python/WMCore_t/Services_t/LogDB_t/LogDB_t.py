@@ -6,14 +6,13 @@ LogDB tests
 """
 from __future__ import print_function
 
-import os
 import time
 import logging
 import unittest
-import threading
 
+from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.Services.LogDB.LogDBBackend import LOGDB_MSG_TYPES, gen_hash
+from WMCore.Services.LogDB.LogDBBackend import gen_hash
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 from WMCore.Services.LogDB.LogDBReport import LogDBReport
 
@@ -31,12 +30,23 @@ class LogDBTest(unittest.TestCase):
         logging.basicConfig()
         self.logger = logging.getLogger('LogDBTest')
 #        self.logger.setLevel(logging.DEBUG)
-        url = os.environ.get('COUCHURL', 'http://localhost:5984') + '/logdb_t'
+
+        self.schema = []
+        self.couchApps = ["LogDB"]
+        self.testInit = TestInitCouchApp('LogDBTest')
+        self.testInit.setLogging()
+        self.testInit.setDatabaseConnection()
+        self.testInit.setSchema(customModules = self.schema,
+                                useDefault = False)
+        dbName = 'logdb_t'
+        self.testInit.setupCouch(dbName, *self.couchApps)
+        url = "%s/%s" % (self.testInit.couchUrl, dbName)
+        
         identifier = 'agentname'
-        self.agent_inst = LogDB(url, identifier, logger=self.logger, create=True)
-        self.agent_inst2 = LogDB(url, identifier, logger=self.logger, create=True, thread_name="Test")
+        self.agent_inst = LogDB(url, identifier, logger=self.logger)
+        self.agent_inst2 = LogDB(url, identifier, logger=self.logger, thread_name="Test")
         identifier = '/DC=org/DC=doegrids/OU=People/CN=First Last 123'
-        self.user_inst = LogDB(url, identifier, logger=self.logger, create=True)
+        self.user_inst = LogDB(url, identifier, logger=self.logger)
         self.report = LogDBReport(self.agent_inst)
 
     def tearDown(self):
@@ -45,7 +55,7 @@ class LogDBTest(unittest.TestCase):
 
         Drop all the WMBS tables.
         """
-        self.agent_inst.backend.deleteDatabase()
+        self.testInit.tearDownCouch()
 
     def test_docid(self):
         "Test docid API"
@@ -58,7 +68,6 @@ class LogDBTest(unittest.TestCase):
 
     def test_prefix(self):
         "Test prefix LogDBBackend API"
-        request = 'abc'
 
         self.assertEqual(self.agent_inst.agent, 1)
         mtype = self.agent_inst.backend.prefix('msg')

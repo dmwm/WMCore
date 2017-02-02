@@ -11,7 +11,7 @@ import hashlib
 import time
 
 # WMCore modules
-from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, CouchConflictError
+from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
 from WMCore.Services.LogDB.LogDBExceptions import LogDBError
 
 # define full list of supported LogDB types
@@ -29,23 +29,14 @@ def tstamp():
     "Return timestamp with microseconds"
     now = datetime.datetime.now()
     base = str(time.mktime(now.timetuple())).split('.')[0]
-    tstamp = '%s.%s' % (base, now.microsecond)
-    return float(tstamp)
+    ctime = '%s.%s' % (base, now.microsecond)
+    return float(ctime)
 
 def clean_entry(doc):
     """Clean document from CouchDB attributes"""
     for attr in ['_rev', '_id']:
         if  attr in doc:
             del doc[attr]
-    return doc
-
-def design_doc():
-    """Return basic design document"""
-    rmap = dict(map="function(doc){ if(doc.request) emit(doc.request, null)}",
-            reduce="_count")
-    tmap = dict(map="function(doc){ if(doc.messages) for(i=0;i<doc.messages.length;i++) emit(doc.messages[i].ts, null)}")
-    views = dict(requests=rmap, tstamp=tmap)
-    doc = dict(_id="_design/LogDB", views=views)
     return doc
 
 class LogDBBackend(object):
@@ -59,23 +50,11 @@ class LogDBBackend(object):
         self.dbid = identifier
         self.thread_name = thread_name
         self.agent = kwds.get('agent', 0)
-        create = kwds.get('create', False)
-        size = kwds.get('size', 10000)
-        self.db = self.server.connectDatabase(db_name, create=create, size=size)
+        self.db = self.server.connectDatabase(db_name, create=False)
         self.design = kwds.get('design', 'LogDB') # name of design document
         self.view = kwds.get('view', 'requests') # name of view to look-up requests
         self.tsview = kwds.get('tsview', 'tstamp') # name of tsview to look-up requests
         self.threadview = kwds.get('tsview', 'logByRequestAndThread')
-        if  create:
-            uri = '/%s/_design/%s' % (db_name, self.design)
-            data = design_doc()
-            try:
-                # insert design doc, if fails due to conflict continue
-                # conflict may happen due to concurrent client connection who
-                # created first this doc
-                self.db.put(uri, data)
-            except CouchConflictError:
-                pass
 
     def deleteDatabase(self):
         """Delete back-end database"""
@@ -137,30 +116,35 @@ class LogDBBackend(object):
             res = self.db.commitOne(doc)
         return res
 
-    def get(self, request, mtype=None, detail=True):
+    def get(self, request, mtype=None, detail=True, agent=True):
         """Retrieve all entries from LogDB for given request"""
         self.check(request, mtype)
-        spec = {'request':request, 'reduce':False}
-        if  mtype:
-            spec.update({'type':mtype})
+        if agent and mtype:
+            mtype = self.prefix(mtype)
+        options = {'reduce':False}
+        if mtype:
+            keys = [[request, mtype]]
+        else:
+            keys=[]
+            options.update({'startkey': [request], 'endkey':[request, {}]})
         if detail:
-            spec.update({'include_docs': True})
-        docs = self.db.loadView(self.design, self.view, spec)
+            options.update({'include_docs': True})
+        docs = self.db.loadView(self.design, self.view, options, keys=keys)
         return docs
     
     def get_by_thread(self, request, mtype='error', detail=False):
         self.check(request, mtype)
-        spec = {'request':request, 'indentifier': self.dbid, 
-                'thr': self.thread_name, 'type':mtype, 'reduce':False}
+        keys = [[request, self.dbid, self.thread_name, mtype]] 
+        options = {'reduce':False}
         if detail:
-            spec.update({'include_docs': True})
-        docs = self.db.loadView(self.design, self.threadview, spec)
+            options.update({'include_docs': True})
+        docs = self.db.loadView(self.design, self.threadview, options, keys)
         return docs
 
     def get_all_requests(self):
         """Retrieve all entries from LogDB"""
-        spec = {'reduce':True, 'group_level':1}
-        docs = self.db.loadView(self.design, self.view, spec)
+        options = {'reduce':True, 'group_level':1}
+        docs = self.db.loadView(self.design, self.view, options)
         return docs
 
     def delete(self, request, mtype=None, this_thread=False):
@@ -183,9 +167,9 @@ class LogDBBackend(object):
         This is done via tstamp view end endkey, e.g.
         curl "http://127.0.0.1:5984/logdb/_design/LogDB/_view/tstamp?endkey=1427912282"
         """
-        tstamp = round(time.time()-thr)
-        docs = self.db.allDocs() # may need another view to look-up old docs
-        spec = {'endkey':tstamp, 'reduce':False}
+        cutoff = round(time.time()-thr)
+        #docs = self.db.allDocs() # may need another view to look-up old docs
+        spec = {'endkey':cutoff, 'reduce':False}
         docs = self.db.loadView(self.design, self.tsview, spec)
         ids = [d['id'] for d in docs.get('rows', [])]
         self.db.bulkDeleteByIDs(ids)

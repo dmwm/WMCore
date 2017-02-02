@@ -12,7 +12,7 @@ from threading import Thread, Condition
 
 class CherryPyPeriodicTask(object):
     
-    def __init__(self, config):
+    def __init__(self, config, enableLogDB=False):
         
         """
         BaseClass which can set up the concurrent task using cherrypy thread.
@@ -27,7 +27,7 @@ class CherryPyPeriodicTask(object):
         self.logger = getTimeRotatingLogger(config._internal_name, config.log_file)
         self.setConcurrentTasks(config)
         for task in self.concurrentTasks:
-            PeriodicWorker(task['func'], config, task['duration'], logger = self.logger)
+            PeriodicWorker(task['func'], config, task['duration'], logger=self.logger, enableLogDB=enableLogDB)
         
     def setConcurrentTasks(self, config):
         """
@@ -43,7 +43,8 @@ class CherryPyPeriodicTask(object):
 
 class PeriodicWorker(Thread):
     
-    def __init__(self, func, config, duration = 600, logger = cherrypy.log):
+    def __init__(self, func, config, duration=600, logger=cherrypy.log, 
+                 enableLogDB=False):
         # use default RLock from condition
         # Lock wan't be shared between the instance used  only for wait
         # func : function or callable object pointer
@@ -53,16 +54,29 @@ class PeriodicWorker(Thread):
         self.config = config
         self.duration = duration
         self.logger = logger
+        
+        if enableLogDB:
+            self.setUpLogDB()
+        else:
+            self.logDB = None
+    
         try: 
             name = func.__name__
             print(name)
         except AttributeError:
             name = func.__class__.__name__
             print(name)
+        
         Thread.__init__(self, name=name)
-        cherrypy.engine.subscribe('start', self.start, priority = 100)
-        cherrypy.engine.subscribe('stop', self.stop, priority = 100)
+        cherrypy.engine.subscribe('start', self.start, priority=100)
+        cherrypy.engine.subscribe('stop', self.stop, priority=100)
+
     
+    def setUpLogDB(self):
+        # default set up for logDB config section need to contain propervalues
+        from WMCore.Services.LogDB.LogDB import LogDB
+        self.logDB = LogDB(self.config.central_logdb_url, self.config.log_reporter, 
+                           thread_name=self.config.object.rsplit(".", 1)[-1])
         
     def stop(self):
         self.wakeUp.acquire()
@@ -76,15 +90,30 @@ class PeriodicWorker(Thread):
             self.wakeUp.acquire()
             try:
                 self.taskFunc(self.config)
+                self.heartBeatInfoToLogDB()
             except Exception as e:
                 self.logger.error("Periodic Thread ERROR %s.%s %s"
                 % (getattr(e, "__module__", "__builtins__"),
                 e.__class__.__name__, str(e)))
-                for line in traceback.format_exc().rstrip().split("\n"):
+                traceMsg = traceback.format_exc()
+                for line in traceMsg.rstrip().split("\n"):
                     self.logger.error(" " + line)
+                self.heartBeatErrorToLogDB(traceMsg)
                 
             self.wakeUp.wait(self.duration)
             self.wakeUp.release()
+            
+    def heartBeatInfoToLogDB(self):
+        if self.logDB:
+            self.logDB.delete(mtype="error", this_thread=True)
+            self.logDB.post(mtype="info")
+        return
+    
+    def heartBeatErrorToLogDB(self, msg):
+        if self.logDB:
+            self.logDB.post(msg=msg, mtype="error")
+        return
+        
 
 class SequentialTaskBase(object):
     

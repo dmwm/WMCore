@@ -233,7 +233,7 @@ class CMSSW(Executor):
 
         os.environ.update(envOverride)
 
-        returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
+        returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
 
         self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
         self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)

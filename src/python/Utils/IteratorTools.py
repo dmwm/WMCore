@@ -36,4 +36,19 @@ def nestedDictUpdate(d, u):
             d[k] = r
         else:
             d[k] = u[k]
+
     return d
+
+def convertFromUnicodeToStr(data):
+    """
+    code fram
+    http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
+    """
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(convertFromUnicodeToStr, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(convertFromUnicodeToStr, data))
+    else:
+        return data

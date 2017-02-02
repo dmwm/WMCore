@@ -29,6 +29,7 @@
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
         "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
+        "Group": "DATAOPS",
         "InputDataset": "/NoBPTX/Run2016D-v2/RAW", 
         "LumiList": {"276315": [[1, 15], [86, 160], [161, 180]], "276352": [[1, 1], [11, 40]], "276327": [[51, 60]]},
         "Memory": 4500, 

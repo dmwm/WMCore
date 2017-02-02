@@ -8,7 +8,7 @@ from __future__ import division
 import os
 import unittest
 
-from Utils.TemporaryEnvironment import tmpEnv
+from Utils.TemporaryEnvironment import set_env
 
 
 class TemporaryEnvironmentTest(unittest.TestCase):
@@ -21,7 +21,7 @@ class TemporaryEnvironmentTest(unittest.TestCase):
         Test the grouper function (returns chunk of an iterable)
         """
 
-        with tmpEnv(NEW_ENV_VAR=u'blah'):
+        with set_env(NEW_ENV_VAR=u'blah'):
             self.assertTrue('NEW_ENV_VAR' in os.environ)
             self.assertEquals(os.environ['NEW_ENV_VAR'], u'blah')
         self.assertFalse('NEW_ENV_VAR' in os.environ)

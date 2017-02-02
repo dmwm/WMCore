@@ -7,14 +7,14 @@ from WMCore.Services.TagCollector.XMLUtils import xml_parser
 class TagCollector(Service):
     """
     Class which provides interface to CMS TagCollector web-service.
-    Provides both Production and Development releases (anytype=1)
+    Provides non-deprecated CMSSW releases in all their ScramArchs (not only prod)
     """
     
     def __init__(self, url=None):
         """
         responseType will be either xml or json
         """
-        defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1"
+        defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1&anyarch=1"
         params = {}
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL

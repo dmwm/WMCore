@@ -8,8 +8,8 @@ MySQL implementation of AddRunLumi
 from Utils.IterTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
-class AddRunLumi(DBFormatter):
 
+class AddRunLumi(DBFormatter):
     sql = """INSERT IGNORE wmbs_file_runlumi_map (fileid, run, lumi)
             select id, :run, :lumi from wmbs_file_details
             where lfn = :lfn"""
@@ -20,27 +20,26 @@ class AddRunLumi(DBFormatter):
 
         if isinstance(filename, list):
             for entry in filename:
-                binds.extend(self.getBinds(filename = entry['lfn'], runs = entry['runs']))
+                binds.extend(self.getBinds(filename=entry['lfn'], runs=entry['runs']))
             return binds
 
         if isinstance(filename, basestring):
             lfn = filename
-
         elif isinstance(filename, dict):
             lfn = filename('lfn')
         else:
             raise Exception("Type of filename argument is not allowed: %s" \
-                                % type(filename))
+                            % type(filename))
 
         if isinstance(runs, set):
             for run in runs:
                 for lumi in run:
                     binds.append({'lfn': lfn,
-                                    'run': run.run,
-                                    'lumi':lumi})
+                                  'run': run.run,
+                                  'lumi': lumi})
         else:
             raise Exception("Type of runs argument is not allowed: %s" \
-                                % type(runs))
+                            % type(runs))
         return binds
 
     def format(self, result):

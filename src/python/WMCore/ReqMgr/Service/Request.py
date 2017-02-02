@@ -466,7 +466,7 @@ class Request(RESTEntity):
         if req_status in ["aborted", "force-complete"]:
             # cancel the workflow first
             self.gq_service.cancelWorkflow(workload.name())
-        if req_status in ["rejected", "aborted", "closed-out", "announced"] and cascade:
+        if req_status in ["rejected", "closed-out", "announced"] and cascade:
             cascade_list = self._retrieveResubmissionChildren(workload.name())
             for req_name in cascade_list:
                 self.reqmgr_db_service.updateRequestStatus(req_name, req_status, dn)

@@ -5,11 +5,7 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
-import logging
-
-
-
-
+from Utils.IterTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 
 class AddRunLumi(DBFormatter):
@@ -18,23 +14,23 @@ class AddRunLumi(DBFormatter):
             select id, :run, :lumi from wmbs_file_details
             where lfn = :lfn"""
 
-    def getBinds(self, file=None, runs=None):
+    def getBinds(self, filename=None, runs=None):
 
         binds = []
 
-        if type(file) == list:
-            for entry in file:
-                binds.extend(self.getBinds(file = entry['lfn'], runs = entry['runs']))
+        if isinstance(filename, list):
+            for entry in filename:
+                binds.extend(self.getBinds(filename = entry['lfn'], runs = entry['runs']))
             return binds
 
-        if type(file) == type('string'):
-            lfn = file
+        if isinstance(filename, basestring):
+            lfn = filename
 
-        elif type(file) == type({}):
-            lfn = file('lfn')
+        elif isinstance(filename, dict):
+            lfn = filename('lfn')
         else:
-            raise Exception("Type of file argument is not allowed: %s" \
-                                % type(file))
+            raise Exception("Type of filename argument is not allowed: %s" \
+                                % type(filename))
 
         if isinstance(runs, set):
             for run in runs:
@@ -50,8 +46,8 @@ class AddRunLumi(DBFormatter):
     def format(self, result):
         return True
 
-    def execute(self, file=None, runs=None, conn = None, transaction = False):
-        binds = self.getBinds(file, runs)
-        result = self.dbi.processData(self.sql, binds,
-                         conn = conn, transaction = transaction)
+    def execute(self, file=None, runs=None, conn=None, transaction=False):
+        for sliceBinds in grouper(self.getBinds(file, runs), 10000):
+            result = self.dbi.processData(self.sql, sliceBinds, conn=conn,
+                                          transaction=transaction)
         return self.format(result)

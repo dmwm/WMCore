@@ -14,7 +14,9 @@ class TagCollector(Service):
         """
         responseType will be either xml or json
         """
-        defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML?anytype=1&anyarch=1"
+        defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"
+        # all releases types and all their archs
+        self.tcArgs = {"anytype": 1, "anyarch": 1}
         params = {}
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL
@@ -32,7 +34,9 @@ class TagCollector(Service):
 
         TODO: Probably want to move this up into Service
         """
-        
+        if not args:
+            args = self.tcArgs
+
         cfile = callname.replace("/", "_")
         if clearCache:
             self.clearCache(cfile, args, verb)
@@ -86,4 +90,3 @@ class TagCollector(Service):
                 releases.add(item['label'])
             arch_dict[row['name']].extend(list(releases))
         return arch_dict
-        

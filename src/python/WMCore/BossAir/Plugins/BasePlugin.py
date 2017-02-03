@@ -6,6 +6,7 @@ Base class for BossAir plugins
 """
 
 from WMCore.WMException import WMException
+from WMCore.WMRuntime.Tools.Scram import ARCH_TO_OS
 
 
 
@@ -40,7 +41,12 @@ class BasePlugin:
 
     @staticmethod
     def stateMap():
-        raise NotImplementedError("stateMap is not implemented")
+        """
+        Empty state map to allow instantiation of base class
+        """
+        stateDict = {}
+
+        return stateDict
 
     def __init__(self, config):
 
@@ -115,4 +121,29 @@ class BasePlugin:
         """
         pass
 
-    
+    @staticmethod
+    def scramArchtoRequiredOS(scramArch=None):
+        """
+
+        Args:
+            scramArch: string or list of scramArches that are acceptable for the job
+
+        Returns:
+            string to be matched for OS requirements for job
+        """
+        requiredOSes = set()
+        if scramArch is None:
+            requiredOSes.add('any')
+        elif isinstance(scramArch, basestring):
+            for arch, validOSes in ARCH_TO_OS.iteritems():
+                if arch in scramArch:
+                    requiredOSes.update(validOSes)
+        elif isinstance(scramArch, list):
+            for validArch in scramArch:
+                for arch, validOSes in ARCH_TO_OS.iteritems():
+                    if arch in validArch:
+                        requiredOSes.update(validOSes)
+        else:
+            requiredOSes.add('any')
+
+        return ','.join(sorted(requiredOSes))

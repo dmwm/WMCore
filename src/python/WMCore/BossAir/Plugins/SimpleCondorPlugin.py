@@ -103,7 +103,9 @@ class SimpleCondorPlugin(BasePlugin):
         self.acctGroupUser = getattr(config.BossAir, 'acctGroupUser', "cmsdataops")
 
         # Build a requirement string
-        self.reqStr = "stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS=?=\"any\") || (GLIDEIN_REQUIRED_OS=?=REQUIRED_OS)) && (TARGET.Cpus >= RequestCpus)"
+        self.reqStr = ('stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) '
+                       '&& ((REQUIRED_OS=?="any") || stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))'
+                       '&& (TARGET.Cpus >= RequestCpus)')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -585,11 +587,9 @@ class SimpleCondorPlugin(BasePlugin):
             ad['PostJobPrio2'] = int(-1 * job['taskID'])
 
             # Add OS requirements for jobs
-            if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):
-                ad['REQUIRED_OS'] = "rhel6"
-            else:
-                ad['REQUIRED_OS'] = "any"
-            
+            requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
+            ad['REQUIRED_OS'] = requiredOSes
+
             ad = convertFromUnicodeToStr(ad)
             condorAd = classad.ClassAd()
             for k, v in ad.iteritems():

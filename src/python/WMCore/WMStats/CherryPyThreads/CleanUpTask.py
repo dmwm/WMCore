@@ -1,7 +1,7 @@
 from __future__ import (division, print_function)
 
 import traceback
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 
 class CleanUpTask(CherryPyPeriodicTask):
@@ -12,7 +12,7 @@ class CleanUpTask(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(CleanUpTask, self).__init__(config, enableLogDB=True)
+        super(CleanUpTask, self).__init__(config)
         self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url, 
                               reqdbCouchApp=config.reqdb_couch_app)
 

@@ -1,13 +1,13 @@
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 
 class LocationUpdateTask(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(LocationUpdateTask, self).__init__(config, enableLogDB=True)
+        super(LocationUpdateTask, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

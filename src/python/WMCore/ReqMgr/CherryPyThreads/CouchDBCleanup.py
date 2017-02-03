@@ -5,7 +5,7 @@ Created on Aug 13, 2014
 '''
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Lexicon import splitCouchServiceURL
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 
@@ -13,7 +13,7 @@ class CouchDBCleanup(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(CouchDBCleanup, self).__init__(config, enableLogDB=True)
+        super(CouchDBCleanup, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

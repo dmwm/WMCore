@@ -51,10 +51,11 @@ class LogDBBackend(object):
         self.thread_name = thread_name
         self.agent = kwds.get('agent', 0)
         self.db = self.server.connectDatabase(db_name, create=False)
-        self.design = kwds.get('design', 'LogDB') # name of design document
-        self.view = kwds.get('view', 'requests') # name of view to look-up requests
-        self.tsview = kwds.get('tsview', 'tstamp') # name of tsview to look-up requests
-        self.threadview = kwds.get('tsview', 'logByRequestAndThread')
+        self.design = 'LogDB' # name of design document
+        self.view = 'requests' # name of view to look-up requests
+        self.tsview = 'tstamp' # name of tsview to look-up requests
+        self.threadview = 'logByRequestAndThread'
+        self.requestview = 'logByRequest'
 
     def deleteDatabase(self):
         """Delete back-end database"""
@@ -132,8 +133,10 @@ class LogDBBackend(object):
         docs = self.db.loadView(self.design, self.view, options, keys=keys)
         return docs
     
-    def get_by_thread(self, request, mtype='error', detail=False):
+    def get_by_thread(self, request, mtype='error', detail=False, agent=True):
         self.check(request, mtype)
+        if agent and mtype:
+            mtype = self.prefix(mtype)
         keys = [[request, self.dbid, self.thread_name, mtype]] 
         options = {'reduce':False}
         if detail:
@@ -141,22 +144,28 @@ class LogDBBackend(object):
         docs = self.db.loadView(self.design, self.threadview, options, keys)
         return docs
 
+    def get_by_request(self, request):
+        keys = [request] 
+        options = {'reduce':False}
+        docs = self.db.loadView(self.design, self.requestview, options, keys)
+        return docs
+    
     def get_all_requests(self):
         """Retrieve all entries from LogDB"""
         options = {'reduce':True, 'group_level':1}
         docs = self.db.loadView(self.design, self.view, options)
         return docs
 
-    def delete(self, request, mtype=None, this_thread=False):
+    def delete(self, request, mtype=None, this_thread=False, agent=True):
         """Delete entry in LogDB for given request"""
         if mtype:
             self.check(request, mtype)
         else:   
             self.check(request)
         if this_thread:
-            docs = self.get_by_thread(request, mtype=mtype, detail=False)
+            docs = self.get_by_thread(request, mtype=mtype, detail=False, agent=agent)
         else:
-            docs = self.get(request, mtype=mtype, detail=False)
+            docs = self.get(request, mtype=mtype, detail=False, agent=agent)
         ids = [r['id'] for r in docs.get('rows', [])]
         res = self.db.bulkDeleteByIDs(ids)
         return res

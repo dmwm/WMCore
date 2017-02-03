@@ -3,7 +3,7 @@ Created on May 19, 2015
 """
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
@@ -65,7 +65,7 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
 
 class StatusChangeTasks(CherryPyPeriodicTask):
     def __init__(self, rest, config):
-        super(StatusChangeTasks, self).__init__(config, enableLogDB=True)
+        super(StatusChangeTasks, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

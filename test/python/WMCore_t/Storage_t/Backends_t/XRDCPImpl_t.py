@@ -105,7 +105,7 @@ class XRDCPImplTest(unittest.TestCase):
         copyCommand += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
         if checksums:
             copyCommand += "echo \"Local File Checksum is: %s\"\n" % checksums
-            copyCommand += "REMOTE_XS=`xrdfs '%s' query checksum '%s' | grep adler32 | sed -r 's/.*adler32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (
+            copyCommand += "REMOTE_XS=`xrdfs '%s' query checksum '%s' | grep -i adler32 | sed -r 's/.*[adler|ADLER]32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (
                 host, path)
             copyCommand += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 

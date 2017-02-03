@@ -140,7 +140,7 @@ class XRDCPImpl(StageOutImpl):
         if useChecksum:
 
             copyCommand += "echo \"Local File Checksum is: %s\"\n" % checksums['adler32']
-            copyCommand += "REMOTE_XS=`xrdfs '%s' query checksum '%s' | grep adler32 | sed -r 's/.*adler32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
+            copyCommand += "REMOTE_XS=`xrdfs '%s' query checksum '%s' | grep -i adler32 | sed -r 's/.*[adler|ADLER]32[ ]*([0-9a-fA-F]{8}).*/\\1/'`\n" % (host, path)
             copyCommand += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']

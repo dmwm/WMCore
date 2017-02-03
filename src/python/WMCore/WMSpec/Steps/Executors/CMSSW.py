@@ -331,7 +331,7 @@ class CMSSW(Executor):
     @staticmethod
     def getSingleScramArch(scramArch):
         """
-        Figure out which scram arch is compatible with both the request and the release
+        Figure out which scram arch is compatible with both the request and the release on the WN
 
         Args:
             scramArch: string or list of strings representing valid scram arches for the workflow
@@ -350,7 +350,10 @@ class CMSSW(Executor):
                         if requestedArch.startswith(validArch):
                             return requestedArch
             except KeyError:
+                logging.error('OS: %s and scramArch %s do not match anything: %s', runningOS, scramArch, OS_TO_ARCH)
                 return sorted(scramArch)[-1]  # Give the most recent release if lookup fails
+
+            logging.error('scramArch %s does not match anything: %s', scramArch, OS_TO_ARCH)
             return None
         else:
             return scramArch

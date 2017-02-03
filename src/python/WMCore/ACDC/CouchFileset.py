@@ -9,7 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import time
 
 from WMCore.ACDC.Fileset import Fileset
-from WMCore.Database.CouchUtils import connectToCouch, requireOwner, requireCollection, requireFilesetName
+from WMCore.Database.CouchUtils import connectToCouch, requireFilesetName
 
 import WMCore.Database.CMSCouch as CMSCouch
 
@@ -81,12 +81,10 @@ class CouchFileset(Fileset):
 
         Get a list of document ids corresponding to filelists in this fileset
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
                   "reduce": False}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
 
         docs = [row["id"] for row in result["rows"]]
@@ -135,7 +133,6 @@ class CouchFileset(Fileset):
         return filelist
 
     @connectToCouch
-    @requireOwner
     @requireFilesetName
     def makeFilelist(self, files = {}):
         """
@@ -150,7 +147,6 @@ class CouchFileset(Fileset):
                  "timestamp": time.time()}
 
         document = CMSCouch.Document(None, input)
-        self.owner.ownThis(document)
 
         commitInfo = self.couchdb.commitOne(document)
         document['_id'] = commitInfo[0]['id']
@@ -204,7 +200,6 @@ class CouchFileset(Fileset):
         return result
 
     @connectToCouch
-    @requireOwner
     @requireFilesetName
     def populate(self):
         """
@@ -212,12 +207,10 @@ class CouchFileset(Fileset):
 
         Load all files out of couch.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
                   "include_docs": True, "reduce": False}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
         self.files = {}
         for row in result["rows"]:
@@ -231,11 +224,9 @@ class CouchFileset(Fileset):
 
         Determine how many files are in the fileset.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
-                  "reduce": True, "group_level": 4}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_count",
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
+                  "reduce": True, "group_level": 2}
+        result = self.couchdb.loadView("ACDC", "coll_fileset_count",
                                        params)
         return result["rows"][0]["value"]

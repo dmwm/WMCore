@@ -5,5 +5,5 @@ function(doc) {
       count += 1;
     }
   }
-  emit([doc.owner.group, doc.owner.user, doc.collection_name, doc.fileset_name], count);
+  emit([doc.collection_name, doc.fileset_name], count);
 }

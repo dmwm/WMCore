@@ -4,12 +4,13 @@ from collections import defaultdict
 from WMCore.Services.Service import Service
 from WMCore.Services.TagCollector.XMLUtils import xml_parser
 
+
 class TagCollector(Service):
     """
     Class which provides interface to CMS TagCollector web-service.
     Provides non-deprecated CMSSW releases in all their ScramArchs (not only prod)
     """
-    
+
     def __init__(self, url=None):
         """
         responseType will be either xml or json
@@ -41,8 +42,8 @@ class TagCollector(Service):
         if clearCache:
             self.clearCache(cfile, args, verb)
 
-        f = self.refreshCache(cfile, callname, args, encoder = encoder,
-                              verb = verb, contentType = contentType)
+        f = self.refreshCache(cfile, callname, args, encoder=encoder,
+                              verb=verb, contentType=contentType)
         result = f.read()
         f.close()
 
@@ -65,8 +66,8 @@ class TagCollector(Service):
         "Yield CMS releases known in tag collector"
         arr = []
         for row in self.data():
-            if  arch:
-                if  arch == row['name']:
+            if arch:
+                if arch == row['name']:
                     for item in row['project']:
                         arr.append(item['label'])
             else:
@@ -80,7 +81,7 @@ class TagCollector(Service):
         for row in self.data():
             arr.append(row['name'])
         return list(set(arr))
-    
+
     def releases_by_architecture(self):
         "returns CMS architectures and realease in dictionary format"
         arch_dict = defaultdict(list)

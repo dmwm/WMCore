@@ -59,8 +59,7 @@ class DataCollectionService(CouchService):
 
 
     @CouchUtils.connectToCouch
-    def getDataCollection(self, collName, user = "cmsdataops",
-                          group = "cmsdataops"):
+    def getDataCollection(self, collName):
         """
         _getDataCollection_
 
@@ -69,7 +68,6 @@ class DataCollectionService(CouchService):
         coll = CouchCollection(name = collName, database = self.database,
                                url = self.url)
 
-        coll.owner = self.newOwner(group, user)
         coll.populate()
         return coll
 
@@ -80,8 +78,7 @@ class DataCollectionService(CouchService):
 
         Given a list of failed jobs, sort them into Filesets and record them
 
-        NOTE: jobs must have a non-standard task, workflow, owner and group
-        attributes assigned to them.
+        NOTE: jobs must have a non-standard task, workflow attributes assigned to them.
         """
         for job in failedJobs:
             try:
@@ -95,9 +92,6 @@ class DataCollectionService(CouchService):
             coll = CouchCollection(database = self.database, url = self.url,
                                    name = workflow,
                                    type = CollectionTypes.DataCollection)
-            owner = self.newOwner(job.get("group", "cmsdataops"),
-                                  job.get("owner", "cmsdataops"))
-            coll.setOwner(owner)
             fileset = CouchFileset(database = self.database, url = self.url,
                                     name = taskName)
             coll.addFileset(fileset)
@@ -113,13 +107,13 @@ class DataCollectionService(CouchService):
         return fileInfo["locations"]
     
     @CouchUtils.connectToCouch
-    def _getFilesetInfo(self, collectionName, filesetName, user, group,
+    def _getFilesetInfo(self, collectionName, filesetName,
                         chunkOffset = None, chunkSize = None):
         """
         """
         option = {"include_docs": True, "reduce": False}
-        keys = [[group, user, collectionName, filesetName]]
-        results = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs", option, keys)
+        keys = [[collectionName, filesetName]]
+        results = self.couchdb.loadView("ACDC", "coll_fileset_docs", option, keys)
         
         filesInfo = []
         for row in results["rows"]:
@@ -138,8 +132,7 @@ class DataCollectionService(CouchService):
             return filesInfo
 
     @CouchUtils.connectToCouch
-    def chunkFileset(self, collectionName, filesetName, chunkSize = 100,
-                     user = "cmsdataops", group = "cmsdataops"):
+    def chunkFileset(self, collectionName, filesetName, chunkSize = 100):
         """
         _chunkFileset_
 
@@ -149,7 +142,7 @@ class DataCollectionService(CouchService):
         chunk.
         """
         chunks = []
-        results = self._getFilesetInfo(collectionName, filesetName, user, group)
+        results = self._getFilesetInfo(collectionName, filesetName)
 
         totalFiles = 0
         currentLocation = None
@@ -184,8 +177,7 @@ class DataCollectionService(CouchService):
         return chunks
 
     @CouchUtils.connectToCouch
-    def singleChunkFileset(self, collectionName, filesetName,
-                           user = "cmsdataops", group = "cmsdataops"):
+    def singleChunkFileset(self, collectionName, filesetName):
         """
         _singleChunkFileset_
 
@@ -195,7 +187,7 @@ class DataCollectionService(CouchService):
         chunk.
         """
         
-        files = self._getFilesetInfo(collectionName, filesetName, user, group)
+        files = self._getFilesetInfo(collectionName, filesetName)
 
         locations = set()
         numFilesInBlock = 0
@@ -217,8 +209,7 @@ class DataCollectionService(CouchService):
                 "locations": locations}
 
     @CouchUtils.connectToCouch
-    def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize,
-                     user = "cmsdataops", group = "cmsdataops"):
+    def getChunkInfo(self, collectionName, filesetName, chunkOffset, chunkSize):
         """
         _getChunkInfo_
 
@@ -226,7 +217,7 @@ class DataCollectionService(CouchService):
         """
         
         files = self._getFilesetInfo(collectionName, filesetName, 
-                                       user, group, chunkOffset, chunkSize)
+                                     chunkOffset, chunkSize)
 
         totalFiles = 0
         currentLocation = None
@@ -250,8 +241,7 @@ class DataCollectionService(CouchService):
                 "locations": currentLocation}
 
     @CouchUtils.connectToCouch
-    def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize = 100,
-                      user = "cmsdataops", group = "cmsdataops"):
+    def getChunkFiles(self, collectionName, filesetName, chunkOffset, chunkSize = 100):
         """
         _getChunkFiles_
 
@@ -259,7 +249,7 @@ class DataCollectionService(CouchService):
         """
         chunkFiles = []
         files = self._getFilesetInfo(collectionName, filesetName, 
-                                       user, group, chunkOffset, chunkSize)
+                                     chunkOffset, chunkSize)
 
         files = mergeFakeFiles(files)
         for fileInfo in files:
@@ -277,8 +267,7 @@ class DataCollectionService(CouchService):
 
 
     @CouchUtils.connectToCouch
-    def getProductionACDCInfo(self, collectionID, taskName, user = "cmsdataops",
-                        group = "cmsdataops"):
+    def getProductionACDCInfo(self, collectionID, taskName):
         """
         _getFileInfo_
 
@@ -290,7 +279,7 @@ class DataCollectionService(CouchService):
           'events' :}]
         """
 
-        files = self._getFilesetInfo(collectionID, taskName, user, group)
+        files = self._getFilesetInfo(collectionID, taskName)
 
         acdcInfo = []
         for value in files:
@@ -302,8 +291,7 @@ class DataCollectionService(CouchService):
         return acdcInfo
 
     @CouchUtils.connectToCouch
-    def getLumiWhitelist(self, collectionID, taskName, user = "cmsdataops",
-                         group = "cmsdataops"):
+    def getLumiWhitelist(self, collectionID, taskName):
         """
         _getLumiWhitelist_
 
@@ -316,7 +304,7 @@ class DataCollectionService(CouchService):
         Note that the run numbers are strings.
         """
         
-        files = self._getFilesetInfo(collectionID, taskName, user, group)
+        files = self._getFilesetInfo(collectionID, taskName)
 
 
         allRuns = {}

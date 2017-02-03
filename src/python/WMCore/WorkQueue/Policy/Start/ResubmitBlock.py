@@ -100,9 +100,7 @@ class ResubmitBlock(StartPolicyInterface):
             block = acdc.getChunkInfo(acdcInfo['collection'],
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],
-                                      acdcBlockSplit['NumOfFiles'],
-                                      user=self.wmspec.getOwner().get("name"),
-                                      group=self.wmspec.getOwner().get("group"))
+                                      acdcBlockSplit['NumOfFiles'])
             dbsBlock['NumberOfFiles'] = block['files']
             dbsBlock['NumberOfEvents'] = block['events']
             dbsBlock['NumberOfLumis'] = block['lumis']
@@ -128,9 +126,7 @@ class ResubmitBlock(StartPolicyInterface):
         chunkSize = 250
         acdcBlocks = acdc.chunkFileset(acdcInfo['collection'],
                                        acdcInfo['fileset'],
-                                       chunkSize,
-                                       user=self.wmspec.getOwner().get("name"),
-                                       group=self.wmspec.getOwner().get("group"))
+                                       chunkSize)
         for block in acdcBlocks:
             dbsBlock = {}
             dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
@@ -152,9 +148,7 @@ class ResubmitBlock(StartPolicyInterface):
         """Return a single block (inside a list) with all associated ACDC records"""
         result = []
         acdcBlock = acdc.singleChunkFileset(acdcInfo['collection'],
-                                            acdcInfo['fileset'],
-                                            user=self.wmspec.getOwner().get("name"),
-                                            group=self.wmspec.getOwner().get("group"))
+                                            acdcInfo['fileset'])
         dbsBlock = {}
         dbsBlock['Name'] = ACDCBlock.name(self.wmspec.name(),
                                           acdcInfo["fileset"],

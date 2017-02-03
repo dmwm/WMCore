@@ -12,7 +12,7 @@ from threading import Thread, Condition
 
 class CherryPyPeriodicTask(object):
     
-    def __init__(self, config, enableLogDB=False):
+    def __init__(self, config):
         
         """
         BaseClass which can set up the concurrent task using cherrypy thread.
@@ -26,8 +26,19 @@ class CherryPyPeriodicTask(object):
         """ 
         self.logger = getTimeRotatingLogger(config._internal_name, config.log_file)
         self.setConcurrentTasks(config)
+        self.setUpLogDB(config)
+        
         for task in self.concurrentTasks:
-            PeriodicWorker(task['func'], config, task['duration'], logger=self.logger, enableLogDB=enableLogDB)
+            PeriodicWorker(task['func'], config, task['duration'], logger=self.logger, logDB=self.logDB)
+            
+    def setUpLogDB(self, config):
+        if hasattr(config, "central_logdb_url"):
+            # default set up for logDB config section need to contain propervalues
+            from WMCore.Services.LogDB.LogDB import LogDB
+            self.logDB = LogDB(config.central_logdb_url, config.log_reporter, 
+                               thread_name=config.object.rsplit(".", 1)[-1])
+        else:
+            self.logDB = None
         
     def setConcurrentTasks(self, config):
         """
@@ -43,8 +54,7 @@ class CherryPyPeriodicTask(object):
 
 class PeriodicWorker(Thread):
     
-    def __init__(self, func, config, duration=600, logger=cherrypy.log, 
-                 enableLogDB=False):
+    def __init__(self, func, config, duration=600, logger=cherrypy.log, logDB=None):
         # use default RLock from condition
         # Lock wan't be shared between the instance used  only for wait
         # func : function or callable object pointer
@@ -54,11 +64,7 @@ class PeriodicWorker(Thread):
         self.config = config
         self.duration = duration
         self.logger = logger
-        
-        if enableLogDB:
-            self.setUpLogDB()
-        else:
-            self.logDB = None
+        self.logDB = logDB
     
         try: 
             name = func.__name__
@@ -70,13 +76,6 @@ class PeriodicWorker(Thread):
         Thread.__init__(self, name=name)
         cherrypy.engine.subscribe('start', self.start, priority=100)
         cherrypy.engine.subscribe('stop', self.stop, priority=100)
-
-    
-    def setUpLogDB(self):
-        # default set up for logDB config section need to contain propervalues
-        from WMCore.Services.LogDB.LogDB import LogDB
-        self.logDB = LogDB(self.config.central_logdb_url, self.config.log_reporter, 
-                           thread_name=self.config.object.rsplit(".", 1)[-1])
         
     def stop(self):
         self.wakeUp.acquire()

@@ -3,7 +3,7 @@
 '''
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
 
@@ -11,7 +11,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(DataCacheUpdate, self).__init__(config, enableLogDB=True)
+        super(DataCacheUpdate, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

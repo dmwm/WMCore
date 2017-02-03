@@ -5,14 +5,14 @@ Created on Aug 13, 2014
 '''
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMDataMining.Utils import gatherWMDataMiningStats
 
 class WMDataMining(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(WMDataMining, self).__init__(config, enableLogDB=True)
+        super(WMDataMining, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

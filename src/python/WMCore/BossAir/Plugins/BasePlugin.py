@@ -33,11 +33,11 @@ class BasePlugin:
     globalState = ['Pending', 'Running', 'Complete','Error']
 
     @staticmethod
-    def verifyState(map):
-        for state in map.values():
+    def verifyState(stateMap):
+        for state in stateMap.values():
             if state not in BasePlugin.globalState:
                 raise BossAirPluginException("not valid state %s" % state)
-        return map
+        return stateMap
 
     @staticmethod
     def stateMap():

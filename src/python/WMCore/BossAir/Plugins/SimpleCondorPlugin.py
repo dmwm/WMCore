@@ -3,28 +3,26 @@
 _SimpleCondorPlugin_
 
 """
-from __future__ import print_function
-from __future__ import division
+from __future__ import division, print_function
 
+import logging
 import os
 import os.path
 import re
-import time
-import logging
 import threading
+import time
+
+import classad
+import htcondor
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
-from WMCore.DAOFactory import DAOFactory
-from WMCore.WMInit import getWMBASE
+from Utils.IterTools import convertFromUnicodeToStr, grouper
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
-from WMCore.FwkJobReport.Report import Report
 from WMCore.Credential.Proxy import Proxy
-from Utils.IterTools import grouper, convertFromUnicodeToStr
+from WMCore.DAOFactory import DAOFactory
+from WMCore.FwkJobReport.Report import Report
+from WMCore.WMInit import getWMBASE
 
-##  python-condor stuff
-import htcondor
-import classad
 
 class SimpleCondorPlugin(BasePlugin):
     """
@@ -135,12 +133,12 @@ class SimpleCondorPlugin(BasePlugin):
         # Submit the jobs
         for jobsReady in grouper(jobs, self.jobsPerSubmit):
 
-            cluster_ad = self.getClusterAd()
-            proc_ads = self.getProcAds(jobsReady)
+            clusterAd = self.getClusterAd()
+            procAds = self.getProcAds(jobsReady)
 
-            logging.debug("Start: Submitting %d jobs using Condor Python SubmitMany" % len(proc_ads))
+            logging.debug("Start: Submitting %d jobs using Condor Python SubmitMany", len(procAds))
             try:
-                clusterId = schedd.submitMany(cluster_ad, proc_ads)
+                clusterId = schedd.submitMany(clusterAd, procAds)
             except Exception as ex:
                 logging.error("SimpleCondorPlugin job submission failed.")
                 logging.error("Moving on the the next batch of jobs and/or cycle....")
@@ -153,7 +151,7 @@ class SimpleCondorPlugin(BasePlugin):
                     failedJobs.append(job)
             else:
                 logging.debug("Finish: Submitting jobs using Condor Python SubmitMany")
-                for index,job in enumerate(jobsReady):
+                for index, job in enumerate(jobsReady):
                     job['gridid'] = "%s.%s" % (clusterId, index)
                     job['status'] = 'Idle'
                     successfulJobs.append(job)
@@ -207,7 +205,7 @@ class SimpleCondorPlugin(BasePlugin):
             if job['gridid'] not in jobInfo:
                 (newStatus, location) = ('Completed', None)
             else:
-                (newStatus,location) = jobInfo[job['gridid']]
+                (newStatus, location) = jobInfo[job['gridid']]
 
             # check for status changes
             if newStatus != job['status']:
@@ -216,11 +214,13 @@ class SimpleCondorPlugin(BasePlugin):
                 if newStatus == 'Running' and job['status'] == 'Idle':
                     if location:
                         job['location'] = location
-                        logging.debug("JobAdInfo: Job location for jobid=%i gridid=%s changed to %s", job['jobid'], job['gridid'], location)
+                        logging.debug("JobAdInfo: Job location for jobid=%i gridid=%s changed to %s", job['jobid'],
+                                      job['gridid'], location)
 
                 job['status'] = newStatus
                 job['status_time'] = int(time.time())
-                logging.debug("JobAdInfo: Job status for jobid=%i gridid=%s changed to %s", job['jobid'], job['gridid'], job['status'])
+                logging.debug("JobAdInfo: Job status for jobid=%i gridid=%s changed to %s", job['jobid'], job['gridid'],
+                              job['status'])
                 changeList.append(job)
 
             job['globalState'] = SimpleCondorPlugin.stateMap().get(newStatus)
@@ -256,7 +256,8 @@ class SimpleCondorPlugin(BasePlugin):
                 continue
             elif os.path.isdir(reportName):
                 # Then something weird has happened. Report error, do nothing
-                logging.error("The job report for job with id %s and gridid %s is a directory", job['id'], job['gridid'])
+                logging.error("The job report for job with id %s and gridid %s is a directory", job['id'],
+                              job['gridid'])
                 logging.error("Ignoring this, but this is very strange")
             else:
                 logging.error("No job report for job with id %s and gridid %s", job['id'], job['gridid'])
@@ -272,7 +273,7 @@ class SimpleCondorPlugin(BasePlugin):
                     condorOut = "condor.%s.out" % job['gridid']
                     condorErr = "condor.%s.err" % job['gridid']
                     condorLog = "condor.%s.log" % job['gridid']
-                    for condorFile in [ condorOut, condorErr, condorLog ]:
+                    for condorFile in [condorOut, condorErr, condorLog]:
                         condorFilePath = os.path.join(job['cache_dir'], condorFile)
                         if os.path.isfile(condorFilePath):
                             logTail = BasicAlgos.tail(condorFilePath, 50)
@@ -328,7 +329,7 @@ class SimpleCondorPlugin(BasePlugin):
             logging.exception(msg)
             return jobtokill
 
-        with sd.transaction() as txn:
+        with sd.transaction() as dummyTxn:
             for siteStrings in origSiteLists:
                 desiredList = set([site.strip() for site in siteStrings[0].split(",")])
                 extDesiredList = set([site.strip() for site in siteStrings[1].split(",")])
@@ -436,7 +437,7 @@ class SimpleCondorPlugin(BasePlugin):
         """
         ad = classad.ClassAd()
 
-        #ad['universe'] = "vanilla"
+        # ad['universe'] = "vanilla"
         ad['Requirements'] = classad.ExprTree(self.reqStr)
         ad['ShouldTransferFiles'] = "YES"
         ad['WhenToTransferOutput'] = "ON_EXIT"
@@ -470,13 +471,14 @@ class SimpleCondorPlugin(BasePlugin):
         ad['TransferIn'] = False
 
         ad['JobMachineAttrs'] = "GLIDEIN_CMSSite"
-        ad['JobAdInformationAttrs'] = "JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite"
+        ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
+                                       "ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite")
 
         # TODO: remove when 8.5.7 is deployed
-        params_to_add = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
-        params_to_skip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']
-        for param in params_to_add:
-            if (param not in ad) and (param in htcondor.param) and (param not in params_to_skip):
+        paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()
+        paramsToSkip = ['accounting_group', 'use_x509userproxy', 'PostJobPrio2', 'JobAdInformationAttrs']
+        for param in paramsToAdd:
+            if (param not in ad) and (param in htcondor.param) and (param not in paramsToSkip):
                 ad[param] = classad.ExprTree(htcondor.param[param])
         return ad
 
@@ -558,7 +560,7 @@ class SimpleCondorPlugin(BasePlugin):
             # - If the job is being matched against a machine, match all available CPUs, provided
             # they are between min and max CPUs.
             # - Otherwise, just use the original CPU count.
-            ad['MinCores'] = int(job.get('minCores', max(1, origCores/2)))
+            ad['MinCores'] = int(job.get('minCores', max(1, origCores / 2)))
             ad['MaxCores'] = max(int(job.get('maxCores', origCores)), origCores)
             ad['OriginalCpus'] = origCores
             # Prefer slots that are closest to our MaxCores without going over.
@@ -573,7 +575,8 @@ class SimpleCondorPlugin(BasePlugin):
             ad['RequestResizedCpus'] = classad.ExprTree('(Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)')
             # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
             # values.  Otherwise, we just report the original CPU request
-            ad['JobCpus'] = classad.ExprTree('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) && (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
+            ad['JobCpus'] = classad.ExprTree('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
+                                              '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
 
             # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
             # Otherwise, we use either the cores in the running job (if available) or the original cores.

@@ -30,13 +30,13 @@ class BasePluginTest(BossAirTest):
         """
         bp = BasePlugin(config=None)
 
-        self.assertEqual(bp.scramArchtoRequiredOS('slc5_blah_blah'),'rhel6')
-        self.assertEqual(bp.scramArchtoRequiredOS('slc6_blah_blah'),'rhel6')
-        self.assertEqual(bp.scramArchtoRequiredOS('slc7_blah_blah'),'rhel7')
+        self.assertEqual(bp.scramArchtoRequiredOS('slc5_blah_blah'), 'rhel6')
+        self.assertEqual(bp.scramArchtoRequiredOS('slc6_blah_blah'), 'rhel6')
+        self.assertEqual(bp.scramArchtoRequiredOS('slc7_blah_blah'), 'rhel7')
 
-        self.assertEqual(bp.scramArchtoRequiredOS(None),'any')
+        self.assertEqual(bp.scramArchtoRequiredOS(None), 'any')
 
-        self.assertEqual(bp.scramArchtoRequiredOS(['slc6_blah_blah','slc7_blah_blah']),'rhel6,rhel7')
+        self.assertEqual(bp.scramArchtoRequiredOS(['slc6_blah_blah', 'slc7_blah_blah']), 'rhel6,rhel7')
 
         return
 

@@ -8,13 +8,13 @@ class MemoryCacheStruct(object):
     WARNING: This can be used in multi thread by registering on GenericDataCache
     But this cache is not thread saft.
     """
-    def __init__(self, expire, func, kwargs=None):
+    def __init__(self, expire, func, initCacheValue=None, kwargs=None):
         """
-        expire is the seconds which cache will be refreshed when cache is order than the expire.
+        expire is the seconds which cache will be refreshed when cache is older than the expire.
         func is the fuction which cache data is retrived
         kwargs are func arguments for cache data
         """
-        self.data = None
+        self.data = initCacheValue
         self.expire = expire
         self.func = func
         if kwargs == None:

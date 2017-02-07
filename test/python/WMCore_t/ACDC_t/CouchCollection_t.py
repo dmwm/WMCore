@@ -13,16 +13,17 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
-from WMCore.ACDC.CouchService import CouchService
 
 from WMCore.DataStructs.File import File
 from WMCore.GroupUser.User import makeUser
 from WMCore.Services.UUID import makeUUID
 
+
 class CouchCollection_t(unittest.TestCase):
     """
     Unittest for Collection specialised for CouchDB backend
     """
+
     def setUp(self):
         """setup couch instance"""
         self.testInit = TestInitCouchApp(__file__)
@@ -49,12 +50,12 @@ class CouchCollection_t(unittest.TestCase):
 
         Test creating, populating and dropping a collection.
         """
-        testCollectionA = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl,
-                                          name = "Thunderstruck")
-        testCollectionB = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl,
-                                          name = "StruckThunder")
+        testCollectionA = CouchCollection(database=self.testInit.couchDbName,
+                                          url=self.testInit.couchUrl,
+                                          name="Thunderstruck")
+        testCollectionB = CouchCollection(database=self.testInit.couchDbName,
+                                          url=self.testInit.couchUrl,
+                                          name="StruckThunder")
         testCollectionA.create()
         testCollectionB.create()
 
@@ -63,24 +64,24 @@ class CouchCollection_t(unittest.TestCase):
 
         testFilesA = []
         for i in range(5):
-            testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
-                            events = random.randint(1024, 4096))
+            testFile = File(lfn=makeUUID(), size=random.randint(1024, 4096),
+                            events=random.randint(1024, 4096))
             testFilesA.append(testFile)
         testFilesB = []
         for i in range(10):
-            testFile = File(lfn = makeUUID(), size = random.randint(1024, 4096),
-                            events = random.randint(1024, 4096))
+            testFile = File(lfn=makeUUID(), size=random.randint(1024, 4096),
+                            events=random.randint(1024, 4096))
             testFilesB.append(testFile)
 
-        testFilesetA = CouchFileset(database = self.testInit.couchDbName,
-                                    url = self.testInit.couchUrl,
-                                    name = "TestFilesetA")
-        testFilesetB = CouchFileset(database = self.testInit.couchDbName,
-                                    url = self.testInit.couchUrl,
-                                    name = "TestFilesetB")
-        testFilesetC = CouchFileset(database = self.testInit.couchDbName,
-                                    url = self.testInit.couchUrl,
-                                    name = "TestFilesetC")
+        testFilesetA = CouchFileset(database=self.testInit.couchDbName,
+                                    url=self.testInit.couchUrl,
+                                    name="TestFilesetA")
+        testFilesetB = CouchFileset(database=self.testInit.couchDbName,
+                                    url=self.testInit.couchUrl,
+                                    name="TestFilesetB")
+        testFilesetC = CouchFileset(database=self.testInit.couchDbName,
+                                    url=self.testInit.couchUrl,
+                                    name="TestFilesetC")
         testCollectionA.addFileset(testFilesetA)
         testCollectionB.addFileset(testFilesetB)
         testCollectionB.addFileset(testFilesetC)
@@ -93,18 +94,18 @@ class CouchCollection_t(unittest.TestCase):
         testCollectionA.drop()
 
         # Try to populate testFilesetA
-        testCollectionC = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl,
-                                          name = "ThunderStruck")
+        testCollectionC = CouchCollection(database=self.testInit.couchDbName,
+                                          url=self.testInit.couchUrl,
+                                          name="ThunderStruck")
         testCollectionC.populate()
 
         self.assertEqual(len(testCollectionC["filesets"]), 0,
                          "Error: There should be no filesets in this collect.")
 
         # Try to populate testFilesetB
-        testCollectionD = CouchCollection(database = self.testInit.couchDbName,
-                                          url = self.testInit.couchUrl,
-                                          name = "StruckThunder")
+        testCollectionD = CouchCollection(database=self.testInit.couchDbName,
+                                          url=self.testInit.couchUrl,
+                                          name="StruckThunder")
         testCollectionD.populate()
 
         for fileset in testCollectionD["filesets"]:
@@ -125,6 +126,7 @@ class CouchCollection_t(unittest.TestCase):
                                  "Error: Wrong file size.")
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

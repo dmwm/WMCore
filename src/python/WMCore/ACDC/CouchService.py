@@ -10,8 +10,8 @@ from time import time
 
 import WMCore.Database.CouchUtils as CouchUtils
 
-class CouchService(object):
 
+class CouchService(object):
     def __init__(self, **options):
         super(CouchService, self).__init__()
         self.options = {}
@@ -54,14 +54,14 @@ class CouchService(object):
         in expirationDays (in days).
         """
         cutoutPoint = time() - (expirationDays * 3600 * 24)
-        result = self.couchdb.loadView("ACDC", "byTimestamp", {"endkey" : cutoutPoint})
+        result = self.couchdb.loadView("ACDC", "byTimestamp", {"endkey": cutoutPoint})
         count = 0
         for entry in result["rows"]:
             self.couchdb.queueDelete(entry["value"])
             count += 1
         self.couchdb.commit()
         return count
-    
+
     @CouchUtils.connectToCouch
     def listCollectionNames(self):
         options = {'reduce': True, 'group_level': 1, 'stale': "update_after"}

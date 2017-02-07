@@ -20,7 +20,7 @@ class Collection(dict, WMObject):
         self.setdefault("filesets", [])
         self.update(options)
 
-    def create(self, unique = False):
+    def create(self, unique=False):
         """
         _create_
 

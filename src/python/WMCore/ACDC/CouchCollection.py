@@ -10,6 +10,7 @@ from WMCore.ACDC.Collection import Collection
 from WMCore.ACDC.CouchFileset import CouchFileset
 from WMCore.Database.CouchUtils import connectToCouch
 
+
 class CouchCollection(Collection):
     """
     Collection that can be stored in CouchDB.
@@ -19,13 +20,14 @@ class CouchCollection(Collection):
       url - CouchDB Server URL
       name - name of the collection
     """
+
     def __init__(self, **options):
         Collection.__init__(self, **options)
-        self.url      = options.get("url")
+        self.url = options.get("url")
         self.database = options.get("database")
-        self.name     = options.get("name")
-        self.server   = None
-        self.couchdb  = None
+        self.name = options.get("name")
+        self.server = None
+        self.couchdb = None
 
     @connectToCouch
     def drop(self):
@@ -58,8 +60,8 @@ class CouchCollection(Collection):
                                        params)
         self["filesets"] = []
         for row in result["rows"]:
-            fileset = CouchFileset(database = self.database, url = self.url,
-                                   name = row["key"][1])
+            fileset = CouchFileset(database=self.database, url=self.url,
+                                   name=row["key"][1])
             self.addFileset(fileset)
             fileset.populate()
         return

@@ -1073,10 +1073,10 @@ class WorkQueue(WorkQueueBase):
         if not inbound_work:
             inbound_work = self.backend.getElementsForSplitting()
         for inbound in inbound_work:
-            # Check we haven't already split the work, unless it's continuous processing
-            work = self.backend.getElementsForParent(inbound)
             try:
-                if work and not continuous:
+                # Check we haven't already split the work, unless it's continuous processing
+                work = not continuous and self.backend.getElementsForParent(inbound)
+                if work:
                     self.logger.info('Request "%s" already split - Resuming' % inbound['RequestName'])
                 else:
                     work, rejectedWork = self._splitWork(inbound['WMSpec'], data=inbound['Inputs'],

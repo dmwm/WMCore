@@ -51,25 +51,18 @@ class CouchService_t(unittest.TestCase):
         svc = CouchService(url = self.testInit.couchUrl,
                            database = self.testInit.couchDbName)
 
-        ownerA = svc.newOwner("somegroup", "someuserA")
-        ownerB = svc.newOwner("somegroup", "someuserB")
-
         testCollectionA = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionA.setOwner(ownerA)
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Struckthunder")
-        testCollectionB.setOwner(ownerA)
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionC.setOwner(ownerB)
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionD.setOwner(ownerB)
 
         testFilesetA = CouchFileset(database = self.testInit.couchDbName,
                                     url = self.testInit.couchUrl,
@@ -111,25 +104,19 @@ class CouchService_t(unittest.TestCase):
         svc = CouchService(url = self.testInit.couchUrl,
                            database = self.testInit.couchDbName)
 
-        ownerA = svc.newOwner("somegroup", "someuserA")
-        ownerB = svc.newOwner("somegroup", "someuserB")
 
         testCollectionA = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionA.setOwner(ownerA)
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Struckthunder")
-        testCollectionB.setOwner(ownerA)
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionC.setOwner(ownerB)
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionD.setOwner(ownerB)
 
         testFilesetA = CouchFileset(database = self.testInit.couchDbName,
                                     url = self.testInit.couchUrl,
@@ -159,15 +146,7 @@ class CouchService_t(unittest.TestCase):
         testFilesetC.add(testFiles)
         testFilesetD.add(testFiles)
 
-        goldenCollectionNames = ["Thunderstruck", "Struckthunder"]
-        for collection in svc.listCollections(ownerA):
-            self.assertTrue(collection["name"] in goldenCollectionNames,
-                            "Error: Missing collection name.")
-            goldenCollectionNames.remove(collection["name"])
-        self.assertEqual(len(goldenCollectionNames), 0,
-                         "Error: Missing collections.")
-
-        goldenFilesetNames = ["TestFilesetC", "TestFilesetD"]
+        goldenFilesetNames = ["TestFilesetA", "TestFilesetC", "TestFilesetD"]
         for fileset in svc.listFilesets(testCollectionD):
             self.assertTrue(fileset["name"] in goldenFilesetNames,
                             "Error: Missing fileset.")
@@ -175,28 +154,6 @@ class CouchService_t(unittest.TestCase):
         self.assertEqual(len(goldenFilesetNames), 0,
                          "Error: Missing filesets.")
 
-        return
-
-    def testOwners(self):
-        """
-        _testOwners_
-
-        Verify that owners can be created, listed and removed.
-        """
-        svc = CouchService(url = self.testInit.couchUrl,
-                           database = self.testInit.couchDbName)
-        self.assertEqual(svc.listOwners(), [])
-
-        owner = svc.newOwner("somegroup", "someuser")
-
-        self.assertTrue(len(svc.listOwners()) == 1 )
-
-        owner2 = svc.listOwners()[0]
-        self.assertEqual(str(owner2['group']), owner['group'])
-        self.assertEqual(str(owner2['name']), owner['name'])
-
-        svc.removeOwner(owner2)
-        self.assertTrue(len(svc.listOwners()) == 0)
         return
 
     def testTimestampAccounting(self):

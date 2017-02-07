@@ -55,8 +55,6 @@ class CouchCollection_t(unittest.TestCase):
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "StruckThunder")
-        testCollectionA.setOwner(self.owner)
-        testCollectionB.setOwner(self.owner)
         testCollectionA.create()
         testCollectionB.create()
 
@@ -98,7 +96,6 @@ class CouchCollection_t(unittest.TestCase):
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "ThunderStruck")
-        testCollectionC.setOwner(self.owner)
         testCollectionC.populate()
 
         self.assertEqual(len(testCollectionC["filesets"]), 0,
@@ -108,7 +105,6 @@ class CouchCollection_t(unittest.TestCase):
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "StruckThunder")
-        testCollectionD.setOwner(self.owner)
         testCollectionD.populate()
 
         for fileset in testCollectionD["filesets"]:

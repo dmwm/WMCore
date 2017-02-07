@@ -1065,7 +1065,7 @@ class JobAccountantTest(unittest.TestCase):
         self.assertEqual(result, 6)
 
         dataCollectionService = DataCollectionService(os.environ["COUCHURL"], 'jobaccountant_acdc_t')
-        x = dataCollectionService.getDataCollection('Steves', 'Steve', 'unknown')
+        x = dataCollectionService.getDataCollection('Steves')
         self.assertEqual(len(x["filesets"]), 1)
         self.assertEqual(len(x["filesets"][0]["files"]), 1)
         return

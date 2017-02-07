@@ -57,8 +57,6 @@ class CouchFileset_t(unittest.TestCase):
         testCollectionB = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "StruckThunder")
-        testCollectionA.setOwner(self.owner)
-        testCollectionB.setOwner(self.owner)
 
         testFiles = []
         for i in range(5):
@@ -87,7 +85,6 @@ class CouchFileset_t(unittest.TestCase):
         testCollectionC = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "StruckThunder")
-        testCollectionC.setOwner(self.owner)
         testCollectionC.populate()
 
         self.assertEqual(len(testCollectionC["filesets"]), 1,
@@ -98,7 +95,6 @@ class CouchFileset_t(unittest.TestCase):
         testCollectionD = CouchCollection(database = self.testInit.couchDbName,
                                           url = self.testInit.couchUrl,
                                           name = "Thunderstruck")
-        testCollectionD.setOwner(self.owner)
         testCollectionD.populate()
 
         self.assertEqual(len(testCollectionD["filesets"]), 1,
@@ -116,7 +112,6 @@ class CouchFileset_t(unittest.TestCase):
         testCollection = CouchCollection(database = self.testInit.couchDbName,
                                          url = self.testInit.couchUrl,
                                          name = "Thunderstruck")
-        testCollection.setOwner(self.owner)
         testFileset = CouchFileset(database = self.testInit.couchDbName,
                                    url = self.testInit.couchUrl,
                                    name = "TestFileset")
@@ -149,7 +144,6 @@ class CouchFileset_t(unittest.TestCase):
         testCollection = CouchCollection(database = self.testInit.couchDbName,
                                          url = self.testInit.couchUrl,
                                          name = "Thunderstruck")
-        testCollection.setOwner(self.owner)
         testFileset = CouchFileset(database = self.testInit.couchDbName,
                                    url = self.testInit.couchUrl,
                                    name = "TestFileset")

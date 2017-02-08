@@ -5,7 +5,7 @@ Created on May 19, 2015
 
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.Service.Auxiliary import update_software
 
 class UpdateAuxDBTasks(CherryPyPeriodicTask):

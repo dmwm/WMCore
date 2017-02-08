@@ -8,6 +8,7 @@ https://github.com/dmwm/WMCore/issues/5705
 import re
 import logging
 import threading
+from collections import defaultdict
 
 # project modules
 from WMCore.Services.LogDB.LogDBBackend import LogDBBackend
@@ -58,12 +59,12 @@ class LogDB(object):
         try:
             if request == None:
                 request = self.default_user
-            if  self.user_pat.match(self.identifier):
+            if self.user_pat.match(self.identifier):
                 res = self.backend.user_update(request, msg, mtype)
             else:
                 res = self.backend.agent_update(request, msg, mtype)
         except Exception as exc:
-            self.logger.error("LogDBBackend post API failed, error=%s" % str(exc))
+            self.logger.error("LogDBBackend post API failed, error=%s", str(exc))
             res = 'post-error'
         self.logger.debug("LogDB post request, res=%s", res)
         return res
@@ -87,7 +88,7 @@ class LogDB(object):
                     rec.update({'request':request, 'identifier':identifier, 'thr': thr, 'type':mtype})
                     res.append(rec)
         except Exception as exc:
-            self.logger.error("LogDBBackend get API failed, error=%s" % str(exc))
+            self.logger.error("LogDBBackend get API failed, error=%s", str(exc))
             res = 'get-error'
         self.logger.debug("LogDB get request, res=%s", res)
         return res
@@ -100,7 +101,7 @@ class LogDB(object):
             for row in results['rows']:
                 res.append(row["key"])
         except Exception as exc:
-            self.logger.error("LogDBBackend get_all_requests API failed, error=%s" % str(exc))
+            self.logger.error("LogDBBackend get_all_requests API failed, error=%s", str(exc))
             res = 'get-error'
         self.logger.debug("LogDB get_all_requests request, res=%s", res)
         return res
@@ -116,7 +117,7 @@ class LogDB(object):
                 request = self.default_user
             res = self.backend.delete(request, mtype, this_thread)
         except Exception as exc:
-            self.logger.error("LogDBBackend delete API failed, error=%s" % str(exc))
+            self.logger.error("LogDBBackend delete API failed, error=%s", str(exc))
             res = 'delete-error'
         self.logger.debug("LogDB delete request, res=%s", res)
         return res
@@ -126,5 +127,55 @@ class LogDB(object):
         try:
             self.backend.cleanup(thr)
         except Exception as exc:
-            self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s' \
-                    % (backend, str(exc)))
+            self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s', backend, str(exc))
+    
+    def heartbeat_report(self):
+        report = defaultdict(dict)
+        if self.user_pat.match(self.identifier):
+            self.logger.error("User %s: doesn't allow this function", self.identifier) 
+            return report
+        
+        for row in self.backend.get(self.default_user, None, agent=True).get('rows', []):
+            identifier = row['doc']['identifier']
+            # wmstats thread can run in multiple boxed. 
+            if self.identifier == identifier or identifier.startswith(self.identifier):
+                #this will handle wmstats DataCacheUpdate thread with multiple machine
+                postfix = identifier.replace(self.identifier, "")
+                thr = "%s%s" % (row['doc']['thr'], postfix)
+                mtype = row['doc']['type']
+                ts = row['doc']['messages'][-1]['ts']
+                msg = row['doc']['messages'][-1]['msg']
+                if (thr in report) and ('ts' in report[thr]) and ts <= report[thr]['ts']:
+                    continue
+                else:
+                    report[thr]['type'] = mtype
+                    report[thr]['msg'] = msg
+                    report[thr]['ts'] = ts
+        return report
+    
+    def _append_down_component_detail(self, report, thr, msg, ts=0, state="error"):
+        report['down_components'].append(thr)
+        detail = {'name':thr,'worker_name':thr, 'state': state, 
+                  'last_error': ts,'error_message': msg,
+                  'pid': 'N/A' }
+        report['down_component_detail'].append(detail)
+        return
+        
+    def wmstats_down_components_report(self, thread_list):
+        report = {}
+        report['down_components'] = []
+        report['down_component_detail'] = []
+        
+        hbinfo = self.heartbeat_report()
+        for thr in thread_list:
+            # skip DataCacheUpdate thread. It will have multiple with post fix.
+            # i.e. DataCacheUpdate-vocms111
+            # TODO, need a better way to check
+            if thr != "DataCacheUpdate" and thr not in hbinfo:
+                self._append_down_component_detail(report, thr, "Thread not running")
+        
+        for thr, info in hbinfo.iteritems():
+            if info['type'] == 'agent-error':
+                self._append_down_component_detail(report, thr, info['msg'], info['ts'])
+        return report
+                

@@ -9,8 +9,10 @@ from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 
-def moveForwardStatus(reqDBWriter, wfStatusDict):
+def moveForwardStatus(reqDBWriter, wfStatusDict, logger):
+    
     for status, nextStatus in AUTO_TRANSITION.iteritems():
+        count = 0
         requests = reqDBWriter.getRequestByStatus([status])
         for wf in requests:
             stateFromGQ = wfStatusDict.get(wf, None)
@@ -19,8 +21,9 @@ def moveForwardStatus(reqDBWriter, wfStatusDict):
             elif stateFromGQ == status:
                 continue
             elif stateFromGQ == "failed" and status == "assigned":
+                count += 1
                 reqDBWriter.updateRequestStatus(wf, stateFromGQ)
-                print("%s in %s moved to %s" % (wf, status, stateFromGQ))
+                logger.debug("%s in %s moved to %s", wf, status, stateFromGQ)
                 continue
 
             try:
@@ -30,16 +33,19 @@ def moveForwardStatus(reqDBWriter, wfStatusDict):
                 continue
             # special case for aborted workflow - aborted-completed instead of completed
             if status == "aborted" and i == 0:
+                count += 1
                 reqDBWriter.updateRequestStatus(wf, "aborted-completed")
-                print("%s in %s moved to %s" % (wf, status, "aborted-completed"))
+                logger.debug("%s in %s moved to %s", wf, status, "aborted-completed")
             else:
                 for j in range(i + 1):
+                    count += 1
                     reqDBWriter.updateRequestStatus(wf, nextStatus[j])
-                    print("%s in %s moved to %s" % (wf, status, nextStatus[j]))
+                    logger.debug("%s in %s moved to %s", wf, status, nextStatus[j])
+        logger.debug("%s requests moved to new state from %s", count, status)
     return
 
 
-def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
+def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict, logger):
     """
     Handle the case when request is aborted/rejected before elements are created in GQ
     """
@@ -58,7 +64,9 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict):
                 for nextStatus in nextStatusList:
                     reqDBWriter.updateRequestStatus(wf, nextStatus)
                     count += 1
-        print("Total %s-archived: %d" % (status, count))
+        # convert to start status for the logging purpose
+        initStatus = "aborted" if status == "aborted-completed" else status
+        logger.info("Total %s-archived: %d", initStatus, count)
 
     return
 
@@ -80,10 +88,12 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
         reqDBWriter = RequestDBWriter(config.reqmgrdb_url)
         gqService = WorkQueue(config.workqueue_url)
-
+        
+        self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
-
-        moveForwardStatus(reqDBWriter, wfStatusDict)
-        moveToArchivedForNoJobs(reqDBWriter, wfStatusDict)
+        
+        self.logger.info("Advancing status")
+        moveForwardStatus(reqDBWriter, wfStatusDict, self.logger)
+        moveToArchivedForNoJobs(reqDBWriter, wfStatusDict, self.logger)
 
         return

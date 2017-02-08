@@ -354,13 +354,14 @@ class CMSSWStepHelper(CoreHelper):
         setattr(self.data.application.configuration, "skipBadFiles",
                 skipBadFiles)
 
-    def setNumberOfCores(self, ncores):
+    def setNumberOfCores(self, ncores, nEventStreams=0):
         """
         _setNumberOfCores_
 
         Set the number of cores for CMSSW to run on
         """
         self.data.application.multicore.numberOfCores = ncores
+        self.data.application.multicore.eventStreams = nEventStreams
 
     def getNumberOfCores(self):
         """
@@ -370,6 +371,13 @@ class CMSSWStepHelper(CoreHelper):
         """
         return self.data.application.multicore.numberOfCores
 
+    def getEventStreams(self):
+        """
+        _getEventStreams_
+
+        Get number of event streams
+        """
+        return self.data.application.multicore.eventStreams
 
 class CMSSW(Template):
     """
@@ -431,11 +439,10 @@ class CMSSW(Template):
 
         step.section_("monitoring")
 
-        #
         # support for multicore cmssw running mode
-        #
         step.application.section_("multicore")
         step.application.multicore.numberOfCores = 1
+        step.application.multicore.eventStreams = 0
 
 
     def helper(self, step):

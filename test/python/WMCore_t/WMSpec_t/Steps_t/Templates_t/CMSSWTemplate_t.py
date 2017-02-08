@@ -103,9 +103,13 @@ class CMSSWTemplateTest(unittest.TestCase):
         helper = template.helper(step)
 
         self.assertEqual(helper.getNumberOfCores(), 1)
+        self.assertEqual(helper.getEventStreams(), 0)
         helper.setNumberOfCores(8)
         self.assertEqual(helper.getNumberOfCores(), 8)
-
+        self.assertEqual(helper.getEventStreams(), 0)
+        helper.setNumberOfCores(8, 6)
+        self.assertEqual(helper.getNumberOfCores(), 8)
+        self.assertEqual(helper.getEventStreams(), 6)
 
     def testChainedProcessing(self):
         """

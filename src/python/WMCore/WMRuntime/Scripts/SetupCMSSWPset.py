@@ -584,11 +584,17 @@ class SetupCMSSWPset(ScriptInterface):
         """
         _handleSingleCoreOverride_
 
-        Make sure job only uses one core in CMSSW
+        Make sure job only uses one core and one stream in CMSSW
         """
         try:
             if int(self.step.data.application.multicore.numberOfCores) > 1:
                 self.step.data.application.multicore.numberOfCores = 1
+        except AttributeError:
+            pass
+
+        try:
+            if int(self.step.data.application.multicore.eventStreams) > 0:
+                self.step.data.application.multicore.eventStreams = 0
         except AttributeError:
             pass
 
@@ -680,15 +686,19 @@ class SetupCMSSWPset(ScriptInterface):
 
         try:
             origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+            eventStreams = int(getattr(self.step.data.application.multicore, 'eventStreams', 0))
             resources = {'cores': origCores}
             resizeResources(resources)
             numCores = resources['cores']
+            if numCores != origCores:
+                print("Resizing a job with nStreams != nCores. Setting nStreams = nCores. This may end badly.")
+                eventStreams = 0
             options = getattr(self.process, "options", None)
             if options is None:
                 self.process.options = cms.untracked.PSet()
                 options = getattr(self.process, "options")
             options.numberOfThreads = cms.untracked.uint32(numCores)
-            options.numberOfStreams = cms.untracked.uint32(0)
+            options.numberOfStreams = cms.untracked.uint32(eventStreams)
         except AttributeError as ex:
             print("Failed to override numberOfThreads: %s" % str(ex))
 

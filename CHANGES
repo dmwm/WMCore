@@ -1,3 +1,7 @@
+1.1.0 to 1.1.0.crab1:
+  - Merge pull request #7602 from ticoann/tag_collector_fix_crab
+  - add kwargs for flexibiity in TagCollector
+
 1.0.23 to 1.1.0:
   - Merge pull request #7563 from amaltaro/inject-patch12
   - 1.1.0.pre10

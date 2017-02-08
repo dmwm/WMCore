@@ -1,3 +1,29 @@
+1.1.0 to 1.1.1.pre1:
+  - Merge pull request #7596 from ticoann/remove_wmbsservice
+  - Merge pull request #7597 from ticoann/log_statusChangeTasks
+  - Merge pull request #7601 from ticoann/tag_archive_fix
+  - add kwargs for flexibiity in TagCollector
+  - add logger for StatusChangeTasks
+  - Merge pull request #7579 from ericvaandering/scram_by_os
+  - Merge pull request #7582 from ticoann/add_heartbeat_checking
+  - Include Alan's comments
+  - Pylint
+  - Make CMSSW.py accept a list of arches or a single arch
+  - Add a context manager for temporary changes to the environment
+  - Rename IterTools to IteratorTools to avoid problems with mac
+  - remove wmbsservice component
+  - Merge pull request #7586 from ericvaandering/condor_multi_os
+  - Merge pull request #7567 from hufnagel/tempdirectory-exception
+  - add unittest
+  - add heartbeat reporting
+  - Merge pull request #7592 from hufnagel/xrdcp-dcache-workaround
+  - Merge pull request #7587 from ticoann/impove_splitting_check
+  - work around the fact that dCache only knows ADLER32, not adler32
+  - Pylint fixes
+  - Make condor submitters able to handle a list of releases or a single release
+  - don't call getElementsForParent if not necessary
+  - prevent exceptions printout in TempDirectory
+
 1.0.23 to 1.1.0:
   - Merge pull request #7563 from amaltaro/inject-patch12
   - 1.1.0.pre10

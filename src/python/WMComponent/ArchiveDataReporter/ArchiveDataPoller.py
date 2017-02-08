@@ -5,7 +5,7 @@ ArchiveDataPoller
 from __future__ import (division, print_function)
 import logging
 import traceback
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMArchive.DataMap import createArchiverDoc
 from WMCore.Services.WMArchive.WMArchive import WMArchive

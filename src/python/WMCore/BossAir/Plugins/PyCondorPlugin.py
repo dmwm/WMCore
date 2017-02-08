@@ -23,7 +23,7 @@ import classad
 import htcondor as condor
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 from WMCore.Algorithms import SubprocessAlgos
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.Credential.Proxy import Proxy

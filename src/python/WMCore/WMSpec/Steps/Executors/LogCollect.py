@@ -28,7 +28,7 @@ from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 
 from WMCore.WMRuntime.Tools.Scram import Scram
 
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 
 
 class LogCollect(Executor):

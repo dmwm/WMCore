@@ -258,9 +258,12 @@ class WMBSHelper(WMConnectionBase):
         and phedex subscriptions, and filesets for each task below and including
         the given task.
         """
+        self.logger.info("XXXX: create subscription in WMBS")
         sub = self._createSubscriptionsInWMBS(task, fileset, alternativeFilesetClose)
-
+        
+        self.logger.info("XXXX: create workflow in DBSBuffer")
         self._createWorkflowsInDBSBuffer()
+        self.logger.info("XXXX: create subscription in DBSBuffer")
         self._createDatasetSubscriptionsInDBSBuffer()
 
         return sub
@@ -400,9 +403,10 @@ class WMBSHelper(WMConnectionBase):
 
         """
         self.beginTransaction()
-
+        self.logger.info("XXXX: create fileset")
         self.createTopLevelFileset()
         try:
+            self.logger.info("XXXX: create subscription")
             sub = self.createSubscription(self.topLevelTask, self.topLevelFileset)
         except Exception as ex:
             myThread = threading.currentThread()

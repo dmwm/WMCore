@@ -7,32 +7,30 @@ For glide-in use.
 """
 from __future__ import division
 
+import Queue
+import glob
+import logging
+import multiprocessing
 import os
 import os.path
 import re
-import time
-import Queue
-import logging
-import threading
-import traceback
 import subprocess
-import multiprocessing
-import glob
+import threading
+import time
+import traceback
+
+import classad
+import htcondor as condor
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
+from Utils.IterTools import grouper
+from WMCore.Algorithms import SubprocessAlgos
+from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
+from WMCore.FwkJobReport.Report import Report
 from WMCore.WMException import WMException
 from WMCore.WMInit import getWMBASE
-from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
-from WMCore.FwkJobReport.Report import Report
-from WMCore.Algorithms import SubprocessAlgos
-from Utils.IterTools import grouper
-
-##  python-condor stuff
-import htcondor as condor
-import classad
 
 GROUP_NAME_RE = re.compile("^[a-zA-Z0-9_]+_([a-zA-Z0-9]+)-")
 
@@ -273,7 +271,9 @@ class PyCondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS==\"any\") || (GLIDEIN_REQUIRED_OS==REQUIRED_OS))"
+        self.reqStr = ('(OpSys == "LINUX" ) && (Arch == "INTEL" || Arch == "X86_64") '
+                       '&& stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) '
+                       '&& ((REQUIRED_OS=="any") || stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -471,7 +471,7 @@ class PyCondorPlugin(BasePlugin):
                 msg += "Something has gone critically wrong in the worker\n"
                 try:
                     msg += "Result: %s\n" % str(res)
-                except:
+                except Exception:
                     pass
                 msg += str(ex)
                 logging.error(msg)
@@ -524,7 +524,6 @@ class PyCondorPlugin(BasePlugin):
         # result in memory duplication).
         logging.info("Purging worker pool to clean up memory")
         self.close()
-
 
         # We must return a list of jobs successfully submitted,
         # and a list of jobs failed
@@ -620,7 +619,7 @@ class PyCondorPlugin(BasePlugin):
                     try:
                         os.remove(reportName)
                         condorReport.save(filename=reportName)
-                    except:
+                    except Exception:
                         logging.error("Cannot remove and replace empty report %s", reportName)
                         logging.error("Report continuing without error!")
             else:
@@ -663,7 +662,7 @@ class PyCondorPlugin(BasePlugin):
             logging.exception(msg)
             return jobtokill
 
-        with sd.transaction() as txn:
+        with sd.transaction() as dummyTxn:
             for siteStrings in origSiteLists:
                 desiredList = set([site.strip() for site in siteStrings[0].split(",")])
                 extDesiredList = set([site.strip() for site in siteStrings[1].split(",")])
@@ -749,7 +748,7 @@ class PyCondorPlugin(BasePlugin):
                 sd.edit('WMAgent_SubTaskName == %s && WMAgent_RequestName == %s && JobPrio != %d' %
                         (classad.quote(str(task)), classad.quote(str(workflow)), priority), "JobPrio",
                         classad.Literal(int(priority)))
-            except:
+            except Exception:
                 msg = "Failed to update JobPrio for WMAgent_SubTaskName=%s" % task
                 logging.warn(msg)
 
@@ -765,7 +764,6 @@ class PyCondorPlugin(BasePlugin):
         Make common JDL header
         """
         jdl = []
-
 
         # -- scriptFile & Output/Error/Log filenames shortened to
         #    avoid condorg submission errors from > 256 character pathnames
@@ -847,7 +845,6 @@ class PyCondorPlugin(BasePlugin):
 
         jdl = self.initSubmit(jobList)
 
-
         # For each script we have to do queue a separate directory, etc.
         for job in jobList:
             if job == {}:
@@ -868,9 +865,9 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("transfer_output_files = Report.%i.pkl\n" % (job["retry_count"]))
 
             # Set job priority from the request and task priority
-            task_priority = int(job.get("taskPriority", self.defaultTaskPriority))
+            taskPriority = int(job.get("taskPriority", self.defaultTaskPriority))
             prio = int(job.get('priority', 0))
-            jdl.append("priority = %i\n" % (prio + task_priority * self.maxTaskPriority))
+            jdl.append("priority = %i\n" % (prio + taskPriority * self.maxTaskPriority))
 
             jdl.append("+PostJobPrio1 = -%d\n" % len(job.get('potentialSites', [])))
             jdl.append("+PostJobPrio2 = -%d\n" % job['taskID'])
@@ -882,7 +879,8 @@ class PyCondorPlugin(BasePlugin):
             jdl.append("+JobLeaseDuration = isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0\n")
 
             ### print all the variables needed for us to rely on condor userlog
-            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
+            jdl.append("job_ad_information_attrs = JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
+                       "ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite\n")
 
             jdl.append("Queue 1\n")
 
@@ -901,13 +899,13 @@ class PyCondorPlugin(BasePlugin):
             return jdl
 
         if self.submitWMSMode and len(job.get('possibleSites', [])) > 0:
-            strg = ','.join(map(str, job.get('possibleSites')))
+            strg = ','.join([str(x) for x in job.get('possibleSites')])
             jdl.append('+DESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+DESIRED_Sites = \"%s\"\n' % (jobCE))
 
         if self.submitWMSMode and len(job.get('potentialSites', [])) > 0:
-            strg = ','.join(map(str, job.get('potentialSites')))
+            strg = ','.join([str(x) for x in job.get('potentialSites')])
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % strg)
         else:
             jdl.append('+ExtDESIRED_Sites = \"%s\"\n' % (jobCE))
@@ -946,7 +944,7 @@ class PyCondorPlugin(BasePlugin):
 
         # Performance and resource estimates (including JDL magic tweaks)
         origCores = job.get('numberOfCores', 1)
-        estimatedMins = int(job['estimatedJobTime']/60.0) if job.get('estimatedJobTime') else 12*60
+        estimatedMins = int(job['estimatedJobTime'] / 60.0) if job.get('estimatedJobTime') else 12 * 60
         estimatedMinsSingleCore = estimatedMins * origCores
         # For now, assume a 15 minute job startup overhead -- condor will round this up further
         jdl.append('+EstimatedSingleCoreMins = %d\n' % estimatedMinsSingleCore)
@@ -958,7 +956,8 @@ class PyCondorPlugin(BasePlugin):
         jdl.append('+ExtraMemory = %d\n' % self.extraMem)
         jdl.append('+RequestMemory = OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)\n')
 
-        requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20*1000*1000*origCores
+        requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage',
+                                                                None) else 20 * 1000 * 1000 * origCores
         jdl.append('request_disk = %d\n' % requestDisk)
 
         # Set up JDL for multithreaded jobs.
@@ -969,7 +968,7 @@ class PyCondorPlugin(BasePlugin):
         # they are between min and max CPUs.
         # - Otherwise, just use the original CPU count.
         jdl.append('machine_count = 1\n')
-        minCores = int(job.get('minCores', max(1, origCores/2)))
+        minCores = int(job.get('minCores', max(1, origCores / 2)))
         maxCores = max(int(job.get('maxCores', origCores)), origCores)
         jdl.append('+MinCores = %d\n' % minCores)
         jdl.append('+MaxCores = %d\n' % maxCores)
@@ -987,7 +986,8 @@ class PyCondorPlugin(BasePlugin):
         jdl.append('+RequestResizedCpus = (Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)\n')
         # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
         # values.  Otherwise, we just report the original CPU request
-        jdl.append('+JobCpus = ((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) && (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus\n')
+        jdl.append('+JobCpus = ((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
+                               '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus\n')
 
         # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
         # Otherwise, we use either the cores in the running job (if available) or the original cores.
@@ -995,12 +995,9 @@ class PyCondorPlugin(BasePlugin):
 
         jdl.append('+WMCore_ResizeJob = %s\n' % bool(job.get('resizeJob', False)))
 
-
         # Add OS requirements for jobs
-        if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):
-            jdl.append('+REQUIRED_OS = "rhel6"\n')
-        else:
-            jdl.append('+REQUIRED_OS = "any"\n')
+        requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
+        jdl.append('+REQUIRED_OS = "%s"\n' % requiredOSes)
 
         return jdl
 
@@ -1035,9 +1032,9 @@ class PyCondorPlugin(BasePlugin):
                 'WMAgent_JobID =!= "UNDEFINED" && WMAgent_AgentName == %s' % classad.quote(str(self.agent)),
                 ["JobStatus", "EnteredCurrentStatus", "JobStartDate", "QDate", "DESIRED_Sites",
                  "ExtDESIRED_Sites", "MATCH_EXP_JOBGLIDEIN_CMSSite", "WMAgent_JobID"]
-                )
+            )
             logging.debug("Finish: Retrieving classAds using Condor Python XQuery")
-        except:
+        except Exception:
             msg = "Query to condor schedd failed in PyCondorPlugin"
             logging.error(msg)
             return None, None

@@ -209,12 +209,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         centralCouchAlive = True
         try:
-            #TODO: need to enable when reqmgr2 -wmstats is ready
-            #abortedWorkflows = self.reqmgrCouchDBWriter.getRequestByStatus(["aborted"], format = "dict");
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
             logging.info("There are %d requests in 'aborted' status in central couch." % len(abortedWorkflows))
-            forceCompleteWorkflows = self.centralCouchDBWriter.getRequestByStatus(["force-complete"])
-            logging.info("List of 'force-complete' workflows in central couch: %s" % forceCompleteWorkflows)
             
         except Exception as ex:
             centralCouchAlive = False
@@ -231,34 +227,14 @@ class TaskArchiverPoller(BaseWorkerThread):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
                     
-                    #Now we know the workflow as a whole is gone, we can delete the information from couch
+                    # T0 agent update
                     if not self.useReqMgrForCompletionCheck:
-                        self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
-                        logging.info("status updated to completed %s" % workflow)
-    
-                    if workflow in abortedWorkflows:
-                        #TODO: remove when reqmgr2-wmstats deployed
-                        newState = "aborted-completed"
-                    else:
-                        newState = None
-                        
-                    if newState != None:
-                        # update reqmgr workload document only request mgr is installed
-                        if not self.useReqMgrForCompletionCheck:
-                            # commented out untill all the agent is updated so every request have new state
-                            # TODO: agent should be able to write reqmgr db diretly add the right group in
-                            # reqmgr
-                            self.requestLocalCouchDB.updateRequestStatus(workflow, newState)
+                        if workflow in abortedWorkflows:
+                            self.requestLocalCouchDB.updateRequestStatus(workflow, "aborted-completed")
+                            logging.info("status updated to aborted completed %s", workflow)
                         else:
-                            try:
-                                self.reqmgr2Svc.updateRequestStatus(workflow, newState)
-                            except Exception as ex:
-                                msg = "%s : fail to update status %s  with HTTP error: %s" % (workflow, newState, str(ex))
-                                msg += traceback.format_exc()
-                                logging.error(msg)
-                                raise ex
-                            
-                        logging.info("status updated to '%s' : %s" % (newState, workflow))
+                            self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
+                            logging.info("status updated to completed %s", workflow)
                     
                     completedWorkflowsDAO.execute([workflow])
         

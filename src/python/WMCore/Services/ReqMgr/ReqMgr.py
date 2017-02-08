@@ -219,7 +219,7 @@ class ReqMgr(Service):
         from WMCore.Cache.GenericDataCache import MemoryCacheStruct
         
         #TODO remove "aborted-completed status when state transition happens in reqmgr2
-        maskStates = ["aborted", "aborted-completed", "force-complete"]
+        maskStates = ["aborted", "force-complete"]
         return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, 
                                             kwargs={'statusList': maskStates, "detail": False})
         

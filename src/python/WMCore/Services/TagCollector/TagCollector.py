@@ -11,13 +11,16 @@ class TagCollector(Service):
     Provides non-deprecated CMSSW releases in all their ScramArchs (not only prod)
     """
 
-    def __init__(self, url=None):
+    def __init__(self, url=None, **kwargs):
         """
         responseType will be either xml or json
         """
         defaultURL = "https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML"
         # all releases types and all their archs
-        self.tcArgs = {"anytype": 1, "anyarch": 1}
+        self.tcArgs = kwargs
+        self.tcArgs.setdefault("anytype", 1)
+        self.tcArgs.setdefault("anyarch", 1)
+
         params = {}
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL

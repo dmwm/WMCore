@@ -295,63 +295,6 @@ config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
 
-config.webapp_('WMBSService')
-config.WMBSService.default_expires = 0
-config.WMBSService.componentDir = os.path.join(config.General.workDir, "WMBSService")
-config.WMBSService.Webtools.port = wmbsServicePort
-config.WMBSService.Webtools.host = serverHostName
-config.WMBSService.Webtools.environment = "devel"
-config.WMBSService.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools')
-config.WMBSService.admin = config.Agent.contact
-config.WMBSService.title = 'WMBS Data Service'
-config.WMBSService.description = 'Provide WMBS related service call'
-
-config.WMBSService.section_("security")
-config.WMBSService.security.dangerously_insecure = True
-
-config.WMBSService.section_('views')
-active = config.WMBSService.views.section_('active')
-wmbs = active.section_('wmbs')
-wmbs.object = 'WMCore.WebTools.RESTApi'
-wmbs.templates = os.path.join(getWMBASE(), 'src/templates/WMCore/WebTools/')
-wmbs.section_('model')
-wmbs.model.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
-wmbs.section_('formatter')
-wmbs.formatter.object = 'WMCore.WebTools.RESTFormatter'
-
-wmbs.section_('couchConfig')
-wmbs.couchConfig.couchURL = couchURL
-wmbs.couchConfig.acdcDBName = acdcDBName
-wmbs.couchConfig.jobDumpDBName = jobDumpDBName
-
-wmagent = config.WMBSService.views.active.section_('wmagent')
-wmagent.object = 'WMCore.WebTools.RESTApi'
-wmagent.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools/')
-wmagent.section_('model')
-wmagent.model.object = 'WMCore.HTTPFrontEnd.Agent.AgentRESTModel'
-wmagent.section_('formatter')
-wmagent.formatter.object = 'WMCore.WebTools.RESTFormatter'
-wmagent.section_('couchConfig')
-wmagent.couchConfig.couchURL = couchURL
-wmagent.couchConfig.acdcDBName = acdcDBName
-wmagent.couchConfig.jobDumpDBName = "wmagent_jobdump"
-
-wmagentmonitor = config.WMBSService.views.active.section_('wmagentmonitor')
-wmagentmonitor.object = 'WMCore.HTTPFrontEnd.Agent.AgentMonitorPage'
-wmagentmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
-wmagentmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
-wmagentmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
-wmagentmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
-
-wmbsmonitor = config.WMBSService.views.active.section_('wmbsmonitor')
-wmbsmonitor.object = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
-wmbsmonitor.templates = os.path.join(os.environ["WMCORE_ROOT"], 'data/templates/WMCore/WebTools')
-wmbsmonitor.javascript = os.path.join(os.environ["WMCORE_ROOT"], 'data/javascript/')
-wmbsmonitor.css = os.path.join(os.environ["WMCORE_ROOT"], 'data/css/')
-wmbsmonitor.html = os.path.join(os.environ["WMCORE_ROOT"], 'data/html/')
-
-
-
 # Alert framework configuration
 
 # common 'Alert' section (Alert "senders" use these values to determine destination)

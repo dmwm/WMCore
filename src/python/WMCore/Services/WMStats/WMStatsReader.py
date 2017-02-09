@@ -264,7 +264,7 @@ class WMStatsReader(object):
                 response.setdefault(team, 0)
                 
             if filterDrain:
-                if not agentInfo['value']['drain_mode']:
+                if not agentInfo['value'].get('drain_mode', False):
                     for team in teams:
                         response[team] += 1
             else:

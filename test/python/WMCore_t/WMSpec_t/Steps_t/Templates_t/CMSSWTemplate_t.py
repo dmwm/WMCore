@@ -7,13 +7,10 @@ Created by Dave Evans on 2010-03-30.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import sys
-import os
 import unittest
 
-from WMCore.WMSpec.WMStep import WMStep
-from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
+from WMCore.WMSpec.WMWorkload import newWorkload
 
 
 class CMSSWTemplateTest(unittest.TestCase):
@@ -24,7 +21,6 @@ class CMSSWTemplateTest(unittest.TestCase):
     Tests the helper methods
 
     """
-
 
     def testA(self):
         """
@@ -51,12 +47,11 @@ class CMSSWTemplateTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-        #TODO: Check the step has the appropriate attributes expected for CMSSW
+        # TODO: Check the step has the appropriate attributes expected for CMSSW
         self.assertTrue(
             hasattr(step, "application"))
         self.assertTrue(
             hasattr(step.application, "setup"))
-
 
     def testB(self):
         """
@@ -77,17 +72,13 @@ class CMSSWTemplateTest(unittest.TestCase):
             msg += str(ex)
             self.fail(msg)
 
-
-        helper.cmsswSetup("CMSSW_X_Y_Z",
-                          scramArch = "slc5_ia32_gcc443"
-            )
+        helper.cmsswSetup("CMSSW_X_Y_Z", scramArch="slc5_ia32_gcc443")
         helper.addOutputModule(
-                    "outputModule1", primaryDataset = "Primary",
-                    processedDataset = 'Processed',
-                    dataTier = 'Tier',
-                    lfnBase = "/store/unmerged/whatever"
-                )
-
+            "outputModule1", primaryDataset="Primary",
+            processedDataset='Processed',
+            dataTier='Tier',
+            lfnBase="/store/unmerged/whatever"
+        )
 
     def testMulticoreSettings(self):
         """

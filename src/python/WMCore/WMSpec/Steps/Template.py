@@ -123,6 +123,10 @@ class Template:
     Base interface definition for any WMStep Template
 
     """
+
+    def __init__(self):
+        pass
+
     def __call__(self, wmStep):
         """
         _operator(wmStep)_

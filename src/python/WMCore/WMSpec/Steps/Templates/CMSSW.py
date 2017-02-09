@@ -8,11 +8,8 @@ Template for a CMSSW Step
 
 import pickle
 
-from WMCore.WMSpec.Steps.Template import Template
-from WMCore.WMSpec.Steps.Template import CoreHelper
 from WMCore.WMSpec.ConfigSectionTree import nodeName
-from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree
-
+from WMCore.WMSpec.Steps.Template import CoreHelper, Template
 
 
 class CMSSWStepHelper(CoreHelper):
@@ -23,7 +20,6 @@ class CMSSWStepHelper(CoreHelper):
     for CMSSW tasks
 
     """
-
 
     def addOutputModule(self, moduleName, **details):
         """
@@ -44,7 +40,6 @@ class CMSSWStepHelper(CoreHelper):
 
         return
 
-
     def addAnalysisFile(self, fileLabel, **details):
         """
         _addAnalysisFile_
@@ -61,7 +56,6 @@ class CMSSWStepHelper(CoreHelper):
             setattr(analysisFile, key, value)
 
         return
-
 
     def listOutputModules(self):
         """
@@ -85,8 +79,7 @@ class CMSSWStepHelper(CoreHelper):
         """
         return getattr(self.data.output.modules, name, None)
 
-
-    def setConfigCache(self, url, document, dbName = "config_cache"):
+    def setConfigCache(self, url, document, dbName="config_cache"):
         """
         _setConfigCache_
 
@@ -103,10 +96,7 @@ class CMSSWStepHelper(CoreHelper):
         self.data.application.configuration.cacheName = dbName
         docUrl = "%s/%s/%s" % (url, dbName, document)
         self.data.application.configuration.configUrl = docUrl
-        self.data.application.configuration.retrieveConfigUrl = \
-                                        "%s/configFile" % docUrl
-
-
+        self.data.application.configuration.retrieveConfigUrl = "%s/configFile" % docUrl
 
     def setDataProcessingConfig(self, scenarioName, functionName, **args):
         """
@@ -123,13 +113,11 @@ class CMSSWStepHelper(CoreHelper):
         # at pickledarguments anyways
         try:
             self.data.application.configuration.section_('arguments')
-            [ setattr(self.data.application.configuration.arguments, k, v)
-              for k, v in args.items() ]
+            [setattr(self.data.application.configuration.arguments, k, v) for k, v in args.items()]
         except Exception:
             pass
         self.data.application.configuration.pickledarguments = pickle.dumps(args)
         return
-
 
     def cmsswSetup(self, cmsswVersion, **options):
         """
@@ -148,7 +136,7 @@ class CMSSWStepHelper(CoreHelper):
         softwareEnvironment - setup command to bootstrap scram,defaults to None
         """
         self.data.application.setup.cmsswVersion = cmsswVersion
-        for k,v in options.items():
+        for k, v in options.items():
             setattr(self.data.application.setup, k, v)
         return
 
@@ -332,8 +320,7 @@ class CMSSWStepHelper(CoreHelper):
         to the process, this comes from user input
         """
         if eventsPerLumi != None:
-            setattr(self.data.application.configuration, "eventsPerLumi",
-                    eventsPerLumi)
+            setattr(self.data.application.configuration, "eventsPerLumi", eventsPerLumi)
 
     def getSkipBadFiles(self):
         """
@@ -341,8 +328,7 @@ class CMSSWStepHelper(CoreHelper):
 
         Check if we can skip inexistent files instead of failing the job
         """
-        return getattr(self.data.application.configuration, "skipBadFiles",
-                False)
+        return getattr(self.data.application.configuration, "skipBadFiles", False)
 
     def setSkipBadFiles(self, skipBadFiles):
         """
@@ -351,8 +337,7 @@ class CMSSWStepHelper(CoreHelper):
         Add a flag to indicate the CMSSW process if we can
         skip inexistent files instead of failing the job
         """
-        setattr(self.data.application.configuration, "skipBadFiles",
-                skipBadFiles)
+        setattr(self.data.application.configuration, "skipBadFiles", skipBadFiles)
 
     def setNumberOfCores(self, ncores, nEventStreams=0):
         """
@@ -378,6 +363,7 @@ class CMSSWStepHelper(CoreHelper):
         Get number of event streams
         """
         return self.data.application.multicore.eventStreams
+
 
 class CMSSW(Template):
     """
@@ -443,7 +429,6 @@ class CMSSW(Template):
         step.application.section_("multicore")
         step.application.multicore.numberOfCores = 1
         step.application.multicore.eventStreams = 0
-
 
     def helper(self, step):
         """

@@ -17,7 +17,7 @@ from WMCore.FwkJobReport.Report import Report
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.DAOFactory import DAOFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.WMBS.Workflow     import Workflow
 from WMCore.WMBS.Subscription import Subscription

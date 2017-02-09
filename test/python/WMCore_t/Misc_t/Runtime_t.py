@@ -54,7 +54,7 @@ import WMCore.WMRuntime.Bootstrap as Bootstrap
 
 # Misc WMCore
 from WMCore.DataStructs.Run     import Run
-from WMCore.Services.UUID       import makeUUID
+from WMCore.Services.UUIDLib       import makeUUID
 from WMCore.FwkJobReport.Report import Report
 
 

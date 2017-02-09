@@ -9,7 +9,7 @@ _TwoFileAndEventBased_
 
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class TwoFileAndEventBased(JobFactory):
     """

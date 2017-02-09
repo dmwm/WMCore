@@ -17,7 +17,7 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMQuality.TestInit import TestInit
 
 

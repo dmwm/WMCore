@@ -11,7 +11,7 @@ based on the size of the files
 
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.DataStructs.Fileset import Fileset
 
 

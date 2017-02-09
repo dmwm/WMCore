@@ -25,7 +25,7 @@ from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMFactory import WMFactory
 
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMQuality.TestInit import TestInit
 

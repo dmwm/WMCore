@@ -14,7 +14,7 @@ from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFi
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class DataCollectionService_t(unittest.TestCase):
     def setUp(self):

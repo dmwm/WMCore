@@ -15,7 +15,7 @@ If file spans a run will need to create a mask for that file.
 
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class RunBased(JobFactory):
     def algorithm(self, *args, **kwargs):

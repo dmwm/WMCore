@@ -15,7 +15,7 @@ from WMCore.DataStructs.Workflow import Workflow
 from WMCore.DataStructs.Run import Run
 import time
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class FixedDelayTest(unittest.TestCase):
     def setUp(self):

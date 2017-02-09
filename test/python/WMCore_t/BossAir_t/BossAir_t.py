@@ -18,7 +18,7 @@ except ImportError:
 import WMCore.WMInit
 from WMQuality.TestInitCouchApp             import TestInitCouchApp as TestInit
 from WMCore.DAOFactory                      import DAOFactory
-from WMCore.Services.UUID                   import makeUUID
+from WMCore.Services.UUIDLib                   import makeUUID
 from WMCore.WMSpec.Makers.TaskMaker         import TaskMaker
 from WMCore.JobStateMachine.ChangeState     import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl

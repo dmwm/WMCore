@@ -24,7 +24,7 @@ from WMCore.DataStructs.Run             import Run
 from WMCore.Database.CMSCouch           import CouchServer
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.WMSpec.Makers.TaskMaker     import TaskMaker
-from WMCore.Services.UUID               import makeUUID
+from WMCore.Services.UUIDLib               import makeUUID
 from WMCore.FwkJobReport.Report         import Report
 from WMQuality.TestInitCouchApp         import TestInitCouchApp as TestInit
 

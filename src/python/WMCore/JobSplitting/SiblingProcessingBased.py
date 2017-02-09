@@ -12,7 +12,7 @@ import logging
 from WMCore.WMBS.File import File
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.DAOFactory import DAOFactory
 
 class SiblingProcessingBased(JobFactory):

@@ -4,7 +4,7 @@ import random
 
 from WMCore.FwkJobReport import Report
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 outputModules = ["outputModule1", "outputModule2", "outputModule3",
                  "outputModule4", "outputModule5", "outputModule6",

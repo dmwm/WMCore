@@ -4,7 +4,7 @@ import random
 
 from WMCore.FwkJobReport import Report
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 outputModules = ["write_A_Calo_RAW", "write_A_Cosmics_RAW",
                  "write_A_HcalHPDNoise_RAW", "write_A_MinimumBias_RAW",

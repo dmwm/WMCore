@@ -8,7 +8,7 @@ import logging
 import threading
 
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.Services.UUID        import makeUUID
+from WMCore.Services.UUIDLib     import makeUUID
 from WMCore.WMBS.File            import File as WMBSFile
 from WMCore.DAOFactory           import DAOFactory
 

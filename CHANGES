@@ -1,3 +1,12 @@
+1.1.0 to 1.1.0_cmsweb.patch1:
+  - Merge pull request #7614 from ticoann/1.1.0_cmsweb_fix
+  - add unittest
+  - add heartbeat reporting
+  - don't call getElementsForParent if not necessary
+  - add logger for StatusChangeTasks
+  - Fix other workqueue views that may have problems
+  - Emit workqueue elements with 0 Jobs
+
 1.0.23 to 1.1.0:
   - Merge pull request #7563 from amaltaro/inject-patch12
   - 1.1.0.pre10

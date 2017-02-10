@@ -548,7 +548,11 @@ class SetupCMSSWPset(ScriptInterface):
         runIsComplete = getattr(baggage, "runIsComplete", False)
         multiRun = getattr(baggage, "multiRun", False)
         runLimits = getattr(baggage, "runLimits", "")
-        cmsswVersion = self.step.data.application.setup.cmsswVersion
+        try:
+            cmsswVersion = self.step.data.application.setup.cmsswVersion
+        except AttributeError:
+            # CRAB3 needs to use an environment var to get the version
+            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
 
         self.process.dqmSaver.runIsComplete = cms.untracked.bool(runIsComplete)
         if multiRun and isCMSSWSupported(cmsswVersion, "CMSSW_8_0_X"):
@@ -602,7 +606,12 @@ class SetupCMSSWPset(ScriptInterface):
         Enable lazy-download for fastCloning for all CMSSW_7_5 jobs (currently off)
         Enable lazy-download for all merge jobs
         """
-        cmsswVersion = self.step.data.application.setup.cmsswVersion
+        try:
+            cmsswVersion = self.step.data.application.setup.cmsswVersion
+        except AttributeError:
+            # CRAB3 needs to use an environment var to get the version
+            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
+
         if cmsswVersion.startswith("CMSSW_7_5") and False:
             print("Using fastCloning/lazydownload")
             self.process.add_(cms.Service("SiteLocalConfigService",
@@ -619,7 +628,11 @@ class SetupCMSSWPset(ScriptInterface):
 
         Enable CondorStatusService for CMSSW releases that support it.
         """
-        cmsswVersion = self.step.data.application.setup.cmsswVersion
+        try:
+            cmsswVersion = self.step.data.application.setup.cmsswVersion
+        except AttributeError:
+            # CRAB3 needs to use an environment var to get the version
+            cmsswVersion = os.environ.get("CMSSW_VERSION", "")
 
         if isCMSSWSupported(cmsswVersion, "CMSSW_7_6_X"):
             print("Tag chirp updates from CMSSW with _%s_" % self.step.data._internal_name)

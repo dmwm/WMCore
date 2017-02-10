@@ -1,6 +1,6 @@
 from __future__ import (division, print_function)
 
-from Utils.CherryPyPeriodicTask import CherryPyPeriodicTask
+from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WorkQueue.WorkQueue import globalQueue
 from WMCore.WorkQueue.WorkQueueReqMgrInterface import WorkQueueReqMgrInterface
 
@@ -8,7 +8,7 @@ class ReqMgrInteractionTask(CherryPyPeriodicTask):
 
     def __init__(self, rest, config):
 
-        super(ReqMgrInteractionTask, self).__init__(config, enableLogDB=True)
+        super(ReqMgrInteractionTask, self).__init__(config)
 
     def setConcurrentTasks(self, config):
         """

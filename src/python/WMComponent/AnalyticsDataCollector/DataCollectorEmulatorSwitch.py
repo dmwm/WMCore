@@ -1,21 +1,16 @@
 """
 Use this for only unit test
 """
-import os
-import sys
-import logging
-
-from WMCore.Configuration import Configuration, saveConfigurationFile
 
 class EmulatorHelper(object):
     """
     Works as global value for the emulator switch.
     WARNNING: This is not multi thread safe.
     """
-    #DO not change default values
+    # DO not change default values
     LocalCouchDBData = None
     ReqMonDBData = None
-    WMAgentDBData= None
+    WMAgentDBData = None
 
     @staticmethod
     def getEmulatorClass(clsName):
@@ -36,7 +31,7 @@ class EmulatorHelper(object):
             return WMAgentDBDataEmulator
 
     @staticmethod
-    def setEmulators(localCouch=False,reqMon=False, wmagentDB=False):
+    def setEmulators(localCouch=False, reqMon=False, wmagentDB=False):
         EmulatorHelper.LocalCouchDBData = localCouch
         EmulatorHelper.ReqMonDBData = reqMon
         EmulatorHelper.WMAgentDBData = wmagentDB
@@ -48,30 +43,30 @@ class EmulatorHelper(object):
         EmulatorHelper.WMAgentDBData = None
 
     @staticmethod
-    def getClass(cls):
+    def getClass(clsObj):
         """
         if emulator flag is set return emulator class
         otherwise return original class.
         if emulator flag is not initialized
             and EMULATOR_CONFIG environment variable is set,
         """
-        emFlag = getattr(EmulatorHelper, cls.__name__)
+        emFlag = getattr(EmulatorHelper, clsObj.__name__)
         if emFlag:
-            return EmulatorHelper.getEmulatorClass(cls.__name__)
+            return EmulatorHelper.getEmulatorClass(clsObj.__name__)
         elif emFlag == None:
             try:
                 from WMQuality.Emulators import emulatorSwitch
-            except:
+            except Exception:
                 # if emulatorSwitch class is not imported don't use
                 # emulator
-                setattr(EmulatorHelper, cls.__name__, False)
+                setattr(EmulatorHelper, clsObj.__name__, False)
             else:
-                envFlag = emulatorSwitch(cls.__name__)
-                setattr(EmulatorHelper, cls.__name__, envFlag)
+                envFlag = emulatorSwitch(clsObj.__name__)
+                setattr(EmulatorHelper, clsObj.__name__, envFlag)
                 if envFlag:
-                    return EmulatorHelper.getEmulatorClass(cls.__name__)
+                    return EmulatorHelper.getEmulatorClass(clsObj.__name__)
         # if emulator flag is False, return original class
-        return cls
+        return clsObj
 
 def emulatorHook(cls):
     """

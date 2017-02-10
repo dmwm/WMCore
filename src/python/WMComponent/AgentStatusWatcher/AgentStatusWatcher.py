@@ -11,6 +11,7 @@ import threading
 from WMCore.Agent.Harness import Harness
 from WMComponent.AgentStatusWatcher.ResourceControlUpdater import ResourceControlUpdater
 from WMComponent.AgentStatusWatcher.AgentStatusPoller import AgentStatusPoller
+from WMComponent.AgentStatusWatcher.DrainStatusPoller import DrainStatusPoller
 
 class AgentStatusWatcher(Harness):
     """
@@ -36,13 +37,19 @@ class AgentStatusWatcher(Harness):
         logging.info("AgentStatusWatcher.preInitialization")
         resourceUpdaterPollInterval = self.config.AgentStatusWatcher.resourceUpdaterPollInterval
         agentPollInterval = self.config.AgentStatusWatcher.agentPollInterval
+        drainStatusPollInterval = self.config.AgentStatusWatcher.drainStatusPollInterval
         myThread = threading.currentThread()
 
-        logging.info("Setting ResourcesUpdate poll interval to %s seconds" % agentPollInterval)
+        logging.info("Setting AgentStatus poll interval to %s seconds", agentPollInterval)
         myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
                                                agentPollInterval)
 
-        logging.info("Setting ResourcesUpdate poll interval to %s seconds" % resourceUpdaterPollInterval)
+        logging.info("Setting ResourcesUpdate poll interval to %s seconds", resourceUpdaterPollInterval)
         myThread.workerThreadManager.addWorker(ResourceControlUpdater(self.config),
                                                resourceUpdaterPollInterval)
+
+        logging.info("Setting DrainStatus poll interval to %s seconds", drainStatusPollInterval)
+        myThread.workerThreadManager.addWorker(DrainStatusPoller(self.config),
+                                               drainStatusPollInterval)
+
         return

@@ -34,7 +34,7 @@ from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job
 from WMCore.WMBS.Subscription import Subscription
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class JobGroup(WMBSBase, WMJobGroup):
     """

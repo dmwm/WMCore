@@ -13,7 +13,7 @@ from WMCore.Configuration import loadConfigurationFile
 from WMCore.WMInit import connectToDB
 from WMCore.WMInit import getWMBASE
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.File import File

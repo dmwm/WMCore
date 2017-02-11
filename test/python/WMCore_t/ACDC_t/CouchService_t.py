@@ -17,7 +17,7 @@ from WMCore.ACDC.CouchCollection import CouchCollection
 
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DataStructs.File import File
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 

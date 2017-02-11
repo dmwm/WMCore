@@ -21,7 +21,7 @@ import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 #from WMQuality.TestInit   import TestInit
 from WMCore.DAOFactory    import DAOFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.WMBS.File         import File
 from WMCore.WMBS.Fileset      import Fileset

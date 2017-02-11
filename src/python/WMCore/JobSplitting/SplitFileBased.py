@@ -18,7 +18,7 @@ from WMCore.DataStructs.Run import Run
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 def mergeUnitCompare(a, b):
     """

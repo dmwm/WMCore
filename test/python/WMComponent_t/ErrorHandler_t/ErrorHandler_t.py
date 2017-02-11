@@ -17,7 +17,7 @@ import WMCore.WMBase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory          import DAOFactory
-from WMCore.Services.UUID       import makeUUID
+from WMCore.Services.UUIDLib       import makeUUID
 
 
 from WMCore.WMBS.Subscription import Subscription

@@ -15,7 +15,7 @@ from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.PhEDExInjector.PhEDExInjectorPoller import PhEDExInjectorPoller
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBase import getTestBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase

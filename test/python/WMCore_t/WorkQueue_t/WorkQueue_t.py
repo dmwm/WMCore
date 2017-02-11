@@ -25,7 +25,7 @@ from WMCore.DataStructs.Run import Run
 from WMCore.Lexicon import sanitizeURL
 from WMCore.ResourceControl.ResourceControl import ResourceControl
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueService
 from WMCore.WMBS.Job import Job
 from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory

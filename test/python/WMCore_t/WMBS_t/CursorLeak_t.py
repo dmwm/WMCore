@@ -12,7 +12,7 @@ import nose
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMQuality.TestInit import TestInit
 

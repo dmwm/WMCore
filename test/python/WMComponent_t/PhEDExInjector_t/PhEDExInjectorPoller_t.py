@@ -17,7 +17,7 @@ from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferBlock import DBSBufferBlock
 
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run

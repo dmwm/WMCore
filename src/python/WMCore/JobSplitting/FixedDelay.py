@@ -10,7 +10,7 @@ any unacquired jobs to
 
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 import time
 
 class FixedDelay(JobFactory):

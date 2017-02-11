@@ -16,7 +16,7 @@ from WMComponent.JobArchiver.JobArchiverPoller import JobArchiverPoller
 from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.Run import Run
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Job import Job

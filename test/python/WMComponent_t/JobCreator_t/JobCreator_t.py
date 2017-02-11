@@ -35,7 +35,7 @@ from WMCore.DataStructs.Run   import Run
 from WMCore.Agent.Configuration              import Configuration
 from WMComponent.JobCreator.JobCreatorPoller import JobCreatorPoller
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.ResourceControl.ResourceControl  import ResourceControl
 from WMCore.Agent.HeartbeatAPI               import HeartbeatAPI

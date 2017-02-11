@@ -9,7 +9,7 @@ that has inject permissions.
 import unittest
 import time
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 import WMCore.Services.PhEDEx.XMLDrop as XMLDrop
 from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.PhEDEx.DataStructs.SubscriptionList import PhEDExSubscription

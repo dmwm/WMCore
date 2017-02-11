@@ -21,7 +21,7 @@ from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.WMBase import getTestBase
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Fileset import Fileset

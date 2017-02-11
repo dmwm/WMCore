@@ -7,7 +7,7 @@ import threading
 import logging
 
 from WMCore.JobSplitting.JobFactory import JobFactory
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.DAOFactory import DAOFactory
 from WMCore.JobSplitting.LumiBased import isGoodRun, isGoodLumi
 from WMCore.DataStructs.Run import Run

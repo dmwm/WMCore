@@ -19,7 +19,7 @@ from dbs.apis.dbsClient import DbsApi
 
 from WMCore.DAOFactory      import DAOFactory
 from WMCore.DataStructs.Run import Run
-from WMCore.Services.UUID   import makeUUID
+from WMCore.Services.UUIDLib   import makeUUID
 
 from WMComponent.DBS3Buffer.DBSBufferDataset import DBSBufferDataset
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile

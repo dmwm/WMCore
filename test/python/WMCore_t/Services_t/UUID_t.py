@@ -11,7 +11,7 @@ import logging
 import socket
 import time
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class UUIDTest(unittest.TestCase):
 

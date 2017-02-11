@@ -13,7 +13,7 @@ import random
 import logging
 import threading
 
-from WMCore.Services.UUID       import makeUUID
+from WMCore.Services.UUIDLib       import makeUUID
 from WMQuality.TestInit         import TestInit
 from WMQuality.Emulators        import EmulatorSetup
 from WMCore.Agent.Configuration import Configuration

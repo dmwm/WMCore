@@ -23,7 +23,7 @@ from WMCore.WMBS.File           import File
 from WMCore.WMBS.Fileset        import Fileset as WMBSFileset
 from WMCore.WMBS.Mask           import Mask
 from WMCore.WMBS.WMBSBase       import WMBSBase
-from WMCore.Services.UUID       import makeUUID
+from WMCore.Services.UUIDLib    import makeUUID
 
 class Job(WMBSBase, WMJob):
     """

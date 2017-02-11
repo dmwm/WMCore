@@ -22,7 +22,7 @@ from WMCore.WMBS.CreateWMBSBase import CreateWMBSBase
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMFactory import WMFactory
 from WMQuality.TestInit import TestInit
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class MonitoringTest(unittest.TestCase):
     def setUp(self):

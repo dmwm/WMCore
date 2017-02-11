@@ -16,7 +16,7 @@ import subprocess
 
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 

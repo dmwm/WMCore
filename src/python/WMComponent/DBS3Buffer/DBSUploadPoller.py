@@ -35,7 +35,7 @@ import multiprocessing
 from WMCore.DAOFactory import DAOFactory
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
-from WMCore.Services.UUID                  import makeUUID
+from WMCore.Services.UUIDLib               import makeUUID
 from WMCore.WMException                    import WMException
 from WMCore.Algorithms.MiscAlgos           import sortListByKey
 

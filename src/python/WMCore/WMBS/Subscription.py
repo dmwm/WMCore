@@ -20,7 +20,7 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Subscription import Subscription as WMSubscription
 from WMCore.DataStructs.Fileset      import Fileset      as WMFileset
 
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class Subscription(WMBSBase, WMSubscription):
     """

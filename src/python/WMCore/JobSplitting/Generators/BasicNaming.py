@@ -6,7 +6,7 @@ Default name generator using a vaguely sensible convention.
 Uses GUIDs to avoid having to keep state
 
 """
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 from WMCore.JobSplitting.Generators.GeneratorInterface import GeneratorInterface
 
 

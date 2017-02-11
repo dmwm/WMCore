@@ -14,7 +14,7 @@ from WMCore.ACDC.CouchFileset import CouchFileset
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.GroupUser.User import makeUser
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run

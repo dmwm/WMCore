@@ -17,7 +17,7 @@ from WMCore.ACDC.CouchService import CouchService
 
 from WMCore.DataStructs.File import File
 from WMCore.GroupUser.User import makeUser
-from WMCore.Services.UUID import makeUUID
+from WMCore.Services.UUIDLib import makeUUID
 
 class CouchCollection_t(unittest.TestCase):
     """

@@ -61,8 +61,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                                scenarioArgs = scenarioArgs,
                                                splitAlgo = self.procJobSplitAlgo,
                                                splitArgs = self.procJobSplitArgs,
-                                               stepType = cmsswStepType,
-                                               forceUnmerged = True)
+                                               stepType = cmsswStepType)
         if self.doLogCollect:
             self.addLogCollectTask(recoTask)
 

@@ -41,7 +41,7 @@ def moveForwardStatus(reqDBWriter, wfStatusDict, logger):
                     count += 1
                     reqDBWriter.updateRequestStatus(wf, nextStatus[j])
                     logger.debug("%s in %s moved to %s", wf, status, nextStatus[j])
-        logger.debug("%s requests moved to new state from %s", count, status)
+        logger.info("%s requests moved to new state from %s", count, status)
     return
 
 

@@ -18,6 +18,7 @@ import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMException      import WMException
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run  import Run
 
 
@@ -353,3 +354,17 @@ class DataCollectionService(CouchService):
             whiteList[str(run)].append(currentSet)
 
         return whiteList
+
+    def getLumilistWhitelist(self, collectionID, taskName, user = "cmsdataops", group = "cmsdataops"):
+        """
+
+        Args:
+            collectionID, taskName, user, group: Parameters for getLumiWhitelist
+
+        Returns: a LumiList object instead of a plane dictionary describing the lumi list
+
+        """
+
+        compactList = self.getLumiWhitelist(collectionID, taskName, user = user, group = group)
+        lumiList = LumiList(compactList=compactList)
+        return lumiList

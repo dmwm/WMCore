@@ -183,11 +183,11 @@ class SimpleCondorPlugin(BasePlugin):
         logging.debug("Start: Retrieving classAds using Condor Python XQuery")
         try:
             itobj = schedd.xquery("WMAgent_AgentName == %s" % classad.quote(self.agent),
-                                  ['ClusterId', 'ProcId', 'JobStatus', 'MATCH_EXP_JOBGLIDEIN_CMSSite'])
+                                  ['ClusterId', 'ProcId', 'JobStatus', 'MachineAttrGLIDEIN_CMSSite0'])
             for jobAd in itobj:
                 gridId = "%s.%s" % (jobAd['ClusterId'], jobAd['ProcId'])
                 jobStatus = SimpleCondorPlugin.exitCodeMap().get(jobAd.get('JobStatus'), 'Unknown')
-                location = jobAd.get('MATCH_EXP_JOBGLIDEIN_CMSSite', None)
+                location = jobAd.get('MachineAttrGLIDEIN_CMSSite0', None)
                 jobInfo[gridId] = (jobStatus, location)
         except Exception as ex:
             logging.error("Query to condor schedd failed in SimpleCondorPlugin.")
@@ -452,8 +452,6 @@ class SimpleCondorPlugin(BasePlugin):
 
         ad['WMAgent_AgentName'] = self.agent
 
-        ad['JOBGLIDEIN_CMSSite'] = classad.ExprTree('isUndefined(GLIDEIN_CMSSite) ? Unknown : GLIDEIN_CMSSite')
-
         ad['JobLeaseDuration'] = classad.ExprTree('isUndefined(MachineAttrMaxHibernateTime0) ? 1200 : MachineAttrMaxHibernateTime0')
 
         # Required for global pool accounting
@@ -472,7 +470,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         ad['JobMachineAttrs'] = "GLIDEIN_CMSSite"
         ad['JobAdInformationAttrs'] = ("JobStatus,QDate,EnteredCurrentStatus,JobStartDate,DESIRED_Sites,"
-                                       "ExtDESIRED_Sites,WMAgent_JobID,MATCH_EXP_JOBGLIDEIN_CMSSite")
+                                       "ExtDESIRED_Sites,WMAgent_JobID,MachineAttrGLIDEIN_CMSSite0")
 
         # TODO: remove when 8.5.7 is deployed
         paramsToAdd = htcondor.param['SUBMIT_ATTRS'].split() + htcondor.param['SUBMIT_EXPRS'].split()

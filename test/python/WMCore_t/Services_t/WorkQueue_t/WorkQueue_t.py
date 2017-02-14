@@ -70,12 +70,12 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 334, 'request_name': specName}])
+                         [{'total_jobs': 339, 'request_name': specName}])
         # work still available, so no childQueue
         self.assertEqual(wqApi.getChildQueuesAndStatus().keys(), [None])
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[specName]['Available']['Jobs'], 334)
+        self.assertEqual(result[specName]['Available']['Jobs'], 339)
 
         self.assertEqual(wqApi.getChildQueuesAndPriority()[None].keys(), [8000])
         self.assertEqual(wqApi.getWMBSUrl(), [])
@@ -151,14 +151,14 @@ class WorkQueueTest(EmulatedUnitTestCase):
         # This only checks minimum client call not exactly correctness of return
         # values.
         self.assertEqual(wqApi.getTopLevelJobsByRequest(),
-                         [{'total_jobs': 334, 'request_name': specName}])
+                         [{'total_jobs': 339, 'request_name': specName}])
         results = wqApi.getJobsByStatusAndPriority()
         self.assertEqual(results.keys(), ['Available'])
         self.assertEqual(results['Available'].keys(), [8000])
-        self.assertTrue(results['Available'][8000]['sum'], 334)
+        self.assertTrue(results['Available'][8000]['sum'], 339)
         result = wqApi.getElementsCountAndJobsByWorkflow()
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[specName]['Available']['Jobs'], 334)
+        self.assertEqual(result[specName]['Available']['Jobs'], 339)
         data = wqApi.db.loadView('WorkQueue', 'elementsDetailByWorkflowAndStatus',
                                  {'startkey': [specName], 'endkey': [specName, {}],
                                   'reduce': False})

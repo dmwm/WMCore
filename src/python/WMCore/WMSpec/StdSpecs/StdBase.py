@@ -510,13 +510,16 @@ class StdBase(object):
                 "processedDataset": processedDataset,
                 "filterName": filterName}
 
-    def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500):
+    def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500,
+                          cmsswVersion=None, scramArch=None):
         """
         _addLogCollectTask_
 
         Create a LogCollect task for log archives that are produced by the
         parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
         logCollectTask = parentTask.addTask(taskName)
         self.addDashboardMonitoring(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
@@ -530,22 +533,23 @@ class StdBase(object):
         logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
 
         logCollectStepHelper = logCollectStep.getTypeHelper()
-        logCollectStepHelper.cmsswSetup(self.frameworkVersion,
+        logCollectStepHelper.cmsswSetup(cmsswVersion,
                                         softwareEnvironment="",
-                                        scramArch=self.scramArch)
+                                        scramArch=scramArch)
 
         return logCollectTask
 
-    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName="cmsRun1", doLogCollect=True, lfn_counter=0, forceTaskName=None):
+    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName, parentStepName="cmsRun1",
+                     doLogCollect=True, lfn_counter=0, forceTaskName=None, cmsswVersion=None, scramArch=None):
         """
         _addMergeTask_
 
         Create a merge task for files produced by the parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
         # StepChain use case, to avoid merge task names clashes
-        if forceTaskName is None:
-            forceTaskName = parentTask.name()
+        forceTaskName = forceTaskName or parentTask.name()
 
         mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
         self.addDashboardMonitoring(mergeTask)
@@ -563,8 +567,9 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         if doLogCollect:
-            self.addLogCollectTask(mergeTask,
-                                   taskName="%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName))
+            taskNameLC = "%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName)
+            self.addLogCollectTask(mergeTask, taskName=taskNameLC,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -582,9 +587,9 @@ class StdBase(object):
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+        mergeTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                         softwareEnvironment="",
-                                        scramArch=self.scramArch)
+                                        scramArch=scramArch)
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
@@ -647,12 +652,16 @@ class StdBase(object):
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,
                           periodic_harvest_interval=0, periodic_harvest_sibling=False,
-                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun"):
+                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun",
+                          cmsswVersion=None, scramArch=None):
         """
         _addDQMHarvestTask_
 
         Create a DQM harvest task to harvest the files produces by the parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
+
         if periodic_harvest_interval:
             harvestType = "Periodic"
         else:
@@ -672,17 +681,19 @@ class StdBase(object):
 
         harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:
-            self.addLogCollectTask(harvestTask, taskName="%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
-                                                                                         parentOutputModuleName,
-                                                                                         harvestType))
+            taskNameLC = "%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
+                                                         parentOutputModuleName,
+                                                         harvestType)
+            self.addLogCollectTask(harvestTask, taskName=taskNameLC,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+        harvestTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                           softwareEnvironment="",
-                                          scramArch=self.scramArch)
+                                          scramArch=scramArch)
 
         harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())
         harvestTaskCmsswHelper.setGlobalTag(self.globalTag)

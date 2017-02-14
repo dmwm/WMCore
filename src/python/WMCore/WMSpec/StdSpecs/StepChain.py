@@ -122,9 +122,7 @@ class StepChainWorkloadFactory(StdBase):
 
         # outputModules were added already, we just want to create merge tasks here
         if strToBool(taskConf.get('KeepOutput', True)):
-            for outputModuleName in outMods.keys():
-                dummyTask = self.addMergeTask(task, self.splittingAlgo,
-                                              outputModuleName, "cmsRun1")
+            self.setupMergeTask(task, taskConf, "cmsRun1", outMods)
 
         return
 
@@ -163,9 +161,7 @@ class StepChainWorkloadFactory(StdBase):
 
         # outputModules were added already, we just want to create merge tasks here
         if strToBool(taskConf.get('KeepOutput', True)):
-            for outputModuleName in outMods.keys():
-                dummyTask = self.addMergeTask(task, self.splittingAlgo,
-                                              outputModuleName, "cmsRun1")
+            self.setupMergeTask(task, taskConf, "cmsRun1", outMods)
 
         return
 
@@ -226,15 +222,14 @@ class StepChainWorkloadFactory(StdBase):
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
             childCmsswStepHelper.keepOutput(childKeepOutput)
-            self.setupOutputModules(task, taskConf["ConfigCacheID"], currentCmsRun, childKeepOutput,
-                                    taskConf['StepName'])
+            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
 
         # Closing out the task configuration. The last step output must be saved/merged
         childCmsswStepHelper.keepOutput(True)
 
         return
 
-    def setupOutputModules(self, task, stepConfigCacheId, stepCmsRun, keepOutput, forceTaskName=None):
+    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput):
         """
         _setupOutputModules_
 
@@ -244,7 +239,7 @@ class StepChainWorkloadFactory(StdBase):
         configCacheUrl = self.configCacheUrl or self.couchURL
         outputMods = {}
 
-        configOutput = self.determineOutputModules(configDoc=stepConfigCacheId,
+        configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
                                                    couchURL=configCacheUrl,
                                                    couchDBName=self.couchDBName)
         for outputModuleName in configOutput.keys():
@@ -256,9 +251,24 @@ class StepChainWorkloadFactory(StdBase):
             outputMods[outputModuleName] = outputModule
 
         if keepOutput:
-            for outputModuleName in outputMods.keys():
-                dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName,
-                                              stepCmsRun, forceTaskName=forceTaskName)
+            self.setupMergeTask(task, taskConf, stepCmsRun, outputMods)
+
+        return
+
+    def setupMergeTask(self, task, taskConf, stepCmsRun, outputMods):
+        """
+        _setupMergeTask_
+
+        Adds a merge task to the parent with the proper task configuration.
+        """
+        frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
+        scramArch = taskConf.get("ScramArch", self.scramArch)
+
+        for outputModuleName in outputMods.keys():
+            dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,
+                                          cmsswVersion=frameworkVersion, scramArch=scramArch,
+                                          forceTaskName=taskConf.get('StepName'))
+
         return
 
     def modifyTaskConfiguration(self, taskConf, firstTask=False, generator=False):

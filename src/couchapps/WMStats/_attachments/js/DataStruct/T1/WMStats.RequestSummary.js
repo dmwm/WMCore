@@ -137,3 +137,24 @@ WMStats.Requests = function(data) {
     };
     return tier1Requests;
 };
+
+
+WMStats.Requests.getPropertyByTask = function(taskPath, property, requestInfo) {
+	
+    if (requestInfo.TaskChain) {
+        var numTasks = requestInfo.TaskChain;
+        var taskSplit = taskPath.split("/");
+        var task = taskSplit[taskSplit.length -1];
+        for (var i=1; i <= numTasks; i++) {
+            if (requestInfo["Task" + i].TaskName == task) {
+                if (requestInfo["Task" + i][property] !== undefined) {
+                	return requestInfo["Task" + i][property];
+                } else {
+                	break;
+                }
+            }
+        }
+    }
+    
+    return requestInfo[property];
+};

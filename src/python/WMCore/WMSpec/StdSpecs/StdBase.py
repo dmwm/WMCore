@@ -17,6 +17,7 @@ from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, strToBool,
                                            checkDBSURL, validateArgumentsCreate, safeStr)
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
+
 class StdBase(object):
     """
     _StdBase_
@@ -221,7 +222,7 @@ class StdBase(object):
 
             # Send the workflow info
             reporter.addTask(workflow)
-        except:
+        except Exception:
             # This is not critical, if it fails just leave it be
             logging.error("There was an error with dashboard reporting")
 
@@ -253,11 +254,11 @@ class StdBase(object):
                             inputModule=None, scenarioName=None,
                             scenarioFunc=None, scenarioArgs=None, couchURL=None,
                             couchDBName=None, configDoc=None, splitAlgo="LumiBased",
-                            splitArgs={'lumis_per_job': 8}, seeding=None,
+                            splitArgs=None, seeding=None,
                             totalEvents=None, eventsPerLumi=None,
                             userDN=None, asyncDest=None, owner_vogroup="DEFAULT",
                             owner_vorole="DEFAULT", stepType="CMSSW",
-                            userSandbox=None, userFiles=[], primarySubType=None,
+                            userSandbox=None, userFiles=None, primarySubType=None,
                             forceMerged=False, forceUnmerged=False,
                             configCacheUrl=None, timePerEvent=None, memoryReq=None,
                             sizePerEvent=None, applySiteLists=True, cmsswVersion=None,
@@ -283,9 +284,11 @@ class StdBase(object):
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
-        # set default scenarioArgs to empty dictionary if it is None
+        # set default values in case it's not passed to this method
         scenarioArgs = scenarioArgs or {}
         taskConf = taskConf or {}
+        splitArgs = splitArgs or {'lumis_per_job': 8}
+        userFiles = userFiles or []
 
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
@@ -418,7 +421,7 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         return outputModules
-    
+
     def _getDictionaryParams(self, prop, key, default=None):
         """
         Support dictonary format for property definition.
@@ -442,12 +445,12 @@ class StdBase(object):
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
         haveRunNumber = (self.runNumber != None and self.runNumber > 0)
-        
+
         taskName = parentTask.name()
         acqEra = self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = self._getDictionaryParams(self.processingString, taskName)
         procVersion = self._getDictionaryParams(self.processingVersion, taskName, 1)
-        
+
         processedDataset = "%s-" % acqEra
         if haveFilterName:
             processedDataset += "%s-" % filterName
@@ -853,9 +856,10 @@ class StdBase(object):
         """
         # Validate the arguments according to the workload arguments definition
         argumentDefinition = self.getWorkloadArguments()
-        msg = validateArgumentsCreate(schema, argumentDefinition)
-        if msg is not None:
-            self.raiseValidationException(msg)
+        try:
+            validateArgumentsCreate(schema, argumentDefinition)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
         return
 
     def raiseValidationException(self, msg):
@@ -866,7 +870,7 @@ class StdBase(object):
         to import WMSpecFactoryException all over the place.
         """
 
-        logging.error("About to raise exception %s" % msg)
+        logging.error("About to raise exception %s", msg)
         raise WMSpecFactoryException(message=msg)
 
     def validateConfigCacheExists(self, configID, couchURL, couchDBName,
@@ -890,7 +894,7 @@ class StdBase(object):
             # if dtail option is set return outputModules
             return configCache.validate(configID)
         except ConfigCacheException as ex:
-            self.raiseValidationException(ex.message())
+            self.raiseValidationException(str(ex))
 
     def getSchema(self):
         return self.schema
@@ -920,7 +924,7 @@ class StdBase(object):
                     it returns True if the input is valid, it can throw exceptions on invalid input.
         - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
         - null: This indicates if the argument can have None as its value.
-        
+
         If above is not specifyed, automatically set by following default value
         - default: None
         - type: str

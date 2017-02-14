@@ -323,7 +323,7 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(testWorkload.getProcessingString(), "ProcessingString_StepChain")
         self.assertEqual(testWorkload.getProcessingVersion(), 1)
         self.assertEqual(testWorkload.getPrepID(), "PREP-StepChain")
-        self.assertEqual(sorted(testWorkload.getCMSSWVersions()), ['CMSSW_7_1_25_patch2', 'CMSSW_8_0_21'])
+        self.assertItemsEqual(testWorkload.getCMSSWVersions(), ['CMSSW_7_1_25_patch2', 'CMSSW_8_0_21'])
         self.assertFalse(testWorkload.getLumiList(), "Wrong lumiList")
         self.assertEqual(testWorkload.data.policies.start.policyName, "MonteCarlo")
 
@@ -408,6 +408,30 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step3']["CMSSWVersion"])
         self.assertEqual(step.data.application.setup.scramArch, testArguments['Step3']["ScramArch"])
         self.assertEqual(step.data.application.configuration.arguments.globalTag, testArguments['Step3']["GlobalTag"])
+
+        # test merge stuff
+        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput')
+        self.assertEqual(task.taskType(), "Merge")
+        self.assertEqual(task.getSwVersion(), testArguments['Step1']["CMSSWVersion"])
+        self.assertEqual(task.getScramArch(), testArguments['Step1']["ScramArch"])
+
+        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeAODSIMoutput')
+        self.assertEqual(task.taskType(), "Merge")
+        self.assertEqual(task.getSwVersion(), testArguments['Step3']["CMSSWVersion"])
+        self.assertEqual(task.getScramArch(), testArguments['Step3']["ScramArch"])
+
+        # test logCollect stuff
+        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/GENSIMRAWSIMoutputMergeLogCollect')
+        self.assertEqual(task.taskType(), "LogCollect")
+        step = task.getStep("logCollect1")
+        self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step1']["CMSSWVersion"])
+        self.assertEqual(step.data.application.setup.scramArch, testArguments['Step1']["ScramArch"])
+
+        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/RECOMergeAODSIMoutput/RECOAODSIMoutputMergeLogCollect')
+        self.assertEqual(task.taskType(), "LogCollect")
+        step = task.getStep("logCollect1")
+        self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step3']["CMSSWVersion"])
+        self.assertEqual(step.data.application.setup.scramArch, testArguments['Step3']["ScramArch"])
 
         return
 

@@ -153,7 +153,8 @@ def _validateArgFunction(argument, value, valFunction):
     if valFunction:
         try:
             if not valFunction(value):
-                raise WMSpecFactoryException("Argument %s, value: %s doesn't pass the validation function." % (argument, value))
+                raise WMSpecFactoryException(
+                    "Argument %s, value: %s doesn't pass the validation function." % (argument, value))
         except Exception as ex:
             # Some validation functions (e.g. Lexicon) will raise errors instead of returning False
             logging.error(str(ex))
@@ -185,11 +186,10 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
 
 
 def _validateInputDataset(arguments):
-    
     inputdataset = arguments.get("InputDataset", None)
     dbsURL = arguments.get("DbsUrl", None)
     if inputdataset != None and dbsURL != None:
-        #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+        # import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client
         from WMCore.Services.DBS.DBS3Reader import DBS3Reader
         from WMCore.Services.DBS.DBSErrors import DBSReaderError
         try:
@@ -209,7 +209,7 @@ def validateInputDatasSetAndParentFlag(arguments):
         else:
             dbsURL = arguments.get("DbsUrl", None)
             if dbsURL != None:
-                #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+                # import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client
                 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
                 result = DBS3Reader(dbsURL).listDatasetParents(inputdataset)
                 if len(result) == 0:
@@ -261,13 +261,15 @@ def validateSiteLists(arguments):
     arguments["SiteBlacklist"] = blackList
     return
 
+
 def validateAutoGenArgument(arguments):
     autoGenArgs = ["TotalInputEvents", "TotalInputFiles", "TotalInputLumis", "TotalEstimatedJobs"]
-    protectedArgs =set(autoGenArgs).intersection(set(arguments.keys()))
+    protectedArgs = set(autoGenArgs).intersection(set(arguments.keys()))
 
     if len(protectedArgs) > 0:
         raise WMSpecFactoryException("Shouldn't set auto generated params %s: remove it" % list(protectedArgs))
     return
+
 
 def validateArgumentsCreate(arguments, argumentDefinition):
     """
@@ -276,7 +278,7 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     Validate a set of arguments against and argument definition
     as defined in StdBase.getWorkloadArguments. It returns
     an error message if the validation went wrong,
-    otherwise returns None, this is used for spec creation 
+    otherwise returns None, this is used for spec creation
     checks the whether argument is optional as well as validation
     """
     validateAutoGenArgument(arguments)
@@ -324,6 +326,7 @@ def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
             arguments[argument] = argumentDefinition[argument]["default"]
     return
 
+
 def setArgumentsWithDefault(arguments, argumentDefinition):
     """
     sets the default value if arguments value is specified as None
@@ -331,13 +334,14 @@ def setArgumentsWithDefault(arguments, argumentDefinition):
     for argument in argumentDefinition:
         if argument not in arguments and "default" in argumentDefinition[argument]:
             arguments[argument] = argumentDefinition[argument]["default"]
-            
+
     # set the Campaign default value to the same as AcquisitionEra if Campaign is not specified
     if not arguments.get("Campaign"):
         if ("AcquisitionEra" in arguments) and isinstance(arguments["AcquisitionEra"], basestring):
             arguments["Campaign"] = arguments["AcquisitionEra"]
-        
+
     return
+
 
 def loadSpecClassByType(specType):
     factoryName = "%sWorkloadFactory" % specType
@@ -352,8 +356,8 @@ def loadSpecByType(specType):
     specClass = loadSpecClassByType(specType)
     return specClass()
 
+
 def checkDBSURL(url):
-    #import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client 
+    # import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client
     from WMCore.Services.DBS.DBS3Reader import DBS3Reader
     return DBS3Reader(url).checkDBSServer()
-

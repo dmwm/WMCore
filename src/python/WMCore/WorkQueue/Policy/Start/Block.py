@@ -3,7 +3,7 @@
 WorkQueue splitting by block
 
 """
-__all__ = []
+from __future__ import print_function, division
 
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
@@ -45,15 +45,19 @@ class Block(StartPolicyInterface):
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
                         parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
-
+            
+            # there could be 0 event files in that case we can't estimate the number of jobs created.
+            # We set Jobs to 1 for that case.
+            # If we need more realistic estimate, we need to dry run the spliting the jobs.
+            estimateJobs = max(1, ceil(block[self.args['SliceType']] / self.args['SliceSize']))
+                                                       
             self.newQueueElement(Inputs={block['block']: self.data.get(block['block'], [])},
                                  ParentFlag=parentFlag,
                                  ParentData=parentList,
                                  NumberOfLumis=int(block[self.lumiType]),
                                  NumberOfFiles=int(block['NumberOfFiles']),
                                  NumberOfEvents=int(block['NumberOfEvents']),
-                                 Jobs=ceil(float(block[self.args['SliceType']]) /
-                                           float(self.args['SliceSize'])),
+                                 Jobs=estimateJobs,
                                  OpenForNewData=True if str(block.get('OpenForWriting')) == '1' else False,
                                  NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
                                  NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
@@ -126,8 +130,8 @@ class Block(StartPolicyInterface):
                 # use the information given from getMaskedBlocks to compute che size of the block
                 block['NumberOfFiles'] = len(maskedBlocks[blockName])
                 # ratio =  lumis which are ok in the block / total num lumis
-                ratioAccepted = 1. * accepted_lumis / float(block['NumberOfLumis'])
-                block['NumberOfEvents'] = float(block['NumberOfEvents']) * ratioAccepted
+                ratioAccepted = accepted_lumis / block['NumberOfLumis']
+                block['NumberOfEvents'] = block['NumberOfEvents'] * ratioAccepted
                 block[self.lumiType] = accepted_lumis
             # check run restrictions
             elif runWhiteList or runBlackList:
@@ -174,8 +178,7 @@ class Block(StartPolicyInterface):
                         if acceptedFile:
                             acceptedFileCount += 1
                             if len(fileEntry['LumiList']) != acceptedFileLumiCount:
-                                acceptedEventCount += float(acceptedFileLumiCount) * fileEntry['NumberOfEvents'] \
-                                                      / len(fileEntry['LumiList'])
+                                acceptedEventCount += acceptedFileLumiCount * fileEntry['NumberOfEvents'] / len(fileEntry['LumiList'])
                             else:
                                 acceptedEventCount += fileEntry['NumberOfEvents']
                     block[self.lumiType] = acceptedLumiCount

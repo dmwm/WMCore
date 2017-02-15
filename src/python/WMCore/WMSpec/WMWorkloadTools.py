@@ -44,6 +44,20 @@ def makeList(stringList):
     raise WMSpecFactoryException("Can't convert to list %s" % stringList)
 
 
+def makeNonEmptyList(stringList):
+    """
+    _makeNonEmptyList_
+
+    Given a string or a list of strings, return a non empty list of strings.
+    Throws an exception in case the final list is empty or input data is not
+    a string or a python list
+    """
+    finalList = makeList(stringList)
+    if not finalList:
+        raise WMSpecFactoryException("Input data cannot be an empty list %s" % stringList)
+    return finalList
+
+
 def strToBool(string):
     """
     _strToBool_

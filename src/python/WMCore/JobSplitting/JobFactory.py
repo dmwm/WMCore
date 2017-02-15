@@ -7,10 +7,10 @@ _JobFactory_
 import logging
 import threading
 
+from WMCore.DAOFactory import DAOFactory
 from WMCore.DataStructs.WMObject import WMObject
-from WMCore.Services.UUIDLib     import makeUUID
-from WMCore.WMBS.File            import File as WMBSFile
-from WMCore.DAOFactory           import DAOFactory
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.File import File as WMBSFile
 
 
 class JobFactory(WMObject):
@@ -21,49 +21,50 @@ class JobFactory(WMObject):
     JobGroup object. The JobFactory should be subclassed by real splitting
     algorithm implementations.
     """
-    def __init__(self,
-                 package='WMCore.DataStructs',
-                 subscription=None,
-                 generators=None,
-                 limit = 0):
+
+    def __init__(self, package='WMCore.DataStructs', subscription=None, generators=None, limit=0):
+        super(JobFactory, self).__init__()
         self.package = package
-        self.subscription  = subscription
-        self.generators    = generators if generators else []
-        self.jobInstance   = None
+        self.subscription = subscription
+        self.generators = generators if generators else []
+        self.jobInstance = None
         self.groupInstance = None
-        self.jobGroups     = []
-        self.currentGroup  = None
-        self.currentJob    = None
-        self.nJobs         = 0
-        self.baseUUID      = None
-        self.limit         = limit
-        self.transaction   = None
-        self.proxies       = []
-        self.grabByProxy   = False
-        self.daoFactory    = None
+        self.jobGroups = []
+        self.currentGroup = None
+        self.currentJob = None
+        self.nJobs = 0
+        self.baseUUID = None
+        self.limit = limit
+        self.transaction = None
+        self.proxies = []
+        self.grabByProxy = False
+        self.daoFactory = None
         self.timing = {'jobInstance': 0, 'sortByLocation': 0, 'acquireFiles': 0, 'jobGroup': 0}
+        self.siteWhitelist = []
+        self.siteBlacklist = []
+        self.trustSitelists = False
+        self.trustPUSitelists = False
 
         if package == "WMCore.WMBS":
-
             myThread = threading.currentThread()
 
-            self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                         logger = myThread.logger,
-                                         dbinterface = myThread.dbi)
-            self.getParentInfoAction  = self.daoFactory(classname = "Files.GetParentInfo")
+            self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                         logger=myThread.logger,
+                                         dbinterface=myThread.dbi)
+            self.getParentInfoAction = self.daoFactory(classname="Files.GetParentInfo")
 
-            self.pnn_to_psn = self.daoFactory(classname = "Locations.GetPNNtoPSNMapping").execute()
+            self.pnn_to_psn = self.daoFactory(classname="Locations.GetPNNtoPSNMapping").execute()
 
         return
 
-    def __call__(self, jobtype = "Job", grouptype = "JobGroup", *args, **kwargs):
+    def __call__(self, jobtype="Job", grouptype="JobGroup", *args, **kwargs):
         """
         __call__
 
 
         """
 
-        #Need to reset the internal data for multiple calls to the factory
+        # Need to reset the internal data for multiple calls to the factory
         self.jobGroups = []
         self.currentGroup = None
         self.currentJob = None
@@ -80,7 +81,7 @@ class JobFactory(WMObject):
         self.baseUUID = makeUUID()
 
         module = "%s.%s" % (self.package, jobtype)
-        module = __import__(module, globals(), locals(), [jobtype])#, -1)
+        module = __import__(module, globals(), locals(), [jobtype])  # , -1)
         self.jobInstance = getattr(module, jobtype.split('.')[-1])
 
         module = "%s.%s" % (self.package, grouptype)
@@ -88,7 +89,6 @@ class JobFactory(WMObject):
         self.groupInstance = getattr(module, grouptype.split('.')[-1])
 
         map(lambda x: x.start(), self.generators)
-
 
         self.limit = int(kwargs.get("file_load_limit", self.limit))
         self.algorithm(*args, **kwargs)
@@ -181,7 +181,7 @@ class JobFactory(WMObject):
             for jobGroup in self.jobGroups:
 
                 for job in jobGroup.newjobs:
-                    #temporary place holder for file location
+                    # temporary place holder for file location
                     fileLocations = set([])
                     if self.trustSitelists:
                         locSet = set(self.siteWhitelist) - set(self.siteBlacklist)
@@ -206,7 +206,7 @@ class JobFactory(WMObject):
                     for fileInfo in job['input_files']:
                         fileInfo['locations'] = set([])
 
-            self.subscription.bulkCommit(jobGroups = self.jobGroups)
+            self.subscription.bulkCommit(jobGroups=self.jobGroups)
 
         else:
 
@@ -234,11 +234,11 @@ class JobFactory(WMObject):
 
         if self.grabByProxy:
             logging.debug("About to load files by proxy")
-            fileset = self.loadFiles(size = self.limit)
+            fileset = self.loadFiles(size=self.limit)
             logging.debug("Loaded %i files", len(fileset))
         else:
             logging.debug("About to load files by DAO")
-            fileset = self.subscription.availableFiles(limit = self.limit, doingJobSplitting = True)
+            fileset = self.subscription.availableFiles(limit=self.limit, doingJobSplitting=True)
 
         for fileInfo in fileset:
 
@@ -257,7 +257,7 @@ class JobFactory(WMObject):
 
         return fileDict
 
-    def getJobName(self, length = None):
+    def getJobName(self, length=None):
         """
         _getJobName_
 
@@ -284,18 +284,18 @@ class JobFactory(WMObject):
 
         myThread = threading.currentThread()
 
-        subAction = self.daoFactory(classname = "Subscriptions.GetAvailableFilesNoLocations")
-        results   = subAction.execute(subscription = self.subscription['id'],
-                                      returnCursor = True,
-                                      conn = myThread.transaction.conn,
-                                      transaction = True)
+        subAction = self.daoFactory(classname="Subscriptions.GetAvailableFilesNoLocations")
+        results = subAction.execute(subscription=self.subscription['id'],
+                                    returnCursor=True,
+                                    conn=myThread.transaction.conn,
+                                    transaction=True)
 
         for proxy in results:
             self.proxies.append(proxy)
             logging.debug("Received %i proxies", len(self.proxies))
 
         # Activate everything so that we grab files by proxy
-        self.grabByProxy  = True
+        self.grabByProxy = True
 
         return
 
@@ -305,11 +305,11 @@ class JobFactory(WMObject):
 
         Close any leftover connections
         """
-        self.proxies     = []
+        self.proxies = []
         self.grabByProxy = False
         return
 
-    def loadFiles(self, size = 10):
+    def loadFiles(self, size=10):
         """
         _loadFiles_
 
@@ -323,22 +323,20 @@ class JobFactory(WMObject):
             logging.info("No additional files found; Ending.")
             return set()
 
-
         resultProxy = self.proxies[0]
-        rawResults  = []
+        rawResults = []
         if isinstance(resultProxy.keys, list):
-            keys  = resultProxy.keys
+            keys = resultProxy.keys
         else:
-            keys  = resultProxy.keys()
+            keys = resultProxy.keys()
             if isinstance(keys, set):
                 # If it's a set, handle it
                 keys = list(keys)
-        files       = set()
-
+        files = set()
 
         while len(rawResults) < size and len(self.proxies) > 0:
             length = size - len(rawResults)
-            newResults = resultProxy.fetchmany(size = length)
+            newResults = resultProxy.fetchmany(size=length)
             if len(newResults) < length:
                 # Assume we're all out
                 # Eliminate this proxy
@@ -349,26 +347,26 @@ class JobFactory(WMObject):
             # Nothing to do
             return set()
 
-        fileList = self.formatDict(results = rawResults, keys = keys)
+        fileList = self.formatDict(results=rawResults, keys=keys)
         fileIDs = list(set([x['fileid'] for x in fileList]))
 
         myThread = threading.currentThread()
-        fileInfoAct  = self.daoFactory(classname = "Files.GetForJobSplittingByID")
-        fileInfoDict = fileInfoAct.execute(file = fileIDs,
-                                           conn = myThread.transaction.conn,
-                                           transaction = True)
+        fileInfoAct = self.daoFactory(classname="Files.GetForJobSplittingByID")
+        fileInfoDict = fileInfoAct.execute(file=fileIDs,
+                                           conn=myThread.transaction.conn,
+                                           transaction=True)
 
-        getLocAction = self.daoFactory(classname = "Files.GetLocationBulk")
-        getLocDict   = getLocAction.execute(files = fileIDs,
-                                            conn = myThread.transaction.conn,
-                                            transaction = True)
+        getLocAction = self.daoFactory(classname="Files.GetLocationBulk")
+        getLocDict = getLocAction.execute(files=fileIDs,
+                                          conn=myThread.transaction.conn,
+                                          transaction=True)
 
         for fID in fileIDs:
-            fl = WMBSFile(id = fID)
+            fl = WMBSFile(id=fID)
             fl.update(fileInfoDict[fID])
             locations = getLocDict.get((fID), [])
             for loc in locations:
-                fl.setLocation(loc, immediateSave = False)
+                fl.setLocation(loc, immediateSave=False)
             files.add(fl)
 
         return files
@@ -392,7 +390,6 @@ class JobFactory(WMObject):
 
         return formattedResults
 
-
     def findParent(self, lfn):
         """
         _findParent_
@@ -401,7 +398,7 @@ class JobFactory(WMObject):
         """
 
         parentsInfo = self.getParentInfoAction.execute([lfn])
-        newParents  = set()
+        newParents = set()
         for parentInfo in parentsInfo:
 
             # This will catch straight to merge files that do not have redneck
@@ -423,13 +420,14 @@ class JobFactory(WMObject):
             # If that didn't work, we've reached the great-grandparents
             # And we have to work via recursion
             else:
-                parentSet = self.findParent(lfn = parentInfo['gplfn'])
+                parentSet = self.findParent(lfn=parentInfo['gplfn'])
                 for parent in parentSet:
                     newParents.add(parent)
 
         return newParents
 
-    def getPerformanceParameters(self, defaultParams):
+    @staticmethod
+    def getPerformanceParameters(defaultParams):
         """
         _getPerformanceParameters_
 
@@ -441,7 +439,7 @@ class JobFactory(WMObject):
         It returns a tuple with the following values:
         timePerEvent, sizePerEvent, memoryRequirement
         """
-        timePerEvent = defaultParams.get('timePerEvent', None) or 0
-        sizePerEvent = defaultParams.get('sizePerEvent', None) or 0
-        memory = defaultParams.get('memoryRequirement', None) or 0
+        timePerEvent = defaultParams.get('timePerEvent', 0) or 0
+        sizePerEvent = defaultParams.get('sizePerEvent', 0) or 0
+        memory = defaultParams.get('memoryRequirement', 0) or 0
         return timePerEvent, sizePerEvent, memory

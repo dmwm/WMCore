@@ -1,6 +1,6 @@
 {
   "createRequest": {
-    "Comments": ["TaskChain creation of the premixing library with PU and no input dataset.",
+    "Comments": ["TaskChain creation of the premixing library with PU and no input dataset; Campaign not defined, thus =AcqEra",
                  "AcqEra/ProcStr overwritten at task level and not set during assignment, including ProcVer"],
     "RequestString": "RequestString-OVERRIDE-ME",
     "AcquisitionEra": "Integ_Test",
@@ -39,7 +39,7 @@
     "Team": "Team-OVERRIDE-ME",
     "Dashboard": "Dashboard-OVERRIDE-ME",
     "SiteBlacklist": [],
-    "MergedLFNBase": "/store/relval",
+    "MergedLFNBase": "/store/backfill/1",
     "UnmergedLFNBase": "/store/unmerged",
     "MinMergeSize": 2147483648,
     "MaxMergeSize": 4294967296,

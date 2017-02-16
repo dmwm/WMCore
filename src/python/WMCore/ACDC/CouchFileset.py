@@ -9,7 +9,7 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 import time
 
 from WMCore.ACDC.Fileset import Fileset
-from WMCore.Database.CouchUtils import connectToCouch, requireOwner, requireCollection, requireFilesetName
+from WMCore.Database.CouchUtils import connectToCouch, requireFilesetName
 
 import WMCore.Database.CMSCouch as CMSCouch
 
@@ -18,6 +18,7 @@ from WMCore.Algorithms.ParseXMLFile import coroutine
 from WMCore.DataStructs.Fileset import Fileset as DataStructsFileset
 from WMCore.DataStructs.File import File
 from WMCore.DataStructs.Run import Run
+
 
 @coroutine
 def makeRun(targets):
@@ -32,6 +33,7 @@ def makeRun(targets):
             newRun = Run(run[u'Run'], *run[u'Lumis'])
             fileRef.addRun(newRun)
 
+
 @coroutine
 def filePipeline(targets):
     """
@@ -41,23 +43,22 @@ def filePipeline(targets):
     while True:
         inputDict = (yield)
         newFile = File(
-            lfn = str(inputDict[u'lfn']),
-            size = int(inputDict[u'size']),
-            events = int(inputDict[u'events'])
+                lfn=str(inputDict[u'lfn']),
+                size=int(inputDict[u'size']),
+                events=int(inputDict[u'events'])
         )
-        targets['run'].send(  (newFile, inputDict[u'runs'])  )
+        targets['run'].send((newFile, inputDict[u'runs']))
         targets['fileset'].addFile(newFile)
-
 
 
 class CouchFileset(Fileset):
     def __init__(self, **options):
         Fileset.__init__(self, **options)
-        self.url          = options.get('url')
-        self.database     = options.get('database')
-        self['name']      = options.get('name')
-        self.server       = None
-        self.couchdb      = None
+        self.url = options.get('url')
+        self.database = options.get('database')
+        self['name'] = options.get('name')
+        self.server = None
+        self.couchdb = None
 
     @connectToCouch
     def drop(self):
@@ -81,12 +82,10 @@ class CouchFileset(Fileset):
 
         Get a list of document ids corresponding to filelists in this fileset
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
                   "reduce": False}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
 
         docs = [row["id"] for row in result["rows"]]
@@ -94,7 +93,7 @@ class CouchFileset(Fileset):
 
     @connectToCouch
     @requireFilesetName
-    def add(self, files, mask = None):
+    def add(self, files, mask=None):
         """
         _add_
 
@@ -119,7 +118,7 @@ class CouchFileset(Fileset):
             if maskLumis != {}:
                 # Then we actually have to do something
                 for f in files:
-                    newRuns = mask.filterRunLumisByMask(runs = f['runs'])
+                    newRuns = mask.filterRunLumisByMask(runs=f['runs'])
                     if newRuns != set([]):
                         f['runs'] = newRuns
                         filteredFiles.append(f)
@@ -130,14 +129,13 @@ class CouchFileset(Fileset):
             filteredFiles = files
 
         jsonFiles = {}
-        [ jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in filteredFiles]
+        [jsonFiles.__setitem__(f['lfn'], f.__to_json__(None)) for f in filteredFiles]
         filelist = self.makeFilelist(jsonFiles)
         return filelist
 
     @connectToCouch
-    @requireOwner
     @requireFilesetName
-    def makeFilelist(self, files = {}):
+    def makeFilelist(self, files={}):
         """
         _makeFilelist_
 
@@ -150,7 +148,6 @@ class CouchFileset(Fileset):
                  "timestamp": time.time()}
 
         document = CMSCouch.Document(None, input)
-        self.owner.ownThis(document)
 
         commitInfo = self.couchdb.commitOne(document)
         document['_id'] = commitInfo[0]['id']
@@ -158,7 +155,7 @@ class CouchFileset(Fileset):
             document['_rev'] = commitInfo[0]['rev']
         else:
             if commitInfo[0]['reason'].find('{exit_status,0}') != -1:
-                #TODO: in this case actually insert succeeded but return error
+                # TODO: in this case actually insert succeeded but return error
                 # due to the bug
                 # https://issues.apache.org/jira/browse/COUCHDB-893
                 # if rev is needed to proceed need to get by 
@@ -198,13 +195,12 @@ class CouchFileset(Fileset):
 
         """
         result = DataStructsFileset(self['name'])
-        pipeline = filePipeline({'fileset' : result, 'run' : makeRun({}) })
+        pipeline = filePipeline({'fileset': result, 'run': makeRun({})})
         for f in self.listFiles():
             pipeline.send(f)
         return result
 
     @connectToCouch
-    @requireOwner
     @requireFilesetName
     def populate(self):
         """
@@ -212,12 +208,10 @@ class CouchFileset(Fileset):
 
         Load all files out of couch.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
                   "include_docs": True, "reduce": False}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
         self.files = {}
         for row in result["rows"]:
@@ -231,11 +225,9 @@ class CouchFileset(Fileset):
 
         Determine how many files are in the fileset.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.collectionName, self["name"]],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.collectionName, self["name"]],
-                  "reduce": True, "group_level": 4}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_count",
+        params = {"startkey": [self.collectionName, self["name"]],
+                  "endkey": [self.collectionName, self["name"]],
+                  "reduce": True, "group_level": 2}
+        result = self.couchdb.loadView("ACDC", "coll_fileset_count",
                                        params)
         return result["rows"][0]["value"]

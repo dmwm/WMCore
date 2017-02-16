@@ -8,7 +8,8 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 from WMCore.ACDC.Collection import Collection
 from WMCore.ACDC.CouchFileset import CouchFileset
-from WMCore.Database.CouchUtils import connectToCouch, requireOwner
+from WMCore.Database.CouchUtils import connectToCouch
+
 
 class CouchCollection(Collection):
     """
@@ -19,28 +20,26 @@ class CouchCollection(Collection):
       url - CouchDB Server URL
       name - name of the collection
     """
+
     def __init__(self, **options):
         Collection.__init__(self, **options)
-        self.url      = options.get("url")
+        self.url = options.get("url")
         self.database = options.get("database")
-        self.name     = options.get("name")
-        self.server   = None
-        self.couchdb  = None
+        self.name = options.get("name")
+        self.server = None
+        self.couchdb = None
 
     @connectToCouch
-    @requireOwner
     def drop(self):
         """
         _drop_
 
         Drop this collection and all files and filesets within it.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.name],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.name, {}],
+        params = {"startkey": [self.name],
+                  "endkey": [self.name, {}],
                   "reduce": False}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
 
         for row in result["rows"]:
@@ -48,24 +47,21 @@ class CouchCollection(Collection):
         return
 
     @connectToCouch
-    @requireOwner
     def populate(self):
         """
         _populate_
 
         The load the collection and all filesets and files out of couch.
         """
-        params = {"startkey": [self.owner.group.name, self.owner.name,
-                               self.name],
-                  "endkey": [self.owner.group.name, self.owner.name,
-                             self.name, {}],
-                  "reduce": True, "group_level": 4}
-        result = self.couchdb.loadView("ACDC", "owner_coll_fileset_docs",
+        params = {"startkey": [self.name],
+                  "endkey": [self.name, {}],
+                  "reduce": True, "group_level": 2}
+        result = self.couchdb.loadView("ACDC", "coll_fileset_docs",
                                        params)
         self["filesets"] = []
         for row in result["rows"]:
-            fileset = CouchFileset(database = self.database, url = self.url,
-                                   name = row["key"][3])
+            fileset = CouchFileset(database=self.database, url=self.url,
+                                   name=row["key"][1])
             self.addFileset(fileset)
             fileset.populate()
         return

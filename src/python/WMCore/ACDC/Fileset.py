@@ -8,19 +8,19 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 from WMCore.DataStructs.WMObject import WMObject
 
+
 class Fileset(dict, WMObject):
     """
     _Fileset_
 
     """
+
     def __init__(self, **options):
         dict.__init__(self)
         WMObject.__init__(self)
         self.setdefault("name", None)
         self.setdefault("files", {})
         self.update(options)
-
-        self.owner      = None
         self.collection = None
 
     def setCollection(self, collection):
@@ -31,7 +31,6 @@ class Fileset(dict, WMObject):
         """
         self.collectionName = collection["name"]
         self.collectionType = collection["type"]
-        self.owner = collection.owner
         return
 
     def create(self):

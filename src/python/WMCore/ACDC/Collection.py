@@ -10,9 +10,6 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 from WMCore.DataStructs.WMObject import WMObject
 import WMCore.ACDC.CollectionTypes as CollectionTypes
 
-from WMCore.GroupUser.User import User
-import WMCore.GroupUser.Decorators as GUDecorators
-
 
 class Collection(dict, WMObject):
     def __init__(self, **options):
@@ -21,22 +18,9 @@ class Collection(dict, WMObject):
         self.setdefault("name", None)
         self.setdefault("type", CollectionTypes.GenericCollection)
         self.setdefault("filesets", [])
-        self.setdefault("owner", None)
         self.update(options)
 
-
-    def setOwner(self, userInstance):
-        """
-        _setOwner_
-
-        Provide a WMCore.GroupUser.User instance that will act as the owner of this
-        collection
-
-        """
-        self.owner = userInstance
-        return
-
-    def create(self, unique = False):
+    def create(self, unique=False):
         """
         _create_
 

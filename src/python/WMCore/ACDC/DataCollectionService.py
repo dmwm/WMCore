@@ -9,16 +9,15 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import logging
 
-from WMCore.ACDC.CouchService import CouchService
+import WMCore.ACDC.CollectionTypes as CollectionTypes
+import WMCore.Database.CouchUtils as CouchUtils
 from WMCore.ACDC.CouchCollection import CouchCollection
 from WMCore.ACDC.CouchFileset import CouchFileset
-
-import WMCore.Database.CouchUtils  as CouchUtils
-import WMCore.ACDC.CollectionTypes as CollectionTypes
-
-from WMCore.WMException import WMException
+from WMCore.ACDC.CouchService import CouchService
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
+from WMCore.WMException import WMException
 
 
 def mergeFakeFiles(chunkFiles):
@@ -54,9 +53,7 @@ class ACDCDCSException(WMException):
 
 class DataCollectionService(CouchService):
     def __init__(self, url, database, **opts):
-        CouchService.__init__(self, url=url,
-                              database=database,
-                              **opts)
+        CouchService.__init__(self, url=url, database=database, **opts)
 
     @CouchUtils.connectToCouch
     def getDataCollection(self, collName):
@@ -65,8 +62,7 @@ class DataCollectionService(CouchService):
 
         Get a data collection by name
         """
-        coll = CouchCollection(name=collName, database=self.database,
-                               url=self.url)
+        coll = CouchCollection(name=collName, database=self.database, url=self.url)
 
         coll.populate()
         return coll
@@ -102,13 +98,13 @@ class DataCollectionService(CouchService):
 
         return
 
-    def _sortLocationInPlace(self, fileInfo):
+    @staticmethod
+    def _sortLocationInPlace(fileInfo):
         fileInfo["locations"].sort()
         return fileInfo["locations"]
 
     @CouchUtils.connectToCouch
-    def _getFilesetInfo(self, collectionName, filesetName,
-                        chunkOffset=None, chunkSize=None):
+    def _getFilesetInfo(self, collectionName, filesetName, chunkOffset=None, chunkSize=None):
         """
         """
         option = {"include_docs": True, "reduce": False}
@@ -126,7 +122,7 @@ class DataCollectionService(CouchService):
         # primary location sort (python preserve sort result)
         filesInfo.sort(key=lambda x: "".join(self._sortLocationInPlace(x)))
 
-        if chunkOffset != None and chunkSize != None:
+        if chunkOffset is not None and chunkSize is not None:
             return filesInfo[chunkOffset: chunkOffset + chunkSize]
         else:
             return filesInfo
@@ -151,7 +147,7 @@ class DataCollectionService(CouchService):
         numEventsInBlock = 0
 
         for value in results:
-            if currentLocation == None:
+            if currentLocation is None:
                 currentLocation = value["locations"]
             if numFilesInBlock == chunkSize or currentLocation != value["locations"]:
                 chunks.append({"offset": totalFiles, "files": numFilesInBlock,
@@ -216,8 +212,7 @@ class DataCollectionService(CouchService):
         Retrieve metadata for a particular chunk.
         """
 
-        files = self._getFilesetInfo(collectionName, filesetName,
-                                     chunkOffset, chunkSize)
+        files = self._getFilesetInfo(collectionName, filesetName, chunkOffset, chunkSize)
 
         totalFiles = 0
         currentLocation = None
@@ -226,7 +221,7 @@ class DataCollectionService(CouchService):
         numEventsInBlock = 0
 
         for fileInfo in files:
-            if currentLocation == None:
+            if currentLocation is None:
                 currentLocation = fileInfo["locations"]
 
             numFilesInBlock += 1
@@ -248,8 +243,7 @@ class DataCollectionService(CouchService):
         Retrieve a chunk of files from the given collection and task.
         """
         chunkFiles = []
-        files = self._getFilesetInfo(collectionName, filesetName,
-                                     chunkOffset, chunkSize)
+        files = self._getFilesetInfo(collectionName, filesetName, chunkOffset, chunkSize)
 
         files = mergeFakeFiles(files)
         for fileInfo in files:
@@ -326,7 +320,7 @@ class DataCollectionService(CouchService):
             while len(lumis) > 0:
                 currentLumi = lumis.pop(0)
                 if currentLumi - 1 != lastLumi:
-                    if currentSet == None:
+                    if currentSet is None:
                         currentSet = [currentLumi]
                     else:
                         currentSet.append(lastLumi)
@@ -339,3 +333,14 @@ class DataCollectionService(CouchService):
             whiteList[str(run)].append(currentSet)
 
         return whiteList
+
+    def getLumilistWhitelist(self, collectionID, taskName):
+        """
+        Args:
+            collectionID, taskName: Parameters for getLumiWhitelist
+
+        Returns: a LumiList object describing the lumi list from the collection
+        """
+
+        lumiList = LumiList(compactList=self.getLumiWhitelist(collectionID, taskName))
+        return lumiList

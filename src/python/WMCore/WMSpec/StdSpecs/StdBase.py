@@ -13,7 +13,7 @@ from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, strToBool,
+from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, makeNonEmptyList, strToBool,
                                            checkDBSURL, validateArgumentsCreate, safeStr)
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
@@ -962,8 +962,8 @@ class StdBase(object):
                      "AcquisitionEra": {"validate": acqname, "optional": False},
                      "CMSSWVersion": {"validate": lambda x: x in releases(),
                                       "optional": False, "attr": "frameworkVersion"},
-                     "ScramArch": {"validate": lambda x: x in architectures(),
-                                   "optional": False},
+                     "ScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
+                                   "optional": False, "type": makeNonEmptyList},
                      "GlobalTag": {"optional": False, "null": False},
                      "GlobalTagConnect": {"null": True},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
@@ -1120,14 +1120,14 @@ class StdBase(object):
                 schema[arg] = os.environ["COUCHURL"]
             elif arg == "CouchDBName":
                 schema[arg] = "reqmgr_config_cache_t"
+            elif arg == "ScramArch":
+                schema[arg] = "slc6_amd64_gcc491"
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":
                         schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
                     elif arg == "CMSSWVersion":
                         schema[arg] = "CMSSW_7_6_2"
-                    elif arg == "ScramArch":
-                        schema[arg] = "slc6_amd64_gcc491"
                     else:
                         schema[arg] = "FAKE"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:

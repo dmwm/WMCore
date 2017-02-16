@@ -285,7 +285,7 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(outModsAndDsets['outputDataset'],
                          '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-ProcessingString_StepChain-v1/MINIAODSIM')
         self.assertEqual(task.getSwVersion(), 'CMSSW_7_1_25_patch2')
-        self.assertEqual(task.getScramArch(), 'slc6_amd64_gcc481')
+        self.assertItemsEqual(task.getScramArch(), ['slc6_amd64_gcc481'])
         step = task.getStep("cmsRun1")
         self.assertEqual(step.data.application.configuration.arguments.globalTag, 'GT-Step1')
 

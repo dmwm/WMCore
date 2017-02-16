@@ -13,12 +13,11 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
-
+from Utils.Utilities import makeList, strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, \
-    validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
 # simple utils for data mining the request dictionary
 isGenerator = lambda args: not args["Step1"].get("InputDataset", None)

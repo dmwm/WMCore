@@ -1,6 +1,6 @@
+from Utils.Utilities import makeList
 from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
 

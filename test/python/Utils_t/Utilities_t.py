@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 """
-Unittests for WMWorkloadTools functions
+Unittests for Utilities functions
 """
 
 from __future__ import division, print_function
 
 import unittest
 
-from WMCore.WMSpec.WMWorkloadTools import makeList, makeNonEmptyList
-from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 
 
 class WMWorkloadToolsTest(unittest.TestCase):
     """
-    unittest for WMWorkloadTools functions
+    unittest for Utilities functions
     """
 
     def testMakeList(self):
@@ -33,9 +32,9 @@ class WMWorkloadToolsTest(unittest.TestCase):
         self.assertItemsEqual(makeList('["aa","bb","cc"]'), ['aa', 'bb', 'cc'])
         self.assertItemsEqual(makeList(u' ["aa", "bb", "cc"] '), ['aa', 'bb', 'cc'])
 
-        self.assertRaises(WMSpecFactoryException, makeList, 123)
-        self.assertRaises(WMSpecFactoryException, makeList, 123.456)
-        self.assertRaises(WMSpecFactoryException, makeList, {1: 123})
+        self.assertRaises(ValueError, makeList, 123)
+        self.assertRaises(ValueError, makeList, 123.456)
+        self.assertRaises(ValueError, makeList, {1: 123})
 
     def testMakeNonEmptyList(self):
         """
@@ -49,8 +48,34 @@ class WMWorkloadToolsTest(unittest.TestCase):
         self.assertItemsEqual(makeList(u'123,456'), makeNonEmptyList(u'123, 456'))
         self.assertItemsEqual(makeList('["aa","bb","cc"]'), makeNonEmptyList('["aa", "bb", "cc"]'))
 
-        self.assertRaises(WMSpecFactoryException, makeNonEmptyList, [])
-        self.assertRaises(WMSpecFactoryException, makeNonEmptyList, "")
+        self.assertRaises(ValueError, makeNonEmptyList, [])
+        self.assertRaises(ValueError, makeNonEmptyList, "")
+
+    def testStrToBool(self):
+        """
+        Test the strToBool function.
+        """
+        for v in [True, "True", "TRUE", "true"]:
+            self.assertTrue(strToBool(v))
+        for v in [False, "False", "FALSE", "false"]:
+            self.assertFalse(strToBool(v))
+
+        for v in ["", "alan", [], [''], {'a': 123}]:
+            self.assertRaises(ValueError, strToBool, v)
+
+    def safeStr(self):
+        """
+        Test the safeStr function.
+        """
+        for v in ['123', u'123', 123]:
+            self.assertEqual(safeStr(v), '123')
+        self.assertEqual(safeStr(123.45), '123.45')
+        self.assertEqual(safeStr(False), 'False')
+        self.assertEqual(safeStr(None), 'None')
+        self.assertEqual(safeStr(""), "")
+
+        for v in [[1, 2], {'x': 123}, set([1])]:
+            self.assertRaises(safeStr(v), '123')
 
 
 if __name__ == '__main__':

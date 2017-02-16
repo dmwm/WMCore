@@ -5,9 +5,9 @@ _PromptReco_
 Standard PromptReco workflow.
 """
 
+from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import dataset, couchurl, identifier, block, procstringT0
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool
 
 
 class PromptRecoWorkloadFactory(StdBase):

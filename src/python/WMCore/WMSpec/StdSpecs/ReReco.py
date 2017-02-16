@@ -4,9 +4,9 @@ _ReReco_
 
 Standard ReReco workflow.
 """
-
+from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.WMWorkloadTools import makeList, validateArgumentsCreate
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
 
 class ReRecoWorkloadFactory(DataProcessing):
     """
@@ -168,7 +168,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["max_events_per_lumi"] = 20000
             elif skimConfig["SkimJobSplitAlgo"] == "LumiBased":
-                skimConfig["SkimJobSplitArgs"["lumis_per_job"]] = int(arguments.get("SkimLumisPerJob%s" % skimIndex, 8))
+                skimConfig["SkimJobSplitArgs"]["lumis_per_job"] = int(arguments.get("SkimLumisPerJob%s" % skimIndex, 8))
             self.skimConfigs.append(skimConfig)
             skimIndex += 1
 

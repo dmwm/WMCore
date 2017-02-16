@@ -6,10 +6,10 @@ Resubmission module, this creates truncated workflows
 with limited input for error recovery.
 """
 
+from Utils.Utilities import makeList
 from WMCore.Lexicon import couchurl, identifier
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList
 
 class ResubmissionWorkloadFactory(StdBase):
     """

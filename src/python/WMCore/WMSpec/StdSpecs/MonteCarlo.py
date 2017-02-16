@@ -12,9 +12,10 @@ fetches from DBS the information about pileup input.
 """
 
 import math
+from Utils.Utilities import strToBool
 from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 
 class MonteCarloWorkloadFactory(StdBase):

@@ -582,17 +582,17 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setCores(self, cores):
+    def setCoresAndStreams(self, cores, nStreams):
         """
         _setCores_
 
-        Update number of cores for each task in the spec
+        Update number of cores and event streams for each task in the spec
         """
         if not cores:
             return
 
         for task in self.taskIterator():
-            task.setNumberOfCores(cores)
+            task.setNumberOfCores(cores, nStreams)
         return
 
     def setMemory(self, memory):
@@ -1678,7 +1678,7 @@ class WMWorkloadHelper(PersistencyHelper):
             self.setDashboardActivity(kwargs["Dashboard"])
 
         self.setMemory(kwargs.get("Memory"))
-        self.setCores(kwargs.get("Multicore"))
+        self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

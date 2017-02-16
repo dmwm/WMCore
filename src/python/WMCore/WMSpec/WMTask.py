@@ -1325,11 +1325,11 @@ class WMTaskHelper(TreeHelper):
         """
         return getattr(self.data.parameters, 'processingString', None)
 
-    def setNumberOfCores(self, cores):
+    def setNumberOfCores(self, cores, nStreams):
         """
         _setNumberOfCores_
 
-        Set number of cores for each CMSSW step in this task and its children
+        Set number of cores and event streams for each CMSSW step in this task and its children
         """
         if self.taskType() in ["Merge", "Harvesting", "Cleanup", "LogCollect"]:
             return
@@ -1339,14 +1339,19 @@ class WMTaskHelper(TreeHelper):
         else:
             taskCores = cores
 
+        if isinstance(nStreams, dict):
+            taskStreams = nStreams.get(self.name(), 0)
+        else:
+            taskStreams = nStreams
+
         if taskCores:
             for stepName in self.listAllStepNames():
                 stepHelper = self.getStepHelper(stepName)
                 if stepHelper.stepType() == "CMSSW":
-                    stepHelper.setNumberOfCores(taskCores)
+                    stepHelper.setNumberOfCores(taskCores, taskStreams)
 
         for task in self.childTaskIterator():
-            task.setNumberOfCores(cores)
+            task.setNumberOfCores(cores, nStreams)
 
         return
 

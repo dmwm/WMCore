@@ -10,8 +10,7 @@ Equivalent of a PayloadNode in the old production system WorkflowSpec
 
 
 
-
-from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper, nodeMap, getNode
+from WMCore.WMSpec.ConfigSectionTree import ConfigSectionTree, TreeHelper
 from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 
@@ -50,11 +49,21 @@ class WMStepHelper(TreeHelper):
 
         Return the number of cores for the step in question
         """
-
         try:
             return int(self.data.application.multicore.numberOfCores)
-        except:
+        except Exception:
             return 1
+
+    def getNumberOfStreams(self):
+        """
+        _getNumberOfStreams_
+
+        Return the number of event streams for the step in question
+        """
+        try:
+            return int(self.data.application.multicore.eventStreams)
+        except Exception:
+            return 0
 
     def addStep(self, stepName):
         """

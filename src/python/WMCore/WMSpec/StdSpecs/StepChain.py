@@ -206,10 +206,14 @@ class StepChainWorkloadFactory(StdBase):
             childCmsswStepHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
             # multicore settings
+            multicore = self.multicore
+            eventStreams = self.eventStreams
             if taskConf['Multicore'] > 0:
-                childCmsswStepHelper.setNumberOfCores(taskConf['Multicore'])
-            else:
-                childCmsswStepHelper.setNumberOfCores(self.multicore)
+                multicore = taskConf['Multicore']
+            if taskConf.get('EventStreams') >= 0:
+                eventStreams = taskConf['EventStreams']
+
+            childCmsswStepHelper.setNumberOfCores(multicore, eventStreams)
 
             # Pileup check
             taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
@@ -433,7 +437,8 @@ class StepChainWorkloadFactory(StdBase):
                                "attr": "prepID", "null": True},
                     "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
-                   }
+                    "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 

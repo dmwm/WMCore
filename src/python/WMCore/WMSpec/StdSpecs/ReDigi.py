@@ -116,9 +116,8 @@ class ReDigiWorkloadFactory(DataProcessing):
 
         self.addMergeTasks(stepOneTask, "cmsRun3", outputMods)
 
-        if self.multicore:
-            stepTwoCmsswHelper.setNumberOfCores(self.multicore)
-            stepThreeCmsswHelper.setNumberOfCores(self.multicore)
+        stepTwoCmsswHelper.setNumberOfCores(self.multicore, self.eventStreams)
+        stepThreeCmsswHelper.setNumberOfCores(self.multicore, self.eventStreams)
 
         return
 
@@ -190,8 +189,8 @@ class ReDigiWorkloadFactory(DataProcessing):
             outputMods[outputModuleName] = outputModule
 
         mergeTasks = self.addMergeTasks(stepOneTask, "cmsRun2", outputMods)
-        if self.multicore:
-            stepTwoCmsswHelper.setNumberOfCores(self.multicore)
+
+        stepTwoCmsswHelper.setNumberOfCores(self.multicore, self.eventStreams)
 
         if self.stepThreeConfigCacheID is None:
             return

@@ -101,9 +101,10 @@ class CMSSW(Executor):
 
         multicoreSettings = self.step.application.multicore
         try:
-            logging.info("CMSSW configured for %s cores", multicoreSettings.numberOfCores)
+            logging.info("CMSSW configured for %s cores and %s event streams",
+                         multicoreSettings.numberOfCores, multicoreSettings.eventStreams)
         except AttributeError:
-            logging.info("No value set for multicore.numberOfCores")
+            logging.info("No value set for multicore numberOfCores or eventStreams")
 
         logging.info("Executing CMSSW step")
 

@@ -343,8 +343,11 @@ class CMSSWStepHelper(CoreHelper):
         """
         _setNumberOfCores_
 
-        Set the number of cores for CMSSW to run on
+        Set the number of cores and event streams for CMSSW to run on
         """
+        # if None is passed for EventStreams, then set it to 0
+        nEventStreams = nEventStreams or 0
+
         self.data.application.multicore.numberOfCores = ncores
         self.data.application.multicore.eventStreams = nEventStreams
 

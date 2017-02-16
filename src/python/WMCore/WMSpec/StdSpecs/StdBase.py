@@ -367,10 +367,16 @@ class StdBase(object):
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskStageHelper = procTaskStageOut.getTypeHelper()
 
-        if 'Multicore' in taskConf and taskConf['Multicore'] > 0:  # used for StepChain overrides
-            procTaskCmsswHelper.setNumberOfCores(taskConf['Multicore'])
-        else:
-            procTaskCmsswHelper.setNumberOfCores(self.multicore)
+        # StepChain overrides
+        multicore = self.multicore
+        eventStreams = self.eventStreams
+        if 'Multicore' in taskConf and taskConf['Multicore'] > 0:
+            multicore = taskConf['Multicore']
+        if 'EventStreams' in taskConf and taskConf['EventStreams'] >= 0:
+            eventStreams = taskConf['EventStreams']
+
+        procTaskCmsswHelper.setNumberOfCores(multicore, eventStreams)
+
         procTaskCmsswHelper.setUserSandbox(userSandbox)
         procTaskCmsswHelper.setUserFiles(userFiles)
         procTaskCmsswHelper.setGlobalTag(globalTag)
@@ -1013,6 +1019,7 @@ class StdBase(object):
                      "IncludeParents": {"default": False, "type": strToBool},
                      "Multicore": {"default": 1, "type": int,
                                    "validate": lambda x: x > 0},
+                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
                      # data location management
                      "TrustSitelists": {"default": False, "type": strToBool},
                      "TrustPUSitelists": {"default": False, "type": strToBool},

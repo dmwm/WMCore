@@ -17,6 +17,7 @@ from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, strToBool,
                                            checkDBSURL, validateArgumentsCreate, safeStr)
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
+
 class StdBase(object):
     """
     _StdBase_
@@ -221,7 +222,7 @@ class StdBase(object):
 
             # Send the workflow info
             reporter.addTask(workflow)
-        except:
+        except Exception:
             # This is not critical, if it fails just leave it be
             logging.error("There was an error with dashboard reporting")
 
@@ -253,11 +254,11 @@ class StdBase(object):
                             inputModule=None, scenarioName=None,
                             scenarioFunc=None, scenarioArgs=None, couchURL=None,
                             couchDBName=None, configDoc=None, splitAlgo="LumiBased",
-                            splitArgs={'lumis_per_job': 8}, seeding=None,
+                            splitArgs=None, seeding=None,
                             totalEvents=None, eventsPerLumi=None,
                             userDN=None, asyncDest=None, owner_vogroup="DEFAULT",
                             owner_vorole="DEFAULT", stepType="CMSSW",
-                            userSandbox=None, userFiles=[], primarySubType=None,
+                            userSandbox=None, userFiles=None, primarySubType=None,
                             forceMerged=False, forceUnmerged=False,
                             configCacheUrl=None, timePerEvent=None, memoryReq=None,
                             sizePerEvent=None, applySiteLists=True, cmsswVersion=None,
@@ -283,9 +284,11 @@ class StdBase(object):
 
         The seeding and totalEvents parameters are only used for production jobs.
         """
-        # set default scenarioArgs to empty dictionary if it is None
+        # set default values in case it's not passed to this method
         scenarioArgs = scenarioArgs or {}
         taskConf = taskConf or {}
+        splitArgs = splitArgs or {'lumis_per_job': 8}
+        userFiles = userFiles or []
 
         self.addDashboardMonitoring(procTask)
         procTaskCmssw = procTask.makeStep("cmsRun1")
@@ -418,7 +421,7 @@ class StdBase(object):
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
         return outputModules
-    
+
     def _getDictionaryParams(self, prop, key, default=None):
         """
         Support dictonary format for property definition.
@@ -442,12 +445,12 @@ class StdBase(object):
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
         haveRunNumber = (self.runNumber != None and self.runNumber > 0)
-        
+
         taskName = parentTask.name()
         acqEra = self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = self._getDictionaryParams(self.processingString, taskName)
         procVersion = self._getDictionaryParams(self.processingVersion, taskName, 1)
-        
+
         processedDataset = "%s-" % acqEra
         if haveFilterName:
             processedDataset += "%s-" % filterName
@@ -510,13 +513,16 @@ class StdBase(object):
                 "processedDataset": processedDataset,
                 "filterName": filterName}
 
-    def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500):
+    def addLogCollectTask(self, parentTask, taskName="LogCollect", filesPerJob=500,
+                          cmsswVersion=None, scramArch=None):
         """
         _addLogCollectTask_
 
         Create a LogCollect task for log archives that are produced by the
         parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
         logCollectTask = parentTask.addTask(taskName)
         self.addDashboardMonitoring(logCollectTask)
         logCollectStep = logCollectTask.makeStep("logCollect1")
@@ -530,22 +536,23 @@ class StdBase(object):
         logCollectTask.setInputReference(parentTaskLogArch, outputModule="logArchive")
 
         logCollectStepHelper = logCollectStep.getTypeHelper()
-        logCollectStepHelper.cmsswSetup(self.frameworkVersion,
+        logCollectStepHelper.cmsswSetup(cmsswVersion,
                                         softwareEnvironment="",
-                                        scramArch=self.scramArch)
+                                        scramArch=scramArch)
 
         return logCollectTask
 
-    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName,
-                     parentStepName="cmsRun1", doLogCollect=True, lfn_counter=0, forceTaskName=None):
+    def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName, parentStepName="cmsRun1",
+                     doLogCollect=True, lfn_counter=0, forceTaskName=None, cmsswVersion=None, scramArch=None):
         """
         _addMergeTask_
 
         Create a merge task for files produced by the parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
         # StepChain use case, to avoid merge task names clashes
-        if forceTaskName is None:
-            forceTaskName = parentTask.name()
+        forceTaskName = forceTaskName or parentTask.name()
 
         mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
         self.addDashboardMonitoring(mergeTask)
@@ -563,8 +570,9 @@ class StdBase(object):
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         if doLogCollect:
-            self.addLogCollectTask(mergeTask,
-                                   taskName="%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName))
+            taskNameLC = "%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName)
+            self.addLogCollectTask(mergeTask, taskName=taskNameLC,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         mergeTask.setTaskType("Merge")
         mergeTask.applyTemplates()
@@ -582,9 +590,9 @@ class StdBase(object):
         mergeTaskCmsswHelper = mergeTaskCmssw.getTypeHelper()
         mergeTaskStageHelper = mergeTaskStageOut.getTypeHelper()
 
-        mergeTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+        mergeTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                         softwareEnvironment="",
-                                        scramArch=self.scramArch)
+                                        scramArch=scramArch)
 
         mergeTaskCmsswHelper.setErrorDestinationStep(stepName=mergeTaskLogArch.name())
         mergeTaskCmsswHelper.setGlobalTag(self.globalTag)
@@ -647,12 +655,16 @@ class StdBase(object):
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,
                           periodic_harvest_interval=0, periodic_harvest_sibling=False,
-                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun"):
+                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun",
+                          cmsswVersion=None, scramArch=None):
         """
         _addDQMHarvestTask_
 
         Create a DQM harvest task to harvest the files produces by the parent task.
         """
+        cmsswVersion = cmsswVersion or self.frameworkVersion
+        scramArch = scramArch or self.scramArch
+
         if periodic_harvest_interval:
             harvestType = "Periodic"
         else:
@@ -672,17 +684,19 @@ class StdBase(object):
 
         harvestTask.setTaskLogBaseLFN(self.unmergedLFNBase)
         if doLogCollect:
-            self.addLogCollectTask(harvestTask, taskName="%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
-                                                                                         parentOutputModuleName,
-                                                                                         harvestType))
+            taskNameLC = "%s%s%sDQMHarvestLogCollect" % (parentTask.name(),
+                                                         parentOutputModuleName,
+                                                         harvestType)
+            self.addLogCollectTask(harvestTask, taskName=taskNameLC,
+                                   cmsswVersion=cmsswVersion, scramArch=scramArch)
 
         harvestTask.setTaskType("Harvesting")
         harvestTask.applyTemplates()
 
         harvestTaskCmsswHelper = harvestTaskCmssw.getTypeHelper()
-        harvestTaskCmsswHelper.cmsswSetup(self.frameworkVersion,
+        harvestTaskCmsswHelper.cmsswSetup(cmsswVersion,
                                           softwareEnvironment="",
-                                          scramArch=self.scramArch)
+                                          scramArch=scramArch)
 
         harvestTaskCmsswHelper.setErrorDestinationStep(stepName=harvestTaskLogArch.name())
         harvestTaskCmsswHelper.setGlobalTag(self.globalTag)
@@ -842,9 +856,10 @@ class StdBase(object):
         """
         # Validate the arguments according to the workload arguments definition
         argumentDefinition = self.getWorkloadArguments()
-        msg = validateArgumentsCreate(schema, argumentDefinition)
-        if msg is not None:
-            self.raiseValidationException(msg)
+        try:
+            validateArgumentsCreate(schema, argumentDefinition)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
         return
 
     def raiseValidationException(self, msg):
@@ -855,7 +870,7 @@ class StdBase(object):
         to import WMSpecFactoryException all over the place.
         """
 
-        logging.error("About to raise exception %s" % msg)
+        logging.error("About to raise exception %s", msg)
         raise WMSpecFactoryException(message=msg)
 
     def validateConfigCacheExists(self, configID, couchURL, couchDBName,
@@ -879,7 +894,7 @@ class StdBase(object):
             # if dtail option is set return outputModules
             return configCache.validate(configID)
         except ConfigCacheException as ex:
-            self.raiseValidationException(ex.message())
+            self.raiseValidationException(str(ex))
 
     def getSchema(self):
         return self.schema
@@ -909,7 +924,7 @@ class StdBase(object):
                     it returns True if the input is valid, it can throw exceptions on invalid input.
         - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
         - null: This indicates if the argument can have None as its value.
-        
+
         If above is not specifyed, automatically set by following default value
         - default: None
         - type: str

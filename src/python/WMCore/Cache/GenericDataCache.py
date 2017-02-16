@@ -3,45 +3,47 @@ import time
 import traceback
 import logging
 
+
 class MemoryCacheStruct(object):
     """
     WARNING: This can be used in multi thread by registering on GenericDataCache
     But this cache is not thread saft.
     """
-    def __init__(self, expire, func, kwargs=None):
+
+    def __init__(self, expire, func, initCacheValue=None, kwargs=None):
         """
-        expire is the seconds which cache will be refreshed when cache is order than the expire.
-        func is the fuction which cache data is retrived
+        expire is the seconds which cache will be refreshed when cache is older than the expire.
+        func is the fuction which cache data is retrieved
         kwargs are func arguments for cache data
         """
-        self.data = None
+        self.data = initCacheValue
         self.expire = expire
         self.func = func
         if kwargs == None:
             kwargs = {}
         self.kwargs = kwargs
-        self.lastUpdated  = -1
-        
+        self.lastUpdated = -1
+
     def isDataExpired(self):
         if self.lastUpdated == -1:
             return True
         if (int(time.time()) - self.lastUpdated) > self.expire:
             return True
         return False
-    
+
     def getData(self, noFail=True):
         if self.isDataExpired():
             try:
                 self.data = self.func(**self.kwargs)
                 self.lastUpdate = int(time.time())
-            except Exception as ex:
+            except Exception:
                 if noFail:
                     logging.error(traceback.format_exc())
                 else:
                     raise
         return self.data
 
-        
+
 class CacheExistException(Exception):
     def __init__(self, cacheName):
         Exception.__init__(self, cacheName)
@@ -51,6 +53,7 @@ class CacheExistException(Exception):
     def __str__(self):
         return "%s: %s" % (self.msg, self.error)
 
+
 class CacheWithWrongStructException(Exception):
     def __init__(self, cacheName):
         Exception.__init__(self, cacheName)
@@ -59,11 +62,11 @@ class CacheWithWrongStructException(Exception):
 
     def __str__(self):
         return "%s: %s" % (self.msg, self.error)
-                    
+
+
 class GenericDataCache(object):
-    
     _dataCache = {}
-    
+
     @staticmethod
     def getCacheData(cacheName):
         return GenericDataCache._dataCache[cacheName]

@@ -137,43 +137,43 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepOneLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepOneLogArchiveFileset.loadData()
         stepOneMergeLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/merged-logArchive")
         stepOneMergeLogArchiveFileset.loadData()
 
         stepTwoUnmergedDQMFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-DQMoutput")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-DQMoutput")
         stepTwoUnmergedDQMFileset.loadData()
         stepTwoUnmergedRECOFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-RECODEBUGoutput")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-RECODEBUGoutput")
         stepTwoUnmergedRECOFileset.loadData()
         stepTwoMergedDQMFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-Merged")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
         stepTwoMergedRECOFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-Merged")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeDQMLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
         stepTwoMergeRECOLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
         stepThreeUnmergedAODFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-aodOutputModule")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-aodOutputModule")
         stepThreeUnmergedAODFileset.loadData()
         stepThreeMergedAODFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-Merged")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-Merged")
         stepThreeMergedAODFileset.loadData()
         stepThreeLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/unmerged-logArchive")
         stepThreeLogArchiveFileset.loadData()
 
         stepThreeMergeLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRAWDEBUGoutput/StepTwoProc/StepTwoProcMergeRECODEBUGoutput/StepThreeProc/StepThreeProcMergeaodOutputModule/merged-logArchive")
         stepThreeMergeLogArchiveFileset.loadData()
 
         stepOneWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -460,15 +460,15 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepTwoMergedDQMFileset = Fileset(name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-Merged")
         stepTwoMergedDQMFileset.loadData()
         stepTwoMergedRECOFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-Merged")
         stepTwoMergedRECOFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeDQMLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeDQMoutput/merged-logArchive")
         stepTwoMergeDQMLogArchiveFileset.loadData()
         stepTwoMergeRECOLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeRECODEBUGoutput/merged-logArchive")
         stepTwoMergeRECOLogArchiveFileset.loadData()
 
         stepTwoWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -601,12 +601,12 @@ class ReDigiTest(EmulatedUnitTestCase):
         stepTwoUnmergedAODFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-aodOutputModule")
         stepTwoUnmergedAODFileset.loadData()
         stepTwoMergedAODFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-Merged")
         stepTwoMergedAODFileset.loadData()
         stepTwoLogArchiveFileset = Fileset(name="/TestWorkload/StepOneProc/unmerged-logArchive")
         stepTwoLogArchiveFileset.loadData()
         stepTwoMergeAODLogArchiveFileset = Fileset(
-            name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive")
+                name="/TestWorkload/StepOneProc/StepOneProcMergeaodOutputModule/merged-logArchive")
         stepTwoMergeAODLogArchiveFileset.loadData()
 
         stepTwoWorkflow = Workflow(spec="somespec", name="TestWorkload",
@@ -830,20 +830,24 @@ class ReDigiTest(EmulatedUnitTestCase):
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = stepOne.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = stepOne.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", defaultArguments)
         stepOne = testWorkload.getTask('StepOneProc')
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = stepOne.getStepHelper(step)
             if step in ('stageOut1', 'logArch1'):
                 self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
         perfParams = stepOne.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
@@ -877,12 +881,14 @@ class ReDigiTest(EmulatedUnitTestCase):
             for step in ('cmsRun1', 'stageOut1', 'logArch1'):
                 stepHelper = taskObj.getStepHelper(step)
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             # then test Memory requirements
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         for task in taskPaths:
             taskObj = testWorkload.getTaskByPath(task)
@@ -890,8 +896,10 @@ class ReDigiTest(EmulatedUnitTestCase):
                 stepHelper = taskObj.getStepHelper(step)
                 if step in ('stageOut1', 'logArch1'):
                     self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                    self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 else:
                     self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                    self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
@@ -921,20 +929,24 @@ class ReDigiTest(EmulatedUnitTestCase):
         for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
             stepHelper = taskObj.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = taskObj.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         taskObj = testWorkload.getTask('StepOneProc')
         for step in ('cmsRun1', 'cmsRun2', 'stageOut1', 'logArch1'):
             stepHelper = taskObj.getStepHelper(step)
             if step in ('stageOut1', 'logArch1'):
                 self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
         perfParams = taskObj.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
@@ -970,12 +982,14 @@ class ReDigiTest(EmulatedUnitTestCase):
             for step in ('cmsRun1', 'stageOut1', 'logArch1'):
                 stepHelper = taskObj.getStepHelper(step)
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             # then test Memory requirements
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         for task in taskPaths:
             taskObj = testWorkload.getTaskByPath(task)
@@ -983,8 +997,10 @@ class ReDigiTest(EmulatedUnitTestCase):
                 stepHelper = taskObj.getStepHelper(step)
                 if step in ('stageOut1', 'logArch1'):
                     self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                    self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 else:
                     self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                    self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
@@ -1022,12 +1038,14 @@ class ReDigiTest(EmulatedUnitTestCase):
                     continue
                 stepHelper = taskObj.getStepHelper(step)
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             # then test Memory requirements
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         for task in taskPaths:
             taskObj = testWorkload.getTaskByPath(task)
@@ -1037,8 +1055,10 @@ class ReDigiTest(EmulatedUnitTestCase):
                 stepHelper = taskObj.getStepHelper(step)
                 if step in ('stageOut1', 'logArch1'):
                     self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                    self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 else:
                     self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                    self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
             perfParams = taskObj.jobSplittingParameters()['performance']
             self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 
@@ -1069,20 +1089,24 @@ class ReDigiTest(EmulatedUnitTestCase):
         for step in ['cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1']:
             stepHelper = stepOne.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = stepOne.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", defaultArguments)
         stepOne = testWorkload.getTask('StepOneProc')
         for step in ['cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1']:
             stepHelper = stepOne.getStepHelper(step)
             if step in ['stageOut1', 'logArch1']:
                 self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
         perfParams = stepOne.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])
 

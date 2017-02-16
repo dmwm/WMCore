@@ -81,7 +81,7 @@ def injectStepChainConfigSingle(couchDatabase):
     miniConfig["pset_tweak_details"] = {
         "process": {"outputModules_": ["MINIAODSIMoutput"],
                     "MINIAODSIMoutput": {"dataset": {"filterName": "", "dataTier": "MINIAODSIM"}}
-                   }
+                    }
     }
     result = couchDatabase.commitOne(miniConfig)
     return result[0]["id"]
@@ -105,7 +105,7 @@ def injectStepChainConfigMC(couchDatabase):
     genConfig["pset_tweak_details"] = {
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "FilterA", "dataTier": "GEN-SIM"}}
-                   }
+                    }
     }
 
     digiConfig = Document()
@@ -117,7 +117,7 @@ def injectStepChainConfigMC(couchDatabase):
     digiConfig["pset_tweak_details"] = {
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "FilterB", "dataTier": "GEN-SIM-RAW"}}
-                   }
+                    }
     }
 
     recoConfig = Document()
@@ -130,7 +130,7 @@ def injectStepChainConfigMC(couchDatabase):
         "process": {"outputModules_": ["RECOSIMoutput", "AODSIMoutput"],
                     "RECOSIMoutput": {"dataset": {"filterName": "FilterC", "dataTier": "GEN-SIM-RECO"}},
                     "AODSIMoutput": {"dataset": {"filterName": "FilterD", "dataTier": "AODSIM"}}
-                   }
+                    }
     }
 
     digi2Config = Document()
@@ -142,7 +142,7 @@ def injectStepChainConfigMC(couchDatabase):
     digi2Config["pset_tweak_details"] = {
         "process": {"outputModules_": ["RAWSIMoutput"],
                     "RAWSIMoutput": {"dataset": {"filterName": "", "dataTier": "GEN-SIM-RAW"}}
-                   }
+                    }
     }
 
     couchDatabase.queue(genConfig)
@@ -363,11 +363,11 @@ class StepChainTests(unittest.TestCase):
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
         self.assertEqual(outMods, set(['RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput']), "Wrong output modules")
         self.assertTrue(
-            '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterA-ProcessingString_StepChain-v1/GEN-SIM' in outDsets)
+                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterA-ProcessingString_StepChain-v1/GEN-SIM' in outDsets)
         self.assertTrue(
-            '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
+                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
         self.assertTrue(
-            '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
+                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
         self.assertEqual(task.getSwVersion(), testArguments['Step1']["CMSSWVersion"])
         self.assertEqual(task.getScramArch(), testArguments['Step1']["ScramArch"])
 
@@ -421,7 +421,8 @@ class StepChainTests(unittest.TestCase):
         self.assertEqual(task.getScramArch(), testArguments['Step3']["ScramArch"])
 
         # test logCollect stuff
-        task = testWorkload.getTaskByPath('/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/GENSIMRAWSIMoutputMergeLogCollect')
+        task = testWorkload.getTaskByPath(
+            '/TestWorkload/GENSIM/GENSIMMergeRAWSIMoutput/GENSIMRAWSIMoutputMergeLogCollect')
         self.assertEqual(task.taskType(), "LogCollect")
         step = task.getStep("logCollect1")
         self.assertEqual(step.data.application.setup.cmsswVersion, testArguments['Step1']["CMSSWVersion"])
@@ -455,7 +456,9 @@ class StepChainTests(unittest.TestCase):
         testArguments['Step1'].update({
             'KeepOutput': False,
             'InputDataset': '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM',
-            'BlockWhitelist': ["/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4","/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4"]
+            'BlockWhitelist': [
+                "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4",
+                "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4"]
         })
         factory = StepChainWorkloadFactory()
 
@@ -497,9 +500,12 @@ class StepChainTests(unittest.TestCase):
         self.assertTrue(splitParams['performance']['sizePerEvent'] >= 512)
         self.assertTrue(splitParams['performance']['memoryRequirement'] == 3500)
 
-        self.assertEqual(task.getInputDatasetPath(), '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM')
-        self.assertTrue('/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4' in task.inputBlockWhitelist())
-        self.assertTrue('/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4' in task.inputBlockWhitelist())
+        self.assertEqual(task.getInputDatasetPath(),
+                         '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM')
+        self.assertTrue(
+            '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a09df90-5593-11e4-bd05-003048f0e3f4' in task.inputBlockWhitelist())
+        self.assertTrue(
+            '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM#3a8b15e6-54e0-11e4-afc7-003048f0e3f4' in task.inputBlockWhitelist())
 
         # test workload step stuff
         self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'cmsRun2', 'logArch1', 'stageOut1'])
@@ -511,9 +517,9 @@ class StepChainTests(unittest.TestCase):
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
         self.assertEqual(outMods, set(['AODSIMoutput', 'RECOSIMoutput']), "Wrong output modules")
         self.assertTrue(
-            '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
+                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
         self.assertTrue(
-            '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
+                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
         return
 
     def testStepMapping(self):
@@ -609,20 +615,24 @@ class StepChainTests(unittest.TestCase):
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = prodTask.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
 
         testArguments["Multicore"] = 6
         testArguments["Memory"] = 4600.0
+        testArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
         prodTask = testWorkload.getTask('StepOne')
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = prodTask.getStepHelper(step)
             if step in ('stageOut1', 'logArch1'):
                 self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), testArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), testArguments["EventStreams"])
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
 
@@ -649,6 +659,7 @@ class StepChainTests(unittest.TestCase):
         for step in ('cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1'):
             stepHelper = prodTask.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
@@ -656,14 +667,17 @@ class StepChainTests(unittest.TestCase):
         # Test Multicore/Memory settings at TOP level **only**
         testArguments["Multicore"] = 6
         testArguments["Memory"] = 4600.0
+        testArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
         prodTask = testWorkload.getTask('StepOne')
         for step in ('cmsRun1', 'cmsRun2', 'cmsRun3', 'stageOut1', 'logArch1'):
             stepHelper = prodTask.getStepHelper(step)
             if step in ('stageOut1', 'logArch1'):
                 self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), testArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), testArguments["EventStreams"])
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
 
@@ -686,6 +700,8 @@ class StepChainTests(unittest.TestCase):
         testArguments['Step3']["Multicore"] = 4
         testArguments['Step1']["Memory"] = 2200.0
         testArguments['Step3']["Memory"] = 4400.0
+        testArguments['Step1']["EventStreams"] = 2
+        testArguments['Step3']["EventStreams"] = 4
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
@@ -695,6 +711,8 @@ class StepChainTests(unittest.TestCase):
             self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
         self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfCores(), testArguments['Step1']["Multicore"])
         self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfCores(), testArguments['Step3']["Multicore"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfStreams(), testArguments['Step1']["EventStreams"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfStreams(), testArguments['Step3']["EventStreams"])
 
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])
@@ -706,14 +724,21 @@ class StepChainTests(unittest.TestCase):
         testArguments["Memory"] = 3300.0
         testArguments['Step1']["Memory"] = 2200.0
         testArguments['Step3']["Memory"] = 4400.0
+        testArguments["EventStreams"] = 6
+        testArguments['Step1']["EventStreams"] = 4
+        testArguments['Step3']["EventStreams"] = 8
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload2", testArguments)
         prodTask = testWorkload.getTask('StepOne')
         for step in ('stageOut1', 'logArch1'):
             stepHelper = prodTask.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1, "%s should have 1 core" % step)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfCores(), testArguments['Step1']["Multicore"])
         self.assertEqual(prodTask.getStepHelper('cmsRun2').getNumberOfCores(), testArguments["Multicore"])
         self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfCores(), testArguments['Step3']["Multicore"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun1').getNumberOfStreams(), testArguments['Step1']["EventStreams"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun2').getNumberOfStreams(), testArguments["EventStreams"])
+        self.assertEqual(prodTask.getStepHelper('cmsRun3').getNumberOfStreams(), testArguments['Step3']["EventStreams"])
 
         perfParams = prodTask.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], testArguments["Memory"])

@@ -9,12 +9,14 @@ Copyright (c) 2010 Fermilab. All rights reserved.
 
 import unittest
 
-from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
-from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMBS.Job import Job
+from WMQuality.TestInitCouchApp import TestInitCouchApp
+
 
 class DataCollectionService_t(unittest.TestCase):
     def setUp(self):
@@ -22,8 +24,8 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
         self.testInit.setupCouch("wmcore-acdc-datacollectionsvc", "GroupUser", "ACDC")
         return
 
@@ -31,6 +33,17 @@ class DataCollectionService_t(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         return
+
+    @staticmethod
+    def getMinimalJob():
+        """Make a minimal job"""
+        job = Job()
+        job["task"] = "/ACDCTest/reco"
+        job["workflow"] = "ACDCTest"
+        job["location"] = "cmssrm.fnal.gov"
+        job["owner"] = "cmsdataops"
+        job["group"] = "cmsdataops"
+        return job
 
     def testChunking(self):
         """
@@ -41,85 +54,78 @@ class DataCollectionService_t(unittest.TestCase):
         only groups files that have the same set of locations.  Also verify that
         the chunks are pulled out of ACDC correctly.
         """
-        dcs = DataCollectionService(url = self.testInit.couchUrl,
-                                    database = "wmcore-acdc-datacollectionsvc")
+        dcs = DataCollectionService(url=self.testInit.couchUrl,
+                                    database="wmcore-acdc-datacollectionsvc")
 
-        def getJob():
-            job = Job()
-            job["task"] = "/ACDCTest/reco"
-            job["workflow"] = "ACDCTest"
-            job["location"] = "cmssrm.fnal.gov"
-            job["owner"] = "cmsdataops"
-            job["group"] = "cmsdataops"
-            return job
 
-        testFileA = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileA = File(lfn=makeUUID(), size=1024, events=1024)
         testFileA.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileA.addRun(Run(1, 1, 2))
-        testFileB = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileB = File(lfn=makeUUID(), size=1024, events=1024)
         testFileB.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileB.addRun(Run(1, 3, 4))
-        testFileC = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileC = File(lfn=makeUUID(), size=1024, events=1024)
         testFileC.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileC.addRun(Run(1, 5, 6))
-        testJobA = getJob()
+        testJobA = self.getMinimalJob()
         testJobA.addFile(testFileA)
         testJobA.addFile(testFileB)
         testJobA.addFile(testFileC)
 
-        testFileD = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileD = File(lfn=makeUUID(), size=1024, events=1024)
         testFileD.setLocation(["cmssrm.fnal.gov"])
         testFileD.addRun(Run(2, 1, 2))
-        testFileE = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileE = File(lfn=makeUUID(), size=1024, events=1024)
         testFileE.setLocation(["cmssrm.fnal.gov"])
         testFileE.addRun(Run(2, 3, 4))
-        testJobB = getJob()
+        testJobB = self.getMinimalJob()
         testJobB.addFile(testFileD)
         testJobB.addFile(testFileE)
 
-        testFileF = File(lfn = makeUUID(), size = 1024, events = 1024,
-                         parents = set(["/some/parent/F"]))
+        testFileF = File(lfn=makeUUID(), size=1024, events=1024,
+                         parents=set(["/some/parent/F"]))
         testFileF.setLocation(["cmssrm.fnal.gov", "castor.cern.ch", "srm.ral.uk"])
         testFileF.addRun(Run(3, 1, 2))
-        testFileG = File(lfn = makeUUID(), size = 1024, events = 1024,
-                         parents = set(["/some/parent/G"]))
-        testFileG.setLocation(["cmssrm.fnal.gov", "castor.cern.ch", "srm.ral.uk"] )
+        testFileG = File(lfn=makeUUID(), size=1024, events=1024,
+                         parents=set(["/some/parent/G"]))
+        testFileG.setLocation(["cmssrm.fnal.gov", "castor.cern.ch", "srm.ral.uk"])
         testFileG.addRun(Run(3, 3, 4))
-        testFileH = File(lfn = makeUUID(), size = 1024, events = 1024,
-                         parents = set(["/some/parent/H"]))
+        testFileH = File(lfn=makeUUID(), size=1024, events=1024,
+                         parents=set(["/some/parent/H"]))
         testFileH.setLocation(["cmssrm.fnal.gov", "castor.cern.ch", "srm.ral.uk"])
         testFileH.addRun(Run(3, 5, 6))
-        testJobC = getJob()
+        testJobC = self.getMinimalJob()
         testJobC.addFile(testFileF)
         testJobC.addFile(testFileG)
         testJobC.addFile(testFileH)
 
-        testFileI = File(lfn = makeUUID(), size = 1024, events = 1024, merged = True)
+        testFileI = File(lfn=makeUUID(), size=1024, events=1024, merged=True)
         testFileI.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileI.addRun(Run(4, 1, 2))
-        testFileJ = File(lfn = makeUUID(), size = 1024, events = 1024, merged = True)
-        testFileJ.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"] )
+        testFileJ = File(lfn=makeUUID(), size=1024, events=1024, merged=True)
+        testFileJ.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileJ.addRun(Run(4, 3, 4))
-        testFileK = File(lfn = makeUUID(), size = 1024, events = 1024, merged = True)
+        testFileK = File(lfn=makeUUID(), size=1024, events=1024, merged=True)
         testFileK.setLocation(["cmssrm.fnal.gov", "castor.cern.ch"])
         testFileK.addRun(Run(4, 5, 6))
-        testJobD = getJob()
+        testJobD = self.getMinimalJob()()
         testJobD.addFile(testFileI)
         testJobD.addFile(testFileJ)
         testJobD.addFile(testFileK)
 
         dcs.failedJobs([testJobA, testJobB, testJobC, testJobD])
         chunks = dcs.chunkFileset("ACDCTest", "/ACDCTest/reco",
-                                  chunkSize = 5)
+                                  chunkSize=5)
 
         self.assertEqual(len(chunks), 4, "Error: There should be four chunks: %s" % len(chunks))
 
         goldenMetaData = {1: {"lumis": 2, "locations": ["castor.cern.ch", "cmssrm.fnal.gov"], "events": 1024},
                           2: {"lumis": 4, "locations": ["cmssrm.fnal.gov"], "events": 2048},
-                          3: {"lumis": 6, "locations": ["castor.cern.ch", "cmssrm.fnal.gov", "srm.ral.uk"], "events": 3072},
+                          3: {"lumis": 6, "locations": ["castor.cern.ch", "cmssrm.fnal.gov", "srm.ral.uk"],
+                              "events": 3072},
                           5: {"lumis": 10, "locations": ["castor.cern.ch", "cmssrm.fnal.gov"], "events": 5120}}
 
-        testFiles =[testFileA, testFileB, testFileC, testFileI, testFileJ, testFileK]
+        testFiles = [testFileA, testFileB, testFileC, testFileI, testFileJ, testFileK]
         lastFile = testFileA
         for testFile in testFiles:
             if lastFile["lfn"] < testFile["lfn"]:
@@ -196,11 +202,11 @@ class DataCollectionService_t(unittest.TestCase):
             del goldenFiles[chunk["files"]]
 
         singleChunk = dcs.singleChunkFileset("ACDCTest", "/ACDCTest/reco")
-        self.assertEqual(singleChunk, {"offset" : 0,
-                                       "files" : 11,
-                                       "events" : 11264,
-                                       "lumis" : 22,
-                                       "locations" : set(["castor.cern.ch", "cmssrm.fnal.gov", "srm.ral.uk"])},
+        self.assertEqual(singleChunk, {"offset": 0,
+                                       "files": 11,
+                                       "events": 11264,
+                                       "lumis": 22,
+                                       "locations": set(["castor.cern.ch", "cmssrm.fnal.gov", "srm.ral.uk"])},
                          "Error: Single chunk metadata is wrong")
 
         return
@@ -220,64 +226,55 @@ class DataCollectionService_t(unittest.TestCase):
            "2": [[5, 7], [10, 12], [15, 15]],
            "3": [[20, 20]]}
         """
-        dcs = DataCollectionService(url = self.testInit.couchUrl,
-                                    database = "wmcore-acdc-datacollectionsvc")
+        dcs = DataCollectionService(url=self.testInit.couchUrl,
+                                    database="wmcore-acdc-datacollectionsvc")
 
-        def getJob():
-            job = Job()
-            job["task"] = "/ACDCTest/reco"
-            job["workflow"] = "ACDCTest"
-            job["location"] = "cmssrm.fnal.gov"
-            job["owner"] = "cmsdataops"
-            job["group"] = "cmsdataops"
-            return job
-
-        testFileA = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileA = File(lfn=makeUUID(), size=1024, events=1024)
         testFileA.addRun(Run(1, 1, 2))
-        testFileB = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileB = File(lfn=makeUUID(), size=1024, events=1024)
         testFileB.addRun(Run(1, 3))
-        testJobA = getJob()
+        testJobA = self.getMinimalJob()
         testJobA.addFile(testFileA)
         testJobA.addFile(testFileB)
 
-        testFileC = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileC = File(lfn=makeUUID(), size=1024, events=1024)
         testFileC.addRun(Run(1, 4, 6))
-        testJobB = getJob()
+        testJobB = self.getMinimalJob()
         testJobB.addFile(testFileC)
 
-        testFileD = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileD = File(lfn=makeUUID(), size=1024, events=1024)
         testFileD.addRun(Run(1, 7))
-        testJobC = getJob()
+        testJobC = self.getMinimalJob()
         testJobC.addFile(testFileD)
 
-        testFileE = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileE = File(lfn=makeUUID(), size=1024, events=1024)
         testFileE.addRun(Run(1, 11, 12))
-        testJobD = getJob()
+        testJobD = self.getMinimalJob()
         testJobD.addFile(testFileE)
 
-        testFileF = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileF = File(lfn=makeUUID(), size=1024, events=1024)
         testFileF.addRun(Run(2, 5, 6, 7))
-        testJobE = getJob()
+        testJobE = self.getMinimalJob()
         testJobE.addFile(testFileF)
 
-        testFileG = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileG = File(lfn=makeUUID(), size=1024, events=1024)
         testFileG.addRun(Run(2, 10, 11, 12))
-        testJobF = getJob()
+        testJobF = self.getMinimalJob()
         testJobF.addFile(testFileG)
 
-        testFileH = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileH = File(lfn=makeUUID(), size=1024, events=1024)
         testFileH.addRun(Run(2, 15))
-        testJobG = getJob()
+        testJobG = self.getMinimalJob()
         testJobG.addFile(testFileH)
 
-        testFileI = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileI = File(lfn=makeUUID(), size=1024, events=1024)
         testFileI.addRun(Run(3, 20))
-        testJobH = getJob()
+        testJobH = self.getMinimalJob()
         testJobH.addFile(testFileI)
 
-        testFileJ = File(lfn = makeUUID(), size = 1024, events = 1024)
+        testFileJ = File(lfn=makeUUID(), size=1024, events=1024)
         testFileJ.addRun(Run(1, 9))
-        testJobI = getJob()
+        testJobI = self.getMinimalJob()
         testJobI.addFile(testFileJ)
 
         dcs.failedJobs([testJobA, testJobB, testJobC, testJobD, testJobE,
@@ -292,6 +289,13 @@ class DataCollectionService_t(unittest.TestCase):
                          "Error: Whitelist for run 2 is wrong.")
         self.assertEqual(whiteList["3"], [[20, 20]],
                          "Error: Whitelist for run 3 is wrong.")
+
+        correctLumiList = LumiList(compactList={"1": [[1, 4], [6, 7], [9, 9], [11, 12]],
+                                                "2": [[5, 7], [10, 12], [15, 15]],
+                                                "3": [[20, 20]]})
+        testLumiList = dcs.getLumilistWhitelist("ACDCTest", "/ACDCTest/reco")
+        self.assertEqual(correctLumiList.getCMSSWString(), testLumiList.getCMSSWString())
+
         return
 
     def notestMergeFakeFiles(self):
@@ -371,7 +375,7 @@ class DataCollectionService_t(unittest.TestCase):
 
         for job in mergedFiles:
             if job['lfn'] == 'MCFakeFile-File1':
-                lumiList= job['runs'][0]['lumis']
+                lumiList = job['runs'][0]['lumis']
         self.assertEqual(len(lumiList), 22)
 
 

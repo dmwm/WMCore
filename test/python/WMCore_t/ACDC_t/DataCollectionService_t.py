@@ -13,6 +13,7 @@ from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.ACDC.DataCollectionService import DataCollectionService, mergeFakeFiles
 from WMCore.WMBS.Job import Job
 from WMCore.DataStructs.File import File
+from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.UUIDLib import makeUUID
 
@@ -292,6 +293,13 @@ class DataCollectionService_t(unittest.TestCase):
                          "Error: Whitelist for run 2 is wrong.")
         self.assertEqual(whiteList["3"], [[20, 20]],
                          "Error: Whitelist for run 3 is wrong.")
+
+        correctLumiList = LumiList(compactList={"1": [[1, 4], [6, 7], [9, 9], [11, 12]],
+                                                "2": [[5, 7], [10, 12], [15, 15]],
+                                                "3": [[20, 20]]})
+        testLumiList = dcs.getLumilistWhitelist("ACDCTest", "/ACDCTest/reco")
+        self.assertEqual(correctLumiList.getCMSSWString(), testLumiList.getCMSSWString())
+
         return
 
     def notestMergeFakeFiles(self):

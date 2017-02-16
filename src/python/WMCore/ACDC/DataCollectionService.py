@@ -18,7 +18,8 @@ import WMCore.ACDC.CollectionTypes as CollectionTypes
 
 from WMCore.WMException import WMException
 from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Run import Run
+from WMCore.DataStructs.LumiList import LumiList
+from WMCore.DataStructs.Run  import Run
 
 
 def mergeFakeFiles(chunkFiles):
@@ -339,3 +340,14 @@ class DataCollectionService(CouchService):
             whiteList[str(run)].append(currentSet)
 
         return whiteList
+
+    def getLumilistWhitelist(self, collectionID, taskName):
+        """
+        Args:
+            collectionID, taskName: Parameters for getLumiWhitelist
+
+        Returns: a LumiList object describing the lumi list from the collection
+        """
+
+        lumiList = LumiList(compactList=self.getLumiWhitelist(collectionID, taskName))
+        return lumiList

@@ -6,11 +6,10 @@ Unittests for Utilities functions
 from __future__ import division, print_function
 
 import unittest
-
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 
 
-class WMWorkloadToolsTest(unittest.TestCase):
+class UtilitiesTests(unittest.TestCase):
     """
     unittest for Utilities functions
     """
@@ -63,7 +62,7 @@ class WMWorkloadToolsTest(unittest.TestCase):
         for v in ["", "alan", [], [''], {'a': 123}]:
             self.assertRaises(ValueError, strToBool, v)
 
-    def safeStr(self):
+    def testSafeStr(self):
         """
         Test the safeStr function.
         """
@@ -75,7 +74,7 @@ class WMWorkloadToolsTest(unittest.TestCase):
         self.assertEqual(safeStr(""), "")
 
         for v in [[1, 2], {'x': 123}, set([1])]:
-            self.assertRaises(safeStr(v), '123')
+            self.assertRaises(ValueError, safeStr, v)
 
 
 if __name__ == '__main__':

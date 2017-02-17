@@ -421,35 +421,36 @@ WMStats.ViewModel = (function (){
             }
             
             var requestInfo = reqMgrRequest.getData();
+            var getPropertyByTask = WMStats.Requests.getPropertyByTask;
             //from passing request info
-            summary.Memory = requestInfo.Memory;
-            summary.SizePerEvent = requestInfo.SizePerEvent;
-            summary.TimePerEvent = requestInfo.TimePerEvent;
             summary.DbsUrl = requestInfo.DbsUrl || "https://cmsweb.cern.ch/dbs/prod/global/DBSReader";
             summary.Group = requestInfo.Group;
             summary.RequestPriority = requestInfo.RequestPriority;
             summary.RequestString = WMStats.Utils.acdcRequestSting(summary.OriginalRequestName, requestInfo.Requestor);
-            summary.PrepID = requestInfo.PrepID;
-            summary.SoftwareVersions = requestInfo.SoftwareVersions;
-            summary.CMSSWVersion = requestInfo.SoftwareVersions[0];
-            summary.Campaign = requestInfo.Campaign;
+            summary.Dashboard = requestInfo.Dashboard;
+            summary.MergedLFNBase = requestInfo.MergedLFNBase;
             // assign more value for acdc assignment
             summary.Team = requestInfo.Teams[0];
+            
+            summary.Memory = getPropertyByTask(summary.InitialTaskPath, "Memory", requestInfo);
+            summary.SizePerEvent = getPropertyByTask(summary.InitialTaskPath, "SizePerEvent", requestInfo);
+            summary.TimePerEvent = getPropertyByTask(summary.InitialTaskPath, "TimePerEvent", requestInfo);
+            summary.PrepID = getPropertyByTask(summary.InitialTaskPath, "PrepID", requestInfo);
+            // TODO remove SoftwareVersions and keep only CMSSWVersion
+            summary.SoftwareVersions = requestInfo.SoftwareVersions;
+            summary.CMSSWVersion = getPropertyByTask(summary.InitialTaskPath, "CMSSWVersion", requestInfo);
+            summary.Campaign = requestInfo.Campaign;
+            
             //TODO get the site white list from acdc db. (site might be overflowed)
             //also change templete to handle multiple selection
             //summary.SiteWhitelist = requestInfo.SiteWhitelist.join();
             //summary.SiteBlacklist = requestInfo.SiteBlacklist.join();
-            summary.AcquisitionEra = requestInfo.AcquisitionEra;
-            summary.ProcessingString = requestInfo.ProcessingString;
-            summary.ProcessingVersion = requestInfo.ProcessingVersion;
-            summary.Dashboard = requestInfo.Dashboard;
-            summary.MergedLFNBase = requestInfo.MergedLFNBase;
-            //inherit only TrustSitelist value for only first task fail
-            if( summary.InitialTaskPath.split("/").length === 3) {
-            	summary.TrustSitelists = requestInfo.TrustSitelists;
-            } else {
-            	summary.TrustSitelists = false;
-            };
+            summary.AcquisitionEra = getPropertyByTask(summary.InitialTaskPath, "AcquisitionEra", requestInfo);
+            summary.ProcessingString = getPropertyByTask(summary.InitialTaskPath, "ProcessingString", requestInfo);
+            summary.ProcessingVersion = getPropertyByTask(summary.InitialTaskPath, "ProcessingVersion", requestInfo);
+            summary.Multicore = getPropertyByTask(summary.InitialTaskPath, "Multicore", requestInfo);
+            
+            
             summary.UnmergedLFNBase = requestInfo.UnmergedLFNBase;
             summary.MinMergeSize = requestInfo.MinMergeSize;
             summary.MaxMergeSize = requestInfo.MaxMergeSize;

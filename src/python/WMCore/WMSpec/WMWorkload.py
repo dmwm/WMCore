@@ -903,7 +903,8 @@ class WMWorkloadHelper(PersistencyHelper):
         sliceSize = splitArgs.get(SplitAlgoToArgMap[sliceType], 1)
         startPolicyArgs["SliceType"] = sliceType
         startPolicyArgs["SliceSize"] = sliceSize
-
+        startPolicyArgs["MaxLumisPerWQElement"] = splitArgs.get("MaxLumisPerWQElement", 200000)
+        
         if len(sliceTypes) > 1:
             subSliceType = sliceTypes[1]
             subSliceSize = splitArgs.get(SplitAlgoToArgMap[subSliceType],

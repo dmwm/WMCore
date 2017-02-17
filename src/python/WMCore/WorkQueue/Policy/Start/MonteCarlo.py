@@ -30,6 +30,7 @@ class MonteCarlo(StartPolicyInterface):
         self.args.setdefault('MaxJobsPerElement', 1000)  # jobs per WQE
         self.args.setdefault('blowupFactor', 1.0) # Estimate of additional jobs following tasks.
                                                   # Total WQE tasks will be Jobs*(1+blowupFactor)
+        self.args.setdefault('MaxLumisPerWQElement', 200000)
         noInputUpdate = self.initialTask.getTrustSitelists().get('trustlists')
         noPileupUpdate = self.initialTask.getTrustSitelists().get('trustPUlists')
 
@@ -67,6 +68,9 @@ class MonteCarlo(StartPolicyInterface):
             nLumis += remainingLumis
             jobs = ceil(nEvents/self.args['SliceSize'])
 
+            if nLumis > self.args['MaxLumisPerWQElement']:
+                raise WorkQueueWMSpecError(self.wmspec, "Too many lumis in WQE: %s" % nLumis)
+            
             mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,
                                  NumberOfLumis = nLumis,

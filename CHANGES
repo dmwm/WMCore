@@ -1,3 +1,71 @@
+1.1.0 to 1.1.1.pre2:
+  - Merge pull request #7636 from amaltaro/utilities
+  - Merge pull request #7621 from ticoann/fix_memory_inheritance_acdc
+  - Move utilitarian function from WMWorkloadTools to Utils
+  - fix ACDC Memory value inheritance
+  - Merge pull request #7623 from amaltaro/spec-scramArchs
+  - Merge pull request #7632 from ericvaandering/new_lumi_acdc
+  - Pylint and PEP-8 fixes
+  - Created some basic unit tests for WMWorkloadTools
+  - Accept either string or list of strings for ScramArch at spec level
+  - Rebase of LumiList
+  - Merge pull request #7619 from amaltaro/stepchain-merge
+  - Merge pull request #7590 from amaltaro/acdc-owner
+  - Merge pull request #7593 from amaltaro/submitter-nonetype
+  - Merge pull request #7628 from amaltaro/analytics-view
+  - pylint fixes and unit test for merge case
+  - Use correct CMSSW/Scram for Merge tasks in StepChain
+  - Fix typo in analyticsData view
+  - pylint stuff
+  - Never return None from MemoryCacheStruct
+  - Merge pull request #7625 from ericvaandering/autoname_jobs
+  - Pylint fixes
+  - Merge pull request #7620 from amaltaro/simplecondor-CMSSite
+  - Merge pull request #7618 from ticoann/allow_0_event_file_for_wq
+  - Make jobs auto-naming
+  - fix unittest
+  - Use machine attr for CMS site location in SimpleCondor
+  - allow 0 event file for job estimation
+  - Merge pull request #7617 from ticoann/add_more_log
+  - Merge pull request #7555 from amaltaro/deployment-simplecondor
+  - Apply couchdb file descriptor patch; use SimpleCondorPlugin
+  - change debug level to info for the status report
+  - Merge pull request #7604 from emaszs/cmssw_ver_fix
+  - Merge pull request #7606 from ticoann/change_uuid_module_name
+  - Change the UUID module name
+  - Merge pull request #7605 from amaltaro/drain_mode-key
+  - Pylint fixes
+  - Fix for agents by team call
+  - Use env var when getting CMSSW version in CRAB
+  - 1.1.1.pre1
+  - Merge pull request #7596 from ticoann/remove_wmbsservice
+  - Merge pull request #7597 from ticoann/log_statusChangeTasks
+  - Merge pull request #7601 from ticoann/tag_archive_fix
+  - add kwargs for flexibiity in TagCollector
+  - add logger for StatusChangeTasks
+  - Merge pull request #7579 from ericvaandering/scram_by_os
+  - Merge pull request #7582 from ticoann/add_heartbeat_checking
+  - Include Alan's comments
+  - Pylint
+  - Make CMSSW.py accept a list of arches or a single arch
+  - Add a context manager for temporary changes to the environment
+  - Rename IterTools to IteratorTools to avoid problems with mac
+  - remove wmbsservice component
+  - Merge pull request #7586 from ericvaandering/condor_multi_os
+  - Merge pull request #7567 from hufnagel/tempdirectory-exception
+  - Pylint fixes
+  - Update unit tests
+  - Remove user/group from ACDC collections
+  - add unittest
+  - add heartbeat reporting
+  - Merge pull request #7592 from hufnagel/xrdcp-dcache-workaround
+  - Merge pull request #7587 from ticoann/impove_splitting_check
+  - work around the fact that dCache only knows ADLER32, not adler32
+  - Pylint fixes
+  - Make condor submitters able to handle a list of releases or a single release
+  - don't call getElementsForParent if not necessary
+  - prevent exceptions printout in TempDirectory
+
 1.1.0 to 1.1.1.pre1:
   - Merge pull request #7596 from ticoann/remove_wmbsservice
   - Merge pull request #7597 from ticoann/log_statusChangeTasks

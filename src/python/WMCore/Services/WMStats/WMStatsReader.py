@@ -258,7 +258,9 @@ class WMStatsReader(object):
         response = dict()
 
         for agentInfo in result["rows"]:
-            teams = agentInfo['value']['agent_team'].split(',')
+            #filtering empty string
+            orgteams = agentInfo['value']['agent_team'].split(',')
+            teams = [t for t in orgteams if t]
             for team in teams:
                 response.setdefault(team, 0)
 

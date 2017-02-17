@@ -11,6 +11,7 @@ Created on Jun 13, 2013
 import json
 import logging
 
+from Utils.Utilities import makeList, strToBool
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
@@ -23,68 +24,6 @@ def makeLumiList(lumiDict):
         return ll.getCompactList()
     except:
         raise WMSpecFactoryException("Could not parse LumiList, %s: %s" % (type(lumiDict), lumiDict))
-
-
-def makeList(stringList):
-    """
-    _makeList_
-
-    Make a python list out of a comma separated list of strings,
-    throws a WMSpecFactoryException if the input is not
-    well formed. If the stringList is already of type list
-    then it is return untouched
-    """
-    if isinstance(stringList, list):
-        return stringList
-    if isinstance(stringList, basestring):
-        toks = stringList.lstrip(' [').rstrip(' ]').split(',')
-        if toks == ['']:
-            return []
-        return [str(tok.strip(' \'"')) for tok in toks]
-    raise WMSpecFactoryException("Can't convert to list %s" % stringList)
-
-
-def makeNonEmptyList(stringList):
-    """
-    _makeNonEmptyList_
-
-    Given a string or a list of strings, return a non empty list of strings.
-    Throws an exception in case the final list is empty or input data is not
-    a string or a python list
-    """
-    finalList = makeList(stringList)
-    if not finalList:
-        raise WMSpecFactoryException("Input data cannot be an empty list %s" % stringList)
-    return finalList
-
-
-def strToBool(string):
-    """
-    _strToBool_
-
-    Convert the string to the matching boolean value:
-    i.e. "True" to python True
-    """
-    if string == False or string == True:
-        return string
-    # Should we make it more human-friendly (i.e. string in ("Yes", "True", "T")?
-    elif string == "True":
-        return True
-    elif string == "False":
-        return False
-    else:
-        raise WMSpecFactoryException("Can't convert to bool: %s" % string)
-
-
-def safeStr(string):
-    """
-    _safeStr_
-
-    WMCore defined type used to more safely cast simple data types to string
-    """
-    if not isinstance(string, (tuple, list, set, dict)):
-        return str(string)
-    raise WMSpecFactoryException("We're not supposed to convert %s to string." % string)
 
 
 def parsePileupConfig(mcPileup, dataPileup):

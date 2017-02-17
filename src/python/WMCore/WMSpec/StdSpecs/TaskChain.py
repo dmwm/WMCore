@@ -86,10 +86,10 @@ Example initial processing task
 """
 from __future__ import division
 
+from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList, strToBool, \
-    validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary

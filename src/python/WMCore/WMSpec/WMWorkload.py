@@ -5,11 +5,11 @@ _WMWorkload_
 Request level processing specification, acts as a container of a set
 of related tasks.
 """
+from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, strToBool, \
-    loadSpecClassByType, setAssignArgumentsWithDefault
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, loadSpecClassByType, setAssignArgumentsWithDefault
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException

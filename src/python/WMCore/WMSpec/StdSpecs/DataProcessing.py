@@ -4,10 +4,10 @@ _DataProcessing_
 
 Base module for workflows with input.
 """
-
+from Utils.Utilities import makeList
 from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import makeList
+
 
 class DataProcessing(StdBase):
     """

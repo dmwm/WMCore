@@ -4,10 +4,10 @@ _MonteCarloFromGEN_
 
 Workflow for processing MonteCarlo GEN files.
 """
-
+from Utils.Utilities import strToBool
 from WMCore.Lexicon import primdataset, dataset
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
-from WMCore.WMSpec.WMWorkloadTools import strToBool, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 
 
 class MonteCarloFromGENWorkloadFactory(DataProcessing):

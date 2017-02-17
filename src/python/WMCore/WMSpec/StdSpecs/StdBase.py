@@ -6,6 +6,7 @@ Base class with helper functions for standard WMSpec files.
 """
 import logging
 
+from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname
@@ -13,8 +14,7 @@ from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMWorkloadTools import (makeList, makeLumiList, makeNonEmptyList, strToBool,
-                                           checkDBSURL, validateArgumentsCreate, safeStr)
+from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 
 

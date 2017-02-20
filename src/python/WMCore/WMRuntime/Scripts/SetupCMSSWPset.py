@@ -663,7 +663,6 @@ class SetupCMSSWPset(ScriptInterface):
 
         """
         self.process = None
-        funcName = None
 
         scenario = getattr(self.step.data.application.configuration, "scenario", None)
         if scenario != None and scenario != "":

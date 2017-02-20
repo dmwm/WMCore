@@ -12,6 +12,7 @@ from nose.plugins.attrib import attr
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
+
 class StdBaseTest(unittest.TestCase):
     """
     _StdBaseTest_
@@ -49,7 +50,7 @@ class StdBaseTest(unittest.TestCase):
         stdBaseInstance = StdBase()
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
         return
-    
+
     @attr('integration')
     def testStdBaseIncludeParentsValidation(self):
         """
@@ -60,27 +61,30 @@ class StdBaseTest(unittest.TestCase):
         """
         arguments = StdBase.getTestArguments()
         stdBaseInstance = StdBase()
-        
+
         arguments["IncludeParents"] = True
         arguments["InputDataset"] = "/Cosmics/Commissioning2015-v1/RAW"
-        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload", arguments)
-        
+        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload",
+                          arguments)
+
         arguments["IncludeParents"] = True
-        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload", arguments)
-        
+        self.assertRaises(WMSpecFactoryException, stdBaseInstance.factoryWorkloadConstruction, "TestWorkload",
+                          arguments)
+
         arguments["IncludeParents"] = True
         arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
-        
+
         arguments["IncludeParents"] = False
         arguments["InputDataset"] = "/Cosmics/Commissioning2015-6Mar2015-v1/RECO"
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
-        
+
         arguments["IncludeParents"] = False
-        arguments["InputDataset"] = "/Cosmics/ABS/RAW" 
+        arguments["InputDataset"] = "/Cosmics/ABS/RAW"
         arguments["DbsUrl"] = None
         stdBaseInstance.factoryWorkloadConstruction("TestWorkload", arguments)
-        return 
+        return
+
 
 if __name__ == "__main__":
     unittest.main()

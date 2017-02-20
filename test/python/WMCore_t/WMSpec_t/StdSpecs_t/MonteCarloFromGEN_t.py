@@ -17,6 +17,7 @@ from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
+
 class MonteCarloFromGENTest(unittest.TestCase):
     def setUp(self):
         """
@@ -28,8 +29,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
         self.testInit.setupCouch("mclhe_t", "ConfigCache")
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
 
         couchServer = CouchServer(os.environ["COUCHURL"])
         self.configDatabase = couchServer.connectDatabase("mclhe_t")
@@ -61,10 +62,11 @@ class MonteCarloFromGENTest(unittest.TestCase):
         newConfig["pset_hash"] = "7c856ad35f9f544839d8525ca10259a7"
         newConfig["owner"] = {"group": "cmsdataops", "user": "sfoulkes"}
         newConfig["pset_tweak_details"] = {"process": {"outputModules_": ["outputRECORECO", "outputALCARECOALCARECO"],
-                                                      "outputRECORECO": {"dataset": {"filterName": "FilterRECO",
-                                                                                     "dataTier": "RECO"}},
-                                                      "outputALCARECOALCARECO": {"dataset": {"filterName": "FilterALCARECO",
-                                                                                             "dataTier": "ALCARECO"}}}}
+                                                       "outputRECORECO": {"dataset": {"filterName": "FilterRECO",
+                                                                                      "dataTier": "RECO"}},
+                                                       "outputALCARECOALCARECO": {
+                                                           "dataset": {"filterName": "FilterALCARECO",
+                                                                       "dataTier": "ALCARECO"}}}}
         result = self.configDatabase.commitOne(newConfig)
         return result[0]["id"]
 
@@ -92,12 +94,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
         splitting = productionTask.jobSplittingParameters()
         self.assertFalse(splitting["deterministicPileup"])
 
-        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath = self.testDir)
+        testWMBSHelper = WMBSHelper(testWorkload, "MonteCarloFromGEN", "SomeBlock", cachepath=self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        procWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/MonteCarloFromGEN")
+        procWorkflow = Workflow(name="TestWorkload",
+                                task="/TestWorkload/MonteCarloFromGEN")
         procWorkflow.load()
 
         self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
@@ -112,7 +114,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
             mergedOutput.loadData()
             unmergedOutput.loadData()
 
-            self.assertEqual(mergedOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(mergedOutput.name,
+                             "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
             self.assertEqual(unmergedOutput.name, "/TestWorkload/MonteCarloFromGEN/unmerged-%s" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
@@ -128,8 +131,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
                          "Error: LogArchive output fileset is wrong.")
 
         for goldenOutputMod in goldenOutputMods:
-            mergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s" % goldenOutputMod)
+            mergeWorkflow = Workflow(name="TestWorkload",
+                                     task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
             self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
@@ -141,9 +144,11 @@ class MonteCarloFromGENTest(unittest.TestCase):
             mergedMergeOutput.loadData()
             unmergedMergeOutput.loadData()
 
-            self.assertEqual(mergedMergeOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(mergedMergeOutput.name,
+                             "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Merged output fileset is wrong.")
-            self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
+            self.assertEqual(unmergedMergeOutput.name,
+                             "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-Merged" % goldenOutputMod,
                              "Error: Unmerged output fileset is wrong.")
 
             logArchOutput = mergeWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
@@ -151,15 +156,17 @@ class MonteCarloFromGENTest(unittest.TestCase):
             logArchOutput.loadData()
             unmergedLogArchOutput.loadData()
 
-            self.assertEqual(logArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(logArchOutput.name,
+                             "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong: %s" % logArchOutput.name)
-            self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
+            self.assertEqual(unmergedLogArchOutput.name,
+                             "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s/merged-logArchive" % goldenOutputMod,
                              "Error: LogArchive output fileset is wrong.")
 
-        topLevelFileset = Fileset(name = "TestWorkload-MonteCarloFromGEN-SomeBlock")
+        topLevelFileset = Fileset(name="TestWorkload-MonteCarloFromGEN-SomeBlock")
         topLevelFileset.loadData()
 
-        procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
+        procSubscription = Subscription(fileset=topLevelFileset, workflow=procWorkflow)
         procSubscription.loadData()
 
         self.assertEqual(procSubscription["type"], "Production",
@@ -167,12 +174,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(procSubscription["split_algo"], "EventAwareLumiBased",
                          "Error: Wrong split algo.")
 
-        unmergedReco = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputRECORECO")
+        unmergedReco = Fileset(name="/TestWorkload/MonteCarloFromGEN/unmerged-outputRECORECO")
         unmergedReco.loadData()
-        recoMergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO")
+        recoMergeWorkflow = Workflow(name="TestWorkload",
+                                     task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO")
         recoMergeWorkflow.load()
-        mergeSubscription = Subscription(fileset = unmergedReco, workflow = recoMergeWorkflow)
+        mergeSubscription = Subscription(fileset=unmergedReco, workflow=recoMergeWorkflow)
         mergeSubscription.loadData()
 
         self.assertEqual(mergeSubscription["type"], "Merge",
@@ -180,12 +187,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(mergeSubscription["split_algo"], "ParentlessMergeBySize",
                          "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
-        unmergedAlca = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-outputALCARECOALCARECO")
+        unmergedAlca = Fileset(name="/TestWorkload/MonteCarloFromGEN/unmerged-outputALCARECOALCARECO")
         unmergedAlca.loadData()
-        alcaMergeWorkflow = Workflow(name = "TestWorkload",
-                                     task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO")
+        alcaMergeWorkflow = Workflow(name="TestWorkload",
+                                     task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO")
         alcaMergeWorkflow.load()
-        mergeSubscription = Subscription(fileset = unmergedAlca, workflow = alcaMergeWorkflow)
+        mergeSubscription = Subscription(fileset=unmergedAlca, workflow=alcaMergeWorkflow)
         mergeSubscription.loadData()
 
         self.assertEqual(mergeSubscription["type"], "Merge",
@@ -194,12 +201,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
                          "Error: Wrong split algo: %s" % mergeSubscription["split_algo"])
 
         for procOutput in ["outputRECORECO", "outputALCARECOALCARECO"]:
-            unmerged = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-%s" % procOutput)
+            unmerged = Fileset(name="/TestWorkload/MonteCarloFromGEN/unmerged-%s" % procOutput)
             unmerged.loadData()
-            cleanupWorkflow = Workflow(name = "TestWorkload",
-                                      task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENCleanupUnmerged%s" % procOutput)
+            cleanupWorkflow = Workflow(name="TestWorkload",
+                                       task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENCleanupUnmerged%s" % procOutput)
             cleanupWorkflow.load()
-            cleanupSubscription = Subscription(fileset = unmerged, workflow = cleanupWorkflow)
+            cleanupSubscription = Subscription(fileset=unmerged, workflow=cleanupWorkflow)
             cleanupSubscription.loadData()
 
             self.assertEqual(cleanupSubscription["type"], "Cleanup",
@@ -207,12 +214,12 @@ class MonteCarloFromGENTest(unittest.TestCase):
             self.assertEqual(cleanupSubscription["split_algo"], "SiblingProcessingBased",
                              "Error: Wrong split algo.")
 
-        procLogCollect = Fileset(name = "/TestWorkload/MonteCarloFromGEN/unmerged-logArchive")
+        procLogCollect = Fileset(name="/TestWorkload/MonteCarloFromGEN/unmerged-logArchive")
         procLogCollect.loadData()
-        procLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                          task = "/TestWorkload/MonteCarloFromGEN/LogCollect")
+        procLogCollectWorkflow = Workflow(name="TestWorkload",
+                                          task="/TestWorkload/MonteCarloFromGEN/LogCollect")
         procLogCollectWorkflow.load()
-        logCollectSub = Subscription(fileset = procLogCollect, workflow = procLogCollectWorkflow)
+        logCollectSub = Subscription(fileset=procLogCollect, workflow=procLogCollectWorkflow)
         logCollectSub.loadData()
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
@@ -220,12 +227,13 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
-        procLogCollect = Fileset(name = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO/merged-logArchive")
+        procLogCollect = Fileset(
+            name="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO/merged-logArchive")
         procLogCollect.loadData()
-        procLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                          task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO/MonteCarloFromGENoutputRECORECOMergeLogCollect")
+        procLogCollectWorkflow = Workflow(name="TestWorkload",
+                                          task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputRECORECO/MonteCarloFromGENoutputRECORECOMergeLogCollect")
         procLogCollectWorkflow.load()
-        logCollectSub = Subscription(fileset = procLogCollect, workflow = procLogCollectWorkflow)
+        logCollectSub = Subscription(fileset=procLogCollect, workflow=procLogCollectWorkflow)
         logCollectSub.loadData()
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
@@ -233,12 +241,13 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.assertEqual(logCollectSub["split_algo"], "MinFileBased",
                          "Error: Wrong split algo.")
 
-        procLogCollect = Fileset(name = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO/merged-logArchive")
+        procLogCollect = Fileset(
+            name="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO/merged-logArchive")
         procLogCollect.loadData()
-        procLogCollectWorkflow = Workflow(name = "TestWorkload",
-                                          task = "/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO/MonteCarloFromGENoutputALCARECOALCARECOMergeLogCollect")
+        procLogCollectWorkflow = Workflow(name="TestWorkload",
+                                          task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMergeoutputALCARECOALCARECO/MonteCarloFromGENoutputALCARECOALCARECOMergeLogCollect")
         procLogCollectWorkflow.load()
-        logCollectSub = Subscription(fileset = procLogCollect, workflow = procLogCollectWorkflow)
+        logCollectSub = Subscription(fileset=procLogCollect, workflow=procLogCollectWorkflow)
         logCollectSub.loadData()
 
         self.assertEqual(logCollectSub["type"], "LogCollect",
@@ -297,6 +306,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = taskObj.getStepHelper(step)
             self.assertEqual(stepHelper.getNumberOfCores(), 1)
+            self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = taskObj.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], 2300.0)
@@ -304,14 +314,17 @@ class MonteCarloFromGENTest(unittest.TestCase):
         # now test case where args are provided
         defaultArguments["Multicore"] = 6
         defaultArguments["Memory"] = 4600.0
+        defaultArguments["EventStreams"] = 3
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", defaultArguments)
         taskObj = testWorkload.getTask('MonteCarloFromGEN')
         for step in ('cmsRun1', 'stageOut1', 'logArch1'):
             stepHelper = taskObj.getStepHelper(step)
             if step == 'cmsRun1':
                 self.assertEqual(stepHelper.getNumberOfCores(), defaultArguments["Multicore"])
+                self.assertEqual(stepHelper.getNumberOfStreams(), defaultArguments["EventStreams"])
             else:
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
+                self.assertEqual(stepHelper.getNumberOfStreams(), 0)
         # then test Memory requirements
         perfParams = taskObj.jobSplittingParameters()['performance']
         self.assertEqual(perfParams['memoryRequirement'], defaultArguments["Memory"])

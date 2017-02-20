@@ -14,6 +14,7 @@ from WMCore.WMSpec.StdSpecs.StoreResults import StoreResultsWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMQuality.TestInit import TestInit
 
+
 class StoreResultsTest(unittest.TestCase):
     def setUp(self):
         """
@@ -24,8 +25,8 @@ class StoreResultsTest(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS"],
+                                useDefault=False)
         self.testDir = self.testInit.generateWorkDir()
         return
 
@@ -47,18 +48,18 @@ class StoreResultsTest(unittest.TestCase):
         correctly.
         """
         arguments = StoreResultsWorkloadFactory.getTestArguments()
-        arguments.update({'CmsPath' :"/uscmst1/prod/sw/cms"})
+        arguments.update({'CmsPath': "/uscmst1/prod/sw/cms"})
 
         factory = StoreResultsWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload",
-                                                                               arguments)
+                                                           arguments)
 
-        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath = self.testDir)
+        testWMBSHelper = WMBSHelper(testWorkload, "StoreResults", "SomeBlock", cachepath=self.testDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testWMBSHelper.topLevelTask, testWMBSHelper.topLevelFileset)
 
-        testWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/StoreResults")
+        testWorkflow = Workflow(name="TestWorkload",
+                                task="/TestWorkload/StoreResults")
         testWorkflow.load()
 
         self.assertEqual(len(testWorkflow.outputMap.keys()), 2,
@@ -75,24 +76,22 @@ class StoreResultsTest(unittest.TestCase):
             self.assertEqual(mergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % goldenOutputMod,
                              "Error: Merged output fileset is wrong: %s" % mergedOutput.name)
             self.assertEqual(unmergedOutput.name, "/TestWorkload/StoreResults/merged-%s" % goldenOutputMod,
-                             "Error: Unmerged output fileset is wrong: %s."%unmergedOutput.name)
+                             "Error: Unmerged output fileset is wrong: %s." % unmergedOutput.name)
 
         logArchOutput = testWorkflow.outputMap["logArchive"][0]["merged_output_fileset"]
         unmergedLogArchOutput = testWorkflow.outputMap["logArchive"][0]["output_fileset"]
         logArchOutput.loadData()
         unmergedLogArchOutput.loadData()
 
-
         self.assertEqual(logArchOutput.name, "/TestWorkload/StoreResults/merged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
         self.assertEqual(unmergedLogArchOutput.name, "/TestWorkload/StoreResults/merged-logArchive",
                          "Error: LogArchive output fileset is wrong.")
 
-
-        topLevelFileset = Fileset(name = "TestWorkload-StoreResults-SomeBlock")
+        topLevelFileset = Fileset(name="TestWorkload-StoreResults-SomeBlock")
         topLevelFileset.loadData()
 
-        procSubscription = Subscription(fileset = topLevelFileset, workflow = testWorkflow)
+        procSubscription = Subscription(fileset=topLevelFileset, workflow=testWorkflow)
         procSubscription.loadData()
 
         self.assertEqual(procSubscription["type"], "Merge",
@@ -101,6 +100,7 @@ class StoreResultsTest(unittest.TestCase):
                          "Error: Wrong split algo.")
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

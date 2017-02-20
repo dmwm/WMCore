@@ -75,7 +75,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
             else:
                 alcaTask = recoTask.addTask("AlcaSkim")
-                alcaTaskConf = {'Multicore': 1}
+                alcaTaskConf = {'Multicore': 1, 'EventStreams': 0}
                 scenarioArgs = { 'globalTag' : self.globalTag,
                                  'skims' : self.alcaSkims,
                                  'primaryDataset' : self.inputPrimaryDataset }

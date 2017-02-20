@@ -1,7 +1,8 @@
 { 
 "createRequest":
 {
-    "Comments": "TaskChain with real input data with 3 tasks, 4-cores task1, 8-cores task2 and 1-core task3. Memory per task. Harvesting enabled",
+    "Comments": ["TaskChain with real input data with 3 tasks; Main dict and Task1 with 4 cores/streams;",
+                 "Task2 with 8 cores and 6 streams; Task3 with 1 core/stream; Memory per task. Harvesting enabled"],
     "AcquisitionEra": "Integ_Test",
     "ProcessingString": "Integ_ProcStr_TEST",
     "Campaign": "Campaign-OVERRIDE-ME",
@@ -22,6 +23,7 @@
     "SizePerEvent": 1234,
     "TimePerEvent": 0.8,
     "Multicore": 4,
+    "EventStreams": 4,
     "Task1": {"InputDataset": "/SingleElectron/Run2012D-v1/RAW",
         "RunWhitelist": [208307],
         "ProcessingString": "GR_H_V55A_RelVal_electron2012D_TEST_Multicore",
@@ -33,6 +35,7 @@
         "KeepOutput": true,
         "TaskName": "HLTD"},
     "Task2": {"AcquisitionEra": "CMSSW_7_4_0",
+        "EventStreams": 6,
         "Multicore": 8,
         "Memory" : 8000,
         "ConfigCacheID": "0d6d2c921e3ce552e8f513db7f91acbb",
@@ -46,6 +49,7 @@
         "TaskName": "RECODreHLT"},
     "Task3": {"AcquisitionEra": "CMSSW_7_4_0",
         "Multicore": 1,
+        "EventStreams": 1,
         "Memory" : 2000,
         "ConfigCacheID": "0d6d2c921e3ce552e8f513db7f91ca7e",
         "GlobalTag": "GR_R_74_V8A",

@@ -223,7 +223,7 @@ class BuildCommand(Command):
 
     def generate_docs (self):
         if not self.skip_docs:
-	    os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ["PYTHONPATH"])
+	    os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ.get("PYTHONPATH", ''))
 	    spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
 
     def compress_assets(self):

@@ -5,6 +5,7 @@ WorkQueue splitting by block
 """
 from __future__ import division
 
+import os
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError, WorkQueueNoWorkError
 from WMCore.DataStructs.Mask import Mask
@@ -66,6 +67,9 @@ class MonteCarlo(StartPolicyInterface):
             remainingLumis = ceil(nEvents % self.args['SliceSize'] / self.args['SubSliceSize'])
             nLumis += remainingLumis
             jobs = ceil(nEvents/self.args['SliceSize'])
+            
+            if nLumis > int(os.environ.get('MAX_LUMIS_PER_WQE', 200000)):
+                raise WorkQueueWMSpecError(self.wmspec, "Too many lumis in WQE: %s" % nLumis)
 
             mask['LastLumi'] = mask['FirstLumi'] + int(nLumis) - 1 # inclusive range
             self.newQueueElement(WMSpec = self.wmspec,

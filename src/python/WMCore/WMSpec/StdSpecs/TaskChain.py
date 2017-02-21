@@ -478,10 +478,6 @@ class TaskChainWorkloadFactory(StdBase):
                 taskConf[argument] = taskArguments[argument]["default"]
             else:
                 taskConf[argument] = taskArguments[argument]["type"](taskConf[argument])
-        baseArguments = self.getWorkloadArguments()
-        for argument in baseArguments:
-            if argument in taskConf:
-                taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
 
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
@@ -642,7 +638,8 @@ class TaskChainWorkloadFactory(StdBase):
                                "attr": "prepID", "null": True},
                     "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
-                   }
+                    "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 

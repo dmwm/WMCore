@@ -27,9 +27,9 @@ def walk_dep_tree(system):
     packages = set()
     statics = set()
     modules = set()
-    bin = set()
+    bindir = set()
     if 'bin' in system.keys():
-        bin = set(system.get('bin', set()))
+        bindir = set(system.get('bin', set()))
     if 'modules' in system.keys():
         modules = set(system.get('modules', set()))
     if 'packages' in system.keys():
@@ -39,11 +39,11 @@ def walk_dep_tree(system):
     if 'systems' in system.keys():
         for system in system['systems']:
             dependants = walk_dep_tree(dependencies[system])
-            bin = bin | dependants.get('bin', set())
+            bindir = bindir | dependants.get('bin', set())
             packages = packages | dependants.get('packages', set())
             statics = statics | dependants.get('statics', set())
             modules = modules | dependants.get('modules', set())
-    return {'bin': bin, 'packages': packages, 'statics': statics, 'modules': modules}
+    return {'bin': bindir, 'packages': packages, 'statics': statics, 'modules': modules}
 
 def list_packages(package_dirs = [], recurse=True):
     """
@@ -55,7 +55,7 @@ def list_packages(package_dirs = [], recurse=True):
     for a_dir in package_dirs:
         if recurse:
             # Recurse the sub-directories
-            for dirpath, dirnames, filenames in os.walk('%s' % a_dir, topdown=True):
+            for dirpath, dummy_dirnames, dummy_filenames in os.walk('%s' % a_dir, topdown=True):
                 pathelements = dirpath.split('/')
                 # If any part of pathelements is in the ignore_these set skip the path
                 if len(set(pathelements) & ignore_these) == 0:
@@ -80,7 +80,7 @@ def data_files_for(dir):
     ignore_these = set(['CVS', '.svn', 'svn', '.git', 'DefaultConfig.py'])
     if dir.endswith('+'):
         dir = dir.rstrip('+')
-        for dirpath, dirnames, filenames in os.walk('%s' % dir, topdown=True):
+        for dirpath, dummy_dirnames, filenames in os.walk('%s' % dir, topdown=True):
             pathelements = dirpath.split('/')
             # If any part of pathelements is in the ignore_these set skip the path
             if len(set(pathelements) & ignore_these) == 0:
@@ -223,8 +223,8 @@ class BuildCommand(Command):
 
     def generate_docs (self):
         if not self.skip_docs:
-	    os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ.get("PYTHONPATH", ''))
-	    spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
+            os.environ["PYTHONPATH"] = "%s/build/lib:%s" % (get_path_to_wmcore_root(), os.environ.get("PYTHONPATH", ''))
+            spawn(['make', '-C', 'doc', 'html', 'PROJECT=%s' % self.system.lower()])
 
     def compress_assets(self):
         if not self.compress:
@@ -266,13 +266,13 @@ class BuildCommand(Command):
         # with the additional explicit setting of force
         command = 'build'
         if self.distribution.have_run.get(command):
-           return
+            return
         cmd = self.distribution.get_command_obj(command)
         # Forcibly set force
         cmd.force = self.force
         cmd.ensure_finalized()
         cmd.run()
-	self.generate_docs()
+        self.generate_docs()
         self.compress_assets()
         self.distribution.have_run[command] = 1
 
@@ -314,12 +314,11 @@ class InstallCommand(install):
         self.distribution.data_files = list_static_files(dependencies[self.system])
         docroot = "%s/doc/build/html" % get_path_to_wmcore_root()
         for dirpath, dirs, files in os.walk(docroot):
-	    self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
-	                                         ["%s/%s" % (dirpath, fname) for fname in files
-				                  if fname != '.buildinfo']))
+            self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
+	                       ["%s/%s" % (dirpath, fname) for fname in files if fname != '.buildinfo']))
         # Mangle data paths if patching.
-	if self.patch:
-          self.distribution.data_files = [('x' + dir, files) for dir, files in self.distribution.data_files]
+        if self.patch:
+            self.distribution.data_files = [('x' + dir, files) for dir, files in self.distribution.data_files]
 
         print_build_info(self)
 

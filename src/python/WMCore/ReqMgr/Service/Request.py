@@ -250,13 +250,17 @@ class Request(RESTEntity):
                 chain_key = "%s%s" % (chain_name, i + 1)
                 chain = req_dict[chain_key]
                 if mask_key in chain:
-                    masked_dict[mask_key].append({chain_key: chain[mask_key]})
+                    masked_dict[mask_key].append(chain[mask_key])
                 else:
                     if isinstance(defaultValue, dict):
                         value = defaultValue.get(chain_key, None)
                     else:
                         value = defaultValue
-                    masked_dict[mask_key].append({chain_key: value})
+                    
+                    if value is not None:
+                        masked_dict[mask_key].append(value)
+            
+            masked_dict[mask_key] = list(set(masked_dict[mask_key]))
         return
 
     def _mask_result(self, mask, result):

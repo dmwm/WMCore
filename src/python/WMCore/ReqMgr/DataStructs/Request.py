@@ -18,7 +18,7 @@ TODO/NOTE:
 from __future__ import print_function, division
 import time
 import cherrypy
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
 from WMCore.Lexicon import identifier
 
@@ -99,3 +99,94 @@ def generateRequestName(request):
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
     # then validate the final request name
     identifier(request["RequestName"])
+    
+        
+def protectedLFNs(requestInfo):
+    
+    reqData = RequestInfo(requestInfo)
+    result = []
+    if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
+        outs = requestInfo.get('OutputDatasets', [])
+        base= requestInfo.get('UnmergedLFNBase','/store/unmerged')
+        for out in outs:
+            _, dsn, ps, tier = out.split('/')
+            acq, rest = ps.split('-',1)
+            dirPath = '/'.join([ base, acq, dsn, tier, rest])
+            result.append(dirPath)
+    return result
+            
+
+class RequestInfo(object):
+    """
+    Wrapper class for Request data
+    """
+    def __init__(self, requestData):
+        self.data = requestData
+    
+    def _maskTaskStepChain(self, prop, chain_name, default=None):
+
+        propExist = False
+        numLoop = self.data["%sChain" % chain_name]
+        for i in range(numLoop):
+            if prop in self.data["%s%s" % (chain_name, i + 1)]:
+                propExist = True
+                break
+        
+        defaultValue = self.data.get(prop, default)
+            
+        if propExist:
+            result = set()
+            for i in range(numLoop):
+                chain_key = "%s%s" % (chain_name, i + 1)
+                chain = self.data[chain_key]
+                if prop in chain:
+                    result.add(chain[prop])
+                else:
+                    if isinstance(defaultValue, dict):
+                        value = defaultValue.get(chain_key, None)
+                    else:
+                        value = defaultValue
+                    
+                    if value is not None:
+                        result.add(value)
+            return list(result)
+        else:
+            if isinstance(defaultValue, dict):
+                return defaultValue.values()
+            else:
+                return defaultValue
+            
+        return
+
+    def get(self, prop, default=None):
+        """
+        """
+        
+        if "TaskChain" in self.data:
+            return self._maskTaskStepChain(prop, "Task")
+        elif "StepChain" in self.data:
+            return self._maskTaskStepChain(prop, "Step")
+        elif prop in self.data:
+            return self.data[prop]
+        else:
+            return default
+        
+    def andFilterCheck(self, filterDict):
+        """
+        checks whether filterDict condition met.
+        filterDict is the dict of key and value(list) format)
+        i.e. 
+        {"RequestStatus": ["running-closed", "completed"],}
+        If this request's RequestStatus is either "running-closed", "completed",
+        return True, otherwise False
+        """
+        for key, value in filterDict.iteritems():
+            if key in self.data:
+                if self.data[key] not in value:
+                    return False
+            else:
+                return False  
+        return True
+
+
+    

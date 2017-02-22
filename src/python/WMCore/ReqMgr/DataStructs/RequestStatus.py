@@ -121,6 +121,11 @@ STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_ST
 # is name of the status
 REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
 
+ACTIVE_STATUS_FILTER = {"RequestStatus": ['assigned', 'acquired', 'running-open',
+                                          'running-closed', 'force-complete', 'completed', 
+                                          'closed-out']}
+ACTIVE_NO_CLOSEOUT_FILTER = {"RequestStatus": ['assigned', 'acquired', 'running-open',
+                                          'running-closed', 'force-complete', 'completed']}
 
 def check_allowed_transition(preState, postState):
     stateList = REQUEST_STATE_TRANSITION.get(preState, [])

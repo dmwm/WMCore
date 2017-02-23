@@ -3,7 +3,7 @@ from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter, convertToServiceCouchDoc
 
 class HeartbeatMonitorBase(CherryPyPeriodicTask):
-    
+
     def __init__(self, rest, config):
         super(HeartbeatMonitorBase, self).__init__(config)
         self.centralWMStats = WMStatsWriter(config.wmstats_url)
@@ -14,10 +14,10 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
         sets the list of function reference for concurrent tasks
         """
         self.concurrentTasks = [{'func': self.reportToWMStats, 'duration': config.heartbeatCheckDuration}]
-        
+
     def reportToWMStats(self, config):
         """
-        report thread status and heartbeat. 
+        report thread status and heartbeat.
         Also can report additional mointoring information by rewriting addAdditionalMonitorReport method
         """
         self.logger.info("Checking Thread status...")
@@ -26,11 +26,11 @@ class HeartbeatMonitorBase(CherryPyPeriodicTask):
         downThreadInfo.update(monitorInfo)
         wqSummaryDoc = convertToServiceCouchDoc(downThreadInfo, config.log_reporter)
         self.centralWMStats.updateAgentInfo(wqSummaryDoc)
-        
+
         self.logger.info("Uploaded to WMStats...")
 
         return
-    
+
     def addAdditionalMonitorReport(self, config):
         """
         add Additonal report with heartbeat report

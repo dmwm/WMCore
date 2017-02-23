@@ -89,14 +89,14 @@ def json2table(jsondata, web_ui_map, visible_attrs=None, selected={}):
                 sel = '<textarea name="%s" class="width-100">%s</textarea>' \
                         % (key, json.dumps(val))
             else:
-                
+
                 MULTI_SELECTION_KEYS = ['SiteWhitelist', 'SiteBlacklist', 'AutoApproveSubscriptionSites']
                 if key in MULTI_SELECTION_KEYS:
                     sel = "<select class=\"width-100\" name=\"%s\" multiple>" % key
                 else:
                     sel = "<select class=\"width-100\" name=\"%s\">" % key
-                
-                if key in selected:    
+
+                if key in selected:
                     values = val
                 else:
                     values = sorted(val)
@@ -282,7 +282,7 @@ def sort(docs, sortby):
     "Sort given documents by sortby attribute"
     for doc in docs:
         yield doc
-        
+
 def reorder_list(org_list, selected):
     """
     if the first is in the list.

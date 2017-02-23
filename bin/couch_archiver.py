@@ -69,11 +69,11 @@ for statusRow in statusResult["rows"]:
     wfName = statusRow["key"][0]
     summaryUrl = summaryBase % (destCouchHost, destDbBase, wfName)
     successUrl = successBase % (destCouchHost, destDbBase, wfName, wfName)
-    failedUrl = successBase % (destCouchHost, destDbBase, wfName, wfName)    
+    failedUrl = successBase % (destCouchHost, destDbBase, wfName, wfName)
     fileHandle.write("%s " % wfName)
     fileHandle.write("<a href=%s>(summary)</a>" % sanitizeURL(summaryUrl)["url"])
     fileHandle.write(" <a href=%s>(success)</a>" % sanitizeURL(successUrl)["url"])
-    fileHandle.write(" <a href=%s>(failure)</a><br>\n" % sanitizeURL(failedUrl)["url"])    
+    fileHandle.write(" <a href=%s>(failure)</a><br>\n" % sanitizeURL(failedUrl)["url"])
 
 fileHandle.write("</body></html>\n")
 fileHandle.close()

@@ -8,7 +8,7 @@ def updateRequestStatus(couchURL, requestList, status):
     for request in requestList:
         ww.updateRequestStatus(request, status)
         print("%s is udated to %s" % (request, status))
-    
+
 if __name__ == "__main__":
     parser =  OptionParser()
     parser.add_option("--url", dest = "url",

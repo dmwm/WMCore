@@ -30,5 +30,5 @@ class HeartbeatMonitor(HeartbeatMonitorBase):
         status = ['Available', 'Negotiating', 'Acquired']
         globalQ = globalQueue(**config.queueParams)
         results = globalQ.monitorWorkQueue(status)
-        
+
         return results

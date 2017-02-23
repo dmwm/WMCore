@@ -24,5 +24,5 @@ class UpdateAuxDBTasks(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-        
+
         update_software(config)

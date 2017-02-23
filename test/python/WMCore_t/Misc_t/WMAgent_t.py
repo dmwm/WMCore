@@ -162,7 +162,7 @@ class WMAgentTest(unittest.TestCase):
         self.testInit.clearDatabase()
 
         self.testInit.delWorkDir()
-        
+
         EmulatorSetup.deleteConfig(self.configFile)
 
         return

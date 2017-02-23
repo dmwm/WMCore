@@ -9,28 +9,28 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
     '''
     Defined Workflow status from its WorkQeuueElement status.
     :param: elementsStatusSet - dictionary of {request_name: set of all WQE status of this request, ...}
-    :returns: request status 
-    
+    :returns: request status
+
     Here is the mapping between request status and it GQE status
     1. acquired:  if all the GQEs are either Available or Negotiating -  Work is still in GQ but not LQ
     2. running-open: if at least one of the GQEs are in Acquired status - at least some work is in LQ
-    3. running-closed: if all the GQEs are in Running or complted status 
+    3. running-closed: if all the GQEs are in Running or complted status
                        no Available Negotiating or Acquired status. all the work is in WMBS db (in agents)
-    4. completed: if all the GQEs are in 'Done', 'Canceled' status. 
+    4. completed: if all the GQEs are in 'Done', 'Canceled' status.
                    - all work is finsed in wmbs (excluding cleanup, logcollect)
-    5. failed: if all the GQEs are in Failed status - this is not currently possible. failed status directly updated from GQ  
-    
-    CancelRequest status treated as transient status.               
+    5. failed: if all the GQEs are in Failed status - this is not currently possible. failed status directly updated from GQ
+
+    CancelRequest status treated as transient status.
     '''
     if len(elementsStatusSet) == 0:
         return None
-    
+
     available = set(["Available", "Negotiating"])
     acquired = set(["Acquired"])
     running = set(["Running"])
     completed = set(['Done', 'Canceled'])
     failed = set(["Failed"])
-    
+
     if elementsStatusSet <= available:
         # if all the elements are Available status.
         return "acquired"
@@ -44,7 +44,7 @@ def convertWQElementsStatusToWFStatus(elementsStatusSet):
         # if one of the elements are in Acquired status
         return "running-open"
     elif running <= elementsStatusSet:
-        # if one of the elements in running status but no elements are 
+        # if one of the elements in running status but no elements are
         # Acquired or Assigned status
         return "running-closed"
     else:
@@ -259,19 +259,19 @@ class WorkQueue(object):
             result[x['key'][0]][x['key'][1]] = {'NumOfElements': x['value']['count'],
                                                 'Jobs': x['value']['sum']}
         return result
-    
-    
+
+
     def _retrieveWorkflowStatus(self, data):
         workflowsStatus = {}
-        
+
         for workflow in data:
             statusSet = set(data[workflow].keys())
             status = convertWQElementsStatusToWFStatus(statusSet)
             if status:
                 workflowsStatus[workflow] = status
         return workflowsStatus
-    
-    
+
+
     def getWorkflowStatusFromWQE(self, stale=True):
         """
         only checks workqueue db not inbox db.
@@ -287,7 +287,7 @@ class WorkQueue(object):
         """
         workflowStatus = self.getWorkflowStatusFromWQE(stale=stale)
         return [wf for wf, status in workflowStatus.iteritems() if status == "completed"]
-    
+
     def getJobsByStatus(self, inboxFlag=False, group=True):
         """
         Returns some stats for the workqueue elements in each status, like:

@@ -45,12 +45,12 @@ class Block(StartPolicyInterface):
                         parentList[dbsBlock["Name"]] = self.sites
                     else:
                         parentList[dbsBlock["Name"]] = self.siteDB.PNNstoPSNs(dbsBlock['PhEDExNodeList'])
-            
+
             # there could be 0 event files in that case we can't estimate the number of jobs created.
             # We set Jobs to 1 for that case.
             # If we need more realistic estimate, we need to dry run the spliting the jobs.
             estimateJobs = max(1, ceil(block[self.args['SliceType']] / self.args['SliceSize']))
-                                                       
+
             self.newQueueElement(Inputs={block['block']: self.data.get(block['block'], [])},
                                  ParentFlag=parentFlag,
                                  ParentData=parentList,

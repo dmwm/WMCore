@@ -23,7 +23,7 @@ def loadRequestSchema(workload, requestSchema):
     """
     _loadRequestSchema_
     Legacy code to support ops script
-    
+
     Does modifications to the workload I don't understand
     Takes a WMWorkloadHelper, operates on it directly with the schema
     """
@@ -46,7 +46,7 @@ def loadRequestSchema(workload, requestSchema):
                         # this logging need to change to cherry py logging
                         logging.error("Invalid Value: %s" % str(ex))
             else:
-                # this logging need to change to cherry py logging 
+                # this logging need to change to cherry py logging
                 logging.error("Invalid Value: %s" % str(ex))
 
     schema.timeStamp = int(time.time())
@@ -66,14 +66,14 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     """
     param and safe structure is RESTArgs structure: named tuple
     RESTArgs(args=[], kwargs={})
-    
+
     validate post/put request
     1. read data from body
     2. validate the permission (authentication)
     3. validate state transition (against previous state from couchdb)
     2. validate using workload validation
     3. convert data from body to arguments (spec instance, argument with default setting)
-    
+
     TODO: raise right kind of error with clear message
     """
     # this needs to be deleted for validation
@@ -105,7 +105,7 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
             args_only_status["RequestStatus"] = request_args["RequestStatus"]
             if 'cascade' in request_args:
                 args_only_status["cascade"] = request_args["cascade"]
-            return  workload, args_only_status 
+            return  workload, args_only_status
     else:
         args_without_status = request_args
 
@@ -134,8 +134,8 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     validate post request
     1. read data from body
     2. validate using spec validation
-    3. convert data from body to arguments (spec instance, argument with default setting) 
-    TODO: rasie right kind of error with clear message 
+    3. convert data from body to arguments (spec instance, argument with default setting)
+    TODO: rasie right kind of error with clear message
     """
 
     initialize_request_args(request_args, config)
@@ -151,7 +151,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     spec = loadSpecByType(request_args["RequestType"])
     if request_args["RequestType"] == "Resubmission":
         initialize_resubmission(request_args, config, reqmgr_db_service)
-        
+
     workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
                                                 request_args)
     return workload, request_args

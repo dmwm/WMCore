@@ -176,4 +176,4 @@ class StompAMQ(object):
         notification['body'] = body
 
         return notification
-    
+

@@ -24,7 +24,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 

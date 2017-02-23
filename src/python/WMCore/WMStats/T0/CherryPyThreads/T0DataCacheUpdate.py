@@ -1,7 +1,7 @@
 '''
 
 '''
-from __future__ import (division, print_function) 
+from __future__ import (division, print_function)
 
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.WMStats.DataStructs.DataCache import DataCache
@@ -25,7 +25,7 @@ class T0DataCacheUpdate(CherryPyPeriodicTask):
         """
         try:
             if DataCache.islatestJobDataExpired():
-                wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url, 
+                wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                                           reqdbCouchApp = "T0Request")
                 jobData = wmstatsDB.getT0ActiveData(jobInfoFlag = True)
                 DataCache.setlatestJobData(jobData)

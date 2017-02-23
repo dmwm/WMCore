@@ -19,8 +19,8 @@ class LocationUpdateTask(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-        
+
         globalQ = globalQueue(**config.queueParams)
         globalQ.updateLocationInfo()
-                  
+
         return

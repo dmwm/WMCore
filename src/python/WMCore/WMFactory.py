@@ -64,7 +64,7 @@ namespace (package): %s """ % (name, str(namespace))
             module = "%s.%s" % (self.namespace, classname)
             errModule = "%s.%s" % (self.namespace, classname)
         if alteredClassName:
-            classname = alteredClassName 
+            classname = alteredClassName
         module = __import__(module, globals(), locals(), [classname])
         obj = getattr(module, classname.split('.')[-1])
         if args == None:

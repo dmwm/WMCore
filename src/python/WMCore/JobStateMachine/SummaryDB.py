@@ -50,17 +50,17 @@ def fwjr_parser(doc):
             fwjr = fwjr.__to_json__(None)
     else:
         raise Exception('Document does not contain FWJR part')
-    
+
     if 'task' not in fwjr:
         return dataCollectedFlag
-    
+
     task_name = fwjr['task']
     try:
         req_name = task_name.split('/')[1]
     except:
         raise Exception('Cannot get request name from task_name "%s"' % task_name)
-    
-    # if one of the step has error except logArchive step don't collect the data 
+
+    # if one of the step has error except logArchive step don't collect the data
     for stepName in fwjr['steps']:
         if not stepName.startswith('logArch') and fwjr['steps'][stepName]['status'] != 0:
             return dataCollectedFlag
@@ -110,7 +110,7 @@ def fwjr_parser(doc):
                     site_summary['inputEvents'] += source.get('events', 0)
         sdict[site_name] = site_summary
         dataCollectedFlag = True
-    
+
     if dataCollectedFlag:
         # prepare final data structure
         sum_doc = dict(_id=req_name, tasks={task_name: dict(sites=sdict)})
@@ -158,21 +158,21 @@ def updateSummaryDB(sumdb, document):
     # parse input doc and create summary doc
     sum_doc = fwjr_parser(document)
     # check if DB has FWJR statistics
-    if sum_doc == False: 
+    if sum_doc == False:
         return False
-    
+
     try:
         doc = sumdb.document(sum_doc['_id'])
         old_tasks = doc['tasks']
     except CouchNotFoundError:
         old_tasks = {}
-    
+
     tasks = update_tasks(old_tasks, sum_doc['tasks'])
-        
+
     try:
         combinedDoc = {'_id': sum_doc['_id'], 'tasks': tasks}
-        resp = sumdb.updateDocument(sum_doc['_id'], "SummaryStats", 
-                                    "genericUpdate", 
+        resp = sumdb.updateDocument(sum_doc['_id'], "SummaryStats",
+                                    "genericUpdate",
                                     fields = combinedDoc,
                                     useBody = True)
         #TODO: check response whether update successfull or not

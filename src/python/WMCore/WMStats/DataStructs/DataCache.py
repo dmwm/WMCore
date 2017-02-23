@@ -1,12 +1,12 @@
 import time
 
 class DataCache(object):
-    # TODO: need to change to  store in  db instead of storing in the memory 
+    # TODO: need to change to  store in  db instead of storing in the memory
     # When mulitple server run for load balancing it could have different result
-    # from each server. 
+    # from each server.
     _duration = 300 # 5 minitues
     _lastedActiveDataFromAgent = {};
-    
+
     @staticmethod
     def getDuration():
         return DataCache._duration;

@@ -34,7 +34,7 @@ def setupRotatingHandler(fileName, maxBytes = 200000000, backupCount = 3):
 
 
 def getTimeRotatingLogger(name, logFile, duration = 'midnight'):
-    """ Set the logger for time based lotaing. 
+    """ Set the logger for time based lotaing.
     """
     logger = logging.getLogger(name)
     handler = TimedRotatingFileHandler(logFile, duration, backupCount = 10)

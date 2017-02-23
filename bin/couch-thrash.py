@@ -35,14 +35,14 @@ def createFile():
     newFile["last_event"] = 0
     newFile["id"] = 1
     return newFile
-    
+
 def createJobs(totalJobs = 100):
     """
     _createJobs_
 
     """
     global lastJobID
-    
+
     newJobs = []
     for i in range(totalJobs):
         newJob = Job(name = makeUUID(), files = [createFile(), createFile()])
@@ -75,15 +75,15 @@ def thrashCouch():
         changeState.recordInCouch(jobs, "created", "new")
         changeState.recordInCouch(jobs, "executing", "created")
         changeState.recordInCouch(jobs, "complete", "executing")
-        
+
         for job in jobs:
             job["fwjr"] = myReport
-        
+
         changeState.recordInCouch(jobs, "success", "complete")
-            
+
         for job in jobs:
             job["fwjr"] = None
-        
+
         changeState.recordInCouch(jobs, "cleanout", "success")
         #time.sleep(10)
     return

@@ -5,7 +5,7 @@ import os
 
 WMSTATS_SCRIPT_DIR = "../src/couchapps/WMStats/_attachments/js"
 MINIFIED_DIR = "../src/couchapps/WMStats/_attachments/js/minified"
-    
+
 globalLib = ["WMStats.Globals.js",
              "WMStats.Utils.js",
              "WMStats.Couch.js",
@@ -125,15 +125,15 @@ def concatenateFiles(filelist, fileName):
     except Exception as ex:
         print("%s" % str(ex))
         pass
-    
+
 if __name__ == "__main__":
-    
+
     initLoadDest = 'global.min.js'
     t1Dest = 'import-all-t1.min.js'
     t0Dest = 'import-all-t0.min.js'
-    
+
     concatenateFiles(globalLib, initLoadDest)
-    
+
     t1_lib = []
     t1_lib.extend(dataStrunct)
     t1_lib.extend(t1_dataStruct)
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     t1_lib.extend(t1_models)
     t1_lib.extend(controller)
     concatenateFiles(t1_lib, t1Dest)
-    
+
     t0_lib = []
     t0_lib.extend(dataStrunct)
     t0_lib.extend(t0_dataStruct)
@@ -156,4 +156,4 @@ if __name__ == "__main__":
     t0_lib.extend(controller)
     concatenateFiles(t0_lib, t0Dest)
 
-    
+

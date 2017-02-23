@@ -740,7 +740,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Get the LumitList from workload (task level should have the same lumiList)
         """
         return self.data.properties.lumiList
-    
+
     def setValidStatus(self, validStatus):
         """
         _setValidStatus_

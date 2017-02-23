@@ -31,7 +31,7 @@ def _cleanDeletedDoc(couchDB, totalLimit, filter, limit, type, lastSeq):
             report = deleteDoc(couchDB, data, cleanLimit)
             #print report
             print("delete sequence %s" % couchDB.last_seq)
-            
+
 def purgeDoc(couchDB, data, cleanLimit):
     purgeDict = {}
     for result in data["results"]:
@@ -49,7 +49,7 @@ def deleteDoc(couchDB, data, cleanLimit):
         cleanLimit += 1
         couchDB.queueDelete(doc)
     return couchDB.commit(doc)
-    
+
 if __name__ == "__main__":
     parser =  OptionParser()
     parser.add_option("--url", dest = "url",

@@ -27,17 +27,17 @@ def handlePostSideEffect(workloadHelper, request_args):
             # 1. get physics group from site db and email address
             # 2. email them the list
             pass
-        
-        
+
+
 def getSiteInfo(config):
     sitedb = SiteDBJSON()
-    sites = sitedb.getAllCMSNames()    
+    sites = sitedb.getAllCMSNames()
     sites.sort()
     wildcardKeys = getattr(config, 'wildcardKeys', {'T1*': 'T1_*',
                                                     'T2*': 'T2_*',
                                                     'T3*': 'T3_*'})
     wildcardSites = {}
-    
+
     for k in wildcardKeys.keys():
         reValue = wildcardKeys.get(k)
         found   = False

@@ -66,13 +66,13 @@ class MarkNewFinishedSubscriptions(DBFormatter):
                         wmbs_sub_files_available.subscription is Null AND
                         wmbs_sub_files_acquired.subscription is Null
                   """
-    
+
     sql = """ UPDATE wmbs_subscription
              SET wmbs_subscription.finished = 1, wmbs_subscription.last_update = :timestamp
-             WHERE wmbs_subscription.id IN ( 
+             WHERE wmbs_subscription.id IN (
              SELECT id FROM (
                     SELECT complete_subscription.id
-                        FROM ( %s ) complete_subscription 
+                        FROM ( %s ) complete_subscription
                     WHERE complete_subscription.id
                         NOT IN ( %s )
                     GROUP BY complete_subscription.id) deletable_subscriptions )""" % (

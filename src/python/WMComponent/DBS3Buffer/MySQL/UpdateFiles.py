@@ -17,5 +17,5 @@ class UpdateFiles(DBFormatter):
             bindVars.append({"block": block.getName(), "status": status})
 
         self.dbi.processData(self.sql, bindVars, conn = conn,
-                             transaction = transaction)            
+                             transaction = transaction)
         return

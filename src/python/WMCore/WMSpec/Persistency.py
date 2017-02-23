@@ -16,7 +16,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 class PersistencyHelper:
     """
     _PersistencyHelper_

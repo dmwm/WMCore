@@ -67,7 +67,7 @@ for workloadTask in workload.taskIterator():
                                         "cmssrm-fzk.gridka.de", "srm2.grid.sinica.edu.tw",
                                         "srm-cms.gridpp.rl.ac.uk", "ccsrm.in2p3.fr",
                                         "srmcms.pic.es"]), merged = False)
-    
+
     myRun = Run(runNumber = 1)
     myRun.lumis.append(1)
     virtualFile.addRun(myRun)

@@ -7,7 +7,7 @@ from __future__ import (division, print_function)
 
 import os
 import json
-import logging 
+import logging
 from WMCore.WMBase import getTestBase
 from RestClient.ErrorHandling.RestClientExceptions import HTTPError
 
@@ -26,7 +26,7 @@ except IOError:
 def mockGetJSON(dummySelf, callname, filename='result.json', clearCache=False, verb='GET', data=None):
     """
     retrieve JSON formatted information using mock for the given call name and the
-    argument dictionaries.  
+    argument dictionaries.
 
     """
     if data is None:

@@ -191,8 +191,8 @@ class DBSBufferUtil(WMConnectionBase):
                 del dbsfile['parentLFNs']
 
         return dbsFiles
-    
-    
+
+
     def getCompletedWorkflows(self):
         """
         _getCompletedWorkflows_

@@ -39,10 +39,10 @@ class TaskArchiver(Harness):
         pollInterval = self.config.TaskArchiver.pollInterval
         logging.info("Setting task archiver poll interval to %s seconds" % pollInterval)
         myThread.workerThreadManager.addWorker(TaskArchiverPoller(self.config), pollInterval)
-        
+
         couchInterval = self.config.TaskArchiver.cleanCouchInterval
         logging.info("Setting poll interval for cleanup old couch doc to %s seconds" % couchInterval)
-        myThread.workerThreadManager.addWorker(CleanCouchPoller(self.config), 
+        myThread.workerThreadManager.addWorker(CleanCouchPoller(self.config),
                                                couchInterval)
 
         return

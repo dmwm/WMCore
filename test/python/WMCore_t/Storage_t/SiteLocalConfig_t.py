@@ -161,7 +161,7 @@ class SiteLocalConfigTest(unittest.TestCase):
 
         phedex = PhEDEx()
         nodes = [node[u'name'] for node in phedex.getNodeMap()["phedex"]["node"]]
-        
+
         for d in os.listdir("/cvmfs/cms.cern.ch/SITECONF/"):
             # Only T0_, T1_... folders are needed
             if d[0] == "T":
@@ -173,7 +173,7 @@ class SiteLocalConfigTest(unittest.TestCase):
                 phedexNode = slc.localStageOut.get("phedex-node")
                 self.assertTrue(phedexNode in nodes,
                                 "Error: Node specified in SLC (%s) not in list returned by PhEDEx api" % phedexNode)
-        return 
+        return
 
 if __name__ == "__main__":
     unittest.main()

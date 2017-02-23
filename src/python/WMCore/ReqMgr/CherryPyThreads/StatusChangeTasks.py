@@ -10,7 +10,7 @@ from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 
 def moveForwardStatus(reqDBWriter, wfStatusDict, logger):
-    
+
     for status, nextStatus in AUTO_TRANSITION.iteritems():
         count = 0
         requests = reqDBWriter.getRequestByStatus([status])
@@ -59,7 +59,7 @@ def moveToArchivedForNoJobs(reqDBWriter, wfStatusDict, logger):
         count = 0
         for wf in requests:
             # check whether wq elements exists for given request
-            # if not, it means 
+            # if not, it means
             if wf not in wfStatusDict:
                 for nextStatus in nextStatusList:
                     reqDBWriter.updateRequestStatus(wf, nextStatus)
@@ -88,10 +88,10 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
         reqDBWriter = RequestDBWriter(config.reqmgrdb_url)
         gqService = WorkQueue(config.workqueue_url)
-        
+
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
-        
+
         self.logger.info("Advancing status")
         moveForwardStatus(reqDBWriter, wfStatusDict, self.logger)
         moveToArchivedForNoJobs(reqDBWriter, wfStatusDict, self.logger)

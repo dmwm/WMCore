@@ -17,8 +17,8 @@ class UpdateBlocks(DBFormatter):
 
         for block in blocks:
             bindVars.append({"block": block.getName(), "location": block.getLocation(),
-                             "status": block.status, "time": block.getStartTime()})            
+                             "status": block.status, "time": block.getStartTime()})
         self.dbi.processData(self.sql, bindVars, conn = conn,
-                                 transaction = transaction)            
+                                 transaction = transaction)
 
         return

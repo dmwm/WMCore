@@ -123,7 +123,7 @@ class SandboxCreator:
                 #//
                 for fetcher in fetcherInstances:
                     #TODO: when cache directory is set as path, cache is maintained by workflow.
-                    # In that case, cache will be deleted when workflow is done, 
+                    # In that case, cache will be deleted when workflow is done,
                     # but if different workflow can share the same cache.
                     # You can set the cache direcoty somewhere else, but need to have cache refresh (delete) policy
                     fetcher.setCacheDirectory(pileupCachePath)
@@ -174,7 +174,7 @@ class SandboxCreator:
 
             psetTweaksPath = PSetTweaks.__path__[0]
             tarContent.append((psetTweaksPath, '/PSetTweaks'))
-            
+
             utilsPath = Utils.__path__[0]
             tarContent.append((utilsPath, '/Utils'))
 

@@ -2,7 +2,7 @@
 
 """
 Request Manager service (ReqMgr) test and client script.
- 
+
 The script shall have no WMCore libraries dependency.
 
 Command line interface: --help
@@ -67,22 +67,22 @@ class RESTClient(object):
 class ReqMgrClient(RESTClient):
     """
     Client REST interface to Request Manager service (ReqMgr).
-    
+
     Actions: all_tests
-    
+
     For reference:
         jsonArgs = json.dumps(requestArgs["createRequest"])
-        status, data = self.http_request("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)        
+        status, data = self.http_request("PUT", "/reqmgr/reqMgr/request", data=jsonArgs)
         data = json.loads(data)
         requestName = data.values()[0]["request"]
-        
+
         params = {"requestName": requestName,
                   "status": "assignment-approved"}
         encodedParams = urllib.urlencode(params)
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self.http_request("PUT", "/reqmgr/reqMgr/request",
                                         data=encodedParams, headers=self.textHeaders)
-                                                       
+
     """
 
     def __init__(self, url, config):
@@ -127,7 +127,7 @@ class ReqMgrClient(RESTClient):
     def create_request(self, config):
         """
         config.request_args - arguments for both creation and assignment
-        
+
         """
         logging.info("Injecting request args:\n%s ..." %
                      config.request_args["createRequest"])
@@ -154,7 +154,7 @@ class ReqMgrClient(RESTClient):
         Set request status assignment-approved of the requestName request.
         Once ReqMgr provides proper API for status settings, esp. for assignment,
         a single method setStates shall handle all request status changes.
-        
+
         """
         logging.info("Approving request '%s' ..." % request_name)
 
@@ -172,7 +172,7 @@ class ReqMgrClient(RESTClient):
     def assign_request(self, config):
         """
         config.request_args - arguments for both creation and assignment
-        
+
         """
         assign_args = config.request_args["assignRequest"]
         assign_args["RequestStatus"] = "assigned"
@@ -199,9 +199,9 @@ class ReqMgrClient(RESTClient):
         all requests in the system are queried.
         toQuery - particular request name to query.
         config.request_names - list of requests to query.
-        
+
         Returns a list of requests in either case.
-        
+
         """
         if to_query:
             requests_to_query = [to_query]
@@ -296,7 +296,7 @@ class ReqMgrClient(RESTClient):
         del self.conn
 
 
-# ---------------------------------------------------------------------------    
+# ---------------------------------------------------------------------------
 
 
 def process_cli_args(args):
@@ -373,8 +373,8 @@ def define_cli_options(parser):
     # -v ---------------------------------------------------------------------
     help = "Verbose console output."
     parser.add_option("-v", "--verbose", action="store_true", help=help)
-    # actions definition below ----------------------------------------------    
-    # -i --------------------------------------------------------------------   
+    # actions definition below ----------------------------------------------
+    # -i --------------------------------------------------------------------
     help = ("Action: Create and approve a request. Whichever from the config "
             "file defined arguments can be overridden from "
             "command line and a few have to be so (*-OVERRIDE-ME ending). "
@@ -414,7 +414,7 @@ def define_cli_options(parser):
 def process_request_args(intput_config_file, command_line_json):
     """
     Load request arguments from a file, blend with JSON from command line.
-    
+
     """
     logging.info("Loading file '%s' ..." % intput_config_file)
     try:
@@ -433,7 +433,7 @@ def process_request_args(intput_config_file, command_line_json):
     else:
         logging.warn("No request arguments to override (--json)? Some values will be wrong.")
 
-    # iterate over all items recursively and warn about those ending with 
+    # iterate over all items recursively and warn about those ending with
     # OVERRIDE-ME, hence not overridden
     def check(items):
         for k, v in items:

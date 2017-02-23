@@ -42,14 +42,14 @@ class WorkQueueManagerCleaner(BaseWorkerThread):
         self.queue.logger.info("Start updating & cleaning...")
         try:
             self.queue.performQueueCleanupActions()
-            # this will clean up whatever left over from above clean up. 
+            # this will clean up whatever left over from above clean up.
             # also if the wq replication has problem it won't delay the killing jobs in condor
             # and updating wmbs status
             abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
 
             for wf in abortedAndForceCompleteRequests:
                 self.queue.killWMBSWorkflow(wf)
-                    
+
         except Exception as ex:
             self.queue.logger.exception("Error cleaning queue: %s" % str(ex))
         self.queue.logger.info("Finished updating & cleaning.")

@@ -24,17 +24,17 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 
 import WMCore.ReqMgr.Service.RegExp as rx
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
-    
+
 class Info(RESTEntity):
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         self.reqmgr_db = api.db_handler.get_db(config.couch_reqmgr_db)
         self.config = config
-                
+
     def validate(self, apiobj, method, api, param, safe):
         pass
 
-    
+
     @restcall
     @tools.expires(secs=-1)
     def get(self):
@@ -51,19 +51,19 @@ class Info(RESTEntity):
         # from WMCore.REST.Auth import authz_match
         # authz_match(role=["Global Admin"], group=["global"])
         # check SiteDB/DataWhoAmI.py
-        
+
         # implement as authentication decorator over modification calls
         # check config.py main.authz_defaults and SiteDB
         # (only Admin: ReqMgr to be able to modify stuff)
-        
+
         wmcore_reqmgr_version = WMCore.__version__
-        
+
         reqmgr_db_info = self.reqmgr_db.info()
-        reqmgr_db_info["reqmgr_couch_url"] = self.config.couch_host 
-        
+        reqmgr_db_info["reqmgr_couch_url"] = self.config.couch_host
+
         # retrieve the last injected request in the system
         # curl ... /reqmgr_workload_cache/_design/ReqMgr/_view/bydate?descending=true&limit=1
-        options = {"descending": True, "limit": 1} 
+        options = {"descending": True, "limit": 1}
         reqmgr_last_injected_request = self.reqmgr_db.loadView("ReqMgr",
                                                     "bydate",
                                                     options=options)
@@ -73,45 +73,45 @@ class Info(RESTEntity):
         # NOTE:
         # "return result" only would return dict with keys without (!!) values set
         return rows([result])
-    
+
 
 class ReqMgrConfigData(RESTEntity):
-    
+
     def __init__(self, app, api, config, mount):
         # CouchDB auxiliary database name
         RESTEntity.__init__(self, app, api, config, mount)
-        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)    
-        
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
+
     def _validate_args(self, param, safe):
         # TODO: need proper validation but for now pass everything
         args_length = len(param.args)
         if args_length == 1:
             safe.kwargs["doc_name"] = param.args[0]
             param.args.pop()
-    
+
         return
-    
+
     def _validate_put_args(self, param, safe):
-        
+
         args_length = len(param.args)
         if args_length == 1:
             safe.kwargs["doc_name"] = param.args[0]
             param.args.pop()
-    
+
         data = cherrypy.request.body.read()
-        
+
         if data:
             config_args = json.loads(data)
             #TODO need to validate the args depending on the config
             safe.kwargs["config_dict"] = config_args
-        
+
     def validate(self, apiobj, method, api, param, safe):
         """
         Validate request input data.
         Has to be implemented, otherwise the service fails to start.
         If it's not implemented correctly (e.g. just pass), the arguments
         are not passed in the method at all.
-        
+
         """
         if method == "GET":
             self._validate_args(param, safe)
@@ -124,16 +124,16 @@ class ReqMgrConfigData(RESTEntity):
         """
         config = ReqMgrConfigDataCache.getConfig(doc_name)
         return rows([config])
-                                              
+
     @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     def put(self, doc_name, config_dict = None):
-        """ 
+        """
         """
         if doc_name == "DEFAULT":
             return ReqMgrConfigDataCache.putDefaultConfig()
         else:
             return ReqMgrConfigDataCache.replaceConfig(doc_name, config_dict)
-            
+
 
 class Group(RESTEntity):
     """
@@ -142,18 +142,18 @@ class Group(RESTEntity):
         itself has to be JSON, so we use only keys in the dictionary
         for group names, other data, if necessary, may be stored as values.
         Currently: {"group1": None, "group2": None, ...}
-        
+
     Newly injected request will specify Group (it's needed down the
     WorkQueue/WMAgent chain), but there is no association between requesting
     user (Requestor) and this Group. SiteDB groups is something different.
-        
+
     """
-    
+
     def __init__(self, app, api, config, mount):
         # CouchDB auxiliary database name
         RESTEntity.__init__(self, app, api, config, mount)
-        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)    
-        
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
+
 
     def validate(self, apiobj, method, api, param, safe):
         if method in ("GET", "HEAD"):
@@ -168,20 +168,20 @@ class Group(RESTEntity):
     def get(self):
         """
         Return list of all groups.
-            
+
         """
         groups = self.reqmgr_aux_db.document("groups")
         del groups["_id"]
         del groups["_rev"]
         return rows(groups.keys())
-                                          
-        
+
+
     @restcall
     def delete(self, group_name):
         """
         Removes an existing group from the database, raises an error
         if group_name doesn't exist.
-        
+
         """
         groups = self.reqmgr_aux_db.document("groups")
         if group_name in groups:
@@ -193,15 +193,15 @@ class Group(RESTEntity):
         else:
             msg = "ERROR: Group '%s' not found in the database." % group_name
             cherrypy.log(msg)
-            raise cherrypy.HTTPError(404, msg)            
-                
-     
+            raise cherrypy.HTTPError(404, msg)
+
+
     @restcall
     def put(self, group_name):
         """
         Adds group of group_name into the database.
         Creates groups document if it doesn't exist.
-        
+
         """
         try:
             groups = self.reqmgr_aux_db.document("groups")
@@ -217,61 +217,61 @@ class Group(RESTEntity):
                 msg = "ERROR: Creating document groups failed, reason: %s" % ex
                 cherrypy.log(msg)
                 raise cherrypy.HTTPError(400, msg)
-        
+
         if group_name in groups:
             return rows(["Already exists."])
         else:
             groups[group_name] = None
             # TODO
-            # this should ideally also wrap try-except            
+            # this should ideally also wrap try-except
             self.reqmgr_aux_db.commitOne(groups)
             return rows(["OK"])
-            
-        
+
+
 
 class Team(RESTEntity):
     """
     Teams are stored in the ReqMgr reqmgr_auxiliary database.
     "teams" is used as id of the document, but the document
         itself has to be JSON: we use {"teams": [list, of, group, names]
-        
+
     When request goes through assignment status, it gets assigned
     to a team.
     Where a request gets run is controlled by SiteBlack/White list.
-        
+
     """
-    
+
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         # CouchDB auxiliary database name
-        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)                
-        
-        
+        self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
+
+
     def validate(self, apiobj, method, api, param, safe):
         if method in ("GET", "HEAD"):
             return
         elif method in ("DELETE, PUT"):
             validate_str("team_name", param, safe, rx.RX_TEAM_NAME, optional=False)
-                
-    
+
+
     @restcall
     def get(self):
         """
         Return list of all teams.
-            
+
         """
         teams = self.reqmgr_aux_db.document("teams")
         del teams["_id"]
         del teams["_rev"]
         return rows(teams.keys())
-    
-    
+
+
     @restcall
     def delete(self, team_name):
         """
         Removes an existing team from the database, raises an error
         if team_name doesn't exist.
-        
+
         """
         teams = self.reqmgr_aux_db.document("teams")
         if team_name in teams:
@@ -283,15 +283,15 @@ class Team(RESTEntity):
         else:
             msg = "ERROR: Team '%s' not found in the database." % team_name
             cherrypy.log(msg)
-            raise cherrypy.HTTPError(404, msg)            
-        
-        
+            raise cherrypy.HTTPError(404, msg)
+
+
     @restcall
     def put(self, team_name):
         """
         Adds team of team_name into the database.
         Creates teams document if it doesn't exist.
-        
+
         """
         try:
             teams = self.reqmgr_aux_db.document("teams")
@@ -307,32 +307,32 @@ class Team(RESTEntity):
                 msg = "ERROR: Creating document teams failed, reason: %s" % ex
                 cherrypy.log(msg)
                 raise cherrypy.HTTPError(400, msg)
-        
+
         if team_name in teams:
             return rows(["Already exists."])
         else:
             teams[team_name] = None
             # TODO
-            # this should ideally also wrap try-except            
+            # this should ideally also wrap try-except
             self.reqmgr_aux_db.commitOne(teams)
             return rows(["OK"])
-        
-        
-    
+
+
+
 class Software(RESTEntity):
     """
     Software - handle CMSSW versions and scram architectures.
     Stored in stored in the ReqMgr reqmgr_auxiliary database, document
         id "software".
-        
+
     """
-    
+
     def __init__(self, app, api, config, mount):
         RESTEntity.__init__(self, app, api, config, mount)
         # CouchDB auxiliary database name
         self.reqmgr_aux_db = api.db_handler.get_db(config.couch_reqmgr_aux_db)
-        
-        
+
+
     def validate(self, apiobj, method, api, param, safe):
         pass
 
@@ -341,23 +341,23 @@ class Software(RESTEntity):
     def get(self):
         """
         Return entire "software" document - all versions and scramarchs.
-            
+
         """
         sw = self.reqmgr_aux_db.document("software")
         del sw["_id"]
         del sw["_rev"]
         return rows([sw])
-    
-    
+
+
 
 def _get_all_scramarchs_and_versions(url):
     """
     Downloads a list of all ScramArchs and Versions from the tag collector.
     Uses XML tag collector resourse.
-    
+
     Result is a dictionary with scramarch as keys and values are lists of
         corresponding CMSSW releases.
-    
+
     """
     result = {}
     try:
@@ -386,12 +386,12 @@ def _get_all_scramarchs_and_versions(url):
                     sw_releases.append(str(attr.value))
         result[str(arch)] = sw_releases
     return result
-    
-    
+
+
 def update_software(config_file):
     """
     Functions retrieves CMSSW versions and scramarchs from CMS tag collector.
-    
+
     """
     config = loadConfigurationFile(config_file)
     # source of the data
@@ -399,13 +399,13 @@ def update_software(config_file):
     # store the data into CouchDB auxiliary database under "software" document
     couch_host = config.views.data.couch_host
     reqmgr_aux_db = config.views.data.couch_reqmgr_aux_db
-    
+
     # get data from tag collector
     all_archs_and_versions = _get_all_scramarchs_and_versions(tag_collector_url)
     if not all_archs_and_versions:
         return
-    
-    # get data already stored in CouchDB    
+
+    # get data already stored in CouchDB
     couchdb = Database(dbname=reqmgr_aux_db, url=couch_host)
     try:
         sw_already_stored = couchdb.document("software")
@@ -416,7 +416,7 @@ def update_software(config_file):
         doc = Document(id="software", inputDict=all_archs_and_versions)
         couchdb.commitOne(doc)
         return
-    
+
     # now compare recent data from tag collector and what we already have stored
     # sorting is necessary
     if sorted(all_archs_and_versions) != sorted(sw_already_stored):

@@ -132,12 +132,12 @@ class LogDBBackend(object):
             options.update({'include_docs': True})
         docs = self.db.loadView(self.design, self.view, options, keys=keys)
         return docs
-    
+
     def get_by_thread(self, request, mtype='error', detail=False, agent=True):
         self.check(request, mtype)
         if agent and mtype:
             mtype = self.prefix(mtype)
-        keys = [[request, self.dbid, self.thread_name, mtype]] 
+        keys = [[request, self.dbid, self.thread_name, mtype]]
         options = {'reduce':False}
         if detail:
             options.update({'include_docs': True})
@@ -145,11 +145,11 @@ class LogDBBackend(object):
         return docs
 
     def get_by_request(self, request):
-        keys = [request] 
+        keys = [request]
         options = {'reduce':False}
         docs = self.db.loadView(self.design, self.requestview, options, keys)
         return docs
-    
+
     def get_all_requests(self):
         """Retrieve all entries from LogDB"""
         options = {'reduce':True, 'group_level':1}
@@ -160,7 +160,7 @@ class LogDBBackend(object):
         """Delete entry in LogDB for given request"""
         if mtype:
             self.check(request, mtype)
-        else:   
+        else:
             self.check(request)
         if this_thread:
             docs = self.get_by_thread(request, mtype=mtype, detail=False, agent=agent)
@@ -169,7 +169,7 @@ class LogDBBackend(object):
         ids = [r['id'] for r in docs.get('rows', [])]
         res = self.db.bulkDeleteByIDs(ids)
         return res
-    
+
     def cleanup(self, thr):
         """
         Clean-up docs older then given threshold (thr should be specified in seconds).

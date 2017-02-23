@@ -201,7 +201,7 @@ class DBSUploadPoller(BaseWorkerThread):
         self.produceCopy = getattr(self.config.DBS3Upload, 'copyBlock', False)
         self.copyPath    = getattr(self.config.DBS3Upload, 'copyBlockPath',
                                    '/data/mnorman/block.json')
-        
+
         self.timeoutWaiver = 1
 
         return
@@ -629,7 +629,7 @@ class DBSUploadPoller(BaseWorkerThread):
                                  prep_id = dbsFile.get('prep_id', None))
             logging.debug("Found block %s in blocks", block.getName())
             block.setPhysicsGroup(group = self.physicsGroup)
-            
+
             encodedBlock = block.convertToDBSBlock()
             logging.info("About to insert block %s", block.getName())
             self.workInput.put({'name': block.getName(), 'block': encodedBlock})
@@ -663,16 +663,16 @@ class DBSUploadPoller(BaseWorkerThread):
         emptyCount    = 0
         while self.blockCount > 0:
             if emptyCount > self.nTries:
-                
-                # When timeoutWaiver is 0 raise error. 
-                # It could take long time to get upload data to DBS 
+
+                # When timeoutWaiver is 0 raise error.
+                # It could take long time to get upload data to DBS
                 # if there are a lot of files are cumulated in the buffer.
                 # in first try but second try should be faster.
                 # timeoutWaiver is set as component variable - only resets when component restarted.
-                # The reason for that is only back log will occur when component is down 
-                # for a long time while other component still running and feeding the data to 
+                # The reason for that is only back log will occur when component is down
+                # for a long time while other component still running and feeding the data to
                 # dbsbuffer
-        
+
                 if self.timeoutWaiver == 0:
                     msg = "Exceeded max number of waits while waiting for DBS to finish"
                     raise DBSUploadException(msg)

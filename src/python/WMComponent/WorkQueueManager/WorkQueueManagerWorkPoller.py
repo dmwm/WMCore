@@ -67,7 +67,7 @@ class WorkQueueManagerWorkPoller(BaseWorkerThread):
             if self.retrieveCondition():
                 work = self.queue.pullWork()
         except IOError as ex:
-            self.queue.logger.error("Error opening connection to work queue: %s \n%s" % 
+            self.queue.logger.error("Error opening connection to work queue: %s \n%s" %
                                     (str(ex), traceback.format_exc()))
         except Exception as ex:
             self.queue.logger.error("Unable to pull work from parent Error: %s\n%s"

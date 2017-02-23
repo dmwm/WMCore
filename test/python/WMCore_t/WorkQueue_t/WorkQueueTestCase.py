@@ -40,7 +40,7 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.configCacheDB = 'workqueue_t_config_cache'
         self.logDBName = 'logdb_t'
         self.requestDBName = 'workqueue_t_reqmgr_workload_cache'
-        
+
         self.setSchema()
         self.testInit = TestInit('WorkQueueTest')
         self.testInit.setLogging()
@@ -60,7 +60,7 @@ class WorkQueueTestCase(EmulatedUnitTestCase):
         self.testInit.setupCouch(self.configCacheDB, 'ConfigCache')
         self.testInit.setupCouch(self.logDBName, 'LogDB')
         self.testInit.setupCouch(self.requestDBName, 'ReqMgr')
-        
+
         self.couchURL = os.environ.get("COUCHURL")
         couchServer = CouchServer(self.couchURL)
         self.configCacheDBInstance = couchServer.connectDatabase(self.configCacheDB)

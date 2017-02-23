@@ -121,7 +121,7 @@ class WorkQueueElementResult(dict):
             if not element.inEndState():
                 return False
         return True
-    
+
     def statusMetrics(self):
         """Returns the status & performance metrics"""
         keys = ['Status', 'PercentComplete', 'PercentSuccess']
@@ -135,14 +135,14 @@ class WorkQueueElementResult(dict):
         for item in to_remove:
             result.pop(item)
         return result
-    
+
     def getMaxJobElement(self):
         maxJobElement = self['Elements'][0]
         for x in self['Elements']:
             if x['Jobs'] > maxJobElement['Jobs']:
                 maxJobElement = x
         return maxJobElement
-    
+
     def getMinJobElement(self):
         minJobElement = self['Elements'][0]
         for x in self['Elements']:

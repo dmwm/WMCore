@@ -24,7 +24,7 @@ class LogDBReport(object):
         else:
             docs = self.logdb.get(request)
         return docs
-        
+
     def orderby(self, docs, order):
         """Order LogDB messages by given type"""
         odict = {}

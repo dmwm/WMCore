@@ -18,7 +18,7 @@ class ListRunsWorkflow(DBFormatter):
                 INNER JOIN dbsbuffer_workflow
                 ON dbsbuffer_file.workflow = dbsbuffer_workflow.id
                 WHERE dbsbuffer_workflow.name = :workflow"""
-                
+
     def execute(self, workflow = None, conn = None, transaction = False):
         """
         _execute_
@@ -32,7 +32,7 @@ class ListRunsWorkflow(DBFormatter):
         results = self.dbi.processData(self.sql, bindVars, conn = conn,
                              transaction = transaction)
         runs = []
-        
+
         for result in results[0].fetchall():
             runs.append(result.values()[0])
 

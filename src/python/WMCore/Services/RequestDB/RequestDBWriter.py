@@ -19,8 +19,8 @@ class RequestDBWriter(RequestDBReader):
                                          "Teams"]
 
     def insertGenericRequest(self, doc):
-        
-        doc = Document(doc["RequestName"], doc) 
+
+        doc = Document(doc["RequestName"], doc)
         result = self.couchDB.commitOne(doc)
         self.updateRequestStatus(doc["RequestName"], "new")
         return result
@@ -31,7 +31,7 @@ class RequestDBWriter(RequestDBReader):
             status["DN"] = dn
         return self.couchDB.updateDocument(request, self.couchapp, "updaterequest",
                     status)
-        
+
     def updateRequestStats(self, request, stats):
         """
         This functionis only available ReqMgr couch app currutly (not T0)

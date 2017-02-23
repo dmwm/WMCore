@@ -57,10 +57,10 @@ class FileInfo:
 
         # Now we know it, we better set it
         setattr(fileReport, 'pfn', pfn)
-        
+
         # Set default of merged as false
         setattr(fileReport, 'merged', False)
-        
+
         return self.processFile(filename = pfn,
                                 fileReport = fileReport,
                                 step = step,

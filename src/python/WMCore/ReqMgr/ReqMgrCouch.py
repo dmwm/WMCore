@@ -13,7 +13,7 @@ def couch_request_error(func):
             msg = "test"
             raise cherrypy.HTTPError(400, "%s Reason: %s" % (msg, ex))
         return wrapperFunc
-    
+
 def couch_err_handler(decorator):
     def decorate(cls):
         for attr in cls.__dict__:
@@ -28,7 +28,7 @@ class RESTBackendCouchDB(Database):
 
 
 class ReqMgrCouch(object):
-    
+
     def __init__(self, config):
         self.config = config
         cherrypy.log("Creating CouchDB connection instances to "
@@ -42,20 +42,20 @@ class ReqMgrCouch(object):
                #config.couch_wmstats_db,
         for db in dbs:
             setattr(self, db, self._create_conn(db))
-        
+
         aux_db = self.get_db(config.couch_reqmgr_aux_db)
         ReqMgrConfigDataCache.set_aux_db(aux_db)
-    
+
     def _create_conn(self, db_name):
         cherrypy.log("Creating CouchDB connection to '%s' ... " % db_name)
         return RESTBackendCouchDB(dbname=db_name, url=self.config.couch_host)
-    
-    
+
+
     def get_db(self, db_name):
         """
         Return corresponding instance of CMSCouch.Database already
         created in the constructor.
-        
+
         """
         try:
             db = getattr(self, db_name)
@@ -67,7 +67,7 @@ class ReqMgrCouch(object):
             trace_str = ''.join(trace)
             msg = "Wrong database name '%s':\n%s" % (db_name, trace_str)
             cherrypy.log(msg)
-            raise cherrypy.HTTPError(500, "Internal application error.")  
-        
-        
-    
+            raise cherrypy.HTTPError(500, "Internal application error.")
+
+
+

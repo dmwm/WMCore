@@ -13,7 +13,7 @@ class CleanUpTask(CherryPyPeriodicTask):
     def __init__(self, rest, config):
 
         super(CleanUpTask, self).__init__(config)
-        self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url, 
+        self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                               reqdbCouchApp=config.reqdb_couch_app)
 
     def setConcurrentTasks(self, config):
@@ -31,7 +31,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         result = self.wmstatsDB.deleteOldDocs(config.DataKeepDays)
         self.logger.info("%s old doc deleted", result)
         return
-    
+
     def cleanUpArchivedRequests(self, config):
         """
         loop through the workflows in couchdb, if archived delete all the data in couchdb
@@ -39,7 +39,7 @@ class CleanUpTask(CherryPyPeriodicTask):
         self.logger.info("getting archived data")
         requestNames = self.wmstatsDB.getArchivedRequests()
         self.logger.info("archived list %s", requestNames)
-        
+
         for req in requestNames:
             self.logger.info("deleting %s data", req)
             try:

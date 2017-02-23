@@ -29,7 +29,7 @@ def _wmAgentConfig(configFile):
     config.JobStateMachine.couchDBName = os.getenv("COUCHDB")
     config.JobStateMachine.jobSummaryDBName = "wmagent_summary_test"
     config.JobStateMachine.summaryStatsDBName = "stat_summary_test"
-    
+
     config.section_("Agent")
     # User specific parameter
     config.Agent.hostName = "cmssrv52.fnal.gov"
@@ -46,7 +46,7 @@ def _wmAgentConfig(configFile):
     config.section_("BossAir")
     config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
     config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
-    
+
     #TaskArchive setup (JobSubmitter needs this)
     config.component_("TaskArchiver")
     config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"

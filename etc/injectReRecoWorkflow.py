@@ -91,7 +91,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
         dbsFile.setAlgorithm(appName = "cmsRun", appVer = "Unknown", appFam = "Unknown",
                              psetHash = "Unknown", configContent = "Unknown")
         dbsFile.create()
-        
+
     inputFileset.commit()
     inputFileset.markOpen(False)
     return

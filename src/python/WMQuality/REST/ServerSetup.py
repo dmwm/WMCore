@@ -16,14 +16,14 @@ class RESTMainTestServer(object):
         self.port = cfg.main.port
         self.host = '127.0.0.1'
         self.serverUrl = "http://%s:%s/%s/" % (self.host, self.port, cfg.main.application)
-        
+
         ## test authentication using fake filepermission
         self.test_authz_key = fake_authz_key_file(False)
         self.config.main.tools.cms_auth.key_file = self.test_authz_key.name
-        #self.header = fake_authz_headers(test_authz_key.data, roles = {"Admin": {'group': ['ReqMgr']}})        
-        
+        #self.header = fake_authz_headers(test_authz_key.data, roles = {"Admin": {'group': ['ReqMgr']}})
+
         self.jsonSender = JSONRequests(self.serverUrl)
-        
+
     def getLastTest(self):
         global lastTest
         return lastTest
@@ -31,9 +31,9 @@ class RESTMainTestServer(object):
     def setLastTest(self):
         global lastTest
         lastTest = self.testName
-    
-        
-    def start(self, blocking = True):    
+
+
+    def start(self, blocking = True):
         self.server.validate_config()
         self.server.setup_server()
         self.server.install_application()
@@ -44,7 +44,7 @@ class RESTMainTestServer(object):
         for app in cherrypy.tree.apps.values():
             if '/' in app.config:
                 app.config["/"]["request.show_tracebacks"] = True
-            
+
         cherrypy.server.httpserver = None
         cherrypy.engine.start()
         if blocking:
@@ -62,6 +62,6 @@ class RESTMainTestServer(object):
         for name, server in getattr(cherrypy, 'servers', {}).items():
             server.unsubscribe()
             del cherrypy.servers[name]
-        
+
         self.test_authz_key.close()
         os.remove(self.test_authz_key.name)

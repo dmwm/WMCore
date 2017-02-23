@@ -67,7 +67,7 @@ class MonteCarlo(StartPolicyInterface):
             remainingLumis = ceil(nEvents % self.args['SliceSize'] / self.args['SubSliceSize'])
             nLumis += remainingLumis
             jobs = ceil(nEvents/self.args['SliceSize'])
-            
+
             if nLumis > int(os.environ.get('MAX_LUMIS_PER_WQE', 200000)):
                 raise WorkQueueWMSpecError(self.wmspec, "Too many lumis in WQE: %s" % nLumis)
 

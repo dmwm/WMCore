@@ -17,17 +17,17 @@ from WMCore.WMStats.Service.RequestInfo import JobDetailInfo
 class T0RestApiHub(RESTApi):
     """
     Server object for REST data access API.
-    
+
     """
     def __init__(self, app, config, mount):
         """
         :arg app: reference to application object; passed to all entities.
         :arg config: reference to configuration; passed to all entities.
         :arg str mount: API URL mount point; passed to all entities."""
-        
+
         RESTApi.__init__(self, app, config, mount)
-        
-        cherrypy.log("T0WMStats entire configuration:\n%s" % Configuration.getInstance())    
+
+        cherrypy.log("T0WMStats entire configuration:\n%s" % Configuration.getInstance())
         cherrypy.log("T0WMStats REST hub configuration subset:\n%s" % config)
         # only allows json format for return value
         self.formats =  [('application/json', JSONFormat())]

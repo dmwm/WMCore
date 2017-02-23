@@ -11,7 +11,7 @@ from WMCore.Services.WMStats.DataStruct.RequestInfoCollection \
 
 from WMCore_t.Services_t.WMStats_t.WMStatsDocGenerator \
    import generate_reqmgr_schema, sample_request_info, sample_complete
-    
+
 class WMStatsTest(unittest.TestCase):
     """
     """
@@ -49,32 +49,32 @@ class WMStatsTest(unittest.TestCase):
     def testWMStatsWriter(self):
         # test getWork
         schema = generate_reqmgr_schema()
-        
+
         result = self.reqDBWriter.insertGenericRequest(schema[0])
         self.assertEqual(result[0]['ok'], True, 'insert fail')
-        
+
         result = self.reqDBWriter.updateRequestStatus(schema[0]['RequestName'], "failed")
         self.assertEqual(result, 'OK', 'update fail')
-        
-        result = self.reqDBWriter.updateRequestStatus("not_exist_schema", "assigned") 
+
+        result = self.reqDBWriter.updateRequestStatus("not_exist_schema", "assigned")
         self.assertEqual(result,'Error: document not found')
-        
+
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], {"Teams": ['teamA']})
         self.assertEqual(result, 'OK', 'update fail')
-        
-        result = self.reqDBWriter.updateRequestProperty("not_exist_schema", {"Teams": ['teamA']})                  
+
+        result = self.reqDBWriter.updateRequestProperty("not_exist_schema", {"Teams": ['teamA']})
         self.assertEqual(result, 'Error: document not found')
-        
+
         totalStats = {'TotalEstimatedJobs': 100, 'TotalInputEvents': 1000, 'TotalInputLumis': 1234, 'TotalInputFiles': 5}
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], totalStats)
         self.assertEqual(result, 'OK', 'update fail')
-        
+
         result = self.reqDBWriter.updateRequestProperty(schema[0]['RequestName'], totalStats)
         self.assertEqual(result, 'OK', 'update fail')
-        
+
         result = self.reqDBWriter.updateRequestProperty("not_exist_schema", totalStats)
         self.assertEqual(result, 'Error: document not found')
-        
+
         spec1 = newWorkload(schema[0]['RequestName'])
         production = spec1.newTask("Production")
         production.setTaskType("Merge")
@@ -84,7 +84,7 @@ class WMStatsTest(unittest.TestCase):
                       'OutputDatasets': spec1.listOutputDatasets()}
         result = self.reqDBWriter.updateRequestProperty(spec1.name(), properties)
         self.assertEqual(result, 'OK', 'update fail')
-        
+
         spec2 = newWorkload("not_exist_schema")
         production = spec2.newTask("Production")
         production.setTaskType("Merge")
@@ -100,15 +100,15 @@ class WMStatsTest(unittest.TestCase):
         requestCollection = RequestInfoCollection(requests)
         result = requestCollection.getJSONData()
         self.assertEqual(result.keys(), [schema[0]['RequestName']])
-        
+
         requests = self.wmstatsReader.getActiveData()
         self.assertEqual(requests.keys(), [schema[0]['RequestName']])
         requests = self.wmstatsReader.getRequestByStatus(["failed"])
         self.assertEqual(requests.keys(), [schema[0]['RequestName']])
-        
+
         requests = self.wmstatsReader.getRequestSummaryWithJobInfo(schema[0]['RequestName'])
         self.assertEqual(requests.keys(), [schema[0]['RequestName']])
-        
+
     def testCompletedCheck(self):
         self.assertEqual(RequestInfo(sample_request_info).isWorkflowFinished(), False)
         self.assertEqual(RequestInfo(sample_complete).isWorkflowFinished(), True)

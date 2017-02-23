@@ -10,7 +10,7 @@ interactions.
 
 import datetime
 import time
-import types 
+import types
 
 from WMCore.DataStructs.WMObject import WMObject
 

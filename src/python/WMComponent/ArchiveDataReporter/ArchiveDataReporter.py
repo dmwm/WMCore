@@ -3,7 +3,7 @@
 _ArhciveDataReporterr_
 
 """
-from __future__ import (division, print_function) 
+from __future__ import (division, print_function)
 import logging
 import threading
 
@@ -14,7 +14,7 @@ class ArchiveDataReporter(Harness):
     """
     Component class for AgentStatusWatcher module
     """
-    
+
     def __init__(self, config):
         """
         __init__
@@ -22,7 +22,7 @@ class ArchiveDataReporter(Harness):
         Initialize the Harness
         """
         Harness.__init__(self, config)
-        
+
         return
 
     def preInitialization(self):
@@ -34,7 +34,7 @@ class ArchiveDataReporter(Harness):
         logging.info("ArhciveDataReporter.preInitialization")
         pollInterval = self.config.ArchiveDataReporter.pollInterval
         myThread = threading.currentThread()
-        
+
         if not self.config.ArchiveDataReporter.WMArchiveURL:
             logging.info("No archive url is set: Doing nothing")
         else:

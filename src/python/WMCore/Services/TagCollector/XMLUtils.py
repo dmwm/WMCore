@@ -33,7 +33,7 @@ def adjust_value(value):
             return value
     else:
         return value
-    
+
 def xml_parser(data, prim_key, tags=None):
     "Generic XML parser"
     if  isinstance(data, basestring):

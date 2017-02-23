@@ -25,7 +25,7 @@ class LogDBTest(unittest.TestCase):
         """
         _setUp_
 
-        Setup the database and logging connection. 
+        Setup the database and logging connection.
         """
         logging.basicConfig()
         self.logger = logging.getLogger('LogDBTest')
@@ -41,7 +41,7 @@ class LogDBTest(unittest.TestCase):
         dbName = 'logdb_t'
         self.testInit.setupCouch(dbName, *self.couchApps)
         url = "%s/%s" % (self.testInit.couchUrl, dbName)
-        
+
         identifier = 'agentname'
         self.agent_inst = LogDB(url, identifier, logger=self.logger, thread_name="MainThread")
         self.agent_inst2 = LogDB(url, identifier, logger=self.logger, thread_name="Test")
@@ -224,7 +224,7 @@ class LogDBTest(unittest.TestCase):
         tdocs = self.report.orderby(docs, order='ts')
         messages = [d['msg'] for d in tdocs]
         self.assertEqual(messages, ['msg4', 'msg3', 'msg2', 'msg1'])
-        
+
     def test_heartbeat(self):
         "Test heartbeat_report function"
         threadName = 'MainThread'
@@ -234,24 +234,24 @@ class LogDBTest(unittest.TestCase):
         self.agent_inst.post(msg="Test heartbeatError", mtype="error")
         report = self.agent_inst.heartbeat_report()
         self.assertEqual(report[threadName]['type'], 'agent-error')
-        
+
         report = self.agent_inst.wmstats_down_components_report([threadName])
         self.assertEqual(report['down_components'], [threadName])
-        
+
         self.agent_inst.post(msg="Test heartbeat", mtype="info")
         report = self.agent_inst.wmstats_down_components_report([threadName])
         self.assertEqual(report['down_components'], [])
-        
+
         report = self.agent_inst.wmstats_down_components_report([threadName, failThread])
         self.assertEqual(report['down_components'], [failThread])
-        
+
         self.agent_inst.post(msg="Test heartbeatError2", mtype="error")
         report = self.agent_inst.wmstats_down_components_report([threadName])
         self.assertEqual(report['down_components'], [threadName])
-        
+
         self.agent_inst.delete(mtype="error", this_thread=True)
         report = self.agent_inst.wmstats_down_components_report([threadName])
         self.assertEqual(report['down_components'], [])
-        
+
 if __name__ == "__main__":
     unittest.main()

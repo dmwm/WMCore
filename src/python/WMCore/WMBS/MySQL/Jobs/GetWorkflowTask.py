@@ -18,7 +18,7 @@ class GetWorkflowTask(DBFormatter):
                  wmbs_jobgroup.id = wmbs_job.jobgroup
                INNER JOIN wmbs_sub_types ON
                  wmbs_subscription.subtype = wmbs_sub_types.id
-             WHERE wmbs_job.id = :jobid"""    
+             WHERE wmbs_job.id = :jobid"""
 
 
     def execute(self, jobIDs, conn = None, transaction = False):

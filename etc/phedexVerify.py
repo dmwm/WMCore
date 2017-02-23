@@ -13,19 +13,19 @@ from WMCore.Configuration import loadConfigurationFile
 def connectToDB():
     """
     _connectToDB_
-    
+
     Connect to the database specified in the WMAgent config.
     """
     if "WMAGENT_CONFIG" not in os.environ:
         print("Please set WMAGENT_CONFIG to point at your WMAgent configuration.")
         sys.exit(1)
-        
+
     if not os.path.exists(os.environ["WMAGENT_CONFIG"]):
         print("Can't find config: %s" % os.environ["WMAGENT_CONFIG"])
         sys.exit(1)
 
     wmAgentConfig = loadConfigurationFile(os.environ["WMAGENT_CONFIG"])
-    
+
     if not hasattr(wmAgentConfig, "CoreDatabase"):
         print("Your config is missing the CoreDatabase section.")
 
@@ -76,6 +76,6 @@ for blockName in blocks.keys():
     for blockFile in blocks[blockName]:
         if blockFile not in blockFiles:
             print("\t File missing: %s" % blockFile)
-        
+
     #sys.exit(0)
 

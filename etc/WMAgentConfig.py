@@ -65,7 +65,7 @@ globalDBSVersion = "DBS_2_0_8"
 
 # List of SE for T1 _Disk endpoints (TODO clean this up at some point)
 diskSites = ['storm-fe-cms.cr.cnaf.infn.it', 'srm-cms-disk.gridpp.rl.ac.uk',
-             'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov'] 
+             'cmssrm-fzk.gridka.de', 'ccsrm.in2p3.fr', 'srmcms.pic.es', 'cmssrmdisk.fnal.gov']
 
 # Job retry information.  This includes the number of times a job will be retried and
 # for how long it will sit in cool off.
@@ -339,7 +339,7 @@ config.AlertProcessor.critical.sinks.section_("email")
 # for queueing too long to be delivered), the CERN exchange server
 # generates a NDL (non-deliverable report) which again is
 # undeliverable since the wmagent machine doesn't run any email service,
-# with noreply@ it goes to /dev/null 
+# with noreply@ it goes to /dev/null
 config.AlertProcessor.critical.sinks.email.fromAddr = "noreply@cern.ch"
 config.AlertProcessor.critical.sinks.email.toAddr = ["wmagentalerts@gmail.com"] # add more in the list
 config.AlertProcessor.critical.sinks.email.smtpServer = "cernmx.cern.ch"
@@ -358,7 +358,7 @@ config.AlertProcessor.critical.sinks.section_("file")
 config.AlertProcessor.critical.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkCritical.json")
 config.AlertProcessor.soft.sinks.section_("file")
 config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(config.General.workDir, "AlertsFileSinkSoft.json")
-# forward sink - should be remote addresses allowing alerts forwarding to a 
+# forward sink - should be remote addresses allowing alerts forwarding to a
 # different AlertProcessor, actually may not even be used ... disable this sink for now
 #config.AlertProcessor.critical.sinks.section_("forward")
 #config.AlertProcessor.critical.sinks.forward.address = "tcp://127.0.0.1:55555"
@@ -373,7 +373,7 @@ config.AlertProcessor.soft.sinks.file.outputfile = os.path.join(config.General.w
 # though generally RESTSink is supposed to communicate with a generic REST server, not just CouchDB
 config.AlertProcessor.critical.sinks.section_("rest")
 config.AlertProcessor.critical.sinks.rest.uri = couchURL + "/" + "alertscollector"
-# buffersize for the CMSCouch interface 
+# buffersize for the CMSCouch interface
 config.AlertProcessor.critical.sinks.rest.bufferSize = 10
 config.AlertProcessor.soft.sinks.section_("rest")
 config.AlertProcessor.soft.sinks.rest.uri = couchURL + "/" + "alertscollector"
@@ -390,7 +390,7 @@ config.AlertGenerator.section_("cpuPoller")
 config.AlertGenerator.cpuPoller.soft = 8 # [percent]
 config.AlertGenerator.cpuPoller.critical = 10 # [percent]
 config.AlertGenerator.cpuPoller.pollInterval = 60 # [second]
-# period during which measurements are collected before evaluating for possible alert triggering 
+# period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.cpuPoller.period = 300 # [second]
 # configuration for overall used physical memory monitor: memPoller (percentage of total physical memory)
 config.AlertGenerator.section_("memPoller")
@@ -414,7 +414,7 @@ config.AlertGenerator.componentsCPUPoller.period = 300 # [second]
 # configuration for particular components memory monitor: componentMemPoller (percentage of total physical memory)
 config.AlertGenerator.section_("componentsMemPoller")
 config.AlertGenerator.componentsMemPoller.soft = 3 # [percent]
-config.AlertGenerator.componentsMemPoller.critical = 5 # [percent] 
+config.AlertGenerator.componentsMemPoller.critical = 5 # [percent]
 config.AlertGenerator.componentsMemPoller.pollInterval = 60  # [second]
 # period during which measurements are collected before evaluating for possible alert triggering
 config.AlertGenerator.componentsMemPoller.period = 300 # [second]

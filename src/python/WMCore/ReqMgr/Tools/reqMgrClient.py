@@ -20,8 +20,8 @@ HEADERS={"Content-type": "application/x-www-form-urlencoded","Accept": "text/pla
 def requestManagerGet(url, request, retries=4):
     """
     Queries ReqMgr through a HTTP GET method
-    in every request manager query 
-    url: the instance used, i.e. url='cmsweb.cern.ch' 
+    in every request manager query
+    url: the instance used, i.e. url='cmsweb.cern.ch'
     request: the request suffix url
     retries: number of retries
     """
@@ -31,7 +31,7 @@ def requestManagerGet(url, request, retries=4):
         conn = httplib.HTTPSConnection(url, cert_file=cert, key_file=ckey)
         conn.request("GET", request)
         resp = conn.getresponse()
-        request = json.load(resp)  
+        request = json.load(resp)
         if 'exception' not in request:
             return request
     raise Exception('Maximum queries to ReqMgr exceeded')
@@ -40,7 +40,7 @@ def requestManagerPost(url, request, params, head = HEADERS):
     """
     Performs some operation on ReqMgr through
     an HTTP POST method.
-    url: the instance used, i.e. url='cmsweb.cern.ch' 
+    url: the instance used, i.e. url='cmsweb.cern.ch'
     request: the request suffix url for the POST method
     params: a dict with the POST parameters
     """
@@ -58,7 +58,7 @@ def requestManagerPut(url, request, params, head = HEADERS):
     """
     Performs some operation on ReqMgr through
     an HTTP PUT method.
-    url: the instance used, i.e. url='cmsweb.cern.ch' 
+    url: the instance used, i.e. url='cmsweb.cern.ch'
     request: the request suffix url for the POST method
     params: a dict with the PUT parameters
     head: optional headers param. If not given it takes default value (HEADERS)
@@ -146,12 +146,12 @@ class WorkflowManager(object):
                     #else parse a list
                     else:
                         request[listitem]= eval(request[listitem])
-            #if not, an empty list will do        
+            #if not, an empty list will do
             else:
                 request[listitem]=[]
 
         inputDataSet=request['InputDataset']
-        
+
         #it the request is rereco, we valiate white/black lists
         if requestType=='ReReco':
             # if there is block whte list, count only the selected block
@@ -159,7 +159,7 @@ class WorkflowManager(object):
                 events = dbs3.getEventCountDataSetBlockList(inputDataSet,request['BlockWhitelist'])
             # if there is block black list, substract them from the total
             if request['BlockBlacklist']:
-                events = (dbs3.getEventCountDataSet(inputDataSet) - 
+                events = (dbs3.getEventCountDataSet(inputDataSet) -
                         dbs3.getEventCountDataSet(inputDataSet,request['BlockBlacklist']))
                 return events
             # same if a run whitelist
@@ -170,9 +170,9 @@ class WorkflowManager(object):
             else:
                 events = dbs3.getEventCountDataset(inputDataSet)
                 return events
-        
+
         events = dbs3.getEventCountDataSet(inputDataSet)
-        # if black list, subsctract them    
+        # if black list, subsctract them
         if request['BlockBlacklist']:
             events=events-dbs3.getEventCountDataSetBlockList(inputDataSet, request['BlockBlacklist'])
         # if white list, only the ones in the whitelist.
@@ -193,7 +193,7 @@ def getOutputEvents(dataset):
     if the request
     """
     return dbs3.getEventCountDataSet(dataset)
-    
+
 def closeOutWorkflow(url, workflowname):
     """
     Closes out a workflow by changing the state to closed-out
@@ -205,7 +205,7 @@ def closeOutWorkflow(url, workflowname):
 
 def closeOutWorkflowCascade(url, workflowname):
     """
-    Closes out a workflow, it will search for any Resubmission requests 
+    Closes out a workflow, it will search for any Resubmission requests
     for which the given request is a parent and announce them too.
     """
     params = {"requestName" : workflowname, "cascade" : True}
@@ -223,7 +223,7 @@ def announceWorkflow(url, workflowname):
 
 def announceWorkflowCascade(url, workflowname):
     """
-    Sets a workflow state to announced, it will search for any Resubmission requests 
+    Sets a workflow state to announced, it will search for any Resubmission requests
     for which the given request is a parent and announce them too.
     """
     params = {"requestName" : workflowname, "cascade" : True}
@@ -279,7 +279,7 @@ def submitWorkflow(url, schema):
     url: the instance ued, i.e. 'cmsweb.cern.ch'
     schema: A dictionary with the parameters needed to create
     the workflow
-    
+
     """
     data = requestManagerPost(url,"/reqmgr/create/makeSchema", schema)
     return data

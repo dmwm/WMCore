@@ -207,7 +207,7 @@ class RequestDBReader(object):
             data = self._getRequestByStatus([status], detail, limit=None, skip=None)
         else:
             data = self._getRequestByStatusAndEndTime(status, detail, endTime)
-            
+
         requestInfo = self._formatCouchData(data, detail = detail)
         return requestInfo
 

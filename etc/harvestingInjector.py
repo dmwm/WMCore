@@ -68,7 +68,7 @@ for option in options.__dict__:
 if missing:
     print("Error: The following mandatory options are missing:")
     print("\n".join(missing))
-    sys.exit(1) 
+    sys.exit(1)
 
 # The default arguments are set in:
 #   WMCORE/src/python/WMCore/WMSpec/StdSpecs/Harvesting.py

@@ -10,7 +10,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMCore.DataStructs.WMObject import WMObject
 
 class JobPackage(WMObject, dict):

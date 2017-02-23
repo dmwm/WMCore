@@ -15,15 +15,15 @@ class ActiveRequestJobInfo(RESTEntity):
     """
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
-        RESTEntity.__init__(self, app, api, config, mount)  
-        
-    def validate(self, apiobj, method, api, param, safe):
-        return            
+        RESTEntity.__init__(self, app, api, config, mount)
 
-    
+    def validate(self, apiobj, method, api, param, safe):
+        return
+
+
     @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
     def get(self):
-        # This assumes DataCahe is periodically updated. 
+        # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         return rows([DataCache.getlatestJobData()])

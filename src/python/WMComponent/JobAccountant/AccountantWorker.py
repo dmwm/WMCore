@@ -78,7 +78,7 @@ class AccountantWorker(WMConnectionBase):
         self.getFullJobInfo          = self.daofactory(classname = "Jobs.LoadForErrorHandler")
         self.getJobTaskNameAction    = self.daofactory(classname = "Jobs.GetFWJRTaskName")
         self.pnn_to_psn              = self.daofactory(classname = "Locations.GetPNNtoPSNMapping").execute()
-        
+
         self.dbsStatusAction       = self.dbsDaoFactory(classname = "DBSBufferFiles.SetStatus")
         self.dbsParentStatusAction = self.dbsDaoFactory(classname = "DBSBufferFiles.GetParentStatus")
         self.dbsChildrenAction     = self.dbsDaoFactory(classname = "DBSBufferFiles.GetChildren")
@@ -88,7 +88,7 @@ class AccountantWorker(WMConnectionBase):
         self.dbsSetChecksum        = self.dbsDaoFactory(classname = "DBSBufferFiles.AddChecksumByLFN")
         self.dbsSetRunLumi         = self.dbsDaoFactory(classname = "DBSBufferFiles.AddRunLumi")
         self.dbsGetWorkflow        = self.dbsDaoFactory(classname = "ListWorkflow")
-        
+
         self.dbsLFNHeritage      = self.dbsDaoFactory(classname = "DBSBufferFiles.BulkHeritageParent")
 
         self.stateChanger = ChangeState(config)
@@ -213,7 +213,7 @@ class AccountantWorker(WMConnectionBase):
             jobReport.setTaskName(jobInfo['taskName'])
             jobReport.save(jobInfo['fwjr_path'])
             if not jobReport.getTaskName():
-                msg = "Report to developers. Failed to recover corrupted fwjr for %s job id %s" % (jobStatus, 
+                msg = "Report to developers. Failed to recover corrupted fwjr for %s job id %s" % (jobStatus,
                                                                                                    jobReport.getJobID())
                 raise AccountantWorkerException(msg)
             else:
@@ -238,7 +238,7 @@ class AccountantWorker(WMConnectionBase):
             # Load the job and set the ID
             fwkJobReport = self.loadJobReport(job)
             fwkJobReport.setJobID(job['id'])
-            
+
             jobSuccess = self.handleJob(jobID = job["id"],
                                         fwkJobReport = fwkJobReport)
 
@@ -255,8 +255,8 @@ class AccountantWorker(WMConnectionBase):
         # Now things done at the end of the job
         # Do what we can with WMBS files
         self.handleWMBSFiles(self.wmbsFilesToBuild, self.parentageBinds)
-        
-        # handle merge files separately since parentage need to set 
+
+        # handle merge files separately since parentage need to set
         # separately to support robust merge
         self.handleWMBSFiles(self.wmbsMergeFilesToBuild, self.parentageBindsForMerge)
 
@@ -433,12 +433,12 @@ class AccountantWorker(WMConnectionBase):
             fwjrFile["merged"] = True
 
         wmbsFile = self.createFileFromDataStructsFile(file = fwjrFile, jobID = jobID)
-        
+
         if jobType == "Merge":
             self.wmbsMergeFilesToBuild.append(wmbsFile)
         else:
             self.wmbsFilesToBuild.append(wmbsFile)
-            
+
         if fwjrFile["merged"]:
             self.addFileToDBS(fwjrFile, task,
                               jobType == "Repack" and fwjrFile["size"] > self.maxAllowedRepackOutputSize)
@@ -588,7 +588,7 @@ class AccountantWorker(WMConnectionBase):
                 self.listOfJobsToFail.append(wmbsJob)
 
         return jobSuccess
-    
+
     def associateLogCollectToParentJobsInWMStats(self, fwkJobReport, logAchiveLFN, task):
         """
         _associateLogCollectToParentJobsInWMStats_
@@ -600,7 +600,7 @@ class AccountantWorker(WMConnectionBase):
         keys = []
         for inputFile in inputFileList:
             keys.append([requestName, inputFile["lfn"]])
-        resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN', 
+        resultRows = self.fwjrCouchDB.loadView("FWJRDump", 'jobsByOutputLFN',
                                                options = {"stale": "update_after"},
                                                keys = keys)['rows']
         if len(resultRows) > 0:
@@ -611,13 +611,13 @@ class AccountantWorker(WMConnectionBase):
             #update Job doc in wmstats
             results = self.getJobInfoByID.execute(parentWMBSJobIDs)
             parentJobNames = []
-            
+
             if isinstance(results, list):
                 for jobInfo in results:
                     parentJobNames.append(jobInfo['name'])
             else:
                 parentJobNames.append(results['name'])
-            
+
             self.localWMStats.updateLogArchiveLFN(parentJobNames, logAchiveLFN)
         else:
             #TODO: if the couch db is consistent with DB this should be removed (checking resultRow > 0)
@@ -733,7 +733,7 @@ class AccountantWorker(WMConnectionBase):
                                           'cktype' : entry})
 
         try:
-            
+
             diffLocation = jobLocations.difference(self.dbsLocations)
 
             for jobLocation in diffLocation:
@@ -803,7 +803,7 @@ class AccountantWorker(WMConnectionBase):
             # if it is the merge job, don't include the parentage on failed input files.
             # otherwise parentage is set for all input files.
             parentageBinds.append({'child': lfn, 'jobid': wmbsFile['jid']})
-                
+
             if wmbsFile['runs']:
                 runLumiBinds.append({'lfn': lfn, 'runs': wmbsFile['runs']})
 
@@ -895,7 +895,7 @@ class AccountantWorker(WMConnectionBase):
         if pnn != None:
             wmbsFile.setLocation(pnn = pnn, immediateSave = False)
         wmbsFile['jid'] = jobID
-        
+
         return wmbsFile
 
     def handleDBSBufferParentage(self):

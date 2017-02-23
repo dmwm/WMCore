@@ -25,17 +25,17 @@ class WMStatsTest(RESTBaseUnitTestWithDBBackend):
         self.setCouchDBs([(reqmgrCouchDB, "ReqMgr"), (wmstatsCouchDB, "WMStats")])
         self.setSchemaModules([])
         RESTBaseUnitTestWithDBBackend.setUp(self)
-        
+
     def tearDown(self):
         RESTBaseUnitTestWithDBBackend.tearDown(self)
 
     def testRequest(self):
         # add request related REST API test
         #
-        #self.jsonSender.put('request/' + schema['RequestName'], schema) 
+        #self.jsonSender.put('request/' + schema['RequestName'], schema)
         #print self.jsonSender.get('request', incoming_headers=self.adminHeader)
         print(self.jsonSender.get('requests'))
-    
+
 if __name__ == '__main__':
 
     unittest.main()

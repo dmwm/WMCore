@@ -20,7 +20,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMCore.ThreadPool.WorkQueue import ThreadPool as Queue
 from WMCore.WMFactory import WMFactory
 

@@ -154,8 +154,8 @@ else
   exit 1
 fi
 
-DATA_SIZE=`lsblk -bo SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
-DATA_SIZE_GB=`lsblk -o SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
+DATA_SIZE=`lsblk -bo SIZE,MOUNTPOINT | grep ' /data1' | sort | uniq | awk '{print $1}'`
+DATA_SIZE_GB=`lsblk -o SIZE,MOUNTPOINT | grep ' /data1' | sort | uniq | awk '{print $1}'`
 if [[ $DATA_SIZE -gt 200000000000 ]]; then  # greater than ~200GB
   echo "Partition /data1 available! Total size: $DATA_SIZE_GB"
   sleep 0.5

@@ -140,7 +140,7 @@ dependencies = {'wmc-rest':{
                                      'WMCore.ReqMgr.DataStructs+'
                                     ],
                         'modules' : ['WMCore.Database.__init__', 'WMCore.Database.CMSCouch',
-                                     'WMCore.Database.CouchUtils'],
+                                     'WMCore.Database.CouchUtils', 'WMCore.ReqMgr.__init__'],
                         'systems': ['wmc-base', 'wmc-rest'],
                         'statics': ['src/couchapps/WMStats+',
                                     'src/couchapps/WMStatsErl+',

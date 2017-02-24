@@ -120,7 +120,19 @@ class StageOutMgr:
 
         msg += "There are %s fallback stage out definitions.\n" % len(self.fallbacks)
         for item in self.fallbacks:
-            msg += "\tFallback to : %s using: %s \n" % (item['phedex-node'], item['command'])
+            pnn = item.get("phedex-node")
+            command = item.get("command")
+            if pnn is None:
+                msg = "Unable to retrieve fallback phedex-node\n"
+                msg += "From site config file.\n"
+                msg += "Unable to perform StageOut operation"
+                raise StageOutInitError(msg)
+            if command is None:
+                msg = "Unable to retrieve fallback command\n"
+                msg += "From site config file.\n"
+                msg += "Unable to perform StageOut operation"
+                raise StageOutInitError(msg)
+            msg += "\tFallback to : %s using: %s \n" % (pnn, command)
 
         print("==== Stageout configuration start ====")
         print(msg)

@@ -119,33 +119,37 @@ def handleAssignment(args, fname, jsonData):
     if 'ProcessingVersion' in jsonData['assignRequest']:
         assignRequest.setdefault('ProcessingVersion', args.procVer)
 
-    # dict args for TaskChain
-    if jsonData['createRequest']['RequestType'] == "TaskChain":
-        if 'AcquisitionEra' in jsonData['assignRequest']:
-            if isinstance(jsonData['assignRequest']['AcquisitionEra'], dict):
-                assignRequest['AcquisitionEra'] = jsonData['assignRequest']['AcquisitionEra']
-                for task, _ in assignRequest['AcquisitionEra'].iteritems():
-                    # lookup this task name
-                    for i in range(1, jsonData['createRequest']['TaskChain'] + 1):
-                        if jsonData['createRequest']['Task%d' % i]['TaskName'] == task:
-                            assignRequest['AcquisitionEra'][task] = jsonData['createRequest']['Task%d' % i].get(
-                                'AcquisitionEra', jsonData['createRequest']['AcquisitionEra'])
-                            break
-        if 'ProcessingString' in jsonData['assignRequest']:
-            if isinstance(jsonData['assignRequest']['ProcessingString'], dict):
-                assignRequest['ProcessingString'] = jsonData['assignRequest']['ProcessingString']
-                for task, _ in assignRequest['ProcessingString'].iteritems():
-                    assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
-        if 'ProcessingVersion' in jsonData['assignRequest']:
-            if isinstance(jsonData['assignRequest']['ProcessingVersion'], dict):
-                assignRequest['ProcessingVersion'] = jsonData['assignRequest']['ProcessingVersion']
-                for task, _ in assignRequest['ProcessingVersion'].iteritems():
-                    # lookup this task name
-                    for i in range(1, jsonData['createRequest']['TaskChain'] + 1):
-                        if jsonData['createRequest']['Task%d' % i]['TaskName'] == task:
-                            assignRequest['ProcessingVersion'][task] = jsonData['createRequest']['Task%d' % i].get(
-                                'ProcessingVersion', jsonData['createRequest']['ProcessingVersion'])
-                            break
+    # dict args for TaskChain and StepChain
+    if jsonData['createRequest']['RequestType'] in ["TaskChain", "StepChain"]:
+        requestType = jsonData['createRequest']['RequestType']
+        joker = requestType.split("Chain")[0]
+        assignDict = jsonData['assignRequest']
+
+        # reuse values provided in the request schema at creation level
+        if 'AcquisitionEra' in assignDict and isinstance(assignDict['AcquisitionEra'], dict):
+            assignRequest['AcquisitionEra'] = assignDict['AcquisitionEra']
+            createDict = jsonData['createRequest']
+            for i in range(1, createDict[requestType] + 1):
+                innerDictName = "%s%d" % (joker, i)  # Task1, Task2, Step1, Step2 ...
+                innerDict = createDict[innerDictName]
+                # if there is no Task/Step level value, get it from the main dict
+                assignRequest['AcquisitionEra'][innerDict["%sName" % joker]] = innerDict.get('AcquisitionEra', createDict['AcquisitionEra'])
+
+        # always overwrite it as provided in the command line and task/step name
+        if 'ProcessingString' in assignDict and isinstance(assignDict['ProcessingString'], dict):
+            assignRequest['ProcessingString'] = assignDict['ProcessingString']
+            for task, _ in assignRequest['ProcessingString'].iteritems():
+                assignRequest['ProcessingString'][task] = task + '_' + tmpProcStr
+
+        # also reuse values as provided in the request schema at creation level
+        if 'ProcessingVersion' in assignDict and isinstance(assignDict['ProcessingVersion'], dict):
+            assignRequest['ProcessingVersion'] = assignDict['ProcessingVersion']
+            createDict = jsonData['createRequest']
+            for i in range(1, createDict[requestType] + 1):
+                innerDictName = "%s%d" % (joker, i)  # Task1, Task2, Step1, Step2 ...
+                innerDict = createDict[innerDictName]
+                # if there is no Task/Step level value, get it from the main dict
+                assignRequest['ProcessingVersion'][innerDict["%sName" % joker]] = innerDict.get('ProcessingVersion', createDict['ProcessingVersion'])
 
     jsonData['assignRequest'].update(assignRequest)
     return
@@ -173,7 +177,7 @@ def main():
             sys.exit(3)
     else:
         templates = os.listdir(wmcorePath)
-    blacklist = ['StoreResults.json']
+    blacklist = ['StoreResults.json', 'Resubmission_MC.json']
     templates = [item for item in templates if item not in blacklist]
 
     reqMgrCommand = "reqmgr.py" if args.reqmgr1 else "reqmgr2.py"

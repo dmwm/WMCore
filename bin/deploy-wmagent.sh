@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch1 -c HG1702f -t production -p "7605" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.pre10 -c HG1702f -t testbed-cmssrv214 -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch2 -c HG1702f -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch1 -c HG1702f -t testbed-cmssrv214 -p "7605" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 
@@ -154,11 +154,10 @@ else
   exit 1
 fi
 
-DATA_SIZE=`lsblk -o SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
-if [[ -z $DATA_SIZE ]]; then
-  DATA1=false
-else
-  echo "Partition /data1 available! Total size: $DATA_SIZE"
+DATA_SIZE=`lsblk -bo SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
+DATA_SIZE_GB=`lsblk -o SIZE,MOUNTPOINT | grep ' /data1' | awk '{print $1}'`
+if [[ $DATA_SIZE -gt 200000000000 ]]; then  # greater than ~200GB
+  echo "Partition /data1 available! Total size: $DATA_SIZE_GB"
   sleep 0.5
   while true; do
     read -p "Would you like to deploy couchdb in this /data1 partition (yes/no)? " yn
@@ -168,6 +167,8 @@ else
       * ) echo "Please answer yes or no.";;
     esac
   done
+else
+  DATA1=false
 fi && echo
 
 echo "Starting new agent deployment with the following data:"

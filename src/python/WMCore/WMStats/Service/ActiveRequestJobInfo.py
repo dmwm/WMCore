@@ -11,7 +11,7 @@ from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_NO_CLOSEOUT_FILTER
 
 class ActiveRequestJobInfo(RESTEntity):
     """
-    get all the active requests with job infromation attatched
+    get all the active requests with job information attatched
     """
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored

@@ -109,7 +109,7 @@ def protectedLFNs(requestInfo):
         outs = requestInfo.get('OutputDatasets', [])
         base= requestInfo.get('UnmergedLFNBase','/store/unmerged')
         for out in outs:
-            _, dsn, ps, tier = out.split('/')
+            dsn, ps, tier = out.split('/')[1:]
             acq, rest = ps.split('-',1)
             dirPath = '/'.join([ base, acq, dsn, tier, rest])
             result.append(dirPath)
@@ -160,6 +160,8 @@ class RequestInfo(object):
 
     def get(self, prop, default=None):
         """
+        gets the value when prop exist as one of the properties in the request document.
+        In case TaskChain, StepChain workflow it searches the property in Task/Step level
         """
         
         if "TaskChain" in self.data:

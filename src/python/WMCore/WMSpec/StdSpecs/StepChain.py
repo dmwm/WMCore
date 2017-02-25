@@ -163,6 +163,22 @@ class StepChainWorkloadFactory(StdBase):
             self.setupMergeTask(task, taskConf, "cmsRun1", outMods)
 
         return
+    
+    def findOverwriteValue(self, prop, stepName, specArgs):
+        # list the params which can have dictionary format to overwrite StepChaign value
+        if prop in specArgs and isinstance(specArgs[prop], dict):
+            return specArgs[prop].get(stepName, None)
+        else:
+            return specArgs.get(prop, None)
+        
+    def updateStepConf(self, taskConf, origArgs):
+        overwritePrpperties = ["AcquistionEra", "ProcessingString", "ProcessingVersion"]
+        for prop in overwritePrpperties:
+            if prop not in taskConf:
+                newProp = self.findOverwriteValue(prop, taskConf['StepName'], origArgs)
+                if newProp is not None:
+                    taskConf[prop] = newProp
+        return
 
     def setupNextSteps(self, task, origArgs):
         """
@@ -178,11 +194,14 @@ class StepChainWorkloadFactory(StdBase):
         for i in range(2, self.stepChain + 1):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
-            stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
+            forceTaskName = origArgs[currentStepNumber]['StepName']
+            stepMapping.setdefault(forceTaskName, (currentStepNumber, currentCmsRun))
             taskConf = {}
             for k, v in origArgs[currentStepNumber].iteritems():
                 taskConf[k] = v
-
+            
+            self.updateStepConf(taskConf, origArgs)
+            
             parentStepNumber = stepMapping.get(taskConf['InputStep'])[0]
             parentCmsRun = stepMapping.get(taskConf['InputStep'])[1]
             parentCmsswStep = task.getStep(parentCmsRun)
@@ -225,14 +244,14 @@ class StepChainWorkloadFactory(StdBase):
             parentCmsswStepHelper.keepOutput(parentKeepOutput)
             childKeepOutput = strToBool(taskConf.get('KeepOutput', True))
             childCmsswStepHelper.keepOutput(childKeepOutput)
-            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput)
+            self.setupOutputModules(task, taskConf, currentCmsRun, childKeepOutput, forceTaskName)
 
         # Closing out the task configuration. The last step output must be saved/merged
         childCmsswStepHelper.keepOutput(True)
 
         return
 
-    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput):
+    def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput, forceTaskName):
         """
         _setupOutputModules_
 
@@ -250,7 +269,7 @@ class StepChainWorkloadFactory(StdBase):
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
-                                                stepName=stepCmsRun)
+                                                stepName=stepCmsRun, forceTaskName=forceTaskName)
             outputMods[outputModuleName] = outputModule
 
         if keepOutput:

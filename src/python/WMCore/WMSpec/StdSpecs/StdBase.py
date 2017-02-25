@@ -441,7 +441,7 @@ class StdBase(object):
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
                         stepName="cmsRun1", forceMerged=False,
-                        forceUnmerged=False):
+                        forceUnmerged=False, forceTaskName=None):
         """
         _addOutputModule_
 
@@ -452,7 +452,7 @@ class StdBase(object):
         haveProcString = (self.processingString != None and self.processingString != "")
         haveRunNumber = (self.runNumber != None and self.runNumber > 0)
 
-        taskName = parentTask.name()
+        taskName = forceTaskName or parentTask.name()
         acqEra = self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = self._getDictionaryParams(self.processingString, taskName)
         procVersion = self._getDictionaryParams(self.processingVersion, taskName, 1)

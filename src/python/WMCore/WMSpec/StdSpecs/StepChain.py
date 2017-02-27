@@ -13,8 +13,8 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
-from Utils.Utilities import makeList, strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
@@ -49,6 +49,9 @@ class StepChainWorkloadFactory(StdBase):
         self.sizePerEvent = None
         self.timePerEvent = None
         self.primaryDataset = None
+        # stepMapping is going to be used during assignment for properly mapping
+        # the arguments to each step/cmsRun
+        self.stepMapping = {}
 
     def __call__(self, workloadName, arguments):
         """
@@ -94,8 +97,7 @@ class StepChainWorkloadFactory(StdBase):
         if self.stepChain > 1:
             self.setupNextSteps(firstTask, arguments)
 
-        # All tasks need to have this parameter set
-        self.workload.setTaskPropertiesFromWorkload()
+        self.workload.setStepMapping(self.stepMapping)
 
         return self.workload
 
@@ -172,19 +174,18 @@ class StepChainWorkloadFactory(StdBase):
         chain the output between all three steps.
         """
         configCacheUrl = self.configCacheUrl or self.couchURL
-        stepMapping = {}
-        stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
+        self.stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
 
         for i in range(2, self.stepChain + 1):
             currentStepNumber = "Step%d" % i
             currentCmsRun = "cmsRun%d" % i
-            stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
+            self.stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
             for k, v in origArgs[currentStepNumber].iteritems():
                 taskConf[k] = v
 
-            parentStepNumber = stepMapping.get(taskConf['InputStep'])[0]
-            parentCmsRun = stepMapping.get(taskConf['InputStep'])[1]
+            parentStepNumber = self.stepMapping.get(taskConf['InputStep'])[0]
+            parentCmsRun = self.stepMapping.get(taskConf['InputStep'])[1]
             parentCmsswStep = task.getStep(parentCmsRun)
             parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
 
@@ -239,6 +240,8 @@ class StepChainWorkloadFactory(StdBase):
         Retrieves the outputModules from the step configuration and sets up
         a merge task for them. Only when KeepOutput is set to True.
         """
+        taskConf = taskConf or {}
+
         configCacheUrl = self.configCacheUrl or self.couchURL
         outputMods = {}
 
@@ -250,7 +253,7 @@ class StepChainWorkloadFactory(StdBase):
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
                                                 configOutput[outputModuleName]["filterName"],
-                                                stepName=stepCmsRun)
+                                                stepName=stepCmsRun, taskConf=taskConf)
             outputMods[outputModuleName] = outputModule
 
         if keepOutput:
@@ -270,7 +273,7 @@ class StepChainWorkloadFactory(StdBase):
         for outputModuleName in outputMods.keys():
             dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,
                                           cmsswVersion=frameworkVersion, scramArch=scramArch,
-                                          forceTaskName=taskConf.get('StepName'))
+                                          forceTaskName=taskConf.get('StepName'), taskConf=taskConf)
 
         return
 

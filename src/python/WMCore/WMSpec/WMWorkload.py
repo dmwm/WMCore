@@ -5,6 +5,8 @@ _WMWorkload_
 Request level processing specification, acts as a container of a set
 of related tasks.
 """
+from __future__ import print_function
+
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
@@ -96,6 +98,48 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def setRequestType(self, requestType):
         self.data.requestType = requestType
+
+    def setStepProperties(self, assignArgs):
+        """
+        _setStepProperties_
+
+        Used for properly setting AcqEra/ProcStr/ProcVer for each step in a StepChain request
+        during assignment. Only used if one of those parameters is a dictionary.
+        """
+        mustSet = False
+        if "AcquisitionEra" in assignArgs and isinstance(assignArgs["AcquisitionEra"], dict):
+            mustSet = True
+        elif "ProcessingString" in assignArgs and isinstance(assignArgs["ProcessingString"], dict):
+            mustSet = True
+        elif "ProcessingVersion" in assignArgs and isinstance(assignArgs["ProcessingVersion"], dict):
+            mustSet = True
+        if mustSet is False:
+            return
+
+        stepNameMapping = self.getStepMapping()
+        for task in self.taskIterator():
+            task.updateLFNsAndDatasets(dictValues=assignArgs, stepMapping=stepNameMapping)
+
+        return
+
+
+    def setStepMapping(self, mapping):
+        """
+        _setStepMapping_
+
+        Mostly used for StepChains. It creates a mapping between the StepName and the step
+        number and the cmsRun number. E.g.:
+          {'GENSIM': ('Step1', 'cmsRun1'), 'DIGI': ('Step2', 'cmsRun2'), 'RECO': ('Step3', 'cmsRun3')}
+        """
+        self.data.properties.stepMapping = mapping
+
+    def getStepMapping(self):
+        """
+        _getStepMapping_
+
+        Mostly used for StepChains.
+        """
+        return getattr(self.data.properties, "stepMapping", None)
 
     def getInitialJobCount(self):
         """
@@ -615,9 +659,9 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the acquisition era for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new acquisition era.
         """
-
+        stepNameMapping = self.getStepMapping()
         for task in self.taskIterator():
-            task.setAcquisitionEra(acquisitionEras)
+            task.setAcquisitionEra(acquisitionEras, stepChain=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         # set acquistionEra for workload (need to refactor)
@@ -631,10 +675,10 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the processing version for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        taskIterator = self.taskIterator()
+        stepNameMapping = self.getStepMapping()
 
-        for task in taskIterator:
-            task.setProcessingVersion(processingVersions)
+        for task in self.taskIterator():
+            task.setProcessingVersion(processingVersions, stepChain=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingVersion = processingVersions
@@ -647,10 +691,10 @@ class WMWorkloadHelper(PersistencyHelper):
         Change the processing string for all tasks in the spec and then update
         all of the output LFNs and datasets to use the new processing version.
         """
-        taskIterator = self.taskIterator()
+        stepNameMapping = self.getStepMapping()
 
-        for task in taskIterator:
-            task.setProcessingString(processingStrings)
+        for task in self.taskIterator():
+            task.setProcessingString(processingStrings, stepChain=stepNameMapping)
 
         self.updateLFNsAndDatasets()
         self.data.properties.processingString = processingStrings
@@ -1637,13 +1681,16 @@ class WMWorkloadHelper(PersistencyHelper):
 
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
-
         if self._checkKeys(kwargs, "ProcessingVersion"):
             self.setProcessingVersion(kwargs["ProcessingVersion"])
         if self._checkKeys(kwargs, "AcquisitionEra"):
             self.setAcquisitionEra(kwargs["AcquisitionEra"])
         if self._checkKeys(kwargs, "ProcessingString"):
             self.setProcessingString(kwargs["ProcessingString"])
+
+        # MUST be set after AcqEra/ProcStr/ProcVer
+        if self.requestType() == "StepChain":
+            self.setStepProperties(kwargs)
 
         if self._checkKeys(kwargs, performanceParams):
             self.setupPerformanceMonitoring(kwargs["MaxRSS"],

@@ -283,6 +283,10 @@ class StdBase(object):
           if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty
 
         The seeding and totalEvents parameters are only used for production jobs.
+
+        taskConf is a dictionary with either Task or Step level key/value pairs used to
+        bypass the workload level argument, providing flexibility to have different
+        settings even inside the same task object.
         """
         # set default values in case it's not passed to this method
         scenarioArgs = scenarioArgs or {}
@@ -336,9 +340,15 @@ class StdBase(object):
                                            memoryReq=memoryReq)
 
         procTask.setTaskType(taskType)
-        procTask.setProcessingVersion(self.processingVersion)
-        procTask.setAcquisitionEra(self.acquisitionEra)
-        procTask.setProcessingString(self.processingString)
+
+        # we better be safe in case the specs set these Task/Step level args to None
+        acqEra = taskConf.get("AcquisitionEra") or self.acquisitionEra
+        procStr = taskConf.get("ProcessingString") or self.processingString
+        procVer = taskConf.get("ProcessingVersion") or self.processingVersion
+        procTask.setAcquisitionEra(acqEra)
+        procTask.setProcessingString(procStr)
+        procTask.setProcessingVersion(procVer)
+
         procTask.setPerformanceMonitor(taskConf.get("MaxRSS", None),
                                        taskConf.get("MaxVSize", None),
                                        taskConf.get("SoftTimeout", None),
@@ -409,7 +419,7 @@ class StdBase(object):
                                                                                    self.inputPrimaryDataset),
                                                 configOutput[outputModuleName]['dataTier'],
                                                 configOutput[outputModuleName].get('filterName', None),
-                                                forceMerged=forceMerged, forceUnmerged=forceUnmerged)
+                                                forceMerged=forceMerged, forceUnmerged=forceUnmerged, taskConf=taskConf)
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
@@ -441,21 +451,26 @@ class StdBase(object):
     def addOutputModule(self, parentTask, outputModuleName,
                         primaryDataset, dataTier, filterName,
                         stepName="cmsRun1", forceMerged=False,
-                        forceUnmerged=False):
+                        forceUnmerged=False, taskConf=None):
         """
         _addOutputModule_
 
         Add an output module to the given processing task.
 
+        taskConf is used for multi-step tasks where diff output processed
+        dataset name is desired
         """
+        taskConf = taskConf or {}
         haveFilterName = (filterName != None and filterName != "")
         haveProcString = (self.processingString != None and self.processingString != "")
         haveRunNumber = (self.runNumber != None and self.runNumber > 0)
 
         taskName = parentTask.name()
-        acqEra = self._getDictionaryParams(self.acquisitionEra, taskName)
-        procString = self._getDictionaryParams(self.processingString, taskName)
-        procVersion = self._getDictionaryParams(self.processingVersion, taskName, 1)
+        if self.requestType == "StepChain" and "StepName" in taskConf:
+            taskName = taskConf["StepName"]
+        acqEra = taskConf.get('AcquisitionEra') or self._getDictionaryParams(self.acquisitionEra, taskName)
+        procString = taskConf.get('ProcessingString') or self._getDictionaryParams(self.processingString, taskName)
+        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion, taskName, 1)
 
         processedDataset = "%s-" % acqEra
         if haveFilterName:
@@ -549,16 +564,21 @@ class StdBase(object):
         return logCollectTask
 
     def addMergeTask(self, parentTask, parentTaskSplitting, parentOutputModuleName, parentStepName="cmsRun1",
-                     doLogCollect=True, lfn_counter=0, forceTaskName=None, cmsswVersion=None, scramArch=None):
+                     doLogCollect=True, lfn_counter=0, forceTaskName=None, cmsswVersion=None, scramArch=None,
+                     taskConf=None):
         """
         _addMergeTask_
 
         Create a merge task for files produced by the parent task.
+
+        taskConf is used for multi-step Tasks where different merge settings are desired for
+        the same parent production/processing task
         """
         cmsswVersion = cmsswVersion or self.frameworkVersion
         scramArch = scramArch or self.scramArch
         # StepChain use case, to avoid merge task names clashes
         forceTaskName = forceTaskName or parentTask.name()
+        taskConf = taskConf or {}
 
         mergeTask = parentTask.addTask("%sMerge%s" % (forceTaskName, parentOutputModuleName))
         self.addDashboardMonitoring(mergeTask)
@@ -574,6 +594,13 @@ class StdBase(object):
         mergeTaskLogArch.setNewStageoutOverride(self.enableNewStageout)
 
         mergeTask.setTaskLogBaseLFN(self.unmergedLFNBase)
+        # we better be safe in case the specs set these Task/Step level args to None
+        acqEra = taskConf.get("AcquisitionEra") or self.acquisitionEra
+        procStr = taskConf.get("ProcessingString") or self.processingString
+        procVer = taskConf.get("ProcessingVersion") or self.processingVersion
+        mergeTask.setAcquisitionEra(acqEra)
+        mergeTask.setProcessingString(procStr)
+        mergeTask.setProcessingVersion(procVer)
 
         if doLogCollect:
             taskNameLC = "%s%sMergeLogCollect" % (forceTaskName, parentOutputModuleName)
@@ -626,7 +653,7 @@ class StdBase(object):
                              primaryDataset=getattr(parentOutputModule, "primaryDataset"),
                              dataTier=getattr(parentOutputModule, "dataTier"),
                              filterName=getattr(parentOutputModule, "filterName"),
-                             forceMerged=True)
+                             forceMerged=True, taskConf=taskConf)
 
         self.addCleanupTask(parentTask, parentOutputModuleName, forceTaskName)
         if self.enableHarvesting and getattr(parentOutputModule, "dataTier") in ["DQMIO", "DQM"]:

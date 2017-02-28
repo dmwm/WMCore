@@ -7,7 +7,7 @@ from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Tools import tools
 from WMCore.WMStats.DataStructs.DataCache import DataCache
 from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_NO_CLOSEOUT_FILTER
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_NO_CLOSEOUT_FILTER, ACTIVE_STATUS_FILTER
 
 class ActiveRequestJobInfo(RESTEntity):
     """
@@ -29,6 +29,23 @@ class ActiveRequestJobInfo(RESTEntity):
         return rows([DataCache.getlatestJobData()])
     
 class ProtectedLFNList(RESTEntity):
+    
+    def __init__(self, app, api, config, mount):
+        # main CouchDB database where requests/workloads are stored
+        RESTEntity.__init__(self, app, api, config, mount)  
+        
+    def validate(self, apiobj, method, api, param, safe):
+        return            
+
+    
+    @restcall(formats = [('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
+    @tools.expires(secs=-1)
+    def get(self):
+        # This assumes DataCahe is periodically updated. 
+        # If data is not updated, need to check, dataCacheUpdate log
+        return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
+
+class ProtectedLFNListOnlyFinalOutput(RESTEntity):
     
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored

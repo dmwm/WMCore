@@ -62,7 +62,7 @@ class Create(DBCreator):
            grid_id       VARCHAR(255),
            bulk_id       VARCHAR(255),
            status        CHAR(1)   DEFAULT '1',
-           sched_status  INT,
+           sched_status  INT NOT NULL,
            retry_count   INT,
            status_time   INT,
            location      INT,

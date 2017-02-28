@@ -93,7 +93,7 @@ class BossAirAPI(WMConnectionBase):
         self.completeDAO = self.daoFactory(classname="CompleteJob")
         self.monitorDAO = self.daoFactory(classname="JobStatusForMonitoring")
 
-
+        self.states = None
         self.loadPlugin(noSetup)
 
         return
@@ -163,7 +163,7 @@ class BossAirAPI(WMConnectionBase):
         for wmbsJob in wmbsJobs:
             runJob = RunJob()
             runJob.buildFromJob(job=wmbsJob)
-            if not runJob.get('status', None):
+            if runJob.get('status') not in self.states:
                 runJob['status'] = self.newState
             jobsToCreate.append(runJob)
 
@@ -184,14 +184,12 @@ class BossAirAPI(WMConnectionBase):
         List runjobs, either active or complete
         """
 
-        existingTransaction = self.beginTransaction()
         if active:
             runJobDicts = self.runningJobDAO.execute(conn=self.getDBConn(),
                                                      transaction=self.existingTransaction())
         else:
             runJobDicts = self.completeJobDAO.execute(conn=self.getDBConn(),
                                                       transaction=self.existingTransaction())
-        self.commitTransaction(existingTransaction)
 
         runJobs = []
         for jDict in runJobDicts:
@@ -215,10 +213,6 @@ class BossAirAPI(WMConnectionBase):
             logging.error(msg)
             raise BossAirException(msg)
 
-
-        existingTransaction = self.beginTransaction()
-
-
         loadJobs = self.loadJobsDAO.execute(status=status,
                                             complete=complete,
                                             conn=self.getDBConn(),
@@ -229,8 +223,6 @@ class BossAirAPI(WMConnectionBase):
             rj.update(jDict)
             statusJobs.append(rj)
 
-        self.commitTransaction(existingTransaction)
-
         return statusJobs
 
 
@@ -240,8 +232,6 @@ class BossAirAPI(WMConnectionBase):
 
         Load by running Job ID
         """
-        existingTransaction = self.beginTransaction()
-
         loadJobsDAO = self.daoFactory(classname="LoadByID")
         loadJobs = loadJobsDAO.execute(jobs=jobs, conn=self.getDBConn(),
                                        transaction=self.existingTransaction())
@@ -251,8 +241,6 @@ class BossAirAPI(WMConnectionBase):
             rj = RunJob()
             rj.update(jDict)
             loadedJobs.append(rj)
-
-        self.commitTransaction(existingTransaction)
 
         return loadedJobs
 
@@ -314,8 +302,6 @@ class BossAirAPI(WMConnectionBase):
         if len(wmbsJobs) < 1:
             return []
 
-        existingTransaction = self.beginTransaction()
-
         jobList = self.loadByWMBSDAO.execute(jobs=wmbsJobs, conn=self.getDBConn(),
                                              transaction=self.existingTransaction())
 
@@ -325,14 +311,13 @@ class BossAirAPI(WMConnectionBase):
             rj.update(job)
             loadedJobs.append(rj)
 
-        self.commitTransaction(existingTransaction)
-
         if not len(loadedJobs) == len(wmbsJobs):
             logging.error("Mismatch in WMBS load: Some requested jobs not found!")
             idList = [x['jobid'] for x in loadedJobs]
             for job in wmbsJobs:
-                if not job['id'] in idList:
-                    logging.error("Could not retrieve job with WMBS ID %i from BossAir database", (job['id']))
+                if job['id'] not in idList:
+                    logging.error("Could not retrieve job with WMBS ID %i from BossAir database", job['id'])
+                    logging.error("  ... WMBS job info is: %s", job)
 
         return loadedJobs
 
@@ -486,7 +471,7 @@ class BossAirAPI(WMConnectionBase):
 
         loadedJobs = self._buildRunningJobsFromRunJobs(runJobs=runningJobs)
 
-        logging.info("About to look for %i loadedJobs.\n", len(loadedJobs))
+        logging.info("About to look for %i loadedJobs.", len(loadedJobs))
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
@@ -741,16 +726,8 @@ class BossAirAPI(WMConnectionBase):
         This should not be called by the standard Submitter/Status/Tracker
         system.  It is meant for outside calling.
         """
-
-
-        existingTransaction = self.beginTransaction()
-
-
         results = self.monitorDAO.execute(commonState, conn=self.getDBConn(),
                                           transaction=self.existingTransaction())
-
-        self.commitTransaction(existingTransaction)
-
 
         return results
 

@@ -36,6 +36,7 @@ class SimpleCondorPlugin(BasePlugin):
         """
         For a given condor status mapped, return a global state used by the agent
         NOTE: these keys are populated into bl_status table.
+        NOTE2: Timeout must be present in all future plugins (New is recommended too)
         """
         stateMap = {'New': 'Pending',
                     'Idle': 'Pending',
@@ -45,6 +46,7 @@ class SimpleCondorPlugin(BasePlugin):
                     'Held': 'Error',
                     'TransferOutput': 'Running',
                     'Suspended': 'Error',
+                    'Timeout': 'Error',
                     'Unknown': 'Error'}
 
         return stateMap

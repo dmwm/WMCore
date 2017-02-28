@@ -45,7 +45,8 @@ class SimpleCondorPlugin(BasePlugin):
                     'Held': 'Error',
                     'TransferOutput': 'Running',
                     'Suspended': 'Error',
-                    'Unknown': 'Error'}
+                    'Unknown': 'Error',
+                    'Timeout': 'Error'}
 
         return stateMap
 

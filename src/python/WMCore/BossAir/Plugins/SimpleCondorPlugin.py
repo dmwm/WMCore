@@ -15,8 +15,8 @@ import time
 import classad
 import htcondor
 
-import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from Utils.IteratorTools import convertFromUnicodeToStr, grouper
+import WMCore.Algorithms.BasicAlgos as BasicAlgos
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
@@ -348,16 +348,16 @@ class SimpleCondorPlugin(BasePlugin):
                     extDesiredList.remove(siteName)
 
                 # now put it back in the string format expected by condor
-                desiredList = ",".join(desiredList)
-                extDesiredList = ",".join(extDesiredList)
+                desiredListStr = ",".join(desiredList)
+                extDesiredListStr = ",".join(extDesiredList)
 
                 try:
                     sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
                                                                                  classad.quote(siteStrings[1])),
-                            "DESIRED_Sites", classad.quote(str(desiredList)))
+                            "DESIRED_Sites", classad.quote(str(desiredListStr)))
                     sd.edit('DESIRED_Sites =?= %s && ExtDESIRED_Sites =?= %s' % (classad.quote(siteStrings[0]),
                                                                                  classad.quote(siteStrings[1])),
-                            "ExtDESIRED_Sites", classad.quote(str(extDesiredList)))
+                            "ExtDESIRED_Sites", classad.quote(str(extDesiredListStr)))
                 except RuntimeError as ex:
                     msg = 'Failed to condor edit job sites. Could be that no jobs were in condor anymore: %s' % str(ex)
                     logging.warning(msg)
@@ -576,7 +576,7 @@ class SimpleCondorPlugin(BasePlugin):
             # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
             # values.  Otherwise, we just report the original CPU request
             ad['JobCpus'] = classad.ExprTree('((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) '
-                                              '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
+                                             '&& (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus')
 
             # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
             # Otherwise, we use either the cores in the running job (if available) or the original cores.

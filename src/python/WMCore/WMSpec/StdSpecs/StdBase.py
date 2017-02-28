@@ -436,6 +436,10 @@ class StdBase(object):
 
             procTaskCmsswHelper.setDataProcessingConfig(scenarioName, scenarioFunc,
                                                         **scenarioArgs)
+        # only in the very end, in order to get it in for the children tasks as well
+        prepID = taskConf.get("PrepID") or self.prepID
+        procTask.setPrepID(prepID)
+
         return outputModules
 
     def _getDictionaryParams(self, prop, key, default=None):
@@ -662,6 +666,11 @@ class StdBase(object):
                                    periodic_harvest_interval=self.periodicHarvestInterval,
                                    doLogCollect=doLogCollect,
                                    dqmHarvestUnit=self.dqmHarvestUnit)
+
+        # only in the very end, in order to get it in for the children tasks as well
+        prepID = taskConf.get("PrepID") or parentTask.getPrepID()
+        mergeTask.setPrepID(prepID)
+
         return mergeTask
 
     def addCleanupTask(self, parentTask, parentOutputModuleName, forceTaskName=None):
@@ -684,6 +693,10 @@ class StdBase(object):
         cleanupStep = cleanupTask.makeStep("cleanupUnmerged%s" % parentOutputModuleName)
         cleanupStep.setStepType("DeleteFiles")
         cleanupTask.applyTemplates()
+
+        # TODO: for StepChain, it will still use the Step1 PrepID. It has to be fixed
+        cleanupTask.setPrepID(parentTask.getPrepID())
+
         return
 
     def addDQMHarvestTask(self, parentTask, parentOutputModuleName, uploadProxy=None,

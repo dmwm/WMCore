@@ -1091,13 +1091,10 @@ class WMWorkloadHelper(PersistencyHelper):
                         outputDataset = "/%s/%s/%s" % (outputModule.primaryDataset,
                                                        outputModule.processedDataset,
                                                        outputModule.dataTier)
-                        if outputDataset not in outputDatasets:
-                            outputDatasets.append(outputDataset)
+                        outputDatasets.append(outputDataset)
 
             moreDatasets = self.listOutputDatasets(task)
-            for anotherDataset in moreDatasets:
-                if anotherDataset not in outputDatasets:
-                    outputDatasets.append(anotherDataset)
+            outputDatasets.extend(moreDatasets)
 
         return outputDatasets
 

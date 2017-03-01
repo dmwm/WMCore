@@ -209,17 +209,20 @@ def get_request_template_from_type(request_type, loc="WMSpec.StdSpecs"):
 def validateOutputDatasets(outDsets, dbsUrl):
     """
     Validate output datasets after all the other arguments have been
-    locally update during assignment
+    locally update during assignment.
     """
+    if len(outDsets) != len(set(outDsets)):
+        msg = "Output dataset contains duplicates and it has to be fixed! %s" % outDsets
+        raise InvalidSpecParameterValue(msg)
+
     datatier = []
     for dataset in outDsets:
-        tokens = dataset.split("/")
-        procds = tokens[2]
-        datatier.append(tokens[3])
+        procds, tier = dataset.split("/")[2:]
+        datatier.append(tier)
         try:
             procdataset(procds)
         except AssertionError as ex:
-            msg = "Bad output dataset name, check the processed dataset.\n %s" % str(ex)
+            msg = "Bad output dataset name, check the processed dataset name.\n %s" % str(ex)
             raise InvalidSpecParameterValue(msg)
 
     # Verify whether the output datatiers are available in DBS
@@ -231,7 +234,7 @@ def _validateDatatier(datatier, dbsUrl):
     _validateDatatier_
 
     Provided a list of datatiers extracted from the outputDatasets, checks
-    whether they all exist in DBS already.
+    whether they all exist in DBS.
     """
     dbsTiers = DBSReader.listDatatiers(dbsUrl)
     badTiers = list(set(datatier) - set(dbsTiers))

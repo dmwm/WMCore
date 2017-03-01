@@ -335,7 +335,9 @@ class StepChainWorkloadFactory(StdBase):
             taskConf["SplittingArguments"]["lumis_per_job"] = taskConf["LumisPerJob"]
         elif taskConf["SplittingAlgo"] == "FileBased":
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
-
+        # this config only used if WQ start policy is MonteCarlo otherwise ignored
+        taskConf["SplittingArguments"]["MaxLumisPerWQElement"] = taskConf["MaxLumisPerWQElement"]
+        
         return
 
     @staticmethod
@@ -435,6 +437,9 @@ class StepChainWorkloadFactory(StdBase):
                     "LheInputFiles": {"default": False, "type": strToBool,
                                       "optional": True, "validate": None,
                                       "attr": "lheInputFiles", "null": False},
+                    "MaxLumisPerWQElement": {"default": 200000, "type": int,
+                                      "optional": True, "validate": lambda x: x > 0,
+                                      "attr": "maxLumisPerWQElement"},
                     "PrepID": {"default": None, "type": str,
                                "optional": True, "validate": None,
                                "attr": "prepID", "null": True},

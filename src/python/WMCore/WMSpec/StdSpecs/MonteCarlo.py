@@ -111,7 +111,8 @@ class MonteCarloWorkloadFactory(StdBase):
             self.eventsPerLumi = self.eventsPerJob
         self.prodJobSplitArgs = {"events_per_job": self.eventsPerJob,
                                  "events_per_lumi": self.eventsPerLumi,
-                                 "lheInputFiles": self.lheInputFiles}
+                                 "lheInputFiles": self.lheInputFiles,
+                                 "MaxLumisPerWQElement": self.maxLumisPerWQElement}
 
         # Transform the pileup as required by the CMSSW step
         self.pileupConfig = parsePileupConfig(self.mcPileup, self.dataPileup)
@@ -177,6 +178,9 @@ class MonteCarloWorkloadFactory(StdBase):
                     "EventsPerLumi": {"default": None, "type": int,
                                       "optional": True, "validate": lambda x: x > 0,
                                       "attr": "eventsPerLumi", "null": True},
+                    "MaxLumisPerWQElement": {"default": 200000, "type": int,
+                                      "optional": True, "validate": lambda x: x > 0,
+                                      "attr": "maxLumisPerWQElement"},
                     "LheInputFiles": {"default": False, "type": strToBool,
                                       "optional": True, "validate": None,
                                       "attr": "lheInputFiles", "null": False}

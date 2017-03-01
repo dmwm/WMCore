@@ -19,7 +19,7 @@
         "AcquisitionEra": "Integ_Test", 
         "CMSSWVersion": "CMSSW_8_0_21", 
         "Campaign": "Campaign-OVERRIDE-ME", 
-        "Comments": ["No input data; PU in Step2; Automatic splitting 200 EpJ, 2 LpJ; Main dict with double scram slc6 and slc7",
+        "Comments": ["No input data; PU in Step2; Automatic splitting 200 EpJ, 2 LpJ; Main dict with list scram slc6",
                      "Step1 using diff 7_1_25_patch2/gcc481; Step2 with 8_0_21 single scram; Step3 with 8_0_21 and top level scram"],
         "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb", 
         "CouchDBName": "reqmgr_config_cache", 
@@ -36,7 +36,7 @@
         "RequestString": "RequestString-OVERRIDE-ME", 
         "RequestType": "StepChain", 
         "Requestor": "amaltaro", 
-        "ScramArch": ["slc6_amd64_gcc530", "slc7_amd64_gcc530"], 
+        "ScramArch": ["slc6_amd64_gcc530"], 
         "SizePerEvent": 250, 
         "Step1": {
             "CMSSWVersion": "CMSSW_7_1_25_patch2", 

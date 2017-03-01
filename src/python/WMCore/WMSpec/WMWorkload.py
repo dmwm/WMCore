@@ -122,7 +122,6 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-
     def setStepMapping(self, mapping):
         """
         _setStepMapping_
@@ -197,12 +196,14 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         return self.data.owner.dictionary_()
 
-    def setOwner(self, name, ownerProperties={'dn': 'DEFAULT'}):
+    def setOwner(self, name, ownerProperties=None):
         """
         _setOwner_
         sets the owner of wmspec.
         Takes a name as a mandatory argument, and then a dictionary of properties
         """
+        ownerProperties = ownerProperties or {'dn': 'DEFAULT'}
+
         self.data.owner.name = name
         self.data.owner.group = "undefined"
 
@@ -214,13 +215,14 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return
 
-    def setOwnerDetails(self, name, group, ownerProperties={'dn': 'DEFAULT'}):
+    def setOwnerDetails(self, name, group, ownerProperties=None):
         """
         _setOwnerDetails_
 
         Set the owner, explicitly requiring the group and user arguments
-
         """
+        ownerProperties = ownerProperties or {'dn': 'DEFAULT'}
+
         self.data.owner.name = name
         self.data.owner.group = group
 
@@ -264,8 +266,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the Start policy and its parameters
         """
         self.data.policies.start.policyName = policyName
-        [setattr(self.data.policies.start, key, val)
-         for key, val in params.items()]
+        for key, val in params.iteritems():
+            setattr(self.data.policies.start, key, val)
 
     def startPolicy(self):
         """
@@ -291,8 +293,8 @@ class WMWorkloadHelper(PersistencyHelper):
         Set the End policy and its parameters
         """
         self.data.policies.end.policyName = policyName
-        [setattr(self.data.policies.end, key, val)
-         for key, val in params.items()]
+        for key, val in params.iteritems():
+            setattr(self.data.policies.end, key, val)
 
     def endPolicy(self):
         """
@@ -318,7 +320,7 @@ class WMWorkloadHelper(PersistencyHelper):
         Retrieve a task with the given name.
         """
         task = getattr(self.data.tasks, taskName, None)
-        if task == None:
+        if task is None:
             return None
         return WMTaskHelper(task)
 
@@ -331,8 +333,8 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         mapping = {}
         for t in self.taskIterator():
-            [mapping.__setitem__(x.getPathName, x.name())
-             for x in t.taskIterator()]
+            for x in t.taskIterator():
+                mapping.__setitem__(x.getPathName, x.name())
 
         taskList = parseTaskPath(taskPath)
 
@@ -1099,25 +1101,24 @@ class WMWorkloadHelper(PersistencyHelper):
         return outputDatasets
 
     def listAllOutputModulesLFNBases(self, initialTask=None, onlyUnmerged=True):
-        
+
         if initialTask:
             taskIterator = initialTask.childTaskIterator()
         else:
             taskIterator = self.taskIterator()
-            
+
         listLFNBases = set()
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
                 for module in outModule.dictionary_().values():
-                    lfnBase = getattr(module,"lfnBase", "")
+                    lfnBase = getattr(module, "lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)
                     elif 'unmerged' in lfnBase:
                         listLFNBases.add(lfnBase)
         return list(listLFNBases)
-                            
-        
+
     def listPileupDatasets(self, initialTask=None):
         """
         _listPileUpDataset_
@@ -1183,7 +1184,7 @@ class WMWorkloadHelper(PersistencyHelper):
                                    custodialSubType="Replica", nonCustodialSubType="Replica",
                                    custodialGroup="DataOps", nonCustodialGroup="DataOps",
                                    priority="Low", primaryDataset=None,
-                                   useSkim = False, isSkim = False,
+                                   useSkim=False, isSkim=False,
                                    dataTier=None, deleteFromSource=False):
         """
         _setSubscriptionInformation_

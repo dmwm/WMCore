@@ -44,10 +44,10 @@ def loadRequestSchema(workload, requestSchema):
                         setattr(newSec, k, v)
                     except Exception as ex:
                         # this logging need to change to cherry py logging
-                        logging.error("Invalid Value: %s" % str(ex))
+                        logging.error("Invalid Value: %s", str(ex))
             else:
                 # this logging need to change to cherry py logging
-                logging.error("Invalid Value: %s" % str(ex))
+                logging.error("Invalid Value: %s", str(ex))
 
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
@@ -100,12 +100,12 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
             args_without_status.update(request_args)
             del args_without_status["RequestStatus"]
         else:
-            #if state change doesn't allow other transition nothing else to validate
+            # if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
             args_only_status["RequestStatus"] = request_args["RequestStatus"]
             if 'cascade' in request_args:
                 args_only_status["cascade"] = request_args["cascade"]
-            return  workload, args_only_status
+            return workload, args_only_status
     else:
         args_without_status = request_args
 
@@ -135,7 +135,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     1. read data from body
     2. validate using spec validation
     3. convert data from body to arguments (spec instance, argument with default setting)
-    TODO: rasie right kind of error with clear message
+    TODO: raise right kind of error with clear message
     """
 
     initialize_request_args(request_args, config)

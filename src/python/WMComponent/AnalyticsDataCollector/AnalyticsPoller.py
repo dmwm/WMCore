@@ -17,6 +17,7 @@ from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import LocalCouchDBData, \
      WMAgentDBData, combineAnalyticsData, convertToRequestCouchDoc, \
      initAgentInfo, DataUploadTime
+from WMComponent.DBS3Buffer.DBSBufferUtil  import DBSBufferUtil
 from WMCore.WMFactory import WMFactory
 
 class AnalyticsPoller(BaseWorkerThread):
@@ -66,8 +67,10 @@ class AnalyticsPoller(BaseWorkerThread):
         
         self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL, 
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
-        #TODO: change the config to hold couch url
+        
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
+        
+        self.dbsBufferUtil = DBSBufferUtil()
         
         if self.pluginName != None:
             pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.Plugins")
@@ -94,6 +97,9 @@ class AnalyticsPoller(BaseWorkerThread):
             
             logging.info("Getting Finished Task Data ...")
             finishedTasks = self.wmagentDB.getFinishedSubscriptionByTask()
+            
+            logging.info("Getting DBS PhEDEx upload status ...")
+            completedWfs = self.dbsBufferUtil.getPhEDxDBSStatuForCompletedWorkflows(summary=True)
 
             # get the data from local workqueue:
             # request name, input dataset, inWMBS, inQueue
@@ -111,12 +117,14 @@ class AnalyticsPoller(BaseWorkerThread):
                                    WorkflowsWithSkippedFile(%s), 
                                    Batch Job(%s),
                                    Finished Tasks(%s),
-                                   Local Queue(%s)  ...""" 
+                                   Local Queue(%s)  
+                                   Complted workflows(%s)...""" 
                     % (len(jobInfoFromCouch), len(fwjrInfoFromCouch), len(skippedInfoFromCouch),
-                       len(batchJobInfo), len(finishedTasks), len(localQInfo)))
+                       len(batchJobInfo), len(finishedTasks), len(localQInfo), len(completedWfs)))
 
             tempCombinedData = combineAnalyticsData(jobInfoFromCouch, batchJobInfo)
-            combinedRequests = combineAnalyticsData(tempCombinedData, localQInfo)
+            tempCombinedData2 = combineAnalyticsData(tempCombinedData, localQInfo)
+            combinedRequests = combineAnalyticsData(tempCombinedData2, completedWfs)
 
             #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())

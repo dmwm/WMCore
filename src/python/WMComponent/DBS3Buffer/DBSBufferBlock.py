@@ -491,7 +491,13 @@ class DBSBufferBlock:
             firstkey, subkey = nestedKey.split('.', 1)
             if firstkey in block and subkey in block[firstkey]:
                 del block[firstkey][subkey]
-                
+
+        # DBS limits the output_module_label at 45 chars
+        for key in ('dataset_conf_list', 'file_conf_list'):
+            for conf in block.get(key, []):
+                if len(conf.get('output_module_label', '')) > 45:
+                    conf['output_module_label'] = conf['output_module_label'][0:30] +\
+                                                  "..." + conf['output_module_label'][-10:]
         return block
                     
     def setPendingAndCloseBlock(self):

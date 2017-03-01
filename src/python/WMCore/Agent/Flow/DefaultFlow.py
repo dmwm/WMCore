@@ -16,7 +16,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMCore.Agent.Configuration import Configuration
 config = Configuration()
 config.section_('General')

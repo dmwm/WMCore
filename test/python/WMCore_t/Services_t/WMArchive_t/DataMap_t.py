@@ -1,4 +1,4 @@
-from __future__ import (division, print_function) 
+from __future__ import (division, print_function)
 import unittest
 import time
 import json
@@ -121,7 +121,7 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                                                     'readMaxMSec': 4832.84,
                                                     'readNumOps': 97620.0,
                                                     'readPercentageOps': 1.00032780168,
-                                                    'readTotalMB': 7423.792,    
+                                                    'readTotalMB': 7423.792,
                                                     'readTotalSecs': 0,
                                                     'writeTotalMB': 357.624,
                                                     'writeTotalSecs': 575158.0},
@@ -167,27 +167,27 @@ SAMPLE_FWJR = {'fallbackFiles': [],
 class DataMap_t(unittest.TestCase):
 
     def testConvertToArchiverFormat(self):
-        
+
         job = {}
-        job["id"] = "1-0" 
-        job['doc'] = {"fwjr": SAMPLE_FWJR, "jobtype": "Processing", 
+        job["id"] = "1-0"
+        job['doc'] = {"fwjr": SAMPLE_FWJR, "jobtype": "Processing",
                       "jobstate": "success", "timestamp": int(time.time())}
         newData = createArchiverDoc(job)
         from pprint import pprint
         pprint(newData)
-        
-        #outputModules = set([a['outputModule'] for a in newData['steps']['cmsRun1']['output']]) 
+
+        #outputModules = set([a['outputModule'] for a in newData['steps']['cmsRun1']['output']])
         #outModules = set(SAMPLE_FWJR['steps']['cmsRun1']['output'].keys())
         #self.assertEqual(outputModules - outModules, set())
-        
+
         run = SAMPLE_FWJR['steps']['cmsRun1']['output']['ALCARECOStreamMuAlCalIsolatedMu'][0]['runs']
         for step in newData['steps']:
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
         self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
         fwjrSamples = ["ErrorCodeFail.json",
-                       "FailedByAgent.json", 
-                       "HarvestSuccessFwjr.json", 
+                       "FailedByAgent.json",
+                       "HarvestSuccessFwjr.json",
                        "LogCollectFailedFwjr.json", "LogCollectSuccessFwjr.json",
                        "MergeFailedFwjr.json", "MergeSuccessFwjr.json",
                        "NoJobReportFail.json",
@@ -200,12 +200,12 @@ class DataMap_t(unittest.TestCase):
             with open(sPath, 'r') as infile:
                 fwjr = json.load(infile)
             job = {}
-            job["id"] = fwjr["_id"] 
-            job['doc'] = {"fwjr": fwjr["fwjr"], "jobtype": fwjr["jobtype"], 
+            job["id"] = fwjr["_id"]
+            job['doc'] = {"fwjr": fwjr["fwjr"], "jobtype": fwjr["jobtype"],
                       "jobstate": fwjr['jobstate'], "timestamp": fwjr["timestamp"]}
             newData =createArchiverDoc(job)
             print("\n\n==========\n%s" % sPath)
             pprint(newData)
-        
+
 if __name__ == '__main__':
     unittest.main()

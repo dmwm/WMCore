@@ -106,7 +106,7 @@ ui.static_content_dir = path.join(path.abspath(__file__.rsplit('/', 3)[0]),
                                   main.application,
                                   "data")
 
-# end of deployment/reqmgr2/config.py 
+# end of deployment/reqmgr2/config.py
 # ---------------------------------------------------------------------------
 
 

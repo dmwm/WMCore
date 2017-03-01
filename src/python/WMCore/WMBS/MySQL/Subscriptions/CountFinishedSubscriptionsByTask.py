@@ -8,10 +8,10 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class CountFinishedSubscriptionsByTask(DBFormatter):
     """
-    Gets count subscriptions given task 
+    Gets count subscriptions given task
     """
 
-    sql = """SELECT ww.name as workflow, ww.task as task, wst.name as jobtype, 
+    sql = """SELECT ww.name as workflow, ww.task as task, wst.name as jobtype,
              COUNT(case when ws.finished = 1 then 1 else null end) as finished,
              COUNT(case when ws.finished = 0 then 1 else null end) as open,
              COUNT(ws.id) as total,

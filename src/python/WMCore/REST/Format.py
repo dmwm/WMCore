@@ -307,7 +307,7 @@ class PrettyJSONFormat(JSONFormat):
         except Exception as e:
             etag.invalidate()
             report_rest_error(ExecutionError(), format_exc(), False)
-            
+
 class RawFormat(RESTFormat):
     """Format an iterable of objects as raw data.
 
@@ -344,7 +344,7 @@ class RawFormat(RESTFormat):
         except BaseException:
             etag.invalidate()
             raise
-            
+
 class DigestETag:
     """Compute hash digest over contents for ETag header."""
     algorithm = None

@@ -551,9 +551,9 @@ class DBS3Reader(object):
             # Probably a child can have more than 1 parent file
             for fp in f['parent_logical_file_name']:
                 childByParents[fp].append(f['logical_file_name'])
-        
+
         parentsLFNs = childByParents.keys()
-        
+
         if len(parentsLFNs) == 0:
             msg = "Error in "
             msg += "DBSReader.listFilesInBlockWithParents(%s)\n There is no parents files" % (

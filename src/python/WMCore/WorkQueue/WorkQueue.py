@@ -502,7 +502,7 @@ class WorkQueue(WorkQueueBase):
         return self.setStatus('Done', elementIDs=elementIDs,
                               SubscriptionId=SubscriptionId,
                               WorkflowName=WorkflowName)
-        
+
     def killWMBSWorkflow(self, workflow):
         # import inside function since GQ doesn't need this.
         from WMCore.WorkQueue.WMBSHelper import killWorkflow

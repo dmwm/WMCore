@@ -120,8 +120,8 @@ class CMSDefaultHandler(DiagnosticHandler):
                               '%s-stderr.log' % (executor.step._internal_name))
         outLog = os.path.join(os.path.dirname(jobRepXml),
                               '%s-stdout.log' % (executor.step._internal_name))
-        
-        
+
+
         if os.path.exists(errLog):
             logTail = BasicAlgos.tail(errLog, DEFAULT_TAIL_LINES_FROM_LOG)
             msg += '\n Adding last %s lines of CMSSW stderr:\n' % DEFAULT_TAIL_LINES_FROM_LOG
@@ -255,7 +255,7 @@ class EDMExceptionHandler(DiagnosticHandler):
             msg = "No Job Report Found: %s" % jobRepXml
             executor.report.addError(executor.step._internal_name,
                                      50115, "MissingJobReport", msg)
-            return 
+            return
 
         # job report XML exists, load the exception information from it
         try:

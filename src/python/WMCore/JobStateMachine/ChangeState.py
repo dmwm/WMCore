@@ -70,12 +70,12 @@ class ChangeState(WMObject, WMConnectionBase):
             self.dbname = getattr(self.config.JobStateMachine, "couchDBName")
         else:
             self.dbname = couchDbName
-            
+
         self.jobsdatabase = None
         self.fwjrdatabase = None
         self.jsumdatabase = None
         self.statsumdatabase = None
-        
+
         self.couchdb = CouchServer(self.config.JobStateMachine.couchurl)
         self._connectDatabases()
 
@@ -124,7 +124,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 logging.error("Error connecting to couch db '%s': %s" % (dbname, str(ex)))
                 self.jsumdatabase = None
                 return False
-        
+
         if not hasattr(self, 'statsumdatabase') or self.statsumdatabase is None:
             dbname = getattr(self.config.JobStateMachine, 'summaryStatsDBName')
             try:
@@ -135,7 +135,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 return False
 
         return True
-    
+
     def propagate(self, jobs, newstate, oldstate, updatesummary = False):
         """
         Move the job from a state to another. Book keep the change to CouchDB.
@@ -155,7 +155,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         # 2. Load workflow/task information into the jobs
         self.loadExtraJobInformation(jobs)
-        
+
         # 3. Make the state transition
         self.persist(jobs, newstate, oldstate)
 
@@ -296,7 +296,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 updateUri += "?newstate=%s&timestamp=%s" % (monitorState, timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
                 logging.debug("Updated job summary status for job %s" % jobSummaryId)
-                
+
                 updateUri = "/" + self.jsumdatabase.name + "/_design/WMStatsAgent/_update/jobStateTransition/" + jobSummaryId
                 updateUri += "?oldstate=%s&newstate=%s&location=%s&timestamp=%s" % (oldstate,
                                                                                     monitorState,
@@ -317,25 +317,25 @@ class ChangeState(WMObject, WMConnectionBase):
                 except:
                     logging.error("Error while trying to strip input files from FWJR.  Ignoring.")
                     pass
-                
+
                 if newstate == "retrydone":
                     jobState = "jobfailed"
                 else:
                     jobState = newstate
-                
+
                 # there is race condition updating couch record location and job is completed.
                 # for the fast fail job, it could miss the location update
-                job["location"] = job["fwjr"].getSiteName() or job.get("location", "Unknown")     
+                job["location"] = job["fwjr"].getSiteName() or job.get("location", "Unknown")
                 # complete fwjr document
                 job["fwjr"].setTaskName(job["task"])
                 jsonFWJR = job["fwjr"].__to_json__(None)
-                
+
                 #Don't archive cleanup job report
                 if job["jobType"] == "Cleanup":
                     archStatus = "skip"
                 else:
                     archStatus = "ready"
-                    
+
                 fwjrDocument = {"_id": "%s-%s" % (job["id"], job["retry_count"]),
                                 "jobid": job["id"],
                                 "jobtype": job["jobType"],
@@ -345,7 +345,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                 "fwjr": jsonFWJR,
                                 "type": "fwjr"}
                 self.fwjrdatabase.queue(fwjrDocument, timestamp = True, callback = discardConflictingDocument)
-                
+
                 updateSummaryDB(self.statsumdatabase, job)
 
                 #TODO: can add config switch to swich on and off
@@ -362,7 +362,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                 errmsgs[step] = [error for error in fwjrDocument["fwjr"]["steps"][step]["errors"]]
                             if "input" in fwjrDocument["fwjr"]["steps"][step] and "source" in fwjrDocument["fwjr"]["steps"][step]["input"]:
                                 inputs.extend( [source["runs"] for source in fwjrDocument["fwjr"]['steps'][step]["input"]["source"] if "runs" in source] )
-    
+
                     outputs = []
                     outputDataset = None
                     for singlestep in job["fwjr"].listSteps():
@@ -383,14 +383,14 @@ class ChangeState(WMObject, WMConnectionBase):
                         inputFileSummary["lfn"] = inputFileStruct["lfn"]
                         inputFileSummary["input_type"] = inputFileStruct["input_type"]
                         inputFiles.append(inputFileSummary)
-                    
+
                     # Don't record intermediate jobfailed status in the jobsummary
                     # change to jobcooloff which will be overwritten by error handler anyway
                     if (job["retry_count"] > 0) and (newstate == 'jobfailed'):
                         summarystate = 'jobcooloff'
                     else:
                         summarystate = newstate
-                           
+
                     jobSummary = {"_id": jobSummaryId,
                                   "wmbsid": job["id"],
                                   "type": "jobsummary",
@@ -421,7 +421,7 @@ class ChangeState(WMObject, WMConnectionBase):
                                                   'location': job["location"],
                                                   'timestamp': timestamp}
                                 jobSummary['state_history'].append(finalStateDict)
-                                
+
                             noEmptyList = ["inputfiles", "lumis"]
                             for prop in noEmptyList:
                                 jobSummary[prop] = jobSummary[prop] if jobSummary[prop] else currentJobDoc.get(prop, [])
@@ -445,7 +445,7 @@ class ChangeState(WMObject, WMConnectionBase):
 
         Update the job state in the database.
         """
-        
+
         if newstate == "killed":
             self.incrementRetryDAO.execute(jobs, increment = 99999,
                                            conn = self.getDBConn(),

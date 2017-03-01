@@ -41,16 +41,16 @@ class CouchappTest(unittest.TestCase):
         self.testInit.setSchema(customModules = ["WMCore.WMBS"],
                                 useDefault = False)
         self.databaseName = "couchapp_t_0"
-        
+
 
         # Setup config for couch connections
         config = self.testInit.getConfiguration()
-        
+
         self.testInit.setupCouch(self.databaseName, "WorkloadSummary")
         self.testInit.setupCouch("%s/jobs" % config.JobStateMachine.couchDBName, "JobDump")
         self.testInit.setupCouch("%s/fwjrs" % config.JobStateMachine.couchDBName, "FWJRDump")
         self.testInit.setupCouch(config.JobStateMachine.summaryStatsDBName, "SummaryStats")
-                                 
+
         # Create couch server and connect to databases
         self.couchdb      = CouchServer(config.JobStateMachine.couchurl)
         self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % config.JobStateMachine.couchDBName)

@@ -72,27 +72,27 @@ class WorkQueueElementsSummary(object):
     """Class to hold the status of a related group of WorkQueueElements"""
     def __init__(self, elements):
         self.elements = elements
-        
+
         elementsByRequest = {}
         for ele in elements:
             elementsByRequest.setdefault(ele["RequestName"], [])
             elementsByRequest[ele["RequestName"]].append(ele)
-            
+
         self.wqResultsByRequest = {}
         for reqName, wqElements in elementsByRequest.iteritems():
             self.wqResultsByRequest[reqName] = WorkQueueElementResult(Elements=wqElements)
-    
+
     def elementsWithHigherPriorityInSameSites(self, requestName, returnFormat="dict"):
-        
+
         if requestName not in self.wqResultsByRequest:
             return None
-            
+
         priority = self.wqResultsByRequest[requestName]['Priority']
         creationTime = self.wqResultsByRequest[requestName]['Elements'][0]['CreationTime']
-        
+
         sites = self.getPossibleSitesByRequest(requestName)
-        
-        sortedElements = []    
+
+        sortedElements = []
         for reqName in self.wqResultsByRequest:
             # skip the workflow
             if reqName == requestName:
@@ -116,13 +116,13 @@ class WorkQueueElementsSummary(object):
             sortedByRequest = defaultdict(list)
             for ele in sortedElements:
                 sortedByRequest[ele['RequestName']].append(ele)
-            
+
             for request in sortedByRequest:
                 sortedByRequest[request] = WorkQueueElementResult(Elements=sortedByRequest[request])
             return sortedByRequest
-    
+
     def getPossibleSitesByRequest(self, requestName):
-        
+
         if requestName not in self.wqResultsByRequest:
             return None
         # this will include all the possible sites on the requests
@@ -131,7 +131,7 @@ class WorkQueueElementsSummary(object):
         for ele in self.wqResultsByRequest[requestName]['Elements']:
             sites = sites | set(possibleSites(ele))
         return sites
-        
+
     def getWQElementResultsByRequest(self, requestName = None):
         if requestName:
             return self.wqResultsByRequest.get(requestName, None)
@@ -139,18 +139,18 @@ class WorkQueueElementsSummary(object):
             return self.wqResultsByRequest
 
     def printSummary(self, request, detail=False):
-        
+
         wqResult = self.getWQElementResultsByRequest(request)
-        
+
         if wqResult is None:
             print("No WQ element exist for the status given")
             return
         print("### summary for %s ###" % request )
         print("  Priority: %s, available elements: %s " % (wqResult["Priority"], len(wqResult['Elements'])))
-        
+
         sites = self.getPossibleSitesByRequest(request)
         print("  Possible sites to run: %s" % list(sites))
-        
+
         higher = self.elementsWithHigherPriorityInSameSites(request)
         total = 0
         totalJobs = 0

@@ -17,7 +17,7 @@ class AnalyticsDataCollector(Harness):
     """
     Component class for AnalyticsDataCollector module
     """
-    
+
     def __init__(self, config):
         """
         __init__
@@ -34,8 +34,8 @@ class AnalyticsDataCollector(Harness):
         Sets up the workers threads
         """
         pollInterval = self.config.AnalyticsDataCollector.pollInterval
-        
+
         myThread = threading.currentThread()
-        
+
         myThread.workerThreadManager.addWorker(AnalyticsPoller(self.config),
                                                pollInterval)

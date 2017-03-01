@@ -59,7 +59,7 @@ def moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, logger):
         count = 0
         for wf in requests:
             # check whether wq elements exists for given request
-            # if not, it means 
+            # if not, it means
             if wf not in wfStatusDict:
                 for nextStatus in nextStatusList:
                     reqmgrSvc.updateRequestStatus(wf, nextStatus)
@@ -88,10 +88,10 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
         reqmgrSvc = ReqMgr(config.reqmgr2_url)
         gqService = WorkQueue(config.workqueue_url)
-        
+
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
-        
+
         self.logger.info("Advancing status")
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
         moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, self.logger)

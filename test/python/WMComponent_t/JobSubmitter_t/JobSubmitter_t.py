@@ -270,11 +270,11 @@ class JobSubmitterTest(unittest.TestCase):
         config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
         config.JobStateMachine.couchDBName     = "jobsubmitter_t"
         config.JobStateMachine.jobSummaryDBName = 'wmagent_summary_t'
-        
+
         #TaskArchive setup (JobSubmitter needs this)
         config.component_("TaskArchiver")
         config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
-        
+
         # Needed, because this is a test
         os.makedirs(config.JobSubmitter.componentDir)
 

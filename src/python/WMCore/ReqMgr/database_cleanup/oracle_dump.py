@@ -5,7 +5,7 @@ Usage:
    python oracle_dump.py user/password@server [TABLE_NAME] > output.dump
    python ./oracle_dump.py user/password@server reqmgr_request > \
        oracle_dump_request_table.py
-       
+
 """
 from __future__ import print_function
 
@@ -38,7 +38,7 @@ def main():
 
     connection = cx_Oracle.Connection(tns)
     cursor = cx_Oracle.Cursor(connection)
-    
+
     for table in tables:
         cmd = "select %s from %s" % (", ".join(tables[table]), table)
         print("# %s" % cmd)
@@ -50,7 +50,7 @@ def main():
             for k, v in zip(tables[table], row):
                 print("\t'%s': '%s'," % (k, v))
             print("},")
-        print("]")    
+        print("]")
         print("# rowcount: %s\n\n\n" % cursor.rowcount)
 
     cursor.close()

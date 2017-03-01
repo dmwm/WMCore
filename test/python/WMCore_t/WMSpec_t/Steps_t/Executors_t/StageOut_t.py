@@ -69,7 +69,7 @@ class StageOutTest(unittest.TestCase):
         os.mkdir( self.stepDir )
         builder = StageOutBuilder.StageOut()
         builder( step.data, 'Production', self.stepDir)
-        
+
         # stolen from CMSSWExecutor_t. thanks, dave
 
         # first, delete all the sandboxen and taskspaces
@@ -184,7 +184,7 @@ class StageOutTest(unittest.TestCase):
         myReport.persist(os.path.join( self.testDir, 'UnitTests','WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
 
         executor = StageOutExecutor.StageOut()
-        
+
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
@@ -192,8 +192,8 @@ class StageOutTest(unittest.TestCase):
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
         return
-    
-    
+
+
     def testUnitTestBackend(self):
         myReport = Report()
         myReport.unpersist(os.path.join( self.testDir,'UnitTests', 'WMTaskSpace', 'cmsRun1' , 'Report.pkl'))
@@ -206,7 +206,7 @@ class StageOutTest(unittest.TestCase):
         helper.addOverride(override = 'option', overrideValue='')
         helper.addOverride(override = 'phedex-node', overrideValue='charlie.sheen.biz')
         helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
-        
+
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
@@ -227,14 +227,14 @@ class StageOutTest(unittest.TestCase):
         helper.addOverride(override = 'phedex-node', overrideValue='charlie.sheen.biz')
         helper.addOverride(override = 'lfn-prefix', overrideValue='test-win')
         helper.setNewStageoutOverride( True )
-        
+
         executor.initialise( self.stepdata, self.job)
         self.setLocalOverride(self.stepdata)
         executor.step = self.stepdata
         executor.execute( )
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'hosts' )))
         self.assertFalse( os.path.exists( os.path.join( self.testDir, 'test1', 'hosts')))
-        
+
     def setLocalOverride(self, step):
         step.section_('override')
         step.override.command    = 'cp'

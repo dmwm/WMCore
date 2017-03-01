@@ -8,7 +8,7 @@ Query the database to get all the current sites in Resource Control
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ListCurrentSites(DBFormatter):
-    sql = """SELECT site_name AS site 
+    sql = """SELECT site_name AS site
                     FROM wmbs_location
            """
 

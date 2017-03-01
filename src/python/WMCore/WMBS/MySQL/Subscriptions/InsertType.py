@@ -14,7 +14,7 @@ class InsertType(DBFormatter):
     sql = """INSERT INTO wmbs_sub_types (name)
                SELECT :name AS name FROM DUAL WHERE NOT EXISTS
                 (SELECT name FROM wmbs_sub_types WHERE name = :name)"""
-    
+
     sqlUpdate = """UPDATE wmbs_sub_types SET priority = :priority
                    WHERE name = :name"""
 

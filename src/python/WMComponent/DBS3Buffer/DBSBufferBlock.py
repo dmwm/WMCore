@@ -60,7 +60,7 @@ class DBSBufferBlock:
         self.location     = location
         self.datasetpath  = datasetpath
         self.workflows    = set()
-        
+
         self.data['block']['block_name']       = name
         self.data['block']['origin_site_name'] = location
         self.data['block']['open_for_writing'] = 1
@@ -116,7 +116,7 @@ class DBSBufferBlock:
         self.data['block']['block_size'] += int(dbsFile['size'])
         self.data['block']['file_count'] += 1
         self.data['block']['block_events'] += int(dbsFile['events'])
-        
+
         # Assemble information for the file itself
         fileDict = {}
         fileDict['file_type']              =  'EDM'
@@ -126,7 +126,7 @@ class DBSBufferBlock:
         fileDict['last_modified_by'] = "WMAgent"
         fileDict['last_modification_date'] = int(time.time())
         fileDict['auto_cross_section'] = 0.0
-        
+
         # Do the checksums
         for cktype in dbsFile['checksums'].keys():
             cksum = dbsFile['checksums'][cktype]
@@ -178,7 +178,7 @@ class DBSBufferBlock:
 
         # Take care of the dataset
         self.setDataset(datasetName  = dbsFile['datasetPath'],
-                        primaryType  = primaryDatasetType, 
+                        primaryType  = primaryDatasetType,
                         datasetType  = datasetType,
                         physicsGroup = dbsFile.get('physicsGroup', None),
                         prep_id = dbsFile.get('prep_id', None))
@@ -270,7 +270,7 @@ class DBSBufferBlock:
         return self.data['dataset'].get('dataset', None)
 
     def setDataset(self, datasetName, primaryType,
-                   datasetType, physicsGroup = None, 
+                   datasetType, physicsGroup = None,
                    prep_id  = None, overwrite = False):
         """
         _setDataset_
@@ -283,7 +283,7 @@ class DBSBufferBlock:
             return
 
         Lexicon.primaryDatasetType(primaryType)
-        
+
         if not datasetType in ['VALID', 'PRODUCTION', 'INVALID', 'DEPRECATED', 'DELETED']:
             msg = "Invalid processedDatasetType %s\n" % datasetType
             logging.error(msg)
@@ -452,31 +452,31 @@ class DBSBufferBlock:
             self.status = blockInfo['status']
             if self.status == "Pending":
                 self.data['block']['open_for_writing'] = 0
-                  
+
             del blockInfo['status']
-            
+
         for key in blockInfo.keys():
             self.data['block'][key] = blockInfo.get(key)
-            
+
     def convertToDBSBlock(self):
         """
         convert to DBSBlock structure to upload to dbs
         """
         block = {}
-        
+
         #TODO: instead of using key to remove need to change to keyToKeep
         # Ask dbs team to publish the list (API)
         keyToRemove = ['insertedFiles', 'newFiles', 'file_count', 'block_size',
                        'origin_site_name', 'creation_date', 'open',
                        'Name', 'close_settings']
-        
+
         nestedKeyToRemove = ['block.block_events', 'block.datasetpath', 'block.workflows']
-        
+
         dbsBufferToDBSBlockKey = {'block_size': 'BlockSize',
-                                  'creation_date': 'CreationDate', 
+                                  'creation_date': 'CreationDate',
                                   'file_count': 'NumberOfFiles',
                                   'origin_site_name': 'location'}
-        
+
         # clone the new DBSBlock dict after filtering out the data.
         for key in self.data:
             if key in keyToRemove:
@@ -485,15 +485,15 @@ class DBSBufferBlock:
                 block[dbsBufferToDBSBlockKey[key]] = copy.deepcopy(self.data[key])
             else:
                 block[key] = copy.deepcopy(self.data[key])
-        
+
         # delete nested key dictionary
         for nestedKey in nestedKeyToRemove:
             firstkey, subkey = nestedKey.split('.', 1)
             if firstkey in block and subkey in block[firstkey]:
                 del block[firstkey][subkey]
-                
+
         return block
-                    
+
     def setPendingAndCloseBlock(self):
         "set the block status as Pending for upload as well as closed"
         # Pending means ready to upload

@@ -70,13 +70,13 @@ class ResourceControl(WMConnectionBase):
         setStateAction.execute(siteName = siteName, state = state,
                                conn = self.getDBConn(),
                                transaction = self.existingTransaction())
-        
+
         return
 
     def listCurrentSites(self):
         """
         _listCurrentSites_
-        
+
         List all the sites currently in Resource Control
         """
         listAction = self.daofactory(classname = "ListCurrentSites")
@@ -87,14 +87,14 @@ class ResourceControl(WMConnectionBase):
     def listSitesSlots(self):
         """
         _listSitesSlots_
-        
+
         List all sites, their slots and state available in Resource Control
         """
         listAction = self.daofactory(classname = "ListSitesSlotsState")
         results = listAction.execute(conn = self.getDBConn(),
                                      transaction = self.existingTransaction())
         return results
-    
+
     def listSiteInfo(self, siteName):
         """
         _listSiteInfo_

@@ -827,7 +827,7 @@ class CondorPlugin(BasePlugin):
                 # Check if there are actually jobs to update
                 command = 'condor_q -constraint \'WMAgent_SubTaskName == "%s" && WMAgent_RequestName == "%s"' %(task, workflow)
                 command += ' && (JobPrio != %d)\'' % priority
-                command += ' -format \'WMAgentID:\%d:::\' WMAgent_JobID'               
+                command += ' -format \'WMAgentID:\%d:::\' WMAgent_JobID'
                 command = shlex.split(command)
                 proc = subprocess.Popen(command, stderr = subprocess.PIPE,
                                         stdout = subprocess.PIPE)

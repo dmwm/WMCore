@@ -106,9 +106,9 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         # Keep a record of the thresholds in memory
         self.currentRcThresholds = {}
-        
+
         self.useReqMgrForCompletionCheck = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
-        
+
         if self.useReqMgrForCompletionCheck:
             # only set up this when reqmgr is used (not Tier0)
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
@@ -116,7 +116,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         else:
             # Tier0 Case - just for the clarity (This private variable shouldn't be used
             self.abortedAndForceCompleteWorkflowCache = None
-            
+
         return
 
     def getPackageCollection(self, sandboxDir):
@@ -238,14 +238,14 @@ class JobSubmitterPoller(BaseWorkerThread):
            self.refreshPollingCount >= self.skipRefreshCount:
             newJobs = self.listJobsAction.execute()
             self.refreshPollingCount = 0
-            
+
             if self.useReqMgrForCompletionCheck:
                 # if reqmgr is used (not Tier0 Agent) get the aborted/forceCompleted record
                 abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
             else:
                 #T0Agent
                 abortedAndForceCompleteRequests = []
-                
+
             logging.info("Found %s new jobs to be submitted.", len(newJobs))
         else:
             self.refreshPollingCount += 1
@@ -400,22 +400,22 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         logging.info("Done pruning killed jobs, moving on to submit.")
         return
- 
+
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
-        jobIDsToPurge = set() 
+        jobIDsToPurge = set()
         for jobID, jobInfo in self.jobDataCache.iteritems():
             if (jobInfo['requestName'] in abortedAndForceCompleteRequests) and \
                (jobInfo['taskType'] not in ['LogCollect', "Cleanup"]):
                 jobIDsToPurge.add(jobID)
         self._purgeJobsFromCache(jobIDsToPurge)
         return
-    
+
     def _purgeJobsFromCache(self, jobIDsToPurge):
-        
+
         if len(jobIDsToPurge) == 0:
             return
-        
+
         self.cachedJobIDs -= jobIDsToPurge
 
         for jobid in jobIDsToPurge:
@@ -424,8 +424,8 @@ class JobSubmitterPoller(BaseWorkerThread):
                 if self.cachedJobs[jobPrio].pop(jobid, None):
                     # then the jobid was found, go to the next one
                     break
-        return  
-        
+        return
+
     def _handleSubmitFailedJobs(self, badJobs, exitCode):
         """
         __handleSubmitFailedJobs_
@@ -441,9 +441,9 @@ class JobSubmitterPoller(BaseWorkerThread):
             if exitCode in [71102, 71104]:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode] + ', '.join(job['possibleLocations']))
             elif exitCode in [71101]:
-                # there is no possible site 
+                # there is no possible site
                 if job.get("fileLocations"):
-                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
+                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  +
                                          ": file locations: " + ', '.join(job['fileLocations']) +
                                          ": site white list: " + ', '.join(job['siteWhitelist']) +
                                          ": site black list: " + ', '.join(job['siteBlacklist']))
@@ -451,10 +451,10 @@ class JobSubmitterPoller(BaseWorkerThread):
                     # This is temporary addition if this is patched for existing agent.
                     # If jobs are created before the patch is applied fileLocations is not set.
                     # TODO. remove this later for new agent
-                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  + 
-                                         ": Job is created before this patch. Please check this input for the jobs: %s " % 
+                    job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode]  +
+                                         ": Job is created before this patch. Please check this input for the jobs: %s " %
                                          job['fwjr'].getAllInputFiles())
-                    
+
             else:
                 job['fwjr'].addError("JobSubmit", exitCode, "SubmitFailed", WM_JOB_ERROR_CODES[exitCode])
             fwjrPath = os.path.join(job['cache_dir'],
@@ -512,7 +512,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         return
 
-        
+
     def assignJobLocations(self):
         """
         _assignJobLocations_
@@ -552,7 +552,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                     if siteName not in self.currentRcThresholds:
                         logging.warn("Have a job for %s which is not in the resource control", siteName)
                         continue
-                    
+
                     try:
                         totalPendingSlots = self.currentRcThresholds[siteName]["total_pending_slots"]
                         totalPendingJobs = self.currentRcThresholds[siteName]["total_pending_jobs"]
@@ -609,7 +609,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Get this job in place to be submitted by the plugin
                     jobsToSubmit[package].append(cachedJob)
-                    
+
                     jobSubmitLogBySites[siteName]["submitted"] += 1
                     jobSubmitLogByPriority[jobPrio]['submitted'] += 1
                     # found a site to submit this job, so go to the next job
@@ -624,7 +624,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         for prio, jobid in jobsToUncache:
             self.cachedJobs[prio].pop(jobid)
             self.cachedJobIDs.remove(jobid)
-            
+
         logging.info("Site submission report: %s", dict(jobSubmitLogBySites))
         logging.info("Priority submission report: %s", dict(jobSubmitLogByPriority))
         logging.info("Have %s packages to submit.", len(jobsToSubmit))
@@ -714,11 +714,11 @@ class JobSubmitterPoller(BaseWorkerThread):
             myThread = threading.currentThread()
             self.getThresholds()
             self.refreshCache()
-            
+
             if self.useReqMgrForCompletionCheck:
                 # only runs when reqmgr is used (not Tier0)
                 self.removeAbortedForceCompletedWorkflowFromCache()
-            
+
             jobsToSubmit = self.assignJobLocations()
             self.submitJobs(jobsToSubmit=jobsToSubmit)
         except WMException:

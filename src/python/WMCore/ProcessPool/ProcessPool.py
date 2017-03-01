@@ -17,7 +17,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from logging.handlers import RotatingFileHandler
 
 from WMCore.WMFactory import WMFactory

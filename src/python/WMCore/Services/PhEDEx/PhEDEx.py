@@ -455,7 +455,7 @@ class PhEDEx(Service):
         """
         take dict of the input
         {'block_name1': [file_lfn1, file_lfn2, ....],
-         'block_name2': [file_lfn1, file_lfn2, ....],           
+         'block_name2': [file_lfn1, file_lfn2, ....],
         }
         and returns
         list of file injected
@@ -493,7 +493,7 @@ class PhEDEx(Service):
         custodial      y or n. filter for custodial responsibility.  default is
                 to return either.
         group          group name.  default is to return replicas for any group.
-        
+
         Returns a dictionary with se names per block
         """
 

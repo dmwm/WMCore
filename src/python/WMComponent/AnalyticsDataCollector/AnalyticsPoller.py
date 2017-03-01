@@ -36,7 +36,7 @@ class AnalyticsPoller(BaseWorkerThread):
         self.summaryLevel = (config.AnalyticsDataCollector.summaryLevel).lower()
         self.pluginName = getattr(config.AnalyticsDataCollector, "pluginName", None)
         self.plugin = None
-                    
+
     def setup(self, parameters):
         """
         set db connection(couchdb, wmbs) to prepare to gather information
@@ -46,7 +46,7 @@ class AnalyticsPoller(BaseWorkerThread):
             self.localQueue = WorkQueueService(self.config.AnalyticsDataCollector.localQueueURL)
 
         # set the connection for local couchDB call
-        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL, 
+        self.localCouchDB = LocalCouchDBData(self.config.AnalyticsDataCollector.localCouchURL,
                                              self.config.JobStateMachine.summaryStatsDBName,
                                              self.summaryLevel)
 
@@ -55,20 +55,20 @@ class AnalyticsPoller(BaseWorkerThread):
         # set wmagent db data
         self.wmagentDB = WMAgentDBData(self.summaryLevel, myThread.dbi, myThread.logger)
         # set the connection for local couchDB call
-        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL, 
+        self.localSummaryCouchDB = WMStatsWriter(self.config.AnalyticsDataCollector.localWMStatsURL,
                                                  appName="WMStatsAgent")
-        
+
         if hasattr(self.config, "Tier0Feeder"):
             #use local db for tier0
             centralRequestCouchDBURL = self.config.AnalyticsDataCollector.localT0RequestDBURL
         else:
             centralRequestCouchDBURL = self.config.AnalyticsDataCollector.centralRequestDBURL
-        
-        self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL, 
+
+        self.centralRequestCouchDB = RequestDBWriter(centralRequestCouchDBURL,
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
         #TODO: change the config to hold couch url
         self.localCouchServer = CouchMonitor(self.config.JobStateMachine.couchurl)
-        
+
         if self.pluginName != None:
             pluginFactory = WMFactory("plugins", "WMComponent.AnalyticsDataCollector.Plugins")
             self.plugin = pluginFactory.loadObject(classname = self.pluginName)
@@ -78,20 +78,20 @@ class AnalyticsPoller(BaseWorkerThread):
         get information from wmbs, workqueue and local couch
         """
         try:
-            
+
             #jobs per request info
             logging.info("Getting Job Couch Data ...")
             jobInfoFromCouch = self.localCouchDB.getJobSummaryByWorkflowAndSite()
 
             #fwjr per request info
             logging.info("Getting FWJRJob Couch Data ...")
-            
+
             fwjrInfoFromCouch = self.localCouchDB.getJobPerformanceByTaskAndSiteFromSummaryDB()
             skippedInfoFromCouch = self.localCouchDB.getSkippedFilesSummaryByWorkflow()
-            
+
             logging.info("Getting Batch Job Data ...")
             batchJobInfo = self.wmagentDB.getBatchJobInfo()
-            
+
             logging.info("Getting Finished Task Data ...")
             finishedTasks = self.wmagentDB.getFinishedSubscriptionByTask()
 
@@ -101,17 +101,17 @@ class AnalyticsPoller(BaseWorkerThread):
             localQInfo = {}
             if not hasattr(self.config, "Tier0Feeder"):
                 localQInfo = self.localQueue.getAnalyticsData()
-            else: 
+            else:
                 logging.debug("Tier-0 instance, not checking WorkQueue")
 
             # combine all the data from 3 sources
             logging.info("""Combining data from
                                    Job Couch(%s),
                                    FWJR(%s),
-                                   WorkflowsWithSkippedFile(%s), 
+                                   WorkflowsWithSkippedFile(%s),
                                    Batch Job(%s),
                                    Finished Tasks(%s),
-                                   Local Queue(%s)  ...""" 
+                                   Local Queue(%s)  ..."""
                     % (len(jobInfoFromCouch), len(fwjrInfoFromCouch), len(skippedInfoFromCouch),
                        len(batchJobInfo), len(finishedTasks), len(localQInfo)))
 
@@ -120,10 +120,10 @@ class AnalyticsPoller(BaseWorkerThread):
 
             #set the uploadTime - should be the same for all docs
             uploadTime = int(time.time())
-            
+
             logging.info("%s requests Data combined,\n uploading request data..." % len(combinedRequests))
             requestDocs = convertToRequestCouchDoc(combinedRequests, fwjrInfoFromCouch, finishedTasks,
-                                                   skippedInfoFromCouch, self.agentInfo, 
+                                                   skippedInfoFromCouch, self.agentInfo,
                                                    uploadTime, self.summaryLevel)
 
 
@@ -133,7 +133,7 @@ class AnalyticsPoller(BaseWorkerThread):
             self.localSummaryCouchDB.uploadData(requestDocs)
             logging.info("Request data upload success\n %s request, \nsleep for next cycle" % len(requestDocs))
             DataUploadTime.setInfo(uploadTime, "ok")
-            
+
         except Exception as ex:
             logging.error("Error occurred, will retry later:")
             logging.error(str(ex))

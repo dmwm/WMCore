@@ -45,7 +45,7 @@ class BaseWorkerThread:
 
         # Termination callback function
         self.terminateCallback = None
-        
+
         # Init the timing
         self.lastTime = time.time()
 
@@ -144,11 +144,11 @@ class BaseWorkerThread:
                hasattr(self.component.config.General, "central_logdb_url") and \
                hasattr(self.component.config, "Agent"):
                 from WMCore.Services.LogDB.LogDB import LogDB
-                myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url, 
+                myThread.logdbClient = LogDB(self.component.config.General.central_logdb_url,
                                          self.component.config.Agent.hostName, logger=logging)
             else:
                 myThread.logdbClient = None
-                
+
             if hasattr(self.component.config, "Agent"):
                 if getattr(self.component.config.Agent, "useHeartbeat", True):
                     self.heartbeatAPI.updateWorkerHeartbeat(myThread.getName())
@@ -227,9 +227,9 @@ class BaseWorkerThread:
     def sleepThread(self):
         """
         _sleepThread_
-        
+
         A subclassable method to make the thread sleep.
-        
+
         The default (naiive) time.sleep(self.idleTime) isn't always
         the best idea, let different workers do it differently.
 
@@ -237,7 +237,7 @@ class BaseWorkerThread:
         doesn't return any values
         """
         time.sleep( self.idleTime )
-        
+
     def initAlerts(self, compName = None):
         """
         _initAlerts_

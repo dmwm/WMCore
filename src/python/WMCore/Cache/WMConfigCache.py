@@ -75,7 +75,7 @@ class DocumentCache(object):
         """
         if self.detail:
             options = {'include_docs':True}
-        else: 
+        else:
             options = {}
         result = self.database.allDocs(options=options, keys=keys)
         for row in result['rows']:
@@ -91,7 +91,7 @@ class ConfigCache(WMObject):
     The class that handles the upload and download of configCache
     artifacts from Couch
     """
-    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False, 
+    def __init__(self, dbURL, couchDBName = None, id = None, rev = None, usePYCurl = False,
                  ckey = None, cert = None, capath = None, detail = True):
         self.dbname = couchDBName
         self.dburl  = dbURL
@@ -553,16 +553,16 @@ class ConfigCache(WMObject):
         """
 
         return self.document.__str__()
-    
+
     def validate(self, configID):
-        
+
         try:
             #TODO: need to change to DataCache
             #self.loadDocument(configID = configID)
             self.loadByID(configID = configID)
         except Exception as ex:
             raise ConfigCacheException("Failure to load ConfigCache while validating workload: %s" % str(ex))
-        
+
         if self.detail:
             duplicateCheck = {}
             try:
@@ -576,7 +576,7 @@ class ConfigCache(WMObject):
                 filterName = outputModule.get('filterName', None)
                 if not dataTier:
                     raise ConfigCacheException("No DataTier in output module.")
-    
+
                 # Add dataTier to duplicate dictionary
                 if not dataTier in duplicateCheck.keys():
                     duplicateCheck[dataTier] = []
@@ -584,9 +584,9 @@ class ConfigCache(WMObject):
                     # Then we've seen this combination before
                     raise ConfigCacheException("Duplicate dataTier/filterName combination.")
                 else:
-                    duplicateCheck[dataTier].append(filterName)            
+                    duplicateCheck[dataTier].append(filterName)
             return outputModuleInfo
         else:
             return True
-    
+
 

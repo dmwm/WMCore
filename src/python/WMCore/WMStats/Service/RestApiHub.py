@@ -20,7 +20,7 @@ from WMCore.WMStats.Service.ActiveRequestJobInfo import (ActiveRequestJobInfo, G
 class RestApiHub(RESTApi):
     """
     Server object for REST data access API.
-    
+
     """
 
     def __init__(self, app, config, mount):

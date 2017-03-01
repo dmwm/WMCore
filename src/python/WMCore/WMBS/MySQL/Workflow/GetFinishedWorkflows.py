@@ -23,10 +23,10 @@ class GetFinishedWorkflows(DBFormatter):
                                          wmbs_subscription.workflow = wmbs_workflow.id
                                       INNER JOIN wmbs_sub_types ON
                                          wmbs_sub_types.id = wmbs_subscription.subtype
-                                  WHERE wmbs_subscription.finished = 0 
+                                  WHERE wmbs_subscription.finished = 0
                                        AND wmbs_sub_types.name %(include)s IN ('LogCollect', 'Cleanup')
                                   GROUP BY wmbs_workflow.name """
-    
+
     sql = """ SELECT wmbs_workflow.name, wmbs_workflow.spec,
                         wmbs_workflow.id AS workflow_id, wmbs_subscription.id AS sub_id
                  FROM wmbs_subscription
@@ -34,13 +34,13 @@ class GetFinishedWorkflows(DBFormatter):
                          wmbs_workflow.id = wmbs_subscription.workflow
                     INNER JOIN wmbs_sub_types ON
                          wmbs_sub_types.id = wmbs_subscription.subtype
-                    WHERE wmbs_sub_types.name %(include)s IN ('LogCollect', 'Cleanup')  AND 
+                    WHERE wmbs_sub_types.name %(include)s IN ('LogCollect', 'Cleanup')  AND
                             wmbs_workflow.name NOT IN (""" + incompleteWf + """ )"""
-            
+
     def execute(self, onlySecondary=False, conn=None, transaction=False):
         """
         _execute_
-        
+
         onlySecondary if set it True gets the complete subscription for the only LogCollect and Cleanup type.
         if False, gets the finished subscription excluding LogCollect and Cleanup tasks
         This DAO is a nested dictionary with the following structure:
@@ -53,9 +53,9 @@ class GetFinishedWorkflows(DBFormatter):
             include = {'include': 'NOT' }
         else:
             include = {'include': '' }
-        
+
         sql = self.sql % include
-         
+
         #Get the completed workflows and subscriptions
         result = self.dbi.processData(sql, conn=conn, transaction=transaction)
         wfsAndSubs = self.formatDict(result)

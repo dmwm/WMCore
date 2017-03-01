@@ -36,7 +36,7 @@ from WMCore.WorkerThreads.BaseWorkerThread       import BaseWorkerThread
 from WMCore.Services.ReqMgr.ReqMgr               import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter   import RequestDBWriter
 
-from WMComponent.TaskArchiver.DataCache import DataCache 
+from WMComponent.TaskArchiver.DataCache import DataCache
 
 class TaskArchiverPollerException(WMException):
     """
@@ -67,9 +67,9 @@ class TaskArchiverPoller(BaseWorkerThread):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         self.dbsDaoFactory = DAOFactory(package = "WMComponent.DBS3Buffer",
-                                     logger = myThread.logger, 
+                                     logger = myThread.logger,
                                      dbinterface = myThread.dbi)
 
         self.config      = config
@@ -87,15 +87,15 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         self.timeout           = getattr(self.config.TaskArchiver, "timeOut", None)
         self.useReqMgrForCompletionCheck   = getattr(self.config.TaskArchiver, 'useReqMgrForCompletionCheck', True)
-        
+
         if not self.useReqMgrForCompletionCheck:
             #sets the local monitor summary couch db
-            self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL, 
+            self.requestLocalCouchDB = RequestDBWriter(self.config.AnalyticsDataCollector.localT0RequestDBURL,
                                                    couchapp = self.config.AnalyticsDataCollector.RequestCouchApp)
             self.centralCouchDBWriter = self.requestLocalCouchDB
         else:
             self.centralCouchDBWriter = RequestDBWriter(self.config.AnalyticsDataCollector.centralRequestDBURL)
-            
+
             self.reqmgr2Svc = ReqMgr(self.config.TaskArchiver.ReqMgr2ServiceURL)
 
         #Load the cleanout state ID and save it
@@ -166,17 +166,17 @@ class TaskArchiverPoller(BaseWorkerThread):
         myThread.transaction.commit()
 
         return
-    
-    
+
+
     def getFinishedWorkflows(self):
         """
         1. Get finished workflows (a finished workflow is defined in Workflow.GetFinishedWorkflows)
         2. Get finished workflows with logCollect and Cleanup only.
-        3. combined those and make return 
+        3. combined those and make return
            finishedwfs - without LogCollect and CleanUp task
            finishedwfsWithLogCollectAndCleanUp - including LogCollect and CleanUp task
         """
-        
+
         finishedWorkflowsDAO = self.daoFactory(classname = "Workflow.GetFinishedWorkflows")
         finishedwfs = finishedWorkflowsDAO.execute()
         finishedLogCollectAndCleanUpwfs = finishedWorkflowsDAO.execute(onlySecondary=True)
@@ -185,13 +185,13 @@ class TaskArchiverPoller(BaseWorkerThread):
             if wf in finishedwfs:
                 finishedwfsWithLogCollectAndCleanUp[wf] = finishedwfs[wf]
         return (finishedwfs, finishedwfsWithLogCollectAndCleanUp)
-        
+
     def completeTasks(self, finishedwfs):
         """
         _completeTasks_
 
         This method will call several auxiliary methods to do the following:
-        
+
         1. Notify the WorkQueue about finished subscriptions
         2. update dbsbuffer_workflow table with finished subscription
         """
@@ -203,18 +203,18 @@ class TaskArchiverPoller(BaseWorkerThread):
         # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) == 0:
             return
-        
+
         completedWorkflowsDAO = self.dbsDaoFactory(classname = "UpdateWorkflowsToCompleted")
-        
+
         centralCouchAlive = True
         try:
             abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
             logging.info("There are %d requests in 'aborted' status in central couch.", len(abortedWorkflows))
-                        
+
         except Exception as ex:
             centralCouchAlive = False
             logging.error("we will try again when remote couch server comes back\n%s", str(ex))
-        
+
         if centralCouchAlive:
             for workflow in finishedwfs:
                 try:
@@ -225,7 +225,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                         for l in finishedwfs[workflow]["workflows"].values():
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
-                    
+
                     #Now we know the workflow as a whole is gone, we can delete the information from couch
                     if not self.useReqMgrForCompletionCheck:
                         if workflow in abortedWorkflows:
@@ -234,9 +234,9 @@ class TaskArchiverPoller(BaseWorkerThread):
                         else:
                             self.requestLocalCouchDB.updateRequestStatus(workflow, "completed")
                             logging.info("status updated to completed %s", workflow)
-                    
+
                     completedWorkflowsDAO.execute([workflow])
-        
+
                 except TaskArchiverPollerException as ex:
 
                     #Something didn't go well when notifying the workqueue, abort!!!
@@ -251,7 +251,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     logging.error(msg)
                     continue
         return
-    
+
     def notifyWorkQueue(self, subList):
         """
         _notifyWorkQueue_

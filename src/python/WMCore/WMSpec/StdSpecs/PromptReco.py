@@ -236,7 +236,7 @@ class PromptRecoWorkloadFactory(StdBase):
                                          "optional" : True, "validate" : lambda x : x > 0,
                                          "attr" : "blockCloseDelay", "null" : False}
                     }
-        
+
         baseArgs.update(specArgs)
         # add more optional arguments in case it is created using ReqMgr (not T0 case but should support both)
         reqMgrArguments = {"CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",

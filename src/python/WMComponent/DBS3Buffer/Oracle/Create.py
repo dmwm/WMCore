@@ -361,7 +361,7 @@ class Create(DBCreator):
                  FOREIGN KEY (workflow)
                  REFERENCES dbsbuffer_workflow(id)
                  ON DELETE CASCADE"""
-                 
+
         self.constraints[len(self.constraints)] = \
             """ALTER TABLE dbsbuffer_file
                  ADD CONSTRAINT fk_file_dataset_algo

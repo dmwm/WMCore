@@ -86,7 +86,7 @@ class FileBased(JobFactory):
                         skippedFiles.append(f)
                 for f in skippedFiles:
                     files.remove(f)
-            
+
         ## Keep only the first totalFiles files. Remove the other files from the locationDict.
         if totalFiles > 0 and totalFiles < len(files):
             removedFiles = files[totalFiles:]
@@ -122,7 +122,7 @@ class FileBased(JobFactory):
                         firstLumi = None
                         lastLumi = None
                         for lumi in run:
-                            if not isGoodLumi(goodRunList, run.run, lumi): 
+                            if not isGoodLumi(goodRunList, run.run, lumi):
                                 if firstLumi != None and lastLumi != None:
                                     self.currentJob['mask'].addRunAndLumis(run = run.run, lumis = [firstLumi, lastLumi])
                                     addedEvents = ((lastLumi - firstLumi + 1) * f['avgEvtsPerLumi'])

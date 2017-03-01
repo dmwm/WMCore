@@ -25,7 +25,7 @@ class DataCacheUpdate(CherryPyPeriodicTask):
         """
         try:
             if DataCache.islatestJobDataExpired():
-                wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url, 
+                wmstatsDB = WMStatsReader(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                                           reqdbCouchApp="ReqMgr")
                 jobData = wmstatsDB.getActiveData(jobInfoFlag = True)
                 DataCache.setlatestJobData(jobData)

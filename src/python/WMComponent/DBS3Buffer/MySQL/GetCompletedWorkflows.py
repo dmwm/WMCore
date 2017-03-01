@@ -10,7 +10,7 @@ class GetCompletedWorkflows(DBFormatter):
     """
     _GetCompletedWorkflows_
     """
-    sql = """SELECT distinct(name) FROM dbsbuffer_workflow 
+    sql = """SELECT distinct(name) FROM dbsbuffer_workflow
                WHERE completed = 1"""
 
     def execute(self, conn = None, transaction = False):

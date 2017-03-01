@@ -129,17 +129,17 @@ class LocalCouchDBData(object):
             return self.jobCouchDB.info()
         except Exception as ex:
             return {'error_message': str(ex)}
-        
+
     def getSkippedFilesSummaryByWorkflow(self):
         """
         get skipped file summary
         gets the data with following format and convert to
-        {u'rows': [{u'value': {u'events': 2468, u'lumis': 5}, u'key': 
+        {u'rows': [{u'value': {u'events': 2468, u'lumis': 5}, u'key':
         [u'sryu_TaskChain_Data_wq_testt_160204_061048_5587', u'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD']}]}
-        
+
         and covert to
-        {'sryu_TaskChain_Data_wq_testt_160204_061048_5587': 
-         {'tasks': {'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD : 
+        {'sryu_TaskChain_Data_wq_testt_160204_061048_5587':
+         {'tasks': {'/sryu_TaskChain_Data_wq_testt_160204_061048_5587/RECOCOSD :
                       {'skippedFiles':2}}}}
         """
         results = self.fwjrAPI.getFWJRWithSkippedFiles()
@@ -150,9 +150,9 @@ class LocalCouchDBData(object):
             data[x['key'][0]].setdefault('tasks', {})
             data[x['key'][0]]['tasks'][x['key'][1]] = x['value']
             data[x['key'][0]]['skipped'] =  True
-    
+
         return data
-        
+
 
 @emulatorHook
 class WMAgentDBData(object):
@@ -299,7 +299,7 @@ def combineAnalyticsData(a, b, combineFunc=None):
 
 
 def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
-                             skippedInfoFromCouch, agentInfo, 
+                             skippedInfoFromCouch, agentInfo,
                              uploadTime, summaryLevel):
     requestDocs = []
     for request, status in combinedRequests.items():
@@ -309,7 +309,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
         doc['workflow'] = request
         doc['status'] = {}
         doc['sites'] = {}
-        
+
         if request in skippedInfoFromCouch:
             doc['skipped'] = skippedInfoFromCouch[request]['skipped']
         else:
@@ -324,7 +324,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                 if doc['skipped']:
                     for task in skippedInfoFromCouch[request]['tasks']:
                         doc['tasks'][task]["skipped"] = skippedInfoFromCouch[request]['tasks'][task]
-                        
+
             # TODO need to handle this correctly by task
             if 'inWMBS' in status:
                 doc['status']['inWMBS'] = status['inWMBS']

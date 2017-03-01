@@ -158,7 +158,7 @@ class CouchFileset(Fileset):
                 # TODO: in this case actually insert succeeded but return error
                 # due to the bug
                 # https://issues.apache.org/jira/browse/COUCHDB-893
-                # if rev is needed to proceed need to get by 
+                # if rev is needed to proceed need to get by
                 # self.couchdb.documentExist(document['_id'])
                 # but that function need to be changed to return _rev
                 document['_rev'] = "NeedToGet"

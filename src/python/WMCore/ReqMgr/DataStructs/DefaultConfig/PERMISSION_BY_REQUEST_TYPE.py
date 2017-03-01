@@ -14,9 +14,9 @@ PERMISSION_BY_REQUEST_TYPE = {
     "NOSTATUS":  DEFAULT_STATUS_PERMISSION, # permmission for updating the values without updating status
     "DEFAULT_STATUS": DEFAULT_STATUS_PERMISSION, # permmission for updating the status change
     "DEFAULT_TYPE": {"new": DEFAULT_STATUS_PERMISSION,
-                     "assignment-approved": DEFAULT_STATUS_PERMISSION,                               
-                     "assigned": DEFAULT_STATUS_PERMISSION},                         
+                     "assignment-approved": DEFAULT_STATUS_PERMISSION,
+                     "assigned": DEFAULT_STATUS_PERMISSION},
     "StoreResult" : {"new": DEFAULT_STATUS_PERMISSION,
-                     "assignment-approved": DEFAULT_STATUS_PERMISSION,                               
-                     "assigned": DEFAULT_STATUS_PERMISSION}                                
+                     "assignment-approved": DEFAULT_STATUS_PERMISSION,
+                     "assigned": DEFAULT_STATUS_PERMISSION}
     }

@@ -78,11 +78,11 @@ class TaskArchiverTest(unittest.TestCase):
         self.testInit.setupCouch("stat_summary_t", "SummaryStats")
         reqmgrdb = "reqmgrdb_t"
         self.testInit.setupCouch(reqmgrdb, "ReqMgr")
-        
+
         reqDBURL = "%s/%s" % (self.testInit.couchUrl, reqmgrdb)
         self.requestWriter = RequestDBWriter(reqDBURL)
         self.requestWriter.defaultStale = {}
-        
+
         self.daofactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
@@ -161,7 +161,7 @@ class TaskArchiverTest(unittest.TestCase):
         config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
         config.TaskArchiver.ReqMgrServiceURL = "https://cmsweb-dev.cern.ch/reqmgr/rest"
         config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
-         
+
         config.component_("AnalyticsDataCollector")
         config.AnalyticsDataCollector.centralRequestDBURL = '%s/reqmgrdb_t' % config.JobStateMachine.couchurl
         config.AnalyticsDataCollector.RequestCouchApp = "ReqMgr"
@@ -409,7 +409,7 @@ class TaskArchiverTest(unittest.TestCase):
 
 
         return jobList
-    
+
     def getPerformanceFromDQM(self, dqmUrl, dataset, run):
         # Make function to fetch this from DQM. Returning Null or False if it fails
         getUrl = "%sjsonfairy/archive/%s%s/DQM/TimerService/event_byluminosity" % (dqmUrl, run, dataset)
@@ -465,7 +465,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(data, testDashBoardPayload)
 
         return True
-    
+
     def populateWorkflowWithCompleteStatus(self, name ="TestWorkload"):
         schema = generate_reqmgr_schema(1)
         schema[0]["RequestName"] = name
@@ -473,7 +473,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.requestWriter.insertGenericRequest(schema[0])
         result = self.requestWriter.updateRequestStatus(name, "completed")
         return result
-    
+
     def testA_BasicFunctionTest(self):
         """
         _BasicFunctionTest_
@@ -496,7 +496,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 name = workload.name(),
                                                 filesetName = "TestFileset_2",
                                                 specLocation = workloadPath,
-                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                task = "/TestWorkload/ReReco/LogCollect",
                                                 type = "LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
@@ -532,11 +532,11 @@ class TaskArchiverTest(unittest.TestCase):
         tables = []
         for x in create.requiredTables:
             tables.append(x[2:])
- 
+
         self.populateWorkflowWithCompleteStatus()
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
-        
+
         cleanCouch = CleanCouchPoller(config = config)
         cleanCouch.setup()
         cleanCouch.algorithm()
@@ -626,7 +626,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 name = workload.name(),
                                                 filesetName = "TestFileset_2",
                                                 specLocation = workloadPath,
-                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                task = "/TestWorkload/ReReco/LogCollect",
                                                 type = "LogCollect")
 
         cachePath = os.path.join(config.JobCreator.jobCacheDir,
@@ -643,7 +643,7 @@ class TaskArchiverTest(unittest.TestCase):
         fwjrdb.loadView("FWJRDump", "fwjrsByWorkflowName",
                         options = {"startkey": [workload.name()],
                                    "endkey": [workload.name(), {}]})['rows']
-    
+
         self.populateWorkflowWithCompleteStatus()
         testTaskArchiver = TaskArchiverPoller(config = config)
         testTaskArchiver.algorithm()
@@ -651,10 +651,10 @@ class TaskArchiverTest(unittest.TestCase):
         cleanCouch = CleanCouchPoller(config = config)
         cleanCouch.setup()
         cleanCouch.algorithm()
-        
+
         dbname       = getattr(config.JobStateMachine, "couchDBName")
         workdatabase = couchdb.connectDatabase("%s/workloadsummary" % dbname)
-    
+
         workloadSummary = workdatabase.document(id = workload.name())
 
         self.assertEqual(workloadSummary['errors']['/TestWorkload/ReReco']['failureTime'], 500)
@@ -783,7 +783,7 @@ class TaskArchiverTest(unittest.TestCase):
                                                 name = workload.name(),
                                                 filesetName = "TestFileset_2",
                                                 specLocation = workloadPath,
-                                                task = "/TestWorkload/ReReco/LogCollect", 
+                                                task = "/TestWorkload/ReReco/LogCollect",
                                                 type = "LogCollect")
 
         # Adding request type as ReReco, real ReqMgr requests have it

@@ -24,7 +24,7 @@ class GFAL2Impl(StageOutImpl):
     def __init__(self, stagein=False):
         StageOutImpl.__init__(self, stagein)
         # If we want to execute commands in clean shell, we can`t separate them with ';'.
-        # Next commands after separation are executed without env -i and this leads us with 
+        # Next commands after separation are executed without env -i and this leads us with
         # mixed environment with COMP and system python.
         # GFAL2 is not build under COMP environment and it had failures with mixed environment.
         self.setups = "env -i X509_USER_PROXY=$X509_USER_PROXY JOBSTARTDIR=$JOBSTARTDIR bash -c '%s'"

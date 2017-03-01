@@ -16,7 +16,7 @@ class AgentStatusWatcher(Harness):
     """
     Component class for AgentStatusWatcher module
     """
-    
+
     def __init__(self, config):
         """
         __init__
@@ -24,7 +24,7 @@ class AgentStatusWatcher(Harness):
         Initialize the Harness
         """
         Harness.__init__(self, config)
-        
+
         return
 
     def preInitialization(self):
@@ -37,11 +37,11 @@ class AgentStatusWatcher(Harness):
         resourceUpdaterPollInterval = self.config.AgentStatusWatcher.resourceUpdaterPollInterval
         agentPollInterval = self.config.AgentStatusWatcher.agentPollInterval
         myThread = threading.currentThread()
-        
+
         logging.info("Setting ResourcesUpdate poll interval to %s seconds" % agentPollInterval)
         myThread.workerThreadManager.addWorker(AgentStatusPoller(self.config),
                                                agentPollInterval)
-        
+
         logging.info("Setting ResourcesUpdate poll interval to %s seconds" % resourceUpdaterPollInterval)
         myThread.workerThreadManager.addWorker(ResourceControlUpdater(self.config),
                                                resourceUpdaterPollInterval)

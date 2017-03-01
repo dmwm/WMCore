@@ -15,7 +15,7 @@ class GetDeletableWorkflows(DBFormatter):
     this DAO searches such workflows. It assumes that a spec is not shared by
     two workflows of the same name.
     """
-    
+
     # Gets completed workflows.
     # (checks there is no unfinished subscription is left on given workflow)
     # Assumes there is no workflow created without subscription is made. (- need to check)
@@ -24,15 +24,15 @@ class GetDeletableWorkflows(DBFormatter):
     compltetedWFs = """ SELECT name FROM wmbs_workflow
                             WHERE name NOT IN (
                                 SELECT DISTINCT ww.name FROM wmbs_workflow ww
-                                      INNER JOIN wmbs_subscription ws 
+                                      INNER JOIN wmbs_subscription ws
                                          ON ws.workflow = ww.id
                                 WHERE ws.finished =0)
                       """
-                      
-    # workflows which has not completed child workflow 
-    # Child workflow means that the workflow uses output files from the other workflow. 
+
+    # workflows which has not completed child workflow
+    # Child workflow means that the workflow uses output files from the other workflow.
     wfsWithIncompletedChildWFs = """ SELECT DISTINCT ww.name FROM wmbs_workflow ww
-                                  INNER JOIN wmbs_subscription ws 
+                                  INNER JOIN wmbs_subscription ws
                                       ON ws.workflow = ww.id
                                   INNER JOIN wmbs_fileset wfs ON
                                      wfs.id = ws.fileset
@@ -44,17 +44,17 @@ class GetDeletableWorkflows(DBFormatter):
                                      child_fileset.fileid = wfp.child
                                   INNER JOIN wmbs_subscription child_subscription ON
                                      child_subscription.fileset = child_fileset.fileset
-                                  WHERE child_subscription.finished = 0                           
+                                  WHERE child_subscription.finished = 0
                             """
-    
+
     sql = """SELECT DISTINCT wmbs_workflow.name, wmbs_workflow.spec,
                         wmbs_workflow.id AS workflow_id, wmbs_subscription.id AS sub_id
                  FROM wmbs_subscription
                      INNER JOIN wmbs_workflow ON
                          wmbs_workflow.id = wmbs_subscription.workflow
-                     INNER JOIN (%s) complete_workflow ON 
+                     INNER JOIN (%s) complete_workflow ON
                          complete_workflow.name = wmbs_workflow.name
-                 WHERE wmbs_workflow.name NOT IN (%s)        
+                 WHERE wmbs_workflow.name NOT IN (%s)
               """ % (compltetedWFs, wfsWithIncompletedChildWFs)
 
     def execute(self, conn = None, transaction = False):

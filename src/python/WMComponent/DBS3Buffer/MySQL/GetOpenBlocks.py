@@ -28,5 +28,5 @@ class GetOpenBlocks(DBFormatter):
 
     def execute(self, conn = None, transaction = False):
         result = self.dbi.processData(self.sql, {}, conn = conn,
-                                          transaction = transaction)            
+                                          transaction = transaction)
         return self.formatDict(result)

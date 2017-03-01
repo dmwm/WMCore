@@ -25,9 +25,9 @@ class WMArchive(Service):
         httpDict.setdefault("accept_type", "application/json")
         httpDict.update(header)
         self.encoder = json.dumps
-        Service.__init__(self, httpDict)        
-    
+        Service.__init__(self, httpDict)
 
-    
+
+
     def archiveData(self, data):
         return self["requests"].post('', {'data': data})[0]['result']

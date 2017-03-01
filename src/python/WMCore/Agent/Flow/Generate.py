@@ -19,7 +19,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMCore.Agent.Configuration import loadConfigurationFile
 
 

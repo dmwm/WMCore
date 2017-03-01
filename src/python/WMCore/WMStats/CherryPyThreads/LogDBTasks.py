@@ -24,9 +24,9 @@ class LogDBTasks(CherryPyPeriodicTask):
         """
         gather active data statistics
         """
-        
+
         logdb = LogDB(config.central_logdb_url, config.log_reporter)
         logdb.cleanup(config.logDBCleanDuration)
-        
-        self.logger.info("cleaned up log db")        
+
+        self.logger.info("cleaned up log db")
         return

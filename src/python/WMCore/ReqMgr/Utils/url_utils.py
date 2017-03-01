@@ -4,7 +4,7 @@
 """
 File       : url_utils.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
-Description: 
+Description:
 """
 from __future__ import print_function
 

@@ -126,7 +126,7 @@ class DBSUploadTest(unittest.TestCase):
         workflowId = self.injectWorkflow(workflowName = workflowName,
                                          taskPath = taskPath)
         parentlessFiles = []
-        
+
         baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % (acqEra)
         for i in range(nFiles):
             testFile = DBSBufferFile(lfn = baseLFN + makeUUID() + ".root", size = 1024,
@@ -164,7 +164,7 @@ class DBSUploadTest(unittest.TestCase):
         """
         parentFiles = []
         childFiles = []
-        
+
         baseLFN = "/store/data/%s/Cosmics/RAW/v1/000/143/316/" % (acqEra)
         for i in range(10):
             testFile = DBSBufferFile(lfn = baseLFN + makeUUID() + ".root", size = 1024,
@@ -182,7 +182,7 @@ class DBSUploadTest(unittest.TestCase):
             lumis = []
             for j in range(10):
                 lumis.append((i * 10) + j)
-            testFile.addRun(Run(143316, *lumis))            
+            testFile.addRun(Run(143316, *lumis))
 
             testFile.setAcquisitionEra(acqEra)
             testFile.setProcessingVer("1")
@@ -208,7 +208,7 @@ class DBSUploadTest(unittest.TestCase):
             lumis = []
             for j in range(20):
                 lumis.append((i * 20) + j)
-            testFile.addRun(Run(143316, *lumis))            
+            testFile.addRun(Run(143316, *lumis))
 
             testFile.setAcquisitionEra(acqEra)
             testFile.setProcessingVer("1")
@@ -219,7 +219,7 @@ class DBSUploadTest(unittest.TestCase):
                                  parentFiles[i * 2 + 1]["lfn"]])
             testFile.addParents([moreParentFiles[i * 2]["lfn"],
                                  moreParentFiles[i * 2 + 1]["lfn"]])
-            childFiles.append(testFile)            
+            childFiles.append(testFile)
 
         return (parentFiles, childFiles)
 
@@ -244,7 +244,7 @@ class DBSUploadTest(unittest.TestCase):
                          "Error: Wrong acquisition era.")
         self.assertEqual(result[0]["physics_group_name"], "NoGroup",
                          "Error: Wrong physics group name.")
-        
+
         results = self.dbsApi.listBlocks(dataset = datasetName, detail = True)
         self.assertEqual(len(results), len(files) / 5,
                          "Error: Wrong number of blocks.")
@@ -255,7 +255,7 @@ class DBSUploadTest(unittest.TestCase):
                              "Error: Wrong number of files.")
             self.assertEqual(result["open_for_writing"], 0,
                              "Error: Block should be closed.")
-        
+
         results = self.dbsApi.listFileArray(dataset = datasetName, detail = True)
         for result in results:
             file = None
@@ -404,7 +404,7 @@ class DBSUploadTest(unittest.TestCase):
             dbsBlock = DBSBufferBlock(blockName,
                                       location = "malpaquet",
                                       datasetpath =  None)
-            dbsBlock.status = "Open"                
+            dbsBlock.status = "Open"
             dbsBlock.setDataset(parentFiles[0]["datasetPath"], 'data', 'VALID')
             dbsUtil.createBlocks([dbsBlock])
             for file in allFiles[i * 5 : (i * 5) + 5]:
@@ -414,7 +414,7 @@ class DBSUploadTest(unittest.TestCase):
                     dbsBlock.status = "InDBS"
                 dbsUtil.updateBlocks([dbsBlock])
             dbsUtil.updateFileStatus([dbsBlock], "InDBS")
-            allBlocks.append(dbsBlock)            
+            allBlocks.append(dbsBlock)
 
         DBSBufferDataset(childFiles[0]["datasetPath"]).create()
         blockName = childFiles[0]["datasetPath"] + "#" + makeUUID()
@@ -440,7 +440,7 @@ class DBSUploadTest(unittest.TestCase):
         # Change the status of the rest of the parent blocks so we can upload
         # them and the children.
         for dbsBlock in allBlocks:
-            dbsBlock.status = "InDBS"            
+            dbsBlock.status = "InDBS"
             dbsUtil.updateBlocks([dbsBlock])
 
         dbsUploader.algorithm()
@@ -450,8 +450,8 @@ class DBSUploadTest(unittest.TestCase):
 
         # Run the uploader one more time to upload the children.
         dbsUploader.algorithm()
-        time.sleep(5)        
-    
+        time.sleep(5)
+
         self.verifyData(childFiles[0]["datasetPath"], childFiles)
         return
 
@@ -468,7 +468,7 @@ class DBSUploadTest(unittest.TestCase):
             # Monkey patch the imports of DbsApi
             from WMComponent.DBS3Buffer import DBSUploadPoller as MockDBSUploadPoller
             MockDBSUploadPoller.DbsApi = MockDbsApi
-    
+
             # Set the poller and the dbsUtil for verification
             myThread = threading.currentThread()
             (_, dbsFilePath) = mkstemp(dir = self.testDir)
@@ -476,7 +476,7 @@ class DBSUploadTest(unittest.TestCase):
             config = self.getConfig()
             dbsUploader = MockDBSUploadPoller.DBSUploadPoller(config = config)
             dbsUtil = DBSBufferUtil()
-    
+
             # First test is event based limits and timeout with no new files.
             # Set the files and workflow
             acqEra = "TropicalSeason%s" % (int(time.time()))
@@ -488,7 +488,7 @@ class DBSUploadTest(unittest.TestCase):
             self.createParentFiles(acqEra, nFiles = 20,
                                    workflowName = workflowName,
                                    taskPath = taskPath)
-    
+
             # The algorithm needs to be run twice.  On the first iteration it will
             # create all the blocks and upload one with less than 150 events.
             # On the second iteration the second block is uploaded.
@@ -550,7 +550,7 @@ class DBSUploadTest(unittest.TestCase):
                 self.assertTrue('block_events' not in block['block'])
                 self.assertTrue('close_settings' not in block)
                 self.assertEqual(block['block']['open_for_writing'], 0)
-    
+
             # Put more files, they will go into the same block and then it will be closed
             # after timeout
             time.sleep(3)
@@ -590,7 +590,7 @@ class DBSUploadTest(unittest.TestCase):
             time.sleep(2)
             dbsUploader.algorithm()
             dbsUploader.checkBlocks()
-    
+
             self.assertEqual(len(openBlocks), 0)
             fakeDBS = open(self.dbsUrl, 'r')
             fakeDBSInfo = json.load(fakeDBS)

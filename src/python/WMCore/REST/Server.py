@@ -1494,12 +1494,12 @@ class DBConnectionPool(Thread):
         trace and cherrypy.log("%s instantiating a new connection" % trace)
         ret = { "pool": self, "trace": trace, "type": s["type"] }
         if s['type'].__name__ == 'MySQLdb':
-            ret.update( { "connection": s["type"].connect(s['host'], s["user"], 
+            ret.update( { "connection": s["type"].connect(s['host'], s["user"],
                                  s["password"], s["db"], int(s["port"])) } )
-        else: 
-            ret.update( { "connection": s["type"].connect(s["user"], s["password"], 
+        else:
+            ret.update( { "connection": s["type"].connect(s["user"], s["password"],
                               	 s["dsn"], threaded=True) } )
-        return ret   
+        return ret
 
     def _test(self, s, prevtrace, trace, req, dbh):
         """Helper function to prepare and test an existing connection object."""
@@ -1513,7 +1513,7 @@ class DBConnectionPool(Thread):
         if s['type'].__name__ == 'MySQLdb':
             client_version = s["type"].get_client_info()
             version = ".".join(str(x) for x in s["type"].version_info)
-        else: 
+        else:
             client_version = ".".join(str(x) for x in s["type"].clientversion())
             version = c.version
         prevtrace = ((prevtrace and prevtrace != trace and

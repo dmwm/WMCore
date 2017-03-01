@@ -1842,16 +1842,16 @@ class SubscriptionTest(unittest.TestCase):
         deletableWorkflowDAO = self.daofactory(classname = "Workflow.GetDeletableWorkflows")
         newFinishedDAO.execute(self.stateID)
         finishedSubs = finishedDAO.execute()
-        
+
         self.assertEqual(len(finishedSubs), 1,
                          "Error: There should be one finished subs. but %s found" % len(finishedSubs))
-        
+
         #Marking the subscription 1 as finished would trigger the deletion of
         #file B which is an error since it is the parent of C.
         dwf = deletableWorkflowDAO.execute()
         self.assertEqual(len(dwf), 0,
                          "Error: There should be no deletable workflow. but %s found" % len(dwf))
-        
+
 
         #Now let's finish the second subscription
         workflow2 = elements['Workflows'][1]
@@ -1871,7 +1871,7 @@ class SubscriptionTest(unittest.TestCase):
         dwf = deletableWorkflowDAO.execute()
         self.assertEqual(len(dwf), 2,
                         "Error: There should be two deletable workflow. but %s found" % len(dwf))
-        
+
         self.assertEqual(len(finishedSubs), 2,
                          "Error: There should be two finished sub.")
         self.assertEqual(finishedSubs[1]['id'], subscription2['id'],

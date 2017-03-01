@@ -127,7 +127,7 @@ class WorkQueueReqMgrInterface(object):
 
             self.logger.info("%s element(s) obtained from RequestManager" % work)
         return work
-    
+
     def cancelWork(self, queue):
         requests = self.reqMgr2.getRequestByStatus(['aborted', 'force-complete'], detail=False)
         count = 0
@@ -232,7 +232,7 @@ class WorkQueueReqMgrInterface(object):
         if message:
             self.logdb.post(request, str(message), 'info')
         reqmgrStatus = self._workQueueToReqMgrStatus(status)
-        
+
         if reqmgrStatus:  # only send known states
             try:
                 self.reqMgr2.updateRequestStatus(request, reqmgrStatus)

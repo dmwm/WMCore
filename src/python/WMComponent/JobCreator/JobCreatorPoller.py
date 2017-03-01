@@ -601,7 +601,7 @@ class JobCreatorPoller(BaseWorkerThread):
 
                 # if we have glideinWMS constraints, then adapt all jobs
                 if self.glideinLimits:
-                    capResourceEstimates(wmbsJobGroups, processDict['numberOfCores'], self.glideinLimits) 
+                    capResourceEstimates(wmbsJobGroups, processDict['numberOfCores'], self.glideinLimits)
 
                 nameDictList = []
                 for wmbsJobGroup in wmbsJobGroups:

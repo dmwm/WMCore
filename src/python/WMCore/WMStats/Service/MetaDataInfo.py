@@ -9,11 +9,11 @@ from WMCore.REST.Server import RESTEntity, restcall
 from WMCore.REST.Tools import tools
 from WMCore.REST.Format import JSONFormat
 
-    
+
 class ServerInfo(RESTEntity):
     def validate(self, apiobj, method, api, param, safe):
         """
-        
+
         """
         pass
 

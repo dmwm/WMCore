@@ -33,7 +33,7 @@ def dump(full_dump=False, fields=None):
                 try:
                     s += "%s:%s  " % (f, doc[f])
                 except KeyError:
-                    s += "%s:n/a  " % f 
+                    s += "%s:n/a  " % f
             print("%s  %s\n" % (s, doc["RequestName"]))
         elif full_dump:
             print("%s\n%s\n%s\n" % (row["id"], doc, 70*'-'))
@@ -42,8 +42,8 @@ def dump(full_dump=False, fields=None):
         doc_counter += 1
         #if doc_counter > 100:
         #    break
-    print("Total documents: %s" % doc_counter) 
-        
+    print("Total documents: %s" % doc_counter)
+
 
 def main():
     if sys.argv[-1] == "-f":
@@ -54,7 +54,7 @@ def main():
     elif len(sys.argv) == 2:
         l = sys.argv[1].split(',')
         dump(fields=l)
-            
+
 
 if __name__ == "__main__":
     main()

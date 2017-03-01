@@ -83,7 +83,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         # custom settings
         # Construct processed dataset version
         if self.pileup_scenario:
-            self.pileup_scenario = self.pileup_scenario+'_' 
+            self.pileup_scenario = self.pileup_scenario+'_'
 
         specialprocstring = kwds.get('specialName', '')
         if  specialprocstring:
@@ -289,7 +289,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
             era = 'Summer13'
             lfn = '/store/mc'
             specialName = campaign + '_'
-        
+
         if campaign == 'UpgradePhase1Age0START_DR61SLHCx':
             era = 'Summer13'
             lfn = '/store/mc'
@@ -319,7 +319,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if 'UpgradePhase1Age' in campaign and 'dr61SLHCx' in specialName:
             specialName = specialName.replace("dr61SLHCx","_DR61SLHCx")
         if 'dr61SLHCx' in specialName:
-            print('WARNING: using new campaign name format')          
+            print('WARNING: using new campaign name format')
 
         if campaign == 'HiFall11_DR44X' or campaign == 'HiFall11DR44':
             era = 'HiFall11'
@@ -375,8 +375,8 @@ class WorkflowDataOpsMgr(WorkflowManager):
             [subscribedOurSite, subscribedOtherSite] = checkAcceptedSubscriptionRequest(self.url, pileupDataset, siteSE)
             if not subscribedOurSite:
                 print('ERROR: pileup dataset not subscribed/approved to required Disk endpoint')
-                sys.exit(0)            
-      
+                sys.exit(0)
+
         # Determine pileup scenario
         # - Fall11_R2 & Fall11_R4 don't add pileup so extract pileup scenario from input
         pileupScenario = ''
@@ -401,7 +401,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if 'LowPU2010_DR42' in workflow or 'LowPU2010DR42' in workflow:
             pileupScenario = 'PU_S0'
         if 'HiWinter13' in workflow and 'DR53X' in workflow:
-            pileupScenario = ''  
+            pileupScenario = ''
         if 'pAWinter13' in workflow and 'DR53X' in workflow:
             pileupScenario = 'pa' # not actually the pileup scenario of course
         if 'ppWinter13' in workflow and 'DR53X' in workflow:
@@ -416,8 +416,8 @@ class WorkflowDataOpsMgr(WorkflowManager):
         return pileupDataset
 
 
-    def _priority(self): 
-        priority = -1 
+    def _priority(self):
+        priority = -1
         for line in self.workload:
            if 'request.schema.RequestPriority' in line:
               priority = line[line.find("=")+1:line.find("<br/")]
@@ -467,7 +467,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
                 if siteUse == 'None':
                     raise Exception('ERROR: No custodial site found for dataset=%s' % self.input_dataset)
                 siteUse = siteUse[:-4]
-  
+
         # Set the custodial location if necessary
         if not self.site_use or self.site_use != 'T2_US':
             if not self.site_cust:
@@ -509,7 +509,7 @@ def getScenario(ps):
     if ps == 'SimGeneral.MixingModule.mix_E8TeV_AVE_10_BX_50ns_300ns_spread_cfi':
        pss = 'PU10bx50'
     if ps == 'SimGeneral.MixingModule.mix_2011_FinalDist_OOTPU_cfi':
-       pss = 'PU_S13'   
+       pss = 'PU_S13'
     if ps == 'SimGeneral.MixingModule.mix_fromDB_cfi':
        pss = 'PU_RD1'
     if ps == 'SimGeneral.MixingModule.mix_2012C_Profile_PoissonOOTPU_cfi':
@@ -563,7 +563,7 @@ def getPileup(config):
 
 def getConfig(url, cacheID):
     "Helper function to get configuration for given cacheID"
-    conn = httplib.HTTPSConnection(url, 
+    conn = httplib.HTTPSConnection(url,
             cert_file = os.getenv('X509_USER_PROXY'),
             key_file = os.getenv('X509_USER_PROXY'))
     conn.request("GET",'/couchdb/reqmgr_config_cache/'+cacheID+'/configFile')

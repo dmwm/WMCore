@@ -28,10 +28,10 @@ timestamp = time.time()
 #(myname, xmlfile, buildername, buildnumber, revision, db ) = ('dum', '../nosetests.xml',1,2,3,4)
 # what metson wants
 #{
-#    "test_name": test_name, 
-#    "builder": builder, 
-#    "timestamp": timestamp, 
-#    "bld_id": build_id, 
+#    "test_name": test_name,
+#    "builder": builder,
+#    "timestamp": timestamp,
+#    "bld_id": build_id,
 #    "step": step,
 #    "reason": reason
 #}
@@ -50,7 +50,7 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
         longRunning.sort()
 
         longRunning = longRunning[-20:]
-        
+
     if len(case.childNodes) > 0:
         if len(case.childNodes) > 1:
             raise RuntimeError("Shouldn't be more than one error in a testcase")
@@ -68,10 +68,10 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
         message += "Traceback: %s \n" % traceback
         message += "========================================================"
         myData = {
-                "test_name": (case.getAttribute('classname') + '.' + case.getAttribute('name')), 
-                "builder": buildername, 
-                "timestamp": timestamp, 
-                "bld_id": buildnumber, 
+                "test_name": (case.getAttribute('classname') + '.' + case.getAttribute('name')),
+                "builder": buildername,
+                "timestamp": timestamp,
+                "bld_id": buildnumber,
                 "step": "notsure",
                 "reason": traceback,
                 "rev"   : revision
@@ -79,16 +79,16 @@ for case in xunit.getElementsByTagName("testsuite")[0].getElementsByTagName('tes
         database.queue(myData)
     else: # win case
         myData = {
-                "test_name": (case.getAttribute('classname') + '.' + case.getAttribute('name')), 
-                "builder": buildername, 
-                "timestamp": timestamp, 
-                "bld_id": buildnumber, 
+                "test_name": (case.getAttribute('classname') + '.' + case.getAttribute('name')),
+                "builder": buildername,
+                "timestamp": timestamp,
+                "bld_id": buildnumber,
                 "step": "notsure",
                 "reason": "success",
                 "rev"   : revision
         }
         database.queue(myData)
-        
+
 database.commit()
 
 longRunning.reverse()
@@ -97,7 +97,7 @@ tmp = 1
 for longTest in longRunning:
     print("%s) %s seconds - %s.%s" % (tmp, longTest[0],longTest[1], longTest[2]))
     tmp += 1
-    
+
 
 # testcase win:
 #<testcase classname="WMCore_t.FwkJobReport_t.Report_t.ReportTest" name="testBadXMLParsing" time="0" />

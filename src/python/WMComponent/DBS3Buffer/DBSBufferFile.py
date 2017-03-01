@@ -184,7 +184,7 @@ class DBSBufferFile(WMBSBase, WMFile):
 
         Insert this file and all it's metadata into the DBS Buffer.
         """
-        
+
         if self.exists() != False:
             self.load()
             return
@@ -436,12 +436,12 @@ class DBSBufferFile(WMBSBase, WMFile):
         return self['globalTag']
 
     def setPrepID(self, prep_id):
-        
+
         self['prep_id'] = prep_id
         return
 
     def getPrepID(self):
-        
+
         return self['prep_id']
 
     def setDatasetParent(self, datasetParent):

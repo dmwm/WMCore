@@ -46,25 +46,25 @@ class RequestDBTest(unittest.TestCase):
         result =  self.requestWriter.insertGenericRequest(schema[0])
 
         self.assertEqual(len(result), 1, 'insert fail');
-        
+
         self.assertEqual(self.requestWriter.updateRequestStatus(schema[0]['RequestName'], "failed"), 'OK', 'update fail')
         self.assertEqual(self.requestWriter.updateRequestStatus("not_exist_schema", "assigned"),
                           'Error: document not found')
-        result = self.requestWriter.updateRequestProperty(schema[0]['RequestName'], 
+        result = self.requestWriter.updateRequestProperty(schema[0]['RequestName'],
                                                                    {'Teams': ['teamA']})
-        self.assertEqual(self.requestWriter.updateRequestProperty(schema[0]['RequestName'], 
+        self.assertEqual(self.requestWriter.updateRequestProperty(schema[0]['RequestName'],
                                                                    {'Teams': ['teamA']}), 'OK', 'update fail')
         self.assertEqual(self.requestWriter.updateRequestProperty("not_exist_schema", {'Teams': 'teamA'}),
                           'Error: document not found')
-        
+
         result = self.requestReader.getRequestByNames([schema[0]['RequestName']])
         self.assertEqual(len(result), 1, "should be 1")
         result = self.requestReader.getRequestByStatus(["failed"], False, 1)
         self.assertEqual(len(result), 1, "should be 1")
-        
+
         result = self.requestReader.getStatusAndTypeByRequest([schema[0]['RequestName']])
         self.assertEqual(result[schema[0]['RequestName']][0], 'failed', "should be failed")
-        
+
         result =  self.requestWriter.insertGenericRequest(schema[1])
         time.sleep(2)
         result =  self.requestWriter.insertGenericRequest(schema[2])
@@ -74,7 +74,7 @@ class RequestDBTest(unittest.TestCase):
         endTime = int(time.time()) + 1
         result = self.requestReader.getRequestByStatusAndEndTime("new", False, endTime)
         self.assertEqual(len(result), 2, "should be 2")
-      
+
 
 if __name__ == '__main__':
 

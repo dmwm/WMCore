@@ -31,25 +31,25 @@ class RequestQuery:
         self.br=Browser()
 
         self.config = config
-        
+
         # Initialise connections
         self.mySiteDB = SiteDBJSON()
         self.phedex = PhEDEx({"endpoint":"https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
         self.dbsPhys01 = DbsApi(url = dbs_base_url+"phys01/DBSReader/")
         self.dbsPhys02 = DbsApi(url = dbs_base_url+"phys02/DBSReader/")
         self.dbsPhys03 = DbsApi(url = dbs_base_url+"phys03/DBSReader/")
-        
+
     def __del__(self):
         self.br.close()
 
     def login2Savannah(self):
         """
-        login2Savannah log into savannah with the given parameters in the config (username and password) 
+        login2Savannah log into savannah with the given parameters in the config (username and password)
         User must have admin priviledges for store results requests
         """
         login_page='https://savannah.cern.ch/account/login.php?uri=%2F'
         savannah_page='https://savannah.cern.ch/task/?group=cms-storeresults'
-        
+
         self.br.open(login_page)
 
         ## 'Search' form is form 0
@@ -57,22 +57,22 @@ class RequestQuery:
         self.br.select_form(nr=1)
 
         username = self.config["SavannahUser"]
-    
+
         self.br['form_loginname']=username
         self.br['form_pw']=self.config["SavannahPasswd"]
-        
+
         self.br.submit()
-        
+
         response = self.br.open(savannah_page)
-        
+
         # Check to see if login was successful
         if not re.search('Logged in as ' + username, response.read()):
             print('login unsuccessful, please check your username and password')
             return False
         else:
             return True
-    
-    def selectQueryForm(self,**kargs):       
+
+    def selectQueryForm(self,**kargs):
         """
         selectQueryForm create the browser view to get all the store result tickets from savannah
         """
@@ -85,7 +85,7 @@ class RequestQuery:
             for item in control.items:
                 if item.attrs['label'] == "Test":
                     control.value = [item.attrs['value']]
-                    
+
             ##select number of entries displayed per page
             control = self.br.find_control("chunksz",type="text")
             control.value = "150"
@@ -103,7 +103,7 @@ class RequestQuery:
                     for item in control.items:
                         if item.attrs['label'] == kargs[arg].strip():
                             control.value = [item.attrs['value']]
-                            
+
                 elif arg == "team":
                     control = self.br.find_control("custom_sb5",type="select")
                     for item in control.items:
@@ -120,21 +120,21 @@ class RequestQuery:
         Get from the list of available CMSSW releases
         return a dictionary of ScramArchitecture by CMSSW
         """
-        
+
         # Set temporary conection to the server and get the response from cmstags
         url = 'https://cmssdt.cern.ch/SDT/cgi-bin/ReleasesXML'
         br = Browser()
         br.set_handle_robots(False)
         response=br.open(url)
         soup = BeautifulSoup(response.read())
-        
+
         # Dictionary form
         # {'CMSSW_X_X_X':[slc5_amd64_gcc472], ... }
         archByCmssw={}
-        
+
         # Fill the dictionary
-        for arch in soup.find_all('architecture'): 
-            for cmssw in arch.find_all('project'): 
+        for arch in soup.find_all('architecture'):
+            for cmssw in arch.find_all('project'):
                 # CMSSW release
                 cmsswLabel = cmssw.get('label').encode('ascii', 'ignore')
                 if cmsswLabel not in archByCmssw:
@@ -142,22 +142,22 @@ class RequestQuery:
                 # ScramArch related to this CMSSW release
                 archName = arch.get('name').encode('ascii', 'ignore')
                 archByCmssw[cmsswLabel].append(archName)
-        
+
         return archByCmssw
-      
-    def createValueDicts(self):       
+
+    def createValueDicts(self):
         """
         Init dictionaries by value/label:
         - Releases by Value
         - Physics group by value
         - DBS url by value
         - DBS rul by label
-        - Status of savannah request by value 
+        - Status of savannah request by value
         - Status of savannah ticket by value (Open/Closed/Any)
-        """      
+        """
         if self.isLoggedIn:
             self.br.select_form(name="bug_form")
-            
+
             control = self.br.find_control("custom_sb2",type="select")
             self.ReleaseByValueDict = self.getLabelByValueDict(control)
 
@@ -175,13 +175,13 @@ class RequestQuery:
             self.TicketStatusByLabelDict = self.getValueByLabelDict(control)
 
         return
-    
+
     def getDatasetOriginSites(self, dbs_url, data):
         """
         Get the origin sites for each block of the dataset.
         Return a list block origin sites.
         """
-        
+
         local_dbs = dbs_url.split('/')[5]
         if local_dbs == 'phys01':
             response = self.dbsPhys01.listBlocks(detail=True,dataset=data)
@@ -194,12 +194,12 @@ class RequestQuery:
         for block in response:
             pnnList.add(block['origin_site_name'])
         psnList = self.mySiteDB.PNNstoPSNs(pnnList)
-        
+
         return psnList, list(pnnList)
 
     def phEDExNodetocmsName(self, nodeList):
         """
-        Convert PhEDEx node name list to cms names list 
+        Convert PhEDEx node name list to cms names list
         """
         names = []
         for node in nodeList:
@@ -210,12 +210,12 @@ class RequestQuery:
             if name not in names:
                 names.append(name)
         return names
-    
+
     def setGlobalTagFromOrigin(self, dbs_url,input_dataset):
         """
         Get the global tag of the dataset from the source dbs url. If it is not set, then set global tag to 'UNKNOWN'
         """
-        
+
         globalTag = ""
         local_dbs = dbs_url.split('/')[5]
         if local_dbs == 'phys01':
@@ -224,14 +224,14 @@ class RequestQuery:
             response = self.dbsPhys02.listOutputConfigs(dataset=input_dataset)
         elif local_dbs == 'phys03':
             response = self.dbsPhys03.listOutputConfigs(dataset=input_dataset)
-        
+
         globalTag = response[0]['global_tag']
         # GlobalTag cannot be empty
         if globalTag == '':
             globalTag = 'UNKNOWN'
-            
+
         return globalTag
-    
+
     def isDataAtUrl(self, dbs_url,input_dataset):
         """
         Returns True if the dataset is at the dbs url, if not returns False
@@ -248,19 +248,19 @@ class RequestQuery:
             return False
         else:
             return True
-         
+
     def getLabelByValueDict(self, control):
         """
         From control items, create a dictionary by values
-        """   
+        """
         d = {}
         for item in control.items:
             value = item.attrs['value']
             label = item.attrs['label']
             d[value] = label
-                
+
         return d
-    
+
     def getValueByLabelDict(self, control):
         """
         From control items, create a dictionary by labels
@@ -272,37 +272,37 @@ class RequestQuery:
             d[label] = value
 
         return d
-    
+
     def getRequests(self,**kargs):
         """
-        getRequests Actually goes through all the savannah requests and create json files if the 
+        getRequests Actually goes through all the savannah requests and create json files if the
         ticket is not Closed and the status of the item is Done.
         It also reports back the summary of the requests in savannah
         """
         requests = []
-        
+
         # Open Browser and login into Savannah
         self.br=Browser()
         self.isLoggedIn = self.login2Savannah()
-        
+
         if self.isLoggedIn:
             if not kargs:
                 self.selectQueryForm(approval_status='1',task_status='0')
             else:
                 self.selectQueryForm(**kargs)
             self.createValueDicts()
-        
+
             self.br.select_form(name="bug_form")
             response = self.br.submit()
 
             html_ouput = response.read()
-            
+
             scramArchByCMSSW = self.getScramArchByCMSSW()
             self.nodeMappings = self.phedex.getNodeMap()
-            
+
             for link in self.br.links(text_regex="#[0-9]+"):
                 response = self.br.follow_link(link)
-                
+
                 try:
                     ## Get Information
                     self.br.select_form(name="item_form")
@@ -310,14 +310,14 @@ class RequestQuery:
                     ## remove leading &nbsp and # from task
                     task = link.text.replace('#','').decode('utf-8').strip()
                     print("Processing ticket: %s" % task)
-                    
+
                     ## Get input dataset name
                     control = self.br.find_control("custom_tf1",type="text")
                     input_dataset = control.value
                     input_primary_dataset = input_dataset.split('/')[1].replace(' ','')
                     input_processed_dataset = input_dataset.split('/')[2].replace(' ','')
                     data_tier = input_dataset.split('/')[3].replace(' ','')
-                    
+
                     ## Get DBS URL by Drop Down
                     control = self.br.find_control("custom_sb4",type="select")
                     dbs_url = self.DBSByValueDict[control.value[0]]
@@ -329,16 +329,16 @@ class RequestQuery:
                     else: # Transform input value to a valid DBS url
                         #dbs_url = "https://cmsweb.cern.ch/dbs/prod/"+dbs_url+"/DBSReader"
                         dbs_url = dbs_base_url+dbs_url+"/DBSReader"
-                        
+
                     ## Get Release
                     control = self.br.find_control("custom_sb2",type="select")
                     release_id = control.value
-                    
+
                     ## Get current request status
                     control = self.br.find_control("status_id",type="select")
                     request_status_id = control.value
                     RequestStatusByValueDict = self.getLabelByValueDict(control)
-                    
+
                     # close the request if deprecated release was used
                     try:
                         release = self.ReleaseByValueDict[release_id[0]]
@@ -352,7 +352,7 @@ class RequestQuery:
                             self.br.back()
                             print("I tried to Close ticket %s due to CMSSW not valid" % task)
                             continue
-                    
+
                     # close the request if release has not ScramArch match
                     if release not in scramArchByCMSSW:
                         if len(self.ReleaseByValueDict)>0 and RequestStatusByValueDict[request_status_id[0]] != "Closed":
@@ -365,7 +365,7 @@ class RequestQuery:
                             self.br.back()
                             print("I tried to Close ticket %s due to ScramArch mismatch" % task)
                             continue
-                    else: 
+                    else:
                         index=len(scramArchByCMSSW[release])
                         scram_arch = scramArchByCMSSW[release][index-1]
 
@@ -385,7 +385,7 @@ class RequestQuery:
                         self.br.back()
                         print("I tried to Close ticket %s, dataset is not at DBS url" % task)
                         continue
-                        
+
                     # Avoid not approved Tickets
                     #if not RequestStatusByValueDict[request_status_id[0]] == "Done":
                     #    continue
@@ -399,7 +399,7 @@ class RequestQuery:
                     control = self.br.find_control("custom_tf3",type="text")
                     dataset_version = control.value.replace(' ','')
                     if dataset_version == "": dataset_version = '1'
-                                        
+
                     ## Get current status
                     control = self.br.find_control("resolution_id",type="select")
                     status_id = control.value
@@ -415,7 +415,7 @@ class RequestQuery:
                         control.value = assignedTo_id
                         self.br.submit()
 
-                    # Set default Adquisition Era for StoreResults 
+                    # Set default Adquisition Era for StoreResults
                     acquisitionEra = "StoreResults"
 
                     ## Construction of the new dataset name (ProcessingString)
@@ -425,24 +425,24 @@ class RequestQuery:
                     else:
                         stripped_dataset = input_processed_dataset.split("-")[1:]
                         new_dataset = '_'.join(stripped_dataset)
-                    
+
                 except Exception as ex:
                     self.br.back()
                     print("There is a problem with this ticket %s, please have a look to the error:" % task)
                     print(str(ex))
                     print(traceback.format_exc())
                     continue
-                
+
                 self.br.back()
-                
+
                 # Get dataset site info:
                 psnList, pnnList = self.getDatasetOriginSites(dbs_url,input_dataset)
-                
+
                 infoDict = {}
                 # Build store results json
                 # First add all the defaults values
                 infoDict["RequestType"] = "StoreResults"
-                infoDict["UnmergedLFNBase"] = "/store/unmerged" 
+                infoDict["UnmergedLFNBase"] = "/store/unmerged"
                 infoDict["MergedLFNBase"] = "/store/results/" + self.GroupByValueDict[group_id].replace("-","_").lower()
                 infoDict["MinMergeSize"] = 1500000000
                 infoDict["MaxMergeSize"] = 5000000000
@@ -450,10 +450,10 @@ class RequestQuery:
                 infoDict["TimePerEvent"] = 40
                 infoDict["SizePerEvent"] = 512.0
                 infoDict["Memory"] = 2394
-                infoDict["CmsPath"] = "/uscmst1/prod/sw/cms"                                        
+                infoDict["CmsPath"] = "/uscmst1/prod/sw/cms"
                 infoDict["Group"] = "DATAOPS"
                 infoDict["DbsUrl"] = dbs_url
-                
+
                 # Add all the information pulled from Savannah
                 infoDict["AcquisitionEra"] = acquisitionEra
                 infoDict["GlobalTag"] = self.setGlobalTagFromOrigin(dbs_url,input_dataset)
@@ -462,19 +462,19 @@ class RequestQuery:
                 infoDict["ProcessingString"] = new_dataset
                 infoDict["CMSSWVersion"] = release
                 infoDict["ScramArch"] = scram_arch
-                infoDict["ProcessingVersion"] = dataset_version                    
+                infoDict["ProcessingVersion"] = dataset_version
                 infoDict["SiteWhitelist"] = psnList
-                
+
                 # Create report for Migration2Global
                 report = {}
-                 
+
                 #Fill json file, if status is done
                 if self.StatusByValueDict[status_id[0]]=='Done' and RequestStatusByValueDict[request_status_id[0]] != "Closed":
                     self.writeJSONFile(task, infoDict)
                     report["json"] = 'y'
                 else:
                     report["json"] = 'n'
-                    
+
                 report["task"] = int(task)
                 report["InputDataset"] = input_dataset
                 report["ProcessingString"] = new_dataset
@@ -489,12 +489,12 @@ class RequestQuery:
                     report["ticketStatus"] = "Closed"
 
                 requests.append(report)
-                    
+
             # Print out report
             self.printReport(requests)
         # Close connections
         self.br.close()
-        
+
         return requests
 
     def closeRequest(self,task,msg):
@@ -504,7 +504,7 @@ class RequestQuery:
         """
         if self.isLoggedIn:
             #self.createValueDicts()
-            
+
             response = self.br.open('https://savannah.cern.ch/task/?'+str(task))
 
             html = response.read()
@@ -517,15 +517,15 @@ class RequestQuery:
             #Put reason to the comment field
             control = self.br.find_control("comment",type="textarea")
             control.value = msg
-                        
+
             #DBS Drop Down is a mandatory field, if set to None (for old requests), it is not possible to close the request
             self.setDBSDropDown()
-                        
+
             self.br.submit()
 
             #remove JSON ticket
             self.removeJSONFile(task)
-            
+
             self.br.back()
         return
 
@@ -581,11 +581,11 @@ class RequestQuery:
         """
         Print out a report
         """
-        print("%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','pnns')) 
+        print("%20s %10s %5s %35s %10s %50s %50s" %( 'Savannah Ticket','Status','json','Assigned to','local DBS','Sites','pnns'))
         print("%20s %10s %5s %35s %10s %50s %50s" %( '-'*20,'-'*10,'-'*5,'-'*35,'-'*10,'-'*50,'-'*50 ))
-        
+
         for report in requests:
-            
+
             json = report["json"]
             ticket = report["task"]
             status = report["ticketStatus"]
@@ -593,6 +593,6 @@ class RequestQuery:
             localUrl = report["localUrl"].split('/')[5]
             site = ', '.join(report["sites"])
             pnns = ', '.join(report["pnns"])
-            print("%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,pnns))  
+            print("%20s %10s %5s %35s %10s %50s %50s" %(ticket,status,json,assigned,localUrl,site,pnns))
 
-        
+

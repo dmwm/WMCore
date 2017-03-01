@@ -11,7 +11,7 @@ Usage:
 needs to have credentials for accessing CMS web ready in
 $X509_USER_CERT $X509_USER_KEY, or proxy stored in /tmp/x509up_u<ID>
 
-""" 
+"""
 from __future__ import print_function
 
 couch_url = "https://cmsweb.cern.ch/couchdb"
@@ -35,7 +35,7 @@ def main():
     db = Database(couch_db_name, couch_url)
     execfile(sys.argv[1], globals())
     oracle_requests = reqmgr_request # read from the input file
-    
+
     print("Oracle requests: %s" % len(oracle_requests))
 
     print("Retrieving data from CouchDB ...")

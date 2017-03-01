@@ -17,7 +17,7 @@ from WMCore.Lexicon import splitCouchServiceURL
 
 def getLogDBInstanceFromThread():
     """This function only gets to call when LogDB is instantiated before hand
-       All the WMComponentWorkers instatntiate LogDB automatically 
+       All the WMComponentWorkers instatntiate LogDB automatically
     """
     myThread = threading.currentThread()
     if not hasattr(myThread, "logdbClient") or not isinstance(myThread.logdbClient, LogDB):
@@ -128,16 +128,16 @@ class LogDB(object):
             self.backend.cleanup(thr)
         except Exception as exc:
             self.logger.error('LogDBBackend cleanup API failed, backend=%s, error=%s', backend, str(exc))
-    
+
     def heartbeat_report(self):
         report = defaultdict(dict)
         if self.user_pat.match(self.identifier):
-            self.logger.error("User %s: doesn't allow this function", self.identifier) 
+            self.logger.error("User %s: doesn't allow this function", self.identifier)
             return report
-        
+
         for row in self.backend.get(self.default_user, None, agent=True).get('rows', []):
             identifier = row['doc']['identifier']
-            # wmstats thread can run in multiple boxed. 
+            # wmstats thread can run in multiple boxed.
             if self.identifier == identifier or identifier.startswith(self.identifier):
                 #this will handle wmstats DataCacheUpdate thread with multiple machine
                 postfix = identifier.replace(self.identifier, "")
@@ -152,20 +152,20 @@ class LogDB(object):
                     report[thr]['msg'] = msg
                     report[thr]['ts'] = ts
         return report
-    
+
     def _append_down_component_detail(self, report, thr, msg, ts=0, state="error"):
         report['down_components'].append(thr)
-        detail = {'name':thr,'worker_name':thr, 'state': state, 
+        detail = {'name':thr,'worker_name':thr, 'state': state,
                   'last_error': ts,'error_message': msg,
                   'pid': 'N/A' }
         report['down_component_detail'].append(detail)
         return
-        
+
     def wmstats_down_components_report(self, thread_list):
         report = {}
         report['down_components'] = []
         report['down_component_detail'] = []
-        
+
         hbinfo = self.heartbeat_report()
         for thr in thread_list:
             # skip DataCacheUpdate thread. It will have multiple with post fix.
@@ -173,9 +173,9 @@ class LogDB(object):
             # TODO, need a better way to check
             if thr != "DataCacheUpdate" and thr not in hbinfo:
                 self._append_down_component_detail(report, thr, "Thread not running")
-        
+
         for thr, info in hbinfo.iteritems():
             if info['type'] == 'agent-error':
                 self._append_down_component_detail(report, thr, info['msg'], info['ts'])
         return report
-                
+

@@ -2,7 +2,7 @@ import time
 import random
 
 def generate_reqmgr_requests(workflowList):
-    """ 
+    """
     generate the request with following structure
       {
        "_id": "cmsdataops_sryu_test4_120111_114950_128",
@@ -37,8 +37,8 @@ def generate_reqmgr_requests(workflowList):
            "cmsdataops"
        ]
     }
-    """   
-    docs = [] 
+    """
+    docs = []
     for workflow in workflowList:
         doc = {"_id": workflow,
                "inputdataset": "/Fake/input/data",
@@ -53,7 +53,7 @@ def generate_reqmgr_requests(workflowList):
                "request_status": [
                                   {"status": "assignment-approved", "update_time": 10000000}
                                  ],
-                "site_white_list": ["Fake"], 
+                "site_white_list": ["Fake"],
                 "teams": ["cmsdataops"]
                 }
         docs.append(doc)
@@ -62,11 +62,11 @@ def generate_reqmgr_requests(workflowList):
 if __name__ == "__main__":
     import json
     reqmgr_requests = generate_reqmgr_requests(["etorassa_EXO-Summer12_DR53X-00003_T1_FR_CCIN2P3_MSS_batch22_v1__120817_181454_6181"])
-    
+
     docList = []
     docList.extend(reqmgr_requests)
     docs = {"docs": docList};
-    
+
     json.dump(docs, open("sample_docs.json", "w+"))
     #use this
     #curl -d @sample_docs.json -X POST -H "Content-Type:application/json" $DB_URL/_bulk_docs

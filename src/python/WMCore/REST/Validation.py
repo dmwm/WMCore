@@ -1,6 +1,6 @@
 from WMCore.REST.Error import *
 import math, re
-import numbers 
+import numbers
 
 def return_message(main_err, custom_err):
     if custom_err:

@@ -52,7 +52,7 @@ class TestWorkloadFactory(object):
                                  run_blacklist=[], run_whitelist=[])
         procTask.data.constraints.sites.whitelist = []
         procTask.data.constraints.sites.blacklist = []
-        
+
         procTaskCmsswHelper = procTaskCmssw.getTypeHelper()
         procTaskCmsswHelper.setGlobalTag("TestGlobalTag::All")
         procTaskCmsswHelper.cmsswSetup("CMSSW_3_5_8_patch3", softwareEnvironment = "",

@@ -73,7 +73,7 @@ ACTIVE_STATUS = ["new",
                  "rejected"]
 
 # if the state is not defined here (new) allows all the property to get
-# states in the key is the source states (need to define source states instead of destination states for GUI update) 
+# states in the key is the source states (need to define source states instead of destination states for GUI update)
 ALLOWED_ACTIONS_FOR_STATUS = {
     "new": ["RequestPriority"],
     "assignment-approved": ["RequestPriority", "Team", "SiteWhitelist", "SiteBlacklist",
@@ -105,10 +105,10 @@ ALLOWED_ACTIONS_FOR_STATUS = {
 }
 
 # transition controlled by ReqMgr2 automatically
-# aborted to completed instead of aborted-completed 
-# since workqueue mapping doesn't have aborted-completed status. 
+# aborted to completed instead of aborted-completed
+# since workqueue mapping doesn't have aborted-completed status.
 # but it need to be converted to aborted-completed whenever update db
-AUTO_TRANSITION = {"assigned": ["acquired", "running-open", "running-closed", "completed"], 
+AUTO_TRANSITION = {"assigned": ["acquired", "running-open", "running-closed", "completed"],
                    "acquired": ["running-open", "running-closed", "completed"],
                    "running-open": ["running-closed", "completed"],
                    "aborted": ["completed"],

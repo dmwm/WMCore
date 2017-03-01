@@ -2,10 +2,10 @@
 
 """ wrapEnv.py [python version] [database schema] [command line]
         handles munging PATH, PYTHONPATH, DATABASE variables for tests
-        read configuration from standards/buildslave.py .. there is an 
+        read configuration from standards/buildslave.py .. there is an
         example file at buildslave.py.sample"""
 from __future__ import print_function
-    
+
 import sys
 import os
 if (len(sys.argv) < 3):
@@ -25,7 +25,7 @@ if ( not (requestedPython in buildslave.conf) ):
     sys.exit(1)
 
 if 'PYTHONPATH' in buildslave.conf[requestedPython]:
-    if 'PYTHONPATH' in os.environ:    
+    if 'PYTHONPATH' in os.environ:
         os.environ['PYTHONPATH'] = "%s:%s" % (buildslave.conf[requestedPython]['PYTHONPATH'], os.environ['PYTHONPATH'])
     else:
         os.environ['PYTHONPATH'] = buildslave.conf[requestedPython]['PYTHONPATH']
@@ -63,7 +63,7 @@ if 'PYTHONPATH' in os.environ:
 sys.stdout.flush()
 os.execvp( commandLine[0], commandLine[0:] )
 
-        
 
-    
-    
+
+
+

@@ -56,7 +56,7 @@ class TestChangeState(unittest.TestCase):
         self.daoFactory = DAOFactory(package = "WMCore.WMBS",
                                      logger = myThread.logger,
                                      dbinterface = myThread.dbi)
-        
+
         couchurl = os.getenv("COUCHURL")
         self.couchServer = CouchServer(dburl = couchurl)
         self.config = self.testInit.getConfiguration()
@@ -758,7 +758,7 @@ class TestChangeState(unittest.TestCase):
 
         changeStateDB = self.couchServer.connectDatabase(dbname = self.config.JobStateMachine.jobSummaryDBName)
         allDocs = changeStateDB.document("_all_docs")
-        
+
         self.assertEqual(len(allDocs["rows"]), 2,
                          "Error: Wrong number of documents")
 

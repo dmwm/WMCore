@@ -291,7 +291,7 @@ class WMStatsReader(object):
     def getRequestByNames(self, requestNames, jobInfoFlag=False):
         """
         To use this function reqDBURL need to be set when wmstats initialized.
-        This will be deplicated so please don use this. 
+        This will be deplicated so please don use this.
         """
         requestInfo = self.reqDB.getRequestByNames(requestNames, True)
 
@@ -315,7 +315,7 @@ class WMStatsReader(object):
         To use this function reqDBURL need to be set when wmstats initialized.
         This will be deplicated so please don use this.
         If legacyFormat is True convert data to old wmstats format from current reqmgr format.
-        Shouldn't be set to True unless existing code breaks  
+        Shouldn't be set to True unless existing code breaks
         """
 
         requestInfo = self.reqDB.getRequestByStatus(statusList, True, limit, skip)
@@ -359,8 +359,8 @@ class WMStatsReader(object):
     def isWorkflowCompletedWithLogCollectAndCleanUp(self, requestName):
         """
         check whether workflow  is completed including LogCollect and CleanUp tasks
-        TODO: If the parent task all failed and next task are not created at all, 
-            It can't detect complete status. 
+        TODO: If the parent task all failed and next task are not created at all,
+            It can't detect complete status.
             If the one of the task doesn't contain any jobs, it will return False
         """
 
@@ -375,7 +375,7 @@ class WMStatsReader(object):
         results = self.couchDB.loadView(self.couchapp, "jobsByStatusWorkflow", options=options)
         jobDetails = {}
         for row in results['rows']:
-            # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']   
+            # row["key"] = ['workflow', 'task', 'jobstatus', 'exitCode', 'site']
             startKey = row["key"][:4]
             endKey = []
             site = row["key"][4]

@@ -43,7 +43,7 @@ class Tier0PluginTest(unittest.TestCase):
         reqDBURL = "%s/%s" % (os.environ['COUCHURL'], self.requestCouchDB)
         self.requestDBWriter = RequestDBWriter(reqDBURL, couchapp="T0Request")
         self.requestDBWriter._setNoStale()
-        
+
         self.stateMap = {}
         self.orderedStates = []
         self.plugin = None

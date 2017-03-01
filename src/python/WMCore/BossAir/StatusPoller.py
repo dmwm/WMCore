@@ -119,8 +119,8 @@ class StatusPoller(BaseWorkerThread):
                     logging.info("Killing job %i because it has exceeded timeout for status '%s'", job['id'], globalState)
                     job['status'] = 'Timeout'
                     jobsToKill[globalState].append(job)
-        
-        timeOutCodeMap = {"Running": 71304, "Pending": 71305, "Error": 71306}            
+
+        timeOutCodeMap = {"Running": 71304, "Pending": 71305, "Error": 71306}
         # We need to show that the jobs are in state timeout
         # and then kill them.
         jobsToKillList = flattenList(jobsToKill.values())

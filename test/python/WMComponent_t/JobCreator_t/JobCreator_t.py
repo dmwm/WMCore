@@ -20,7 +20,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
-    
+
 from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 from WMQuality.Emulators import EmulatorSetup
 from WMCore.DAOFactory import DAOFactory

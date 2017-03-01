@@ -24,13 +24,13 @@ class FetcherInterface(object):
 
     def workingDirectory(self):
         return self.workingDir
-    
+
     def setCacheDirectory(self, cacheDir):
         self.cacheDir = cacheDir
 
     def cacheDirectory(self):
         return self.cacheDir
-        
+
     def __call__(self, wmTaskHelper):
         """
         _operator(wmTask)_

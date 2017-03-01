@@ -616,7 +616,7 @@ class ResourceControlTest(EmulatedUnitTestCase):
         myResourceControl = ResourceControl(config)
         myResourceControl.insertSite("testSite1", 10, 20, "testSE1", "testCE1", "T1_US_FNAL", "MockPlugin")
         myResourceControl.insertSite("testSite2", 20, 40, "testSE2", "testCE2", "T1_IT_CNAF", "MockPlugin")
-        
+
         myResourceControl.insertThreshold("testSite1", "Processing", 20, 10)
         myResourceControl.insertThreshold("testSite1", "Merge", 200, 100)
         myResourceControl.insertThreshold("testSite2", "Processing", 50, 25)

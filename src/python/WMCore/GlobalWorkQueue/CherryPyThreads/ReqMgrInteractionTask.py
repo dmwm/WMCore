@@ -18,15 +18,15 @@ class ReqMgrInteractionTask(CherryPyPeriodicTask):
 
     def interactWithReqmgr(self, config):
         """
-        
+
         1. pull new work
         2. add the new element from running-open request
         3. report element status to reqmgr (need to be removed and set as reqmgr task)
         4. record this activity
         """
-        
+
         globalQ = globalQueue(**config.queueParams)
         reqMgrInt = WorkQueueReqMgrInterface(**config.reqMgrConfig)
         reqMgrInt(globalQ)
-                  
+
         return

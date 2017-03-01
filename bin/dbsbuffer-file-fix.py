@@ -23,8 +23,8 @@ def fixDBSmissingFileAssoc():
             inner join wmbs_location wl on wl.id = fl.location
             inner join dbsbuffer_location on dbsbuffer_location.pnn = wls.pnn
             inner join dbsbuffer_file on dbsbuffer_file.lfn = fd.lfn
-            where fd.lfn in (select df.lfn from dbsbuffer_file df 
-                               left outer join dbsbuffer_file_location dfl on df.id = dfl.filename 
+            where fd.lfn in (select df.lfn from dbsbuffer_file df
+                               left outer join dbsbuffer_file_location dfl on df.id = dfl.filename
                                where dfl.location is null)
                       """
     unfinishedTasks = formatter.formatDict(formatter.dbi.processData(problemFilesSql))
@@ -41,4 +41,4 @@ def fixDBSmissingFileAssoc():
 
 if __name__ == '__main__':
     fixDBSmissingFileAssoc()
-    
+

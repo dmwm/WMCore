@@ -40,6 +40,6 @@ class RestApiHub(RESTApi):
                    "jobdetail": JobDetailInfo(app, self, config, mount),
                    "requestcache": ActiveRequestJobInfo(app, self, config, mount),
                    "protectedlfns": ProtectedLFNList(app, self, config, mount),
-                   "protectedlfns_partial": ProtectedLFNListOnlyFinalOutput(app, self, config, mount),
+                   "protectedlfns_final": ProtectedLFNListOnlyFinalOutput(app, self, config, mount),
                    "globallocks": GlobalLockList(app, self, config, mount)
                   })

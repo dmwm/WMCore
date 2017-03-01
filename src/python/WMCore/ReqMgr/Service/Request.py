@@ -451,7 +451,8 @@ class Request(RESTEntity):
         # validate/update OutputDatasets after ProcessingString and AcquisionEra is updated
         request_args['OutputDatasets'] = workload.listOutputDatasets()
         validateOutputDatasets(request_args['OutputDatasets'], workload.getDbsUrl())
-        
+
+        # by default, it contains all unmerged LFNs (used by sites to protect the unmerged area
         request_args['OutputModulesLFNBases'] = workload.listAllOutputModulesLFNBases()
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)

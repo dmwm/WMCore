@@ -29,6 +29,10 @@ class ActiveRequestJobInfo(RESTEntity):
         return rows([DataCache.getlatestJobData()])
     
 class ProtectedLFNList(RESTEntity):
+    """
+    API which provides a list of ALL possible unmerged LFN bases (including
+    transient datasets/LFNs).
+    """
     
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
@@ -46,7 +50,10 @@ class ProtectedLFNList(RESTEntity):
         return rows(DataCache.filterData(ACTIVE_STATUS_FILTER, ["OutputModulesLFNBases"]))
 
 class ProtectedLFNListOnlyFinalOutput(RESTEntity):
-    
+    """
+    Same as ProtectedLFNList API, however this one only provides LFNs that are not
+    transient, so only final output LFNs.
+    """
     def __init__(self, app, api, config, mount):
         # main CouchDB database where requests/workloads are stored
         RESTEntity.__init__(self, app, api, config, mount)  

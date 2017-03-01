@@ -219,6 +219,8 @@ class Report:
         jsonReport["steps"] = {}
         jsonReport["skippedFiles"] = self.getAllSkippedFiles()
         jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
+        jsonReport["Campaign"] = self.getCampaign()
+        jsonReport["PrepID"] = self.getPrepID()
 
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
@@ -1207,6 +1209,47 @@ class Report:
         """
         return getattr(self.data, 'task', None)
 
+    def setCampaign(self, campaign):
+        """
+        _setCampaign_
+
+        Set the campaign for the report
+        """
+        self.data.campaign = campaign
+        return
+
+    def getCampaign(self):
+        """
+        _getCampaign_
+
+        Return the campaign
+        """
+        return getattr(self.data, 'campaign', None)
+
+    def setPrepID(self, prepid):
+        """
+        _setPrepID_
+
+        Set the PrepID for the report
+        """
+
+        fileRefs = self.getAllFileRefs()
+
+        # Should now have all the fileRefs
+        for f in fileRefs:
+            f.prep_id = prepid
+
+        self.data.prepid = prepid
+        return
+
+    def getPrepID(self):
+        """
+        _getPrepID_
+
+        Return the PrepID
+        """
+        return getattr(self.data, 'prepid', None)
+
 
     def setJobID(self, jobID):
         """
@@ -1289,22 +1332,6 @@ class Report:
         # Should now have all the fileRefs
         for f in fileRefs:
             f.globalTag = globalTag
-
-        return
-
-    def setPrepID(self, prep_id):
-        """
-        _setGlobalTag_
-
-        Set the global Tag from the spec on the WN
-        ONLY run this after all the files have been attached
-        """
-
-        fileRefs = self.getAllFileRefs()
-
-        # Should now have all the fileRefs
-        for f in fileRefs:
-            f.prep_id = prep_id
 
         return
 

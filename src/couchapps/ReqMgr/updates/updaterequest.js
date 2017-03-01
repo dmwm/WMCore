@@ -63,7 +63,7 @@ function(doc, req) {
 	            key == "InputDatasets" ||
 	            key == "OutputDatasets" ||
 	            key == "CustodialSites" ||
-	            key == "NoneCustodialSites" ||
+	            key == "NonCustodialSites" ||
 	            key == "AutoApproveSubscriptionSites" ||
 	            key == "OutputModulesLFNBases" ||
 	            key == "Teams") {

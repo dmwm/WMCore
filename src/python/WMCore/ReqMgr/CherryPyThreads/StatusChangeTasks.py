@@ -10,7 +10,7 @@ from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 
 
 def moveForwardStatus(reqDBWriter, wfStatusDict, logger):
-
+    
     for status, nextStatus in AUTO_TRANSITION.iteritems():
         count = 0
         requests = reqDBWriter.getRequestByStatus([status])

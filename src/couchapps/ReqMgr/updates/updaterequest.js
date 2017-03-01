@@ -65,6 +65,7 @@ function(doc, req) {
 	            key == "CustodialSites" ||
 	            key == "NoneCustodialSites" ||
 	            key == "AutoApproveSubscriptionSites" ||
+	            key == "OutputModulesLFNBases" ||
 	            key == "Teams") {
 	    		
 	    		doc[key] = JSON.parse(newValues[key]);

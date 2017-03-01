@@ -1101,6 +1101,26 @@ class WMWorkloadHelper(PersistencyHelper):
 
         return outputDatasets
 
+    def listAllOutputModulesLFNBases(self, initialTask=None, onlyUnmerged=True):
+        
+        if initialTask:
+            taskIterator = initialTask.childTaskIterator()
+        else:
+            taskIterator = self.taskIterator()
+            
+        listLFNBases = set()
+        for task in taskIterator:
+            for stepName in task.listAllStepNames():
+                outModule = task.getOutputModulesForStep(stepName)
+                for module in outModule.dictionary_().values():
+                    lfnBase = getattr(module,"lfnBase", "")
+                    if not onlyUnmerged and lfnBase:
+                        listLFNBases.add(lfnBase)
+                    elif 'unmerged' in lfnBase:
+                        listLFNBases.add(lfnBase)
+        return list(listLFNBases)
+                            
+        
     def listPileupDatasets(self, initialTask=None):
         """
         _listPileUpDataset_

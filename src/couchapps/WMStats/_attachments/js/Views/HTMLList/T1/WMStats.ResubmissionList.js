@@ -20,10 +20,10 @@ WMStats.namespace('ResubmissionList');
         }
         //htmlstr += "<li><b>Requestor:</b><input type='text' name='Requestor' size=30  value='" + summary.Requestor + "'/></li>";
         htmlstr += "<li><b>Group:</b> " + summary.Group + "</li>";
-        htmlstr += "<li><b>PrepID:</b> " + summary.PrepID + "</li>";
+        htmlstr += "<li><b>PrepID:</b> " + JSON.stringify(summary.PrepID) + "</li>";
         htmlstr += "<li><b>RequestPriority:</b> " + summary.RequestPriority + "</li>";
         htmlstr += "<li><b>DBSURL:</b> " + summary.DbsUrl + "</li>";
-        htmlstr += "<li><b>Memory:</b> " + summary.Memory + "</li>";
+        htmlstr += "<li><b>Memory:</b> " + JSON.stringify(summary.Memory) + "</li>";
         htmlstr += "<li><b>SizePerEven:</b> " + summary.SizePerEvent + "</li>";
         htmlstr += "<li><b>TimePerEvent:</b> " + summary.TimePerEvent + "</li>";
         htmlstr += "<li><b>RequestType:</b> " + summary.RequestType + "</li>";

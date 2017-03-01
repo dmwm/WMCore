@@ -158,3 +158,33 @@ WMStats.Requests.getPropertyByTask = function(taskPath, property, requestInfo) {
     
     return requestInfo[property];
 };
+
+WMStats.Requests.getDictPropertyByTask = function(property, requestInfo) {
+	
+    if (requestInfo.TaskChain) {
+        var numTasks = requestInfo.TaskChain;
+        var pValue = {};
+        for (var i=1; i <= numTasks; i++) {
+        	var taskName = requestInfo["Task" + i].TaskName;
+            if (requestInfo["Task" + i][property] !== undefined) {
+            	pValue[taskName] = requestInfo["Task" + i][property];
+            } else {
+            	if (requestInfo[property]) {
+	            	var value = requestInfo[property][taskName];
+	            	if (value === undefined) {
+	            		pValue[taskName] = requestInfo[property];
+	            	} else {
+	            		pValue[taskName] = value;
+	            	}
+	            }else{
+	            	return requestInfo[property];
+	            }
+            }
+        }
+        return pValue;
+    }
+    
+    return requestInfo[property];
+};
+
+

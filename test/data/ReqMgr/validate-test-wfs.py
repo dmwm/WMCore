@@ -66,7 +66,8 @@ def getContent(url, params=None):
     except HTTPError as e:
         print("The server couldn't fulfill the request at %s" % url)
         print("Error code: ", e.code)
-        sys.exit(1)
+        output = '{}'
+        #sys.exit(1)
     except URLError as e:
         print('Failed to reach server at %s' % url)
         print('Reason: ', e.reason)
@@ -90,6 +91,9 @@ def getCouchSummary(reqName, baseUrl):
     couchOutput = {}
     couchWorkl = baseUrl + "/couchdb/workloadsummary/" + reqName
     couchOutput["workflow_summary"] = json.loads(getContent(couchWorkl))
+    if not couchOutput["workflow_summary"]:
+        # then just add the output key to get it going downstream
+        couchOutput["workflow_summary"]["output"] = None
     return couchOutput
 
 
@@ -177,9 +181,11 @@ def harvesting(workload, outDsets):
         print("Harvesting enabled. Querying DQMGui at: %s" % url)
         allFiles = getDqmInfo(url)
         for outDsets in wantedOutput:
+            # dirty hack for multirun harvesting, that changes the dataset name up here
+            outDsets = outDsets.rsplit('/', 1)[0]
             for sample in allFiles:
                 for item in sample['items']:
-                    if outDsets == item['dataset']:
+                    if item['dataset'].startswith(outDsets):
                         print(item)
 
 

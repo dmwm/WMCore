@@ -13,7 +13,9 @@
             "SiteWhitelist-OVERRIDE-ME"
         ], 
         "SoftTimeout": 129600, 
-        "Team": "Team-OVERRIDE-ME", 
+        "Team": "Team-OVERRIDE-ME",
+        "TrustSitelists" : true,
+        "TrustPUSitelists" : true,
         "UnmergedLFNBase": "/store/unmerged"
     }, 
     "createRequest": {

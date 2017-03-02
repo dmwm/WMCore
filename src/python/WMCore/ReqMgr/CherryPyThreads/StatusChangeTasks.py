@@ -55,7 +55,7 @@ def moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, logger):
                         "rejected": ["rejected-archived"]}
 
     for status, nextStatusList in statusTransition.items():
-        requests = reqmgrSvc.getRequestByStatus([status])
+        requests = reqmgrSvc.getRequestByStatus([status], detail=False)
         count = 0
         for wf in requests:
             # check whether wq elements exists for given request

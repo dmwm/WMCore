@@ -5,35 +5,25 @@ _ChangeState_t_
 """
 
 import unittest
-import sys
 import os
-import logging
 import threading
-import time
-import urllib
-import types
 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 from WMCore.DAOFactory import DAOFactory
-from WMCore.WMFactory import WMFactory
 from WMCore.Database.CMSCouch import CouchServer
 
 from WMCore.JobStateMachine.ChangeState import ChangeState, Transitions
 
-from WMCore.WMBS.Job import Job
 from WMCore.WMBS.File import File
 from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup import JobGroup
-
-from WMCore.DataStructs.Run import Run
 
 from WMCore.FwkJobReport.Report import Report
 from WMCore.JobSplitting.SplitterFactory import SplitterFactory
 from WMCore.WMBase import getTestBase
-from WMCore.Configuration import Configuration
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
 class TestChangeState(unittest.TestCase):
     def setUp(self):
@@ -60,7 +50,9 @@ class TestChangeState(unittest.TestCase):
         couchurl = os.getenv("COUCHURL")
         self.couchServer = CouchServer(dburl = couchurl)
         self.config = self.testInit.getConfiguration()
-        self.taskName = "/TestWorkflow/Task"
+        self.taskName = "/TestWorkflow/ReReco1"
+        self.specGen = WMSpecGenerator()
+        self.specUrl = self.specGen.createProcessingSpec("TestWorkflow", returnType="file")
         return
 
     def tearDown(self):
@@ -71,6 +63,7 @@ class TestChangeState(unittest.TestCase):
         """
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
+        self.specGen.removeSpecs()
         return
 
     def testCheck(self):
@@ -99,23 +92,23 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["T2_CH_CERN"]))
-        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["T2_CH_CERN"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
+                         locations=set(["T2_CH_CERN"]))
+        testFileB = File(lfn="SomeLFNB", events=1025, size=2049,
+                         locations=set(["T2_CH_CERN"]))
         testFileA.create()
         testFileB.create()
 
@@ -124,9 +117,9 @@ class TestChangeState(unittest.TestCase):
         testFileset.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 2, \
                "Error: Splitting should have created two jobs."
@@ -147,8 +140,8 @@ class TestChangeState(unittest.TestCase):
         testJobADoc = change.jobsdatabase.document(testJobA["couch_record"])
 
         for transition in testJobADoc["states"].itervalues():
-            self.assertTrue(type(transition["timestamp"]) in (int,
-                                                             long))
+            self.assertTrue(isinstance(transition["timestamp"], int) or 
+                            isinstance(transition["timestamp"], long))
 
         self.assertEqual(testJobADoc["jobid"] , testJobA["id"], "Error: ID parameter is incorrect.")
         assert testJobADoc["name"] == testJobA["name"], \
@@ -203,7 +196,7 @@ class TestChangeState(unittest.TestCase):
         assert len(testJobBDoc["inputfiles"]) == 1, \
                "Error: Input files parameter is incorrect."
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/jobs")
+        changeStateDB = self.couchServer.connectDatabase(dbname="changestate_t/jobs")
         allDocs = changeStateDB.document("_all_docs")
 
         self.assertEqual(len(allDocs["rows"]), 3,
@@ -236,29 +229,29 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
         testFileset = Fileset(name = "TestFileset")
         testFileset.create()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["T2_CH_CERN"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
+                         locations=set(["T2_CH_CERN"]))
         testFileA.create()
         testFileset.addFile(testFileA)
         testFileset.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         testJobA = jobGroup.jobs[0]
         testJobA["user"] = "sfoulkes"
@@ -281,30 +274,30 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
         testFileset.commit()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
                "Error: Splitting should have created four jobs."
@@ -329,12 +322,12 @@ class TestChangeState(unittest.TestCase):
         change.persist([testJobA, testJobB], "created", "new")
         change.persist([testJobC, testJobD], "new", "none")
 
-        stateDAO = self.daoFactory(classname = "Jobs.GetState")
+        stateDAO = self.daoFactory(classname="Jobs.GetState")
 
-        jobAState = stateDAO.execute(id = testJobA["id"])
-        jobBState = stateDAO.execute(id = testJobB["id"])
-        jobCState = stateDAO.execute(id = testJobC["id"])
-        jobDState = stateDAO.execute(id = testJobD["id"])
+        jobAState = stateDAO.execute(id=testJobA["id"])
+        jobBState = stateDAO.execute(id=testJobB["id"])
+        jobCState = stateDAO.execute(id=testJobC["id"])
+        jobDState = stateDAO.execute(id=testJobD["id"])
 
         assert jobAState == "created" and jobBState =="created" and \
                jobCState == "new" and jobDState == "new", \
@@ -354,27 +347,27 @@ class TestChangeState(unittest.TestCase):
         locationAction = self.daoFactory(classname = "Locations.New")
         locationAction.execute("site1", pnn = "T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
         testFileset.commit()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
                "Error: Splitting should have created four jobs."
@@ -424,28 +417,28 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
                "Error: Splitting should have created one job."
@@ -504,28 +497,28 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
                "Error: Splitting should have created one job."
@@ -545,7 +538,7 @@ class TestChangeState(unittest.TestCase):
         change.propagate([testJobA], 'executing', 'created')
         change.propagate([testJobA], 'executing', 'created')
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        changeStateDB = self.couchServer.connectDatabase(dbname="changestate_t/fwjrs")
         allDocs = changeStateDB.document("_all_docs")
 
         self.assertEqual(len(allDocs["rows"]), 2,
@@ -553,7 +546,7 @@ class TestChangeState(unittest.TestCase):
 
         for resultRow in allDocs["rows"]:
             if resultRow["id"] != "_design/FWJRDump":
-                fwjrDoc = changeStateDB.document(resultRow["id"])
+                changeStateDB.document(resultRow["id"])
                 break
 
         return
@@ -567,30 +560,30 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
         for i in range(4):
-            newFile = File(lfn = "File%s" % i, locations = set(["T2_CH_CERN"]))
+            newFile = File(lfn="File%s" % i, locations=set(["T2_CH_CERN"]))
             newFile.create()
             testFileset.addFile(newFile)
 
         testFileset.commit()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 4, \
                "Error: Splitting should have created four jobs."
@@ -641,28 +634,28 @@ class TestChangeState(unittest.TestCase):
         self.config.JobStateMachine.maxFWJRInputFiles = 0
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         self.assertEqual(len(jobGroup.jobs), 1,
                          "Error: Splitting should have created one job.")
@@ -682,7 +675,7 @@ class TestChangeState(unittest.TestCase):
 
         change.propagate([testJobA], 'executing', 'created')
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = "changestate_t/fwjrs")
+        changeStateDB = self.couchServer.connectDatabase(dbname="changestate_t/fwjrs")
         allDocs = changeStateDB.document("_all_docs")
 
         self.assertEqual(len(allDocs["rows"]), 2,
@@ -715,28 +708,28 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
                "Error: Splitting should have created one job."
@@ -756,7 +749,7 @@ class TestChangeState(unittest.TestCase):
         testJobA["fwjr"] = myReport
         change.propagate([testJobA], 'jobfailed', 'executing')
 
-        changeStateDB = self.couchServer.connectDatabase(dbname = self.config.JobStateMachine.jobSummaryDBName)
+        changeStateDB = self.couchServer.connectDatabase(dbname=self.config.JobStateMachine.jobSummaryDBName)
         allDocs = changeStateDB.document("_all_docs")
 
         self.assertEqual(len(allDocs["rows"]), 2,
@@ -773,7 +766,7 @@ class TestChangeState(unittest.TestCase):
 
         del testJobA["fwjr"]
 
-        change.propagate([testJobA], 'jobcooloff', 'jobfailed', updatesummary = True)
+        change.propagate([testJobA], 'jobcooloff', 'jobfailed', updatesummary=True)
         return
 
 
@@ -787,28 +780,28 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNC", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNC", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 1, \
                "Error: Splitting should have created one job."
@@ -838,25 +831,25 @@ class TestChangeState(unittest.TestCase):
         myThread = threading.currentThread()
         myThread.dbi.processData("ALTER TABLE wmbs_job AUTO_INCREMENT = 1")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf002", task = "/TestWorkflow/Test2")
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf002", task="/TestWorkflow/Test2")
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFilesetB")
+        testFileset = Fileset(name="TestFilesetB")
         testFileset.create()
 
-        testFile = File(lfn = "SomeLFNB", locations = set(["T2_CH_CERN"]))
+        testFile = File(lfn="SomeLFNB", locations=set(["T2_CH_CERN"]))
         testFile.create()
         testFileset.addFile(testFile)
         testFileset.commit()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow)
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow)
         testSubscription.create()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         testJobB = jobGroup.jobs[0]
         testJobB["user"] = "dballest"
@@ -881,24 +874,24 @@ class TestChangeState(unittest.TestCase):
         """
         change = ChangeState(self.config, "changestate_t")
 
-        locationAction = self.daoFactory(classname = "Locations.New")
-        locationAction.execute("site1", pnn = "T2_CH_CERN")
-        locationAction.execute("site2", pnn = "T1_US_FNAL_Disk")
+        locationAction = self.daoFactory(classname="Locations.New")
+        locationAction.execute("site1", pnn="T2_CH_CERN")
+        locationAction.execute("site2", pnn="T1_US_FNAL_Disk")
 
-        testWorkflow = Workflow(spec = "spec.xml", owner = "Steve",
-                                name = "wf001", task = self.taskName)
+        testWorkflow = Workflow(spec=self.specUrl, owner="Steve",
+                                name="wf001", task=self.taskName)
         testWorkflow.create()
-        testFileset = Fileset(name = "TestFileset")
+        testFileset = Fileset(name="TestFileset")
         testFileset.create()
-        testSubscription = Subscription(fileset = testFileset,
-                                        workflow = testWorkflow,
-                                        split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        split_algo="FileBased")
         testSubscription.create()
 
-        testFileA = File(lfn = "SomeLFNA", events = 1024, size = 2048,
-                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
-        testFileB = File(lfn = "SomeLFNB", events = 1025, size = 2049,
-                         locations = set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileA = File(lfn="SomeLFNA", events=1024, size=2048,
+                         locations=set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
+        testFileB = File(lfn="SomeLFNB", events=1025, size=2049,
+                         locations=set(["T2_CH_CERN", "T1_US_FNAL_Disk"]))
         testFileA.create()
         testFileB.create()
 
@@ -907,9 +900,9 @@ class TestChangeState(unittest.TestCase):
         testFileset.commit()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = testSubscription)
-        jobGroup = jobFactory(files_per_job = 1)[0]
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=testSubscription)
+        jobGroup = jobFactory(files_per_job=1)[0]
 
         assert len(jobGroup.jobs) == 2, \
                "Error: Splitting should have created two jobs."
@@ -951,7 +944,7 @@ class TestChangeState(unittest.TestCase):
         transition = testJobADoc["states"][maxKey]
         self.assertEqual(transition["location"], "site2")
 
-        listJobsDAO = self.daoFactory(classname = "Jobs.GetLocation")
+        listJobsDAO = self.daoFactory(classname="Jobs.GetLocation")
         jobid = [{'jobid' : 1}, {'jobid' : 2}]
         jobsLocation = listJobsDAO.execute(jobid)
         for job in jobsLocation:

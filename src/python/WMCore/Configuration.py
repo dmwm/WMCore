@@ -8,19 +8,21 @@ Module dealing with Configuration file in python format
 
 """
 
-
-
-
-import os
 import imp
+import os
+import sys
 import traceback
+
+# Python3 compatibility
+if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
+    basestring = str
 
 _SimpleTypes = [
     bool,
     float,
+    basestring,  # For py2/py3 compatibility, don't let futurize remove PY3 Remove when python 3 transition complete
     str,
-    unicode,
-    long,    # Not needed in python3
+    long,  # PY3: Not needed in python3, will be converted to duplicate int
     type(None),
     int,
     ]
@@ -100,9 +102,9 @@ class ConfigSection(object):
 
     def _complexTypeCheck(self, name, value):
 
-        if type(value) in _SimpleTypes:
+        if isinstance(value, tuple(_SimpleTypes)):
             return
-        elif type(value) in _ComplexTypes:
+        elif isinstance(value, tuple(_ComplexTypes)):
             vallist = value
             if isinstance(value, dict):
                 vallist = value.values()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#pylint: disable=
+# encoding: utf-8
+
 """
 File       : XMLUtils.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -8,9 +8,9 @@ Description: Set of utilities for RequestManager code
 """
 
 from __future__ import (division, print_function)
-# system modules
-import re
+
 import cStringIO as StringIO
+import re
 import xml.etree.cElementTree as ET
 
 int_number_pattern = re.compile(r'(^[0-9-]$|^[0-9-][0-9]*$)')

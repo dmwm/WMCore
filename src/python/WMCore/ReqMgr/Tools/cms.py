@@ -1,16 +1,15 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#pylint: disable=
+# encoding: utf-8
+
 """
 File       : cms.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
 Description: CMS modules
 """
+
 from __future__ import (division, print_function)
 
-# system modules
 from WMCore.Cache.GenericDataCache import MemoryCacheStruct
-# CMS modules
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, REQUEST_STATE_TRANSITION
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 from WMCore.Services.TagCollector.TagCollector import TagCollector

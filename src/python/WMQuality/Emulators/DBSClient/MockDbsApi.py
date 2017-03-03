@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
 """
 Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 """

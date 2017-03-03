@@ -1,4 +1,5 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
 """
 Version of Services/PhEDEx intended to be used with mock or unittest.mock
 Parts of this code are cribbed directly from

@@ -290,20 +290,10 @@ class CleanCouchPoller(BaseWorkerThread):
             if not self.isUploadedToWMArchive(workflowName):
                 continue
             if self.cleanAllLocalCouchDB(workflowName):
-                if self.useReqMgrForCompletionCheck:
-                    try:
-                        self.reqmgr2Svc.updateRequestStatus(workflowName, archiveState)
-                    except Exception as ex:
-                        msg = "%s : fail to update status with HTTP error: %s" % (workflowName, str(ex))
-                        msg += traceback.format_exc()
-                        logging.error(msg)
-                        raise ex
-
-                    updated += 1
-                    logging.debug("status updated to %s %s", archiveState, workflowName)
-                else:
-                    # tier0 update case
+                if not self.useReqMgrForCompletionCheck:
+                    #  only update tier0 case, for Prodcuction/Processing reqmgr will update status 
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
+                updated += 0
         return updated
 
     def archiveSummaryAndPublishToDashBoard(self, finishedwfsWithLogCollectAndCleanUp):

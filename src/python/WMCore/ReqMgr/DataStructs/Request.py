@@ -183,6 +183,13 @@ class RequestInfo(object):
         return True, otherwise False
         """
         for key, value in filterDict.iteritems():
+            # special case checks where key is not exist in Request's Doc.
+            # It is used whether AgentJobInfo is deleted or not for announced status
+            if value == "NO_KEY" and key not in self.data:
+                continue
+            if not isinstance(value, list):
+                value = [value]
+                
             if key in self.data:
                 if self.data[key] not in value:
                     return False

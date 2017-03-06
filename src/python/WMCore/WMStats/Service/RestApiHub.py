@@ -14,7 +14,7 @@ from WMCore.WMStats.Service.MetaDataInfo import ServerInfo
 from WMCore.WMStats.Service.RequestInfo import (RequestInfo, FinishedStatusInfo,
                                                 TeamInfo, JobDetailInfo)
 from WMCore.WMStats.Service.ActiveRequestJobInfo import (ActiveRequestJobInfo, GlobalLockList,
-                                                         ProtectedLFNList, ProtectedLFNListOnlyFinalOutput)
+                        ProtectedLFNList, ProtectedLFNListOnlyFinalOutput, FilteredActiveRequestJobInfo)
 
 
 class RestApiHub(RESTApi):
@@ -41,6 +41,7 @@ class RestApiHub(RESTApi):
                    "isfinished": FinishedStatusInfo(app, self, config, mount),
                    "jobdetail": JobDetailInfo(app, self, config, mount),
                    "requestcache": ActiveRequestJobInfo(app, self, config, mount),
+                   "filtered_requests": FilteredActiveRequestJobInfo(app, self, config, mount),
                    "protectedlfns": ProtectedLFNList(app, self, config, mount),
                    "protectedlfns_final": ProtectedLFNListOnlyFinalOutput(app, self, config, mount),
                    "globallocks": GlobalLockList(app, self, config, mount)

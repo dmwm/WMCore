@@ -3,14 +3,16 @@ Created on May 19, 2015
 """
 from __future__ import (division, print_function)
 
+import time
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.ReqMgr.DataStructs.RequestStatus import AUTO_TRANSITION
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
+from WMCore.Services.WMStatsServer.WMStatsServer import WMStatsServer
 
 
 def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
-    
+
     for status, nextStatus in AUTO_TRANSITION.iteritems():
         count = 0
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
@@ -45,14 +47,12 @@ def moveForwardStatus(reqmgrSvc, wfStatusDict, logger):
     return
 
 
-def moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, logger):
+def moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, logger):
     """
     Handle the case when request is aborted/rejected before elements are created in GQ
     """
 
-    statusTransition = {"aborted": ["aborted-completed", "aborted-archived"],
-                        "aborted-completed": ["aborted-archived"],
-                        "rejected": ["rejected-archived"]}
+    statusTransition = {"aborted": ["aborted-completed"]}
 
     for status, nextStatusList in statusTransition.items():
         requests = reqmgrSvc.getRequestByStatus([status], detail=False)
@@ -64,6 +64,38 @@ def moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, logger):
                 for nextStatus in nextStatusList:
                     reqmgrSvc.updateRequestStatus(wf, nextStatus)
                     count += 1
+        logger.info("Total aborted-completed: %d", count)
+
+    return
+
+
+def moveToArchived(wmstatsSvc, reqmgrSvc, archiveDelayHours, logger):
+    """
+    Handle normal-archived transition.
+    By checking AgentJobInfo status we can check whether all the agent deleted the data.
+    TODO: still need to handle the case whether agent couch is not updated for a while and agent data gets deleted
+    """
+
+    currentTime = int(time.time())
+    threshold = archiveDelayHours * 3600
+    count = 0
+
+    statusTransition = {"announced": "normal-archived",
+                        "aborted-completed": "aborted-archived",
+                        "rejected": "rejected-archived"}
+
+    outputMask = ["AgentJobInfo", "RequestTransition"]
+
+    for status, nextStatus in statusTransition.items():
+        inputConditon = {"RequestStatus": [status], "AgentJobInfo": "NO_KEY"}
+        for reqInfo in wmstatsSvc.getFilteredActiveData(inputConditon, outputMask):
+            if reqInfo["RequestName"] and (not reqInfo["RequestTransition"] or
+                (currentTime - reqInfo["RequestTransition"][-1]["UpdateTime"]) > threshold):
+                try:
+                    reqmgrSvc.updateRequestStatus(reqInfo["RequestName"], nextStatus)
+                    count += 1
+                except Exception as ex:
+                    logger.error("Fail to update %s: %s", reqInfo["RequestName"], str(ex))
         # convert to start status for the logging purpose
         initStatus = "aborted" if status == "aborted-completed" else status
         logger.info("Total %s-archived: %d", initStatus, count)
@@ -88,12 +120,16 @@ class StatusChangeTasks(CherryPyPeriodicTask):
 
         reqmgrSvc = ReqMgr(config.reqmgr2_url)
         gqService = WorkQueue(config.workqueue_url)
+        wmstatsSvc = WMStatsServer(config.wmstats_url)
 
         self.logger.info("Getting GQ data for status check")
         wfStatusDict = gqService.getWorkflowStatusFromWQE()
 
         self.logger.info("Advancing status")
         moveForwardStatus(reqmgrSvc, wfStatusDict, self.logger)
-        moveToArchivedForNoJobs(reqmgrSvc, wfStatusDict, self.logger)
+        moveToCompletedForNoWQJobs(reqmgrSvc, wfStatusDict, self.logger)
+        moveToArchived(wmstatsSvc, reqmgrSvc, config.archiveDelayHours, self.logger)
+
+        self.logger.info("Done advancing status")
 
         return

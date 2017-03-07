@@ -1,3 +1,137 @@
+1.1.0 to 1.1.1:
+  - Merge pull request #7662 from amaltaro/inject-stepchainAssig
+  - 1.1.1.pre9
+  - Merge pull request #7685 from ticoann/fix_status_change
+  - Fix archive status update
+  - Merge pull request #7658 from ericvaandering/remove_trailing
+  - Merge pull request #7191 from ericvaandering/work_debug
+  - Resolve a few conflicts
+  - Knob for multirun harvesting dataset naming; bypass lack of workload summary
+  - Added Resubmission template; removed double OS from scramArchs
+  - Inject/Assign script can now handle step level assignment of StepChains
+  - 1.1.1.pre8
+  - Merge pull request #7678 from amaltaro/typo-updaterequest
+  - Merge pull request #7674 from amaltaro/stepchain-multiprepid
+  - basic pylint fixes
+  - Fix a typo in ReqMgr updaterequest function; rename protectedlfns_partial api
+  - Merge pull request #7677 from ticoann/output_module_api
+  - Merge pull request #7676 from ticoann/task_chain_fix
+  - add function to get output unmerged lfnbaset
+  - fix TaskChian ACDC inheritence
+  - Allow different PrepID in StepChains
+  - 1.1.1.pre7
+  - Merge pull request #7650 from amaltaro/stepchain-steps
+  - added output dataset name test
+  - Support Step level dataset args in StepChain
+  - Merge pull request #7667 from ticoann/improve_6755
+  - follow up #7655
+  - 1.1.1.pre6
+  - Merge pull request #7666 from ticoann/fix_dependency
+  - fix the dependency
+  - Merge pull request #7665 from amaltaro/deploy-uniqDisk
+  - Get unique size for /data1 partition
+  - 1.1.1.pre5
+  - Merge pull request #7655 from ticoann/add_protected_list
+  - provide protected lfn api
+  - Merge pull request #7659 from amaltaro/deploy-data1Improve
+  - Check size of /data1 during WMA deployment
+  - Merge pull request #7657 from ticoann/fix_dn_register
+  - Strip trailing whitespace
+  - fix dn record for state transiton
+  - Merge pull request #7652 from ericvaandering/cleanup_dao
+  - Cleanup WMBS creation
+  - 1.1.1.pre4
+  - Merge pull request #7646 from ticoann/fix_pylint
+  - fix indentation
+  - Merge pull request #7643 from vkuznet/fix-setup
+  - Split by lumis while paying attention to the amount of work. This does the final splitting on a lumi by lumi basis, uses LumiList where possible, and naturally doesn't split lumis amoung jobs (no correction function needed). Also comes with tests. Refactored several times to make the main loop as compact and clear as possible.
+  - Fix setup_build issue with empty PYTHONPATH and add wmc-wmarchive build key
+  - 1.1.1.pre3
+  - Merge pull request #7642 from ticoann/lumi_split_limit
+  - Merge pull request #7634 from amaltaro/nstreams-patch1
+  - add parameters to limit lumis in WQE
+  - Merge pull request #7622 from amaltaro/templates-Feb2017
+  - Set EventStreams in some StepChain/TaskChain templates
+  - Merge pull request #7639 from ticoann/remove_wmbs_service
+  - Merge pull request #7641 from ticoann/fix_getting_team
+  - remove "" team from the search
+  - Merge pull request #7637 from amaltaro/utilities-name
+  - Unit tests and pylint fixes
+  - Support for number of event streams
+  - Merge pull request #7603 from ericvaandering/diff_eventstream
+  - remove WorkflowManager component
+  - Rename Utilities test class
+  - 1.1.1.pre2
+  - Merge pull request #7636 from amaltaro/utilities
+  - Merge pull request #7621 from ticoann/fix_memory_inheritance_acdc
+  - Move utilitarian function from WMWorkloadTools to Utils
+  - Pylint fixes
+  - Add nStreams to CMSSW
+  - fix ACDC Memory value inheritance
+  - Merge pull request #7623 from amaltaro/spec-scramArchs
+  - Merge pull request #7632 from ericvaandering/new_lumi_acdc
+  - Pylint and PEP-8 fixes
+  - Created some basic unit tests for WMWorkloadTools
+  - Accept either string or list of strings for ScramArch at spec level
+  - Rebase of LumiList
+  - Merge pull request #7619 from amaltaro/stepchain-merge
+  - Merge pull request #7590 from amaltaro/acdc-owner
+  - Merge pull request #7593 from amaltaro/submitter-nonetype
+  - Merge pull request #7628 from amaltaro/analytics-view
+  - pylint fixes and unit test for merge case
+  - Use correct CMSSW/Scram for Merge tasks in StepChain
+  - Fix typo in analyticsData view
+  - pylint stuff
+  - Never return None from MemoryCacheStruct
+  - Merge pull request #7625 from ericvaandering/autoname_jobs
+  - Pylint fixes
+  - Merge pull request #7620 from amaltaro/simplecondor-CMSSite
+  - Merge pull request #7618 from ticoann/allow_0_event_file_for_wq
+  - Make jobs auto-naming
+  - Last template writing to relval space; update DMWM StepChains
+  - fix unittest
+  - Use machine attr for CMS site location in SimpleCondor
+  - allow 0 event file for job estimation
+  - Merge pull request #7617 from ticoann/add_more_log
+  - Merge pull request #7555 from amaltaro/deployment-simplecondor
+  - Apply couchdb file descriptor patch; use SimpleCondorPlugin
+  - change debug level to info for the status report
+  - Merge pull request #7604 from emaszs/cmssw_ver_fix
+  - Merge pull request #7606 from ticoann/change_uuid_module_name
+  - Change the UUID module name
+  - Merge pull request #7605 from amaltaro/drain_mode-key
+  - Pylint fixes
+  - Fix for agents by team call
+  - Use env var when getting CMSSW version in CRAB
+  - 1.1.1.pre1
+  - Merge pull request #7596 from ticoann/remove_wmbsservice
+  - Merge pull request #7597 from ticoann/log_statusChangeTasks
+  - Merge pull request #7601 from ticoann/tag_archive_fix
+  - add kwargs for flexibiity in TagCollector
+  - add logger for StatusChangeTasks
+  - Merge pull request #7579 from ericvaandering/scram_by_os
+  - Merge pull request #7582 from ticoann/add_heartbeat_checking
+  - Include Alan's comments
+  - Pylint
+  - Make CMSSW.py accept a list of arches or a single arch
+  - Add a context manager for temporary changes to the environment
+  - Rename IterTools to IteratorTools to avoid problems with mac
+  - remove wmbsservice component
+  - Merge pull request #7586 from ericvaandering/condor_multi_os
+  - Merge pull request #7567 from hufnagel/tempdirectory-exception
+  - Pylint fixes
+  - Update unit tests
+  - Remove user/group from ACDC collections
+  - add unittest
+  - add heartbeat reporting
+  - Merge pull request #7592 from hufnagel/xrdcp-dcache-workaround
+  - Merge pull request #7587 from ticoann/impove_splitting_check
+  - work around the fact that dCache only knows ADLER32, not adler32
+  - Pylint fixes
+  - Make condor submitters able to handle a list of releases or a single release
+  - don't call getElementsForParent if not necessary
+  - prevent exceptions printout in TempDirectory
+
 1.1.0 to 1.1.1.pre9:
   - Merge pull request #7685 from ticoann/fix_status_change
   - Fix archive status update

@@ -8,35 +8,37 @@ Module dealing with Configuration file in python format
 
 """
 
-
-
-
-import os
 import imp
+import os
+import sys
 import traceback
+
+# Python3 compatibility
+if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
+    basestring = str
 
 _SimpleTypes = [
     bool,
     float,
+    basestring,  # For py2/py3 compatibility, don't let futurize remove PY3 Remove when python 3 transition complete
     str,
-    unicode,
-    long,    # Not needed in python3
+    long,  # PY3: Not needed in python3, will be converted to duplicate int
     type(None),
     int,
-    ]
+]
 
 _ComplexTypes = [
     dict,
     list,
     tuple,
-    ]
+]
 
 _SupportedTypes = []
 _SupportedTypes.extend(_SimpleTypes)
 _SupportedTypes.extend(_ComplexTypes)
 
 
-def format(value):
+def formatAsString(value):
     """
     _format_
 
@@ -46,6 +48,7 @@ def format(value):
     if isinstance(value, str):
         value = "\'%s\'" % value
     return str(value)
+
 
 def formatNative(value):
     """
@@ -63,17 +66,18 @@ def formatNative(value):
     if isinstance(value, dict):
         return dict
     else:
-        return format(value)
+        return formatAsString(value)
 
 
 class ConfigSection(object):
-    #pylint: disable=protected-access
+    # pylint: disable=protected-access
     """
     _ConfigSection_
 
     Chunk of configuration information
     """
-    def __init__(self, name = None):
+
+    def __init__(self, name=None):
         object.__init__(self)
         self._internal_documentation = ""
         self._internal_name = name
@@ -81,13 +85,13 @@ class ConfigSection(object):
         self._internal_docstrings = {}
         self._internal_children = set()
         self._internal_parent_ref = None
-        #The flag skipChecks controls weather each parameter added to the configuration
-        #should be a primitive or complex type that can be "jsonized"
-        #By default it is false, but ConfigurationEx instances set it to True
+        # The flag skipChecks controls weather each parameter added to the configuration
+        # should be a primitive or complex type that can be "jsonized"
+        # By default it is false, but ConfigurationEx instances set it to True
         self._internal_skipChecks = False
 
     def __eq__(self, other):
-        if (isinstance(other, type(self))):
+        if isinstance(other, type(self)):
             return (
                 (self._internal_documentation == other._internal_documentation) and
                 (self._internal_name == other._internal_name) and
@@ -96,13 +100,13 @@ class ConfigSection(object):
                 (self._internal_children == other._internal_children) and
                 (self._internal_parent_ref == other._internal_parent_ref))
         else:
-            return (id(self) == id(other))
+            return id(self) == id(other)
 
     def _complexTypeCheck(self, name, value):
 
-        if type(value) in _SimpleTypes:
+        if isinstance(value, tuple(_SimpleTypes)):
             return
-        elif type(value) in _ComplexTypes:
+        elif isinstance(value, tuple(_ComplexTypes)):
             vallist = value
             if isinstance(value, dict):
                 vallist = value.values()
@@ -115,7 +119,6 @@ class ConfigSection(object):
             msg += "Added to WMAgent Configuration."
             msg += "Use ConfigurationEx to skip checks on config params"
             raise RuntimeError(msg)
-
 
     def __setattr__(self, name, value):
         if name.startswith("_internal_"):
@@ -134,8 +137,8 @@ class ConfigSection(object):
         if isinstance(value, unicode):
             value = str(value)
 
-        #for backward compatibility use getattr and sure to work if the
-        #_internal_skipChecks flag is not set
+        # for backward compatibility use getattr and sure to work if the
+        # _internal_skipChecks flag is not set
         if not getattr(self, '_internal_skipChecks', False):
             self._complexTypeCheck(name, value)
 
@@ -160,7 +163,6 @@ class ConfigSection(object):
         for attr in self._internal_settings:
             yield getattr(self, attr)
 
-
     def __add__(self, otherSection):
         """
         _addition operator_
@@ -172,13 +174,13 @@ class ConfigSection(object):
             settingInstance = getattr(otherSection, setting)
             if setting in self._internal_settings:
                 currentSetting = getattr(self, setting)
-                if not isinstance(currentSetting, type(settingInstance)) and currentSetting != None and settingInstance != None:
+                if not isinstance(currentSetting, type(settingInstance)) \
+                        and currentSetting is not None and settingInstance is not None:
                     msg = "Trying to overwrite a setting with mismatched types"
                     msg += "%s.%s is not the same type as %s.%s" % (
                         self._internal_name, setting,
                         otherSection._internal_name, setting
-                        )
-
+                    )
 
                     raise TypeError(msg)
             self.__setattr__(setting, settingInstance)
@@ -198,8 +200,6 @@ class ConfigSection(object):
         self.__setattr__(sectionName, newSection)
         return object.__getattribute__(self, sectionName)
 
-
-
     def pythonise_(self, **options):
         """
         convert self into list of python format strings
@@ -211,10 +211,10 @@ class ConfigSection(object):
 
         """
         document = options.get('document', False)
-        comment  = options.get('comment',  False)
-        prefix   = options.get('prefix',   None)
+        comment = options.get('comment', False)
+        prefix = options.get('prefix', None)
 
-        if prefix != None:
+        if prefix is not None:
             myName = "%s.%s" % (prefix, self._internal_name)
         else:
             myName = self._internal_name
@@ -228,33 +228,32 @@ class ConfigSection(object):
         if comment:
             result.append("# %s: %s" % (
                 myName, self._internal_documentation.replace(
-                "\n", "\n# "),
-                ))
+                    "\n", "\n# "),
+            ))
         for attr in self._internal_settings:
             if attr in self._internal_children:
                 result.append("%s.section_(\'%s\')" % (myName, attr))
                 result.extend(getattr(self, attr).pythonise_(
-                    document = document, comment = comment, prefix = myName))
+                    document=document, comment=comment, prefix=myName))
                 continue
             if attr in self._internal_docstrings:
                 if comment:
                     result.append("# %s.%s: %s" % (
                         myName, attr,
                         self._internal_docstrings[attr].replace("\n", "\n# ")
-                        ))
-            result.append( "%s.%s = %s" % (
+                    ))
+            result.append("%s.%s = %s" % (
                 myName,
-                attr, format(getattr(self, attr))
-                ))
+                attr, formatAsString(getattr(self, attr))
+            ))
 
             if attr in self._internal_docstrings:
                 if document:
                     result.append(
                         "%s.document_(\"\"\"%s\"\"\", \'%s\')" % (
-                        myName,
-                        self._internal_docstrings[attr], attr))
+                            myName,
+                            self._internal_docstrings[attr], attr))
         return result
-
 
     def dictionary_(self):
         """
@@ -275,7 +274,6 @@ class ConfigSection(object):
             result.__setitem__(x, getattr(self, x))
         return result
 
-
     def dictionary_whole_tree_(self):
         """
         Create a dictionary representation of this object.
@@ -294,11 +292,10 @@ class ConfigSection(object):
                 v = getattr(self, x)
                 result[x] = v.dictionary_whole_tree_()
                 continue
-            result.__setitem__(x, getattr(self, x)) # the same as result[x] = value
+            result.__setitem__(x, getattr(self, x))  # the same as result[x] = value
         return result
 
-
-    def document_(self, docstring, parameter = None):
+    def document_(self, docstring, parameter=None):
         """
         _document_
 
@@ -307,12 +304,11 @@ class ConfigSection(object):
         This method will overwrite any existing documentation
 
         """
-        if parameter == None:
+        if parameter is None:
             self._internal_documentation = str(docstring)
             return
         self._internal_docstrings[parameter] = str(docstring)
         return
-
 
     def __str__(self):
         """
@@ -329,7 +325,7 @@ class ConfigSection(object):
         include docs as calls to document_
         """
         result = ""
-        for pystring in self.pythonise_(document = True):
+        for pystring in self.pythonise_(document=True):
             result += "%s\n" % pystring
         return result
 
@@ -339,11 +335,11 @@ class ConfigSection(object):
         include docs as comments
         """
         result = ""
-        for pystring in self.pythonise_(comment = True):
+        for pystring in self.pythonise_(comment=True):
             result += "%s\n" % pystring
         return result
 
-    #Added by mnorman to make our strategy to use configSections viable
+    # Added by mnorman to make our strategy to use configSections viable
     def listSections_(self):
         """
         _listSections_
@@ -357,13 +353,14 @@ class ConfigSection(object):
 
 
 class Configuration(object):
-    #pylint: disable=protected-access
+    # pylint: disable=protected-access
     """
     _Configuration_
 
     Top level configuration object
 
     """
+
     def __init__(self):
         object.__init__(self)
         self._internal_components = []
@@ -502,7 +499,7 @@ class Configuration(object):
 
         """
         document = options.get('document', False)
-        comment  = options.get('comment',  False)
+        comment = options.get('comment', False)
 
         result = "from WMCore.Configuration import Configuration\n"
         result += "config = Configuration()\n"
@@ -514,10 +511,9 @@ class Configuration(object):
             else:
                 result += "config.section_(\'%s\')\n" % sectionName
 
-
             sectionRef = getattr(self, sectionName)
             for sectionAttr in sectionRef.pythonise_(
-                document = document, comment = comment):
+                    document=document, comment=comment):
                 if sectionAttr.startswith("#"):
                     result += "%s\n" % sectionAttr
                 else:
@@ -536,13 +532,13 @@ class Configuration(object):
         """
         python format with document_ calls
         """
-        return self.pythonise_(document = True)
+        return self.pythonise_(document=True)
 
     def commentedString_(self):
         """
         python format with docs as comments
         """
-        return self.pythonise_(comment = True)
+        return self.pythonise_(comment=True)
 
 
 class ConfigurationEx(Configuration):
@@ -555,8 +551,9 @@ class ConfigurationEx(Configuration):
     can be used as configuration parameters now. Drawback is that the configuration
     cannot be saved and passed around using the code.
     """
+
     def __init__(self):
-        #super(ConfigurationEx, self).__init__()
+        # super(ConfigurationEx, self).__init__()
         Configuration.__init__(self)
 
     def section_(self, sectionName):
@@ -569,7 +566,7 @@ class ConfigurationEx(Configuration):
 
         """
         section = Configuration.section_(self, sectionName)
-        section._internal_skipChecks = True #pylint: disable=protected-access
+        section._internal_skipChecks = True  # pylint: disable=protected-access
         return section
 
 
@@ -583,7 +580,7 @@ def loadConfigurationFile(filename):
 
     cfgBaseName = os.path.basename(filename).replace(".py", "")
     cfgDirName = os.path.dirname(filename)
-    if  not cfgDirName:
+    if not cfgDirName:
         modPath = imp.find_module(cfgBaseName)
     else:
         modPath = imp.find_module(cfgBaseName, [cfgDirName])
@@ -602,9 +599,9 @@ def loadConfigurationFile(filename):
         if isinstance(attr, Configuration):
             return attr
 
-    #  //
+    # //
     # //  couldnt find a Configuration instance
-    #//
+    # //
     msg = "Unable to find a Configuration object instance in file:\n"
     msg += "%s\n" % filename
     raise RuntimeError(msg)
@@ -626,7 +623,8 @@ def saveConfigurationFile(configInstance, filename, **options):
         raise NotImplementedError("ConfigurationEx instances cannot be saved. Use Configuration instead.")
     comment = options.get("comment", False)
     document = options.get("document", False)
-    if document: comment = False
+    if document:
+        comment = False
 
     handle = open(filename, 'w')
     if document:

@@ -229,7 +229,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert isinstance(encoded_data, str), \
+        assert isinstance(encoded_data, (str, basestring)), \
             "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-#pylint: disable=E1103, E1101, C0103
-#E1103: Use DB objects attached to thread
-#E1101: Create config sections
-#C0103: Internal methods start with _
+# pylint: disable=E1103, E1101, C0103
+# E1103: Use DB objects attached to thread
+# E1101: Create config sections
+# C0103: Internal methods start with _
 """
 _BossAirAPI_
 
@@ -22,13 +22,13 @@ import logging
 import subprocess
 
 from WMCore.JobStateMachine.ChangeState import ChangeState
-from WMCore.DAOFactory          import DAOFactory
-from WMCore.WMFactory           import WMFactory
-from WMCore.BossAir.RunJob      import RunJob
-from WMCore.WMConnectionBase    import WMConnectionBase
-from WMCore.WMException         import WMException
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMFactory import WMFactory
+from WMCore.BossAir.RunJob import RunJob
+from WMCore.WMConnectionBase import WMConnectionBase
+from WMCore.WMException import WMException
 from WMCore.FwkJobReport.Report import Report
-from WMCore.WMExceptions        import WM_JOB_ERROR_CODES
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 class BossAirException(WMException):
@@ -44,8 +44,6 @@ class BossAirAPI(WMConnectionBase):
 
     The API layer for the BossAir prototype
     """
-
-
 
     def __init__(self, config, noSetup=False):
         """
@@ -93,14 +91,12 @@ class BossAirAPI(WMConnectionBase):
         self.completeDAO = self.daoFactory(classname="CompleteJob")
         self.monitorDAO = self.daoFactory(classname="JobStatusForMonitoring")
 
-
+        self.states = None
         self.loadPlugin(noSetup)
 
         return
 
-
-
-    def loadPlugin(self, noSetup = False):
+    def loadPlugin(self, noSetup=False):
         """
         _loadPlugin_
 
@@ -115,10 +111,8 @@ class BossAirAPI(WMConnectionBase):
             for state in self.plugins[name].states:
                 states.add(state)
 
-        states = list(states)
-
-        if not self.newState in states:
-            states.append(self.newState)
+        if self.newState not in states:
+            states.add(self.newState)
 
         if not noSetup:
             # Add states only if we're not
@@ -129,7 +123,6 @@ class BossAirAPI(WMConnectionBase):
 
         return
 
-
     def addStates(self, states):
         """
         _addStates_
@@ -138,12 +131,10 @@ class BossAirAPI(WMConnectionBase):
         """
         existingTransaction = self.beginTransaction()
 
-
         self.stateDAO.execute(states=states, conn=self.getDBConn(),
                               transaction=self.existingTransaction())
 
         self.commitTransaction(existingTransaction)
-
 
         return
 
@@ -163,10 +154,9 @@ class BossAirAPI(WMConnectionBase):
         for wmbsJob in wmbsJobs:
             runJob = RunJob()
             runJob.buildFromJob(job=wmbsJob)
-            if not runJob.get('status', None):
+            if runJob.get('status') not in self.states:
                 runJob['status'] = self.newState
             jobsToCreate.append(runJob)
-
 
         # Next insert them into the database
         self.newJobDAO.execute(jobs=jobsToCreate, conn=self.getDBConn(),
@@ -176,7 +166,6 @@ class BossAirAPI(WMConnectionBase):
 
         return
 
-
     def _listRunJobs(self, active=True):
         """
         _listRunJobs_
@@ -184,14 +173,12 @@ class BossAirAPI(WMConnectionBase):
         List runjobs, either active or complete
         """
 
-        existingTransaction = self.beginTransaction()
         if active:
             runJobDicts = self.runningJobDAO.execute(conn=self.getDBConn(),
                                                      transaction=self.existingTransaction())
         else:
             runJobDicts = self.completeJobDAO.execute(conn=self.getDBConn(),
                                                       transaction=self.existingTransaction())
-        self.commitTransaction(existingTransaction)
 
         runJobs = []
         for jDict in runJobDicts:
@@ -200,7 +187,6 @@ class BossAirAPI(WMConnectionBase):
             runJobs.append(rj)
 
         return runJobs
-
 
     def _loadByStatus(self, status, complete='1'):
         """
@@ -215,10 +201,6 @@ class BossAirAPI(WMConnectionBase):
             logging.error(msg)
             raise BossAirException(msg)
 
-
-        existingTransaction = self.beginTransaction()
-
-
         loadJobs = self.loadJobsDAO.execute(status=status,
                                             complete=complete,
                                             conn=self.getDBConn(),
@@ -229,10 +211,7 @@ class BossAirAPI(WMConnectionBase):
             rj.update(jDict)
             statusJobs.append(rj)
 
-        self.commitTransaction(existingTransaction)
-
         return statusJobs
-
 
     def _loadByID(self, jobs):
         """
@@ -240,8 +219,6 @@ class BossAirAPI(WMConnectionBase):
 
         Load by running Job ID
         """
-        existingTransaction = self.beginTransaction()
-
         loadJobsDAO = self.daoFactory(classname="LoadByID")
         loadJobs = loadJobsDAO.execute(jobs=jobs, conn=self.getDBConn(),
                                        transaction=self.existingTransaction())
@@ -251,8 +228,6 @@ class BossAirAPI(WMConnectionBase):
             rj = RunJob()
             rj.update(jDict)
             loadedJobs.append(rj)
-
-        self.commitTransaction(existingTransaction)
 
         return loadedJobs
 
@@ -269,11 +244,10 @@ class BossAirAPI(WMConnectionBase):
 
         existingTransaction = self.beginTransaction()
 
-
         self.updateDAO.execute(jobs=jobs, conn=self.getDBConn(),
                                transaction=self.existingTransaction())
 
-        jobsWithLocation = filter(lambda x: x.get('location') is not None, jobs)
+        jobsWithLocation = [job for job in jobs if job.get('location') is not None]
         if jobsWithLocation:
             self.stateMachine.recordLocationChange(jobsWithLocation)
 
@@ -301,7 +275,6 @@ class BossAirAPI(WMConnectionBase):
 
         self.commitTransaction(existingTransaction)
 
-
         return
 
     def loadByWMBS(self, wmbsJobs):
@@ -314,8 +287,6 @@ class BossAirAPI(WMConnectionBase):
         if len(wmbsJobs) < 1:
             return []
 
-        existingTransaction = self.beginTransaction()
-
         jobList = self.loadByWMBSDAO.execute(jobs=wmbsJobs, conn=self.getDBConn(),
                                              transaction=self.existingTransaction())
 
@@ -325,14 +296,13 @@ class BossAirAPI(WMConnectionBase):
             rj.update(job)
             loadedJobs.append(rj)
 
-        self.commitTransaction(existingTransaction)
-
-        if not len(loadedJobs) == len(wmbsJobs):
+        if len(loadedJobs) != len(wmbsJobs):
             logging.error("Mismatch in WMBS load: Some requested jobs not found!")
             idList = [x['jobid'] for x in loadedJobs]
             for job in wmbsJobs:
-                if not job['id'] in idList:
-                    logging.error("Could not retrieve job with WMBS ID %i from BossAir database", (job['id']))
+                if job['id'] not in idList:
+                    logging.error("Could not retrieve job with WMBS ID %i from BossAir database", job['id'])
+                    logging.error("  ... WMBS job info is: %s", job)
 
         return loadedJobs
 
@@ -360,8 +330,6 @@ class BossAirAPI(WMConnectionBase):
                 raise BossAirException("Proxy Expired", output.strip())
 
         return
-
-
 
     def submit(self, jobs, info=None):
         """
@@ -394,18 +362,18 @@ class BossAirAPI(WMConnectionBase):
             runJobs.append(rj)
             # Can't add to the cache in submit()
             # It's NOT the same bossAir instance
-            #self.jobs.append(rj)
+            # self.jobs.append(rj)
 
         # Now figure out which plugin we need
         pluginDict = {}
         for job in runJobs:
             plugin = job['plugin']
-            if not plugin in pluginDict.keys():
+            if plugin not in pluginDict.keys():
                 pluginDict[plugin] = []
             pluginDict[plugin].append(job)
 
         for plugin in pluginDict.keys():
-            if not plugin in self.plugins.keys():
+            if plugin not in self.plugins.keys():
                 # Then we have a non-existant plugin
                 msg = "CRITICAL ERROR: Non-existant plugin!\n"
                 msg += "Given a plugin %s that we don't have access to.\n" % (plugin)
@@ -447,8 +415,6 @@ class BossAirAPI(WMConnectionBase):
 
         return successJobs, failureJobs
 
-
-
     def track(self, runJobIDs=None, wmbsIDs=None):
         """
         _track_
@@ -471,11 +437,11 @@ class BossAirAPI(WMConnectionBase):
 
         if runJobIDs:
             for job in runningJobs:
-                if not job['id'] in runJobIDs:
+                if job['id'] not in runJobIDs:
                     runningJobs.remove(job)
         if wmbsIDs:
             for job in runningJobs:
-                if not job['jobid'] in wmbsIDs:
+                if job['jobid'] not in wmbsIDs:
                     runningJobs.remove(job)
 
         if len(runningJobs) < 1:
@@ -486,16 +452,16 @@ class BossAirAPI(WMConnectionBase):
 
         loadedJobs = self._buildRunningJobsFromRunJobs(runJobs=runningJobs)
 
-        logging.info("About to look for %i loadedJobs.\n", len(loadedJobs))
+        logging.info("About to look for %i loadedJobs.", len(loadedJobs))
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
-            if not plugin in jobsToTrack.keys():
+            if plugin not in jobsToTrack.keys():
                 jobsToTrack[plugin] = []
             jobsToTrack[plugin].append(runningJob)
 
         for plugin in jobsToTrack.keys():
-            if not plugin in self.plugins.keys():
+            if plugin not in self.plugins.keys():
                 msg = "Jobs tracking with non-existant plugin %s\n" % (plugin)
                 msg += "They were submitted but can't be tracked?\n"
                 msg += "That's too strange to continue\n"
@@ -509,7 +475,8 @@ class BossAirAPI(WMConnectionBase):
                 jobsToReturn.extend(localRunning)
                 jobsToChange.extend(localChanges)
                 jobsToComplete.extend(localCompletes)
-                logging.info("Executing/changing/completing %i/%i/%i jobs in plugin %s.", len(localRunning), len(localChanges), len(localCompletes), plugin)
+                logging.info("Executing/changing/completing %i/%i/%i jobs in plugin %s.", len(localRunning),
+                             len(localChanges), len(localCompletes), plugin)
             except WMException:
                 raise
             except Exception as ex:
@@ -526,7 +493,6 @@ class BossAirAPI(WMConnectionBase):
 
         self._updateJobs(jobs=jobsToChange)
         self._complete(jobs=jobsToComplete)
-
 
         # We should have a globalState variable for changed jobs
         # from the plugin
@@ -552,7 +518,7 @@ class BossAirAPI(WMConnectionBase):
         jobsToComplete = {}
 
         for job in jobs:
-            if not job['plugin'] in jobsToComplete.keys():
+            if job['plugin'] not in jobsToComplete.keys():
                 jobsToComplete[job['plugin']] = []
             jobsToComplete[job['plugin']].append(job)
 
@@ -575,7 +541,6 @@ class BossAirAPI(WMConnectionBase):
 
         return
 
-
     def _completeKill(self, jobs):
         """
         __completeKill_
@@ -595,7 +560,6 @@ class BossAirAPI(WMConnectionBase):
 
         return
 
-
     def getComplete(self):
         """
         _getComplete_
@@ -614,7 +578,6 @@ class BossAirAPI(WMConnectionBase):
 
         return completeJobs
 
-
     def removeComplete(self, jobs):
         """
         _removeComplete_
@@ -630,8 +593,6 @@ class BossAirAPI(WMConnectionBase):
         self._deleteJobs(jobs=jobsToRemove)
 
         return
-
-
 
     def kill(self, jobs, workflowName=None, killMsg=None, errorCode=71300):
         """
@@ -658,12 +619,12 @@ class BossAirAPI(WMConnectionBase):
 
         for runningJob in loadedJobs:
             plugin = runningJob['plugin']
-            if not plugin in jobsToKill.keys():
+            if plugin not in jobsToKill.keys():
                 jobsToKill[plugin] = []
             jobsToKill[plugin].append(runningJob)
 
         for plugin in jobsToKill.keys():
-            if not plugin in self.plugins.keys():
+            if plugin not in self.plugins.keys():
                 msg = "Jobs tracking with non-existant plugin %s\n" % (plugin)
                 msg += "They were submitted but can't be tracked?\n"
                 msg += "That's too strange to continue\n"
@@ -679,7 +640,7 @@ class BossAirAPI(WMConnectionBase):
                         pluginInst.kill(jobs=jobsToKill[plugin])
                     # Register the killed jobs
                     for job in jobsToKill[plugin]:
-                        if job.get('cache_dir', None) == None or job.get('retry_count', None) == None:
+                        if job.get('cache_dir') is None or job.get('retry_count') is None:
                             continue
                         # Try to save an error report as the jobFWJR
                         if not os.path.isdir(job['cache_dir']):
@@ -716,7 +677,6 @@ class BossAirAPI(WMConnectionBase):
                     self._completeKill(jobs=jobsToKill[plugin])
         return
 
-
     def update(self, jobs):
         """
         _update_
@@ -731,8 +691,6 @@ class BossAirAPI(WMConnectionBase):
 
         return
 
-
-
     def monitor(self, commonState=True):
         """
         _monitor_
@@ -741,16 +699,8 @@ class BossAirAPI(WMConnectionBase):
         This should not be called by the standard Submitter/Status/Tracker
         system.  It is meant for outside calling.
         """
-
-
-        existingTransaction = self.beginTransaction()
-
-
         results = self.monitorDAO.execute(commonState, conn=self.getDBConn(),
                                           transaction=self.existingTransaction())
-
-        self.commitTransaction(existingTransaction)
-
 
         return results
 
@@ -818,12 +768,11 @@ class BossAirAPI(WMConnectionBase):
             for key in runJob.keys():
                 # Fill one from the other
                 # runJob, being most recent, should be on top
-                if runJob[key] == None:
+                if runJob[key] is None:
                     runJob[key] = loadJob.get(key, None)
             finalJobs.append(runJob)
 
         return finalJobs
-
 
     def _buildRunningJobs(self, wmbsJobs):
         """
@@ -847,7 +796,7 @@ class BossAirAPI(WMConnectionBase):
                     rj.buildFromJob(wmbsJob)
                     rj['id'] = runJob['id']
                     for key in rj.keys():
-                        if rj[key] == None:
+                        if rj[key] is None:
                             rj[key] = runJob.get(key, None)
                     finalJobs.append(rj)
                     break
@@ -855,8 +804,8 @@ class BossAirAPI(WMConnectionBase):
             # It means that although we sent for it, we couldn't find it.
             # Possibly means that the job just isn't in there yet.
             # Make a note of it, then do nothing
-            logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n", wmbsJob['id'], wmbsJob['retry_count'])
+            logging.debug("Could not successfully load a runJob for wmbsJob %i:%i\n", wmbsJob['id'],
+                          wmbsJob['retry_count'])
             logging.debug("WMBS Job: %s\n", wmbsJob)
-
 
         return finalJobs

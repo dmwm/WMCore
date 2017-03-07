@@ -1,3 +1,13 @@
+1.1.0 to 1.1.0.crab3:
+  - Merge pull request #7695 from emaszs/patch-3
+  - Don't sort list each iteration in FileBased splitting
+  - 1.1.0.crab2
+  - Merge pull request #7608 from emaszs/crab_cmssw_ver_fix
+  - Use env var when getting CMSSW version in CRAB
+  - 1.1.0.crab1
+  - Merge pull request #7602 from ticoann/tag_collector_fix_crab
+  - add kwargs for flexibiity in TagCollector
+
 1.1.0 to 1.1.0.crab2:
   - Merge pull request #7608 from emaszs/crab_cmssw_ver_fix
   - Use env var when getting CMSSW version in CRAB

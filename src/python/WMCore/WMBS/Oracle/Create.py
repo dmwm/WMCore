@@ -18,7 +18,7 @@ class Create(CreateWMBSBase):
     Class to set up the WMBS schema in an Oracle database
     """
     sequence_tables = [
-        'wms_fileset',
+        'wmbs_fileset',
         'wmbs_file_details',
         'wmbs_location',
         'wmbs_location_state',

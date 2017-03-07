@@ -20,3 +20,5 @@ setup.sh
 setup_environment_only.sh
 shutdown.sh
 tester_runner_bash.sh
+MANIFEST
+dist/

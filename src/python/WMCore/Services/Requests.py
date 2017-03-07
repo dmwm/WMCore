@@ -229,6 +229,7 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
+        # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
         assert isinstance(encoded_data, (str, basestring)), \
             "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 

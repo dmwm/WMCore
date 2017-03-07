@@ -61,7 +61,7 @@ class FileBased(JobFactory):
                     ## Do average event per lumi calculation.
                     f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
                 newlist.append(f)
-                locationDict[key] = sorted(newlist, key = lambda f: f['lfn'])
+            locationDict[key] = sorted(newlist, key = lambda f: f['lfn'])
 
         ## Make a list with all the files, sorting them by LFN. Remove from the list all
         ## the files filtered out by the lumi-mask (if there is one).

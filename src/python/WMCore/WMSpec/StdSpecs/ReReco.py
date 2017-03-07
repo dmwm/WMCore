@@ -4,6 +4,9 @@ _ReReco_
 
 Standard ReReco workflow.
 """
+from __future__ import division
+from builtins import str
+from past.utils import old_div
 from Utils.Utilities import makeList
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate
@@ -57,7 +60,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                                               stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             # Only merge the desired outputs
             if outputModuleName not in self.transientModules:
                 self.addMergeTask(procTask, self.procJobSplitAlgo,
@@ -134,7 +137,7 @@ class ReRecoWorkloadFactory(DataProcessing):
 
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
 
-            for outputModuleName in outputMods.keys():
+            for outputModuleName in list(outputMods.keys()):
                 self.addMergeTask(skimTask, skimJobSplitAlgo,
                                   outputModuleName)
 
@@ -164,7 +167,7 @@ class ReRecoWorkloadFactory(DataProcessing):
             if skimConfig["SkimJobSplitAlgo"] == "FileBased":
                 skimConfig["SkimJobSplitArgs"]["files_per_job"] = int(arguments.get("SkimFilesPerJob%s" % skimIndex, 1))
             elif skimConfig["SkimJobSplitAlgo"] == "EventBased" or skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
-                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int((8.0 * 3600.0) / skimConfig["TimePerEvent"])))
+                skimConfig["SkimJobSplitArgs"]["events_per_job"] = int(arguments.get("SkimEventsPerJob%s" % skimIndex, int(old_div((8.0 * 3600.0), skimConfig["TimePerEvent"]))))
                 if skimConfig["SkimJobSplitAlgo"] == "EventAwareLumiBased":
                     skimConfig["SkimJobSplitAlgo"]["max_events_per_lumi"] = 20000
             elif skimConfig["SkimJobSplitAlgo"] == "LumiBased":
@@ -238,10 +241,10 @@ class ReRecoWorkloadFactory(DataProcessing):
         """
         DataProcessing.validateSchema(self, schema)
         couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
-        mainOutputModules = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
+        mainOutputModules = list(self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
                                                            couchURL = couchUrl,
                                                            couchDBName = schema["CouchDBName"],
-                                                           getOutputModules = True).keys()
+                                                           getOutputModules = True).keys())
 
         # Skim facts have to be validated outside the usual master validation
         skimArguments = self.getSkimArguments()
@@ -249,7 +252,7 @@ class ReRecoWorkloadFactory(DataProcessing):
         skimInputs = set()
         while "SkimName%s" % skimIndex in schema:
             instanceArguments = {}
-            for argument in skimArguments.keys():
+            for argument in list(skimArguments.keys()):
                 realArg = argument.replace("#N", str(skimIndex))
                 instanceArguments[realArg] = skimArguments[argument]
             msg = validateArgumentsCreate(schema, instanceArguments)

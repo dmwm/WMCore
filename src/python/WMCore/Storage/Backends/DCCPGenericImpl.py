@@ -10,6 +10,7 @@ Doesnt support deletion yet: This needs to be added
 
 
 """
+from builtins import str
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl

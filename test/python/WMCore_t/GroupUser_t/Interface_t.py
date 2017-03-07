@@ -7,6 +7,7 @@ Created by Dave Evans on 2010-07-29.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import range
 import unittest
 import os
 

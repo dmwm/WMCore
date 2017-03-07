@@ -6,13 +6,16 @@ Implementation of StageOutImpl interface for DCCPFNAL
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
 
 try:
-    from commands import getoutput, getstatusoutput
+    from subprocess import getoutput, getstatusoutput
 except ImportError:
     # python3
     from subprocess import getoutput, getstatusoutput

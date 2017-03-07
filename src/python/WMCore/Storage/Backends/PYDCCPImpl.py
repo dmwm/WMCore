@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for DCCP With PyDCAP bindings
 available
 
 """
+from builtins import str
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl

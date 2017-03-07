@@ -32,7 +32,7 @@ class LoadFiles(DBFormatter):
         dictResults = []
         for formattedResult in formattedResults:
             dictResult = {}
-            if "file" in formattedResult.keys():
+            if "file" in list(formattedResult.keys()):
                 dictResult["id"] = int(formattedResult["file"])
                 dictResults.append(dictResult)
 

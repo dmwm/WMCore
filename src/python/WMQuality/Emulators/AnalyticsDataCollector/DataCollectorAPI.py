@@ -3,6 +3,8 @@ Provide functions to collect data and upload data
 """
 from __future__ import print_function
 
+from builtins import range
+from builtins import object
 import logging
 
 from WMCore.Lexicon import splitCouchServiceURL
@@ -26,7 +28,7 @@ COUCH_JOB_STATUS = ['queued_first', 'queued_retry', 'cooloff', 'submitted_first'
 QUEUE_JOB_STATUS = ['inQueue', 'inWMBS']
 BATCH_JOB_STATUS = ['submitted_pending', 'submitted_running']
 
-class LocalCouchDBData():
+class LocalCouchDBData(object):
 
     def __init__(self, couchURL, summaryLevel):
         # set the connection for local couchDB call
@@ -72,7 +74,7 @@ class LocalCouchDBData():
         """
         return {}
 
-class ReqMonDBData():
+class ReqMonDBData(object):
 
     def __init__(self, couchURL):
         # set the connection for local couchDB call
@@ -84,7 +86,7 @@ class ReqMonDBData():
         """
         return {'status':'ok'}
 
-class WMAgentDBData():
+class WMAgentDBData(object):
 
     def __init__(self, summaryLevel, dbi, logger):
 

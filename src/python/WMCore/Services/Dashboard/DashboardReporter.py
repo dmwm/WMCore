@@ -4,6 +4,8 @@ __DashboardReporter__
 Utilities for reporting information to the dashboard
 """
 
+from builtins import str
+from past.builtins import basestring
 import time
 import logging
 
@@ -355,7 +357,7 @@ class DashboardReporter(WMObject):
 
         inputFilesStrings = []
         fileCount = 0
-        for inputFile, details in files.items():
+        for inputFile, details in list(files.items()):
             fileCount += 1
             success = '0'
             accessType = details['status']

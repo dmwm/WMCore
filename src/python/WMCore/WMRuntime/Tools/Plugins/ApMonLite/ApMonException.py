@@ -9,6 +9,7 @@ General Exception class for JC modules
 
 
 
+from builtins import str
 import exceptions
 import inspect
 #import logging
@@ -88,7 +89,7 @@ class ApMonException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
+        for key, value in list(data.items()):
             self[key] = value
         return
 
@@ -97,6 +98,6 @@ class ApMonException(exceptions.Exception):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
         strg += "Message: %s\n" % self.message
-        for key, value in self.data.items():
+        for key, value in list(self.data.items()):
             strg += "\t%s : %s\n" % (key, value, )
         return strg

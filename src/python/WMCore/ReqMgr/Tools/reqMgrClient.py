@@ -6,13 +6,17 @@
 """
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
 import os
 import re
 import sys
 import json
-import urllib
-import urllib2
-import httplib
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+import http.client
 
 # default headers for PUT and POST methods
 HEADERS={"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
@@ -28,7 +32,7 @@ def requestManagerGet(url, request, retries=4):
     cert = os.getenv('X509_USER_PROXY')
     ckey = os.getenv('X509_USER_PROXY')
     for _ in range(retries):
-        conn = httplib.HTTPSConnection(url, cert_file=cert, key_file=ckey)
+        conn = http.client.HTTPSConnection(url, cert_file=cert, key_file=ckey)
         conn.request("GET", request)
         resp = conn.getresponse()
         request = json.load(resp)
@@ -44,10 +48,10 @@ def requestManagerPost(url, request, params, head = HEADERS):
     request: the request suffix url for the POST method
     params: a dict with the POST parameters
     """
-    conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
+    conn  =  http.client.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
                                     key_file = os.getenv('X509_USER_PROXY'))
     headers = head
-    encodedParams = urllib.urlencode(params)
+    encodedParams = urllib.parse.urlencode(params)
     conn.request("POST", request, encodedParams, headers)
     response = conn.getresponse()
     data = response.read()
@@ -63,10 +67,10 @@ def requestManagerPut(url, request, params, head = HEADERS):
     params: a dict with the PUT parameters
     head: optional headers param. If not given it takes default value (HEADERS)
     """
-    conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
+    conn  =  http.client.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'),
                                     key_file = os.getenv('X509_USER_PROXY'))
     headers = head
-    encodedParams = urllib.urlencode(params)
+    encodedParams = urllib.parse.urlencode(params)
     conn.request("PUT", request, encodedParams, headers)
     response = conn.getresponse()
     data = response.read()

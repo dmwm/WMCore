@@ -6,6 +6,9 @@ Implementation of StageOutImpl interface for SRM Version 2
 
 """
 from __future__ import print_function
+from builtins import zip
+from builtins import str
+from builtins import range
 import os, re
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl
@@ -70,7 +73,7 @@ class SRMV2Impl(StageOutImpl):
                                         for i in range(targetdir.count("/")-4)]
         dirsToCheck = dirs[:]; dirsToCheck.reverse()
         levelToCreateFrom = len(dirs)
-        for count, folder in zip(range(len(dirsToCheck), 0, -1), dirsToCheck):
+        for count, folder in zip(list(range(len(dirsToCheck), 0, -1)), dirsToCheck):
             try:
                 exitCode, output = self.run(checkdircmd + folder)
                 levelToCreateFrom = count # create dirs from here (at least)

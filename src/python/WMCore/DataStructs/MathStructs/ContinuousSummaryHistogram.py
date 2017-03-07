@@ -8,6 +8,8 @@ Created on Nov 20, 2012
 
 @author: dballest
 """
+from __future__ import division
+from past.utils import old_div
 import math
 
 from WMCore.DataStructs.MathStructs.SummaryHistogram import SummaryHistogram
@@ -148,7 +150,7 @@ class ContinuousSummaryHistogram(SummaryHistogram):
         # Number of bins can be specified or calculated based on number of points
         nBins = self.fixedNBins
         if nBins is None:
-            nBins = int(math.floor((5.0 / 3.0) * math.pow(self.nPoints, 1.0 / 3.0)))
+            nBins = int(math.floor((old_div(5.0, 3.0)) * math.pow(self.nPoints, old_div(1.0, 3.0))))
 
         # Define min and max
         if not self.dropOutliers:
@@ -160,7 +162,7 @@ class ContinuousSummaryHistogram(SummaryHistogram):
             lowerLimit = self.average - (stdDev * self.sigmaLimit)
 
         # Incremental delta
-        delta = abs(float(upperLimit - lowerLimit)) / nBins
+        delta = old_div(abs(float(upperLimit - lowerLimit)), nBins)
 
         # Build the bins, it's a list of tuples for now
         bins = []

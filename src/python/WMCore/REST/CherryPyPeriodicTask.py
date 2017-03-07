@@ -4,6 +4,8 @@ Created on Jul 31, 2014
 @author: sryu
 '''
 from __future__ import print_function, division
+from builtins import str
+from builtins import object
 import cherrypy
 import traceback
 from WMCore.WMLogging import getTimeRotatingLogger

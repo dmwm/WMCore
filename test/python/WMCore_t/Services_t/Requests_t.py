@@ -7,12 +7,15 @@ Created on Aug 6, 2009
 '''
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import os
 import shutil
 import tempfile
 import time
 import unittest
-from httplib import HTTPException
+from http.client import HTTPException
 
 import nose
 
@@ -204,9 +207,9 @@ class testJSONRequests(unittest.TestCase):
     def roundTripLax(self, data):
         encoded = self.request.encode(data)
         decoded = self.request.decode(encoded)
-        datakeys = data.keys()
+        datakeys = list(data.keys())
 
-        for k in decoded.keys():
+        for k in list(decoded.keys()):
             assert k in datakeys
             datakeys.pop(datakeys.index(k))
         #print 'the following keys were dropped\n\t',datakeys

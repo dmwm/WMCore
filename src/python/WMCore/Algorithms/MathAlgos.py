@@ -6,7 +6,11 @@ _MathAlgos_
 Simple mathematical tools and tricks that might prove to
 be useful.
 """
+from __future__ import division
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import math
 import decimal
 import logging
@@ -57,13 +61,13 @@ def getAverageStdDev(numList):
     if length < 1:
         return average, total
 
-    average = float(total)/length
+    average = old_div(float(total),length)
 
     for value in numList:
         tmpValue = value - average
         stdBase += (tmpValue * tmpValue)
 
-    stdDev = math.sqrt(stdBase/length)
+    stdDev = math.sqrt(old_div(stdBase,length))
 
     if math.isnan(average) or math.isinf(average):
         average = 0.0
@@ -127,7 +131,7 @@ def createHistogram(numList, nBins, limit):
         nBins = 1
         upperBound = upperBound + 1
         lowerBound = lowerBound - 1
-    binSize = float(upperBound - lowerBound)/nBins
+    binSize = old_div(float(upperBound - lowerBound),nBins)
     binSize = floorTruncate(binSize)
 
     for x in range(nBins):
@@ -184,7 +188,7 @@ def floorTruncate(value, precision = 3):
 
     prec = math.pow(10, precision)
 
-    return math.floor(float(value * prec))/float(prec)
+    return old_div(math.floor(float(value * prec)),float(prec))
 
 
 def sortDictionaryListByKey(dictList, key, reverse = False):
@@ -256,7 +260,7 @@ def calculateRunningAverageAndQValue(newPoint, n, oldM, oldQ):
     else:
         if not validateNumericInput(oldM): raise MathAlgoException("Provided a non-valid oldM")
         if not validateNumericInput(oldQ): raise MathAlgoException("Provided a non-valid oldQ")
-        M = oldM + (newPoint - oldM) / n
+        M = oldM + old_div((newPoint - oldM), n)
         Q = oldQ + ((n - 1) * (newPoint - oldM) * (newPoint - oldM) / n)
 
     return M, Q
@@ -275,7 +279,7 @@ def calculateStdDevFromQ(Q, n):
     if not validateNumericInput(Q): raise MathAlgoException("Provided a non-valid Q")
     if not validateNumericInput(n): raise MathAlgoException("Provided a non-valid n")
 
-    sigma = math.sqrt(Q / n)
+    sigma = math.sqrt(old_div(Q, n))
 
     if not validateNumericInput(sigma): return 0.0
 

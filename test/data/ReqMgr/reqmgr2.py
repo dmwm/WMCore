@@ -15,10 +15,14 @@ Note: tests for checking data directly in CouchDB in ReqMgr1 test script:
     WMCore/test/data/ReqMgr/reqmgr.py
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import object
 import os
 import sys
-from httplib import HTTPSConnection, HTTPConnection
-import urllib
+from http.client import HTTPSConnection, HTTPConnection
+import urllib.request, urllib.parse, urllib.error
 import logging
 from optparse import OptionParser, TitledHelpFormatter
 import json
@@ -117,7 +121,7 @@ class ReqMgrClient(RESTClient):
         urn = self.urn_prefix + "/request"
         for request_name in config.request_names:
             logging.info("Deleting '%s' request ..." % request_name)
-            args = urllib.urlencode({"request_name": request_name})
+            args = urllib.parse.urlencode({"request_name": request_name})
             status, data = self.http_request("DELETE", urn, data=args)
             if status != 200:
                 print(data)
@@ -245,7 +249,7 @@ class ReqMgrClient(RESTClient):
         self._caller_checker("/about", "GET")
         self._caller_checker("/info", "GET")
         group = "mygroup"
-        args = urllib.urlencode({"group_name": group})
+        args = urllib.parse.urlencode({"group_name": group})
         self._caller_checker("/group", "PUT", input_data=args)
         data = self._caller_checker("/group", "GET")
         assert group in data, "%s should be in %s" % (group, data)
@@ -253,7 +257,7 @@ class ReqMgrClient(RESTClient):
         data = self._caller_checker("/group", "GET")
         assert group not in data, "%s should be deleted from %s" % (group, data)
         team = "myteam"
-        args = urllib.urlencode({"team_name": team})
+        args = urllib.parse.urlencode({"team_name": team})
         self._caller_checker("/team", "PUT", input_data=args)
         data = self._caller_checker("/team", "GET")
         assert team in data, "%s should be in %s" % (team, data)
@@ -273,7 +277,7 @@ class ReqMgrClient(RESTClient):
         # returns also all allowed transitions
         data = self._caller_checker("/status?transition=true", "GET")
         for status_def in data:
-            status = status_def.keys()[0]
+            status = list(status_def.keys())[0]
             trans = status_def[status]
             assert status in data2, "%s is not in %s" % (status, data2)
             assert isinstance(trans, list), "transition %s should be list" % trans
@@ -326,7 +330,7 @@ def process_cli_args(args):
     if opts.json and not (opts.create_request or opts.assign_request or opts.all_tests):
         err_exit("--json only with --create_request, --assign_request or --all_tests", parser)
 
-    for action in filter(lambda name: getattr(opts, name), actions):
+    for action in [name for name in actions if getattr(opts, name)]:
         if opts.all_tests and action and action != "all_tests":
             err_exit("Arguments --all_tests and --%s mutually exclusive." % action, parser)
 
@@ -427,7 +431,7 @@ def process_request_args(intput_config_file, command_line_json):
         logging.info("Parsing request arguments on the command line ...")
         cli_json = json.loads(command_line_json)
         # if a key exists in cli_json, update values in the main request_args dict
-        for k in request_args.keys():
+        for k in list(request_args.keys()):
             if k in cli_json:
                 request_args[k].update(cli_json[k])
     else:
@@ -438,11 +442,11 @@ def process_request_args(intput_config_file, command_line_json):
     def check(items):
         for k, v in items:
             if isinstance(v, dict):
-                check(v.items())
-            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+                check(list(v.items()))
+            if isinstance(v, str) and v.endswith("OVERRIDE-ME"):
                 logging.warn("Not properly set: %s: %s" % (k, v))
 
-    check(request_args.items())
+    check(list(request_args.items()))
     return request_args
 
 
@@ -464,7 +468,7 @@ def main():
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None
     # config is all options for this script but also request creation parameters
-    actions = filter(lambda name: getattr(config, name), defined_actions)
+    actions = [name for name in defined_actions if getattr(config, name)]
     logging.info("Actions to perform: %s" % actions)
     for action in actions:
         logging.info("Performing '%s' ..." % action)

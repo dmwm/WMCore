@@ -25,6 +25,9 @@ sample usage:
 
 """
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import os.path
 import sys
@@ -34,7 +37,7 @@ import logging
 ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
 
 OS_TO_ARCH = {}
-for arch, oses in ARCH_TO_OS.iteritems():
+for arch, oses in ARCH_TO_OS.items():
     for osName in oses:
         if osName not in OS_TO_ARCH:
             OS_TO_ARCH[osName] = []
@@ -68,7 +71,7 @@ def testWriter(func, *args):
 procWriter = lambda s, l: s.stdin.write(l)
 
 
-class Scram:
+class Scram(object):
     """
     _Scram_
 

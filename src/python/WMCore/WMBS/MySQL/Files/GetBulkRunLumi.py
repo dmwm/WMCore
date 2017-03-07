@@ -34,9 +34,9 @@ class GetBulkRunLumi(DBFormatter):
         for entry in res:
             id  = entry['id']
             run = entry['run']
-            if not id in finalResult.keys():
+            if not id in list(finalResult.keys()):
                 finalResult[id] = {}
-            if not run in finalResult[id].keys():
+            if not run in list(finalResult[id].keys()):
                 finalResult[id][run] = []
             finalResult[id][run].append(entry['lumi'])
 

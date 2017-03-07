@@ -11,6 +11,7 @@ _AccountantWorker_
 Used by the JobAccountant to do the actual processing of completed jobs.
 """
 
+from builtins import str
 import os
 import threading
 import logging
@@ -480,7 +481,7 @@ class AccountantWorker(WMConnectionBase):
                 outputModules.add(fwjrFile['outputModule'])
             if set(outputMap.keys()) == outputModules:
                 pass
-            elif jobType == "LogCollect" and len(outputMap.keys()) == 0 and outputModules == set(['LogCollect']):
+            elif jobType == "LogCollect" and len(list(outputMap.keys())) == 0 and outputModules == set(['LogCollect']):
                 pass
             elif jobType == "Merge" and set(outputMap.keys()) == set(['Merged', 'MergedError', 'logArchive']) and outputModules == set(['Merged', 'logArchive']):
                 pass
@@ -728,7 +729,7 @@ class AccountantWorker(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in list(selfChecksums.keys()):
                     dbsCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                           'cktype' : entry})
 
@@ -819,7 +820,7 @@ class AccountantWorker(WMConnectionBase):
             if selfChecksums:
                 # If we have checksums we have to create a bind
                 # For each different checksum
-                for entry in selfChecksums.keys():
+                for entry in list(selfChecksums.keys()):
                     fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                            'cktype' : entry})
 
@@ -945,7 +946,7 @@ class AccountantWorker(WMConnectionBase):
         Here ACDC records and created and the file are moved
         to wmbs_sub_files_failed from completed.
         """
-        jobList = self.getFullJobInfo.execute([{'jobid' : x} for x in self.jobsWithSkippedFiles.keys()],
+        jobList = self.getFullJobInfo.execute([{'jobid' : x} for x in list(self.jobsWithSkippedFiles.keys())],
                                               fileSelection = self.jobsWithSkippedFiles,
                                               conn = self.getDBConn(),
                                               transaction = self.existingTransaction())

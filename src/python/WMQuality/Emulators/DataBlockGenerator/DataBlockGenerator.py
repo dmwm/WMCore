@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 from .Globals import GlobalParams
 from . import Globals
 
@@ -87,7 +90,7 @@ class DataBlockGenerator(object):
                           # assign run and lumi numbers in appropriate range: note run numbers
                           #  for successive blocks may overlap if numOfRunsPerFile() > 1
                           'LumiList': [{'RunNumber': GlobalParams.numOfRunsPerFile(),
-                                        'LumiSectionNumber': range(1, GlobalParams.numOfLumisPerBlock()+1)}]
+                                        'LumiSectionNumber': list(range(1, GlobalParams.numOfLumisPerBlock()+1))}]
                           }
         defaultDBSFile.update(dbsFile)
         return defaultDBSFile

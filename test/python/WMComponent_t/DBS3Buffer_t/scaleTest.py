@@ -6,6 +6,8 @@ _scaleTest_
 Fills a DBSBuffer with random data and then runs a DBSUpload process on it.
 """
 from __future__ import print_function
+from builtins import range
+from builtins import object
 import os
 import sys
 import time
@@ -24,7 +26,7 @@ from WMComponent.DBS3Buffer.DBSBufferFile   import DBSBufferFile
 from WMComponent.DBS3Buffer.DBSBufferUtil   import DBSBufferUtil
 from WMComponent.DBS3Buffer.DBSUploadPoller import DBSUploadPoller
 
-class scaleTestFiller:
+class scaleTestFiller(object):
     """
     _scaleTestFiller_
 

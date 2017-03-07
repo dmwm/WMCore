@@ -7,6 +7,7 @@ Implementation of StageOutImpl interface for RFIO in Castor-2
 """
 from __future__ import print_function
 
+from builtins import str
 import os
 
 from WMCore.Storage.Execute import runCommand

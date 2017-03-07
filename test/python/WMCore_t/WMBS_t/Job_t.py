@@ -5,6 +5,7 @@ _Job_t_
 Unit tests for the WMBS job class.
 """
 
+from builtins import str
 import unittest
 import logging
 import os
@@ -986,7 +987,7 @@ class JobTest(unittest.TestCase):
         outputMapAction = self.daoFactory(classname = "Jobs.GetOutputMap")
         outputMap = outputMapAction.execute(jobID = testJob["id"])
 
-        assert len(outputMap.keys()) == 3, \
+        assert len(list(outputMap.keys())) == 3, \
                "Error: Wrong number of outputs for primary workflow."
 
         goldenMap = {"output": (recoOutputFileset.id,
@@ -996,7 +997,7 @@ class JobTest(unittest.TestCase):
                      "DQM": (dqmOutputFileset.id,
                              mergedDqmOutputFileset.id)}
 
-        for outputID in outputMap.keys():
+        for outputID in list(outputMap.keys()):
             for outputFilesets in outputMap[outputID]:
                 if outputFilesets["merged_output_fileset"] == None:
                     self.assertEqual(outputFilesets["output_fileset"],
@@ -1004,7 +1005,7 @@ class JobTest(unittest.TestCase):
                                      "Error: Cleanup fileset is wrong.")
                     continue
 
-                self.assertTrue(outputID in goldenMap.keys(),
+                self.assertTrue(outputID in list(goldenMap.keys()),
                                 "Error: Output identifier is missing.")
                 self.assertEqual(outputFilesets["output_fileset"],
                                  goldenMap[outputID][0],
@@ -1014,7 +1015,7 @@ class JobTest(unittest.TestCase):
                                  "Error: Merged output fileset is wrong.")
                 del goldenMap[outputID]
 
-        self.assertEqual(len(goldenMap.keys()), 0,
+        self.assertEqual(len(list(goldenMap.keys())), 0,
                          "Error: Missing output maps.")
 
         return
@@ -1062,7 +1063,7 @@ class JobTest(unittest.TestCase):
         testJob.baggage.TestSection.test = 100
         finalJob = testJob.getDataStructsJob()
 
-        for key in finalJob.keys():
+        for key in list(finalJob.keys()):
             if key == 'input_files':
                 for file in testJob['input_files']:
                     self.assertEqual(file.returnDataStructsFile() in finalJob['input_files'], True)

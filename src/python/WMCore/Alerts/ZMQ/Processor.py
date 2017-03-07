@@ -5,6 +5,8 @@ by a Receiver to process Alert streams sent from Agent components.
 
 """
 
+from builtins import next
+from builtins import object
 import sys
 import logging
 import traceback
@@ -79,7 +81,7 @@ def handleSoft(targets, config):
         alert = (yield)
         alertBuffer.append(alert)
         if len(alertBuffer) >= bufferSize:
-            for target in targets.values():
+            for target in list(targets.values()):
                 # if sending to a particular sink fails, the entire component
                 # should remain functional
                 # suboptimal to put this exception handling twice, but putting
@@ -104,7 +106,7 @@ def handleCritical(targets, config):
     """
     while True:
         alert = (yield)
-        for target in targets.values():
+        for target in list(targets.values()):
             # if sending to a particular sink fails, the entire component
             # should remain functional
             # suboptimal to put this exception handling twice, but putting

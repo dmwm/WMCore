@@ -62,7 +62,7 @@ class FrontEndAuth(cherrypy.Tool):
 
         # User information is available on headers
         prefix = suffix = ""
-        hkeys = headers.keys()
+        hkeys = list(headers.keys())
         hkeys.sort()
         for hk in hkeys:
             hk=hk.lower()
@@ -116,7 +116,7 @@ class FrontEndAuth(cherrypy.Tool):
         if not (role or group or site):
             return True
 
-        for k, v in user['roles'].iteritems():
+        for k, v in user['roles'].items():
             if (not role) or (k in role):
                 if not (group or site):
                     return True

@@ -5,11 +5,15 @@
     Given a path, workflow and task, create a sandbox within the path
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import object
 import os
 import shutil
 import tarfile
 import tempfile
-import urlparse
+import urllib.parse
 import zipfile
 import logging
 
@@ -31,7 +35,7 @@ def tarFilter(tarinfo):
     else:
         return tarinfo
 
-class SandboxCreator:
+class SandboxCreator(object):
 
     def __init__(self):
         self.packageWMCore = True
@@ -101,7 +105,7 @@ class SandboxCreator:
                 fetcherNames = commonFetchers[:]
                 taskFetchers = getattr(task.data, "fetchers", [])
                 fetcherNames.extend(taskFetchers)
-                fetcherInstances = map(getFetcher, fetcherNames)
+                fetcherInstances = list(map(getFetcher, fetcherNames))
 
                 taskPath = "%s/%s" % (path, task.name())
                 self._makePathonPackage(taskPath)
@@ -179,7 +183,7 @@ class SandboxCreator:
             tarContent.append((utilsPath, '/Utils'))
 
         for sb in userSandboxes:
-            splitResult = urlparse.urlsplit(sb)
+            splitResult = urllib.parse.urlsplit(sb)
             if not splitResult[0]:
                 tarContent.append((sb, os.path.basename(sb)))
 

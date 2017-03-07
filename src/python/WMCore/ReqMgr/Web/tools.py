@@ -5,6 +5,8 @@
 Web tools.
 """
 
+from builtins import str
+from builtins import object
 __revision__ = "$Id: tools.py,v 1.5 2010/04/07 18:19:31 valya Exp $"
 __author__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"
@@ -82,7 +84,7 @@ class TemplatedPage(Page):
         self.name = "TemplatedPage"
         self.base = config.get('base', '')
         verbose = config.get('verbose', 0)
-        self.jinja = True if 'jinja2' in sys.modules.keys() else False
+        self.jinja = True if 'jinja2' in list(sys.modules.keys()) else False
         if  self.jinja:
             templates = 'JINJA'
         else:

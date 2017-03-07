@@ -38,7 +38,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         mySiteConfig = SiteLocalConfig(fnalConfigFileName)
 
         assert mySiteConfig.siteName == "T1_US_FNAL", "Error: Wrong site name."
-        assert len(mySiteConfig.eventData.keys()) == 1, "Error: Wrong number of event data keys."
+        assert len(list(mySiteConfig.eventData.keys())) == 1, "Error: Wrong number of event data keys."
         assert mySiteConfig.eventData["catalog"] == "trivialcatalog_file:/cvmfs/cms.cern.ch/SITECONF/T1_US_FNAL_Disk/PhEDEx/storage.xml?protocol=fallbackxrd", \
                "Eroror: Event data catalog is wrong."
 
@@ -92,7 +92,7 @@ class SiteLocalConfigTest(unittest.TestCase):
         assert mySiteConfig.siteName == "T3_US_Vanderbilt", \
                "Error: Wrong site name."
 
-        assert len(mySiteConfig.eventData.keys()) == 1, \
+        assert len(list(mySiteConfig.eventData.keys())) == 1, \
                "Error: Wrong number of event data keys."
         assert mySiteConfig.eventData["catalog"] == "trivialcatalog_file://gpfs1/grid/grid-app/cmssoft/cms/SITECONF/local/PhEDEx/storage.xml?protocol=direct", \
                "Eroror: Event data catalog is wrong."

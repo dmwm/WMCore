@@ -7,6 +7,7 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
+from builtins import range
 import json
 import unittest
 import logging
@@ -43,7 +44,7 @@ class RESTFormatTest(RESTBaseUnitTest):
         rf = RESTFormatter(config=self.config.Webtools)
         url = self.urlbase +'list1/'
 
-        for textType in rf.supporttypes.keys():
+        for textType in list(rf.supporttypes.keys()):
             # test accepted type should return 200 error
             methodTest('GET', url, accept=textType, output={'code':200})
 

@@ -6,6 +6,9 @@ Runtime binary file for CleanUp type nodes
 
 """
 from __future__ import print_function
+from builtins import filter
+from builtins import str
+from builtins import object
 import sys
 import os
 from WMCore.Storage.TaskState import TaskState, getTaskState
@@ -40,19 +43,19 @@ class CleanUpFailure(Exception):
         msg += " Failed to clean up file:\n"
         msg += " %s\n" % lfn
         msg += " Details:\n"
-        for key, val in details.items():
+        for key, val in list(details.items()):
             msg += "  %s: %s\n" % (key, val)
 
         print(msg)
 
-class SkippedFileFilter:
+class SkippedFileFilter(object):
     def __init__(self, skippedFiles):
         self.skipped = [ i['Lfn'] for i in skippedFiles ]
 
     def __call__(self, filedata):
         return filedata['LFN'] not in self.skipped
 
-class CleanUpManager:
+class CleanUpManager(object):
     """
     _CleanUpManager_
 
@@ -91,9 +94,9 @@ class CleanUpManager:
         self.inputState.loadJobReport()
         inputReport = self.inputState.getJobReport()
 
-        inputFileDetails = filter(
+        inputFileDetails = list(filter(
             SkippedFileFilter(inputReport.skippedFiles),
-            inputReport.inputFiles)
+            inputReport.inputFiles))
 
 
         self.inputFiles = [ i['LFN'] for i in inputFileDetails ]

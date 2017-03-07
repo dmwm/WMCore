@@ -48,7 +48,7 @@ class JobStatusByLocation(DBFormatter):
                                 globals(), locals(), [data['plugin']])
             plugIn = getattr(module, data['plugin'])
 
-            for status in plugIn.stateMap().values():
+            for status in list(plugIn.stateMap().values()):
                 commonStates[data['site_name']].setdefault(status, 0)
 
             state = plugIn.stateMap().get(data['status'])
@@ -56,7 +56,7 @@ class JobStatusByLocation(DBFormatter):
             commonStates[data['site_name']]['pending_slots'] = data['pending_slots']
 
         results = []
-        for key, value in commonStates.items():
+        for key, value in list(commonStates.items()):
             reformedData = {'site_name': key}
             reformedData.update(value)
             results.append(reformedData)

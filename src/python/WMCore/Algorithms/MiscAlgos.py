@@ -35,7 +35,7 @@ def sortListByKey(data, key):
                 logging.error("Found list entry with empty key set in sortListByKey: %s" % entry)
                 logging.error("Skipping")
                 continue
-        if not value in final.keys():
+        if not value in list(final.keys()):
             final[value] = []
         final[value].append(entry)
 
@@ -54,13 +54,13 @@ def dict_diff(first, second):
     KEYNOTFOUND = '<KEYNOTFOUND>'
     diff = {}
     # Check all keys in first dict
-    for key in first.keys():
+    for key in list(first.keys()):
         if (key not in second):
             diff[key] = (first[key], KEYNOTFOUND)
         elif (first[key] != second[key]):
             diff[key] = (first[key], second[key])
     # Check all keys in second dict to find missing
-    for key in second.keys():
+    for key in list(second.keys()):
         if (key not in first):
             diff[key] = (KEYNOTFOUND, second[key])
     return diff

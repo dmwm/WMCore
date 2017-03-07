@@ -3,6 +3,7 @@
 Some generic base classes for building web pages with.
 """
 
+from builtins import str
 import hashlib
 import json
 import logging
@@ -192,7 +193,7 @@ def exposedasxml (func):
     def wrapper (self, data, expires, contentType = "application/xml"):
         das = runDas(self, func, data, expires)
         header = "<?xml version='1.0' standalone='yes'?>"
-        keys = das.keys()
+        keys = list(das.keys())
         keys.remove('results')
         string = ''
         for key in keys:

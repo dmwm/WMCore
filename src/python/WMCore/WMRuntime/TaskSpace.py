@@ -8,6 +8,8 @@ Runtime utils for a Task
 
 """
 
+from builtins import str
+from builtins import object
 import os
 import sys
 import inspect
@@ -31,7 +33,7 @@ def preloadWorkload(x):
         return x(self)
     return wrapper
 
-class TaskSpace:
+class TaskSpace(object):
     """
     _TaskSpace_
 
@@ -119,7 +121,7 @@ class TaskSpace:
 
         """
         modName = "WMTaskSpace.%s" % stepName
-        if modName in sys.modules.keys():
+        if modName in list(sys.modules.keys()):
             space = sys.modules[modName]
         else:
             try:

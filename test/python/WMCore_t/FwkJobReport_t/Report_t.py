@@ -346,12 +346,12 @@ cms::Exception caught in EventProcessor and rethrown
 
         jsonReport = myReport.__to_json__(None)
 
-        assert "task" in jsonReport.keys(), \
+        assert "task" in list(jsonReport.keys()), \
                "Error: Task name missing from report."
 
-        assert len(jsonReport["steps"].keys()) == 1, \
+        assert len(list(jsonReport["steps"].keys())) == 1, \
                "Error: Wrong number of steps in report."
-        assert "cmsRun1" in jsonReport["steps"].keys(), \
+        assert "cmsRun1" in list(jsonReport["steps"].keys()), \
                "Error: Step missing from json report."
 
         cmsRunStep = jsonReport["steps"]["cmsRun1"]
@@ -359,7 +359,7 @@ cms::Exception caught in EventProcessor and rethrown
         jsonReportSections = ["status", "errors", "logs", "parameters", "site",
                               "analysis", "cleanup", "input", "output", "start"]
         for jsonReportSection in jsonReportSections:
-            assert jsonReportSection in cmsRunStep.keys(), \
+            assert jsonReportSection in list(cmsRunStep.keys()), \
                 "Error: missing section: %s" % jsonReportSection
 
         return
@@ -435,7 +435,7 @@ cms::Exception caught in EventProcessor and rethrown
         report.setStepPMEM(stepName="cmsRun1", min=100, max=800, average=244)
 
         perf = report.retrieveStep("cmsRun1").performance
-        for section in perf.dictionary_().values():
+        for section in list(perf.dictionary_().values()):
             d = section.dictionary_()
             self.assertEqual(d['min'], 100)
             self.assertEqual(d['max'], 800)

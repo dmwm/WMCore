@@ -33,7 +33,7 @@ class GetForJobSplittingByID(GetByID):
             tmpDict["events"]      = int(entry["events"])
             tmpDict["first_event"] = int(entry["first_event"])
             tmpDict['minrun']      = entry.get('minrun', None)
-            if "size" in entry.keys():
+            if "size" in list(entry.keys()):
                 tmpDict["size"]    = int(entry["size"])
             else:
                 tmpDict["size"]    = int(entry["filesize"])

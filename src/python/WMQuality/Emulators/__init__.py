@@ -2,6 +2,7 @@
 """
 
 
+from builtins import str
 import logging
 import os
 from WMCore.Configuration import loadConfigurationFile

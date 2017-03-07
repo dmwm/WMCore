@@ -2,6 +2,8 @@
 Provide functions to collect data and upload data
 """
 
+from builtins import str
+from builtins import object
 import os
 import time
 import subprocess
@@ -286,7 +288,7 @@ def combineAnalyticsData(a, b, combineFunc=None):
     """
     result = {}
     result.update(a)
-    for key, value in b.items():
+    for key, value in list(b.items()):
         if key not in result:
             result[key] = value
         else:
@@ -302,7 +304,7 @@ def convertToRequestCouchDoc(combinedRequests, fwjrInfo, finishedTasks,
                              skippedInfoFromCouch, agentInfo,
                              uploadTime, summaryLevel):
     requestDocs = []
-    for request, status in combinedRequests.items():
+    for request, status in list(combinedRequests.items()):
         doc = {}
         doc.update(agentInfo)
         doc['type'] = "agent_request"
@@ -379,11 +381,11 @@ def _setMultiLevelStatus(statusData, status, value):
 
 
 def _combineJobsForStatusAndSite(requestData, data):
-    for status, siteJob in requestData.items():
+    for status, siteJob in list(requestData.items()):
         if not isinstance(siteJob, dict):
             _setMultiLevelStatus(data['status'], status, siteJob)
         else:
-            for site, job in siteJob.items():
+            for site, job in list(siteJob.items()):
                 _setMultiLevelStatus(data['status'], status, int(job))
                 if site != 'Agent':
                     if site is None:
@@ -412,7 +414,7 @@ def _convertToStatusSiteFormat(requestData, summaryLevel=None):
 
     if summaryLevel != None and summaryLevel == 'task':
         data['tasks'] = {}
-        for task, taskData in requestData.items():
+        for task, taskData in list(requestData.items()):
             data['tasks'][task] = _convertToStatusSiteFormat(taskData)
             _combineJobsForStatusAndSite(taskData, data)
     else:

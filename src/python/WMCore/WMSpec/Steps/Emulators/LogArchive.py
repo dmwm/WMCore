@@ -7,6 +7,7 @@ Basic Emulator for LogArchive Step
 """
 from __future__ import print_function
 
+from builtins import str
 import os
 import os.path
 import re

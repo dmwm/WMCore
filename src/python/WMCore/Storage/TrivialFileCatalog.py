@@ -25,9 +25,14 @@ Usage: Given a TFC constact string: trivialcatalog_file:/path?protocol=proto
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import range
 import os
 import re
-import urlparse
+import urllib.parse
 from xml.dom.minidom import Element
 
 from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode
@@ -141,7 +146,7 @@ class TrivialFileCatalog(dict):
 
         def _getElementForMappingEntry(entry, mappingStyle):
             e = Element(mappingStyle)
-            for k, v in entry.items():
+            for k, v in list(entry.items()):
                 # ignore empty, None or compiled regexp items into output
                 if not v or (k == "path-match-expr"):
                     continue
@@ -149,7 +154,7 @@ class TrivialFileCatalog(dict):
             return e
 
         root = Element("storage-mapping") # root element name
-        for mappingStyle, mappings in self.items():
+        for mappingStyle, mappings in list(self.items()):
             for mapping in mappings:
                 mapElem = _getElementForMappingEntry(mapping, mappingStyle)
                 root.appendChild(mapElem)
@@ -179,7 +184,7 @@ def tfcProtocol(contactString):
     protocol from it.
 
     """
-    args = urlparse.urlsplit(contactString)[3]
+    args = urllib.parse.urlsplit(contactString)[3]
     value = args.replace("protocol=", '')
     return value
 

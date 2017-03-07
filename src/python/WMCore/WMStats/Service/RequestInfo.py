@@ -124,4 +124,4 @@ class TeamInfo(RESTEntity):
     @tools.expires(secs=-1)
     def get(self):
         result = self.wmstats.agentsByTeam(filterDrain=False)
-        return rows(result.keys())
+        return rows(list(result.keys()))

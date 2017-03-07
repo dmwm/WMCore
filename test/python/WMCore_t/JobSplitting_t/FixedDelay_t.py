@@ -4,7 +4,10 @@ _FixedDelay_t_
 
 Fixed Delay splitting test.
 """
+from __future__ import division
 
+from builtins import range
+from past.utils import old_div
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -39,7 +42,7 @@ class FixedDelayTest(unittest.TestCase):
         self.multipleFileLumiset = Fileset(name = "TestFileset3")
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100)
-            newFile.addRun(Run(1, *[45+i/3]))
+            newFile.addRun(Run(1, *[45+old_div(i,3)]))
             self.multipleFileLumiset.addFile(newFile)
 
         self.singleLumiFileset = Fileset(name = "TestFileset4")

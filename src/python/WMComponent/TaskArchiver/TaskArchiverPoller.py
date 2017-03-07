@@ -23,6 +23,7 @@ histogramLimit: Limit in terms of number of standard deviations from the
   average at which you cut the histogram off.  All points outside of that
   go into overflow and underflow.
 """
+from builtins import str
 __all__ = []
 import logging
 import threading
@@ -198,7 +199,7 @@ class TaskArchiverPoller(BaseWorkerThread):
 
 
         #Only delete those where the upload and notification succeeded
-        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs),finishedwfs.keys())
+        logging.info("Found %d candidate workflows for completing: %s", len(finishedwfs),list(finishedwfs.keys()))
         # update the completed flag in dbsbuffer_workflow table so blocks can be closed
         # create updateDBSBufferWorkflowComplete DAO
         if len(finishedwfs) == 0:
@@ -222,7 +223,7 @@ class TaskArchiverPoller(BaseWorkerThread):
                     if self.workQueue != None:
                         subList = []
                         logging.info("Marking subscriptions as Done ...")
-                        for l in finishedwfs[workflow]["workflows"].values():
+                        for l in list(finishedwfs[workflow]["workflows"].values()):
                             subList.extend(l)
                         self.notifyWorkQueue(subList)
 

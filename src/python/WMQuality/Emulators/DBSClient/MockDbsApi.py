@@ -4,6 +4,8 @@
 Version of dbsClient.dbsApi intended to be used with mock or unittest.mock
 """
 
+from builtins import str
+from builtins import object
 from __future__ import (division, print_function)
 
 import copy
@@ -62,7 +64,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [str(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -85,7 +87,7 @@ class MockDbsApi(object):
             origArgs = copy.deepcopy(kwargs)
             returnDicts = []
             for lfn in kwargs['logical_file_name']:
-                origArgs.update({'logical_file_name': [unicode(lfn)]})
+                origArgs.update({'logical_file_name': [str(lfn)]})
                 returnDicts.extend(self.genericLookup(**origArgs))
             return returnDicts
         else:
@@ -111,11 +113,11 @@ class MockDbsApi(object):
         :return: the dictionary that DBS would have returned
         """
 
-        if self.url not in mockData.keys():
+        if self.url not in list(mockData.keys()):
             raise DBSReaderError("Mock DBS emulator knows nothing about instance %s" % self.url)
 
         if kwargs:
-            signature = '%s:%s' % (self.item, sorted(kwargs.iteritems()))
+            signature = '%s:%s' % (self.item, sorted(kwargs.items()))
         else:
             signature = self.item
 

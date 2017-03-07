@@ -1,5 +1,7 @@
 from __future__ import print_function
 # system modules
+from builtins import str
+from builtins import range
 import cherrypy
 from multiprocessing import Process
 from cherrypy.test import webtest
@@ -36,7 +38,7 @@ class Task(Thread):
         """Get the daemon status. Returns dictionary of time stamps of the
         the last hundred times this thread last did 'work'."""
         with self._cv:
-            return dict((k, v) for k, v in self._status.iteritems())
+            return dict((k, v) for k, v in self._status.items())
 
     def stop(self):
         """Tell the task thread to quit."""
@@ -86,7 +88,7 @@ class TaskAPI(RESTApi):
     entity to report their status via HTTP GET."""
     def __init__(self, app, config, mount):
         RESTApi.__init__(self, app, config, mount)
-        tasks = [Task() for _ in xrange(0, 10)]
+        tasks = [Task() for _ in range(0, 10)]
         self._add({ "status": Status(app, self, config, mount, tasks) })
 
 class TaskTest(webtest.WebCase):
@@ -103,7 +105,7 @@ class TaskTest(webtest.WebCase):
     def test(self):
         h = self.h
         h.append(("Accept", "application/json"))
-        for _ in xrange(0, 10):
+        for _ in range(0, 10):
             self.getPage("/test/status", headers=h)
             print(self.body)
             time.sleep(.3)

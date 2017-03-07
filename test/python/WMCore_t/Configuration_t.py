@@ -2,6 +2,9 @@
 #pylint: disable=E1101,C0103,R0902
 
 
+from builtins import str
+from builtins import range
+from builtins import object
 import unittest
 
 from WMCore.Configuration import ConfigSection
@@ -142,7 +145,7 @@ class ConfigurationTest(unittest.TestCase):
         self.assertEqual(config.Section2.Tuple,
                          ("string", 123, 123.456, False))
 
-        class DummyObject:
+        class DummyObject(object):
             pass
         # unsupported parameter type
         self.assertRaises(
@@ -319,7 +322,7 @@ class ConfigurationTest(unittest.TestCase):
         config.Task1.section_("subSection")
         config.Task1.subSection.value3 = "MyValue3"
         d = config.dictionary_whole_tree_()
-        for values in d.values():
+        for values in list(d.values()):
             self.assertFalse(isinstance(values, ConfigSection))
         self.assertEqual(d["Task1"]["subSection"]["value3"], "MyValue3")
 

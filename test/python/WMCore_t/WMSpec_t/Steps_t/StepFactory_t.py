@@ -7,6 +7,7 @@ Unittests for StepFactory module
 """
 
 
+from builtins import str
 import unittest
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 

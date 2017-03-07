@@ -129,11 +129,11 @@ class ListThresholdsForSubmit(DBFormatter):
         queries into a single datastructure.
         """
         results = []
-        for k, v in formattedResults.items():
+        for k, v in list(formattedResults.items()):
             item = {}
             item['site'] = k
             item['data'] = []
-            for ck, cv in v.items():
+            for ck, cv in list(v.items()):
                 childItem = {}
                 childItem['type'] = ck
                 childItem.update(cv)

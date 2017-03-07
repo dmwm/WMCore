@@ -5,6 +5,7 @@ _TaskSpace_
 Frontend module for setting up TaskSpace & StepSpace areas within a job.
 """
 
+from builtins import str
 import inspect
 import pickle
 import os

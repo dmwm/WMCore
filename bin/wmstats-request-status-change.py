@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from builtins import input
 import os
 import sys
 from optparse import OptionParser
@@ -39,7 +40,7 @@ if __name__ == "__main__":
         print("new status needs to be set")
         sys.exit(1)
 
-    answer = raw_input("%s change to %s in wmstats db (yes, no)?" % (options.request, options.newstatus))
+    answer = input("%s change to %s in wmstats db (yes, no)?" % (options.request, options.newstatus))
     if not answer.lower() == "yes":
         print("Canceled")
         sys.exit(1)

@@ -38,13 +38,13 @@ def getSiteInfo(config):
                                                     'T3*': 'T3_*'})
     wildcardSites = {}
 
-    for k in wildcardKeys.keys():
+    for k in list(wildcardKeys.keys()):
         reValue = wildcardKeys.get(k)
         found   = False
         for s in sites:
             if re.search(reValue, s):
                 found = True
-                if not k in wildcardSites.keys():
+                if not k in list(wildcardSites.keys()):
                     wildcardSites[k] = []
                 wildcardSites[k].append(s)
         if found:

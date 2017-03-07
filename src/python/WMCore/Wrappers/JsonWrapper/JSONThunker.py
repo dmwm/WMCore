@@ -1,10 +1,12 @@
+from builtins import str
+from builtins import object
 import sys
 import types
 
-class _EmptyClass:
+class _EmptyClass(object):
     pass
 
-class JSONThunker:
+class JSONThunker(object):
     """
     _JSONThunker_
     Converts an arbitrary object to <-> from a jsonable object.
@@ -25,11 +27,11 @@ class JSONThunker:
                                  bool,
                                  int,
                                  float,
-                                 long,
+                                 int,
                                  complex,
                                  str,
                                  bytes,
-                                 unicode
+                                 str
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -126,7 +128,7 @@ class JSONThunker:
         toThunk = self.checkRecursion( toThunk )
         special = False
         tmpdict = {}
-        for k,v in toThunk.iteritems():
+        for k,v in toThunk.items():
             if type(k) == type(int):
                 special = True
                 tmpdict['_i:%s' % k] = self._thunk(v)
@@ -186,9 +188,9 @@ class JSONThunker:
                     'type': thunktype,
                     thunktype: {}}
 
-        for k,v in data.__dict__.iteritems():
+        for k,v in data.__dict__.items():
             tempDict[k] = self._thunk(v)
-        for k,v in data.iteritems():
+        for k,v in data.items():
             tempDict[thunktype][k] = self._thunk(v)
 
         return tempDict
@@ -198,9 +200,9 @@ class JSONThunker:
         data.pop('is_dict', False)
         thunktype = data.pop('type', False)
 
-        for k,v in data.iteritems():
+        for k,v in data.items():
             if (k == thunktype):
-                for k2,v2 in data[thunktype].iteritems():
+                for k2,v2 in data[thunktype].items():
                     value[k2] = self._unthunk(v2)
             else:
                 value.__dict__[k] = self._unthunk(v)
@@ -215,7 +217,7 @@ class JSONThunker:
                     thunktype: []}
         for k,v in enumerate(data):
             tempDict['thunktype'].append(self._thunk(v))
-        for k,v in data.__dict__.iteritems():
+        for k,v in data.__dict__.items():
             tempDict[k] = self._thunk(v)
         return tempDict
 
@@ -224,10 +226,10 @@ class JSONThunker:
         data.pop('is_list', False)
         thunktype = data.pop('type')
         tmpdict = {}
-        for k,v in data[thunktype].iteritems():
+        for k,v in data[thunktype].items():
             setattr(value, k, self._unthunk(v))
 
-        for k,v in data.iteritems():
+        for k,v in data.items():
             if (k == thunktype):
                 continue
             value.__dict__ = self._unthunk(v)
@@ -262,7 +264,7 @@ class JSONThunker:
         """
         _unthunk - does the actual work for unthunk
         """
-        if (type(jsondata) == unicode):
+        if (type(jsondata) == str):
             return str(jsondata)
         if (type(jsondata) == type({})):
             if ('thunker_encoded_json' in jsondata):
@@ -275,7 +277,7 @@ class JSONThunker:
                 if jsondata['type'] == 'dict':
                     # We have a "special" dict
                     data = {}
-                    for k,v in jsondata['dict'].iteritems():
+                    for k,v in jsondata['dict'].items():
                         tmp = self._unthunk(v)
                         if k.startswith('_i:'):
                             data[int(k.lstrip('_i:'))] = tmp
@@ -338,7 +340,7 @@ class JSONThunker:
             else:
                 #print 'last ditch attempt'
                 data = {}
-                for k,v in jsondata.iteritems():
+                for k,v in jsondata.items():
                     data[k] = self._unthunk(v)
                 return data
 

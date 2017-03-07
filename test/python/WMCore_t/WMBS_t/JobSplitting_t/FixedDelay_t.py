@@ -4,7 +4,10 @@ _FixedDelay_t_
 
 Fixed delay job splitting.
 """
+from __future__ import division
 
+from builtins import range
+from past.utils import old_div
 import unittest
 import os
 import threading
@@ -66,7 +69,7 @@ class FixedDelayTest(unittest.TestCase):
         self.multipleFileLumiset.create()
         for i in range(10):
             newFile = File(makeUUID(), size = 1000, events = 100, locations = set(["T2_CH_CERN"]))
-            newFile.addRun(Run(1, *[45+i/3]))
+            newFile.addRun(Run(1, *[45+old_div(i,3)]))
             newFile.create()
             self.multipleFileLumiset.addFile(newFile)
         self.multipleFileLumiset.commit()

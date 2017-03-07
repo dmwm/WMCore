@@ -3,12 +3,15 @@ WorkQueueElementResult
 
 A dictionary based object meant to represent a WorkQueue block
 """
+from __future__ import division
 
 #Can we re-use WorkQueueElement for this?
 
 
 
 
+from builtins import str
+from past.utils import old_div
 class WorkQueueElementResult(dict):
     """Class to hold the status of a related group of WorkQueueElements"""
     def __init__(self, **kwargs):
@@ -25,11 +28,11 @@ class WorkQueueElementResult(dict):
                             sum([x['FilesProcessed'] for x in self['Elements']]))
             self.setdefault('Jobs', sum([x['Jobs'] for x in self['Elements']]))
             self.setdefault('PercentComplete',
-                            int(sum([x['PercentComplete'] for x in self['Elements']],
-                                0.0) / len(self['Elements'])))
+                            int(old_div(sum([x['PercentComplete'] for x in self['Elements']],
+                                0.0), len(self['Elements']))))
             self.setdefault('PercentSuccess',
-                            int(sum([x['PercentSuccess'] for x in self['Elements']],
-                                0.0) / len(self['Elements'])))
+                            int(old_div(sum([x['PercentSuccess'] for x in self['Elements']],
+                                0.0), len(self['Elements']))))
             self.setdefault('RequestName', self['Elements'][0]['RequestName'])
             self.setdefault('TeamName', self['Elements'][0]['TeamName'])
             self.setdefault('Priority', self['Elements'][0]['Priority'])
@@ -54,7 +57,7 @@ class WorkQueueElementResult(dict):
 
     def fractionComplete(self):
         """Return fraction successful"""
-        return len(self.completeItems()) / float(len(self['Elements']))
+        return old_div(len(self.completeItems()), float(len(self['Elements'])))
 
     def completeItems(self):
         """Return complete items"""

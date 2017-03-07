@@ -28,7 +28,7 @@ class RemoveDuplicates(DBFormatter):
         results = self.dbi.processData(self.sql, binds, conn = conn,
                                       transaction = transaction)
         for result in self.formatDict(results):
-            if result["lfn"] in newFiles.keys():
+            if result["lfn"] in list(newFiles.keys()):
                 del newFiles[result["lfn"]]
 
-        return newFiles.values()
+        return list(newFiles.values())

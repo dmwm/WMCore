@@ -12,6 +12,7 @@
 # Mattia Cinquilli <mcinquil@cern.ch>
 # on 2013/04/14 for integration on CRAB services.
 
+from builtins import str
 import logging
 import socket
 import re

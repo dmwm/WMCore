@@ -5,6 +5,8 @@ _UserFileCache_
 API for UserFileCache service
 """
 
+from builtins import str
+from past.builtins import basestring
 import os
 import json
 import shutil

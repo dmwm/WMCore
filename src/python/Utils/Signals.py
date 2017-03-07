@@ -26,7 +26,7 @@ def dumpthreads(isignal, iframe):
     print("DAS stack, signal=%s, frame=%s" % (isignal, iframe))
     id2name = dict([(th.ident, th.name) for th in threading.enumerate()])
     code = []
-    for tid, stack in sys._current_frames().items():
+    for tid, stack in list(sys._current_frames().items()):
         code.append("\n# Thread: %s(%d)" % (id2name.get(tid,""), tid))
         for filename, lineno, name, line in traceback.extract_stack(stack):
             code.append('File: "%s", line %d, in %s' % (filename, lineno, name))

@@ -6,6 +6,9 @@ Interface to LogDB persistent storage
 """
 
 # syste modules
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import datetime
 import hashlib
 import time

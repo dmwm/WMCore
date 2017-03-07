@@ -8,6 +8,7 @@ Generic methods used by all of the WMBS classes.
 
 
 
+from builtins import object
 import threading
 import copy
 
@@ -19,7 +20,7 @@ try:
 except (ImportError, NameError):
     pass
 
-class WMConnectionBase:
+class WMConnectionBase(object):
     """
     Generic db connection and transaction methods used by all of the WMCore classes.
     """

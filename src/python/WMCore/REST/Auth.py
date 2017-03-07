@@ -1,3 +1,5 @@
+from builtins import map
+from builtins import str
 import cherrypy, hmac, hashlib, logging, re
 
 def user_info_from_headers(key, verbose=False):
@@ -22,7 +24,7 @@ def user_info_from_headers(key, verbose=False):
     # Extract user information from the headers. Collect data required
     # for HMAC validation while processing headers.
     prefix = suffix = ""
-    hkeys = headers.keys()
+    hkeys = list(headers.keys())
     hkeys.sort()
     for hk in hkeys:
         hk = hk.lower()
@@ -33,7 +35,7 @@ def user_info_from_headers(key, verbose=False):
             if hk.startswith("cms-authn"):
                 val = headers[hk]
                 if hk in ("cms-authn-name", "cms-authn-dn"):
-                    val = unicode(val, "utf-8")
+                    val = str(val, "utf-8")
                 user[hkname] = val
             if hk.startswith("cms-authz"):
                 user['roles'][hkname] = { 'site': set(), 'group': set() }
@@ -67,9 +69,9 @@ def authz_match(role=[], group=[], site=[], verbose=False):
     site = (site and isinstance(site, str) and [site]) or site
 
     # Reformat all items into canonical format.
-    role = role and map(authz_canonical, role)
-    group = group and map(authz_canonical, group)
-    site = site and map(authz_canonical, site)
+    role = role and list(map(authz_canonical, role))
+    group = group and list(map(authz_canonical, group))
+    site = site and list(map(authz_canonical, site))
 
     # If role, group and site are all empty, no authz requirements: pass
     if not (role or group or site):
@@ -78,7 +80,7 @@ def authz_match(role=[], group=[], site=[], verbose=False):
         return
 
     # Otherwise determine set intersection of requirements.
-    for r, authz in ((user and user['roles']) or {}).iteritems():
+    for r, authz in ((user and user['roles']) or {}).items():
         if (not role) or (r in role):
             if not (group or site):
                 if verbose:

@@ -5,6 +5,9 @@ _DBSReader_
 Readonly DBS Interface
 
 """
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import time
 from collections import defaultdict
 
@@ -31,8 +34,8 @@ def remapDBS3Keys(data, stringify=False, **others):
                'block_name': 'BlockName', 'lumi_section_num': 'LumiSectionNumber'}
 
     mapping.update(others)
-    format = lambda x: str(x) if stringify and isinstance(x, unicode) else x
-    for name, newname in mapping.iteritems():
+    format = lambda x: str(x) if stringify and isinstance(x, str) else x
+    for name, newname in mapping.items():
         if name in data:
             data[newname] = format(data[name])
     return data
@@ -195,9 +198,9 @@ class DBS3Reader(object):
         """
         # Pointless code in python3
         if isinstance(block, str):
-            block = unicode(block)
+            block = str(block)
         if isinstance(dataset, str):
-            dataset = unicode(dataset)
+            dataset = str(dataset)
 
         try:
             if block:
@@ -552,7 +555,7 @@ class DBS3Reader(object):
             for fp in f['parent_logical_file_name']:
                 childByParents[fp].append(f['logical_file_name'])
 
-        parentsLFNs = childByParents.keys()
+        parentsLFNs = list(childByParents.keys())
 
         if len(parentsLFNs) == 0:
             msg = "Error in "
@@ -672,7 +675,7 @@ class DBS3Reader(object):
         """
         # Pointless code in python3
         if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
+            fileBlockName = str(fileBlockName)
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlock(%s): No matching data"
             raise DBSReaderError(msg % fileBlockName)
@@ -700,7 +703,7 @@ class DBS3Reader(object):
 
         """
         if isinstance(fileBlockName, str):
-            fileBlockName = unicode(fileBlockName)
+            fileBlockName = str(fileBlockName)
 
         if not self.blockExists(fileBlockName):
             msg = "DBSReader.getFileBlockWithParents(%s): No matching data"
@@ -819,7 +822,7 @@ class DBS3Reader(object):
                 raise Exception(msg)
 
             if blocksInfo:
-                for blockSites in blocksInfo.values():
+                for blockSites in list(blocksInfo.values()):
                     locations.update(blockSites)
 
         return list(locations)

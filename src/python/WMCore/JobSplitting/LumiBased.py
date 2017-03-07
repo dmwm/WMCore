@@ -6,10 +6,15 @@ _LumiBased_
 Lumi based splitting algorithm that will chop a fileset into
 a set of jobs based on lumi sections
 """
+from __future__ import division
 
 
 
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import operator
 import logging
 import threading
@@ -53,13 +58,13 @@ def isGoodRun(goodRunList, run):
     if goodRunList == None or goodRunList == {}:
         return True
 
-    if str(run) in goodRunList.keys():
+    if str(run) in list(goodRunList.keys()):
         # @e can find a run
         return True
 
     return False
 
-class LumiChecker:
+class LumiChecker(object):
     """ Simple utility class that helps correcting dataset that have lumis split across jobs:
 
         Due to error in processing (in particular, the Run I Tier-0), some
@@ -112,9 +117,9 @@ class LumiChecker:
         if not self.applyLumiCorrection:
             return
         if job: # the first time you call "newJob" in the splitting algorithm currentJob is None
-            for run, lumiIntervals in job['mask']['runAndLumis'].iteritems():
+            for run, lumiIntervals in job['mask']['runAndLumis'].items():
                 for startLumi, endLumi in lumiIntervals:
-                    for lumi in xrange(startLumi, endLumi + 1):
+                    for lumi in range(startLumi, endLumi + 1):
                         self.lumiJobs[(run, lumi)] = job
 
     def fixInputFiles(self):
@@ -125,7 +130,7 @@ class LumiChecker:
         if not self.applyLumiCorrection:
             return
 
-        for (run, lumi), files in self.splitLumiFiles.iteritems():
+        for (run, lumi), files in self.splitLumiFiles.items():
             for file_ in files:
                 self.lumiJobs[(run, lumi)].addFile(file_)
 
@@ -208,14 +213,14 @@ class LumiBased(JobFactory):
         if self.package == 'WMCore.WMBS':
             loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
 
-        for key in lDict.keys():
+        for key in list(lDict.keys()):
             newlist = []
             # First we need to load the data
             if self.package == 'WMCore.WMBS':
                 fileLumis = loadRunLumi.execute(files = lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
+                    for run in list(lumiDict.keys()):
                         f.addRun(run = Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
@@ -231,7 +236,7 @@ class LumiBased(JobFactory):
                 f['lowestRun'] = f['runs'][0]
                 # Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(old_div(float(f['events']), f['lumiCount']))
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']
@@ -253,7 +258,7 @@ class LumiBased(JobFactory):
         lumisInJob = 0
         lumisInTask = 0
         self.lumiChecker = LumiChecker(applyLumiCorrection)
-        for location in locationDict.keys():
+        for location in list(locationDict.keys()):
 
             # For each location, we need a new jobGroup
             self.newGroup()

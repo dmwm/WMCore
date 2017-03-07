@@ -35,7 +35,7 @@ def mockGetJSON(dummySelf, callname, filename='result.json', clearCache=False, v
     #Build args
     args = {'callname':callname, 'filename':filename, 'clearCache':clearCache, 'verb':verb, 'data':data}
     result = {}
-    signature = '%s' %(sorted(args.iteritems()))
+    signature = '%s' %(sorted(args.items()))
     try:
         if mockData[signature] == 'Raises HTTPError':
             raise HTTPError

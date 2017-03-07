@@ -10,6 +10,8 @@ Created on Nov 2, 2012
 @author: dballest
 """
 
+from builtins import str
+from builtins import filter
 import threading
 import traceback
 import re
@@ -223,7 +225,7 @@ class Tier0Plugin(PluginInterface):
         clean unused task lists
         """
         self.logger.debug('Cleaning up task cache')
-        for workflow in self.taskCache.keys():
+        for workflow in list(self.taskCache.keys()):
             if workflow not in reportedWorkflows:
                 self.taskCache.pop(workflow)
         return
@@ -243,8 +245,8 @@ class Tier0Plugin(PluginInterface):
             completedTasksForStatus = 0
             totalTasksForStatus = 0
             for regex in pair[1]:
-                completedTasksForStatus += len(filter(regex, completedTasks))
-                totalTasksForStatus += len(filter(regex, fullTaskList))
+                completedTasksForStatus += len(list(filter(regex, completedTasks)))
+                totalTasksForStatus += len(list(filter(regex, fullTaskList)))
             if completedTasksForStatus == totalTasksForStatus:
                 currentStatus = pair[0]
             else:

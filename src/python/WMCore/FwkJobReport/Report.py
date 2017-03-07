@@ -8,6 +8,11 @@ Framework job report object.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import re
 import logging
 import sys
@@ -15,7 +20,7 @@ import traceback
 import time
 import math
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -95,11 +100,11 @@ def addAttributesToFile(fileSection, **attributes):
 
     Add attributes to a file in the FWJR.
     """
-    for attName in attributes.keys():
+    for attName in list(attributes.keys()):
         setattr(fileSection, attName, attributes[attName])
     return
 
-class Report:
+class Report(object):
     """
     The base class for the new jobReport
 
@@ -200,7 +205,7 @@ class Report:
                 continue
 
             jsonPerformance[reportSection] = getattr(perfSection, reportSection).dictionary_()
-            for key in jsonPerformance[reportSection].keys():
+            for key in list(jsonPerformance[reportSection].keys()):
                 val = jsonPerformance[reportSection][key]
                 if isinstance(val, float):
                     if math.isinf(val) or math.isnan(val):
@@ -421,7 +426,7 @@ class Report:
 
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
-        keyList = file.keys()
+        keyList = list(file.keys())
 
         fileRef.section_("runs")
         if "runs" in file:
@@ -485,7 +490,7 @@ class Report:
         fileRef = getattr(srcMod.files, fileSection)
         srcMod.files.fileCount += 1
 
-        keyList = attrs.keys()
+        keyList = list(attrs.keys())
 
         fileRef.section_("runs")
         if "runs" in attrs:
@@ -518,7 +523,7 @@ class Report:
         newFile = getattr(analysisFiles, label)
         newFile.fileName = filename
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        [setattr(newFile, x, y) for x, y in list(attrs.items())]
 
         analysisFiles.fileCount += 1
         return
@@ -536,7 +541,7 @@ class Report:
         removedFiles.section_(label)
         newFile = getattr(removedFiles, label)
 
-        [setattr(newFile, x, y) for x, y in attrs.items()]
+        [setattr(newFile, x, y) for x, y in list(attrs.items())]
 
         self.report.cleanup.removed.fileCount += 1
         return
@@ -1423,7 +1428,7 @@ class Report:
         error = None
         files = self.getAllFilesFromStep(step = stepName)
         for f in files:
-            if not 'adler32' in f.get('checksums', {}).keys():
+            if not 'adler32' in list(f.get('checksums', {}).keys()):
                 error = f.get('lfn', None)
             elif f['checksums']['adler32'] == None:
                 error = f.get('lfn', None)

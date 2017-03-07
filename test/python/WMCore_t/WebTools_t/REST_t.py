@@ -7,10 +7,12 @@ Unit tests for checking RESTModel works correctly
 TODO: duplicate all direct call tests to ones that use HTTP
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import unittest
 import logging
-import urllib2
-import urllib
+import urllib.request, urllib.error, urllib.parse
+import urllib.request, urllib.parse, urllib.error
 import json
 
 from cherrypy import HTTPError
@@ -141,11 +143,11 @@ class RESTTest(RESTBaseUnitTest):
         list takes a single integer argument, querying with a string
         """
         url = self.urlbase + 'list?int=a'
-        self.assertRaises(urllib2.HTTPError, urllib2.urlopen, url)
+        self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, url)
         # urllib2,urlopen raise the error but not urllib.urlopen
         url = self.urlbase + 'list1?int=a'
         expected_data = {"exception": 400, "type": "HTTPError", "message": "Invalid input: Arguments added where none allowed"}
-        urllib_data = urllib.urlopen(url)
+        urllib_data = urllib.request.urlopen(url)
         if self.do_production:
             #production mode returns 403 error
             self.assertEqual(urllib_data.getcode(), 403)
@@ -162,7 +164,7 @@ class RESTTest(RESTBaseUnitTest):
         request_input = {'input_int':123, 'input_str':'abc'}
         output={'code':200, 'type':'text/json'}
         result = json.loads(methodTest(verb, url, request_input=request_input, output=output)[0])
-        for i in result.keys():
+        for i in list(result.keys()):
             self.assertEqual(result[i], request_input[i], '%s does not match response' % i)
 
     def testA(self):
@@ -367,7 +369,7 @@ class RESTTest(RESTBaseUnitTest):
     def testAuthentication(self):
         verb ='PUT'
         url = self.urlbase + 'list1'
-        urllib_data = urllib.urlopen(url)
+        urllib_data = urllib.request.urlopen(url)
         self.assertEqual(urllib_data.getcode(), 403)
 
         # pass proper role

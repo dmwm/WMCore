@@ -37,7 +37,7 @@ class GetLocationsForJobs(DBFormatter):
 
         for res in modifiedResult:
             #Should only have one entry (one site_name per site)
-            tmp = res.values()[0]
+            tmp = list(res.values())[0]
             if not tmp in newResult:
                 newResult.append(tmp)
 

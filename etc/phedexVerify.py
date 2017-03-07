@@ -59,7 +59,7 @@ for row in results:
 
 phedex = PhEDEx.PhEDEx({"endpoint": "https://cmsweb.cern.ch/phedex/datasvc/json/prod/"}, "json")
 
-for blockName in blocks.keys():
+for blockName in list(blocks.keys()):
     print("%s:" % blockName)
 
     args = {}

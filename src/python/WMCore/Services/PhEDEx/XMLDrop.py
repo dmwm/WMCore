@@ -8,6 +8,8 @@ Modified from ProdCommon.DataMgmt.PhEDEx.DropMaker.py
 TODO: Need to merge with ProdCommon.DataMgmt.PhEDEx.DropMaker.py - Talk to Stuart
 """
 
+from builtins import str
+from builtins import object
 import logging
 from xml.dom.minidom import getDOMImplementation
 
@@ -54,12 +56,12 @@ class XMLFileblock(list):
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
             checksum = ",".join(["%s:%s" % (x, y) for x, y \
-                                 in checksums.items() \
+                                 in list(checksums.items()) \
                                  if y not in (None, '')])
         for lfn, checksums, size in self:
             # checksums is a comma separated list of key:value pair
             formattedChecksums = ",".join(["%s:%s" % (x.lower(), y) for x, y \
-                                           in checksums.items() \
+                                           in list(checksums.items()) \
                                            if y not in (None, '')])
             file = doc.createElement("file")
             file.setAttribute('name', lfn)
@@ -122,12 +124,12 @@ class XMLDataset(list):
         dataset.setAttribute('is-transient', self.datasetIsTransient)
         dataset.setAttribute('name', self.datasetName)
 
-        for block in self.fileblocks.values():
+        for block in list(self.fileblocks.values()):
             dataset.appendChild(block.save())
 
         return dataset
 
-class XMLInjectionSpec:
+class XMLInjectionSpec(object):
     """
     _XMLInjectionSpec_
     <data version='2'>
@@ -189,7 +191,7 @@ class XMLInjectionSpec:
         dbs.setAttribute('name', self.dbs)
         result.appendChild(dbs)
 
-        for dataset in self.datasetPaths.values():
+        for dataset in list(self.datasetPaths.values()):
             dbs.appendChild(dataset.save())
 
         return result.toprettyxml()

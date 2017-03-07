@@ -7,9 +7,12 @@ to other classes. If a test fails an AssertionError should be raised, and
 handled appropriately by the client methods, on success returns True.
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import re
 import string
-import urlparse
+import urllib.parse
 
 from WMCore.WMException import WMException
 
@@ -225,7 +228,7 @@ def userprocdataset(candidate):
 def procversion(candidate):
     """ Integers """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in list(candidate.values()):
             check(r'^[0-9]+$', str(candi))
         return True
     else:
@@ -237,7 +240,7 @@ def procstring(candidate):
     if not candidate:
         raise AssertionError("ProcStr cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in list(candidate.values()):
             check(r'[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -249,7 +252,7 @@ def procstringT0(candidate):
     ProcessingString validation function for T0 specs
     """
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in list(candidate.values()):
             check(r'^$|[a-zA-Z0-9_]{1,100}$', candi)
         return True
     else:
@@ -264,7 +267,7 @@ def acqname(candidate):
     if not candidate:
         raise AssertionError("AcqEra cannot be empty or None.")
     if isinstance(candidate, dict):
-        for candi in candidate.values():
+        for candi in list(candidate.values()):
             check(r'[a-zA-Z][a-zA-Z0-9_]*$', candi)
         return True
     else:
@@ -580,7 +583,7 @@ def sanitizeURL(url):
        WANNING: This doesn't check the correctness of url format.
        Don't use ':' in username or password.
     """
-    endpoint_components = urlparse.urlparse(url)
+    endpoint_components = urllib.parse.urlparse(url)
     # Cleanly pull out the user/password from the url
     if endpoint_components.port:
         netloc = '%s:%s' % (endpoint_components.hostname,
@@ -589,7 +592,7 @@ def sanitizeURL(url):
         netloc = endpoint_components.hostname
 
     # Build a URL without the username/password information
-    url = urlparse.urlunparse(
+    url = urllib.parse.urlunparse(
             [endpoint_components.scheme,
              netloc,
              endpoint_components.path,

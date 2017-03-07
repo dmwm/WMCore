@@ -4,6 +4,7 @@ ErrorHandler test TestErrorHandler module and the harness
 """
 from __future__ import print_function
 
+from builtins import range
 import os
 import os.path
 import threading

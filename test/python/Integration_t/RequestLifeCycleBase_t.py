@@ -2,6 +2,7 @@
 """Base class for integration test for request lifecycle"""
 from __future__ import print_function
 
+from builtins import object
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
 from WMCore.Cache.WMConfigCache import ConfigCache

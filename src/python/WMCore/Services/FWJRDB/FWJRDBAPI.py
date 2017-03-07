@@ -1,8 +1,10 @@
+from past.builtins import basestring
+from builtins import object
 from __future__ import (division, print_function)
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL
 
-class FWJRDBAPI():
+class FWJRDBAPI(object):
 
     def __init__(self, couchURL, dbName=None):
         """
@@ -71,7 +73,7 @@ class FWJRDBAPI():
         if detail or returnDict:
             return result
         else:
-            return result.keys()
+            return list(result.keys())
 
     def getFWJRByArchiveStatus(self, status, limit=None, skip=None):
         """

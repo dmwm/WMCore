@@ -102,7 +102,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
                                 task="/TestWorkload/MonteCarloFromGEN")
         procWorkflow.load()
 
-        self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(procWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
         self.assertEqual(procWorkflow.wfType, 'production')
 
@@ -135,7 +135,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
                                      task="/TestWorkload/MonteCarloFromGEN/MonteCarloFromGENMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]

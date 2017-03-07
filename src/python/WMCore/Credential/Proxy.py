@@ -4,7 +4,12 @@
 _Proxy_
 Wrap gLite proxy commands.
 """
+from __future__ import division
 
+from builtins import filter
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import contextlib
 import copy
 import os, subprocess
@@ -60,7 +65,7 @@ def destroyListCred( credNameList = [], credTimeleftList = { }, logger = None, t
     """
     cleanCredCmdList = []
 
-    for credIdx in xrange(len(credNameList)):
+    for credIdx in range(len(credNameList)):
         hours, minutes, seconds = credTimeleftList[ credIdx ]
         timeleft = int(hours) * 3600 + int(minutes) * 60 + int(seconds)
         if timeleft == 0:
@@ -201,7 +206,7 @@ class Proxy(Credential):
         if self.retcode:
             raise CredentialException('Cannot get user certificate remaining time with "voms-proxy-info"')
 
-        daystoexp = int (timeleft / (60 * 60 * 24))
+        daystoexp = int (old_div(timeleft, (60 * 60 * 24)))
         return daystoexp
 
     def getProxyDetails(self):
@@ -585,7 +590,7 @@ class Proxy(Credential):
         timeLeft = int( timeLeft.strip() )
 
         if timeLeft > 0:
-            vomsValid = "%d:%02d" % ( timeLeft / 3600, ( timeLeft - ( timeLeft / 3600 ) *3600 ) / 60 )
+            vomsValid = "%d:%02d" % ( old_div(timeLeft, 3600), old_div(( timeLeft - ( old_div(timeLeft, 3600) ) *3600 ), 60) )
 
         self.logger.debug( 'Requested voms validity: %s' % vomsValid )
 
@@ -655,11 +660,11 @@ class Proxy(Credential):
         """
         # TODO: make the minimum value between proxyLife and vomsLife configurable
         if abs(ProxyLife - VomsLife) > 900 :
-            hours = int(ProxyLife) / 3600
-            minutes = (int(ProxyLife) - hours * 3600) / 60
+            hours = old_div(int(ProxyLife), 3600)
+            minutes = old_div((int(ProxyLife) - hours * 3600), 60)
             proxyLife = "%d:%02d" % (hours, minutes)
-            hours = int(VomsLife) / 3600
-            minutes = (int(VomsLife) - hours * 3600) / 60
+            hours = old_div(int(VomsLife), 3600)
+            minutes = old_div((int(VomsLife) - hours * 3600), 60)
             vomsLife = "%d:%02d" % (hours, minutes)
             msg =  "Proxy lifetime %s is different from \
                    voms extension lifetime %s for proxy %s" \
@@ -701,7 +706,7 @@ class Proxy(Credential):
                                              self.commandTimeout)
         if retcode == 0:
             if allAttributes:
-                return filter(bool, attribute.split('\n'))
+                return list(filter(bool, attribute.split('\n')))
             else:
                 return attribute.split('\n')[0]
         else:

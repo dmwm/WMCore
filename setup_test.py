@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+from builtins import str
 import atexit
 import hashlib
 import os
@@ -214,7 +215,7 @@ if can_nose:
             # divide it up
             totalCases = len(testIds)
             myIds = []
-            for testID in testIds.keys():
+            for testID in list(testIds.keys()):
                 if int(testID) >= int(self.testMinimumIndex) and int(testID) <= int(self.testMaximumIndex):
                     # generate a stable ID for sorting
                     if int(self.testCurrentSlice) < int(self.testTotalSlices):  # testCurrentSlice is 0-indexed

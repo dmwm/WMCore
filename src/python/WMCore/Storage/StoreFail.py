@@ -11,6 +11,8 @@ from __future__ import print_function
 
 
 
+from builtins import str
+from builtins import object
 from WMCore.Storage.StageOutError import StageOutFailure
 from WMCore.Storage.StageOutMgr import StageOutMgr
 
@@ -30,7 +32,7 @@ def modifyLFN(inputLfn):
     return newLfn
 
 
-class StoreFailMgr:
+class StoreFailMgr(object):
     """
     _StoreFailMgr_
 

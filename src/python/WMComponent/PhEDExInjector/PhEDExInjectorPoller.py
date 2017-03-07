@@ -40,12 +40,17 @@ being present for the site we injected it at. If all these conditions are met, i
 deleted from the site it was originally injected at.
 
 """
+from __future__ import division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.utils import old_div
 import threading
 import logging
 import traceback
 import time
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.WMException import WMException
@@ -86,7 +91,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         if getattr(config.PhEDExInjector, "subscribeDatasets", False):
             pollInterval = config.PhEDExInjector.pollInterval
             subInterval = config.PhEDExInjector.subscribeInterval
-            self.subFrequency = max(1, int(round(subInterval / pollInterval)))
+            self.subFrequency = max(1, int(round(old_div(subInterval, pollInterval))))
             logging.info("SubscribeDataset and deleteBlocks will run every %d polling cycles", self.subFrequency)
             # subscribe on first cycle
             self.pollCounter = self.subFrequency - 1
@@ -199,7 +204,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         for datasetPath in injectionData:
             datasetSpec = injectionSpec.getDataset(datasetPath)
 
-            for fileBlockName, fileBlock in injectionData[datasetPath].iteritems():
+            for fileBlockName, fileBlock in injectionData[datasetPath].items():
                 blockSpec = datasetSpec.getFileblock(fileBlockName,
                                                      fileBlock["is-open"])
 
@@ -228,7 +233,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         blocks = []
         for datasetPath in unInjectedData:
 
-            for blockName, fileBlock in unInjectedData[datasetPath].items():
+            for blockName, fileBlock in list(unInjectedData[datasetPath].items()):
 
                 newBlock = {blockName: set()}
 
@@ -249,7 +254,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         uninjectedFiles = self.getUninjected.execute()
 
-        for siteName in uninjectedFiles.keys():
+        for siteName in list(uninjectedFiles.keys()):
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -335,7 +340,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
 
         migratedBlocks = self.getMigrated.execute()
 
-        for siteName in migratedBlocks.keys():
+        for siteName in list(migratedBlocks.keys()):
             # SE names can be stored in DBSBuffer as that is what is returned in
             # the framework job report.  We'll try to map the SE name to a
             # PhEDEx node name here.
@@ -423,7 +428,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
             return
 
         try:
-            subscriptions = self.phedex.getSubscriptionMapping(*blockDict.keys())
+            subscriptions = self.phedex.getSubscriptionMapping(*list(blockDict.keys()))
         except:
             logging.error("Couldn't get subscription info from PhEDEx, retry next cycle")
             return
@@ -500,7 +505,7 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         _deleteBlocksPhEDExCalls_
         actual PhEDEx calls for block deletion
         """
-        deletion = PhEDExDeletion(blocksToDelete.keys(), location,
+        deletion = PhEDExDeletion(list(blocksToDelete.keys()), location,
                                   level='block',
                                   comments="WMAgent blocks auto-delete from %s" % location,
                                   blocks=blocksToDelete)

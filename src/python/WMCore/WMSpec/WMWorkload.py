@@ -7,6 +7,8 @@ of related tasks.
 """
 from __future__ import print_function
 
+from builtins import range
+from past.builtins import basestring
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
@@ -209,7 +211,7 @@ class WMWorkloadHelper(PersistencyHelper):
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwner without a dictionary")
 
-        for key in ownerProperties.keys():
+        for key in list(ownerProperties.keys()):
             setattr(self.data.owner, key, ownerProperties[key])
 
         return
@@ -226,7 +228,7 @@ class WMWorkloadHelper(PersistencyHelper):
 
         if not isinstance(ownerProperties, dict):
             raise Exception("Someone is trying to setOwnerDetails without a dictionary")
-        for key in ownerProperties.keys():
+        for key in list(ownerProperties.keys()):
             setattr(self.data.owner, key, ownerProperties[key])
         return
 
@@ -265,7 +267,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.policies.start.policyName = policyName
         [setattr(self.data.policies.start, key, val)
-         for key, val in params.items()]
+         for key, val in list(params.items())]
 
     def startPolicy(self):
         """
@@ -292,7 +294,7 @@ class WMWorkloadHelper(PersistencyHelper):
         """
         self.data.policies.end.policyName = policyName
         [setattr(self.data.policies.end, key, val)
-         for key, val in params.items()]
+         for key, val in list(params.items())]
 
     def endPolicy(self):
         """
@@ -1112,7 +1114,7 @@ class WMWorkloadHelper(PersistencyHelper):
         for task in taskIterator:
             for stepName in task.listAllStepNames():
                 outModule = task.getOutputModulesForStep(stepName)
-                for module in outModule.dictionary_().values():
+                for module in list(outModule.dictionary_().values()):
                     lfnBase = getattr(module,"lfnBase", "")
                     if not onlyUnmerged and lfnBase:
                         listLFNBases.add(lfnBase)

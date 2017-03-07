@@ -116,10 +116,10 @@ AUTO_TRANSITION = {"assigned": ["acquired", "running-open", "running-closed", "c
                    "force-complete": ["completed"]}
 
 # list of destiantion states which doesn't allow any additional arguement update
-STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.iteritems() if len(val) == 0]
+STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_STATUS.items() if len(val) == 0]
 # each item from STATUS_TRANSITION is a dictionary with 1 item, the key
 # is name of the status
-REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
+REQUEST_STATE_LIST = list(REQUEST_STATE_TRANSITION.keys())
 
 ACTIVE_STATUS_FILTER = {"RequestStatus": ['assigned', 'acquired', 'running-open',
                                           'running-closed', 'force-complete', 'completed', 

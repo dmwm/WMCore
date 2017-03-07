@@ -3,6 +3,7 @@
     WorkQueue.Policy.Start.Block tests
 """
 
+from builtins import str
 import unittest
 
 from WMCore_t.WMSpec_t.samples.MultiTaskProcessingWorkload import workload as MultiTaskProcessingWorkload
@@ -114,7 +115,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 46)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertNotEqual(units[0]['Inputs'].keys(), newArgs['BlockBlacklist'])
+        self.assertNotEqual(list(units[0]['Inputs'].keys()), newArgs['BlockBlacklist'])
 
         # Block Whitelist
         newArgs = {}
@@ -126,7 +127,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
+        self.assertEqual(list(units[0]['Inputs'].keys()), newArgs['BlockWhitelist'])
 
         # Block Mixed Whitelist
         newArgs = {}
@@ -139,7 +140,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 0)
-        self.assertEqual(units[0]['Inputs'].keys(), newArgs['BlockWhitelist'])
+        self.assertEqual(list(units[0]['Inputs'].keys()), newArgs['BlockWhitelist'])
 
         # Run Whitelist
         newArgs = {}
@@ -151,7 +152,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
-        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace'])
+        self.assertEqual(list(units[0]['Inputs'].keys()), [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace'])
 
         # Run Blacklist
         newArgs = {}
@@ -163,7 +164,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 45)
         self.assertEqual(len(rejectedWork), 2)
-        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#217ea8d8-0c4f-11e1-b764-003048caaace'])
+        self.assertEqual(list(units[0]['Inputs'].keys()), [dataset + '#217ea8d8-0c4f-11e1-b764-003048caaace'])
 
         # Run Mixed Whitelist
         newArgs = {}
@@ -175,7 +176,7 @@ class BlockTestCase(EmulatedUnitTestCase):
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
         self.assertEqual(len(units), 1)
         self.assertEqual(len(rejectedWork), 46)
-        self.assertEqual(units[0]['Inputs'].keys(), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])
+        self.assertEqual(list(units[0]['Inputs'].keys()), [dataset + '#b469f816-0946-11e1-8347-003048caaace'])
 
     def testLumiMask(self):
         """Lumi mask test"""
@@ -260,7 +261,7 @@ class BlockTestCase(EmulatedUnitTestCase):
                 wq_jobs += unit['Jobs']
                 # This fails. listRunLumis does not work correctly with DBS3,
                 # returning None for the # of lumis in a run
-                runLumis = dbs[inputDataset.dbsurl].listRunLumis(block=unit['Inputs'].keys()[0])
+                runLumis = dbs[inputDataset.dbsurl].listRunLumis(block=list(unit['Inputs'].keys())[0])
                 for run in runLumis:
                     if run in getFirstTask(Tier1ReRecoWorkload).inputRunWhitelist():
                         # This is what it is with DBS3 unless we calculate it
@@ -353,7 +354,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             blocks = []  # fill with blocks as we get work units for them
             inputs = {}
             for unit in units:
-                blocks.extend(unit['Inputs'].keys())
+                blocks.extend(list(unit['Inputs'].keys()))
                 inputs.update(unit['Inputs'])
                 self.assertEqual(69, unit['Priority'])
                 self.assertTrue(1 <= unit['Jobs'])
@@ -368,13 +369,13 @@ class BlockTestCase(EmulatedUnitTestCase):
         # Modify the spec and task, get first a fresh policy instance
         policyInstance = Block(**self.splitArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
-            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': inputs.keys()})
+            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': list(inputs.keys())})
             self.assertRaises(WorkQueueNoWorkError, policyInstance, Tier1ReRecoWorkload, task)
 
         # Run one last time
         policyInstance = Block(**self.splitArgs)
         for task in Tier1ReRecoWorkload.taskIterator():
-            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': inputs.keys()})
+            policyInstance.modifyPolicyForWorkAddition({'ProcessedInputs': list(inputs.keys())})
             self.assertRaises(WorkQueueNoWorkError, policyInstance, Tier1ReRecoWorkload, task)
 
         return
@@ -412,7 +413,7 @@ class BlockTestCase(EmulatedUnitTestCase):
             for unit in units:
                 pileupData = unit["PileupData"]
                 self.assertEqual(len(pileupData), 1)
-                self.assertItemsEqual(pileupData.values()[0], ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
+                self.assertItemsEqual(list(pileupData.values())[0], ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         return
 
     def testWithMaskedBlocks(self):
@@ -469,8 +470,8 @@ class BlockTestCase(EmulatedUnitTestCase):
                                  inputDataset.tier)
         dbs = DBSReader(inputDataset.dbsurl)
         maskedBlocks = Block(**self.splitArgs).getMaskedBlocks(task, dbs, dataset)
-        for dummyBlock, files in maskedBlocks.iteritems():
-            for dummyFile, lumiList in files.iteritems():
+        for dummyBlock, files in maskedBlocks.items():
+            for dummyFile, lumiList in files.items():
                 self.assertEqual(str(lumiList), str(inputLumis & lumiMask))
 
 

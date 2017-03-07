@@ -4,6 +4,7 @@ Unittest for WMTweak module
 
 """
 
+from builtins import str
 import unittest
 
 import PSetTweaks.WMTweak as WMTweaks

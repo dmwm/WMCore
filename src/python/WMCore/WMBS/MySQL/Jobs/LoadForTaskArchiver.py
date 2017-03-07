@@ -56,7 +56,7 @@ class LoadForTaskArchiver(DBFormatter):
         for result in fileList:
             bindDict[result['id']] = 1
             result['newRuns'] = []
-        fileBinds = [{'fileid' : x} for x in bindDict.keys()]
+        fileBinds = [{'fileid' : x} for x in list(bindDict.keys())]
 
         #Load file information
         if len(fileBinds):
@@ -65,13 +65,13 @@ class LoadForTaskArchiver(DBFormatter):
             lumiList = self.formatDict(lumiResult)
             lumiDict = {}
             for l in lumiList:
-                if not l['fileid'] in lumiDict.keys():
+                if not l['fileid'] in list(lumiDict.keys()):
                     lumiDict[l['fileid']] = []
                 lumiDict[l['fileid']].append(l)
 
             for f in fileList:
                 fileRuns = {}
-                if f['id'] in lumiDict.keys():
+                if f['id'] in list(lumiDict.keys()):
                     for l in lumiDict[f['id']]:
                         run = l['run']
                         lumi = l['lumi']
@@ -81,7 +81,7 @@ class LoadForTaskArchiver(DBFormatter):
                             fileRuns[run] = []
                             fileRuns[run].append(lumi)
 
-                for r in fileRuns.keys():
+                for r in list(fileRuns.keys()):
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]
                     f['newRuns'].append(newRun)
@@ -89,9 +89,9 @@ class LoadForTaskArchiver(DBFormatter):
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
-            if not jobid in filesForJobs.keys():
+            if not jobid in list(filesForJobs.keys()):
                 filesForJobs[jobid] = {}
-            if f['id'] not in filesForJobs[jobid].keys():
+            if f['id'] not in list(filesForJobs[jobid].keys()):
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
                 for r in wmbsFile['newRuns']:
@@ -102,8 +102,8 @@ class LoadForTaskArchiver(DBFormatter):
         #Add the file information to job objects and load the masks
         jobList = [Job(id = x) for x in jobID]
         for j in jobList:
-            if j['id'] in filesForJobs.keys():
-                j['input_files'] = filesForJobs[j['id']].values()
+            if j['id'] in list(filesForJobs.keys()):
+                j['input_files'] = list(filesForJobs[j['id']].values())
             j['mask'].load(j['id'])
 
         return jobList

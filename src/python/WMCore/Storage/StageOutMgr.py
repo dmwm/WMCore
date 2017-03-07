@@ -10,6 +10,8 @@ use this class as a basic API
 from __future__ import print_function
 
 # If we don't import them, they cannot be ever used (bad PyCharm!)
+from builtins import str
+from builtins import object
 import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 
@@ -21,7 +23,7 @@ from WMCore.Storage.Registry import retrieveStageOutImpl
 from WMCore.Services.Dashboard.DashboardAPI import stageoutPolicyReport
 
 
-class StageOutMgr:
+class StageOutMgr(object):
     """
     _StageOutMgr_
 
@@ -40,7 +42,7 @@ class StageOutMgr:
             print("StageOutMgr::__init__(): Override: %s" % overrideParams)
             checkParams = ["command", "option", "phedex-node", "lfn-prefix"]
             for param in checkParams:
-                if param in self.overrideConf.keys():
+                if param in list(self.overrideConf.keys()):
                     self.override = True
             if not self.override:
                 print("=======StageOut Override: These are not the parameters you are looking for")
@@ -157,7 +159,7 @@ class StageOutMgr:
                 overrideParams['option'] = ""
 
         msg = "=======StageOut Override Initialised:================\n"
-        for key, val in overrideParams.items():
+        for key, val in list(overrideParams.items()):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         print(msg)
@@ -323,7 +325,7 @@ class StageOutMgr:
 
 
         """
-        for lfn, fileInfo in self.completedFiles.items():
+        for lfn, fileInfo in list(self.completedFiles.items()):
             pfn = fileInfo['PFN']
             command = fileInfo['StageOutCommand']
             msg = "Cleaning out file: %s\n" % lfn

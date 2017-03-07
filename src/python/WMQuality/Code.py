@@ -9,17 +9,23 @@ code style.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import input
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import sys
 
 try:
-    from commands import getstatusoutput
+    from subprocess import getstatusoutput
 except ImportError:
     # python3
     from subprocess import getstatusoutput
 
 
-class Code:
+class Code(object):
     """
     _Code_
 
@@ -54,12 +60,12 @@ class Code:
         print('Report file:    ' + self.report)
         print('Base dir:       ' + self.baseDir)
 
-        cont = raw_input('Are these values correct? ' + \
+        cont = input('Are these values correct? ' + \
                          'Press "A" to abbort or any other key to proceed ')
         if cont == 'A':
             sys.exit(0)
 
-        for packageDir in self.packages.keys():
+        for packageDir in list(self.packages.keys()):
             localPath = os.path.join(self.baseDir, packageDir)
             # execute the quality script which produces a codeQuality.txt file
             command = self.script + ' ' + localPath
@@ -123,7 +129,7 @@ class Code:
                     moduleName = ''
                     # do not include the actual file for style testing
                     # (only modules)
-                    for index in xrange(0, len(parts) - 1):
+                    for index in range(0, len(parts) - 1):
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
@@ -159,11 +165,11 @@ class Code:
         we aggregrate them in our style check.
         """
 
-        for moduleName in self.module.keys():
+        for moduleName in list(self.module.keys()):
             # find the one with the most votes per module:
             votes = 0
             winner = ''
-            for voter in self.module[moduleName].keys():
+            for voter in list(self.module[moduleName].keys()):
                 if self.module[moduleName][voter] > votes:
                     votes = self.module[moduleName][voter]
                     winner = voter
@@ -172,19 +178,19 @@ class Code:
         # quick and dirty algorithm O(n^2). Can be done in O(n*lg(n))
         moduleLength = {}
         # find module lengths first
-        for moduleName in self.module.keys():
+        for moduleName in list(self.module.keys()):
             parts = moduleName.split('/')
             if len(parts) not in moduleLength:
                 moduleLength[len(parts)] = []
             moduleLength[len(parts)].append(moduleName)
-        lengths = moduleLength.keys()
+        lengths = list(moduleLength.keys())
         lengths.sort(reverse=True)
 
         for length in lengths:
             # FIXME: needs to be configurable.
             if length > 2:
                 parents = {}
-                for moduleName in self.module.keys():
+                for moduleName in list(self.module.keys()):
                     parts = moduleName.split('/')
                     # group all parts of same length.
                     if len(parts) == length:
@@ -193,7 +199,7 @@ class Code:
                             parents[parent] = []
                         parents[parent].append([moduleName, self.module[moduleName]])
                 # check if all the children have the same developer as parent. If so remove the children.
-                for parent in parents.keys():
+                for parent in list(parents.keys()):
                     same = True
                     parentDeveloper = self.module[parent]
                     for moduleName, developer in parents[parent]:
@@ -231,7 +237,7 @@ packages = {\\
         styleFile.writelines(head)
         styleFile.writelines('\n')
 
-        for moduleName in self.module.keys():
+        for moduleName in list(self.module.keys()):
             # find the one with the most votes per module:
             # register this.
             styleFile.writelines("        '" + moduleName + "':'" + self.module[moduleName] + "',\\\n")
@@ -250,7 +256,7 @@ code.summaryText()
         """
 
         print('\nReport Summary:\n')
-        for author in self.lowQuality.keys():
+        for author in list(self.lowQuality.keys()):
             if len(self.lowQuality[author]) > 0:
                 print('Author: ' + author)
                 print('---------------------')

@@ -5,6 +5,10 @@ TaskArchiver test
 Tests both the archiving of tasks and the creation of the
 workloadSummary
 """
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os.path
 import logging
 import threading
@@ -309,7 +313,7 @@ class TaskArchiverTest(unittest.TestCase):
         changer.propagate(testJobGroup.jobs, 'executing', 'created')
         changer.propagate(testJobGroup.jobs, 'complete', 'executing')
         for i in range(self.nJobs):
-            if i < self.nJobs/2:
+            if i < old_div(self.nJobs,2):
                 testJobGroup.jobs[i]['fwjr'] = report1
             else:
                 testJobGroup.jobs[i]['fwjr'] = report2
@@ -436,7 +440,7 @@ class TaskArchiverTest(unittest.TestCase):
                     # Those should come from the config :
                     if points[i] == 0:
                         continue
-                    binSize = responseJSON["hist"]["xaxis"]["last"]["value"]/responseJSON["hist"]["xaxis"]["last"]["id"]
+                    binSize = old_div(responseJSON["hist"]["xaxis"]["last"]["value"],responseJSON["hist"]["xaxis"]["last"]["id"])
                     # Fetching the important values
                     instLuminosity = i*binSize
                     timePerEvent = points[i]
@@ -566,7 +570,7 @@ class TaskArchiverTest(unittest.TestCase):
         self.assertEqual(workloadSummary['ACDCServer'], sanitizeURL(config.ACDC.couchurl)['url'])
 
         # Check the output
-        self.assertEqual(workloadSummary['output'].keys(), ['/Electron/MorePenguins-v0/RECO'])
+        self.assertEqual(list(workloadSummary['output'].keys()), ['/Electron/MorePenguins-v0/RECO'])
         self.assertEqual(sorted(workloadSummary['output']['/Electron/MorePenguins-v0/RECO']['tasks']),
                         ['/TestWorkload/ReReco', '/TestWorkload/ReReco/LogCollect'])
         # Check performance
@@ -595,7 +599,7 @@ class TaskArchiverTest(unittest.TestCase):
 
         # LogCollect task is made out of identical FWJRs
         # assert that it is identical
-        for x in workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys():
+        for x in list(workloadSummary['performance']['/TestWorkload/ReReco/LogCollect']['cmsRun1'].keys()):
             if x in config.TaskArchiver.histogramKeys:
                 continue
             for y in ['average', 'stdDev']:

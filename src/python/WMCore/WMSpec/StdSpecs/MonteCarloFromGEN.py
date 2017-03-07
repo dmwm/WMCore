@@ -59,7 +59,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         if self.pileupConfig:
             self.setupPileup(procTask, self.pileupConfig)
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             self.addMergeTask(procTask, self.procJobSplitAlgo,
                               outputModuleName)
 

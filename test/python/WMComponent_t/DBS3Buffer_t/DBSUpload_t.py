@@ -6,6 +6,9 @@
 DBSUpload test TestDBSUpload module and the harness
 
 """
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import os
 import threading
 import time
@@ -246,7 +249,7 @@ class DBSUploadTest(unittest.TestCase):
                          "Error: Wrong physics group name.")
 
         results = self.dbsApi.listBlocks(dataset = datasetName, detail = True)
-        self.assertEqual(len(results), len(files) / 5,
+        self.assertEqual(len(results), old_div(len(files), 5),
                          "Error: Wrong number of blocks.")
         for result in results:
             self.assertEqual(result["block_size"], 5120,

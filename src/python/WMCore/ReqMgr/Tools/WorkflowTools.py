@@ -9,10 +9,12 @@ Description: Workflow management tools
 from __future__ import print_function
 
 # system modules
+from future import standard_library
+standard_library.install_aliases()
 import os
 import re
 import json
-import httplib
+import http.client
 
 # ReqMgr modules
 from ReqMgr.tools.reqMgrClient import WorkflowManager
@@ -37,7 +39,7 @@ def getDatasetStatus(dataset):
 
 def getWorkload(url, workflow):
     "Return workload list"
-    conn = httplib.HTTPSConnection(url,
+    conn = http.client.HTTPSConnection(url,
             cert_file = os.getenv('X509_USER_PROXY'),
             key_file = os.getenv('X509_USER_PROXY'))
     r1=conn.request("GET",'/reqmgr/view/showWorkload?requestName='+workflow)
@@ -563,7 +565,7 @@ def getPileup(config):
 
 def getConfig(url, cacheID):
     "Helper function to get configuration for given cacheID"
-    conn = httplib.HTTPSConnection(url,
+    conn = http.client.HTTPSConnection(url,
             cert_file = os.getenv('X509_USER_PROXY'),
             key_file = os.getenv('X509_USER_PROXY'))
     conn.request("GET",'/couchdb/reqmgr_config_cache/'+cacheID+'/configFile')
@@ -572,12 +574,12 @@ def getConfig(url, cacheID):
 
 def findCustodialLocation(url, dataset):
     "Helper function to find custodial location for given dataset"
-    conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'), key_file = os.getenv('X509_USER_PROXY'))
+    conn  =  http.client.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'), key_file = os.getenv('X509_USER_PROXY'))
     r1=conn.request("GET",'/phedex/datasvc/json/prod/blockreplicas?dataset='+dataset)
     r2=conn.getresponse()
     result = json.loads(r2.read())
     request=result['phedex']
-    if 'block' not in request.keys():
+    if 'block' not in list(request.keys()):
             return "No Site"
     if len(request['block'])==0:
             return "No Site"
@@ -588,14 +590,14 @@ def findCustodialLocation(url, dataset):
 
 def checkAcceptedSubscriptionRequest(url, dataset, site):
     "Helper function"
-    conn = httplib.HTTPSConnection(url,
+    conn = http.client.HTTPSConnection(url,
             cert_file = os.getenv('X509_USER_PROXY'),
             key_file = os.getenv('X509_USER_PROXY'))
     conn.request("GET",'/phedex/datasvc/json/prod/requestlist?dataset='+dataset+'&type=xfer')
     resp = conn.getresponse()
     result = json.load(resp)
     requests=result['phedex']
-    if 'request' not in requests.keys():
+    if 'request' not in list(requests.keys()):
         return [False, False]
     ourNode = False
     otherNode = False

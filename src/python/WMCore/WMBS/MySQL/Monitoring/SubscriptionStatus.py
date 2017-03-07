@@ -97,8 +97,8 @@ class SubscriptionStatus(DBFormatter):
                     filesetDict["running"] += result["job_count"]
 
         results = []
-        for workflowName in workflows.keys():
-            for filesetName in workflows[workflowName].keys():
+        for workflowName in list(workflows.keys()):
+            for filesetName in list(workflows[workflowName].keys()):
                 success = workflows[workflowName][filesetName]["success"]
                 failure = workflows[workflowName][filesetName]["failure"]
                 running = workflows[workflowName][filesetName]["running"]

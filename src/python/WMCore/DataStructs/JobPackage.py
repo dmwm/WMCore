@@ -6,8 +6,10 @@ Data structure for storing and retreiving multiple job objects.
 """
 
 
+from future import standard_library
+standard_library.install_aliases()
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

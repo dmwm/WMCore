@@ -7,6 +7,8 @@ This policy is specifically used by DQMHarvest workflows, which requires
 some special handling based on run information. Nonetheless, trying to
 make it generic enough that could be used by other spec types.
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 from math import ceil
@@ -37,7 +39,7 @@ class Dataset(StartPolicyInterface):
         datasetPath = self.initialTask.getInputDatasetPath()
 
         # dataset splitting can't have its data selection overridden
-        if self.data and self.data.keys() != [datasetPath]:
+        if self.data and list(self.data.keys()) != [datasetPath]:
             raise RuntimeError("Can't provide different data to split with")
 
         blocks = self.validBlocks(self.initialTask, self.dbs())
@@ -54,9 +56,9 @@ class Dataset(StartPolicyInterface):
             numEvents += int(block['NumberOfEvents'])
 
         if self.args['SliceType'] == 'NumberOfRuns':
-            numJobs = ceil(len(work) / float(self.args['SliceSize']))
+            numJobs = ceil(old_div(len(work), float(self.args['SliceSize'])))
         else:
-            numJobs = ceil(float(work) / float(self.args['SliceSize']))
+            numJobs = ceil(old_div(float(work), float(self.args['SliceSize'])))
 
         # parentage
         parentFlag = True if self.initialTask.parentProcessingFlag() else False

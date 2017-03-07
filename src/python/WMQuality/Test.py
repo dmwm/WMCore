@@ -9,17 +9,22 @@ to developers responsible for the test.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import unittest
 
 import WMCore.WMInit
 
 try:
-    from commands import getstatusoutput
+    from subprocess import getstatusoutput
 except ImportError:
     # python3
     from subprocess import getstatusoutput
-class Test:
+class Test(object):
     """
     _Test_
 
@@ -113,7 +118,7 @@ Test framework error! Did you use the proper test classes? """
                     moduleName = ''
                     # do not include the actual file for style testing
                     # (only modules)
-                    for index in xrange(0, len(parts)):
+                    for index in range(0, len(parts)):
                         # we cut of part of the path
                         if index > pathCut:
                             moduleName = os.path.join(moduleName, parts[index])
@@ -176,18 +181,18 @@ from WMQuality.Test import Test
         losers = {}
         losersCum = {}
         # make the import statements
-        for testFile in self.testFile.keys():
+        for testFile in list(self.testFile.keys()):
             # find the one with the most votes per module:
             votes = 0
             winner = ''
-            for voter in self.testFile[testFile].keys():
+            for voter in list(self.testFile[testFile].keys()):
                 if self.testFile[testFile][voter] > votes:
                     votes = self.testFile[testFile][voter]
                     winner = voter
             # make the import:
             parts = testFile.split('/')
             importStmt = 'from '
-            for part in xrange(0, len(parts)-1):
+            for part in range(0, len(parts)-1):
                 if part > self.moduleCut:
                     importStmt += parts[part]+"."
             importStmt += parts[-1].split('.')[0]
@@ -261,12 +266,12 @@ test.summaryText()
         print('Writing level 1 failures to file: failures1.log ')
         failures = open('failures1.log','w')
         failures.writelines('Failed import summary (level 1):\n\n')
-        for winner in losersCum.keys():
+        for winner in list(losersCum.keys()):
             msg = 'Author: '+winner
             msg += ' Failures: '+str(losersCum[winner])
             failures.writelines(msg+'\n')
         failures.writelines('\nFailed import details:\n\n')
-        for winner in losers.keys():
+        for winner in list(losers.keys()):
             failures.writelines('************Author: '+winner+'***********\n\n')
             for failed in losers[winner]:
                 failures.writelines('File: '+failed[0]+'\n\n')
@@ -285,20 +290,20 @@ test.summaryText()
             failures.writelines(test[0].__class__.__name__+'-->'+test[1]+'\n')
         failures.writelines('\n\n')
         failures.writelines('Failed tests (level 3):\n\n')
-        for author in self.failures.keys():
+        for author in list(self.failures.keys()):
             failures.writelines(author+ \
                 ':'+str(len(self.failures[author]))+' failures\n')
-        for author in self.errors.keys():
+        for author in list(self.errors.keys()):
             failures.writelines(author+ \
                 ':'+str(len(self.errors[author]))+' errors\n')
         failures.writelines('Failures (level 3):\n\n')
-        for author in self.failures.keys():
+        for author in list(self.failures.keys()):
             failures.writelines('Author: '+author+'\n\n')
             for failure in self.failures[author]:
                 failures.writelines('Test: '+failure[0]+'\n\n')
                 failures.writelines('Failure: '+failure[1]+'\n\n')
 
-        for author in self.errors.keys():
+        for author in list(self.errors.keys()):
             failures.writelines('Author: '+author+'\n\n')
             for failure in self.errors[author]:
                 failures.writelines('Test: '+failure[0]+'\n\n')

@@ -8,6 +8,8 @@ Created on Jun 13, 2013
 
 @author: dballest
 """
+from builtins import str
+from past.builtins import basestring
 import json
 import logging
 
@@ -66,12 +68,12 @@ def _validateArgumentDict(argument, argValue, argumentDefinition):
     Validate arguments that carry a dict value type
     """
     validNull = argumentDefinition["null"]
-    if not validNull and None in argValue.values():
+    if not validNull and None in list(argValue.values()):
         raise WMSpecFactoryException("Argument %s can't be None" % argument)
-    elif all(val is None for val in argValue.values()):
+    elif all(val is None for val in list(argValue.values())):
         return argValue
 
-    for val in argValue.values():
+    for val in list(argValue.values()):
         try:
             # sigh.. LumiList has a peculiar type validation
             if argument == 'LumiList':
@@ -106,7 +108,7 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     Check whether create or assign mandatory parameters were properly
     set in the request schema.
     """
-    for arg, argValue in argumentDefinition.iteritems():
+    for arg, argValue in argumentDefinition.items():
         optional = argValue.get(optionKey, True)
         if not optional and arg not in arguments:
             msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argValue)

@@ -1,5 +1,8 @@
 from __future__ import print_function
 
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import hashlib
 import json
 import types
@@ -118,13 +121,13 @@ class XMLFormat(RESTFormat):
         """Render an object `obj` into XML."""
         if isinstance(obj, type(None)):
             result = ""
-        elif isinstance(obj, (unicode, str)):
+        elif isinstance(obj, (str, str)):
             result = xml.sax.saxutils.escape(obj).encode("utf-8")
         elif isinstance(obj, (int, float, bool)):
             result = xml.sax.saxutils.escape(str(obj)).encode("utf-8")
         elif isinstance(obj, dict):
             result = "<dict>"
-            for k, v in obj.iteritems():
+            for k, v in obj.items():
                 result += "<key>%s</key><value>%s</value>" % \
                   (xml.sax.saxutils.escape(k).encode("utf-8"),
                    XMLFormat.format_obj(v))
@@ -345,7 +348,7 @@ class RawFormat(RESTFormat):
             etag.invalidate()
             raise
 
-class DigestETag:
+class DigestETag(object):
     """Compute hash digest over contents for ETag header."""
     algorithm = None
 

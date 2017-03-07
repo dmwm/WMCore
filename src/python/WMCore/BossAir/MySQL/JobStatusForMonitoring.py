@@ -55,7 +55,7 @@ class JobStatusForMonitoring(DBFormatter):
             commonStates[data['workflow']][state] += data['num_jobs']
 
         results = []
-        for key, value in commonStates.items():
+        for key, value in list(commonStates.items()):
             reformedData = {'request_name': key}
             reformedData.update(value)
             results.append(reformedData)

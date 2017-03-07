@@ -5,6 +5,10 @@ _BossAirPlugin_
 Base class for BossAir plugins
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import os
 import logging
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
@@ -13,7 +17,7 @@ from datetime import timedelta
 from random import randint
 import multiprocessing
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 

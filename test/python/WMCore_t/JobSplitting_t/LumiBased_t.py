@@ -5,6 +5,8 @@ _LumiBased_t_
 Lumi based splitting test.
 """
 
+from builtins import next
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File

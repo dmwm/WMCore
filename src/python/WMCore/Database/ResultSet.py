@@ -9,9 +9,10 @@ like the SQLAlchemy class to minimise the impact of adding this class.
 
 
 
+from builtins import object
 import threading
 
-class ResultSet:
+class ResultSet(object):
     def __init__(self):
         self.data = []
         self.keys = []
@@ -37,7 +38,7 @@ class ResultSet:
         elif resultproxy.returns_rows:
             for r in resultproxy:
                 if len(self.keys) == 0:
-                    self.keys.extend(r.keys())
+                    self.keys.extend(list(r.keys()))
                 self.data.append(r)
 
         return

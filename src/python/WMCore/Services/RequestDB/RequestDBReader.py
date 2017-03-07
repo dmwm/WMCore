@@ -1,3 +1,5 @@
+from past.builtins import basestring
+from builtins import object
 import time
 from WMCore.Database.CMSCouch import CouchServer, Database
 from WMCore.Lexicon import splitCouchServiceURL, sanitizeURL
@@ -68,7 +70,7 @@ class RequestDBReader(object):
         if detail or returnDict:
             return result
         else:
-            return result.keys()
+            return list(result.keys())
 
     def _getRequestByName(self, requestName, detail):
         result = self.couchDB.getDoc(requestName)

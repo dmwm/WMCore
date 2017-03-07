@@ -5,6 +5,8 @@ _EventBased_t_
 Event based splitting test.
 """
 
+from builtins import str
+from builtins import range
 import unittest
 import threading
 import os
@@ -153,8 +155,8 @@ class EventBasedTest(unittest.TestCase):
                 lfn = "MCFakeFile-some-hash-%s" % str(i).zfill(5)
                 acdcFile = File(lfn = lfn, size = 100, events = eventsPerJob, locations = self.validLocations,
                                 merged = False, first_event = 1)
-                run = Run(1, *range(1 + (i * lumisPerFile) + j * lumisPerJob,
-                                    (j + 1) * lumisPerJob + (i * lumisPerFile) + 2))
+                run = Run(1, *list(range(1 + (i * lumisPerFile) + j * lumisPerJob,
+                                    (j + 1) * lumisPerJob + (i * lumisPerFile) + 2)))
                 acdcFile.addRun(run)
                 acdcDoc = {"collection_name" : workflowName,
                            "collection_type" : "ACDC.CollectionTypes.DataCollection",
@@ -181,7 +183,7 @@ class EventBasedTest(unittest.TestCase):
         newFile = File("MCFakeFile-some-hash-%s" % str(index).zfill(5), size = 1000,
                        events = numEvents,
                        locations = set(["T1_US_FNAL_Disk"]))
-        newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
+        newFile.addRun(Run(1, *list(range(firstLumi, lastLumi + 1))))
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent
         newFile.create()

@@ -1,9 +1,12 @@
 """
 Perform cleanup actions
 """
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 __all__ = []
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import threading
 import logging
 import traceback
@@ -157,9 +160,9 @@ class ResourceControlUpdater(BaseWorkerThread):
             self.ioBoundMetric)
 
         # get info from dashboard
-        sites = urllib2.urlopen(urlSiteState).read()
-        cpuBound = urllib2.urlopen(urlCpuBound).read()
-        ioBound = urllib2.urlopen(urlIoBound).read()
+        sites = urllib.request.urlopen(urlSiteState).read()
+        cpuBound = urllib.request.urlopen(urlCpuBound).read()
+        ioBound = urllib.request.urlopen(urlIoBound).read()
 
         # parse from json format to dictionary, get only 'csvdata'
         ssbSiteState = json.loads(sites)['csvdata']
@@ -173,7 +176,7 @@ class ResourceControlUpdater(BaseWorkerThread):
         self.thresholdsByVOName(ssbIoSlots, ssbSiteSlots, slotsType='slotsIO')
 
         # Now remove sites with state only, such that no updates are applied to them
-        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.iteritems() if len(v) == 3}
+        ssbSiteSlots = {k: v for k, v in ssbSiteSlots.items() if len(v) == 3}
 
         if not ssbSiteSlots:
             logging.error("One or more of the SSB metrics is down. Please contact the Dashboard team.")

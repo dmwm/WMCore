@@ -6,6 +6,7 @@ Implementation of StageOutImpl interface for RFIO
 
 """
 from __future__ import print_function
+from builtins import str
 import os
 from WMCore.Storage.Registry import registerStageOutImpl
 from WMCore.Storage.StageOutImpl import StageOutImpl

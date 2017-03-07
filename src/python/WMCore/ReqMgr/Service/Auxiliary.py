@@ -6,9 +6,13 @@ Teams, Groups, Software versions handling for ReqMgr.
 """
 from __future__ import print_function, division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import logging
 import cherrypy
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import json
 import xml.dom.minidom
 from xml.parsers.expat import ExpatError
@@ -173,7 +177,7 @@ class Group(RESTEntity):
         groups = self.reqmgr_aux_db.document("groups")
         del groups["_id"]
         del groups["_rev"]
-        return rows(groups.keys())
+        return rows(list(groups.keys()))
 
 
     @restcall
@@ -263,7 +267,7 @@ class Team(RESTEntity):
         teams = self.reqmgr_aux_db.document("teams")
         del teams["_id"]
         del teams["_rev"]
-        return rows(teams.keys())
+        return rows(list(teams.keys()))
 
 
     @restcall
@@ -362,7 +366,7 @@ def _get_all_scramarchs_and_versions(url):
     result = {}
     try:
         logging.debug("Getting data from %s ..." % url)
-        f = urllib.urlopen(url)
+        f = urllib.request.urlopen(url)
         dom_doc = xml.dom.minidom.parse(f)
     except ExpatError as ex:
         logging.error("Could not get data from CMS tag collector, abort."

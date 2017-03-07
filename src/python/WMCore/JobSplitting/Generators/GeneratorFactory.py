@@ -5,6 +5,7 @@ _GeneratorFactory_
 
 """
 
+from builtins import str
 from WMCore.WMFactory import WMFactory
 from WMCore.WMException import WMException
 

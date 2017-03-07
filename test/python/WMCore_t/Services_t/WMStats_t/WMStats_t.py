@@ -95,19 +95,19 @@ class WMStatsTest(unittest.TestCase):
         self.assertEqual(result, 'Error: document not found')
 
         requests = self.wmstatsReader.getRequestByStatus(["failed"], jobInfoFlag = False, legacyFormat = True)
-        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(list(requests.keys()), [schema[0]['RequestName']])
 
         requestCollection = RequestInfoCollection(requests)
         result = requestCollection.getJSONData()
-        self.assertEqual(result.keys(), [schema[0]['RequestName']])
+        self.assertEqual(list(result.keys()), [schema[0]['RequestName']])
 
         requests = self.wmstatsReader.getActiveData()
-        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(list(requests.keys()), [schema[0]['RequestName']])
         requests = self.wmstatsReader.getRequestByStatus(["failed"])
-        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(list(requests.keys()), [schema[0]['RequestName']])
 
         requests = self.wmstatsReader.getRequestSummaryWithJobInfo(schema[0]['RequestName'])
-        self.assertEqual(requests.keys(), [schema[0]['RequestName']])
+        self.assertEqual(list(requests.keys()), [schema[0]['RequestName']])
 
     def testCompletedCheck(self):
         self.assertEqual(RequestInfo(sample_request_info).isWorkflowFinished(), False)

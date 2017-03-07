@@ -1,4 +1,5 @@
 # system modules
+from builtins import range
 import json
 import re
 import zlib
@@ -38,7 +39,7 @@ class Multi(RESTEntity):
         validate_num("lim", param, safe, bare=True, optional=True, minval=0, maxval=10)
 
     def _generate(self, lim):
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             if i == lim:
                 raise InvalidObject("cut at %d" % i)
             yield ["row", i]
@@ -183,7 +184,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 10
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i
@@ -211,7 +212,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 5
-        for i in xrange(0, 5):
+        for i in range(0, 5):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i
@@ -239,7 +240,7 @@ class Tester(webtest.WebCase):
         assert "result" in b
         assert isinstance(b["result"], list)
         assert len(b["result"]) == 10
-        for i in xrange(0, 10):
+        for i in range(0, 10):
             assert isinstance(b["result"][i], list)
             assert b["result"][i][0] == "row"
             assert b["result"][i][1] == i

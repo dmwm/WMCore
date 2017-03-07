@@ -34,6 +34,6 @@ class ListRunsWorkflow(DBFormatter):
         runs = []
 
         for result in results[0].fetchall():
-            runs.append(result.values()[0])
+            runs.append(list(result.values())[0])
 
         return runs

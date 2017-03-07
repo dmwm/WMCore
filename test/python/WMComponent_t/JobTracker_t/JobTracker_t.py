@@ -4,10 +4,13 @@
 JobTracker test
 """
 from __future__ import print_function
+from __future__ import division
 
 
 
 
+from builtins import range
+from past.utils import old_div
 import os
 import os.path
 import logging
@@ -507,7 +510,7 @@ class JobTrackerTest(unittest.TestCase):
 
 
         # Now create some jobs
-        for job in testJobGroup.jobs[:(nJobs/2)]:
+        for job in testJobGroup.jobs[:(old_div(nJobs,2))]:
             jdl = createJDL(id = job['id'], directory = submitDir, jobCE = jobCE)
             jdlFile = os.path.join(submitDir, 'condorJDL_%i.jdl' % (job['id']))
             handle = open(jdlFile, 'w')
@@ -528,10 +531,10 @@ class JobTrackerTest(unittest.TestCase):
 
         # Are jobs in the right state?
         result = self.getJobs.execute(state = 'Executing', jobType = "Processing")
-        self.assertEqual(len(result), nJobs/2)
+        self.assertEqual(len(result), old_div(nJobs,2))
 
         result = self.getJobs.execute(state = 'Complete', jobType = "Processing")
-        self.assertEqual(len(result), nJobs/2)
+        self.assertEqual(len(result), old_div(nJobs,2))
 
 
         # Then we're done
@@ -543,7 +546,7 @@ class JobTrackerTest(unittest.TestCase):
         self.assertEqual(nRunning, 0)
 
         print ("Process took %f seconds to process %i classAds" %((stopTime - startTime),
-                                                                  nJobs/2))
+                                                                  old_div(nJobs,2)))
         p = pstats.Stats('testStats.stat')
         p.sort_stats('cumulative')
         p.print_stats()

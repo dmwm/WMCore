@@ -65,7 +65,7 @@ class Create(CreateWMBSBase):
                wmbs_file_runlumi_map (fileid, run, lumi)"""
 
     def execute(self, conn=None, transaction=None):
-        for i in self.create.keys():
+        for i in list(self.create.keys()):
             self.create[i] += " ENGINE=InnoDB"
             self.create[i] = self.create[i].replace('INTEGER', 'INT(11)')
 

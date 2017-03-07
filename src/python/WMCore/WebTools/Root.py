@@ -161,11 +161,11 @@ class Root(Harness):
                          'server', 'tools', 'wsgi', 'checker']
         # Deal with "long hand" configuration variables
         for i in configurables:
-            if i in configDict.keys():
-                for config_param, param_value in configDict[i].dictionary_().items():
+            if i in list(configDict.keys()):
+                for config_param, param_value in list(configDict[i].dictionary_().items()):
                     if isinstance(param_value, ConfigSection):
                         # TODO: make this loads better
-                        for child_param, child_param_value in param_value.dictionary_().items():
+                        for child_param, child_param_value in list(param_value.dictionary_().items()):
                             cherrypy.config["%s.%s.%s" % (i, config_param, child_param)] = child_param_value
                     elif type(param_value) in [type('string'), type(123)]:
                         cherrypy.config["%s.%s" % (i, config_param)] = param_value
@@ -219,7 +219,7 @@ class Root(Harness):
             cherrypy.log.access_log.setLevel(configDict.get("access_log_level", logging.DEBUG))
 
         default_port = 8080
-        if "server.socket_port" in cherrypy.config.keys():
+        if "server.socket_port" in list(cherrypy.config.keys()):
             default_port = cherrypy.config["server.socket_port"]
         cherrypy.config["server.thread_pool"] = configDict.get("thread_pool", 10)
         cherrypy.config["server.socket_port"] = configDict.get("port", default_port)
@@ -252,14 +252,14 @@ class Root(Harness):
         globalconf = self.appconfig.dictionary_()
         del globalconf['views']
         the_index = ''
-        if 'index' in globalconf.keys():
+        if 'index' in list(globalconf.keys()):
             the_index = globalconf['index']
             del globalconf['index']
 
         for view in self.appconfig.views.active:
             #Iterate through each view's configuration and instantiate the class
             if view._internal_name != the_index:
-                if 'instances' in globalconf.keys():
+                if 'instances' in list(globalconf.keys()):
                     for instance in globalconf['instances']:
                         self._mountPage(view, globalconf, factory, instance)
                 else:
@@ -281,10 +281,10 @@ class Root(Harness):
         view_config.application = self.app
 
         view_dict = view.dictionary_()
-        for k in globalconf.keys():
+        for k in list(globalconf.keys()):
             # Add the global config to the view
             view_config.__setattr__(k, globalconf[k])
-        for k in view_dict.keys():
+        for k in list(view_dict.keys()):
             # overwrite global if the local config is different
             view_config.__setattr__(k, view_dict[k])
 
@@ -359,7 +359,7 @@ class Root(Harness):
             for view in self.appconfig.views.active:
                 if not getattr(view, "hidden", False):
                     viewName = view._internal_name
-                    if 'instances' in globalconf.keys():
+                    if 'instances' in list(globalconf.keys()):
                         for instance in globalconf['instances']:
                             mount_point = '/%s/%s/%s' % (self.app.lower(), instance, viewName)
                             viewObj = cherrypy.tree.apps[mount_point].root
@@ -401,7 +401,7 @@ class Root(Harness):
         cherrypy.engine.stop()
 
         # Ensure the next server that's started gets fresh objects
-        for name, server in getattr(cherrypy, 'servers', {}).items():
+        for name, server in list(getattr(cherrypy, 'servers', {}).items()):
             server.unsubscribe()
             del cherrypy.servers[name]
 

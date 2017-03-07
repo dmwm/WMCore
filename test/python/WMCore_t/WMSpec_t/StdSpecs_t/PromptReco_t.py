@@ -86,7 +86,7 @@ class PromptRecoTest(unittest.TestCase):
         recoWorkflow = Workflow(name="TestWorkload",
                                 task="/TestWorkload/Reco")
         recoWorkflow.load()
-        self.assertEqual(len(recoWorkflow.outputMap.keys()), len(testArguments["WriteTiers"]) + 1,
+        self.assertEqual(len(list(recoWorkflow.outputMap.keys())), len(testArguments["WriteTiers"]) + 1,
                          "Error: Wrong number of WF outputs in the Reco WF.")
 
         goldenOutputMods = ["write_RECO", "write_ALCARECO", "write_AOD", "write_DQM"]
@@ -115,7 +115,7 @@ class PromptRecoTest(unittest.TestCase):
         alcaSkimWorkflow = Workflow(name="TestWorkload",
                                     task="/TestWorkload/Reco/AlcaSkim")
         alcaSkimWorkflow.load()
-        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
+        self.assertEqual(len(list(alcaSkimWorkflow.outputMap.keys())), len(testArguments["AlcaSkims"]) + 1,
                          "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
         goldenOutputMods = []
@@ -165,7 +165,7 @@ class PromptRecoTest(unittest.TestCase):
                                      task="/TestWorkload/Reco/RecoMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
@@ -199,8 +199,8 @@ class PromptRecoTest(unittest.TestCase):
                                      task="/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
-                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap.keys()))
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
+                             "Error: Wrong number of WF outputs %d." % len(list(mergeWorkflow.outputMap.keys())))
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
             unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
@@ -428,7 +428,7 @@ class PromptRecoTest(unittest.TestCase):
         recoWorkflow = Workflow(name="TestWorkload",
                                 task="/TestWorkload/Reco")
         recoWorkflow.load()
-        self.assertEqual(len(recoWorkflow.outputMap.keys()), len(testArguments["WriteTiers"]) + 1,
+        self.assertEqual(len(list(recoWorkflow.outputMap.keys())), len(testArguments["WriteTiers"]) + 1,
                          "Error: Wrong number of WF outputs in the Reco WF.")
 
         goldenOutputMods = ["write_RECO", "write_ALCARECO", "write_AOD", "write_DQM"]
@@ -457,7 +457,7 @@ class PromptRecoTest(unittest.TestCase):
         alcaSkimWorkflow = Workflow(name="TestWorkload",
                                     task="/TestWorkload/Reco/AlcaSkim")
         alcaSkimWorkflow.load()
-        self.assertEqual(len(alcaSkimWorkflow.outputMap.keys()), len(testArguments["AlcaSkims"]) + 1,
+        self.assertEqual(len(list(alcaSkimWorkflow.outputMap.keys())), len(testArguments["AlcaSkims"]) + 1,
                          "Error: Wrong number of WF outputs in the AlcaSkim WF.")
 
         goldenOutputMods = []
@@ -491,7 +491,7 @@ class PromptRecoTest(unittest.TestCase):
                                      task="/TestWorkload/Reco/RecoMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
@@ -525,8 +525,8 @@ class PromptRecoTest(unittest.TestCase):
                                      task="/TestWorkload/Reco/AlcaSkim/AlcaSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
-                             "Error: Wrong number of WF outputs %d." % len(mergeWorkflow.outputMap.keys()))
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
+                             "Error: Wrong number of WF outputs %d." % len(list(mergeWorkflow.outputMap.keys())))
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
             unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]

@@ -7,6 +7,7 @@
 # commands.
 #
 
+from builtins import str
 import os
 import time
 import re

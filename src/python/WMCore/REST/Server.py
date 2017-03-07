@@ -1,3 +1,8 @@
+from builtins import map
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
 import cherrypy
 import inspect
 import os
@@ -39,7 +44,7 @@ RESTArgs = namedtuple("RESTArgs", ["args", "kwargs"])
 
 ######################################################################
 ######################################################################
-class RESTFrontPage:
+class RESTFrontPage(object):
     """Base class for a trivial front page intended to hand everything
     over to a javascript-based user interface implementation.
 
@@ -151,7 +156,7 @@ class RESTFrontPage:
         :arg bool debug_mode:    Specifies how to set REST_DEBUG, see above."""
 
         # Verify all roots do end in a slash.
-        for origin, info in roots.iteritems():
+        for origin, info in roots.items():
             if not re.match(r"^[-a-z0-9]+$", origin):
                 raise ValueError("invalid root label")
             if not info["root"].endswith("/"):
@@ -182,7 +187,7 @@ class RESTFrontPage:
 
         if instances:
             instances = [dict(id=k, title=v[".title"], order=v[".order"])
-                         for k, v in instances().iteritems()]
+                         for k, v in instances().items()]
             instances.sort(lambda a, b: a["order"] - b["order"])
             self._preamble += (", REST_INSTANCES = %s" % json.dumps(instances))
 
@@ -271,9 +276,9 @@ class RESTFrontPage:
                 elif ctype != ctypemap[suffix]:
                     ctype = "text/plain"
                 if suffix == "html":
-                    for var, value in self._substitutions.iteritems():
+                    for var, value in self._substitutions.items():
                         data = data.replace("@" + var + "@", value)
-                    for var, files in self._embeddings.iteritems():
+                    for var, files in self._embeddings.items():
                         value = ""
                         for fpath in files:
                             if not os.access(fpath, os.R_OK):
@@ -355,7 +360,7 @@ class RESTFrontPage:
 
 ######################################################################
 ######################################################################
-class MiniRESTApi:
+class MiniRESTApi(object):
     """Minimal base class for REST services.
 
     .. rubric:: Overview
@@ -752,7 +757,7 @@ class MiniRESTApi:
         api = param.args.pop(0)
         if api not in self.methods[request.method]:
             response.headers['Allow'] = \
-              " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
+              " ".join(sorted([m for m, d in self.methods.items() if api in d]))
             raise APIMethodMismatch()
         apiobj = self.methods[request.method][api]
 
@@ -863,7 +868,7 @@ class RESTApi(MiniRESTApi):
         :arg callable entry: The pre-entry callback hook. See :meth:`_enter`.
         :arg callable wrapper: Optional wrapper to modify the method handler.
         :returns: Nothing."""
-        for label, entity in entities.iteritems():
+        for label, entity in entities.items():
             for method in _METHODS:
                 handler = getattr(entity, method.lower(), None)
                 if not handler and method == 'HEAD':
@@ -1219,7 +1224,7 @@ class DBConnectionPool(Thread):
 
     def __init__(self, id, dbspec):
         Thread.__init__(self, name=self.__class__.__name__)
-        self.sigready = [Condition() for _ in xrange(0, self.num_signals)]
+        self.sigready = [Condition() for _ in range(0, self.num_signals)]
         self.sigqueue = Condition()
         self.queue = []
         self.idle = []
@@ -1446,7 +1451,7 @@ class DBConnectionPool(Thread):
                                 len(self.inuse), len(self.idle)))
 
         # Attempt to connect max_tries times.
-        for _ in xrange(0, self.max_tries):
+        for _ in range(0, self.max_tries):
             try:
                 # Take next idle connection, or make a new one if none exist.
                 # Then test and prepare that connection, linking it in trace
@@ -1707,8 +1712,8 @@ class DatabaseRESTApi(RESTApi):
         module = __import__(modname, globals(), locals(), [item])
         self._db = getattr(module, item)
         myid = "%s.%s" % (self.__class__.__module__, self.__class__.__name__)
-        for spec in self._db.values():
-            for db in spec.values():
+        for spec in list(self._db.values()):
+            for db in list(spec.values()):
                 if isinstance(db, dict):
                     db["pool"] = DBConnectionPool(myid, db)
                     DatabaseRESTApi._ALL_POOLS.append(db["pool"])
@@ -1716,7 +1721,7 @@ class DatabaseRESTApi(RESTApi):
     @staticmethod
     def _logconnections(*args):
         """SIGUSR2 signal handler to log status of all pools."""
-        map(lambda p: p.logstatus(), DatabaseRESTApi._ALL_POOLS)
+        list(map(lambda p: p.logstatus(), DatabaseRESTApi._ALL_POOLS))
 
     def _add(self, entities):
         """Add entities.
@@ -2237,12 +2242,12 @@ class DatabaseRESTApi(RESTApi):
         For example the call ``api.bindmap(a = [1, 2], b = [3, 4])`` returns a
         list of dictionaries ``[{ "a": 1, "b": 3 }, { "a": 2, "b": 4 }]``."""
 
-        keys = kwargs.keys()
-        return [dict(list(zip(keys, vals))) for vals in zip(*kwargs.values())]
+        keys = list(kwargs.keys())
+        return [dict(list(zip(keys, vals))) for vals in zip(*list(kwargs.values()))]
 
 ######################################################################
 ######################################################################
-class RESTEntity:
+class RESTEntity(object):
     """Base class for entities in :class:`~.RESTApi`-based interfaces.
 
     This class doesn't offer any service other than holding on to the

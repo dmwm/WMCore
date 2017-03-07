@@ -6,6 +6,7 @@ API definition for Generator objects
 
 """
 
+from builtins import object
 class GeneratorInterface(object):
     """
     _GeneratorInterface_

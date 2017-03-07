@@ -7,6 +7,7 @@ Test lumi based splitting.
 
 from __future__ import division
 
+from builtins import range
 import threading
 import unittest
 import random
@@ -477,7 +478,7 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(len(jobs), 10)
         for j in jobs:
             runs = j['mask'].getRunAndLumis()
-            for r in runs.keys():
+            for r in list(runs.keys()):
                 self.assertEqual(len(runs[r]), 2)
                 for l in runs[r]:
                     # Each run should have two lumis

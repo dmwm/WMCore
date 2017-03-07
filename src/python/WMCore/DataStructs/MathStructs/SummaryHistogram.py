@@ -8,6 +8,7 @@ Created on Nov 16, 2012
 
 @author: dballest
 """
+from builtins import str
 from WMCore.DataStructs.WMObject import WMObject
 
 class SummaryHistogram(WMObject):

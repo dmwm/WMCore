@@ -84,8 +84,8 @@ class RunJob(dict):
         self['siteName']    = job.get('custom', {}).get('location', None)
 
         # Update the job with all other shared keys
-        for key in job.keys():
-            if key in self.keys():
+        for key in list(job.keys()):
+            if key in list(self.keys()):
                 self[key] = job[key]
 
         return
@@ -109,7 +109,7 @@ class RunJob(dict):
         job['usergroup']      = self['usergroup']
         job['userrole']      = self['userrole']
 
-        for key in self.keys():
+        for key in list(self.keys()):
             if key != 'id':
                 job[key] = self[key]
 

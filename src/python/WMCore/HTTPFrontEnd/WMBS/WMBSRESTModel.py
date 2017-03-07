@@ -4,6 +4,7 @@
 Rest Model for WMBS Monitoring.
 """
 
+from past.builtins import basestring
 import time
 
 from WMCore.WebTools.RESTModel import RESTModel

@@ -1,3 +1,4 @@
+from builtins import object
 NOT_EXIST_DATASET = 'thisdoesntexist'
 PILEUP_DATASET = '/HighPileUp/Run2011A-v1/RAW'
 

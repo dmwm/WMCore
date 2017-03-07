@@ -8,6 +8,7 @@ Unittest for StageOut.py
 
 
 
+from builtins import str
 import unittest
 import tempfile
 import shutil

@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 from __future__ import division, print_function
 
+from builtins import str
+from builtins import map
+from past.builtins import basestring
 import collections
 from itertools import islice
 from itertools import chain
@@ -30,7 +33,7 @@ def nestedDictUpdate(d, u):
     Code from Alex Matelli
     http://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
     """
-    for k, v in u.iteritems():
+    for k, v in u.items():
         if isinstance(v, collections.Mapping):
             r = nestedDictUpdate(d.get(k, {}), v)
             d[k] = r
@@ -46,8 +49,8 @@ def convertFromUnicodeToStr(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(convertFromUnicodeToStr, data.iteritems()))
+        return dict(list(map(convertFromUnicodeToStr, iter(data.items()))))
     elif isinstance(data, collections.Iterable):
-        return type(data)(map(convertFromUnicodeToStr, data))
+        return type(data)(list(map(convertFromUnicodeToStr, data)))
     else:
         return data

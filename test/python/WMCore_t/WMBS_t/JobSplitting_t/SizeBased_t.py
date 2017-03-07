@@ -5,6 +5,7 @@ _SizeBased_t_
 Size based splitting test.
 """
 
+from builtins import range
 import unittest
 import threading
 import os

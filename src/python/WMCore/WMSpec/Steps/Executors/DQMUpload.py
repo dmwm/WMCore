@@ -6,22 +6,25 @@ Implementation of an Executor for a DQMUpload step
 
 """
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import sys
-import httplib
-import urllib2
+import http.client
+import urllib.request, urllib.error, urllib.parse
 import logging
 import traceback
 
-from cStringIO import StringIO
+from io import StringIO
 from mimetypes import guess_type
 from gzip import GzipFile
 from functools import reduce
 
 # Compatibility with python2.3 or earlier
-HTTPS = httplib.HTTPS
+HTTPS = http.client.HTTPS
 if sys.version_info[:3] >= (2, 4, 0):
-    HTTPS = httplib.HTTPSConnection
+    HTTPS = http.client.HTTPSConnection
 
 from hashlib import md5
 
@@ -165,7 +168,7 @@ class DQMUpload(Executor):
                 msg += 'Detail: %s\n' % headers.get("Dqm-Status-Detail", None)
                 msg += 'Data: %s\n' % str(data)
                 logging.info(msg)
-        except urllib2.HTTPError as ex:
+        except urllib.error.HTTPError as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Status code: %s\n' % ex.hdrs.get("Dqm-Status-Code", None)
             msg += 'Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
@@ -194,12 +197,12 @@ class DQMUpload(Executor):
         """
         boundary = '----------=_DQM_FILE_BOUNDARY_=-----------'
         (body, crlf) = ('', '\r\n')
-        for (key, value) in args.items():
+        for (key, value) in list(args.items()):
             payload = str(value)
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"' % key) + crlf
             body += crlf + payload + crlf
-        for (key, filename) in files.items():
+        for (key, filename) in list(files.items()):
             body += '--' + boundary + crlf
             body += ('Content-Disposition: form-data; name="%s"; filename="%s"'
                      % (key, os.path.basename(filename))) + crlf
@@ -247,14 +250,14 @@ class DQMUpload(Executor):
             msg += "  ==> %s: %s\n" % (arg, args[arg])
         logging.info(msg)
 
-        datareq = urllib2.Request(url + '/data/put')
+        datareq = urllib.request.Request(url + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
         self.marshall(args, {'file' : filename}, datareq)
         if 'https://' in url:
-            result = urllib2.build_opener(HTTPSCertAuthenticate()).open(datareq)
+            result = urllib.request.build_opener(HTTPSCertAuthenticate()).open(datareq)
         else:
-            result = urllib2.build_opener(urllib2.ProxyHandler({})).open(datareq)
+            result = urllib.request.build_opener(urllib.request.ProxyHandler({})).open(datareq)
 
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':

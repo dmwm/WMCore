@@ -4,7 +4,10 @@ _Step.Executor.LogArchive_
 
 Implementation of an Executor for a LogArchive step
 """
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
 import os
 import os.path
 import logging
@@ -27,7 +30,7 @@ import WMCore.Storage.StageOutMgr as StageOutMgr
 import WMCore.Storage.FileManager
 
 
-lfnGroup = lambda j : str(j.get("counter", 0) / 1000).zfill(4)
+lfnGroup = lambda j : str(old_div(j.get("counter", 0), 1000)).zfill(4)
 
 class LogArchive(Executor):
     """

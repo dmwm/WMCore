@@ -5,11 +5,12 @@ _StepSpace_
 Frontend module for setting up StepSpace areas within a job.
 
 """
+from builtins import object
 import os
 import inspect
 from WMCore.WMRuntime.Sandbox import Sandbox
 
-class StepSpace:
+class StepSpace(object):
     """
     _StepSpace_
 

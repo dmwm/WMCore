@@ -120,7 +120,7 @@ class ConfigTest(unittest.TestCase):
                             value.insert(index, value.replace(oldWorkDir, self.testDir))
                     setattr(component, var, value)
                 elif type(value) == dict:
-                    for key in value.keys():
+                    for key in list(value.keys()):
                         if type(value[key]) == str and re.search(oldWorkDir, value[key]):
                             value[key] = value[key].replace(oldWorkDir, self.testDir)
                     setattr(component, var, value)

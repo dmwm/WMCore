@@ -5,6 +5,7 @@ _WMBSHelper_t_
 Unit tests for the WMBSHelper class.
 """
 
+from builtins import next
 import os
 import threading
 import unittest
@@ -589,7 +590,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(procWorkflow.spec, os.path.join(self.workDir, procWorkflow.name,
                                                          "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(procWorkflow.outputMap.keys()), 1,
+        self.assertEqual(len(list(procWorkflow.outputMap.keys())), 1,
                          "Error: Wrong number of WF outputs.")
 
         mergedProcOutput = procWorkflow.outputMap["OutputA"][0]["merged_output_fileset"]
@@ -612,7 +613,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
+        self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 1,
                          "Error: Wrong number of WF outputs.")
 
         cleanupWorkflow = Workflow(name = "TestWorkload",
@@ -624,7 +625,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(cleanupWorkflow.spec, os.path.join(self.workDir, cleanupWorkflow.name,
                                                             "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(cleanupWorkflow.outputMap.keys()), 0,
+        self.assertEqual(len(list(cleanupWorkflow.outputMap.keys())), 0,
                          "Error: Wrong number of WF outputs.")
 
         unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
@@ -642,7 +643,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                         "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(list(skimWorkflow.outputMap.keys())), 2,
                          "Error: Wrong number of WF outputs.")
 
         mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["merged_output_fileset"]
@@ -740,7 +741,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeWorkflow.spec, os.path.join(self.workDir, mergeWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
+        self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 1,
                          "Error: Wrong number of WF outputs.")
 
         unmergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["output_fileset"]
@@ -758,7 +759,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
                                                           "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(list(skimWorkflow.outputMap.keys())), 2,
                          "Error: Wrong number of WF outputs.")
 
         mergedSkimOutputA = skimWorkflow.outputMap["SkimOutputA"][0]["merged_output_fileset"]

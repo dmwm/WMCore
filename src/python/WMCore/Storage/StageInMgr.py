@@ -9,6 +9,8 @@ Based on StageOutMgr class
 """
 from __future__ import print_function
 
+from builtins import str
+from builtins import object
 import os
 
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
@@ -29,7 +31,7 @@ class StageInSuccess(Exception):
 
 
 
-class StageInMgr:
+class StageInMgr(object):
     """
     _StageInMgr_
 
@@ -143,7 +145,7 @@ class StageInMgr:
                 overrideParams['option'] = ""
 
         msg = "=======StageIn Override Initialised:================\n"
-        for key, val in overrideParams.items():
+        for key, val in list(overrideParams.items()):
             msg += " %s : %s\n" % (key, val)
         msg += "=====================================================\n"
         print(msg)

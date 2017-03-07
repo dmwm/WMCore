@@ -3,6 +3,9 @@ ReqMgr request handling.
 
 """
 
+from builtins import str
+from builtins import range
+from past.builtins import basestring
 import json
 import traceback
 
@@ -46,7 +49,7 @@ class Request(RESTEntity):
             return
 
         no_multi_key = ["detail", "_nostale", "date_range", "common_dict"]
-        for key, value in param.kwargs.items():
+        for key, value in list(param.kwargs.items()):
             # convert string to list
             if key not in no_multi_key and isinstance(value, basestring):
                 param.kwargs[key] = [value]
@@ -108,7 +111,7 @@ class Request(RESTEntity):
             doc[ids] = 'on'
 
         docs = []
-        for key in doc.keys():
+        for key in list(doc.keys()):
             if key.startswith('request'):
                 rid = key.split('request-')[-1]
                 if rid != 'all':
@@ -223,7 +226,7 @@ class Request(RESTEntity):
 
     def initialize_clone(self, request_name):
         requests = self.reqmgr_db_service.getRequestByNames(request_name)
-        clone_args = requests.values()[0]
+        clone_args = list(requests.values())[0]
         # overwrite the name and time stamp.
         initialize_request_args(clone_args, self.config, clone=True)
         # timestamp status update
@@ -270,7 +273,7 @@ class Request(RESTEntity):
 
         if len(mask) > 0:
             masked_result = {}
-            for req_name, req_info in result.items():
+            for req_name, req_info in list(result.items()):
                 masked_result.setdefault(req_name, {})
                 for mask_key in mask:
                     masked_result[req_name].update({mask_key: req_info.get(mask_key, None)})
@@ -373,10 +376,10 @@ class Request(RESTEntity):
         result = self._mask_result(mask, result)
         # If detail is set to False return just list of request name
         if not option["include_docs"]:
-            return result.keys()
+            return list(result.keys())
 
         if common_dict == 1:
-            response_list = result.values()
+            response_list = list(result.values())
         else:
             response_list = [result]
         return rows(response_list)

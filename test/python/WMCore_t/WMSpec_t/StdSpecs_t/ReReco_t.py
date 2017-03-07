@@ -125,7 +125,7 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing")
         procWorkflow.load()
 
-        self.assertEqual(len(procWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(procWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = ["RECOoutput", "DQMoutput"]
@@ -156,7 +156,7 @@ class ReRecoTest(unittest.TestCase):
                                      task="/TestWorkload/DataProcessing/DataProcessingMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
@@ -278,7 +278,7 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim")
         skimWorkflow.load()
 
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(skimWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = ["SkimA", "SkimB"]
@@ -313,7 +313,7 @@ class ReRecoTest(unittest.TestCase):
                                      task="/TestWorkload/DataProcessing/DataProcessingMergeRECOoutput/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]
@@ -480,7 +480,7 @@ class ReRecoTest(unittest.TestCase):
                                 task="/TestWorkload/DataProcessing/SomeSkim")
         skimWorkflow.load()
 
-        self.assertEqual(len(skimWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(skimWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = ["SkimA", "SkimB"]
@@ -512,7 +512,7 @@ class ReRecoTest(unittest.TestCase):
                                      task="/TestWorkload/DataProcessing/SomeSkim/SomeSkimMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]

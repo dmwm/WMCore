@@ -84,7 +84,7 @@ class MonteCarloTest(EmulatedUnitTestCase):
         prodWorkflow = Workflow(name="TestWorkload", task="/TestWorkload/Production")
         prodWorkflow.load()
 
-        self.assertEqual(len(prodWorkflow.outputMap.keys()), 3,
+        self.assertEqual(len(list(prodWorkflow.outputMap.keys())), 3,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = ["OutputA", "OutputB"]
@@ -116,7 +116,7 @@ class MonteCarloTest(EmulatedUnitTestCase):
                                      task="/TestWorkload/Production/ProductionMerge%s" % goldenOutputMod)
             mergeWorkflow.load()
 
-            self.assertEqual(len(mergeWorkflow.outputMap.keys()), 2,
+            self.assertEqual(len(list(mergeWorkflow.outputMap.keys())), 2,
                              "Error: Wrong number of WF outputs.")
 
             mergedMergeOutput = mergeWorkflow.outputMap["Merged"][0]["merged_output_fileset"]

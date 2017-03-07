@@ -6,8 +6,10 @@ Fetch configfiles and PSet TWeaks for CMSSW Steps in a WMTask
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from WMCore.WMSpec.Steps.Fetchers.FetcherInterface import FetcherInterface
 from WMCore.Cache.WMConfigCache import ConfigCache

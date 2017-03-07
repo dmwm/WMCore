@@ -7,6 +7,9 @@ Refactoring of StageOutMgr -- for now, not accessed by default
 
 """
 
+from builtins import str
+from builtins import range
+from builtins import object
 import os
 import logging
 log = logging
@@ -24,7 +27,7 @@ import WMCore.Storage.Backends
 import WMCore.Storage.Plugins
 import time
 
-class FileManager:
+class FileManager(object):
     """
     _FileManager_
 
@@ -372,7 +375,7 @@ class FileManager:
 
 
         """
-        for lfn in self.completedFiles.keys():
+        for lfn in list(self.completedFiles.keys()):
             self.info("Cleaning out file: %s\n" % lfn)
             try:
                 self.deleteLFN(lfn)

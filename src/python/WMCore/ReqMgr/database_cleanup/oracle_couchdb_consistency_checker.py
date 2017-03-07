@@ -26,6 +26,8 @@ https://github.com/dmwm/WMCore/issues/4388
 """
 from __future__ import print_function
 
+from builtins import zip
+from builtins import str
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couchdb_name = "reqmgr_workload_cache"
 

@@ -386,7 +386,7 @@ class Job(WMBSBase, WMJob):
         """
 
         if not fwjrPath:
-            if 'fwjr' in self.keys():
+            if 'fwjr' in list(self.keys()):
                 fwjrPath = self['fwjr']
             else:
                 return None
@@ -408,16 +408,16 @@ class Job(WMBSBase, WMJob):
         job = WMJob(name = self['name'])
 
         # Transfer all simple keys
-        for key in self.keys():
+        for key in list(self.keys()):
             keyType = type(self.get(key))
-            if keyType in [str, long, int, float]:
+            if keyType in [str, int, int, float]:
                 job[key] = self[key]
 
         for file in self['input_files']:
             job['input_files'].append(file.returnDataStructsFile())
 
         job['mask'] = WMMask()
-        for key in self["mask"].keys():
+        for key in list(self["mask"].keys()):
             job["mask"][key] = self["mask"][key]
 
         job.baggage = self.baggage

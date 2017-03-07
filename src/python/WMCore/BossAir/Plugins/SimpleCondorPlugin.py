@@ -5,6 +5,7 @@ _SimpleCondorPlugin_
 """
 from __future__ import division, print_function
 
+from builtins import str
 import logging
 import os
 import os.path
@@ -595,7 +596,7 @@ class SimpleCondorPlugin(BasePlugin):
 
             ad = convertFromUnicodeToStr(ad)
             condorAd = classad.ClassAd()
-            for k, v in ad.iteritems():
+            for k, v in ad.items():
                 condorAd[k] = v
             classAds.append((condorAd, 1))
 

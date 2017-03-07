@@ -4,6 +4,9 @@ _StdBase_
 
 Base class with helper functions for standard WMSpec files.
 """
+from builtins import str
+from builtins import range
+from builtins import object
 import logging
 
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
@@ -317,7 +320,7 @@ class StdBase(object):
             procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
 
         newSplitArgs = {}
-        for argName in splitArgs.keys():
+        for argName in list(splitArgs.keys()):
             newSplitArgs[str(argName)] = splitArgs[argName]
 
         procTask.setSplittingAlgorithm(splitAlgo, **newSplitArgs)
@@ -412,7 +415,7 @@ class StdBase(object):
                                                    configDoc, couchURL, couchDBName,
                                                    configCacheUrl=configCacheUrl)
         outputModules = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(procTask,
                                                 outputModuleName,
                                                 configOutput[outputModuleName].get('primaryDataset',
@@ -849,7 +852,7 @@ class StdBase(object):
             raise Exception('Provided list of docs has different request type')
         ids = set()
         for doc in docs:
-            for key, val in doc.iteritems():
+            for key, val in doc.items():
                 if key.endswith('ConfigCacheID'):
                     ids.add(val)
         ids = list(ids)

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import str
 from glob import iglob
 import shutil
 import os

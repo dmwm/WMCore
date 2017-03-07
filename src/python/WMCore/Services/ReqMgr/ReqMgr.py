@@ -1,3 +1,4 @@
+from past.builtins import basestring
 import json
 
 from WMCore.Services.Service import Service
@@ -61,7 +62,7 @@ class ReqMgr(Service):
             args = "_nostale=true&"
         else:
             args = ""
-        for name, values in queryDict.items():
+        for name, values in list(queryDict.items()):
             if isinstance(values, basestring) or isinstance(values, int):
                 values = [values]
             for val in values:

@@ -7,7 +7,10 @@ Created on Nov 7, 2012
 
 @author: dballest
 """
+from __future__ import division
 
+from builtins import range
+from past.utils import old_div
 import os
 import unittest
 
@@ -172,7 +175,7 @@ class Tier0PluginTest(unittest.TestCase):
         topLevelSub = Subscription(sharedFileset, topLevelWorkflow)
         topLevelSub.create()
         self.stateMap['Merge'].append(topLevelSub)
-        for task in filter(lambda x : not x.count('CleanupUnmerged'), secondLevelTasks):
+        for task in [x for x in secondLevelTasks if not x.count('CleanupUnmerged')]:
             secondLevelWorkflow = Workflow(task = '/%s/Express/%s' % (workflowName, task), **options)
             secondLevelWorkflow.create()
             mergeSub = Subscription(sharedFileset, secondLevelWorkflow)
@@ -278,11 +281,11 @@ class Tier0PluginTest(unittest.TestCase):
         """
 
         for idx in range(0, len(self.orderedStates) * 2):
-            nextState = self.orderedStates[idx / 2]
-            if (idx / 2) == 0:
+            nextState = self.orderedStates[old_div(idx, 2)]
+            if (old_div(idx, 2)) == 0:
                 currentState = 'Closed'
             else:
-                currentState = self.orderedStates[idx / 2 - 1]
+                currentState = self.orderedStates[old_div(idx, 2) - 1]
             if idx % 2 == 0:
                 for transitionObject in self.stateMap[nextState][:-1]:
                     method = getattr(transitionObject, transitionMethod)

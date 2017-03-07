@@ -62,7 +62,7 @@ class StoreResultsTest(unittest.TestCase):
                                 task="/TestWorkload/StoreResults")
         testWorkflow.load()
 
-        self.assertEqual(len(testWorkflow.outputMap.keys()), 2,
+        self.assertEqual(len(list(testWorkflow.outputMap.keys())), 2,
                          "Error: Wrong number of WF outputs.")
 
         goldenOutputMods = ["Merged"]

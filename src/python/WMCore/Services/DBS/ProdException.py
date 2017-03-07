@@ -9,6 +9,7 @@ General Exception class for Prod modules
 
 
 
+from builtins import str
 import exceptions
 import inspect
 import logging
@@ -92,7 +93,7 @@ class ProdException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
+        for key, value in list(data.items()):
             self[key] = value
         return
 
@@ -106,7 +107,7 @@ class ProdException(exceptions.Exception):
         strg += self.message
         strg +="</Message>\n"
         strg +="<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in list(self.data.items()):
             strg +="<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -124,6 +125,6 @@ class ProdException(exceptions.Exception):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
         strg += "Message: %s\n" % self.message
-        for key, value in self.data.items():
+        for key, value in list(self.data.items()):
             strg += "\t%s : %s\n" % (key, value, )
         return strg

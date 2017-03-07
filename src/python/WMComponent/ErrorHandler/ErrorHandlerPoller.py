@@ -25,11 +25,14 @@ immediately to the 'created' state, skipping cooloff.  It defaults to [].
 
 Note that failureExitCodes has precedence over passExitCodes.
 """
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os.path
 import threading
 import logging
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 

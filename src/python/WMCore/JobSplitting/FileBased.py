@@ -5,7 +5,9 @@ _FileBased_
 File based splitting algorithm that will chop a fileset into
 a set of jobs based on file boundaries
 """
+from __future__ import division
 
+from past.utils import old_div
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.WMBS.File import File
 from WMCore.WMSpec.WMTask import buildLumiMask
@@ -59,14 +61,14 @@ class FileBased(JobFactory):
                     if f['lumiCount'] == 0:
                         continue
                     ## Do average event per lumi calculation.
-                    f['avgEvtsPerLumi'] = round(float(f['events']) / f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(old_div(float(f['events']), f['lumiCount']))
                 newlist.append(f)
             locationDict[key] = sorted(newlist, key = lambda f: f['lfn'])
 
         ## Make a list with all the files, sorting them by LFN. Remove from the list all
         ## the files filtered out by the lumi-mask (if there is one).
         files = []
-        for filesPerLocSet in locationDict.values():
+        for filesPerLocSet in list(locationDict.values()):
             for f in filesPerLocSet:
                 files.append(f)
         if len(files):
@@ -92,11 +94,11 @@ class FileBased(JobFactory):
             removedFiles = files[totalFiles:]
             files = files[:totalFiles]
             for f in removedFiles:
-                for locSet in locationDict.keys():
+                for locSet in list(locationDict.keys()):
                     if f in locationDict[locSet]:
                         locationDict[locSet].remove(f)
 
-        for locSet in locationDict.keys():
+        for locSet in list(locationDict.keys()):
             #Now we have all the files in a certain location set
             fileList = locationDict[locSet]
             filesInJob  = 0

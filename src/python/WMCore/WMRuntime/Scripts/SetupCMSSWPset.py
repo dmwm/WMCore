@@ -6,6 +6,7 @@ Create a CMSSW PSet suitable for running a WMAgent job.
 """
 from __future__ import print_function
 
+from builtins import str
 import json
 import os
 import pickle
@@ -292,7 +293,7 @@ class SetupCMSSWPset(ScriptInterface):
         #   dataset.dataTier
         #   dataset.filterName
         if hasattr(self.process, "outputModules"):
-            outputModuleNames = self.process.outputModules.keys()
+            outputModuleNames = list(self.process.outputModules.keys())
         else:
             outputModuleNames = self.process.outputModules_()
         for outMod in outputModuleNames:
@@ -497,7 +498,7 @@ class SetupCMSSWPset(ScriptInterface):
         prodsAndFilters = {}
         prodsAndFilters.update(self.process.producers)
         prodsAndFilters.update(self.process.filters)
-        for key, value in prodsAndFilters.items():
+        for key, value in list(prodsAndFilters.items()):
             if value.type_() in ["MixingModule", "DataMixingModule"]:
                 mixModules.append(value)
             if value.type_() == "DataMixingModule":

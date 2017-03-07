@@ -7,6 +7,7 @@ Test harness for invoking an Implementation plugin
 """
 from __future__ import print_function
 
+from builtins import str
 import sys
 import getopt
 

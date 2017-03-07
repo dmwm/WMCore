@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # This is the interface to the Dashboard that the monitor will use
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import threading
 import os
 import time

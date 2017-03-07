@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 WorkQueue provides functionality to queue large chunks of work,
 thus acting as a buffer for the next steps in job processing
@@ -8,48 +9,40 @@ and released when a suitable resource is found to execute them.
 
 https://twiki.cern.ch/twiki/bin/view/CMS/WMCoreJobPool
 """
-from __future__ import (print_function, division)
 
-from collections import defaultdict
+from __future__ import division, print_function
+
 import os
 import threading
 import time
 import traceback
+from collections import defaultdict
 
 from WMCore import Lexicon
-from WMCore.Alerts import API as alertAPI
-
-from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
-from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
-
-from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
-from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
-from WMCore.WorkQueue.Policy.Start import startPolicy
-from WMCore.WorkQueue.Policy.End import endPolicy
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueWMSpecError
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
-from WMCore.WorkQueue.WorkQueueExceptions import TERMINAL_EXCEPTIONS
-from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueError
-from WMCore.WorkQueue.WorkQueueUtils import get_dbs
-from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames
-
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
 from WMCore.ACDC.DataCollectionService import DataCollectionService
-from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
-from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
-from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
-
-from WMCore.Database.CMSCouch import CouchNotFoundError, CouchInternalServerError
-
+from WMCore.Alerts import API as alertAPI
+from WMCore.Database.CMSCouch import CouchInternalServerError, CouchNotFoundError
+from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
-from WMCore.Services.LogDB.LogDB import LogDB
+from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper, getWorkloadFromTask
+from WMCore.WorkQueue.DataLocationMapper import WorkQueueDataLocationMapper
+from WMCore.WorkQueue.DataStructs.ACDCBlock import ACDCBlock
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
+from WMCore.WorkQueue.Policy.End import endPolicy
+from WMCore.WorkQueue.Policy.Start import startPolicy
+from WMCore.WorkQueue.WorkQueueBackend import WorkQueueBackend
+from WMCore.WorkQueue.WorkQueueBase import WorkQueueBase
+from WMCore.WorkQueue.WorkQueueExceptions import (TERMINAL_EXCEPTIONS, WorkQueueError, WorkQueueNoMatchingElements,
+                                                  WorkQueueWMSpecError)
+from WMCore.WorkQueue.WorkQueueUtils import cmsSiteNames, get_dbs
 
 
-#  //
-# // Convenience constructor functions
-# //
+# Convenience constructor functions
+
 def globalQueue(logger=None, dbi=None, **kwargs):
     """Convenience method to create a WorkQueue suitable for use globally
     """

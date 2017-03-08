@@ -35,6 +35,9 @@ try:
 except ImportError:
     pass
 
+# Python3 compatibility
+if sys.version.startswith('3.'):  # PY3 Remove when python 3 transition complete
+    basestring = str
 
 def check_server_url(srvurl):
     """Check given url for correctness"""
@@ -71,8 +74,7 @@ class Requests(dict):
         # check for basic auth early, as if found this changes the url
         urlComponent = sanitizeURL(url)
         if urlComponent['username'] is not None:
-            self.addBasicAuth( \
-                urlComponent['username'], urlComponent['password'])
+            self.addBasicAuth(urlComponent['username'], urlComponent['password'])
             url = urlComponent['url']  # remove user, password from url
 
         self.setdefault("host", url)
@@ -86,8 +88,7 @@ class Requests(dict):
         if 'cachepath' in idict and idict['cachepath'] is None:
             self["req_cache_path"] = None
         else:
-            cache_dir = (self.cachePath(idict.get('cachepath'), \
-                                        idict.get('service_name')))
+            cache_dir = (self.cachePath(idict.get('cachepath'), idict.get('service_name')))
             self["cachepath"] = cache_dir
             self["req_cache_path"] = os.path.join(cache_dir, '.cache')
         self.setdefault("timeout", 300)
@@ -158,8 +159,8 @@ class Requests(dict):
         # And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
         url = self['host'] + uri
-        response, data = self.reqmgr.request(url, params, headers, \
-                                             verb=verb, ckey=ckey, cert=cert, capath=capath, decode=decoder)
+        response, data = self.reqmgr.request(url, params, headers, verb=verb,
+                                             ckey=ckey, cert=cert, capath=capath, decode=decoder)
         return data, response.status, response.reason, response.fromcache
 
     def makeRequest_httplib(self, uri=None, data={}, verb='GET',
@@ -225,15 +226,16 @@ class Requests(dict):
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert isinstance(encoded_data, str), \
+        # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
+        # PY3 Don't let futurize change this
+        assert isinstance(encoded_data, (str, basestring)), \
             "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying
         # try to send request - if this fails try again - should then succeed
         try:
             conn = self._getURLOpener()
-            response, result = conn.request(uri, method=verb,
-                                                    body=encoded_data, headers=headers)
+            response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
             if response.status == 408:  # timeout can indicate a socket error
                 raise socket.error
         except (socket.error, AttributeError):
@@ -247,8 +249,7 @@ class Requests(dict):
             conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client
             try:
-                response, result = conn.request(uri, method=verb,
-                                                        body=encoded_data, headers=headers)
+                response, result = conn.request(uri, method=verb, body=encoded_data, headers=headers)
             except AttributeError:
                 msg = traceback.format_exc()
                 # socket/httplib really screwed up - nuclear option
@@ -499,7 +500,6 @@ class Requests(dict):
         ckey, cert = self.getKeyCert()
         capath = self.getCAPath()
         import pycurl
-        from WMCore.Services.pycurl_manager import ResponseHeader
 
         hbuf = StringIO.StringIO()
 
@@ -559,6 +559,7 @@ class JSONRequests(Requests):
         else:
             return {}
 
+
 class TempDirectory(object):
     """
     Directory that cleans up after itself
@@ -576,5 +577,5 @@ class TempDirectory(object):
         try:
             # it'll likely fail, but give it a try
             shutil.rmtree(self.dir, ignore_errors=True)
-        except:
+        except (IOError, OSError):
             pass

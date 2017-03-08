@@ -1,10 +1,22 @@
+from __future__ import print_function
+
 import sys
 import types
 
-class _EmptyClass:
+# PY3 compatibility
+# Not clear this function will work under python3 either.
+# nosetests Requests_t.py:testJSONRequests.testSet2 is a minimal test that fails on python2
+# The problem is that isinstance checks on this object in python2 fail if included
+if sys.version.startswith('3.'):
+    from builtins import object
+    # Make types compatible, can also be removed once transition is over
+    long = int
+    basestring = str
+
+class _EmptyClass(object):
     pass
 
-class JSONThunker:
+class JSONThunker(object):
     """
     _JSONThunker_
     Converts an arbitrary object to <-> from a jsonable object.
@@ -29,7 +41,8 @@ class JSONThunker:
                                  complex,
                                  str,
                                  bytes,
-                                 unicode
+                                 unicode,
+                                 basestring
                                  )
         # objects that inherit from dict should be treated as a dict
         #   they don't store their data in __dict__. There was enough
@@ -73,7 +86,13 @@ class JSONThunker:
         """
         backs off the recursion counter if we're returning from _thunk
         """
-        self.foundIDs[id(data)] = self.foundIDs[id(data)] -1
+        import pdb
+        # pdb.set_trace()
+        try:
+            self.foundIDs[id(data)] = self.foundIDs[id(data)] -1
+        except:
+            print("Could not find count for id %s of type %s data %s" % (id(data), type(data), data))
+            raise
 
     def checkBlackListed(self, data):
         """
@@ -148,7 +167,7 @@ class JSONThunker:
         toThunk = self.checkRecursion( toThunk )
         toThunk = self.checkBlackListed(toThunk)
 
-        if (type(toThunk) == type("")):
+        if isinstance(toThunk, basestring):
             # things that got blacklisted
             return toThunk
         if (hasattr(toThunk, '__to_json__')):
@@ -237,8 +256,7 @@ class JSONThunker:
         """
         helper function for thunk, does the actual work
         """
-
-        if (type(toThunk) in self.passThroughTypes):
+        if isinstance(toThunk, self.passThroughTypes):
             return toThunk
         elif (type(toThunk) == type([])):
             return self.handleListThunk(toThunk)

@@ -17,43 +17,15 @@ from httplib import HTTPException
 import nose
 
 import WMCore.Services.Requests as Requests
-from WMCore.DataStructs.Job import Job
 from WMCore.DataStructs.Job import Job as DataStructsJob
 from WMCore.DataStructs.Mask import Mask
 from WMCore.DataStructs.Run import Run
 from WMCore.Services.Requests import JSONRequests
 from WMCore.WMInit import getWMBASE
-from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 from WMQuality.TestInit import TestInit
 from WMQuality.WebTools.RESTBaseUnitTest import RESTBaseUnitTest
 from WMQuality.WebTools.RESTServerSetup import DefaultConfig
 
-
-class testThunking(unittest.TestCase):
-    """
-    Direct tests of thunking standard python type
-    """
-    def setUp(self):
-        self.thunker = JSONThunker()
-
-    def roundTrip(self, data):
-        encoded = self.thunker.thunk(data)
-        decoded = self.thunker.unthunk(encoded)
-        self.assertEqual( data, decoded )
-
-    def testStr(self):
-        self.roundTrip('hello')
-
-    def testList(self):
-        self.roundTrip([123, 456])
-
-    def testDict(self):
-        self.roundTrip({'abc':123, 'def':456})
-        self.roundTrip({'abc':123, 456:'def'})
-
-    def testSet(self):
-        self.roundTrip(set([]))
-        self.roundTrip(set([123, 'abc']))
 
 class testRequestExceptions(unittest.TestCase):
 
@@ -245,7 +217,7 @@ class testJSONRequests(unittest.TestCase):
         mymask = Mask()
         mymask['FirstEvent'] = 9999
         mymask['LastEvent'] = 999
-        myjob = Job()
+        myjob = DataStructsJob()
         myjob["mask"] = mymask
         self.roundTrip(myjob)
 

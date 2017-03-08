@@ -5,6 +5,7 @@ WorkQueue splitting by block
 """
 from __future__ import print_function, division
 
+from builtins import str
 from math import ceil
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
 from WMCore.Services.SiteDB.SiteDB import SiteDBJSON as SiteDB

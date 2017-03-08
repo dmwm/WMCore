@@ -18,7 +18,7 @@ class GetSite(DBFormatter):
 
     def format(self, result):
         rowProxy = result[0].fetchall()[0]
-        return rowProxy.values()[0]
+        return list(rowProxy.values())[0]
 
     def execute(self, jobGroupID = None, conn = None,
                 transaction = False):

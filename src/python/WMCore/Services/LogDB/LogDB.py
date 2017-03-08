@@ -5,6 +5,8 @@ https://github.com/dmwm/WMCore/issues/5705
 """
 
 # standard modules
+from builtins import str
+from builtins import object
 import re
 import logging
 import threading
@@ -174,7 +176,7 @@ class LogDB(object):
             if thr != "DataCacheUpdate" and thr not in hbinfo:
                 self._append_down_component_detail(report, thr, "Thread not running")
 
-        for thr, info in hbinfo.iteritems():
+        for thr, info in hbinfo.items():
             if info['type'] == 'agent-error':
                 self._append_down_component_detail(report, thr, info['msg'], info['ts'])
         return report

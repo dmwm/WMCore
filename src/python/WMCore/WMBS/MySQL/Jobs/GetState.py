@@ -29,7 +29,7 @@ class GetState(DBFormatter):
         if len(results) == 0:
             return False
         else:
-            return results[0].fetchall()[0].values()[0]
+            return list(results[0].fetchall()[0].values())[0]
 
 
     def execute(self, id, conn = None, transaction = False):

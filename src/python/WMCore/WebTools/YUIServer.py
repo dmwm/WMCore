@@ -1,8 +1,9 @@
+from builtins import object
 import cherrypy
 import re
 import logging
 
-class YUIServer:
+class YUIServer(object):
     def __init__(self, config):
         self.yuidir = config.yuidir
         self.pattern = re.compile(r"^[-a-z_/]+\.(js|css|png)$")

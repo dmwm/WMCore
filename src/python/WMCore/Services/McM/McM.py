@@ -5,12 +5,16 @@ A service class for retrieving data from McM using
 an SSO cookie since it sits behind CERN SSO
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import json
 import os
 import pycurl
 import subprocess
 
-from StringIO import StringIO
+from io import StringIO
 
 
 from WMCore.WMException import WMException

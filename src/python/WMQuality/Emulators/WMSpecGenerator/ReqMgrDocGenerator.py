@@ -1,3 +1,4 @@
+from builtins import range
 from __future__ import (print_function, division)
 import time
 import random
@@ -31,7 +32,7 @@ def generate_reqmgr_schema(number=NUM_OF_REQUEST):
     #doc['team'] = schema['team']
     """
     docs = []
-    for i in xrange(number):
+    for i in range(number):
         doc = {"RequestName": "test_workflow_%s" % i,
                "InputDataset": "/Photon/Run2011A-v1/RAW",
                "Group": "cmsdataops",
@@ -85,7 +86,7 @@ def generate_reqmgr_requests(number=NUM_OF_REQUEST):
     }
     """
     docs = []
-    for i in xrange(number):
+    for i in range(number):
         doc = {"_id": "test_workflow_%s" % i,
                "inputdataset": "/Photon/Run2011A-v1/RAW",
                "group": "cmsdataops",
@@ -137,8 +138,8 @@ def generate_agent_requests(number=NUM_OF_REQUEST, iterations=ITERATIONS):
     """
     current_time = int(time.time())
     docs = []
-    for cycle in xrange(iterations):
-        for i in xrange(number):
+    for cycle in range(iterations):
+        for i in range(number):
             doc = {"status": {"inWMBS": 12,
                               "submitted": {"retry": 2, "running": 2, "pending": 2, "first": 2},
                               "failure": {"exception": 2, "create": 2, "submit": 2},
@@ -218,7 +219,7 @@ def generate_jobsummary(request, number=NUM_OF_JOBS_PER_REQUEST):
      'jobfailed', 'createcooloff',  'submitcooloff', 'jobcooloff', 'success',
      'exhausted', 'killed']
 
-    for i in xrange(number):
+    for i in range(number):
         status = statusList[random.randint(0, len(statusList)-1)]
         errmsgs = {}
         if status.find("failed"):

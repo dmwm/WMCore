@@ -4,6 +4,7 @@ ZMQ Sender, Alerts framework.
 """
 
 
+from builtins import object
 import os
 import logging
 

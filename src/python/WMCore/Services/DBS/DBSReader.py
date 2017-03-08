@@ -6,6 +6,7 @@ Readonly DBS Interface
 
 """
 
+from builtins import str
 from WMCore.Services.DBS.DBSErrors import DBSReaderError
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader
 

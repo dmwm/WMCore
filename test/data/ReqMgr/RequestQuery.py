@@ -8,6 +8,8 @@ Request.
 """
 from __future__ import print_function
 
+from builtins import str
+from builtins import object
 import json
 import os
 
@@ -20,7 +22,7 @@ from WMCore.Services.SiteDB.SiteDB import SiteDBJSON
 dbs_base_url = "https://cmsweb.cern.ch/dbs/prod/"
 #dbs_base_url = "https://cmsweb-testbed.cern.ch/dbs/int/"
 
-class RequestQuery:
+class RequestQuery(object):
 
     def __init__(self,config):
         self.br=Browser()

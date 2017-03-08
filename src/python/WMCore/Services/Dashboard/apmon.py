@@ -41,6 +41,9 @@ Sending strings is supported, but they will not be stored in the
 farm's store nor shown in the farm's window in the MonALISA client.
 """
 from __future__ import division
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import re
 import xdrlib
 import socket
@@ -879,9 +882,9 @@ class ApMon(object):
         if value is None:
             self.logger.log(Logger.WARNING, "Ignore " + str(name)+ " parameter because of None value")
             return False
-        if isinstance(name, unicode):
+        if isinstance(name, str):
             name = str(name)
-        if isinstance(value, unicode):
+        if isinstance(value, str):
             value = str(value)
         try:
             typeValue = self.__valueTypes[type(value)]

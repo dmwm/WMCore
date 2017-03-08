@@ -11,6 +11,7 @@ Interface and base class for step specific diagnostic handlers
 
 
 
+from builtins import object
 class DiagnosticHandler(object):
     """
     _DiagnosticHandler_

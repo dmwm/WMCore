@@ -23,7 +23,7 @@ class GetByLFN(DBFormatter):
         if formattedResult["first_event"] != None:
             formattedResult["first_event"] = int(formattedResult["first_event"])
 
-        if "size" in formattedResult.keys():
+        if "size" in list(formattedResult.keys()):
             formattedResult["size"] = formattedResult["size"]
         else:
             # The size column is named "filesize" in Oracle as size is

@@ -9,15 +9,21 @@ http://wiki.apache.org/couchdb/API_Cheatsheet
 NOT A THREAD SAFE CLASS.
 """
 from __future__ import print_function
+from __future__ import division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 import hashlib
 import base64
 import logging
 import traceback
-from httplib import HTTPException
+from http.client import HTTPException
 from datetime import datetime
 
 from WMCore.Services.Requests import JSONRequests
@@ -25,10 +31,10 @@ from WMCore.Lexicon import replaceToSantizeURL
 
 
 def check_name(dbname):
-    match = re.match("^[a-z0-9_$()+-/]+$", urllib.unquote_plus(dbname))
+    match = re.match("^[a-z0-9_$()+-/]+$", urllib.parse.unquote_plus(dbname))
     if not match:
         msg = '%s is not a valid database name'
-        raise ValueError(msg % urllib.unquote_plus(dbname))
+        raise ValueError(msg % urllib.parse.unquote_plus(dbname))
 
 
 def check_server_url(srvurl):
@@ -59,7 +65,7 @@ class Document(dict):
         # https://issues.apache.org/jira/browse/COUCHDB-1141
         deletedDict = {'_id': self['_id'], '_rev': self['_rev'], '_deleted': True}
         self.update(deletedDict)
-        for key in self.keys():
+        for key in list(self.keys()):
             if key not in deletedDict:
                 del self[key]
 
@@ -71,7 +77,7 @@ class Document(dict):
         this object and adding a bunch of keys that couch won't understand.
         """
         jsonDict = {}
-        for key in self.keys():
+        for key in list(self.keys()):
             jsonDict[key] = self[key]
 
         return jsonDict
@@ -170,7 +176,7 @@ class Database(CouchDBRequests):
         """
         check_name(dbname)
 
-        self.name = urllib.quote_plus(dbname)
+        self.name = urllib.parse.quote_plus(dbname)
 
         CouchDBRequests.__init__(self, url=url, ckey=ckey, cert=cert)
         self._reset_queue()
@@ -196,7 +202,7 @@ class Database(CouchDBRequests):
             data[label] = int(time.time())
         else:
             for doc in data:
-                if label not in doc.keys():
+                if label not in list(doc.keys()):
                     doc[label] = int(time.time())
         return data
 
@@ -297,9 +303,9 @@ class Database(CouchDBRequests):
         on CouchDB revisions for document history is not safe, as any compaction will
         remove the older revisions.
         """
-        uri = '/%s/%s' % (self.name, urllib.quote_plus(id))
+        uri = '/%s/%s' % (self.name, urllib.parse.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev': rev})
+            uri += '?' + urllib.parse.urlencode({'rev': rev})
         return Document(id=id, inputDict=self.get(uri))
 
     def getPrevisousRevision(self, doc_id, numberBefore=1):
@@ -309,7 +315,7 @@ class Database(CouchDBRequests):
                               special case 0 means the first revision.
         :return: previous revision document specified by numberBefore
         """
-        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.quote_plus(doc_id))
+        uri = '/%s/%s?revs=true&open_revs=all' % (self.name, urllib.parse.quote_plus(doc_id))
         revisionRecord = self.get(uri)
         rev = revisionRecord[0]['ok']['_revisions']
 
@@ -334,11 +340,11 @@ class Database(CouchDBRequests):
         http://wiki.apache.org/couchdb/Document_Update_Handlers
         """
         # Clean up /'s in the name etc.
-        doc_id = urllib.quote_plus(doc_id)
+        doc_id = urllib.parse.quote_plus(doc_id)
 
         if not useBody:
             updateUri = '/%s/_design/%s/_update/%s/%s?%s' % \
-                        (self.name, design, update_func, doc_id, urllib.urlencode(fields))
+                        (self.name, design, update_func, doc_id, urllib.parse.urlencode(fields))
 
             return self.put(uri=updateUri, decode=False)
         else:
@@ -354,7 +360,7 @@ class Database(CouchDBRequests):
         http://wiki.apache.org/couchdb/Document_Update_Handlers
         """
         # Clean up /'s in the name etc.
-        doc_id = urllib.quote_plus(doc_id)
+        doc_id = urllib.parse.quote_plus(doc_id)
 
         updateUri = '/%s/%s' % (self.name, doc_id)
         return self.put(uri=updateUri, data=fields, decode=False)
@@ -363,9 +369,9 @@ class Database(CouchDBRequests):
         """
         Check if a document exists by ID. If specified check that the revision rev exists.
         """
-        uri = "/%s/%s" % (self.name, urllib.quote_plus(id))
+        uri = "/%s/%s" % (self.name, urllib.parse.quote_plus(id))
         if rev:
-            uri += '?' + urllib.urlencode({'rev': rev})
+            uri += '?' + urllib.parse.urlencode({'rev': rev})
         try:
             self.makeRequest(uri, {}, 'HEAD')
             return True
@@ -467,7 +473,7 @@ class Database(CouchDBRequests):
         more info: http://wiki.apache.org/couchdb/HTTP_view_API
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             # We can't encode the stale option, as it will be converted to '"ok"'
             # which couch barfs on.
             if k == "stale":
@@ -477,7 +483,7 @@ class Database(CouchDBRequests):
 
         if len(keys):
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_view/%s?%s' % \
                                    (self.name, design, view, data), {'keys': keys})
             else:
@@ -500,12 +506,12 @@ class Database(CouchDBRequests):
         deal with it appropriately.
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 retval = self.post('/%s/_design/%s/_list/%s/%s?%s' % \
                                    (self.name, design, list, view, data), {'keys': keys},
                                    decode=False)
@@ -540,12 +546,12 @@ class Database(CouchDBRequests):
         keys is the list of key (ids) for doc to be returned
         """
         encodedOptions = {}
-        for k, v in options.iteritems():
+        for k, v in options.items():
             encodedOptions[k] = self.encode(v)
 
         if len(keys):
             if encodedOptions:
-                data = urllib.urlencode(encodedOptions)
+                data = urllib.parse.urlencode(encodedOptions)
                 return self.post('/%s/_all_docs?%s' % (self.name, data),
                                  {'keys': keys})
             else:
@@ -809,7 +815,7 @@ class RotatingDatabase(Database):
         find = {'map': "function(doc) {if(doc.rotate_state == '%s') {emit(doc.timestamp, doc._id);}}" % state}
         uri = '/%s/_temp_view' % self.seed_db.name
         if options:
-            uri += '?%s' % urllib.urlencode(options)
+            uri += '?%s' % urllib.parse.urlencode(options)
         data = self.seed_db.post(uri, find)
         return data['rows']
 
@@ -892,7 +898,7 @@ class CouchServer(CouchDBRequests):
         """
         check_name(dbname)
 
-        self.put("/%s" % urllib.quote_plus(dbname))
+        self.put("/%s" % urllib.parse.quote_plus(dbname))
         # Pass the Database constructor the unquoted name - the constructor will
         # quote it for us.
         return Database(dbname=dbname, url=self.url, size=size, ckey=self.ckey, cert=self.cert)
@@ -900,7 +906,7 @@ class CouchServer(CouchDBRequests):
     def deleteDatabase(self, dbname):
         "Delete a database from the server"
         check_name(dbname)
-        dbname = urllib.quote_plus(dbname)
+        dbname = urllib.parse.quote_plus(dbname)
         return self.delete("/%s" % dbname)
 
     def connectDatabase(self, dbname='database', create=True, size=1000):
@@ -1144,7 +1150,7 @@ class CouchMonitor(object):
         adhoc way to check the replication
         """
         # monitor the last update on replications according to 5 min + checkpoint_interval
-        secsUpdateOn = 5 * 60 + activeStatus['checkpoint_interval'] / 1000
+        secsUpdateOn = 5 * 60 + old_div(activeStatus['checkpoint_interval'], 1000)
         lastUpdate = activeStatus["updated_on"]
         updateNum = int(activeStatus["source_seq"])
         previousUpdateNum = self.getPreviousUpdateSequence(source, target)

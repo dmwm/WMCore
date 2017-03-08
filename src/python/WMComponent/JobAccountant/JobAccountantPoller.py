@@ -5,6 +5,7 @@ _JobAccountantPoller_
 Poll WMBS for complete jobs and process their framework job reports.
 """
 
+from builtins import str
 import time
 import threading
 import logging

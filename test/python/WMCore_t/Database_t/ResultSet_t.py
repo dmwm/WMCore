@@ -10,6 +10,8 @@ Unit tests for the Database/ResultSet class
 #Written to test the ResultSet class initially by mnorman
 #Dependent on DBCore, specifically DBCore.processData()
 
+from builtins import str
+from builtins import range
 import unittest
 import logging
 import threading

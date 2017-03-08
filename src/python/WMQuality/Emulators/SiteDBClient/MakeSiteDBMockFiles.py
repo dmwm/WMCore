@@ -4,11 +4,14 @@ MakeSiteDBMockFiles
 Program to create mock SiteDB JSON files used by the SiteDB mock-based emulator
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 from __future__ import (division, print_function)
 
 import json
 import os
-from urllib2 import HTTPError
+from urllib.error import HTTPError
 
 from WMCore.Services.SiteDB.SiteDBAPI import SiteDBAPI
 from WMCore.WMBase import getTestBase
@@ -49,7 +52,7 @@ if __name__ == '__main__':
 
     siteDB = SiteDBAPI()
     for call in calls:
-        signature = str(sorted(call.iteritems()))
+        signature = str(sorted(call.items()))
         callname = call['callname']
         try:
             result = siteDB.getJSON(**call)

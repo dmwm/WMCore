@@ -2,6 +2,7 @@
 """
 pullWork poller
 """
+from builtins import str
 __all__ = []
 
 

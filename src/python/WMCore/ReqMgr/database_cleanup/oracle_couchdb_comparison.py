@@ -14,6 +14,7 @@ $X509_USER_CERT $X509_USER_KEY, or proxy stored in /tmp/x509up_u<ID>
 """
 from __future__ import print_function
 
+from past.builtins import execfile
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couch_db_name = "reqmgr_workload_cache"
 

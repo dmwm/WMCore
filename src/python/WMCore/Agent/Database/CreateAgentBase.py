@@ -73,7 +73,7 @@ class CreateAgentBase(DBCreator):
         everything is in place have the DBCreator make everything.
         """
         for requiredTable in self.requiredTables:
-            if requiredTable not in self.create.keys():
+            if requiredTable not in list(self.create.keys()):
                 raise WMException("The table '%s' is not defined." % \
                                   requiredTable, "WMCORE-2")
 

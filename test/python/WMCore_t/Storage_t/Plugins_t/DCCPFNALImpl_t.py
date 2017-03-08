@@ -1,3 +1,4 @@
+from builtins import object
 import os
 import unittest
 import mox
@@ -9,7 +10,7 @@ from WMCore.WMBase import getWMBASE
 from WMCore.Storage.StageOutError import StageOutError, StageOutFailure
 from nose.plugins.attrib import attr
 
-class RunCommandThing:
+class RunCommandThing(object):
     def __init__(self, target):
         self.target = target
     def runCommand(self,things):

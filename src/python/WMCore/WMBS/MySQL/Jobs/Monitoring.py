@@ -4,6 +4,7 @@ _Monitoring_
 
 Monitoring DAO classes for Jobs in WMBS
 """
+from builtins import map
 __all__ = []
 
 
@@ -23,4 +24,4 @@ class JobsByState(DBFormatter):
         def reduce_function(x, y):
             x.update(y)
             return x
-        return reduce(reduce_function, map(map_function, list))
+        return reduce(reduce_function, list(map(map_function, list)))

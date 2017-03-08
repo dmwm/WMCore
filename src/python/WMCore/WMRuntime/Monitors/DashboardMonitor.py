@@ -6,6 +6,7 @@ _DashboardMonitor_
 This class monitors the job progress and reports to the dashboard
 """
 
+from builtins import str
 import time
 import logging
 import os

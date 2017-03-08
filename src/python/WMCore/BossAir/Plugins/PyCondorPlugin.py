@@ -7,7 +7,11 @@ For glide-in use.
 """
 from __future__ import division
 
-import Queue
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+import queue
 import glob
 import logging
 import multiprocessing
@@ -444,7 +448,7 @@ class PyCondorPlugin(BasePlugin):
         for dummy in range(nSubmits):
             try:
                 res = self.result.get(block=True, timeout=timeout)
-            except Queue.Empty:
+            except queue.Empty:
                 # If the queue was empty go to the next submit
                 # Those jobs have vanished
                 logging.error("Queue.Empty error received!")
@@ -555,7 +559,7 @@ class PyCondorPlugin(BasePlugin):
 
         # Now go over the jobs from WMBS and see what we have
         for job in jobs:
-            if job['jobid'] not in jobInfo.keys():
+            if job['jobid'] not in list(jobInfo.keys()):
                 self.procJobNoInfo(job, changeList, completeList)
             else:
                 self.procClassAd(job, jobInfo.get(job['jobid']), changeList, completeList, runningList)
@@ -1008,7 +1012,7 @@ class PyCondorPlugin(BasePlugin):
         This is how you get the name of a CE for a job
         """
 
-        if jobSite not in self.locationDict.keys():
+        if jobSite not in list(self.locationDict.keys()):
             siteInfo = self.locationAction.execute(siteName=jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
         return self.locationDict[jobSite]

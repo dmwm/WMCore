@@ -1,3 +1,4 @@
+from builtins import object
 import time
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
 
@@ -41,7 +42,7 @@ class DataCache(object):
     def filterData(filterDict, maskList):
         reqData = DataCache.getlatestJobData()
 
-        for _, reqInfo in reqData.iteritems():
+        for _, reqInfo in reqData.items():
             reqData = RequestInfo(reqInfo)
             if reqData.andFilterCheck(filterDict):
                 for prop in maskList:
@@ -57,6 +58,6 @@ class DataCache(object):
     def getProtectedLFNs():
         reqData = DataCache.getlatestJobData()
 
-        for _, reqInfo in reqData.iteritems():
+        for _, reqInfo in reqData.items():
             for dirPath in protectedLFNs(reqInfo):
                 yield dirPath

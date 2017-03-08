@@ -11,6 +11,7 @@ A REST formatter that appends the DAS headers to the result data
 # I want dasjson and plist to be methods instead of functions
 # pylint: disable=R0201
 
+from builtins import str
 import json
 import plistlib
 
@@ -66,7 +67,7 @@ class DASRESTFormatter(RESTFormatter):
         "Return DAS compliant xml"
         das = runDas(self, func, data, expires)
         header = "<?xml version='1.0' standalone='yes'?>"
-        keys = das.keys()
+        keys = list(das.keys())
         keys.remove('results')
         string = ''
         for key in keys:

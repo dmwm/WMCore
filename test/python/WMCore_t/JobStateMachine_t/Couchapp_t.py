@@ -8,6 +8,7 @@ test couchapps.  Its utility is probably limited for people who
 know what they're doing, and for couchapps that will never need
 to be altered
 """
+from builtins import range
 import os
 import unittest
 import threading

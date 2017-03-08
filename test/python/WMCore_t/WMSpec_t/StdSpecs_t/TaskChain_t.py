@@ -7,6 +7,8 @@ Created by Dave Evans on 2011-06-21.
 Copyright (c) 2011 Fermilab. All rights reserved.
 """
 
+from builtins import str
+from builtins import range
 import json
 import os
 import unittest
@@ -390,7 +392,7 @@ class TaskChainTests(unittest.TestCase):
         outputMods = outputModuleList(task)
         ignoredOutputMods = task.getIgnoredOutputModulesForTask()
         outputMods = set(outputMods) - set(ignoredOutputMods)
-        self.assertEqual(len(workflow.outputMap.keys()), len(outputMods),
+        self.assertEqual(len(list(workflow.outputMap.keys())), len(outputMods),
                          "Error: Wrong number of WF outputs")
 
         for outputModule in outputMods:
@@ -510,7 +512,7 @@ class TaskChainTests(unittest.TestCase):
         workload = factory.factoryWorkloadConstruction("YankingTheChain", arguments)
 
         for task in workload.getAllTasks():
-            flags = task.getTrustSitelists().values()
+            flags = list(task.getTrustSitelists().values())
             self.assertEqual(flags, [False, False])
 
         # set both flags to true now
@@ -518,9 +520,9 @@ class TaskChainTests(unittest.TestCase):
         for task in workload.getAllTasks():
             flags = task.getTrustSitelists()
             if task.isTopOfTree():
-                self.assertEqual(flags.values(), [True, True])
+                self.assertEqual(list(flags.values()), [True, True])
             elif task.taskType() in ["Cleanup", "LogCollect"]:
-                self.assertEqual(flags.values(), [False, False])
+                self.assertEqual(list(flags.values()), [False, False])
             else:
                 self.assertFalse(flags['trustlists'])
                 self.assertTrue(flags['trustPUlists'])
@@ -528,7 +530,7 @@ class TaskChainTests(unittest.TestCase):
         # set both to false now
         workload.setTrustLocationFlag(False, False)
         for task in workload.getAllTasks(cpuOnly=True):
-            flags = task.getTrustSitelists().values()
+            flags = list(task.getTrustSitelists().values())
             self.assertEqual(flags, [False, False])
         return
 

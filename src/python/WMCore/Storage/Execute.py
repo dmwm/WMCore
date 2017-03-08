@@ -7,6 +7,7 @@ Run the stage out commands in a nice non-blocking way
 """
 from __future__ import print_function
 
+from builtins import str
 import fcntl
 import os
 import select

@@ -10,6 +10,7 @@ Diagnostic implementation for a job's DeleteFiles step
 
 
 
+from builtins import range
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 

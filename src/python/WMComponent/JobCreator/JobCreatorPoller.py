@@ -2,6 +2,12 @@
 """
 The JobCreator Poller for the JSM
 """
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import next
+from past.utils import old_div
 __all__ = []
 
 
@@ -11,7 +17,7 @@ import logging
 import traceback
 import threading
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -112,7 +118,7 @@ def capResourceEstimates(jobGroups, nCores, constraints):
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'], constraints['MaxRequestDiskKB'])
             else:
                 # we assume job efficiency as nCores * 0.8 for multicore
-                j['estimatedJobTime'] = min(j['estimatedJobTime']/(nCores * 0.8),
+                j['estimatedJobTime'] = min(old_div(j['estimatedJobTime'],(nCores * 0.8)),
                                             constraints['MaxWallTimeSecs'])
                 j['estimatedDiskUsage'] = min(j['estimatedDiskUsage'],
                                               constraints['MaxRequestDiskKB'] * nCores)
@@ -724,7 +730,7 @@ class JobCreatorPoller(BaseWorkerThread):
         try:
             self.changeState.propagate(wmbsJobGroup.jobs, 'created', 'new')
 
-            createFailedJobs = filter(lambda x : x.get('failedOnCreation', False), wmbsJobGroup.jobs)
+            createFailedJobs = [x for x in wmbsJobGroup.jobs if x.get('failedOnCreation', False)]
             self.generateCreateFailedReports(createFailedJobs)
             self.changeState.propagate(createFailedJobs, 'createfailed', 'created')
         except WMException:

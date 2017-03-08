@@ -10,6 +10,7 @@ Usage:
 from __future__ import print_function
 
 
+from builtins import zip
 import sys
 import cx_Oracle
 from .oracle_tables import reqmgr_oracle_tables_defition

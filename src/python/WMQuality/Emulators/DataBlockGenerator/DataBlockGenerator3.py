@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from builtins import object
 from .Globals import GlobalParams
 from . import Globals
 
@@ -89,7 +92,7 @@ class DataBlockGenerator3(object):
                          }
         lumiList = []
 
-        for run in xrange(1, GlobalParams.numOfRunsPerFile() + 1):
+        for run in range(1, GlobalParams.numOfRunsPerFile() + 1):
             lumiList.append(
                 {run:[run*(GlobalParams.numOfLumisPerBlock()) + lumi -1
                         for lumi in range(GlobalParams.numOfLumisPerBlock())]

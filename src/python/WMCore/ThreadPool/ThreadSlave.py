@@ -16,19 +16,23 @@ attribute.
 
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import base64
 import logging
 import threading
 import os
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
 from WMCore.Database.Transaction import Transaction
 from WMCore.WMFactory import WMFactory
 
-class ThreadSlave:
+class ThreadSlave(object):
     """
     __ThreadSlave__
 

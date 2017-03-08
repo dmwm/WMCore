@@ -8,13 +8,17 @@ _JobSubmitterPoller_t_
 Submit jobs for execution.
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import logging
 import threading
 import os.path
 from collections import defaultdict, Counter
 from operator import itemgetter
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -183,7 +187,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         jobPackage[loadedJob["id"]] = loadedJob.getDataStructsJob()
         batchDir = jobPackage['directory']
 
-        if len(jobPackage.keys()) == self.packageSize:
+        if len(list(jobPackage.keys())) == self.packageSize:
             if not os.path.exists(batchDir):
                 os.makedirs(batchDir)
 
@@ -199,7 +203,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         Write any jobs packages to disk that haven't been written out already.
         """
-        workflowNames = self.jobsToPackage.keys()
+        workflowNames = list(self.jobsToPackage.keys())
         for workflowName in workflowNames:
             jobPackage = self.jobsToPackage[workflowName]["package"]
             batchDir = jobPackage['directory']
@@ -404,7 +408,7 @@ class JobSubmitterPoller(BaseWorkerThread):
     def removeAbortedForceCompletedWorkflowFromCache(self):
         abortedAndForceCompleteRequests = self.abortedAndForceCompleteWorkflowCache.getData()
         jobIDsToPurge = set()
-        for jobID, jobInfo in self.jobDataCache.iteritems():
+        for jobID, jobInfo in self.jobDataCache.items():
             if (jobInfo['requestName'] in abortedAndForceCompleteRequests) and \
                (jobInfo['taskType'] not in ['LogCollect', "Cleanup"]):
                 jobIDsToPurge.add(jobID)
@@ -484,7 +488,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
         rcThresholds = self.resourceControl.listThresholdsForSubmit()
 
-        for siteName in rcThresholds.keys():
+        for siteName in list(rcThresholds.keys()):
             # Add threshold if we don't have it already
             state = rcThresholds[siteName]["state"]
 
@@ -495,7 +499,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
             # then update the task type x task priority mapping
             if not self.taskTypePrioMap:
-                for task, value in rcThresholds[siteName]['thresholds'].items():
+                for task, value in list(rcThresholds[siteName]['thresholds'].items()):
                     self.taskTypePrioMap[task] = value.get('priority', 0) * self.maxTaskPriority
 
         # When the list of drain/abort sites change between iteration then a location
@@ -542,7 +546,7 @@ class JobSubmitterPoller(BaseWorkerThread):
                 break
 
             # start eating through the elder jobs first
-            for job in sorted(self.cachedJobs[jobPrio].values(), key=itemgetter('timestamp')):
+            for job in sorted(list(self.cachedJobs[jobPrio].values()), key=itemgetter('timestamp')):
                 jobid = job['id']
                 jobType = job['type']
                 possibleSites = job['possibleLocations']
@@ -597,7 +601,7 @@ class JobSubmitterPoller(BaseWorkerThread):
 
                     # Sort jobs by jobPackage
                     package = cachedJob['packageDir']
-                    if package not in jobsToSubmit.keys():
+                    if package not in list(jobsToSubmit.keys()):
                         jobsToSubmit[package] = []
 
                     # Add the sandbox to a global list
@@ -647,7 +651,7 @@ class JobSubmitterPoller(BaseWorkerThread):
             logging.debug("There are no packages to submit.")
             return
 
-        for package in jobsToSubmit.keys():
+        for package in list(jobsToSubmit.keys()):
 
             sandbox = self.sandboxPackage[package]
             jobs = jobsToSubmit.get(package, [])
@@ -693,7 +697,7 @@ class JobSubmitterPoller(BaseWorkerThread):
         This is how you get the name of a CE and the plugin for a job
         """
 
-        if not jobSite in self.locationDict.keys():
+        if not jobSite in list(self.locationDict.keys()):
             siteInfo = self.locationAction.execute(siteName=jobSite)
             self.locationDict[jobSite] = siteInfo[0]
         return (self.locationDict[jobSite].get('ce_name'),

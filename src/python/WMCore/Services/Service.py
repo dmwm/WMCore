@@ -48,13 +48,16 @@ service cache   |    no    |   yes    |   yes    |     no     |
 result          |  cached  |  cached  |  cached  | not cached |
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import datetime
 import json
 import logging
 import os
 import time
-from cStringIO import StringIO
-from httplib import HTTPException
+from io import StringIO
+from http.client import HTTPException
 
 from WMCore.Services.Requests import Requests, JSONRequests
 from WMCore.WMException import WMException
@@ -97,7 +100,7 @@ class Service(dict):
         cfg_dict = cfg_dict or {}
         #The following should read the configuration class
         for a in ['endpoint']:
-            assert a in cfg_dict.keys(), "Can't have a service without a %s" % a
+            assert a in list(cfg_dict.keys()), "Can't have a service without a %s" % a
 
         #if end point ends without '/', add that
         if not cfg_dict['endpoint'].endswith('/'):

@@ -75,9 +75,9 @@ class ReportEmuTest(unittest.TestCase):
         assert outputFile["merged"] == False, \
                "Error: Output should be unmerged."
 
-        assert "adler32" in outputFile["checksums"].keys(), \
+        assert "adler32" in list(outputFile["checksums"].keys()), \
                "Error: Adler32 checksum missing."
-        assert "cksum" in outputFile["checksums"].keys(), \
+        assert "cksum" in list(outputFile["checksums"].keys()), \
                "Error: CKSum checksum missing."
 
         return

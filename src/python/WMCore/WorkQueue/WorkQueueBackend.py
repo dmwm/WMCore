@@ -5,10 +5,15 @@ WorkQueueBackend
 Interface to WorkQueue persistent storage
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import json
 import random
 import time
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError, Document
 from WMCore.Lexicon import sanitizeURL
@@ -276,7 +281,7 @@ class WorkQueueBackend(object):
         data = {"updates": json.dumps(updatedParams),
                 "options": json.dumps(optionsArg)}
         for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
+            thisuri = uri + ele + "?" + urllib.parse.urlencode(data)
             self.db.makeRequest(uri=thisuri, type='PUT')
         return
 
@@ -289,7 +294,7 @@ class WorkQueueBackend(object):
         data = {"updates": json.dumps(updatedParams),
                 "options": json.dumps(optionsArg)}
         for ele in elementIds:
-            thisuri = uri + ele + "?" + urllib.urlencode(data)
+            thisuri = uri + ele + "?" + urllib.parse.urlencode(data)
             self.inbox.makeRequest(uri=thisuri, type='PUT')
         return
 
@@ -360,7 +365,7 @@ class WorkQueueBackend(object):
             self.logger.info("setting teams %s" % teams)
         if wfs:
             result = []
-            for i in xrange(0, len(wfs), 20):
+            for i in range(0, len(wfs), 20):
                 options['wfs'] = wfs[i:i + 20]
                 data = self.db.loadList('WorkQueue', 'workRestrictions', 'availableByPriority', options)
                 result.extend(json.loads(data))
@@ -395,12 +400,12 @@ class WorkQueueBackend(object):
 
             prio = element['Priority']
             possibleSite = None
-            sites = thresholds.keys()
+            sites = list(thresholds.keys())
             random.shuffle(sites)
             for site in sites:
                 if element.passesSiteRestriction(site):
                     # Count the number of jobs currently running of greater priority
-                    curJobCount = sum(map(lambda x: x[1] if x[0] >= prio else 0, siteJobCounts.get(site, {}).items()))
+                    curJobCount = sum([x[1] if x[0] >= prio else 0 for x in list(siteJobCounts.get(site, {}).items())])
                     self.logger.debug("Job Count: %s, site: %s thresholds: %s" % (curJobCount, site, thresholds[site]))
                     if curJobCount < thresholds[site]:
                         possibleSite = site
@@ -541,7 +546,7 @@ class WorkQueueBackend(object):
         else:
             injectionStatus = dict((x['key'], x['value']) for x in data.get('rows', []))
             finalInjectionStatus = []
-            for request in injectionStatus.keys():
+            for request in list(injectionStatus.keys()):
                 inboxElement = self.getInboxElements(WorkflowName=request)
                 requestOpen = inboxElement[0].get('OpenForNewData', False) if inboxElement else False
                 finalInjectionStatus.append({request: injectionStatus[request] and not requestOpen})

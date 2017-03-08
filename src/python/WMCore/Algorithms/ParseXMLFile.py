@@ -8,6 +8,9 @@ Used for the expat xml parsers
 
 """
 
+from builtins import next
+from builtins import str
+from builtins import object
 import os
 import re
 import xml.parsers.expat
@@ -16,7 +19,7 @@ import xml.parsers.expat
 
 
 
-class Node:
+class Node(object):
     """
     _Node_
 
@@ -28,7 +31,7 @@ class Node:
         self.name = str(name)
         self.attrs = {}
         self.text = None
-        [ self.attrs.__setitem__(str(k), str(v)) for k,v in attrs.items()]
+        [ self.attrs.__setitem__(str(k), str(v)) for k,v in list(attrs.items())]
         self.children = []
 
     def __str__(self):

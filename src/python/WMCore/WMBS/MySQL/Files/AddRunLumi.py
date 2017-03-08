@@ -5,6 +5,7 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
+from past.builtins import basestring
 from Utils.IteratorTools import grouper
 from WMCore.Database.DBFormatter import DBFormatter
 

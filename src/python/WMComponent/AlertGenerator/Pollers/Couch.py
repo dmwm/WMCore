@@ -2,7 +2,11 @@
 Module for all CouchDb related polling.
 
 """
+from __future__ import division
 
+from builtins import zip
+from builtins import str
+from past.utils import old_div
 import os
 import logging
 
@@ -85,7 +89,7 @@ class CouchPoller(PeriodPoller):
         """
         pid = self._getProcessPID()
         self._dbProcessDetail = ProcessDetail(pid, "CouchDB")
-        numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
+        numOfMeasurements = round(old_div(self.config.period, self.config.pollInterval), 0)
         self._measurements = Measurements(numOfMeasurements)
 
 

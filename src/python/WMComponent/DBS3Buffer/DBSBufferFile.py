@@ -118,7 +118,7 @@ class DBSBufferFile(WMBSBase, WMFile):
         action = self.daoFactory(classname = "DBSBufferFiles.GetRunLumiFile")
         runs = action.execute(self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
-        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+        [self.addRun(run=Run(r, *runs[r])) for r in list(runs.keys())]
 
         action = self.daoFactory(classname = "DBSBufferFiles.GetLocation")
         self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
@@ -498,7 +498,7 @@ class DBSBufferFile(WMBSBase, WMFile):
                               transaction = self.existingTransaction())
 
         self["runs"].clear()
-        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+        [self.addRun(run=Run(r, *runs[r])) for r in list(runs.keys())]
 
         self.commitTransaction(existingTransaction)
         return

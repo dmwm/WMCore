@@ -151,7 +151,7 @@ class WebAPI(DatabasePage):
         """
         dict = {}
         try:
-            assert method in self.methods.keys(), "Unknown method called"
+            assert method in list(self.methods.keys()), "Unknown method called"
             if len(input):
                 dict = self.methods[method]['call'](**input)
             else:

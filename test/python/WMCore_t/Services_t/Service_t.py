@@ -1,5 +1,8 @@
 """
 """
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import unittest
 import os
 import logging
@@ -8,8 +11,8 @@ import socket
 import time
 import tempfile
 import shutil
-from httplib import HTTPException
-from httplib import BadStatusLine, IncompleteRead
+from http.client import HTTPException
+from http.client import BadStatusLine, IncompleteRead
 
 from nose.plugins.attrib import attr
 

@@ -1,3 +1,4 @@
+from builtins import str
 from WMCore.WebTools.RESTModel import RESTModel
 from cherrypy import response, request, HTTPError
 
@@ -24,11 +25,11 @@ class NestedModel(RESTModel):
         args = list(args)
         basemethnom = args[0]
         basemethod = self.methods[verb][basemethnom]
-        children = self.methods[verb][basemethnom].keys()
+        children = list(self.methods[verb][basemethnom].keys())
         method = children.pop(children.index('default'))
         try:
             # is there a method in the keywords?
-            for a in kwargs.keys():
+            for a in list(kwargs.keys()):
                 if a in children:
                     method = a
                     if not len(kwargs[a]):
@@ -44,7 +45,7 @@ class NestedModel(RESTModel):
         except TypeError as e:
             raise HTTPError(400, str(e))
 
-        if 'expires' in basemethod[method].keys():
+        if 'expires' in list(basemethod[method].keys()):
             return data, basemethod[method]['expires']
         else:
             return data, False

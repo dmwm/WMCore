@@ -7,6 +7,8 @@ Diagnostic implementation for a job StageOut
 
 """
 
+from builtins import str
+from builtins import range
 import os
 from WMCore.WMSpec.Steps.Diagnostic import Diagnostic, DiagnosticHandler
 

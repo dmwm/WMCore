@@ -4,6 +4,7 @@ Created on Jun 16, 2009
 @author: meloam
 '''
 from __future__ import print_function
+from builtins import object
 import os
 import sys
 from types import *

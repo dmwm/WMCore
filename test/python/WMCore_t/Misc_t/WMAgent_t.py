@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from past.utils import old_div
 import os
 import time
 import shutil
@@ -12,7 +17,7 @@ import threading
 
 from subprocess import Popen, PIPE
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -585,7 +590,7 @@ class WMAgentTest(unittest.TestCase):
         for job in completeJobs:
             self.assertFalse(os.path.exists(job['fwjr_path']))
             jobFolder = 'JobCluster_%i' \
-                    % (int(job['id']/config.JobArchiver.numberOfJobsToCluster))
+                    % (int(old_div(job['id'],config.JobArchiver.numberOfJobsToCluster)))
             jobPath = os.path.join(logDir, jobFolder, 'Job_%i.tar' %(job['id']))
             self.assertTrue(os.path.isfile(jobPath))
             self.assertTrue(os.path.getsize(jobPath) > 0)

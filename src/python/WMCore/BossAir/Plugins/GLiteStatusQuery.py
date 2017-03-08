@@ -4,8 +4,13 @@ _GLiteLBQuery_
 GLite LB query functions
 """
 from __future__ import print_function
+from __future__ import division
 
 
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import sys
 import os
 import getopt
@@ -40,7 +45,7 @@ except :
 
 ##########################################################################
 
-class MyJSONEncoder:
+class MyJSONEncoder(object):
     """
     easy class able to transform a string representation of a python dictionary
     in a valid JSON output recognizable by simplejson
@@ -290,7 +295,7 @@ class GLiteStatusQuery(object):
                 bulkInfo = statusAttribute
 
                 # how many jobs in the bulk?
-                intervals = int ( len(bulkInfo) / self.attrNumber )
+                intervals = int ( old_div(len(bulkInfo), self.attrNumber) )
 
                 # look if the parent is aborted
                 if str(bulkInfo[self.status]) == 'Aborted' :

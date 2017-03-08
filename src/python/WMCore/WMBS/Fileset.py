@@ -17,6 +17,7 @@ workflow + fileset = subscription
 
 
 
+from builtins import str
 from WMCore.WMBS.File import File, addFilesToWMBSInBulk
 from WMCore.WMBS.WMBSBase import WMBSBase
 from WMCore.DataStructs.Fileset import Fileset as WMFileset

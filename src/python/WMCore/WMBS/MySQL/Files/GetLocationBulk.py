@@ -28,7 +28,7 @@ class GetLocationBulk(DBFormatter):
         results    = {}
 
         for raw in rawResults:
-            if not raw['id'] in results.keys():
+            if not raw['id'] in list(results.keys()):
                 results[raw['id']] = []
             results[raw['id']].append(raw['pnn'])
 

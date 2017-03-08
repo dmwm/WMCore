@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import unittest
 
 
@@ -122,7 +125,7 @@ class SeederTest(unittest.TestCase):
                 self.assertEqual(hasattr(conf.RandomSeeder.evtgenproducer, 'initialSeed'), True)
                 self.assertEqual(hasattr(conf.RandomSeeder.generator, 'initialSeed'), True)
                 self.assertEqual(job["mask"]["FirstLumi"], count%11)
-                self.assertEqual(job["mask"]["FirstRun"],  (count/11) + 1)
+                self.assertEqual(job["mask"]["FirstRun"],  (old_div(count,11)) + 1)
                 count += 1
 
         return

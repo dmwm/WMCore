@@ -4,11 +4,13 @@ _gLitePlugin_t_
 
 gLite Plugin test
 """
+from future import standard_library
+standard_library.install_aliases()
 import os.path
 from os import environ
 import unittest
 import threading
-from commands import getoutput as executeCommand
+from subprocess import getoutput as executeCommand
 import time
 from nose.plugins.attrib import attr
 

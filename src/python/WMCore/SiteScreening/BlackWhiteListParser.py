@@ -12,6 +12,8 @@ Large parts of the July 2008 re-write come from Brian Bockelman
 
 
 
+from past.builtins import basestring
+from builtins import object
 import types
 import fnmatch
 import re

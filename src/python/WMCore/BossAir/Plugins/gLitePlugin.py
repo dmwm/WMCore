@@ -7,7 +7,11 @@ gLite Plugin
 """
 from __future__ import print_function
 
-import Queue
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+import queue
 import json
 import logging
 import multiprocessing
@@ -470,7 +474,7 @@ class gLitePlugin(BasePlugin):
 
         for job in jobs:
             sandbox = job['sandbox']
-            if not sandbox in submitDict.keys():
+            if not sandbox in list(submitDict.keys()):
                 submitDict[sandbox] = {}
             if job[groupbysite] not in submitDict[sandbox]:
                 if job[groupbysite]:
@@ -483,10 +487,10 @@ class gLitePlugin(BasePlugin):
 
         # Now submit the bastards
         currentwork = len(workqueued)
-        for sandbox in submitDict.keys():
+        for sandbox in list(submitDict.keys()):
             logging.debug("   Handling '%s'" % str(sandbox))
             siteDict = submitDict.get(sandbox, {})
-            for site in siteDict.keys():
+            for site in list(siteDict.keys()):
                 logging.debug("   Handling '%s'" % str(site))
                 ## getting the sandbox jobs and splitting  by collection size
                 jobList = siteDict.get(site, [])
@@ -580,12 +584,12 @@ class gLitePlugin(BasePlugin):
                     currentwork += 1
 
         logging.debug("Waiting for %i works to finish.." % len(workqueued))
-        for n in xrange(len(workqueued)):
+        for n in range(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except Queue.Empty:
+            except queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout   = res['jsout']
@@ -635,7 +639,7 @@ class gLitePlugin(BasePlugin):
                     continue
                 if 'children' in jsout:
                     logging.info("WMS endpoint used: %s" % jsout["endpoint"])
-                    jobnames = jsout['children'].keys()
+                    jobnames = list(jsout['children'].keys())
                     for jj in jobsub:
                         jobnamejdl = 'Job_%i_%s' % (jj['id'], jj['retry_count'])
                         if jobnamejdl in jobnames:
@@ -736,7 +740,7 @@ class gLitePlugin(BasePlugin):
         # also splitting the jobs of a user may help (each chunk of work has at
         # max N jobs)
 
-        for user in dnjobs.keys():
+        for user in list(dnjobs.keys()):
 
             valid, ownerproxy, proxymsg = self.validateProxy( user )
             if not valid:
@@ -763,12 +767,12 @@ class gLitePlugin(BasePlugin):
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
-        for n in xrange(len(workqueued)):
+        for n in range(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except Queue.Empty:
+            except queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
@@ -806,7 +810,7 @@ class gLitePlugin(BasePlugin):
                 ##  }
                 for jj in jobs:
                     status = None
-                    if jj['gridid'] in out.keys():
+                    if jj['gridid'] in list(out.keys()):
                         jobStatus   = out[jj['gridid']]
                         status      = jobStatus['statusScheduler']
                         destination = jobStatus['destination']
@@ -920,12 +924,12 @@ class gLitePlugin(BasePlugin):
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
-        for n in xrange(len(workqueued)):
+        for n in range(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except Queue.Empty:
+            except queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
@@ -1024,12 +1028,12 @@ class gLitePlugin(BasePlugin):
         # Now we should have sent all jobs to be submitted
         # Going to do the rest of it now
         logging.debug("Waiting for %i works to finish..." % len(workqueued))
-        for n in xrange(len(workqueued)):
+        for n in range(len(workqueued)):
             logging.debug("Waiting for work number %i to finish.." % n)
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except Queue.Empty:
+            except queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
@@ -1155,12 +1159,12 @@ class gLitePlugin(BasePlugin):
         # Waiting for results
         logging.debug("Waiting for %i JOBS to be killed..." % len(workqueued))
 
-        for n in xrange(len(workqueued)):
+        for n in range(len(workqueued)):
             logging.debug("Waiting for job number %i to be killed.." % n)
             res = None
             try:
                 res = result.get(block = True, timeout = self.basetimeout)
-            except Queue.Empty:
+            except queue.Empty:
                 logging.error("Timeout retrieving result %i out of %i" % (n, len(workqueued)) )
                 continue
             jsout  = res['jsout']
@@ -1420,7 +1424,7 @@ class gLitePlugin(BasePlugin):
         This is how you get the name of a CE for a job
         """
 
-        if not jobSite in self.locationDict.keys():
+        if not jobSite in list(self.locationDict.keys()):
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('pnn', None)
         return self.locationDict[jobSite]

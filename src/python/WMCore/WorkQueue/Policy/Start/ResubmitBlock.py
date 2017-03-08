@@ -17,6 +17,8 @@ ACDC unsupported:
 - SiblingProcessingBased
 
 """
+from __future__ import division
+from past.utils import old_div
 __all__ = []
 
 from WMCore.WorkQueue.Policy.Start.StartPolicyInterface import StartPolicyInterface
@@ -67,8 +69,8 @@ class ResubmitBlock(StartPolicyInterface):
                                  NumberOfLumis=block[self.lumiType],
                                  NumberOfFiles=block['NumberOfFiles'],
                                  NumberOfEvents=block['NumberOfEvents'],
-                                 Jobs=ceil(float(block[self.args['SliceType']]) /
-                                           float(self.args['SliceSize'])),
+                                 Jobs=ceil(old_div(float(block[self.args['SliceType']]),
+                                           float(self.args['SliceSize']))),
                                  ACDC=block['ACDC'],
                                  NoInputUpdate=self.initialTask.getTrustSitelists().get('trustlists'),
                                  NoPileupUpdate=self.initialTask.getTrustSitelists().get('trustPUlists')
@@ -88,7 +90,7 @@ class ResubmitBlock(StartPolicyInterface):
             raise WorkQueueWMSpecError(self.wmspec, 'No acdc section for %s' % task.getPathName())
         acdc = DataCollectionService(acdcInfo["server"], acdcInfo["database"])
         if self.data:
-            acdcBlockSplit = ACDCBlock.splitBlockName(self.data.keys()[0])
+            acdcBlockSplit = ACDCBlock.splitBlockName(list(self.data.keys())[0])
         else:
             # if self.data is not passed, assume the the data is input dataset
             # from the spec
@@ -96,7 +98,7 @@ class ResubmitBlock(StartPolicyInterface):
 
         if acdcBlockSplit:
             dbsBlock = {}
-            dbsBlock['Name'] = self.data.keys()[0]
+            dbsBlock['Name'] = list(self.data.keys())[0]
             block = acdc.getChunkInfo(acdcInfo['collection'],
                                       acdcBlockSplit['TaskName'],
                                       acdcBlockSplit['Offset'],

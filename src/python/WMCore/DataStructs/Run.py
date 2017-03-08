@@ -9,6 +9,7 @@ container representing a run, and its constituent lumi sections
 
 
 
+from past.builtins import cmp
 from WMCore.DataStructs.WMObject import WMObject
 
 class Run(WMObject):

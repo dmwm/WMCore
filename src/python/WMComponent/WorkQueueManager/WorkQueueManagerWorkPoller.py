@@ -8,6 +8,7 @@ Pull work out of the work queue.
 
 
 
+from builtins import str
 import time
 import random
 import traceback

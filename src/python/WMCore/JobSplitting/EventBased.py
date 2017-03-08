@@ -5,7 +5,10 @@ _EventBased_
 Event based splitting algorithm that will chop a fileset into
 a set of jobs based on event counts
 """
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
 import logging
 import traceback
 from math import ceil
@@ -79,7 +82,7 @@ class EventBased(JobFactory):
                     fileLumis = loadRunLumi.execute(files=fileList)
                     for f in fileList:
                         lumiDict = fileLumis.get(f['id'], {})
-                        for run in lumiDict.keys():
+                        for run in list(lumiDict.keys()):
                             f.addRun(run=Run(run, *lumiDict[run]))
 
             for f in fileList:
@@ -149,8 +152,7 @@ class EventBased(JobFactory):
                             self.newJob(name=self.getJobName(length=totalJobs))
                             self.currentJob.addFile(f)
                             self.currentJob.addBaggageParameter("lheInputFiles", lheInput)
-                            lumisPerJob = int(ceil(float(eventsPerJob)
-                                                   / eventsPerLumi))
+                            lumisPerJob = int(ceil(old_div(float(eventsPerJob), eventsPerLumi)))
                             # Limit the number of events to a unsigned 32bit int
                             eventsRemaining = eventsInFile - totalEvents
                             if (currentEvent + eventsPerJob - 1) > (2 ** 32 - 1) and (
@@ -166,7 +168,7 @@ class EventBased(JobFactory):
                             else:
                                 jobTime = eventsRemaining * timePerEvent
                                 diskRequired = eventsRemaining * sizePerEvent
-                                lumisPerJob = int(ceil(float(eventsRemaining) / eventsPerLumi))
+                                lumisPerJob = int(ceil(old_div(float(eventsRemaining), eventsPerLumi)))
                                 self.currentJob["mask"].setMaxAndSkipEvents(eventsRemaining,
                                                                             currentEvent)
                                 self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob,
@@ -226,12 +228,12 @@ class EventBased(JobFactory):
                     if eventsToRun >= eventsPerJob:
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsPerJob, currentEvent)
                         if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsPerJob) / eventsPerLumi))
+                            lumisPerJob = int(ceil(old_div(float(eventsPerJob), eventsPerLumi)))
                             self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                     else:
                         self.currentJob["mask"].setMaxAndSkipEvents(eventsToRun, currentEvent)
                         if fakeFile['lfn'].startswith("MCFakeFile"):
-                            lumisPerJob = int(ceil(float(eventsToRun) / eventsPerLumi))
+                            lumisPerJob = int(ceil(old_div(float(eventsToRun), eventsPerLumi)))
                             self.currentJob["mask"].setMaxAndSkipLumis(lumisPerJob, currentLumi)
                         eventsToRun = eventsPerJob
                     jobTime = eventsPerJob * timePerEvent

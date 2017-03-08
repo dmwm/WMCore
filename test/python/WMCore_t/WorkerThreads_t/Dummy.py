@@ -5,19 +5,20 @@ _Dummy_
 A dummy class to mimic the component for tets.
 """
 
+from builtins import object
 import logging
 import os
 import threading
 
-class DBCoreDummy:
+class DBCoreDummy(object):
     def __init__(self):
         self.connectUrl = os.getenv("DATABASE")
 
-class ConfigDummy:
+class ConfigDummy(object):
     def __init__(self):
         self.CoreDatabase = DBCoreDummy()
 
-class Dummy():
+class Dummy(object):
     """
     _Dummy_
 

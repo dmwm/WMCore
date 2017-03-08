@@ -107,7 +107,7 @@ class LoadForErrorHandler(DBFormatter):
         fileList  = self.formatDict(filesResult)
         fileBinds = []
         if fileSelection:
-            fileList = filter(lambda x : x['lfn'] in fileSelection[x['jobid']], fileList)
+            fileList = [x for x in fileList if x['lfn'] in fileSelection[x['jobid']]]
         for x in fileList:
             # Add new runs
             x['newRuns'] = []
@@ -126,13 +126,13 @@ class LoadForErrorHandler(DBFormatter):
             lumiList = self.formatDict(lumiResult)
             lumiDict = {}
             for l in lumiList:
-                if not l['fileid'] in lumiDict.keys():
+                if not l['fileid'] in list(lumiDict.keys()):
                     lumiDict[l['fileid']] = []
                 lumiDict[l['fileid']].append(l)
 
             for f in fileList:
                 fileRuns = {}
-                if f['id'] in lumiDict.keys():
+                if f['id'] in list(lumiDict.keys()):
                     for l in lumiDict[f['id']]:
                         run  = l['run']
                         lumi = l['lumi']
@@ -142,7 +142,7 @@ class LoadForErrorHandler(DBFormatter):
                             fileRuns[run] = []
                             fileRuns[run].append(lumi)
 
-                for r in fileRuns.keys():
+                for r in list(fileRuns.keys()):
                     newRun = Run(runNumber = r)
                     newRun.lumis = fileRuns[r]
                     f['newRuns'].append(newRun)
@@ -150,9 +150,9 @@ class LoadForErrorHandler(DBFormatter):
         filesForJobs = {}
         for f in fileList:
             jobid = f['jobid']
-            if not jobid in filesForJobs.keys():
+            if not jobid in list(filesForJobs.keys()):
                 filesForJobs[jobid] = {}
-            if f['id'] not in filesForJobs[jobid].keys():
+            if f['id'] not in list(filesForJobs[jobid].keys()):
                 wmbsFile = File(id = f['id'])
                 wmbsFile.update(f)
                 wmbsFile['locations'].add(f['pnn'])
@@ -167,7 +167,7 @@ class LoadForErrorHandler(DBFormatter):
                 filesForJobs[jobid][f['id']]['locations'].add(f['pnn'])
 
         for j in jobList:
-            if j['id'] in filesForJobs.keys():
-                j['input_files'] = filesForJobs[j['id']].values()
+            if j['id'] in list(filesForJobs.keys()):
+                j['input_files'] = list(filesForJobs[j['id']].values())
 
         return jobList

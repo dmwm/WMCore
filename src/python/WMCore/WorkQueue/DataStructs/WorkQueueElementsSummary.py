@@ -2,6 +2,8 @@
 WorkQueueElementsSummary
 
 """
+from past.builtins import basestring
+from builtins import object
 from __future__ import (print_function, division)
 from collections import defaultdict
 
@@ -35,7 +37,7 @@ def getGlobalSiteStatusSummary(elements, status=None, dataLocality=False):
     elif status and isinstance(status, (list, tuple)):
         activeStatus = status
     else:
-        activeStatus = elements.keys()
+        activeStatus = list(elements.keys())
 
     uniqueJobsSummary = {}
     possibleJobsSummary = {}
@@ -79,7 +81,7 @@ class WorkQueueElementsSummary(object):
             elementsByRequest[ele["RequestName"]].append(ele)
 
         self.wqResultsByRequest = {}
-        for reqName, wqElements in elementsByRequest.iteritems():
+        for reqName, wqElements in elementsByRequest.items():
             self.wqResultsByRequest[reqName] = WorkQueueElementResult(Elements=wqElements)
 
     def elementsWithHigherPriorityInSameSites(self, requestName, returnFormat="dict"):

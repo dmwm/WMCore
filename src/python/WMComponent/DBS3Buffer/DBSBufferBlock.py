@@ -5,6 +5,7 @@ DBSBufferBlock
 This is a block object which will be uploaded to DBS
 """
 
+from builtins import object
 import time
 import logging
 import copy
@@ -24,7 +25,7 @@ class DBSBufferBlockException(WMException):
 
 
 
-class DBSBufferBlock:
+class DBSBufferBlock(object):
     """
     _DBSBufferBlock_
 
@@ -128,7 +129,7 @@ class DBSBufferBlock:
         fileDict['auto_cross_section'] = 0.0
 
         # Do the checksums
-        for cktype in dbsFile['checksums'].keys():
+        for cktype in list(dbsFile['checksums'].keys()):
             cksum = dbsFile['checksums'][cktype]
             if cktype.lower() == 'cksum':
                 fileDict['check_sum'] = cksum
@@ -448,14 +449,14 @@ class DBSBufferBlock:
         self.startTime = blockInfo.get('creation_date')
         self.inBuff    = True
 
-        if 'status' in blockInfo.keys():
+        if 'status' in list(blockInfo.keys()):
             self.status = blockInfo['status']
             if self.status == "Pending":
                 self.data['block']['open_for_writing'] = 0
 
             del blockInfo['status']
 
-        for key in blockInfo.keys():
+        for key in list(blockInfo.keys()):
             self.data['block'][key] = blockInfo.get(key)
 
     def convertToDBSBlock(self):
@@ -481,7 +482,7 @@ class DBSBufferBlock:
         for key in self.data:
             if key in keyToRemove:
                 continue
-            elif key in dbsBufferToDBSBlockKey.keys():
+            elif key in list(dbsBufferToDBSBlockKey.keys()):
                 block[dbsBufferToDBSBlockKey[key]] = copy.deepcopy(self.data[key])
             else:
                 block[key] = copy.deepcopy(self.data[key])

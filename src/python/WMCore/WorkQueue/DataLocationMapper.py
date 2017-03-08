@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 """Map data to locations for WorkQueue"""
+from __future__ import division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
+from past.utils import old_div
 from collections import defaultdict
 import time
 import logging
@@ -21,7 +27,7 @@ def isGlobalDBS(dbs):
     try:
         # try to determine from name - save a trip to server
         # fragile but if this url changes many other things will break also...
-        from urlparse import urlparse
+        from urllib.parse import urlparse
         url = urlparse(dbs.dbs.getServerUrl())  # DBSApi has url not DBSReader
         if url.hostname.startswith('cmsweb.cern.ch') and url.path.startswith('/dbs/prod/global'):
             return True
@@ -46,7 +52,7 @@ def isGlobalDBS(dbs):
 def timeFloor(number, interval=UPDATE_INTERVAL_COARSENESS):
     """Get numerical floor of time to given interval"""
     from math import floor
-    return floor(number / interval) * interval
+    return floor(old_div(number, interval)) * interval
 
 
 def isDataset(inputData):
@@ -92,7 +98,7 @@ class DataLocationMapper(object):
 
         dataByDbs = self.organiseByDbs(dataItems)
 
-        for dbs, dataItems in dataByDbs.items():
+        for dbs, dataItems in list(dataByDbs.items()):
             # if global use phedex, else use dbs
             if isGlobalDBS(dbs):
                 output, fullResync = self.locationsFromPhEDEx(dataItems, fullResync,
@@ -139,7 +145,7 @@ class DataLocationMapper(object):
             raise RuntimeError("shouldn't get here")
 
         # convert from PhEDEx name to cms site name
-        for name, nodes in result.items():
+        for name, nodes in list(result.items()):
             psns = set()
             psns.update(self.sitedb.PNNstoPSNs(nodes))
             result[name] = list(psns)
@@ -161,7 +167,7 @@ class DataLocationMapper(object):
                 logging.error('Error getting block location from dbs for %s: %s', dataItem, str(ex))
 
         # convert the sets to lists
-        for name, nodes in result.items():
+        for name, nodes in list(result.items()):
             psns = set()
             psns.update(self.sitedb.PNNstoPSNs(nodes))
             result[name] = list(psns)
@@ -195,9 +201,9 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
-        for dbs, dataMapping in dataLocations.items():
+        for dbs, dataMapping in list(dataLocations.items()):
             modified = []
-            for data, locations in dataMapping.items():
+            for data, locations in list(dataMapping.items()):
                 elements = self.backend.getElementsForData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -225,9 +231,9 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
         dataLocations, fullResync = DataLocationMapper.__call__(self, dataItems, fullResync)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
-        for dataMapping in dataLocations.values():
+        for dataMapping in list(dataLocations.values()):
             modified = []
-            for data, locations in dataMapping.items():
+            for data, locations in list(dataMapping.items()):
                 elements = self.backend.getElementsForParentData(data)
                 for element in elements:
                     if element.get('NoInputUpdate', False):
@@ -255,9 +261,9 @@ class WorkQueueDataLocationMapper(DataLocationMapper):
                                                                 datasetSearch=True)
 
         # elements with multiple changed data items will fail fix this, or move to store data outside element
-        for dataMapping in dataLocations.values():
+        for dataMapping in list(dataLocations.values()):
             modified = []
-            for data, locations in dataMapping.items():
+            for data, locations in list(dataMapping.items()):
                 elements = self.backend.getElementsForPileupData(data)
                 for element in elements:
                     if element.get('NoPileupUpdate', False):

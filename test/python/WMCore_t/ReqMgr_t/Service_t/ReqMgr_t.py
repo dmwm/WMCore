@@ -219,7 +219,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
 
         response = self.getMultiRequestsWithAuth([requestName])
         self.assertEqual(self.resultLength(response), 1)
-        self.assertEqual(response[0]['result'][0].keys()[0], requestName)
+        self.assertEqual(list(response[0]['result'][0].keys())[0], requestName)
 
         #response = self.cloneRequestWithAuth(requestName)
         #self.assertEqual(response[1], 200, "put request clone")

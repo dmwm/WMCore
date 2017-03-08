@@ -6,6 +6,7 @@ Unittest for WMCore.WMSpec.Steps.Template module
 
 """
 
+from builtins import str
 import unittest
 
 from WMCore.WMSpec.WMStep import WMStep, WMStepHelper

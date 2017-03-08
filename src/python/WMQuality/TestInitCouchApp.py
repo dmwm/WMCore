@@ -11,8 +11,11 @@ Created by Dave Evans on 2010-08-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 from couchapp.commands import push as couchapppush
 from couchapp.config import Config
@@ -20,7 +23,7 @@ from WMCore.Database.CMSCouch import CouchServer
 
 from WMQuality.TestInit import TestInit
 
-class CouchAppTestHarness:
+class CouchAppTestHarness(object):
     """
     Test Harness for installing a couch database instance with several couchapps
     in a unittest.setUp and wiping it out in a unittest.tearDown
@@ -59,7 +62,7 @@ class CouchAppTestHarness:
         push a list of couchapps to the database
         """
         for couchappdir in  couchappdirs:
-            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.quote_plus(self.dbName)))
+            couchapppush(self.couchappConfig, couchappdir, "%s/%s" % (self.couchUrl, urllib.parse.quote_plus(self.dbName)))
 
 
 class TestInitCouchApp(TestInit):

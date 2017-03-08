@@ -2,6 +2,8 @@
 from __future__ import division, print_function
 
 
+from builtins import str
+from past.builtins import basestring
 def makeList(stringList):
     """
     _makeList_

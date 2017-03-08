@@ -8,11 +8,18 @@ _CondorPlugin_
 Example of Condor plugin
 For glide-in use.
 """
+from __future__ import division
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import os
 import re
 import time
-import Queue
+import queue
 import os.path
 import logging
 import threading
@@ -371,14 +378,14 @@ class CondorPlugin(BasePlugin):
         nSubmits   = 0
         for job in jobs:
             sandbox = job['sandbox']
-            if not sandbox in submitDict.keys():
+            if not sandbox in list(submitDict.keys()):
                 submitDict[sandbox] = []
             submitDict[sandbox].append(job)
 
 
         # Now submit the bastards
         queueError = False
-        for sandbox in submitDict.keys():
+        for sandbox in list(submitDict.keys()):
             jobList = submitDict.get(sandbox, [])
             idList = [x['jobid'] for x in jobList]
             if queueError:
@@ -435,7 +442,7 @@ class CondorPlugin(BasePlugin):
         for n in range(nSubmits):
             try:
                 res = self.result.get(block = True, timeout = timeout)
-            except Queue.Empty:
+            except queue.Empty:
                 # If the queue was empty go to the next submit
                 # Those jobs have vanished
                 logging.error("Queue.Empty error received!")
@@ -560,12 +567,12 @@ class CondorPlugin(BasePlugin):
         jobInfo = self.getClassAds()
         if jobInfo == None:
             return runningList, changeList, completeList
-        if len(jobInfo.keys()) == 0:
+        if len(list(jobInfo.keys())) == 0:
             noInfoFlag = True
 
         for job in jobs:
             # Now go over the jobs from WMBS and see what we have
-            if not job['jobid'] in jobInfo.keys():
+            if not job['jobid'] in list(jobInfo.keys()):
                 # Two options here, either put in removed, or not
                 # Only cycle through Removed if condor_q is sending
                 # us no information
@@ -1048,7 +1055,7 @@ class CondorPlugin(BasePlugin):
 
         # Performance estimates
         if job.get('estimatedJobTime', None):
-            jdl.append('+MaxWallTimeMins = %d\n' % int(job['estimatedJobTime']/60.0))
+            jdl.append('+MaxWallTimeMins = %d\n' % int(old_div(job['estimatedJobTime'],60.0)))
         if job.get('estimatedMemoryUsage', None):
             jdl.append('request_memory = %d\n' % int(job['estimatedMemoryUsage']))
         if job.get('estimatedDiskUsage', None):
@@ -1074,7 +1081,7 @@ class CondorPlugin(BasePlugin):
         This is how you get the name of a CE for a job
         """
 
-        if not jobSite in self.locationDict.keys():
+        if not jobSite in list(self.locationDict.keys()):
             siteInfo = self.locationAction.execute(siteName = jobSite)
             self.locationDict[jobSite] = siteInfo[0].get('ce_name', None)
         return self.locationDict[jobSite]
@@ -1129,7 +1136,7 @@ class CondorPlugin(BasePlugin):
                 key = str(statement.split(':')[0])
                 value = statement.split(':')[1].split(')')[0]
                 tmpDict[key] = value
-            if not 'WMAgentID' in tmpDict.keys():
+            if not 'WMAgentID' in list(tmpDict.keys()):
                 # Then we have an invalid job somehow
                 logging.error("Invalid job discovered in condor_q")
                 logging.error(tmpDict)

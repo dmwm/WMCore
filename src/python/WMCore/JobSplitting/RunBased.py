@@ -13,6 +13,7 @@ If file spans a run will need to create a mask for that file.
 
 
 
+from builtins import range
 from WMCore.JobSplitting.JobFactory import JobFactory
 from WMCore.DataStructs.Fileset import Fileset
 from WMCore.Services.UUIDLib import makeUUID
@@ -48,7 +49,7 @@ class RunBased(JobFactory):
 
         locationDict = self.sortByLocation()
 
-        for location in locationDict.keys():
+        for location in list(locationDict.keys()):
             fileList = locationDict[location]
             for f in fileList:
 
@@ -69,13 +70,13 @@ class RunBased(JobFactory):
                 run = min(runList)
 
                 #If we don't have the run, we need to add it
-                if not run in runDict.keys():
+                if not run in list(runDict.keys()):
                     runDict[run] = []
 
                 runDict[run].append(f)
 
 
-            for run in runDict.keys():
+            for run in list(runDict.keys()):
                 #Find the runs in the dictionary we assembled and split the files in them
 
                 self.newGroup()

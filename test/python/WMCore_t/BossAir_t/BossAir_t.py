@@ -5,13 +5,16 @@ BossAir preliminary test
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import os.path
 import threading
 import unittest
 import getpass
 import subprocess
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -416,12 +419,12 @@ class BossAirTest(unittest.TestCase):
         baAPI  = BossAirAPI(config = config)
 
         # We should have loaded a plugin
-        self.assertTrue('TestPlugin' in baAPI.plugins.keys())
+        self.assertTrue('TestPlugin' in list(baAPI.plugins.keys()))
 
         result = myThread.dbi.processData("SELECT name FROM bl_status")[0].fetchall()
         statusList = []
         for i in result:
-            statusList.append(i.values()[0])
+            statusList.append(list(i.values())[0])
 
         # We should have the plugin states in the database
         self.assertEqual(statusList.sort(), ['New', 'Dead', 'Gone'].sort())

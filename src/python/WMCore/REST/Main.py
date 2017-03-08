@@ -8,11 +8,15 @@ up an appropriately configured CherryPy instance. Views are loaded dynamically
 and can be turned on/off via configuration file."""
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import sys, os, errno, re, os.path, subprocess, socket, time
-import cherrypy, logging, thread, traceback
+import cherrypy, logging, _thread, traceback
 import WMCore.REST.Tools
 from WMCore.Configuration import ConfigSection, loadConfigurationFile
-from cStringIO import StringIO
+from io import StringIO
 from optparse import OptionParser
 from cherrypy import Application
 from cherrypy.lib import profiler
@@ -109,7 +113,7 @@ class Logger(LogManager):
              'f': inheaders.get("Referer", ""),
              'a': inheaders.get("User-Agent", "") })
 
-class RESTMain:
+class RESTMain(object):
     """Base class for the core CherryPy main application object.
 
     The :class:`~.RESTMain` implements basic functionality of a CherryPy-based
@@ -183,7 +187,7 @@ class RESTMain:
         cpconfig.update({'engine.autoreload.on': False})
         cpconfig.update({'request.show_tracebacks': False})
         cpconfig.update({'request.methods_with_bodies': ("POST", "PUT", "DELETE")})
-        thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))
+        _thread.stack_size(getattr(self.srvconfig, 'thread_stack_size', 128*1024))
         sys.setcheckinterval(getattr(self.srvconfig, 'sys_check_interval', 10000))
         self.silent = getattr(self.srvconfig, 'silent', False)
 
@@ -192,9 +196,9 @@ class RESTMain:
                         'server', 'tools', 'wsgi', 'checker'):
             if not hasattr(self.srvconfig, section):
                 continue
-            for opt, value in getattr(self.srvconfig, section).dictionary_().iteritems():
+            for opt, value in getattr(self.srvconfig, section).dictionary_().items():
                 if isinstance(value, ConfigSection):
-                    for xopt, xvalue in value.dictionary_().iteritems():
+                    for xopt, xvalue in value.dictionary_().items():
                         cpconfig.update({"%s.%s.%s" % (section, opt, xopt): xvalue})
                 elif isinstance(value, str) or isinstance(value, int):
                     cpconfig.update({"%s.%s" % (section, opt): value})

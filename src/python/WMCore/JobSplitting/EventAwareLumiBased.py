@@ -11,7 +11,10 @@ Created on Sep 25, 2012
 
 @author: dballest
 """
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
 import logging
 import operator
 import traceback
@@ -101,14 +104,14 @@ class EventAwareLumiBased(JobFactory):
         if self.package == 'WMCore.WMBS':
             loadRunLumi = self.daoFactory(classname = "Files.GetBulkRunLumi")
 
-        for key in lDict.keys():
+        for key in list(lDict.keys()):
             newlist = []
             # First we need to load the data
             if self.package == 'WMCore.WMBS':
                 fileLumis = loadRunLumi.execute(files = lDict[key])
                 for f in lDict[key]:
                     lumiDict = fileLumis.get(f['id'], {})
-                    for run in lumiDict.keys():
+                    for run in list(lumiDict.keys()):
                         f.addRun(run = Run(run, *lumiDict[run]))
 
             for f in lDict[key]:
@@ -123,7 +126,7 @@ class EventAwareLumiBased(JobFactory):
 
                 #Do average event per lumi calculation
                 if f['lumiCount']:
-                    f['avgEvtsPerLumi'] = round(float(f['events'])/f['lumiCount'])
+                    f['avgEvtsPerLumi'] = round(old_div(float(f['events']),f['lumiCount']))
                     if deterministicPileup:
                         # We assume that all lumis are equal in the dataset
                         eventsPerLumiInDataset = f['avgEvtsPerLumi']
@@ -173,7 +176,7 @@ class EventAwareLumiBased(JobFactory):
                     #Adapt the lumis per job to match the target conditions
                     if f['avgEvtsPerLumi']:
                         #If there are events in the file
-                        ratio = float(avgEventsPerJob) / f['avgEvtsPerLumi']
+                        ratio = old_div(float(avgEventsPerJob), f['avgEvtsPerLumi'])
                         lumisPerJob = max(int(math.floor(ratio)), 1)
                     else:
                         #Zero event file, then the ratio goes to infinity. Computers don't like that
@@ -184,7 +187,7 @@ class EventAwareLumiBased(JobFactory):
                     updateSplitOnJobStop = True
                     eventsRemaining = max(avgEventsPerJob - currentJobAvgEventCount, 0)
                     if f['avgEvtsPerLumi']:
-                        lumisAllowed = int(math.floor(float(eventsRemaining) / f['avgEvtsPerLumi']))
+                        lumisAllowed = int(math.floor(old_div(float(eventsRemaining), f['avgEvtsPerLumi'])))
                     else:
                         lumisAllowed = f['lumiCount']
                     lumisPerJob = max(lumisInJob + lumisAllowed, 1)
@@ -275,7 +278,7 @@ class EventAwareLumiBased(JobFactory):
                                 #Reset calculations for this file
                                 updateSplitOnJobStop = False
                                 if f['avgEvtsPerLumi']:
-                                    ratio = float(avgEventsPerJob) / f['avgEvtsPerLumi']
+                                    ratio = old_div(float(avgEventsPerJob), f['avgEvtsPerLumi'])
                                     lumisPerJob = max(int(math.floor(ratio)), 1)
                                 else:
                                     lumisPerJob = f['lumiCount']

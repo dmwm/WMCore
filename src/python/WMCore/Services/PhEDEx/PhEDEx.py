@@ -1,3 +1,5 @@
+from builtins import str
+from past.builtins import basestring
 import json
 import logging
 from xml.dom.minidom import parseString
@@ -254,7 +256,7 @@ class PhEDEx(Service):
 
         # Hard to query all at once in one GET call, POST not cacheable
         # Query each dataset and record relevant dataset or block location
-        for dsname, items in inputs.items():
+        for dsname, items in list(inputs.items()):
             try:
                 # query for all blocks in dataset
                 kwargs['block'] = dsname + '#%'
@@ -317,7 +319,7 @@ class PhEDEx(Service):
         nodeList = nodeNameMap['phedex']['node']
         ret = None
         for node in nodeList:
-            if node['se'] == unicode(se):
+            if node['se'] == str(se):
                 if node['kind'] == 'Buffer':
                     return node['name']
                 elif node['kind'] == 'MSS':

@@ -4,6 +4,8 @@
 WorkQueuManager test
 """
 
+from builtins import range
+from builtins import object
 import os
 import logging
 import threading
@@ -18,7 +20,7 @@ from WMComponent.AnalyticsDataCollector.AnalyticsDataCollector import AnalyticsD
 from WMComponent.AnalyticsDataCollector.AnalyticsPoller import AnalyticsPoller
 from WMComponent.AnalyticsDataCollector.DataCollectorEmulatorSwitch import EmulatorHelper
 
-class MockLocalQService():
+class MockLocalQService(object):
 
     def __init__(self):
         pass

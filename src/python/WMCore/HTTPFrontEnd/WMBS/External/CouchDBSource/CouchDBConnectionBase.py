@@ -1,5 +1,8 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 
 from WMCore.Database.CMSCouch import CouchServer
@@ -69,7 +72,7 @@ class CouchDBConnectionBase(object):
         baseURL = re.sub('://.+:.+@', '://', baseURL, 1)
 
         if (options):
-            data = urllib.urlencode(options)
+            data = urllib.parse.urlencode(options)
             if path:
                 baseURL = "%s/%s?%s" % (baseURL, path, data)
             else:

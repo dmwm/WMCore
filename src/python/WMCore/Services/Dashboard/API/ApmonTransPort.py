@@ -11,6 +11,8 @@ from __future__ import print_function
 
 
 
+from builtins import str
+from builtins import object
 import random
 import time
 import sys
@@ -21,7 +23,7 @@ import os
 apmonLoggingLevel = apmon.Logger.INFO
 
 
-class ApmonTransPort:
+class ApmonTransPort(object):
 
     """ _ApmonTransPort_ """
 
@@ -55,7 +57,7 @@ class ApmonTransPort:
         Send multiple parameters to the Monalisa, with last given cluster and node name
         """
         try:
-            params.items()
+            list(params.items())
         except AttributeError as ex:
             msg = "ApmonTransPort: Unable to sendAll the params, use _dict_ - "
             msg += str(ex)

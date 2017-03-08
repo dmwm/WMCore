@@ -11,6 +11,7 @@ from __future__ import print_function
 
 
 
+from builtins import str
 import os.path
 import logging
 import signal
@@ -120,7 +121,7 @@ class DeleteFiles(Executor):
 
         if hasattr(self.step, 'filesToDelete'):
             # files from the configTree to be deleted
-            for k, v in self.step.filesToDelete.dictionary_().iteritems():
+            for k, v in self.step.filesToDelete.dictionary_().items():
                 if k.startswith('file'):
                     logging.debug("Deleting LFN: %s" % v)
                     fileForTransfer = {'LFN' : v,

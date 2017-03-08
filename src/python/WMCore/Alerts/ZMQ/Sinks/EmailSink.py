@@ -3,6 +3,7 @@ EmailSink - send alerts via email.
 
 """
 
+from builtins import object
 import logging
 import smtplib
 

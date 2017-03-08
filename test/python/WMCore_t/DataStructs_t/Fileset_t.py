@@ -5,6 +5,7 @@ _Fileset_t_
 Testcase for Fileset
 
 """
+from builtins import range
 import logging
 import random
 import unittest

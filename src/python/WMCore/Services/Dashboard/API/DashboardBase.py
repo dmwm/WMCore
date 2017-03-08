@@ -11,6 +11,8 @@ from __future__ import print_function
 
 
 
+from builtins import str
+from builtins import range
 import uuid
 import types
 import time
@@ -67,7 +69,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
 
         params = {}
         params.update(self)
-        for key, value in params.items():
+        for key, value in list(params.items()):
             if value == None:
                 del params[key]
 
@@ -95,7 +97,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
         if len(self.publisher) == 0:
             self._InitPublisher()
 
-        for key, value in params.items():
+        for key, value in list(params.items()):
             if value == None:
                 del params[key]
 
@@ -195,7 +197,7 @@ class DashboardBase(MSGTransPortAgent, ApmonTransPort, dict):
 
         params = {}
         if len(self.FILES) != 0:
-            for key, value in self.FILES.items():
+            for key, value in list(self.FILES.items()):
                 params[key] = str(value[1:]).strip('[]').replace(',', '')
 
             for members in self.publisher:

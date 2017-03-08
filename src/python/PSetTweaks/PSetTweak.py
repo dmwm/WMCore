@@ -7,7 +7,13 @@ independent python structure
 
 """
 
-import StringIO
+from future import standard_library
+standard_library.install_aliases()
+from builtins import map
+from builtins import range
+from past.builtins import basestring
+from builtins import object
+import io
 import imp
 import inspect
 import json
@@ -31,7 +37,7 @@ class PSetHolder(object):
 #  //
 # // Assistant lambda functions
 #//
-childPSets = lambda x: [ value for value in x.__dict__.values()
+childPSets = lambda x: [ value for value in list(x.__dict__.values())
                          if value.__class__.__name__ == "PSetHolder" ]
 childParameters = lambda p, x: [ "%s.%s" % (p,i) for i in  x.parameters_ ]
 
@@ -61,7 +67,7 @@ def psetIterator(obj):
 
 
 
-class PSetLister:
+class PSetLister(object):
     """
     _PSetLister_
 
@@ -88,11 +94,11 @@ class PSetLister:
         self.psets.append(psetPath)
         params = childParameters(psetPath, pset)
         self.parameters[psetPath] = params
-        map(self, childPSets(pset))
+        list(map(self, childPSets(pset)))
         self.queue.pop(-1)
 
 
-class JSONiser:
+class JSONiser(object):
     """
     _JSONiser_
 
@@ -139,7 +145,7 @@ class JSONiser:
         queue = ".".join(self.queue)
         for param in params:
             self.parameters["%s.%s" % (queue, param)]  = dictionary[param]
-        for key, value in dictionary.items():
+        for key, value in list(dictionary.items()):
             if isinstance(value, dict):
                 self.queue.append(key)
                 self.dejson(dictionary[key])
@@ -152,7 +158,7 @@ class JSONiser:
 
 
 
-class PSetTweak:
+class PSetTweak(object):
     """
     _PSetTweak_
 
@@ -400,9 +406,9 @@ class PSetTweak:
 
 
             jsoniser = JSONiser()
-            jsoniser.dejson(json.load(StringIO.StringIO(jsonContent)))
+            jsoniser.dejson(json.load(io.StringIO(jsonContent)))
 
-            for param, value in jsoniser.parameters.items():
+            for param, value in list(jsoniser.parameters.items()):
                 self.addParameter(param , value)
 
 
@@ -417,6 +423,6 @@ def makeTweakFromJSON(jsonDictionary):
     jsoniser = JSONiser()
     jsoniser.dejson(jsonDictionary)
     tweak = PSetTweak()
-    for param, value in jsoniser.parameters.items():
+    for param, value in list(jsoniser.parameters.items()):
         tweak.addParameter(param , value)
     return tweak

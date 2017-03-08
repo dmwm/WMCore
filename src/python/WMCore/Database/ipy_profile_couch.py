@@ -9,6 +9,10 @@ from __future__ import print_function
 
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 __license__    = "GPL"
 
 __maintainer__ = "Valentin Kuznetsov"
@@ -29,7 +33,7 @@ from   IPython import Release
 import IPython.ipapi
 import __main__
 
-class PrintManager:
+class PrintManager(object):
     def __init__(self):
         from IPython import ColorANSI
         self.term = ColorANSI.TermColors
@@ -103,7 +107,7 @@ def httplib_request(host, path, params, request='POST', debug=0):
     if  debug:
         httplib.HTTPConnection.debuglevel = 1
     if  type(params) is not str:
-        params = urllib.urlencode(params, doseq=True)
+        params = urllib.parse.urlencode(params, doseq=True)
     if  debug:
         print("input parameters", params)
     headers = {"Content-type": "application/x-www-form-urlencoded",
@@ -141,10 +145,10 @@ def print_data(data, lookup="value"):
         values = row[lookup]
         if  type(values) is dict:
             if  not padding:
-                for key in values.keys():
+                for key in list(values.keys()):
                     if  len(key) > maxl:
                         maxl = len(key)
-            for key, val in values.items():
+            for key, val in list(values.items()):
                 padding = " "*(maxl-len(key))
                 print("%s%s: %s" % (padding, PM.msg_blue(key), val))
             print()
@@ -203,7 +207,7 @@ def couch_views():
         path  = '/%s/%s' % (DB, doc)
         res   = httplib_request(host, path, {}, 'GET', DEBUG)
         rdict = json.loads(res)
-        for view_name, view_dict in rdict['views'].items():
+        for view_name, view_dict in list(rdict['views'].items()):
             print(PM.msg_blue("view name: ") + view_name)
             print(PM.msg_blue("map:"))
             print(PM.msg_green(view_dict['map']))
@@ -224,7 +228,7 @@ def create_view(view_dict):
     path  = '/%s/_design/%s' % (DB, DESIGN)
     data  = httplib_request(host, path, {}, 'GET', DEBUG)
     jsondict = json.loads(data)
-    for view_name, view_def in view_dict.items():
+    for view_name, view_def in list(view_dict.items()):
         jsondict['views'][view_name] = view_def
 
     # update views

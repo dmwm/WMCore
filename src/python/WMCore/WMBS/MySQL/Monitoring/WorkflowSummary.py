@@ -72,7 +72,7 @@ class WorkflowSummary(DBFormatter):
                 workflow[result["wmspec"]]['processing'] += self.processingCount(result)
 
         # need to order by id (client side)
-        return workflow.values()
+        return list(workflow.values())
 
     def execute(self, conn = None, transaction = False):
         results = self.dbi.processData(self.sql,

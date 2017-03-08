@@ -50,14 +50,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in list(dbsfile.keys()):
             # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in list(dbsfile['runInfo'].keys()):
                     run = Run(runNumber = r)
                     run.extend(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in list(dbsfile.keys()):
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn = lfn)
@@ -141,14 +141,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in list(dbsfile.keys()):
                 # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in list(dbsfile['runInfo'].keys()):
                     run = Run(runNumber = r)
                     run.extend(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in list(dbsfile.keys()):
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn = lfn)
@@ -176,14 +176,14 @@ class DBSBufferUtil(WMConnectionBase):
             dbsFiles.append(dbsfile)
 
         for dbsfile in dbsFiles:
-            if 'runInfo' in dbsfile.keys():
+            if 'runInfo' in list(dbsfile.keys()):
                 # Then we have to replace it with a real run
-                for r in dbsfile['runInfo'].keys():
+                for r in list(dbsfile['runInfo'].keys()):
                     run = Run(runNumber = r)
                     run.extend(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
-            if 'parentLFNs' in dbsfile.keys():
+            if 'parentLFNs' in list(dbsfile.keys()):
                 # Then we have some parents
                 for lfn in dbsfile['parentLFNs']:
                     newFile = DBSBufferFile(lfn = lfn)

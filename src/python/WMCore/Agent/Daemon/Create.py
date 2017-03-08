@@ -20,6 +20,7 @@
       http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/66012
 '''
 from __future__ import print_function
+from builtins import str
 import logging
 from logging.handlers import RotatingFileHandler
 import sys, os, time

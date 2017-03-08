@@ -9,8 +9,12 @@ deserialising the response.
 The response from the remote server is cached if expires/etags are set.
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import base64
-import cStringIO as StringIO
+import io as StringIO
 import logging
 import os
 import shutil
@@ -19,10 +23,10 @@ import stat
 import sys
 import tempfile
 import traceback
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 import types
-from httplib import HTTPException
+from http.client import HTTPException
 from json import JSONEncoder, JSONDecoder
 
 from WMCore.Algorithms import Permissions
@@ -80,7 +84,7 @@ class Requests(dict):
         # then update with the incoming dict
         self.update(idict)
 
-        self['endpoint_components'] = urlparse.urlparse(self['host'])
+        self['endpoint_components'] = urllib.parse.urlparse(self['host'])
 
         # If cachepath = None disable caching
         if 'cachepath' in idict and idict['cachepath'] is None:
@@ -153,7 +157,7 @@ class Requests(dict):
         headers = {"Content-type": contentType,
                    "User-agent": "WMCore.Services.Requests/v001",
                    "Accept": self['accept_type']}
-        for key in self.additionalHeaders.keys():
+        for key in list(self.additionalHeaders.keys()):
             headers[key] = self.additionalHeaders[key]
         # And now overwrite any headers that have been passed into the call:
         headers.update(incoming_headers)
@@ -188,7 +192,7 @@ class Requests(dict):
                    "Accept": self['accept_type']}
         encoded_data = ''
 
-        for key in self.additionalHeaders.keys():
+        for key in list(self.additionalHeaders.keys()):
             headers[key] = self.additionalHeaders[key]
 
         # And now overwrite any headers that have been passed into the call:
@@ -221,11 +225,13 @@ class Requests(dict):
             headers["Content-length"] = len(encoded_data)
         elif verb == 'GET' and data:
             # encode the data as a get string
-            uri = "%s?%s" % (uri, urllib.urlencode(data, doseq=True))
+            uri = "%s?%s" % (uri, urllib.parse.urlencode(data, doseq=True))
 
         headers["Content-length"] = str(len(encoded_data))
 
-        assert isinstance(encoded_data, str), \
+        # PY3 needed for compatibility because str under futurize is not a string. Can be just str in Py3 only
+        # PY3 Don't let futurize change this
+        assert isinstance(encoded_data, (str, basestring)), \
             "Data in makeRequest is %s and not encoded to a string" % type(encoded_data)
 
         # httplib2 will allow sockets to close on remote end without retrying
@@ -242,7 +248,7 @@ class Requests(dict):
             # & retry. httplib2 doesn't clear httplib state before next request
             # if this is threaded this may spoil things
             # only have one endpoint so don't need to determine which to shut
-            for con in conn.connections.values():
+            for con in list(conn.connections.values()):
                 con.close()
             conn = self._getURLOpener()
             # ... try again... if this fails propagate error to client
@@ -276,7 +282,7 @@ class Requests(dict):
         """
         encode data into some appropriate format, for now make it a string...
         """
-        return urllib.urlencode(data, doseq=1)
+        return urllib.parse.urlencode(data, doseq=1)
 
     def decode(self, data):
         """

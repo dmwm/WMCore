@@ -6,6 +6,7 @@ General Exception class for WM modules
 
 """
 
+from builtins import str
 import exceptions
 import inspect
 import logging
@@ -105,7 +106,7 @@ class WMException(exceptions.Exception):
         Add key=value information pairs to an
         exception instance
         """
-        for key, value in data.items():
+        for key, value in list(data.items()):
             self[key] = value
         return
 
@@ -119,7 +120,7 @@ class WMException(exceptions.Exception):
         strg += self._message
         strg += "</Message>\n"
         strg += "<DataItems>\n"
-        for key, value in self.data.items():
+        for key, value in list(self.data.items()):
             strg += "<DataItem>\n"
             strg += "<Key>\n"
             strg += str(key)
@@ -137,7 +138,7 @@ class WMException(exceptions.Exception):
         """create a string rep of this exception"""
         strg = "%s\n" % self.name
         strg += "Message: %s\n" % self._message
-        for key, value in self.data.items():
+        for key, value in list(self.data.items()):
             strg += "\t%s : %s\n" % (key, value, )
         strg += "\nTraceback: \n"
         strg += self.traceback

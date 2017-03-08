@@ -89,4 +89,4 @@ class GetFilesForMerge(DBFormatter):
                 result[entry['file_lfn']]['pnn'].add(entry['pnn'])
         for entry in result:
             result[entry]['pnn'] = frozenset(result[entry]['pnn'])
-        return result.values()
+        return list(result.values())

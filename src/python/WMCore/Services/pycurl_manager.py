@@ -11,11 +11,16 @@ underlying data-services.
 """
 from __future__ import print_function
 
-import cStringIO as StringIO
-import httplib
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.builtins import basestring
+from builtins import object
+import io as StringIO
+import http.client
 import json
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import pycurl
 
@@ -78,7 +83,7 @@ class RequestHandler(object):
         #data is not encoded, we need to do that
         if verb in ['GET', 'HEAD']:
             if params:
-                encoded_data = urllib.urlencode(params, doseq=doseq)
+                encoded_data = urllib.parse.urlencode(params, doseq=doseq)
             else:
                 return ''
         else:
@@ -126,7 +131,7 @@ class RequestHandler(object):
         curl.setopt(pycurl.URL, url)
         if  headers:
             curl.setopt(pycurl.HTTPHEADER, \
-                    ["%s: %s" % (k, v) for k, v in headers.items()])
+                    ["%s: %s" % (k, v) for k, v in list(headers.items())])
         bbuf = StringIO.StringIO()
         hbuf = StringIO.StringIO()
         curl.setopt(pycurl.WRITEFUNCTION, bbuf.write)
@@ -194,7 +199,7 @@ class RequestHandler(object):
             data = bbuf.getvalue()
             msg = 'url=%s, code=%s, reason=%s, headers=%s' \
                     % (url, header.status, header.reason, header.header)
-            exc = httplib.HTTPException(msg)
+            exc = http.client.HTTPException(msg)
             setattr(exc, 'req_data', params)
             setattr(exc, 'req_headers', headers)
             setattr(exc, 'url', url)

@@ -7,6 +7,7 @@ Basic Emulator for AlcaHarvest Step
 """
 from __future__ import print_function
 
+from builtins import str
 from WMCore.WMSpec.Steps.Emulator import Emulator
 
 class AlcaHarvest(Emulator):

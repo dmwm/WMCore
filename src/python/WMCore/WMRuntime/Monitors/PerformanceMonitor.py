@@ -7,7 +7,10 @@ Monitor object which checks the job to ensure it is working inside
 the agreed limits of virtual memory and wallclock time, and terminate it
 if it exceeds them.
 """
+from __future__ import division
 
+from builtins import str
+from past.utils import old_div
 import os
 import signal
 import os.path
@@ -31,7 +34,7 @@ def average(numbers):
     Quick averaging function
 
     """
-    return float(sum(numbers)) / len(numbers)
+    return old_div(float(sum(numbers)), len(numbers))
 
 class PerformanceMonitorException(WMException):
     """

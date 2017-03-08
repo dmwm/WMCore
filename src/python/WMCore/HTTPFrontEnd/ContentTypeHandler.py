@@ -1,3 +1,4 @@
+from builtins import object
 import json
 
 from cherrypy import request
@@ -5,7 +6,7 @@ from cherrypy import request
 from WMCore.Wrappers.JsonWrapper.JSONThunker import JSONThunker
 
 
-class ContentTypeHandler:
+class ContentTypeHandler(object):
 
     def __init__(self):
         self.supportedType = {"application/json": self.jsonHandler,

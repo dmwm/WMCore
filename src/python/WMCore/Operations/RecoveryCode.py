@@ -10,6 +10,7 @@ system because it will wipe out all running and queued jobs.
 """
 
 
+from builtins import object
 import os
 import os.path
 import logging
@@ -127,7 +128,7 @@ def cleanSubmitDir(jobList, config):
 
 
 
-class PurgeJobs:
+class PurgeJobs(object):
     """
     PurgeJobs
 

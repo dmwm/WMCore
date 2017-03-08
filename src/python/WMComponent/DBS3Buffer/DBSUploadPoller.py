@@ -25,10 +25,14 @@ add them, and then add the files.  This is why everything is
 so convoluted.
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import time
 import threading
 import logging
-import Queue
+import queue
 import traceback
 import multiprocessing
 
@@ -72,7 +76,7 @@ def createDictionaryFromConfig(configSection):
 
     final = configSection.dictionary_()
 
-    for key in final.keys():
+    for key in list(final.keys()):
         if hasattr(final[key], 'dictionary_'):
             # Then we can turn it into a dictionary
             final[key] = createDictionaryFromConfig(final[key])
@@ -326,7 +330,7 @@ class DBSUploadPoller(BaseWorkerThread):
         # Load them if we don't have them
         blocksToLoad = []
         for block in openBlocks:
-            if not block['blockname'] in self.blockCache.keys():
+            if not block['blockname'] in list(self.blockCache.keys()):
                 blocksToLoad.append(block['blockname'])
 
         # Now load the blocks
@@ -401,7 +405,7 @@ class DBSUploadPoller(BaseWorkerThread):
             fileDict = sortListByKey(loadedFiles, 'locations')
 
             # Now add each file
-            for location in fileDict.keys():
+            for location in list(fileDict.keys()):
 
                 files = fileDict.get(location)
 
@@ -449,7 +453,7 @@ class DBSUploadPoller(BaseWorkerThread):
         Mark Open blocks as Pending if they have timed out or their workflows have completed
         """
         completedWorkflows = self.dbsUtil.getCompletedWorkflows()
-        for block in self.blockCache.values():
+        for block in list(self.blockCache.values()):
             if block.status == "Open":
                 if ( block.getTime() > block.getMaxBlockTime() ) or any (key in completedWorkflows for key in block.workflows):
                     block.setPendingAndCloseBlock()
@@ -495,7 +499,7 @@ class DBSUploadPoller(BaseWorkerThread):
         """
         datasetpath = newFile["datasetPath"]
 
-        for block in self.blockCache.values():
+        for block in list(self.blockCache.values()):
             if datasetpath == block.getDatasetPath() and location == block.getLocation():
                 if not self.isBlockOpen(newFile = newFile, block = block) and not skipOpenCheck:
                     # Block isn't open anymore.  Mark it as pending so that it gets uploaded.
@@ -538,7 +542,7 @@ class DBSUploadPoller(BaseWorkerThread):
         createInDBS = []
         createInDBSBuffer = []
         updateInDBSBuffer = []
-        for block in self.blockCache.values():
+        for block in list(self.blockCache.values()):
             if block.getName() in self.queuedBlocks:
                 # Block is already being dealt with by another process.  We'll
                 # ignore it here.
@@ -686,7 +690,7 @@ class DBSUploadPoller(BaseWorkerThread):
                 blocksToClose.append(blockresult)
                 self.blockCount -= 1
                 logging.debug("Got a block to close")
-            except Queue.Empty:
+            except queue.Empty:
                 # This means the queue has no current results
                 time.sleep(2)
                 emptyCount += 1

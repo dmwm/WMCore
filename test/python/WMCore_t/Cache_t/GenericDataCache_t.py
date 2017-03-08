@@ -5,6 +5,7 @@ Test class for the WMConfigCache
 """
 from __future__ import print_function, division
 
+from builtins import object
 import unittest
 import time
 from WMCore.Cache.GenericDataCache import GenericDataCache, CacheExistException, \
@@ -58,7 +59,7 @@ class GenericDataCacheTest(unittest.TestCase):
         mc2 = MemoryCacheStruct(0, lambda x: x, {}, kwargs={'x': {'one':1, 'two':2}})
         self.assertEqual(mc2.data, {})
         after = mc2.getData()
-        self.assertItemsEqual(after.keys(), ['one', 'two'])
+        self.assertItemsEqual(list(after.keys()), ['one', 'two'])
 
         return
 

@@ -5,6 +5,7 @@ _JobSubmitterCaching_t_
 Verify that the caching of jobs and white/black lists works correctly.
 """
 
+from builtins import range
 import unittest
 import os
 import pickle

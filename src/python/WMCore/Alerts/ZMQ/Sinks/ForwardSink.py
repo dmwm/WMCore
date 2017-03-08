@@ -3,6 +3,7 @@ ForwardSink - send / forward alerts to another Receiver.
 
 """
 
+from builtins import object
 import logging
 
 from WMCore.Alerts.ZMQ.Sender import Sender

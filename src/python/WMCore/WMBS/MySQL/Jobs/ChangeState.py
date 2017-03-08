@@ -8,6 +8,7 @@ wrapper class), a retry count for that state, and an id for the couchdb record
 (also added in by the wrapper class, if not present).
 """
 
+from builtins import map
 from WMCore.Database.DBFormatter import DBFormatter
 
 class ChangeState(DBFormatter):
@@ -29,7 +30,7 @@ class ChangeState(DBFormatter):
                     'time': self.timestamp(),
                     'couch_record': job['couch_record']}
             return dict
-        return map(function, jobs)
+        return list(map(function, jobs))
 
     def execute(self, jobs = [], conn = None, transaction = False):
         """

@@ -45,7 +45,7 @@ class GetAllJobs(DBFormatter):
             tempList = results[0].fetchall()
             final = []
             for i in tempList:
-                final.append(i.values()[0])
+                final.append(list(i.values())[0])
             return final
 
 

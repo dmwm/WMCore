@@ -5,6 +5,7 @@ _ApMonDestMgr_
 Object that manages multicasts to a set of ApMonDestinations
 
 """
+from builtins import map
 import random
 import logging
 from WMCore.WMRuntime.Tools.Plugins.ApMonLite.ApMonDestination import ApMonDestination
@@ -61,7 +62,7 @@ class ApMonDestMgr(list):
         Connect to UDP socket for all destinations
 
         """
-        map(_Connect, self)
+        list(map(_Connect, self))
         return
 
     def disconnect(self):
@@ -71,7 +72,7 @@ class ApMonDestMgr(list):
         Disconnect UDP socket for all destinations
 
         """
-        map(_Disconnect, self)
+        list(map(_Disconnect, self))
 
 
     def send(self, **args):

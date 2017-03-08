@@ -1,8 +1,10 @@
+from future import standard_library
+standard_library.install_aliases()
 import hashlib
 import hmac
-import urllib
-from httplib import HTTPConnection
-from urlparse import urlparse
+import urllib.request, urllib.parse, urllib.error
+from http.client import HTTPConnection
+from urllib.parse import urlparse
 
 from WMCore.WebTools.Page import make_rfc_timestamp
 
@@ -25,11 +27,11 @@ def makeRequest(url, values=None, verb='GET', accept="text/plain",
 
     data = None
     if verb == 'GET' and values:
-        data = urllib.urlencode(values, doseq=True)
+        data = urllib.parse.urlencode(values, doseq=True)
     elif verb != 'GET' and values:
         # needs to test other encoding type
         if contentType == "application/x-www-form-urlencoded":
-            data = urllib.urlencode(values)
+            data = urllib.parse.urlencode(values)
         else:
             # for other encoding scheme values assumed to be encoded already
             data = values
@@ -67,7 +69,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
                                                      secure, secureParam)
 
     keyMap = {'code': code, 'data': data, 'type': content_type, 'response': response}
-    for key, value in output.items():
+    for key, value in list(output.items()):
         msg = 'Got a return %s != %s (got %s, type %s) (data %s, type %s)' \
                 % (keyMap[key], value, keyMap[key], type(keyMap[key]), data, type(data))
         assert keyMap[key] == value, msg
@@ -82,7 +84,7 @@ def methodTest(verb, url, request_input={}, accept='text/json', contentType = No
 
 def _generateHash(keyfile, headers):
     prefix = suffix = ""
-    hkeys = headers.keys()
+    hkeys = list(headers.keys())
     hkeys.sort()
     for hk in hkeys:
         hk=hk.lower()

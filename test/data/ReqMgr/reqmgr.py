@@ -33,10 +33,14 @@ by a user on the command line, whichever other argument can be overridden too.
 from __future__ import print_function
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import os
 import sys
-from httplib import HTTPSConnection, HTTPConnection
-import urllib
+from http.client import HTTPSConnection, HTTPConnection
+import urllib.request, urllib.parse, urllib.error
 import logging
 from optparse import OptionParser, TitledHelpFormatter
 import json
@@ -114,7 +118,7 @@ class ReqMgrClient(RESTClient):
             sys.exit(1)
         data = json.loads(data)
 
-        requestName = data.values()[0]["RequestName"]
+        requestName = list(data.values())[0]["RequestName"]
         logging.info("Create request '%s' succeeded." % requestName)
         return requestName
 
@@ -124,7 +128,7 @@ class ReqMgrClient(RESTClient):
         Talks to the ReqMgr webpage, as if the request came from the web browser.
 
         """
-        encodedParams = urllib.urlencode(requestArgs["createRequest"])
+        encodedParams = urllib.parse.urlencode(requestArgs["createRequest"])
         logging.info("Injecting a request for arguments (webpage):\n%s ..." % requestArgs["createRequest"])
         # the response is now be an HTML webpage
         status, data = self.httpRequest("POST", "/reqmgr/create/makeSchema",
@@ -166,7 +170,7 @@ class ReqMgrClient(RESTClient):
         """
         params = {"requestName": requestName,
                   "status": "assignment-approved"}
-        encodedParams = urllib.urlencode(params)
+        encodedParams = urllib.parse.urlencode(params)
         logging.info("Approving request '%s' ..." % requestName)
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request",
                                         data=encodedParams, headers=self.textHeaders)
@@ -200,9 +204,9 @@ class ReqMgrClient(RESTClient):
             # TODO this needs to be put right with proper REST interface
             del assignArgs["Team"]
             jsonEncodedParams = {}
-            for paramKey in assignArgs.keys():
+            for paramKey in list(assignArgs.keys()):
                 jsonEncodedParams[paramKey] = json.dumps(assignArgs[paramKey])
-            encodedParams = urllib.urlencode(jsonEncodedParams, True)
+            encodedParams = urllib.parse.urlencode(jsonEncodedParams, True)
             logging.info("Assigning request '%s' ..." % requestName)
             status, data = self.httpRequest("POST", "/reqmgr/assign/handleAssignmentPage",
                                             data=encodedParams, headers=self.textHeaders)
@@ -230,7 +234,7 @@ class ReqMgrClient(RESTClient):
             splittingParams['requestName'] = requestName
             splittingParams['splittingTask'] = '/%s/%s' % (requestName, taskName)
             splittingParams['splittingAlgo'] = splittingAlgo
-            encodedParams = urllib.urlencode(splittingParams, True)
+            encodedParams = urllib.parse.urlencode(splittingParams, True)
             logging.info("Changing splitting parameters for request '%s' and task '%s' ..." % (requestName, taskName))
             status, data = self.httpRequest("POST", "/reqmgr/view/handleSplittingPage",
                                             data=encodedParams, headers=self.textHeaders)
@@ -341,7 +345,7 @@ class ReqMgrClient(RESTClient):
             sys.exit(1)
         data = json.loads(data)
 
-        newRequestName = data.values()[0]["RequestName"]
+        newRequestName = list(data.values())[0]["RequestName"]
         logging.info("Clone request succeeded: original request name: '%s' "
                      "new request name: '%s'" % (requestName, newRequestName))
         return newRequestName
@@ -358,7 +362,7 @@ class ReqMgrClient(RESTClient):
         # jsonSender.put("request/%s?priority=%s" % (requestName, priority))
         # "requestName": requestName can probably be specified here as well
         params = {"priority": "%s" % priority}
-        encodedParams = urllib.urlencode(params)
+        encodedParams = urllib.parse.urlencode(params)
         status, data = self.httpRequest("PUT", "/reqmgr/reqMgr/request/%s" % requestName,
                                         data=encodedParams, headers=self.textHeaders)
         if status > 200:
@@ -737,7 +741,7 @@ def processCmdLine(args):
     if (opts.json and not opts.createRequest) and (opts.json and not opts.allTests) \
         and (opts.json and not opts.assignRequests) and (opts.json and not opts.changeSplitting):
         errExit("--json only with --createRequest, --allTests, --assignRequest, --changeSplitting", parser)
-    for action in filter(lambda name: getattr(opts, name), actions):
+    for action in [name for name in actions if getattr(opts, name)]:
         if opts.allTests and action and action != "allTests":
             errExit("Arguments --allTests and --%s mutually exclusive." % action, parser)
     if opts.requestNames:
@@ -860,7 +864,7 @@ def processRequestArgs(intputConfigFile, commandLineJson):
         logging.info("Parsing request arguments on the command line ...")
         cliJson = json.loads(commandLineJson)
         # if a key exists in cliJson, update values in the main requestArgs dict
-        for k in requestArgs.keys():
+        for k in list(requestArgs.keys()):
             if k in cliJson:
                 requestArgs[k].update(cliJson[k])
     else:
@@ -871,10 +875,10 @@ def processRequestArgs(intputConfigFile, commandLineJson):
     def check(items):
         for k, v in items:
             if isinstance(v, dict):
-                check(v.items())
-            if isinstance(v, unicode) and v.endswith("OVERRIDE-ME"):
+                check(list(v.items()))
+            if isinstance(v, str) and v.endswith("OVERRIDE-ME"):
                 logging.warn("Not properly set: %s: %s" % (k, v))
-    check(requestArgs.items())
+    check(list(requestArgs.items()))
     return requestArgs
 
 
@@ -896,7 +900,7 @@ def main():
     # there is now gonna be usually 1 action to perform, but could be more
     # filter out those where config.ACTION is None
     # config is all options for this script but also request creation parameters
-    actions = filter(lambda name: getattr(config, name), definedActions)
+    actions = [name for name in definedActions if getattr(config, name)]
     logging.info("Actions to perform: %s" % actions)
     for action in actions:
         logging.info("Performing '%s' ..." % action)

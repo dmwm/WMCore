@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from builtins import str
 import xdrlib
 import random
 import types
@@ -135,7 +136,7 @@ class ApMonDestination(dict):
         #  //
         # // pack the parameters themselves
         #//
-        for name, value in params.items():
+        for name, value in list(params.items()):
             self.packParameter(packer, name, value)
 
         #  //
@@ -164,7 +165,7 @@ class ApMonDestination(dict):
         #//
         if value == None:
             return
-        if type(value) not in _ValuePackers.keys():
+        if type(value) not in list(_ValuePackers.keys()):
             return
 
         #  //

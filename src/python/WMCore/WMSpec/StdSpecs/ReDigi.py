@@ -24,7 +24,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         Add merge and cleanup tasks for the output of a processing step.
         """
         mergeTasks = {}
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             mergeTask = self.addMergeTask(parentTask, self.procJobSplitAlgo,
                                           outputModuleName, parentStepName)
             mergeTasks[outputModuleName] = mergeTask
@@ -94,7 +94,7 @@ class ReDigiWorkloadFactory(DataProcessing):
 
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
                                                    configCacheUrl, self.couchDBName)
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(stepOneTask,
                                                 outputModuleName,
                                                 self.inputPrimaryDataset,
@@ -105,7 +105,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         configOutput = self.determineOutputModules(None, None, self.stepThreeConfigCacheID,
                                                    configCacheUrl, self.couchDBName)
         outputMods = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(stepOneTask,
                                                 outputModuleName,
                                                 self.inputPrimaryDataset,
@@ -179,7 +179,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
                                                    configCacheUrl, self.couchDBName)
         outputMods = {}
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(stepOneTask,
                                                 outputModuleName,
                                                 self.inputPrimaryDataset,

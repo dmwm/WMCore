@@ -6,6 +6,11 @@ _ProcessPool_
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 import zmq
 import subprocess
 import sys
@@ -14,7 +19,7 @@ import os
 import threading
 import traceback
 try:
-    import cPickle as pickle
+    import pickle as pickle
 except ImportError:
     import pickle
 
@@ -38,7 +43,7 @@ class ProcessPoolException(WMException):
     """
 
 
-class ProcessPoolWorker:
+class ProcessPoolWorker(object):
     """
     _ProcessPoolWorker_
 
@@ -61,7 +66,7 @@ class ProcessPoolWorker:
         return
 
 
-class ProcessPool:
+class ProcessPool(object):
     def __init__(self, slaveClassName, totalSlaves, componentDir,
                  config, namespace='WMComponent', inPort='5555',
                  outPort='5558'):

@@ -6,9 +6,11 @@ Implementation of StageOutImpl interface for DCCPFNAL
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 import os
 try:
-    from commands import getoutput
+    from subprocess import getoutput
 except ImportError:
     # python3
     from subprocess import getoutput

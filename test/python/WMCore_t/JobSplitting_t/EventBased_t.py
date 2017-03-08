@@ -5,6 +5,7 @@ _EventBased_t_
 Event based splitting test.
 """
 
+from builtins import range
 import unittest
 
 from WMCore.DataStructs.File import File
@@ -81,7 +82,7 @@ class EventBasedTest(unittest.TestCase):
         singleMCFileset = Fileset(name = "MCTestFileset")
         newFile = File("MCFakeFileTest", size = 1000, events = numEvents)
         newFile.setLocation('se01')
-        newFile.addRun(Run(1, *range(firstLumi, lastLumi + 1)))
+        newFile.addRun(Run(1, *list(range(firstLumi, lastLumi + 1))))
         newFile["first_event"] = firstEvent
         newFile["last_event"] = lastEvent
         testWorkflow = Workflow()

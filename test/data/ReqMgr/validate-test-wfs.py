@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import sys
-import urllib
-import urllib2
-import httplib
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
+import http.client
 import json
 import argparse
 import pwd
-from urllib2 import HTTPError, URLError
+from urllib.error import HTTPError, URLError
 from pprint import pprint
 
 # table parameters
@@ -23,13 +26,13 @@ CLIENT_ID = 'validate-test-wfs/1.2::python/%s.%s' % sys.version_info[:2]
 cachedDqmgui = None
 
 
-class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
+class HTTPSClientAuthHandler(urllib.request.HTTPSHandler):
     """
     Basic HTTPS class
     """
 
     def __init__(self, key, cert):
-        urllib2.HTTPSHandler.__init__(self)
+        urllib.request.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
 
@@ -40,7 +43,7 @@ class HTTPSClientAuthHandler(urllib2.HTTPSHandler):
         return self.do_open(self.getConnection, req)
 
     def getConnection(self, host, timeout=290):
-        return httplib.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
+        return http.client.HTTPSConnection(host, key_file=self.key, cert_file=self.cert)
 
 
 def getX509():
@@ -57,7 +60,7 @@ def getContent(url, params=None):
     cert = getX509()
     client = '%s (%s)' % (CLIENT_ID, os.environ.get('USER', ''))
     handler = HTTPSClientAuthHandler(cert, cert)
-    opener = urllib2.build_opener(handler)
+    opener = urllib.request.build_opener(handler)
     opener.addheaders = [("User-Agent", client),
                          ("Accept", "application/json")]
     try:
@@ -112,7 +115,7 @@ def getPhedexInfo(dataset, baseUrl):
     Queries blockreplicas PhEDEx API to retrieve general information needed
     """
     phedexOutput = {}
-    queryParams = urllib.urlencode({'dataset': dataset})
+    queryParams = urllib.parse.urlencode({'dataset': dataset})
     phedexUrl = baseUrl + "/phedex/datasvc/json/prod/" + "blockreplicas"
     phedexOutput = json.loads(getContent(phedexUrl, queryParams))
     return phedexOutput["phedex"]["block"]
@@ -130,12 +133,12 @@ def getDbsInfo(dataset, baseUrl):
     dbsOutput = {}
     dbsOutput[dataset] = {"blockorigin": [], "filesummaries": [], "outputconfigs": []}
     for api in dbsOutput[dataset]:
-        fullUrl = dbsUrl + api + "?" + urllib.urlencode({'dataset': dataset})
+        fullUrl = dbsUrl + api + "?" + urllib.parse.urlencode({'dataset': dataset})
         data = json.loads(getContent(fullUrl))
         dbsOutput[dataset][api] = data
 
     # Separate query for prep_id, since we want any access_type
-    fullUrl = dbsUrl + "datasets?" + urllib.urlencode({'dataset': dataset})
+    fullUrl = dbsUrl + "datasets?" + urllib.parse.urlencode({'dataset': dataset})
     fullUrl += "&dataset_access_type=*&detail=True"
     data = json.loads(getContent(fullUrl))
     dbsOutput[dataset]["prep_id"] = data[0]["prep_id"] if data else ''
@@ -238,7 +241,7 @@ def compareSpecial(d1, d2, key=None):
 
         if key == 'PNN':
             for dset in d2:
-                for block, value in d2[dset].iteritems():
+                for block, value in d2[dset].items():
                     if isinstance(value, dict):
                         if d1[dset][block][key] != d2[dset][block][key]:
                             return outcome
@@ -398,7 +401,7 @@ def validateAll(reqmgrInputDset, couchInfo, phedexInfo, dbsInfo):
     print('|' + ' ' * 25 + '| CouchDB | PhEDEx | DBS  |')
     print(SEPARATELINE)
 
-    compRes = compareLists(couchInfo.keys(), phedexInfo.keys(), dbsInfo.keys())
+    compRes = compareLists(list(couchInfo.keys()), list(phedexInfo.keys()), list(dbsInfo.keys()))
     print('| Same dataset name       | {compRes:7s} | {compRes:6s} | {compRes:4s} |'.format(compRes=compRes))
 
     compRes = compareLists(couchInfo, phedexInfo, dbsInfo, key='dsetSize')

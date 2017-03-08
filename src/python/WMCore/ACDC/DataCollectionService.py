@@ -7,6 +7,7 @@ Created by Dave Evans on 2010-07-30.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
+from builtins import str
 import logging
 
 import WMCore.ACDC.CollectionTypes as CollectionTypes
@@ -41,7 +42,7 @@ def mergeFakeFiles(chunkFiles):
             mergedFiles[acdcFile['lfn']]['runs'][0]['lumis'].extend(acdcFile['runs'][0]['lumis'])
     logging.info("resulted in %d final ACDC FakeFiles.", len(mergedFiles))
 
-    return mergedFiles.values()
+    return list(mergedFiles.values())
 
 
 class ACDCDCSException(WMException):
@@ -115,7 +116,7 @@ class DataCollectionService(CouchService):
         for row in results["rows"]:
             files = row["doc"].get("files", False)
             if files:
-                filesInfo.extend(files.values())
+                filesInfo.extend(list(files.values()))
 
         # second lfn sort
         filesInfo.sort(key=lambda x: x["lfn"])
@@ -308,7 +309,7 @@ class DataCollectionService(CouchService):
                     allRuns[run["run_number"]] = []
                 allRuns[run["run_number"]].extend(run["lumis"])
 
-        for run in allRuns.keys():
+        for run in list(allRuns.keys()):
             lumis = []
             lumis.extend(set(allRuns[run]))
             lumis.sort()

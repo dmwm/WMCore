@@ -13,6 +13,9 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from Utils.Utilities import makeList, strToBool
 from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
@@ -66,7 +69,7 @@ class StepChainWorkloadFactory(StdBase):
 
         # Update the task configuration
         taskConf = {}
-        for k, v in arguments["Step1"].iteritems():
+        for k, v in arguments["Step1"].items():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
         self.inputPrimaryDataset = taskConf.get("PrimaryDataset", self.primaryDataset)
@@ -181,7 +184,7 @@ class StepChainWorkloadFactory(StdBase):
             currentCmsRun = "cmsRun%d" % i
             self.stepMapping.setdefault(origArgs[currentStepNumber]['StepName'], (currentStepNumber, currentCmsRun))
             taskConf = {}
-            for k, v in origArgs[currentStepNumber].iteritems():
+            for k, v in origArgs[currentStepNumber].items():
                 taskConf[k] = v
 
             parentStepNumber = self.stepMapping.get(taskConf['InputStep'])[0]
@@ -248,7 +251,7 @@ class StepChainWorkloadFactory(StdBase):
         configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
                                                    couchURL=configCacheUrl,
                                                    couchDBName=self.couchDBName)
-        for outputModuleName in configOutput.keys():
+        for outputModuleName in list(configOutput.keys()):
             outputModule = self.addOutputModule(task, outputModuleName,
                                                 self.inputPrimaryDataset,
                                                 configOutput[outputModuleName]["dataTier"],
@@ -270,7 +273,7 @@ class StepChainWorkloadFactory(StdBase):
         frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
         scramArch = taskConf.get("ScramArch", self.scramArch)
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in list(outputMods.keys()):
             dummyTask = self.addMergeTask(task, self.splittingAlgo, outputModuleName, stepCmsRun,
                                           cmsswVersion=frameworkVersion, scramArch=scramArch,
                                           forceTaskName=taskConf.get('StepName'), taskConf=taskConf)
@@ -315,11 +318,11 @@ class StepChainWorkloadFactory(StdBase):
             filterEff = taskConf.get("FilterEfficiency")
             # Adjust totalEvents according to the filter efficiency
             taskConf["SplittingAlgo"] = "EventBased"
-            taskConf["RequestNumEvents"] = int(requestNumEvts / filterEff)
+            taskConf["RequestNumEvents"] = int(old_div(requestNumEvts, filterEff))
             taskConf["SizePerEvent"] = self.sizePerEvent * filterEff
 
         if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / self.timePerEvent)
+            taskConf["EventsPerJob"] = int(old_div((8.0 * 3600.0), self.timePerEvent))
         if taskConf["EventsPerLumi"] is None:
             taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
 
@@ -482,7 +485,7 @@ class StepChainWorkloadFactory(StdBase):
                 configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
                                                            couchURL=couchUrl,
                                                            couchDBName=schema["CouchDBName"])
-                for outputModuleName in configOutput.keys():
+                for outputModuleName in list(configOutput.keys()):
                     if outputModuleName in outputMods:
                         msg = "StepChain does not support KeepOutput sharing the same output module."
                         msg += "\n%s re-using outputModule: %s" % (stepName, outputModuleName)

@@ -28,7 +28,7 @@ class GetCompletedFilesByRun(DBFormatter):
         formattedResults = DBFormatter.formatDict(self, results)
 
         for formattedResult in formattedResults:
-            if "file" in formattedResult.keys():
+            if "file" in list(formattedResult.keys()):
                 formattedResult["file"] = int(formattedResult["file"])
             else:
                 formattedResult["file"] = int(formattedResult["fileid"])

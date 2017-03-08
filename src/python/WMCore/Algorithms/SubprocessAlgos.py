@@ -8,6 +8,7 @@ i.e., stand-ins for Linux command line functions
 
 """
 
+from builtins import str
 import os
 import re
 import signal

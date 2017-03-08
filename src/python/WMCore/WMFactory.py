@@ -10,13 +10,15 @@ can be made threadsafe.
 
 
 
+from builtins import str
+from builtins import object
 import logging
 import threading
 
 from WMCore.WMException import WMException
 from WMCore.WMExceptions import WMEXCEPTION
 
-class WMFactory:
+class WMFactory(object):
     """
     A factory Class that is 'not thread safe' but is intended to work in
     threads (no sharing). The class dynamically loads objects from files

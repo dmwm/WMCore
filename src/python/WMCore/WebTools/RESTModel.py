@@ -4,6 +4,8 @@
 """
 Rest Model abstract implementation
 """
+from builtins import str
+from past.builtins import basestring
 from functools import wraps
 from WMCore.Lexicon import check
 from WMCore.WebTools.WebAPI import WebAPI
@@ -53,24 +55,24 @@ class RESTModel(WebAPI):
             he = HTTPError(400, 'bad VERB or method')
 
         # Checks whether verb is supported, if not return 501 error
-        if verb not in self.methods.keys():
+        if verb not in list(self.methods.keys()):
             data =  "Unsupported verb: %s" % (verb)
             he = HTTPError(501, data)
         else:
             # We know how to deal with this VERB
             # Do we know the method?
-            method_for_verb = method in self.methods[verb].keys()
+            method_for_verb = method in list(self.methods[verb].keys())
 
             if method_for_verb:
                 return
             # Is the method supported for a VERB different to the the requests?
             unsupported_verb = False
 
-            other_verbs = self.methods.keys()
+            other_verbs = list(self.methods.keys())
             other_verbs.remove(verb)
 
             for v in other_verbs:
-                unsupported_verb = unsupported_verb | (method in self.methods[v].keys())
+                unsupported_verb = unsupported_verb | (method in list(self.methods[v].keys()))
 
             # Checks whether method exists but used wrong verb
             if unsupported_verb:
@@ -121,7 +123,7 @@ class RESTModel(WebAPI):
             self.debug(traceback.format_exc())
             raise HTTPError(400, error)
         # Don't need to handle other exceptions here - that's done in RESTAPI
-        if 'expires' in self.methods[verb][method].keys():
+        if 'expires' in list(self.methods[verb][method].keys()):
             return data, self.methods[verb][method]['expires']
         else:
             return data, self.defaultExpires
@@ -240,7 +242,7 @@ class RESTModel(WebAPI):
         # due to mixmatch (string vs unicode) between python and Oracle
         # we must pass string parameters.
         for a in self.methods[verb][method]['args']:
-            if a in input_kwargs.keys():
+            if a in list(input_kwargs.keys()):
                 v = input_kwargs[a]
                 if isinstance(v, basestring):
                     input_data[a] = str(v)

@@ -5,7 +5,8 @@ _Config_
 Pseudo CMSSW config classes.
 """
 
-class Container():
+from builtins import object
+class Container(object):
     """
     _Container_
 
@@ -30,7 +31,7 @@ class Container():
         """
         return self._type
 
-class ConfigObject():
+class ConfigObject(object):
     """
     _ConfigObject_
 
@@ -122,7 +123,7 @@ def PSet(**attributes):
     Create a new PSet with the given attributes.
     """
     newPSet = Container()
-    for attributeName in attributes.keys():
+    for attributeName in list(attributes.keys()):
         setattr(newPSet, attributeName, attributes[attributeName])
 
     return newPSet

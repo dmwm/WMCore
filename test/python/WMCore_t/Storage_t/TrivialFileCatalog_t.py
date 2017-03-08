@@ -5,6 +5,7 @@ _TrivialFileCatalog_t_
 Test the parsing of the TFC.
 """
 
+from builtins import str
 import os
 import unittest
 import nose

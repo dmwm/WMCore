@@ -8,6 +8,7 @@ This cleverly named object is the thread that handles the monitoring of individu
 from __future__ import division
 from __future__ import print_function
 
+from builtins import str
 import os
 import os.path
 import threading
@@ -110,7 +111,7 @@ class Watchdog(threading.Thread):
                         args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
 
                 logging.info("Watchdog modified: %s. Final settings:", changedCores)
-                for k, v in args.iteritems():
+                for k, v in args.items():
                     logging.info("  %s: %r", k, v)
             # Actually initialize the monitor variables
             mon.initMonitor(task = task, job = wmbsJob,

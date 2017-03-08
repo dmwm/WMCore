@@ -5,6 +5,7 @@ MakeDBSMockFiles
 Program to create mock DBS JSON files used by the DBS mock-based emulator
 """
 
+from builtins import str
 from __future__ import (division, print_function)
 
 import json
@@ -46,23 +47,23 @@ for endpoint, outFile, calls, datasets in INSTANCES:
         calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
         calls.append(['listFileArray',
                       {'dataset': '/Cosmics/ComissioningHI-v1/RAW', 'detail': True, 'validFileOnly': 1}])
-        calls.append(['listRuns', {'dataset': unicode(dataset)}])
+        calls.append(['listRuns', {'dataset': str(dataset)}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:
-            calls.append(['listBlocks', {'block_name': unicode(block['block_name'])}])
-            calls.append(['listBlocks', {'block_name': unicode(block['block_name']), 'detail': True}])
+            calls.append(['listBlocks', {'block_name': str(block['block_name'])}])
+            calls.append(['listBlocks', {'block_name': str(block['block_name']), 'detail': True}])
             calls.append(['listBlockParents', {'block_name': str(block['block_name'])}])
-            calls.append(['listFileLumis', {'block_name': unicode(block['block_name'])}])
-            calls.append(['listFileLumis', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
-            calls.append(['listFileArray', {'block_name': unicode(block['block_name']),
+            calls.append(['listFileLumis', {'block_name': str(block['block_name'])}])
+            calls.append(['listFileLumis', {'block_name': str(block['block_name']), 'validFileOnly': 1}])
+            calls.append(['listFileArray', {'block_name': str(block['block_name']),
                                             'detail': True, 'validFileOnly': 1}])
-            calls.append(['listFileSummaries', {'block_name': unicode(block['block_name']), 'validFileOnly': 1}])
             calls.append(['listFileSummaries', {'block_name': str(block['block_name']), 'validFileOnly': 1}])
-            calls.append(['listRuns', {'block_name': unicode(block['block_name'])}])
-            calls.append(['listFileParents', {'block_name': unicode(block['block_name'])}])
+            calls.append(['listFileSummaries', {'block_name': str(block['block_name']), 'validFileOnly': 1}])
+            calls.append(['listRuns', {'block_name': str(block['block_name'])}])
+            calls.append(['listFileParents', {'block_name': str(block['block_name'])}])
             files = realDBS.listFiles(block_name=block['block_name'])
             for dbsFile in files:
-                lfn = unicode(dbsFile['logical_file_name'])
+                lfn = str(dbsFile['logical_file_name'])
                 calls.append(['listFileArray', {'logical_file_name': [lfn], 'detail': True}])
                 calls.append(['listFileArray', {'logical_file_name': [lfn]}])
                 calls.append(['listFileLumiArray', {'logical_file_name': [lfn]}])
@@ -78,7 +79,7 @@ for endpoint, outFile, calls, datasets in INSTANCES:
             print(" Fetching call list %d%% done." % percentDone)
         func = getattr(realDBS, call[0])
         if len(call) > 1:
-            signature = '%s:%s' % (call[0], sorted(call[1].iteritems()))
+            signature = '%s:%s' % (call[0], sorted(call[1].items()))
             try:
                 result = func(**call[1])
             except HTTPError:

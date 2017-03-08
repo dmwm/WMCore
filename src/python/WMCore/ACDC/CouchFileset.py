@@ -6,6 +6,7 @@ CouchFileset.py
 Created by Dave Evans on 2010-03-19.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
+from builtins import str
 import time
 
 from WMCore.ACDC.Fileset import Fileset
@@ -183,7 +184,7 @@ class CouchFileset(Fileset):
                 raise RuntimeError(msg)
 
             files = doc["files"]
-            for d in files.values():
+            for d in list(files.values()):
                 yield d
 
     @connectToCouch

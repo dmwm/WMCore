@@ -8,6 +8,9 @@ interactions.
 
 
 
+from builtins import str
+from builtins import zip
+from builtins import range
 import datetime
 import time
 import types
@@ -73,9 +76,9 @@ class DBFormatter(WMObject):
                 #WARNING: this can generate errors for some stupid reason
                 # in both oracle and mysql.
                 entry = {}
-                for index in xrange(0,len(descriptions)):
+                for index in range(0,len(descriptions)):
                     # WARNING: Oracle returns table names in CAP!
-                    if type(i[index]) == unicode:
+                    if type(i[index]) == str:
                         entry[str(descriptions[index].lower())] = str(i[index])
                     else:
                         entry[str(descriptions[index].lower())] = i[index]
@@ -94,7 +97,7 @@ class DBFormatter(WMObject):
             return {}
 
         r = result[0]
-        description = map(lambda x: str(x).lower(), r.keys)
+        description = [str(x).lower() for x in r.keys]
         if len(r.data) < 1:
             return {}
 
@@ -110,7 +113,7 @@ class DBFormatter(WMObject):
 
         """
 	if type(cursor.keys) == types.MethodType:
-            keys = [x.lower() for x in cursor.keys()]
+            keys = [x.lower() for x in list(cursor.keys())]
         else:
             keys = [x.lower() for x in cursor.keys]
         result = []
@@ -130,7 +133,7 @@ class DBFormatter(WMObject):
 
     def getBinds(self, **kwargs):
         binds = {}
-        for i in kwargs.keys():
+        for i in list(kwargs.keys()):
             binds = self.dbi.buildbinds(self.dbi.makelist(kwargs[i]), i, binds)
         return binds
 

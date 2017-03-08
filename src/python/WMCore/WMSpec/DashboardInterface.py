@@ -15,12 +15,17 @@ from __future__ import print_function
 
 
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 from xml.dom import minidom
 import logging
 import traceback
 
 
-import urllib, urllib2
+import urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse
 import os
 import socket
 
@@ -64,12 +69,12 @@ def HTTPpost(params, url, onFailureFile = None):
     try:
         logging.debug("contacting %s" % url)
 
-        data = urllib.urlencode(params)
+        data = urllib.parse.urlencode(params)
         #put who we are in headers
         headers = { 'User-Agent' : USER_AGENT }
-        req = urllib2.Request(url, data, headers)
+        req = urllib.request.Request(url, data, headers)
 
-        response = urllib2.urlopen(req, data)
+        response = urllib.request.urlopen(req, data)
 
         logging.debug("received http code: %s, message: %s, response: %s" \
                       % (response.code, response.msg, str(response.read())))

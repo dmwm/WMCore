@@ -24,6 +24,7 @@ talking to the group, and WMBS JobGroups can calculate status from the database
 instead of the in memory objects.
 """
 
+from builtins import str
 import logging
 import threading
 

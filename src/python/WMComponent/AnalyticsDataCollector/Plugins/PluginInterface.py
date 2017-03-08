@@ -6,6 +6,7 @@ Base class for AnalyticsDataCollector plug-ins
 
 """
 
+from builtins import object
 class PluginInterface(object):
     """Interface for policies"""
     def __init__(self, **args):

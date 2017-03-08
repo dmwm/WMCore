@@ -28,15 +28,15 @@ def walk_dep_tree(system):
     statics = set()
     modules = set()
     bindir = set()
-    if 'bin' in system.keys():
+    if 'bin' in list(system.keys()):
         bindir = set(system.get('bin', set()))
-    if 'modules' in system.keys():
+    if 'modules' in list(system.keys()):
         modules = set(system.get('modules', set()))
-    if 'packages' in system.keys():
+    if 'packages' in list(system.keys()):
         packages = set(system.get('packages', set()))
-    if 'statics' in system.keys():
+    if 'statics' in list(system.keys()):
         statics = set(system.get('statics', set()))
-    if 'systems' in system.keys():
+    if 'systems' in list(system.keys()):
         for system in system['systems']:
             dependants = walk_dep_tree(dependencies[system])
             bindir = bindir | dependants.get('bin', set())
@@ -126,17 +126,17 @@ def check_system(command):
     """
     Check that the system being built is known, print an error message and exit if it's not.
     """
-    if command.system in dependencies.keys():
+    if command.system in list(dependencies.keys()):
         return
     elif command.system == None:
         msg = "System not specified: -s option for %s must be specified and provide one of:\n" % command.get_command_name()
-        msg += ", ".join(dependencies.keys())
+        msg += ", ".join(list(dependencies.keys()))
         print(msg)
         sys.exit(1)
     else:
         msg = "Specified system [%s] is unknown:" % command.system
         msg += " -s option for %s must be specified and provide one of:\n" % command.get_command_name()
-        msg += ", ".join(dependencies.keys())
+        msg += ", ".join(list(dependencies.keys()))
         print(msg)
         sys.exit(1)
 
@@ -198,7 +198,7 @@ class BuildCommand(Command):
     description = "to ensure a clean build of only the specified sub-system.\n\n"
     description += "\tAvailable sub-systems: \n"
     description += "\t["
-    description += ", ".join(dependencies.keys())
+    description += ", ".join(list(dependencies.keys()))
     description += "]\n"
 
     user_options = build.user_options
@@ -284,7 +284,7 @@ class InstallCommand(install):
     description = "to ensure a clean build of only the specified sub-system.\n\n"
     description += "\tAvailable sub-systems: \n"
     description += "\t["
-    description += ", ".join(dependencies.keys())
+    description += ", ".join(list(dependencies.keys()))
     description += "]\n"
 
     user_options = install.user_options

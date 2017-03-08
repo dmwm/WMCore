@@ -219,7 +219,7 @@ class File(WMBSBase, WMFile):
         runs = action.execute(self["lfn"], conn = self.getDBConn(),
                               transaction = self.existingTransaction())
 
-        [self.addRun(run = Run(r, *runs[r])) for r in runs.keys()]
+        [self.addRun(run = Run(r, *runs[r])) for r in list(runs.keys())]
 
         action = self.daofactory(classname = "Files.GetLocation")
         self["locations"] = action.execute(self["lfn"], conn = self.getDBConn(),
@@ -284,7 +284,7 @@ class File(WMBSBase, WMFile):
         self.commitTransaction(existingTransaction)
         if self['checksums']:
             #Add a checksum
-            for entry in self['checksums'].keys():
+            for entry in list(self['checksums'].keys()):
                 self.setCksum(cksum = self['checksums'][entry], cktype = entry)
         return
 
@@ -363,7 +363,7 @@ class File(WMBSBase, WMFile):
                               transaction = self.existingTransaction())
 
         self["runs"].clear()
-        [self.addRun(run=Run(r, *runs[r])) for r in runs.keys()]
+        [self.addRun(run=Run(r, *runs[r])) for r in list(runs.keys())]
 
         self.commitTransaction(existingTransaction)
         return
@@ -586,7 +586,7 @@ def addFilesToWMBSInBulk(filesetId, workflowName, files, isDBS = True,
         if selfChecksums:
             # If we have checksums we have to create a bind
             # For each different checksum
-            for entry in selfChecksums.keys():
+            for entry in list(selfChecksums.keys()):
                 fileCksumBinds.append({'lfn': lfn, 'cksum' : selfChecksums[entry],
                                        'cktype' : entry})
 

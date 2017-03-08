@@ -4,6 +4,7 @@ _couch-trash_
 
 """
 
+from builtins import range
 import os
 import random
 import time

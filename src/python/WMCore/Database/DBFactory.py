@@ -1,4 +1,5 @@
 
+from builtins import object
 import threading
 
 from sqlalchemy import create_engine
@@ -18,7 +19,7 @@ class DBFactory(object):
     def __init__(self, logger, dburl=None, options={}):
         self.logger = logger
         # get the engine parameter from option
-        if 'engine_parameters' in options.keys():
+        if 'engine_parameters' in list(options.keys()):
             self._defaultEngineParams.update(options['engine_parameters'])
             del options['engine_parameters']
 
@@ -45,39 +46,39 @@ class DBFactory(object):
 
             """
             hostjoin = ''
-            if 'dialect' in options.keys():
+            if 'dialect' in list(options.keys()):
                 self.dburl = '%s://' % options['dialect']
                 del options['dialect']
-            if 'user' in options.keys():
+            if 'user' in list(options.keys()):
                 self.dburl = '%s%s' % (self.dburl, options['user'])
                 hostjoin='@'
                 del options['user']
-            if 'username' in options.keys():
+            if 'username' in list(options.keys()):
                 self.dburl = '%s%s' % (self.dburl, options['username'])
                 hostjoin='@'
                 del options['username']
-            if 'passwd' in options.keys():
+            if 'passwd' in list(options.keys()):
                 self.dburl = '%s:%s' % (self.dburl, options['passwd'])
                 del options['passwd']
-            if 'password' in options.keys():
+            if 'password' in list(options.keys()):
                 self.dburl = '%s:%s' % (self.dburl, options['password'])
                 del options['password']
-            if 'tnsName' in options.keys():
+            if 'tnsName' in list(options.keys()):
                 self.dburl = '%s%s%s' % (self.dburl, hostjoin, options['tnsName'])
                 del options['tnsName']
-            elif 'host' in options.keys():
+            elif 'host' in list(options.keys()):
                 self.dburl = '%s%s%s' % (self.dburl, hostjoin, options['host'])
                 del options['host']
-                if 'port' in options.keys():
+                if 'port' in list(options.keys()):
                     self.dburl = '%s:%s' % (self.dburl, options['port'])
                     del options['port']
-            if 'host' in options.keys():
+            if 'host' in list(options.keys()):
                 self.dburl = '%s/%s' % (self.dburl, options['host'])
                 del options['host']
-            if 'database' in options.keys():
+            if 'database' in list(options.keys()):
                 self.dburl = '%s/%s' % (self.dburl, options['database'])
                 del options['database']
-            elif 'sid' in options.keys():
+            elif 'sid' in list(options.keys()):
                 self.dburl = '%s/%s' % (self.dburl, options['sid'])
                 del options['sid']
 

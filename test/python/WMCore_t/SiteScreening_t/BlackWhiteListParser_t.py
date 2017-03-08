@@ -3,6 +3,7 @@
 Test case for SiteScreening
 """
 
+from builtins import object
 import unittest
 import logging
 
@@ -15,7 +16,7 @@ logging.basicConfig(level=logging.DEBUG,
 fakeLogger = logging.getLogger('SiteScreening')
 
 
-class FakeLogger:
+class FakeLogger(object):
     """
     Fake logger class
     """

@@ -10,7 +10,11 @@ _CreateWorkArea_
 Class(es) that create the work area for each jobGroup
 Used in JobCreator
 """
+from __future__ import division
 
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import os
 import os.path
 import threading
@@ -116,7 +120,7 @@ class CreateWorkAreaException(WMException):
 
 
 
-class CreateWorkArea:
+class CreateWorkArea(object):
     """
     Basic class for doing the JobMaker dirty work
 
@@ -311,7 +315,7 @@ class CreateWorkArea:
         Create a sub-directory to allow storage of large jobs
         """
 
-        value = jobCounter/1000
+        value = old_div(jobCounter,1000)
         jobCollDir = '%s/JobCollection_%i_%i' % (taskDir, self.jobGroup.id, value)
         #Set this to a global variable
         self.collectionDir = jobCollDir

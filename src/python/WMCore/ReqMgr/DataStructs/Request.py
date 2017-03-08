@@ -16,6 +16,8 @@ TODO/NOTE:
 
 """
 from __future__ import print_function, division
+from builtins import range
+from builtins import object
 import time
 import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
@@ -81,7 +83,7 @@ def initialize_resubmission(request_args, config, reqmgr_db_service):
     request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host,
                                                          config.couch_reqmgr_db)
     requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    resubmission_args = requests.values()[0]
+    resubmission_args = list(requests.values())[0]
     for arg in resubmission_args:
         if (arg not in request_args) and (arg not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST):
             request_args[arg] = resubmission_args[arg]
@@ -152,7 +154,7 @@ class RequestInfo(object):
             return list(result)
         else:
             if isinstance(defaultValue, dict):
-                return defaultValue.values()
+                return list(defaultValue.values())
             else:
                 return defaultValue
             
@@ -182,7 +184,7 @@ class RequestInfo(object):
         If this request's RequestStatus is either "running-closed", "completed",
         return True, otherwise False
         """
-        for key, value in filterDict.iteritems():
+        for key, value in filterDict.items():
             if key in self.data:
                 if self.data[key] not in value:
                     return False

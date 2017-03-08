@@ -24,7 +24,7 @@ class ListSites(DBFormatter):
         else:
             format = []
             for i in results[0].fetchall():
-                format.append(i.values()[0])
+                format.append(list(i.values())[0])
             return format
 
 

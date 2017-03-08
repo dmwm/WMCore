@@ -15,12 +15,14 @@ too, however, only id, rev, and _deleted flag, everything else is wiped.
 """
 from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
 couch_host = "https://cmsweb.cern.ch"
 couch_uri = "couchdb/reqmgr_workload_cache"
 
 import sys
 import os
-import httplib
+import http.client
 import json
 
 
@@ -37,7 +39,7 @@ def main():
 
     key_file = os.getenv("X509_USER_KEY", None) or "/tmp/x509up_u%s" % os.getuid()
     cert_file = os.getenv("X509_USER_CERT", None) or "/tmp/x509up_u%s" % os.getuid()
-    conn = httplib.HTTPSConnection(couch_host, key_file=key_file, cert_file=cert_file)
+    conn = http.client.HTTPSConnection(couch_host, key_file=key_file, cert_file=cert_file)
     input_file = sys.argv[1]
     f = open(input_file, 'r')
     # have to specify the documents revision, otherwise getting:

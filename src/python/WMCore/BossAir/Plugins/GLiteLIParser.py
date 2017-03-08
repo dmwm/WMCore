@@ -1,7 +1,9 @@
+from builtins import str
+from builtins import object
 import os
 import re
 
-class LoggingInfoParser:
+class LoggingInfoParser(object):
     #Non capturing group: (?: )
     #Error messages can contain \n (that's why I used lookahead (?=-))
     sregExps = [

@@ -4,10 +4,14 @@ _ReportEmu_
 
 Class for creating bogus framework job reports.
 """
+from __future__ import division
 
 
 
 
+from builtins import str
+from builtins import object
+from past.utils import old_div
 import os.path
 
 from WMCore.Services.UUIDLib import makeUUID
@@ -73,7 +77,7 @@ class ReportEmu(object):
         else:
             outputTotalEvents = totalEvents
 
-        outputSize = int(totalSize * ((outputTotalEvents * 1.0) / (totalEvents * 1.0)))
+        outputSize = int(totalSize * (old_div((outputTotalEvents * 1.0), (totalEvents * 1.0))))
         return (outputSize, outputTotalEvents)
 
     def addOutputFilesToReport(self, report):

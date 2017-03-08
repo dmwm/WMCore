@@ -3,6 +3,7 @@ Module encapsulates agent-related tests, e.g. CPU, memory utilisation
 of agent's components, etc.
 
 """
+from __future__ import division
 
 # TODO
 # Should consider ProcessDetail and Measurement occupying a common
@@ -12,6 +13,8 @@ of agent's components, etc.
 # be ensured automatically
 
 
+from builtins import zip
+from past.utils import old_div
 import os
 import logging
 from xml.etree.ElementTree import ElementTree
@@ -98,10 +101,10 @@ class ComponentsPoller(PeriodPoller):
         and Measurements classes.
 
         """
-        self.numOfMeasurements = round(self.config.period / self.config.pollInterval, 0)
+        self.numOfMeasurements = round(old_div(self.config.period, self.config.pollInterval), 0)
         # list of pairs (componentPID, componentName)
         componentsInfo = self._getComponentsInfo()
-        for compName, compPID in componentsInfo.items():
+        for compName, compPID in list(componentsInfo.items()):
             self._setUpProcessDetailAndMeasurements(compPID, compName)
 
 
@@ -154,7 +157,7 @@ class ComponentsPoller(PeriodPoller):
 
         if len(componentsInfo) > 0:
             logging.info("Some new components appeared since last check ...")
-            for compName, compPID in componentsInfo.items():
+            for compName, compPID in list(componentsInfo.items()):
                 self._setUpProcessDetailAndMeasurements(compPID, compName)
 
 

@@ -50,11 +50,9 @@ class EventBased(JobFactory):
                 couchDB = kwargs.get('couchDB')
                 filesetName = kwargs.get('filesetName')
                 collectionName = kwargs.get('collectionName')
-                owner = kwargs.get('owner')
-                group = kwargs.get('group')
                 logging.info('Creating jobs for ACDC fileset %s', filesetName)
                 dcs = DataCollectionService(couchURL, couchDB)
-                acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName, owner, group)
+                acdcFileList = dcs.getProductionACDCInfo(collectionName, filesetName)
             except Exception as ex:
                 msg = "Exception while trying to load goodRunList\n"
                 msg += "Refusing to create any jobs.\n"

@@ -18,6 +18,7 @@ from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMConnectionBase import WMConnectionBase
 from WMCore.Lexicon import sanitizeURL
 from WMCore.JobStateMachine.SummaryDB import updateSummaryDB
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 
 CMSSTEP = re.compile(r'^cmsRun[0-9]+$')
 
@@ -53,10 +54,18 @@ def discardConflictingDocument(couchDbInstance, data, result):
 
         return retval
     except CouchError as ex:
-        logging.error("Couldn't resolve conflict when updating document with id %s" % result["id"])
-        logging.error("Error: %s" % str(ex))
+        logging.error("Couldn't resolve conflict when updating document with id %s", result["id"])
+        logging.error("Error: %s", str(ex))
         return result
 
+def getDataFromSpecFile(specFile):
+    workload = WMWorkloadHelper()
+    workload.load(specFile)
+    campaign = workload.getCampaign()
+    result = {"Campaign": campaign}
+    for task in workload.taskIterator():
+        result[task.getPathName()] = task.getPrepID()
+    return result
 
 class ChangeState(WMObject, WMConnectionBase):
     """
@@ -82,8 +91,7 @@ class ChangeState(WMObject, WMConnectionBase):
         try:
             self.dashboardReporter = DashboardReporter(config)
         except Exception as ex:
-            logging.error("Error setting up the \
--                          dashboard reporter: %s" % str(ex))
+            logging.error("Error setting up the dashboard reporter: %s", str(ex))
             raise
 
         self.getCouchDAO = self.daofactory("Jobs.GetCouchID")
@@ -92,8 +100,10 @@ class ChangeState(WMObject, WMConnectionBase):
         self.workflowTaskDAO = self.daofactory("Jobs.GetWorkflowTask")
         self.jobTypeDAO = self.daofactory("Jobs.GetType")
         self.updateLocationDAO = self.daofactory("Jobs.UpdateLocation")
+        self.getWorkflowSpecDAO = self.daofactory("Workflow.GetSpecAndNameFromTask")
 
         self.maxUploadedInputFiles = getattr(self.config.JobStateMachine, 'maxFWJRInputFiles', 1000)
+        self.workloadCache = {}
         return
 
     def _connectDatabases(self):
@@ -104,7 +114,7 @@ class ChangeState(WMObject, WMConnectionBase):
             try:
                 self.jobsdatabase = self.couchdb.connectDatabase("%s/jobs" % self.dbname, size = 250)
             except Exception as ex:
-                logging.error("Error connecting to couch db '%s/jobs': %s" % (self.dbname, str(ex)))
+                logging.error("Error connecting to couch db '%s/jobs': %s", self.dbname, str(ex))
                 self.jobsdatabase = None
                 return False
 
@@ -163,7 +173,7 @@ class ChangeState(WMObject, WMConnectionBase):
         try:
             self.reportToDashboard(jobs, newstate, oldstate)
         except Exception as ex:
-            logging.error("Error reporting to the dashboard: %s" % str(ex))
+            logging.error("Error reporting to the dashboard: %s", str(ex))
             logging.error(traceback.format_exc())
 
         # 5. Document the state transition in couch
@@ -174,7 +184,7 @@ class ChangeState(WMObject, WMConnectionBase):
             logging.exception(msg)
             raise
         except Exception as ex:
-            logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error("Error updating job in couch: %s", str(ex))
             logging.error(traceback.format_exc())
 
         return
@@ -303,10 +313,15 @@ class ChangeState(WMObject, WMConnectionBase):
                                                                                     job["location"],
                                                                                     timestamp)
                 self.jsumdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
-                logging.debug("Updated job summary state history for job %s" % jobSummaryId)
+                logging.debug("Updated job summary state history for job %s", jobSummaryId)
 
             if job.get("fwjr", None):
-
+                
+                cachedByWorkflow = self.workloadCache.setdefault(job['workflow'], 
+                                            getDataFromSpecFile(
+                                             self.getWorkflowSpecDAO.execute(job['task'])[job['task']]['spec']))
+                job['fwjr'].setCampaign(cachedByWorkflow.get('Campaign', ''))
+                job['fwjr'].setPrepID(cachedByWorkflow.get(job['task'], ''))
                 # If there are too many input files, strip them out
                 # of the FWJR, as they should already
                 # be in the database
@@ -353,7 +368,7 @@ class ChangeState(WMObject, WMConnectionBase):
                 if (job["retry_count"] > 0) or (newstate != 'success'):
                     jobSummaryId = job["name"]
                     # building a summary of fwjr
-                    logging.debug("Pushing job summary for job %s" % jobSummaryId)
+                    logging.debug("Pushing job summary for job %s", jobSummaryId)
                     errmsgs = {}
                     inputs = []
                     if "steps" in fwjrDocument["fwjr"]:
@@ -591,5 +606,5 @@ class ChangeState(WMObject, WMConnectionBase):
                 updateUri += "?location=%s" % (location)
                 self.jobsdatabase.makeRequest(uri = updateUri, type = "PUT", decode = False)
         except Exception as ex:
-            logging.error("Error updating job in couch: %s" % str(ex))
+            logging.error("Error updating job in couch: %s", str(ex))
             logging.error(traceback.format_exc())

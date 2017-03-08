@@ -421,9 +421,7 @@ class WorkQueue(WorkQueueBase):
             fileLists = acdc.getChunkFiles(acdcInfo['collection'],
                                            acdcInfo['fileset'],
                                            splitedBlockName['Offset'],
-                                           splitedBlockName['NumOfFiles'],
-                                           user=wmspec.getOwner().get("name"),
-                                           group=wmspec.getOwner().get("group"))
+                                           splitedBlockName['NumOfFiles'])
 
             block = {}
             block["Files"] = fileLists

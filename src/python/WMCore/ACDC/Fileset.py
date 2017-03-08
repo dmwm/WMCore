@@ -19,8 +19,6 @@ class Fileset(dict, WMObject):
         self.setdefault("name", None)
         self.setdefault("files", {})
         self.update(options)
-
-        self.owner      = None
         self.collection = None
 
     def setCollection(self, collection):
@@ -31,7 +29,6 @@ class Fileset(dict, WMObject):
         """
         self.collectionName = collection["name"]
         self.collectionType = collection["type"]
-        self.owner = collection.owner
         return
 
     def create(self):

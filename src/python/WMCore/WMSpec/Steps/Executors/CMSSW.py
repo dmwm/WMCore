@@ -267,10 +267,12 @@ class CMSSW(Executor):
         inputPath = self.task.getInputDatasetPath()
         globalTag = typeHelper.getGlobalTag()
         prepID = self.task.getPrepID()
+        campaign = self.workload.getCampaign()
         cacheUrl, cacheDB, configID = stepHelper.getConfigInfo()
 
         self.report.setValidStatus(validStatus=validStatus)
         self.report.setGlobalTag(globalTag=globalTag)
+        self.report.setCampaign(campaign)
         self.report.setPrepID(prepID)
         self.report.setInputDataset(inputPath=inputPath)
         self.report.setAcquisitionProcessing(acquisitionEra=acquisitionEra,

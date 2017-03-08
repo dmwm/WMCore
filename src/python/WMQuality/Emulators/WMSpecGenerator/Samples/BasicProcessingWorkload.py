@@ -4,8 +4,6 @@ _Tier1ReRecoWorkload_
 """
 
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
 
 #  //
 # // Set up the basic workload task and step structure
@@ -15,7 +13,8 @@ def createWorkload(name="BasicProcessing"):
     workload.setOwner("DMWMTest")
     workload.setStartPolicy('DatasetBlock')
     workload.setEndPolicy('SingleShot')
-
+    workload.setCampaign("TestCampaign")
+    workload.setPrepID("TestPrepID")
     #  //
     # // set up the production task
     #//
@@ -28,7 +27,7 @@ def createWorkload(name="BasicProcessing"):
     skimLogArch = rerecoCmssw.addStep("logArch1")
     skimLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
-    rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
+    rereco.setSplittingAlgorithm("FileBased", files_per_job=1)
     rereco.addInputDataset(
         primary = "Cosmics",
         processed = "CRAFT09-PromptReco-v1",
@@ -46,17 +45,17 @@ def createWorkload(name="BasicProcessing"):
 
     rerecoCmsswHelper.cmsswSetup(
         "CMSSW_3_1_2",
-        softwareEnvironment = " . /uscmst1/prod/sw/cms/bashrc prod"
+        softwareEnvironment=" . /uscmst1/prod/sw/cms/bashrc prod"
         )
 
     rerecoCmsswHelper.setDataProcessingConfig(
-        "cosmics", "promptReco", globalTag = "GLOBAL::BALLS",
-        writeTiers = ['RECO'])
+        "cosmics", "promptReco", globalTag="GLOBAL::BALLS",
+        writeTiers=['RECO'])
 
     rerecoCmsswHelper.addOutputModule(
-        "outputRECO", primaryDataset = "Primary",
-        processedDataset = "Processed",
-        dataTier = "RECO")
+        "outputRECO", primaryDataset="Primary",
+        processedDataset="Processed",
+        dataTier="RECO")
 
     #Add a stageOut step
     skimStageOutHelper = skimStageOut.getTypeHelper()

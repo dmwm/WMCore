@@ -219,7 +219,9 @@ class Report:
         jsonReport["steps"] = {}
         jsonReport["skippedFiles"] = self.getAllSkippedFiles()
         jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
-
+        jsonReport["Campaign"] = self.getCampaign()
+        jsonReport["PrepID"] = self.getPrepID()
+        
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
             jsonStep = {}
@@ -1291,7 +1293,22 @@ class Report:
             f.globalTag = globalTag
 
         return
+    
+    def setCampaign(self, campaign):
+        """
+        _setCampaign_
+        Set the campaign for the report
+        """
+        self.data.campaign = campaign
+        return
 
+    def getCampaign(self):
+        """
+        _getCampaign_
+        Return the campaign
+        """
+        return getattr(self.data, 'campaign', "")
+    
     def setPrepID(self, prep_id):
         """
         _setGlobalTag_
@@ -1306,7 +1323,16 @@ class Report:
         for f in fileRefs:
             f.prep_id = prep_id
 
+        self.data.prep_id = prep_id
         return
+
+    def getPrepID(self):
+        """
+         _getPrepID_
+ 
+         Return the PrepID
+        """
+        return getattr(self.data, 'prep_id', "")
 
     def setConfigURL(self, configURL):
         """

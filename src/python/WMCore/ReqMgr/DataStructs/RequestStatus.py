@@ -18,8 +18,6 @@ REQUEST_STATE_TRANSITION = {
                  "failed"],
 
     "acquired": ["running-open",
-                 "completed",
-                 "acquired",
                  "aborted"],
 
     "running-open": ["running-closed",
@@ -35,8 +33,7 @@ REQUEST_STATE_TRANSITION = {
     "failed": ["rejected",  # manual transition
                "assigned"],  # manual transition
 
-    "completed": ["completed",
-                  "closed-out",
+    "completed": ["closed-out",
                   "rejected"],  # manual transition
 
     "closed-out": ["announced", "rejected"],  # manual transition
@@ -122,7 +119,7 @@ STATES_ALLOW_ONLY_STATE_TRANSITION = [key for key, val in ALLOWED_ACTIONS_FOR_ST
 REQUEST_STATE_LIST = REQUEST_STATE_TRANSITION.keys()
 
 ACTIVE_STATUS_FILTER = {"RequestStatus": ['assigned', 'acquired', 'running-open',
-                                          'running-closed', 'force-complete', 'completed', 
+                                          'running-closed', 'force-complete', 'completed',
                                           'closed-out']}
 ACTIVE_NO_CLOSEOUT_FILTER = {"RequestStatus": ['assigned', 'acquired', 'running-open',
                                           'running-closed', 'force-complete', 'completed']}

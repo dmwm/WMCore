@@ -275,7 +275,7 @@ class Scram(object):
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
-                                )
+                               )
 
         # Passing the environment in to the subprocess call results in all of
         # the variables being quoted which causes problems for search paths.

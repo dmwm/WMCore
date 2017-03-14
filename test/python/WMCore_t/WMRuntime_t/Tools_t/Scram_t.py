@@ -9,8 +9,10 @@ Copyright (c) 2012 evansde77. All rights reserved.
 
 import unittest
 import os
+import tempfile
 from WMQuality.TestInit import TestInit
-from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS
+from Utils.TemporaryEnvironment import tmpEnv
+from WMCore.WMRuntime.Tools.Scram import Scram, OS_TO_ARCH, ARCH_TO_OS, getSingleScramArch
 
 
 class Scram_t(unittest.TestCase):
@@ -18,6 +20,7 @@ class Scram_t(unittest.TestCase):
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
         self.testDir = self.testInit.generateWorkDir()
+        self.oldCwd = os.getcwd()
 
     def tearDown(self):
         self.testInit.delWorkDir()
@@ -101,6 +104,42 @@ class Scram_t(unittest.TestCase):
         self.assertItemsEqual(OS_TO_ARCH['rhel7'], ['slc7'])
         self.assertItemsEqual(ARCH_TO_OS['slc6'], ['rhel6'])
         self.assertItemsEqual(ARCH_TO_OS['slc7'], ['rhel7'])
+
+    def testScramArchParsing(self):
+        """
+        Test the various modes of parsing for the scram arch
+        """
+        try:
+            os.chdir(self.testDir)
+            with tempfile.NamedTemporaryFile() as tf:
+                tf.write('GLIDEIN_REQUIRED_OS = "rhel6" \n')
+                tf.write('Memory = 2048\n')
+                tf.flush()
+                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
+                    self.assertEquals(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEquals(getSingleScramArch('slc5_blah_blah'), 'slc5_blah_blah')
+                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                                      'slc6_blah_blah')
+                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']),
+                                      'slc6_blah_blah')
+                    self.assertEquals(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
+            with tempfile.NamedTemporaryFile() as tf:
+                tf.write('GLIDEIN_REQUIRED_OS = "rhel7" \n')
+                tf.write('Memory = 2048\n')
+                tf.flush()
+                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
+                    self.assertEquals(getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEquals(getSingleScramArch('slc7_blah_blah'), 'slc7_blah_blah')
+                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                                      'slc7_blah_blah')
+                    self.assertEquals(getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']), None)
+                    self.assertEquals(getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']),
+                                      'slc7_blah_blah')
+        except Exception:
+            raise
+        finally:
+            os.chdir(self.oldCwd)
+        return
 
 
 if __name__ == '__main__':

@@ -376,7 +376,7 @@ class ReqMgrService(TemplatedPage):
             kwds.update({'status': 'new'})
         kwds.update({'_nostale': True})
         docs = []
-        attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus']
+        attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus', 'Campaign']
         dataResult = self.reqmgr.getRequestByStatus(statusList=[kwds['status']])
         for data in dataResult:
             for val in data.values():

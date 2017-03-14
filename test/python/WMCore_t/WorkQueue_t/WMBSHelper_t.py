@@ -9,6 +9,7 @@ import os
 import threading
 import unittest
 
+from WMCore.WMBase import getTestBase
 from WMCore.BossAir.BossAirAPI import BossAirAPI
 from WMCore.Configuration import loadConfigurationFile
 from WMCore.DAOFactory import DAOFactory
@@ -38,11 +39,13 @@ mcArgs = getMCArgs()
 BLOCK1 = '03fe83c2-0c23-11e1-b764-003048caaace'
 BLOCK2 = '04be2fcc-0b8f-11e1-b764-003048caaace'
 
+
 def getFirstTask(wmspec):
     """Return the 1st top level task"""
     # http://www.logilab.org/ticket/8774
     # pylint: disable=E1101,E1103
     return next(wmspec.taskIterator())
+
 
 class WMBSHelperTest(EmulatedUnitTestCase):
     def setUp(self):
@@ -59,11 +62,11 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.testInit.setupCouch("wmbshelper_t/fwjrs", "FWJRDump")
         self.testInit.setupCouch("config_test", "GroupUser", "ConfigCache")
         os.environ["COUCHDB"] = "wmbshelper_t"
-        self.testInit.setSchema(customModules = ["WMCore.WMBS",
-                                                 "WMComponent.DBS3Buffer",
-                                                 "WMCore.BossAir",
-                                                 "WMCore.ResourceControl"],
-                                useDefault = False)
+        self.testInit.setSchema(customModules=["WMCore.WMBS",
+                                               "WMComponent.DBS3Buffer",
+                                               "WMCore.BossAir",
+                                               "WMCore.ResourceControl"],
+                                useDefault=False)
 
         self.workDir = self.testInit.generateWorkDir()
 
@@ -72,9 +75,19 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.inputDataset = self.topLevelTask.inputDataset()
         self.dataset = self.topLevelTask.getInputDatasetPath()
         self.dbs = DBSReader(self.inputDataset.dbsurl)
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = threading.currentThread().logger,
-                                     dbinterface = threading.currentThread().dbi)
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=threading.currentThread().logger,
+                                     dbinterface=threading.currentThread().dbi)
+
+        self.configFile = EmulatorSetup.setupWMAgentConfig()
+        self.config = loadConfigurationFile(self.configFile)
+
+        self.config.component_("JobSubmitter")
+        self.config.JobSubmitter.submitDir = self.workDir
+        self.config.JobSubmitter.submitScript = os.path.join(getTestBase(),
+                                                             'WMComponent_t/JobSubmitter_t',
+                                                             'submit.sh')
+
         return
 
     def tearDown(self):
@@ -86,12 +99,12 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
-
+        EmulatorSetup.deleteConfig(self.configFile)
         super(WMBSHelperTest, self).tearDown()
 
         return
 
-    def setupForKillTest(self, baAPI = None):
+    def setupForKillTest(self, baAPI=None):
         """
         _setupForKillTest_
 
@@ -101,28 +114,28 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         for each subscription in various states.
         """
         myThread = threading.currentThread()
-        daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                logger = myThread.logger,
-                                dbinterface = myThread.dbi)
+        daoFactory = DAOFactory(package="WMCore.WMBS",
+                                logger=myThread.logger,
+                                dbinterface=myThread.dbi)
 
-        dummyLocationAction = daoFactory(classname = "Locations.New")
-        changeStateAction = daoFactory(classname = "Jobs.ChangeState")
+        dummyLocationAction = daoFactory(classname="Locations.New")
+        changeStateAction = daoFactory(classname="Jobs.ChangeState")
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
-                                   ceName = 'site1', plugin = "TestPlugin")
-        resourceControl.insertThreshold(siteName = 'site1', taskType = 'Processing', \
-                                        maxSlots = 10000, pendingSlots = 10000)
+        resourceControl.insertSite(siteName='site1', pnn='goodse.cern.ch',
+                                   ceName='site1', plugin="TestPlugin")
+        resourceControl.insertThreshold(siteName='site1', taskType='Processing', \
+                                        maxSlots=10000, pendingSlots=10000)
 
-        userDN     = 'someDN'
-        userAction = daoFactory(classname = "Users.New")
-        userAction.execute(dn = userDN, group_name = 'DEFAULT', role_name = 'DEFAULT')
+        userDN = 'someDN'
+        userAction = daoFactory(classname="Users.New")
+        userAction.execute(dn=userDN, group_name='DEFAULT', role_name='DEFAULT')
 
         inputFileset = Fileset("input")
         inputFileset.create()
 
-        inputFileA = File("lfnA", locations = "goodse.cern.ch")
-        inputFileB = File("lfnB", locations = "goodse.cern.ch")
-        inputFileC = File("lfnC", locations = "goodse.cern.ch")
+        inputFileA = File("lfnA", locations="goodse.cern.ch")
+        inputFileB = File("lfnB", locations="goodse.cern.ch")
+        inputFileC = File("lfnC", locations="goodse.cern.ch")
         inputFileA.create()
         inputFileB.create()
         inputFileC.create()
@@ -135,9 +148,9 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         unmergedOutputFileset = Fileset("unmerged")
         unmergedOutputFileset.create()
 
-        unmergedFileA = File("ulfnA", locations = "goodse.cern.ch")
-        unmergedFileB = File("ulfnB", locations = "goodse.cern.ch")
-        unmergedFileC = File("ulfnC", locations = "goodse.cern.ch")
+        unmergedFileA = File("ulfnA", locations="goodse.cern.ch")
+        unmergedFileB = File("ulfnB", locations="goodse.cern.ch")
+        unmergedFileC = File("ulfnC", locations="goodse.cern.ch")
         unmergedFileA.create()
         unmergedFileB.create()
         unmergedFileC.create()
@@ -147,76 +160,76 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         unmergedOutputFileset.addFile(unmergedFileC)
         unmergedOutputFileset.commit()
 
-        mainProcWorkflow = Workflow(spec = "spec1", owner = "Steve",
-                                    name = "Main", task = "Proc")
+        mainProcWorkflow = Workflow(spec="spec1", owner="Steve",
+                                    name="Main", task="Proc")
         mainProcWorkflow.create()
-        mainProcMergeWorkflow = Workflow(spec = "spec1", owner = "Steve",
-                                         name = "Main", task = "ProcMerge")
+        mainProcMergeWorkflow = Workflow(spec="spec1", owner="Steve",
+                                         name="Main", task="ProcMerge")
         mainProcMergeWorkflow.create()
-        mainCleanupWorkflow = Workflow(spec = "spec1", owner = "Steve",
-                                       name = "Main", task = "Cleanup")
+        mainCleanupWorkflow = Workflow(spec="spec1", owner="Steve",
+                                       name="Main", task="Cleanup")
         mainCleanupWorkflow.create()
 
-        self.mainProcSub = Subscription(fileset = inputFileset,
-                                        workflow = mainProcWorkflow,
-                                        type = "Processing")
+        self.mainProcSub = Subscription(fileset=inputFileset,
+                                        workflow=mainProcWorkflow,
+                                        type="Processing")
         self.mainProcSub.create()
         self.mainProcSub.acquireFiles(inputFileA)
         self.mainProcSub.completeFiles(inputFileB)
 
-        procJobGroup = JobGroup(subscription = self.mainProcSub)
+        procJobGroup = JobGroup(subscription=self.mainProcSub)
         procJobGroup.create()
-        self.procJobA = Job(name = "ProcJobA")
+        self.procJobA = Job(name="ProcJobA")
         self.procJobA["state"] = "new"
         self.procJobA["location"] = "site1"
-        self.procJobB = Job(name = "ProcJobB")
+        self.procJobB = Job(name="ProcJobB")
         self.procJobB["state"] = "executing"
         self.procJobB["location"] = "site1"
-        self.procJobC = Job(name = "ProcJobC")
+        self.procJobC = Job(name="ProcJobC")
         self.procJobC["state"] = "complete"
         self.procJobC["location"] = "site1"
         self.procJobA.create(procJobGroup)
         self.procJobB.create(procJobGroup)
         self.procJobC.create(procJobGroup)
 
-        self.mainMergeSub = Subscription(fileset = unmergedOutputFileset,
-                                         workflow = mainProcMergeWorkflow,
-                                         type = "Merge")
+        self.mainMergeSub = Subscription(fileset=unmergedOutputFileset,
+                                         workflow=mainProcMergeWorkflow,
+                                         type="Merge")
         self.mainMergeSub.create()
         self.mainMergeSub.acquireFiles(unmergedFileA)
         self.mainMergeSub.failFiles(unmergedFileB)
 
-        mergeJobGroup = JobGroup(subscription = self.mainMergeSub)
+        mergeJobGroup = JobGroup(subscription=self.mainMergeSub)
         mergeJobGroup.create()
-        self.mergeJobA = Job(name = "MergeJobA")
+        self.mergeJobA = Job(name="MergeJobA")
         self.mergeJobA["state"] = "exhausted"
         self.mergeJobA["location"] = "site1"
-        self.mergeJobB = Job(name = "MergeJobB")
+        self.mergeJobB = Job(name="MergeJobB")
         self.mergeJobB["state"] = "cleanout"
         self.mergeJobB["location"] = "site1"
-        self.mergeJobC = Job(name = "MergeJobC")
+        self.mergeJobC = Job(name="MergeJobC")
         self.mergeJobC["state"] = "new"
         self.mergeJobC["location"] = "site1"
         self.mergeJobA.create(mergeJobGroup)
         self.mergeJobB.create(mergeJobGroup)
         self.mergeJobC.create(mergeJobGroup)
 
-        self.mainCleanupSub = Subscription(fileset = unmergedOutputFileset,
-                                           workflow = mainCleanupWorkflow,
-                                           type = "Cleanup")
+        self.mainCleanupSub = Subscription(fileset=unmergedOutputFileset,
+                                           workflow=mainCleanupWorkflow,
+                                           type="Cleanup")
         self.mainCleanupSub.create()
         self.mainCleanupSub.acquireFiles(unmergedFileA)
         self.mainCleanupSub.completeFiles(unmergedFileB)
 
-        cleanupJobGroup = JobGroup(subscription = self.mainCleanupSub)
+        cleanupJobGroup = JobGroup(subscription=self.mainCleanupSub)
         cleanupJobGroup.create()
-        self.cleanupJobA = Job(name = "CleanupJobA")
+        self.cleanupJobA = Job(name="CleanupJobA")
         self.cleanupJobA["state"] = "new"
         self.cleanupJobA["location"] = "site1"
-        self.cleanupJobB = Job(name = "CleanupJobB")
+        self.cleanupJobB = Job(name="CleanupJobB")
         self.cleanupJobB["state"] = "executing"
         self.cleanupJobB["location"] = "site1"
-        self.cleanupJobC = Job(name = "CleanupJobC")
+        self.cleanupJobC = Job(name="CleanupJobC")
         self.cleanupJobC["state"] = "complete"
         self.cleanupJobC["location"] = "site1"
         self.cleanupJobA.create(cleanupJobGroup)
@@ -234,26 +247,26 @@ class WMBSHelperTest(EmulatedUnitTestCase):
                 job['plugin'] = 'TestPlugin'
                 job['userdn'] = userDN
                 job['usergroup'] = 'DEFAULT'
-                job['userrole']  = 'DEFAULT'
+                job['userrole'] = 'DEFAULT'
                 job['custom']['location'] = 'site1'
-            baAPI.createNewJobs(wmbsJobs = jobList)
+            baAPI.createNewJobs(wmbsJobs=jobList)
 
         # We'll create an unrelated workflow to verify that it isn't affected
         # by the killing code.
         bogusFileset = Fileset("dontkillme")
         bogusFileset.create()
 
-        bogusFileA = File("bogus/lfnA", locations = "goodse.cern.ch")
+        bogusFileA = File("bogus/lfnA", locations="goodse.cern.ch")
         bogusFileA.create()
         bogusFileset.addFile(bogusFileA)
         bogusFileset.commit()
 
-        bogusWorkflow = Workflow(spec = "spec2", owner = "Steve",
-                                 name = "Bogus", task = "Proc")
+        bogusWorkflow = Workflow(spec="spec2", owner="Steve",
+                                 name="Bogus", task="Proc")
         bogusWorkflow.create()
-        self.bogusSub = Subscription(fileset = bogusFileset,
-                                     workflow = bogusWorkflow,
-                                     type = "Processing")
+        self.bogusSub = Subscription(fileset=bogusFileset,
+                                     workflow=bogusWorkflow,
+                                     type="Processing")
         self.bogusSub.create()
         self.bogusSub.acquireFiles(bogusFileA)
         return
@@ -285,7 +298,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         goldenLFNs = ["lfnA", "lfnB", "lfnC"]
         for completedFile in completedFiles:
             self.assertTrue(completedFile["lfn"] in goldenLFNs, \
-                          "Error: Extra completed file.")
+                            "Error: Extra completed file.")
             goldenLFNs.remove(completedFile["lfn"])
 
         self.assertEqual(len(failedFiles), 0, \
@@ -314,7 +327,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         goldenLFNs = ["ulfnA", "ulfnC"]
         for completedFile in completedFiles:
             self.assertTrue(completedFile["lfn"] in goldenLFNs, \
-                          "Error: Extra complete file.")
+                            "Error: Extra complete file.")
             goldenLFNs.remove(completedFile["lfn"])
 
         self.assertEqual(len(goldenLFNs), 0, \
@@ -401,7 +414,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         procTask = testWorkload.newTask("ProcessingTask")
         procTask.setTaskType("Processing")
-        procTask.setSplittingAlgorithm("FileBased", files_per_job = 1)
+        procTask.setSplittingAlgorithm("FileBased", files_per_job=1)
         procTaskCMSSW = procTask.makeStep("cmsRun1")
         procTaskCMSSW.setStepType("CMSSW")
         procTaskCMSSWHelper = procTaskCMSSW.getTypeHelper()
@@ -411,18 +424,18 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         procTask.applyTemplates()
 
         procTaskCMSSWHelper.addOutputModule("OutputA",
-                                            primaryDataset = "bogusPrimary",
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DataTierA",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)
+                                            primaryDataset="bogusPrimary",
+                                            processedDataset="bogusProcessed",
+                                            dataTier="DataTierA",
+                                            lfnBase="bogusUnmerged",
+                                            mergedLFNBase="bogusMerged",
+                                            filterName=None)
 
         mergeTask = procTask.addTask("MergeTask")
-        mergeTask.setInputReference(procTaskCMSSW, outputModule = "OutputA")
+        mergeTask.setInputReference(procTaskCMSSW, outputModule="OutputA")
         mergeTask.setTaskType("Merge")
-        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", min_merge_size = 1,
-                                        max_merge_size = 2, max_merge_events = 3)
+        mergeTask.setSplittingAlgorithm("WMBSMergeBySize", min_merge_size=1,
+                                        max_merge_size=2, max_merge_events=3)
         mergeTaskCMSSW = mergeTask.makeStep("cmsRun1")
         mergeTaskCMSSW.setStepType("CMSSW")
         mergeTaskCMSSWHelper = mergeTaskCMSSW.getTypeHelper()
@@ -430,17 +443,17 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         mergeTask.applyTemplates()
 
         mergeTaskCMSSWHelper.addOutputModule("Merged",
-                                             primaryDataset = "bogusPrimary",
-                                             processedDataset = "bogusProcessed",
-                                             dataTier = "DataTierA",
-                                             lfnBase = "bogusUnmerged",
-                                             mergedLFNBase = "bogusMerged",
-                                             filterName = None)
+                                             primaryDataset="bogusPrimary",
+                                             processedDataset="bogusProcessed",
+                                             dataTier="DataTierA",
+                                             lfnBase="bogusUnmerged",
+                                             mergedLFNBase="bogusMerged",
+                                             filterName=None)
 
         cleanupTask = procTask.addTask("CleanupTask")
-        cleanupTask.setInputReference(procTaskCMSSW, outputModule = "OutputA")
+        cleanupTask.setInputReference(procTaskCMSSW, outputModule="OutputA")
         cleanupTask.setTaskType("Merge")
-        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job = 50)
+        cleanupTask.setSplittingAlgorithm("SiblingProcessingBased", files_per_job=50)
         cleanupTaskCMSSW = cleanupTask.makeStep("cmsRun1")
         cleanupTaskCMSSW.setStepType("CMSSW")
         dummyCleanupTaskCMSSWHelper = cleanupTaskCMSSW.getTypeHelper()
@@ -449,8 +462,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         skimTask = mergeTask.addTask("SkimTask")
         skimTask.setTaskType("Skim")
-        skimTask.setInputReference(mergeTaskCMSSW, outputModule = "Merged")
-        skimTask.setSplittingAlgorithm("FileBased", files_per_job = 1, include_parents = True)
+        skimTask.setInputReference(mergeTaskCMSSW, outputModule="Merged")
+        skimTask.setSplittingAlgorithm("FileBased", files_per_job=1, include_parents=True)
         skimTaskCMSSW = skimTask.makeStep("cmsRun1")
         skimTaskCMSSW.setStepType("CMSSW")
         skimTaskCMSSWHelper = skimTaskCMSSW.getTypeHelper()
@@ -458,20 +471,20 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         skimTask.applyTemplates()
 
         skimTaskCMSSWHelper.addOutputModule("SkimOutputA",
-                                            primaryDataset = "bogusPrimary",
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DataTierA",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)
+                                            primaryDataset="bogusPrimary",
+                                            processedDataset="bogusProcessed",
+                                            dataTier="DataTierA",
+                                            lfnBase="bogusUnmerged",
+                                            mergedLFNBase="bogusMerged",
+                                            filterName=None)
 
         skimTaskCMSSWHelper.addOutputModule("SkimOutputB",
-                                            primaryDataset = "bogusPrimary",
-                                            processedDataset = "bogusProcessed",
-                                            dataTier = "DataTierA",
-                                            lfnBase = "bogusUnmerged",
-                                            mergedLFNBase = "bogusMerged",
-                                            filterName = None)
+                                            primaryDataset="bogusPrimary",
+                                            processedDataset="bogusProcessed",
+                                            dataTier="DataTierA",
+                                            lfnBase="bogusUnmerged",
+                                            mergedLFNBase="bogusMerged",
+                                            filterName=None)
 
         return testWorkload
 
@@ -485,20 +498,20 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.siteDB = SiteDBJSON()
 
         # add sites that would normally be added by operator via resource_control
-        locationDAO = self.daoFactory(classname = "Locations.New")
+        locationDAO = self.daoFactory(classname="Locations.New")
         self.pnns = []
         for site in ['T2_XX_SiteA', 'T2_XX_SiteB']:
-            locationDAO.execute(siteName = site, pnn = self.siteDB.cmsNametoPhEDExNode(site)[0])
+            locationDAO.execute(siteName=site, pnn=self.siteDB.cmsNametoPhEDExNode(site)[0])
             self.pnns.append(self.siteDB.cmsNametoPhEDExNode(site)[0])
 
-    def createWMSpec(self, name = 'ReRecoWorkload'):
+    def createWMSpec(self, name='ReRecoWorkload'):
         factory = ReRecoWorkloadFactory()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
         wmspec = factory.factoryWorkloadConstruction(name, rerecoArgs)
         wmspec.setSpecUrl("/path/to/workload")
-        wmspec.setSubscriptionInformation(custodialSites = [],
-                                          nonCustodialSites = [], autoApproveSites = [],
-                                          priority = "Low", custodialSubType = "Move")
+        wmspec.setSubscriptionInformation(custodialSites=[],
+                                          nonCustodialSites=[], autoApproveSites=[],
+                                          priority="Low", custodialSubType="Move")
         return wmspec
 
     def createMCWMSpec(self, name='MonteCarloWorkload'):
@@ -514,21 +527,21 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         topLevelTask = getFirstTask(wmspec)
         inputDataset = topLevelTask.inputDataset()
         dbs = DBSReader(inputDataset.dbsurl)
-        #dbsDict = {self.inputDataset.dbsurl : self.dbs}
+        # dbsDict = {self.inputDataset.dbsurl : self.dbs}
         return dbs
 
-    def createWMBSHelperWithTopTask(self, wmspec, block, mask = None,
-                                    parentFlag = False, detail = False):
+    def createWMBSHelperWithTopTask(self, wmspec, block, mask=None,
+                                    parentFlag=False, detail=False):
 
         topLevelTask = getFirstTask(wmspec)
 
-        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath = self.workDir)
+        wmbs = WMBSHelper(wmspec, topLevelTask.name(), block, mask, cachepath=self.workDir)
         if block:
             if parentFlag:
                 block = self.dbs.getFileBlockWithParents(block)[block]
             else:
                 block = self.dbs.getFileBlock(block)[block]
-        sub, files = wmbs.createSubscriptionAndAddFiles(block = block)
+        sub, files = wmbs.createSubscriptionAndAddFiles(block=block)
         if detail:
             return wmbs, sub, files
         else:
@@ -540,22 +553,17 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         Verify that workflow killing works correctly.
         """
-        configFile = EmulatorSetup.setupWMAgentConfig()
-
-        config = loadConfigurationFile(configFile)
-
-        baAPI = BossAirAPI(config = config)
+        baAPI = BossAirAPI(config=self.config)
 
         # Create nine jobs
-        self.setupForKillTest(baAPI = baAPI)
+        self.setupForKillTest(baAPI=baAPI)
         self.assertEqual(len(baAPI._listRunJobs()), 9)
-        killWorkflow("Main", config, config)
+        killWorkflow("Main", self.config, self.config)
 
         self.verifyFileKillStatus()
         self.verifyJobKillStatus()
         self.assertEqual(len(baAPI._listRunJobs()), 8)
 
-        EmulatorSetup.deleteConfig(configFile)
         return
 
     def testCreateSubscription(self):
@@ -565,19 +573,19 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         Verify that the subscription creation code works correctly.
         """
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
-                                   ceName = 'site1', plugin = "TestPlugin")
-        resourceControl.insertSite(siteName = 'site2', pnn = 'goodse2.cern.ch',
-                                   ceName = 'site2', plugin = "TestPlugin")
+        resourceControl.insertSite(siteName='site1', pnn='goodse.cern.ch',
+                                   ceName='site1', plugin="TestPlugin")
+        resourceControl.insertSite(siteName='site2', pnn='goodse2.cern.ch',
+                                   ceName='site2', plugin="TestPlugin")
 
         testWorkload = self.createTestWMSpec()
         testTopLevelTask = getFirstTask(testWorkload)
-        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath = self.workDir)
+        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath=self.workDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testTopLevelTask, testWMBSHelper.topLevelFileset)
 
-        procWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/ProcessingTask")
+        procWorkflow = Workflow(name="TestWorkload",
+                                task="/TestWorkload/ProcessingTask")
         procWorkflow.load()
 
         self.assertEqual(procWorkflow.owner, "sfoulkes",
@@ -603,8 +611,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedProcOutput.name, "/TestWorkload/ProcessingTask/unmerged-OutputA",
                          "Error: Unmerged output fileset is wrong.")
 
-        mergeWorkflow = Workflow(name = "TestWorkload",
-                                 task = "/TestWorkload/ProcessingTask/MergeTask")
+        mergeWorkflow = Workflow(name="TestWorkload",
+                                 task="/TestWorkload/ProcessingTask/MergeTask")
         mergeWorkflow.load()
 
         self.assertEqual(mergeWorkflow.owner, "sfoulkes",
@@ -615,8 +623,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(len(mergeWorkflow.outputMap.keys()), 1,
                          "Error: Wrong number of WF outputs.")
 
-        cleanupWorkflow = Workflow(name = "TestWorkload",
-                                 task = "/TestWorkload/ProcessingTask/CleanupTask")
+        cleanupWorkflow = Workflow(name="TestWorkload",
+                                   task="/TestWorkload/ProcessingTask/CleanupTask")
         cleanupWorkflow.load()
 
         self.assertEqual(cleanupWorkflow.owner, "sfoulkes",
@@ -633,14 +641,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedMergeOutput.name, "/TestWorkload/ProcessingTask/MergeTask/merged-Merged",
                          "Error: Unmerged output fileset is wrong.")
 
-        skimWorkflow = Workflow(name = "TestWorkload",
-                                task = "/TestWorkload/ProcessingTask/MergeTask/SkimTask")
+        skimWorkflow = Workflow(name="TestWorkload",
+                                task="/TestWorkload/ProcessingTask/MergeTask/SkimTask")
         skimWorkflow.load()
 
         self.assertEqual(skimWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
-                                                        "WMSandbox", "WMWorkload.pkl"),
+                                                         "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
@@ -657,17 +665,19 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         self.assertEqual(mergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
                          "Error: Merged output fileset is wrong: %s" % mergedSkimOutputA.name)
-        self.assertEqual(unmergedSkimOutputA.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
+        self.assertEqual(unmergedSkimOutputA.name,
+                         "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputA",
                          "Error: Unmerged output fileset is wrong.")
         self.assertEqual(mergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
                          "Error: Merged output fileset is wrong.")
-        self.assertEqual(unmergedSkimOutputB.name, "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
+        self.assertEqual(unmergedSkimOutputB.name,
+                         "/TestWorkload/ProcessingTask/MergeTask/SkimTask/unmerged-SkimOutputB",
                          "Error: Unmerged output fileset is wrong.")
 
-        topLevelFileset = Fileset(name = "TestWorkload-ProcessingTask-SomeBlock")
+        topLevelFileset = Fileset(name="TestWorkload-ProcessingTask-SomeBlock")
         topLevelFileset.loadData()
 
-        procSubscription = Subscription(fileset = topLevelFileset, workflow = procWorkflow)
+        procSubscription = Subscription(fileset=topLevelFileset, workflow=procWorkflow)
         procSubscription.loadData()
 
         self.assertEqual(len(procSubscription.getWhiteBlackList()), 2,
@@ -685,7 +695,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(procSubscription["split_algo"], "FileBased",
                          "Error: Wrong split algo.")
 
-        mergeSubscription = Subscription(fileset = unmergedProcOutput, workflow = mergeWorkflow)
+        mergeSubscription = Subscription(fileset=unmergedProcOutput, workflow=mergeWorkflow)
         mergeSubscription.loadData()
 
         self.assertEqual(len(mergeSubscription.getWhiteBlackList()), 0,
@@ -696,7 +706,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
                          "Error: Wrong split algo.")
 
-        skimSubscription = Subscription(fileset = unmergedMergeOutput, workflow = skimWorkflow)
+        skimSubscription = Subscription(fileset=unmergedMergeOutput, workflow=skimWorkflow)
         skimSubscription.loadData()
 
         self.assertEqual(skimSubscription["type"], "Skim",
@@ -711,14 +721,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         """
         resourceControl = ResourceControl()
-        resourceControl.insertSite(siteName = 'site1', pnn = 'goodse.cern.ch',
-                                   ceName = 'site1', plugin = "TestPlugin")
-        resourceControl.insertSite(siteName = 'site2', pnn = 'goodse2.cern.ch',
-                                   ceName = 'site2', plugin = "TestPlugin")
+        resourceControl.insertSite(siteName='site1', pnn='goodse.cern.ch',
+                                   ceName='site1', plugin="TestPlugin")
+        resourceControl.insertSite(siteName='site2', pnn='goodse2.cern.ch',
+                                   ceName='site2', plugin="TestPlugin")
 
         testWorkload = self.createTestWMSpec()
         testTopLevelTask = getFirstTask(testWorkload)
-        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath = self.workDir)
+        testWMBSHelper = WMBSHelper(testWorkload, testTopLevelTask.name(), "SomeBlock", cachepath=self.workDir)
         testWMBSHelper.createTopLevelFileset()
         testWMBSHelper._createSubscriptionsInWMBS(testTopLevelTask, testWMBSHelper.topLevelFileset)
 
@@ -727,12 +737,12 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         # create  the subscription for multiple top task (MergeTask and CleanupTask for the same block)
         for task in testWorkload.getTopLevelTask():
-            testResubmitWMBSHelper = WMBSHelper(testWorkload, task.name(), "SomeBlock2", cachepath = self.workDir)
+            testResubmitWMBSHelper = WMBSHelper(testWorkload, task.name(), "SomeBlock2", cachepath=self.workDir)
             testResubmitWMBSHelper.createTopLevelFileset()
             testResubmitWMBSHelper._createSubscriptionsInWMBS(task, testResubmitWMBSHelper.topLevelFileset)
 
-        mergeWorkflow = Workflow(name = "ResubmitTestWorkload",
-                                 task = "/ResubmitTestWorkload/MergeTask")
+        mergeWorkflow = Workflow(name="ResubmitTestWorkload",
+                                 task="/ResubmitTestWorkload/MergeTask")
         mergeWorkflow.load()
 
         self.assertEqual(mergeWorkflow.owner, "sfoulkes",
@@ -749,14 +759,14 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedMergeOutput.name, "/ResubmitTestWorkload/MergeTask/merged-Merged",
                          "Error: Unmerged output fileset is wrong.")
 
-        skimWorkflow = Workflow(name = "ResubmitTestWorkload",
-                                task = "/ResubmitTestWorkload/MergeTask/SkimTask")
+        skimWorkflow = Workflow(name="ResubmitTestWorkload",
+                                task="/ResubmitTestWorkload/MergeTask/SkimTask")
         skimWorkflow.load()
 
         self.assertEqual(skimWorkflow.owner, "sfoulkes",
                          "Error: Wrong owner.")
         self.assertEqual(skimWorkflow.spec, os.path.join(self.workDir, skimWorkflow.name,
-                                                          "WMSandbox", "WMWorkload.pkl"),
+                                                         "WMSandbox", "WMWorkload.pkl"),
                          "Error: Wrong spec URL")
         self.assertEqual(len(skimWorkflow.outputMap.keys()), 2,
                          "Error: Wrong number of WF outputs.")
@@ -780,10 +790,10 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(unmergedSkimOutputB.name, "/ResubmitTestWorkload/MergeTask/SkimTask/unmerged-SkimOutputB",
                          "Error: Unmerged output fileset is wrong.")
 
-        topLevelFileset = Fileset(name = "ResubmitTestWorkload-MergeTask-SomeBlock2")
+        topLevelFileset = Fileset(name="ResubmitTestWorkload-MergeTask-SomeBlock2")
         topLevelFileset.loadData()
 
-        mergeSubscription = Subscription(fileset = topLevelFileset, workflow = mergeWorkflow)
+        mergeSubscription = Subscription(fileset=topLevelFileset, workflow=mergeWorkflow)
         mergeSubscription.loadData()
 
         self.assertEqual(len(mergeSubscription.getWhiteBlackList()), 0,
@@ -794,7 +804,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(mergeSubscription["split_algo"], "WMBSMergeBySize",
                          "Error: Wrong split algo.")
 
-        skimSubscription = Subscription(fileset = unmergedMergeOutput, workflow = skimWorkflow)
+        skimSubscription = Subscription(fileset=unmergedMergeOutput, workflow=skimWorkflow)
         skimSubscription.loadData()
 
         self.assertEqual(skimSubscription["type"], "Skim",
@@ -854,7 +864,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         dbsFiles = self.dbs.getFileBlock(block)[block]['Files']
         self.assertEqual(numOfFiles, len(dbsFiles))
         firstFileset = wmbs.topLevelFileset
-        wmbsDao = wmbs.daofactory(classname = "Files.InFileset")
+        wmbsDao = wmbs.daofactory(classname="Files.InFileset")
 
         numOfFiles = len(wmbsDao.execute(firstFileset.id))
         self.assertEqual(numOfFiles, len(dbsFiles))
@@ -870,7 +880,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(numOfFiles, 0)
         secondFileset = wmbs.topLevelFileset
 
-        wmbsDao = wmbs.daofactory(classname = "Files.InFileset")
+        wmbsDao = wmbs.daofactory(classname="Files.InFileset")
         numOfFiles = len(wmbsDao.execute(secondFileset.id))
         self.assertEqual(numOfFiles, len(dbsFiles))
 
@@ -903,8 +913,8 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         # now do a montecarlo workflow
         self.setupMCWMSpec()
-        mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,
-                    LastEvent = 999995, LastLumi = 12345, LastRun = 12)
+        mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
+                    LastEvent=999995, LastLumi=12345, LastRun=12)
 
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
         wmbs.topLevelFileset.loadData()
@@ -967,25 +977,25 @@ class WMBSHelperTest(EmulatedUnitTestCase):
 
         self.setupMCWMSpec()
 
-        mask = Mask(FirstRun = 12, FirstLumi = 1234, FirstEvent = 12345,
-                    LastEvent = 999995, LastLumi = 12345, LastRun = 12)
+        mask = Mask(FirstRun=12, FirstLumi=1234, FirstEvent=12345,
+                    LastEvent=999995, LastLumi=12345, LastRun=12)
 
         wmbs = self.createWMBSHelperWithTopTask(self.wmspec, None, mask)
         subscription = wmbs.topLevelSubscription
         self.assertEqual(1, subscription.exists())
         fileset = subscription['fileset']
         self.assertEqual(1, fileset.exists())
-        fileset.loadData() # need to refresh from database
+        fileset.loadData()  # need to refresh from database
 
         self.assertEqual(len(fileset.files), 1)
         self.assertEqual(len(fileset.parents), 0)
         self.assertFalse(fileset.open)
 
         firstFile = list(fileset.files)[0]
-        self.assertEqual(firstFile['events'], mask['LastEvent'] - mask['FirstEvent'] + 1) # inclusive range
-        self.assertEqual(firstFile['merged'], False) # merged files get added to dbs
+        self.assertEqual(firstFile['events'], mask['LastEvent'] - mask['FirstEvent'] + 1)  # inclusive range
+        self.assertEqual(firstFile['merged'], False)  # merged files get added to dbs
         self.assertEqual(len(firstFile['parents']), 0)
-        #firstFile.loadData()
+        # firstFile.loadData()
         self.assertEqual(sorted(firstFile['locations']), sorted(self.pnns))
         self.assertEqual(len(firstFile.getParentLFNs()), 0)
 
@@ -995,6 +1005,7 @@ class WMBSHelperTest(EmulatedUnitTestCase):
         self.assertEqual(run.lumis[0], mask['FirstLumi'])
         self.assertEqual(run.lumis[-1], mask['LastLumi'])
         self.assertEqual(len(run.lumis), mask['LastLumi'] - mask['FirstLumi'] + 1)
+
 
 if __name__ == '__main__':
     unittest.main()

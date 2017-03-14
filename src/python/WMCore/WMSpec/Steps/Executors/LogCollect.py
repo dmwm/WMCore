@@ -14,21 +14,15 @@ import tarfile
 import datetime
 import socket
 
+from Utils.IteratorTools import grouper
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-
 from WMCore.WMSpec.Steps.Executor import Executor
-
 from WMCore.Storage.StageOutMgr import StageOutMgr
 from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.DeleteMgr import DeleteMgr
-
 from WMCore.Storage.StageOutError import StageOutFailure
-
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
-
-from WMCore.WMRuntime.Tools.Scram import Scram
-
-from Utils.IteratorTools import grouper
+from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch
 
 
 class LogCollect(Executor):
@@ -61,6 +55,8 @@ class LogCollect(Executor):
         scramCommand = self.step.application.setup.scramCommand
         scramArch = self.step.application.setup.scramArch
         cmsswVersion = self.step.application.setup.cmsswVersion
+
+        scramArch = getSingleScramArch(scramArch)
 
         # Are we using emulators again?
         if (emulator != None):
@@ -270,7 +266,7 @@ class LogCollect(Executor):
         except Alarm:
             logging.error("Indefinite hang during stageOut of LogCollect to EOS")
         except Exception as ex:
-            logging.error("Unable to stageOut LogCollect to EOS:\n", ex)
+            logging.error("Unable to stageOut LogCollect to EOS: %s", ex)
         signal.alarm(0)
 
         # we got this far, delete input

@@ -32,20 +32,15 @@ class ReportTest(unittest.TestCase):
         self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.testInit.setupCouch("report_t/fwjrs", "FWJRDump")
 
-        self.xmlPath = os.path.join(getTestBase(),
-                                    "WMCore_t/FwkJobReport_t/CMSSWProcessingReport.xml")
-        self.badxmlPath = os.path.join(getTestBase(),
-                                       "WMCore_t/FwkJobReport_t/CMSSWFailReport2.xml")
-        self.skippedFilesxmlPath = os.path.join(getTestBase(),
-                                                "WMCore_t/FwkJobReport_t/CMSSWSkippedNonExistentFile.xml")
-        self.skippedAllFilesxmlPath = os.path.join(getTestBase(),
-                                                   "WMCore_t/FwkJobReport_t/CMSSWSkippedAll.xml")
-        self.fallbackXmlPath = os.path.join(getTestBase(),
-                                            "WMCore_t/FwkJobReport_t/CMSSWInputFallback.xml")
-        self.twoFileFallbackXmlPath = os.path.join(getTestBase(),
-                                                   "WMCore_t/FwkJobReport_t/CMSSWTwoFileRemote.xml")
-        self.pileupXmlPath = os.path.join(getTestBase(),
-                                          "WMCore_t/FwkJobReport_t/CMSSWPileup.xml")
+        testData = os.path.join(getTestBase(), "WMCore_t/FwkJobReport_t")
+        self.xmlPath = os.path.join(testData, "CMSSWProcessingReport.xml")
+        self.badxmlPath = os.path.join(testData, "CMSSWFailReport2.xml")
+        self.skippedFilesxmlPath = os.path.join(testData, "CMSSWSkippedNonExistentFile.xml")
+        self.skippedAllFilesxmlPath = os.path.join(testData, "CMSSWSkippedAll.xml")
+        self.fallbackXmlPath = os.path.join(testData, "CMSSWInputFallback.xml")
+        self.twoFileFallbackXmlPath = os.path.join(testData, "CMSSWTwoFileRemote.xml")
+        self.pileupXmlPath = os.path.join(testData, "CMSSWPileup.xml")
+        self.withEventsXmlPath = os.path.join(testData, "CMSSWWithEventCounts.xml")
 
         self.testDir = self.testInit.generateWorkDir()
         return
@@ -203,6 +198,21 @@ class ReportTest(unittest.TestCase):
         """
         myReport = Report("cmsRun1")
         myReport.parse(self.xmlPath)
+
+        self.verifyInputData(myReport)
+        self.verifyRecoOutput(myReport)
+        self.verifyAlcaOutput(myReport)
+
+        return
+
+    def testWithEventsXMLParsing(self):
+        """
+        _testParsing_
+
+        Verify that the parsing of a CMSSW XML report works correctly.
+        """
+        myReport = Report("cmsRun1")
+        myReport.parse(self.withEventsXmlPath)
 
         self.verifyInputData(myReport)
         self.verifyRecoOutput(myReport)

@@ -13,7 +13,6 @@ import threading
 import traceback
 import time
 
-from httplib import HTTPException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
@@ -282,7 +281,7 @@ class CleanCouchPoller(BaseWorkerThread):
         except Exception as ex:
             msg = traceback.format_exc()
             logging.error(msg)
-            logging.error("Error occurred, will try again next cycle")
+            logging.error("Error occurred, will try again next cycle: %s", str(ex))
 
     def archiveWorkflows(self, workflows, archiveState):
         updated = 0
@@ -291,7 +290,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 continue
             if self.cleanAllLocalCouchDB(workflowName):
                 if not self.useReqMgrForCompletionCheck:
-                    #  only update tier0 case, for Prodcuction/Processing reqmgr will update status 
+                    #  only update tier0 case, for Prodcuction/Processing reqmgr will update status
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
                 updated += 0
         return updated

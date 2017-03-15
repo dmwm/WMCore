@@ -101,10 +101,13 @@ class SimpleCondorPlugin(BasePlugin):
         self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
         self.acctGroupUser = getattr(config.BossAir, 'acctGroupUser', "cmsdataops")
 
-        # Build a requirement string
-        self.reqStr = ('stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) '
-                       '&& ((REQUIRED_OS=?="any") || stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))'
-                       '&& (TARGET.Cpus >= RequestCpus)')
+        # Build a requirement string.  All CMS resources match DESIRED_Sites on the START
+        # expression side; however, there are currently some resources (T2_CH_CERN_HLT)
+        # that are missing the REQUIRED_OS logic.  Hence, we duplicate it here.
+        # TODO(bbockelm): Remove reqStr once HLT has upgraded.
+        self.reqStr = ('((REQUIRED_OS=?="any") || '
+                       '(GLIDEIN_REQUIRED_OS =?= "any") || '
+                       'stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -440,7 +443,8 @@ class SimpleCondorPlugin(BasePlugin):
         ad = classad.ClassAd()
 
         # ad['universe'] = "vanilla"
-        ad['Requirements'] = classad.ExprTree(self.reqStr)
+        if self.reqStr:
+            ad['Requirements'] = classad.ExprTree(self.reqStr)
         ad['ShouldTransferFiles'] = "YES"
         ad['WhenToTransferOutput'] = "ON_EXIT"
         ad['UserLogUseXML'] = True

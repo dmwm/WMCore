@@ -239,7 +239,7 @@ class LogCollect(Executor):
         signal.alarm(0)
 
         # add to job report
-        self.report.addOutputFile(outputModule="LogCollect", file=tarInfo)
+        self.report.addOutputFile(outputModule="LogCollect", aFile=tarInfo)
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']
         outputRef.output.location = tarInfo['PNN']

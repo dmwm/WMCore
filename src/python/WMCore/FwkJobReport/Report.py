@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-#pylint: disable=W0142
-# W0142: Dave likes himself some **
+
 """
 _Report_
 
@@ -8,25 +7,24 @@ Framework job report object.
 """
 from __future__ import print_function
 
-import re
 import logging
-import sys
-import traceback
-import time
 import math
+import re
+import sys
+import time
+import traceback
+
+from WMCore.Configuration import ConfigSection
+from WMCore.DataStructs.File import File
+from WMCore.DataStructs.Run import Run
+from WMCore.FwkJobReport.FileInfo import FileInfo
+from WMCore.WMException import WMException
+from WMCore.WMExceptions import WM_JOB_ERROR_CODES
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
-
-from WMCore.Configuration import ConfigSection
-
-from WMCore.DataStructs.File import File
-from WMCore.DataStructs.Run import Run
-
-from WMCore.FwkJobReport.FileInfo import FileInfo
-from WMCore.WMException           import WMException
-from WMCore.WMExceptions import WM_JOB_ERROR_CODES
 
 
 class FwkJobReportException(WMException):
@@ -37,7 +35,8 @@ class FwkJobReportException(WMException):
     """
     pass
 
-def checkFileForCompletion(filee):
+
+def checkFileForCompletion(aFile):
     """
     _checkFileForCompletion_
 
@@ -45,6 +44,7 @@ def checkFileForCompletion(filee):
     file is ready for transfer.
     """
     return True
+
 
 def addBranchNamesToFile(fileSection, branchNames):
     """
@@ -54,6 +54,7 @@ def addBranchNamesToFile(fileSection, branchNames):
     """
     setattr(fileSection, "branches", branchNames)
     return
+
 
 def addInputToFile(fileSection, inputLFN, inputPFN):
     """
@@ -70,6 +71,7 @@ def addInputToFile(fileSection, inputLFN, inputPFN):
     fileSection.input.append(inputLFN)
     fileSection.inputpfns.append(inputPFN)
     return
+
 
 def addRunInfoToFile(fileSection, runInfo):
     """
@@ -89,6 +91,7 @@ def addRunInfoToFile(fileSection, runInfo):
         setattr(fileSection.runs, str(runInfo.run), runInfo.lumis)
     return
 
+
 def addAttributesToFile(fileSection, **attributes):
     """
     _addAttributesToFiles_
@@ -99,15 +102,19 @@ def addAttributesToFile(fileSection, **attributes):
         setattr(fileSection, attName, attributes[attName])
     return
 
+
 class Report:
     """
     The base class for the new jobReport
 
     """
+
     def __init__(self, reportname=None):
         self.data = ConfigSection("FrameworkJobReport")
         self.data.steps = []
         self.data.workload = "Unknown"
+        self.report = None
+        self.reportname = ""
 
         if reportname:
             self.addStep(reportname=reportname)
@@ -159,8 +166,8 @@ class Report:
             logging.debug(crashMessage)
             raise FwkJobReportException(msg)
 
-
-    def jsonizeFiles(self, reportModule):
+    @staticmethod
+    def jsonizeFiles(reportModule):
         """
         _jsonizeFiles_
 
@@ -187,7 +194,8 @@ class Report:
 
         return jsonFiles
 
-    def jsonizePerformance(self, perfSection):
+    @staticmethod
+    def jsonizePerformance(perfSection):
         """
         _jsonizePerformance_
 
@@ -221,7 +229,7 @@ class Report:
         jsonReport["fallbackFiles"] = self.getAllFallbackFiles()
         jsonReport["Campaign"] = self.getCampaign()
         jsonReport["PrepID"] = self.getPrepID()
-        
+
         for stepName in self.listSteps():
             reportStep = self.retrieveStep(stepName)
             jsonStep = {}
@@ -400,20 +408,23 @@ class Report:
         self.report.outputModules = []
         return
 
-    def addOutputFile(self, outputModule, file={}):
+    def addOutputFile(self, outputModule, aFile=None):
         """
         _addFile_
 
         Add an output file to the outputModule provided.
         """
-        if not checkFileForCompletion(file):
+
+        aFile = aFile or {}
+
+        if not checkFileForCompletion(aFile):
             # Then the file is not complete, and should not be added
             print("ERROR")
             return None
 
         # Now load the output module and create the file object
         outMod = getattr(self.report.output, outputModule, None)
-        if outMod == None:
+        if outMod is None:
             outMod = self.addOutputModule(outputModule)
         count = outMod.files.fileCount
         fileSection = "file%s" % count
@@ -423,36 +434,36 @@ class Report:
 
         # Now we need to eliminate the optional and non-primitives:
         # runs, parents, branches, locations and datasets
-        keyList = file.keys()
+        keyList = aFile.keys()
 
         fileRef.section_("runs")
-        if "runs" in file:
-            for run in file["runs"]:
+        if "runs" in aFile:
+            for run in aFile["runs"]:
                 addRunInfoToFile(fileRef, run)
             keyList.remove('runs')
 
-        if "parents" in file:
-            setattr(fileRef, 'parents', list(file['parents']))
+        if "parents" in aFile:
+            setattr(fileRef, 'parents', list(aFile['parents']))
             keyList.remove('parents')
 
-        if "locations" in file:
-            fileRef.location = list(file["locations"])
+        if "locations" in aFile:
+            fileRef.location = list(aFile["locations"])
             keyList.remove('locations')
-        elif "PNN" in file:
-            fileRef.location = [file["PNN"]]
+        elif "PNN" in aFile:
+            fileRef.location = [aFile["PNN"]]
 
-        if "LFN" in file:
-            fileRef.lfn = file["LFN"]
+        if "LFN" in aFile:
+            fileRef.lfn = aFile["LFN"]
             keyList.remove("LFN")
-        if "PFN" in file:
-            fileRef.lfn = file["PFN"]
+        if "PFN" in aFile:
+            fileRef.lfn = aFile["PFN"]
             keyList.remove("PFN")
 
         # All right, the rest should be JSONalizable python primitives
         for entry in keyList:
-            setattr(fileRef, entry, file[entry])
+            setattr(fileRef, entry, aFile[entry])
 
-        #And we're done
+        # And we're done
         return fileRef
 
     def addInputSource(self, sourceName):
@@ -479,7 +490,7 @@ class Report:
         Add an input file to the given source.
         """
         srcMod = getattr(self.report.input, sourceName, None)
-        if srcMod == None:
+        if srcMod is None:
             srcMod = self.addInputSource(sourceName)
         count = srcMod.files.fileCount
         fileSection = "file%s" % count
@@ -550,7 +561,7 @@ class Report:
         Add an error report with an exitCode, type/class of error and
         details of the error as a string
         """
-        if self.retrieveStep(stepName) == None:
+        if self.retrieveStep(stepName) is None:
             # Create a step and set it to failed
             # Assumption: Adding an error fails a step
             self.addStep(stepName, status=1)
@@ -565,7 +576,7 @@ class Report:
         errDetails.type = str(errorType)
         errDetails.details = errorDetails
 
-        setattr(stepSection.errors, "errorCount", errorCount +1)
+        setattr(stepSection.errors, "errorCount", errorCount + 1)
         return
 
     def addSkippedFile(self, lfn, pfn):
@@ -618,7 +629,7 @@ class Report:
         This creates a report section into self.report
         """
         if hasattr(self.data, reportname):
-            msg = "Attempted to create pre-existing report section %s" % (reportname)
+            msg = "Attempted to create pre-existing report section %s" % reportname
             logging.error(msg)
             return
 
@@ -661,7 +672,7 @@ class Report:
         _setStep_
 
         """
-        if not stepName in self.data.steps:
+        if stepName not in self.data.steps:
             self.data.steps.append(stepName)
         else:
             logging.info("Step %s is now being overridden by a new step report", stepName)
@@ -724,38 +735,38 @@ class Report:
         fileRef = getattr(outputMod.files, fileName, None)
         newFile = File(locations=set())
 
-        #Locations
+        # Locations
         newFile.setLocation(getattr(fileRef, "location", None))
 
-        #Runs
+        # Runs
         runList = fileRef.runs.listSections_()
         for run in runList:
-            lumis  = getattr(fileRef.runs, run)
+            lumis = getattr(fileRef.runs, run)
             newRun = Run(int(run), *lumis)
             newFile.addRun(newRun)
 
-        newFile["lfn"]            = getattr(fileRef, "lfn", None)
-        newFile["pfn"]            = getattr(fileRef, "pfn", None)
-        newFile["events"]         = int(getattr(fileRef, "events", 0))
-        newFile["size"]           = int(getattr(fileRef, "size", 0))
-        newFile["branches"]       = getattr(fileRef, "branches", [])
-        newFile["input"]          = getattr(fileRef, "input", [])
-        newFile["inputpfns"]      = getattr(fileRef, "inputpfns", [])
-        newFile["branch_hash"]    = getattr(fileRef, "branch_hash", None)
-        newFile["catalog"]        = getattr(fileRef, "catalog", "")
-        newFile["guid"]           = getattr(fileRef, "guid", "")
-        newFile["module_label"]   = getattr(fileRef, "module_label", "")
-        newFile["checksums"]      = getattr(fileRef, "checksums", {})
-        newFile["merged"]         = bool(getattr(fileRef, "merged", False))
-        newFile["dataset"]        = getattr(fileRef, "dataset", {})
+        newFile["lfn"] = getattr(fileRef, "lfn", None)
+        newFile["pfn"] = getattr(fileRef, "pfn", None)
+        newFile["events"] = int(getattr(fileRef, "events", 0))
+        newFile["size"] = int(getattr(fileRef, "size", 0))
+        newFile["branches"] = getattr(fileRef, "branches", [])
+        newFile["input"] = getattr(fileRef, "input", [])
+        newFile["inputpfns"] = getattr(fileRef, "inputpfns", [])
+        newFile["branch_hash"] = getattr(fileRef, "branch_hash", None)
+        newFile["catalog"] = getattr(fileRef, "catalog", "")
+        newFile["guid"] = getattr(fileRef, "guid", "")
+        newFile["module_label"] = getattr(fileRef, "module_label", "")
+        newFile["checksums"] = getattr(fileRef, "checksums", {})
+        newFile["merged"] = bool(getattr(fileRef, "merged", False))
+        newFile["dataset"] = getattr(fileRef, "dataset", {})
         newFile["acquisitionEra"] = getattr(fileRef, 'acquisitionEra', None)
-        newFile["processingVer"]  = getattr(fileRef, 'processingVer', None)
-        newFile["validStatus"]    = getattr(fileRef, 'validStatus', None)
-        newFile["globalTag"]      = getattr(fileRef, 'globalTag', None)
-        newFile["prep_id"]        = getattr(fileRef, 'prep_id', None)
-        newFile['configURL']      = getattr(fileRef, 'configURL', None)
-        newFile['inputPath']      = getattr(fileRef, 'inputPath', None)
-        newFile["outputModule"]   = outputModule
+        newFile["processingVer"] = getattr(fileRef, 'processingVer', None)
+        newFile["validStatus"] = getattr(fileRef, 'validStatus', None)
+        newFile["globalTag"] = getattr(fileRef, 'globalTag', None)
+        newFile["prep_id"] = getattr(fileRef, 'prep_id', None)
+        newFile['configURL'] = getattr(fileRef, 'configURL', None)
+        newFile['inputPath'] = getattr(fileRef, 'inputPath', None)
+        newFile["outputModule"] = outputModule
         newFile["fileRef"] = fileRef
 
         return newFile
@@ -782,7 +793,6 @@ class Report:
             listOfFiles.extend(self.getFilesFromOutputModule(step=step, outputModule=module))
 
         return listOfFiles
-
 
     def getAllFiles(self):
         """
@@ -820,8 +830,7 @@ class Report:
         """
         step = self.retrieveStep(stepName)
 
-        inputSources = []
-        if inputSource == None:
+        if inputSource is None:
             inputSources = step.input.listSections_()
         else:
             inputSources = [inputSource]
@@ -843,7 +852,7 @@ class Report:
                 moduleLabel = getattr(fwjrFile, "module_label", None)
                 inputType = getattr(fwjrFile, "input_type", None)
 
-                inputFile = File(lfn = lfn, size = size, events = events)
+                inputFile = File(lfn=lfn, size=size, events=events)
                 inputFile["pfn"] = pfn
                 inputFile["branches"] = branches
                 inputFile["catalog"] = catalog
@@ -877,9 +886,9 @@ class Report:
 
         listOfFiles = []
         for n in range(outputMod.files.fileCount):
-            file = self.getOutputFile(fileName='file%i' %(n), outputModule=outputModule, step=step)
-            if file:
-                listOfFiles.append(file)
+            aFile = self.getOutputFile(fileName='file%i' % (n), outputModule=outputModule, step=step)
+            if aFile:
+                listOfFiles.append(aFile)
             else:
                 msg = "Could not find file%i in module" % (n)
                 logging.error(msg)
@@ -971,7 +980,7 @@ class Report:
 
         Get all errors for a given step
         """
-        if self.retrieveStep(stepName) == None:
+        if self.retrieveStep(stepName) is None:
             # Create a step and set it to failed
             # Assumption: Adding an error fails a step
             self.addStep(stepName, status=1)
@@ -983,7 +992,6 @@ class Report:
             return {}
         else:
             return stepSection.errors.dictionary_()
-
 
     def stepSuccessful(self, stepName):
         """
@@ -998,7 +1006,6 @@ class Report:
             return False
 
         return True
-
 
     def taskSuccessful(self, ignoreString='logArch'):
         """
@@ -1024,7 +1031,6 @@ class Report:
                 value = False
 
         return value
-
 
     def getAnalysisFilesFromStep(self, step):
         """
@@ -1053,7 +1059,6 @@ class Report:
                 filteredResults.append(result)
 
         return filteredResults
-
 
     def getAllFileRefsFromStep(self, step):
         """
@@ -1099,13 +1104,12 @@ class Report:
         for module in listOfModules:
             outputMod = getattr(stepReport.output, module, None)
             for n in range(outputMod.files.fileCount):
-                file = getattr(outputMod.files, 'file%i' %(n), None)
-                if not file:
-                    msg = "Could not find file%i in module" % (n)
+                aFile = getattr(outputMod.files, 'file%i' % n, None)
+                if not aFile:
+                    msg = "Could not find file%i in module" % n
                     logging.error(msg)
                     return None
-                fileInfo(fileReport=file, step=step, outputModule=module)
-
+                fileInfo(fileReport=aFile, step=step, outputModule=module)
 
         return
 
@@ -1178,7 +1182,7 @@ class Report:
 
         firstStep = self.getTimes(stepName=steps[0])
         startTime = firstStep['startTime']
-        stopTime  = firstStep['stopTime']
+        stopTime = firstStep['stopTime']
 
         for stepName in steps:
             timeStamps = self.getTimes(stepName=stepName)
@@ -1208,7 +1212,6 @@ class Report:
         Return the task name
         """
         return getattr(self.data, 'task', None)
-
 
     def setJobID(self, jobID):
         """
@@ -1293,7 +1296,7 @@ class Report:
             f.globalTag = globalTag
 
         return
-    
+
     def setCampaign(self, campaign):
         """
         _setCampaign_
@@ -1308,7 +1311,7 @@ class Report:
         Return the campaign
         """
         return getattr(self.data, 'campaign', "")
-    
+
     def setPrepID(self, prep_id):
         """
         _setGlobalTag_
@@ -1329,7 +1332,7 @@ class Report:
     def getPrepID(self):
         """
          _getPrepID_
- 
+
          Return the PrepID
         """
         return getattr(self.data, 'prep_id', "")
@@ -1356,7 +1359,6 @@ class Report:
         Set the input dataset path for the task in each file
         """
 
-
         fileRefs = self.getAllFileRefs()
 
         # Should now have all the fileRefs
@@ -1364,7 +1366,7 @@ class Report:
             f.inputPath = inputPath
         return
 
-    def setStepRSS(self, stepName, min, max, average):
+    def setStepRSS(self, stepName, minimum, maximum, average):
         """
         _setStepRSS_
 
@@ -1373,13 +1375,13 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('RSSMemory')
-        reportStep.performance.RSSMemory.min = min
-        reportStep.performance.RSSMemory.max = max
+        reportStep.performance.RSSMemory.min = minimum
+        reportStep.performance.RSSMemory.max = maximum
         reportStep.performance.RSSMemory.average = average
 
         return
 
-    def setStepPMEM(self, stepName, min, max, average):
+    def setStepPMEM(self, stepName, minimum, maximum, average):
         """
         _setStepPMEM_
 
@@ -1388,13 +1390,13 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PhysicalMemory')
-        reportStep.performance.PhysicalMemory.min = min
-        reportStep.performance.PhysicalMemory.max = max
+        reportStep.performance.PhysicalMemory.min = minimum
+        reportStep.performance.PhysicalMemory.max = maximum
         reportStep.performance.PhysicalMemory.average = average
 
         return
 
-    def setStepPCPU(self, stepName, min, max, average):
+    def setStepPCPU(self, stepName, minimum, maximum, average):
         """
         _setStepPCPU_
 
@@ -1403,14 +1405,13 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('PercentCPU')
-        reportStep.performance.PercentCPU.min = min
-        reportStep.performance.PercentCPU.max = max
+        reportStep.performance.PercentCPU.min = minimum
+        reportStep.performance.PercentCPU.max = maximum
         reportStep.performance.PercentCPU.average = average
 
         return
 
-
-    def setStepVSize(self, stepName, min, max, average):
+    def setStepVSize(self, stepName, minimum, maximum, average):
         """
         _setStepVSize_
 
@@ -1419,8 +1420,8 @@ class Report:
 
         reportStep = self.retrieveStep(stepName)
         reportStep.performance.section_('VSizeMemory')
-        reportStep.performance.VSizeMemory.min = min
-        reportStep.performance.VSizeMemory.max = max
+        reportStep.performance.VSizeMemory.min = minimum
+        reportStep.performance.VSizeMemory.max = maximum
         reportStep.performance.VSizeMemory.average = average
 
         return
@@ -1447,11 +1448,11 @@ class Report:
           code 60451 for the step, failing it.
         """
         error = None
-        files = self.getAllFilesFromStep(step = stepName)
+        files = self.getAllFilesFromStep(step=stepName)
         for f in files:
-            if not 'adler32' in f.get('checksums', {}).keys():
+            if 'adler32' not in f.get('checksums', {}).keys():
                 error = f.get('lfn', None)
-            elif f['checksums']['adler32'] == None:
+            elif f['checksums']['adler32'] is None:
                 error = f.get('lfn', None)
 
         if error:

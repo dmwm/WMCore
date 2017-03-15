@@ -439,10 +439,10 @@ cms::Exception caught in EventProcessor and rethrown
         """
 
         report = Report("cmsRun1")
-        report.setStepVSize(stepName="cmsRun1", min=100, max=800, average=244)
-        report.setStepRSS(stepName="cmsRun1", min=100, max=800, average=244)
-        report.setStepPCPU(stepName="cmsRun1", min=100, max=800, average=244)
-        report.setStepPMEM(stepName="cmsRun1", min=100, max=800, average=244)
+        report.setStepVSize(stepName="cmsRun1", minimum=100, maximum=800, average=244)
+        report.setStepRSS(stepName="cmsRun1", minimum=100, maximum=800, average=244)
+        report.setStepPCPU(stepName="cmsRun1", minimum=100, maximum=800, average=244)
+        report.setStepPMEM(stepName="cmsRun1", minimum=100, maximum=800, average=244)
 
         perf = report.retrieveStep("cmsRun1").performance
         for section in perf.dictionary_().values():

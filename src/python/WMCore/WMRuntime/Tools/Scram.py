@@ -30,6 +30,8 @@ import os.path
 import sys
 import subprocess
 import logging
+from PSetTweaks.WMTweak import readAdValues
+
 
 ARCH_TO_OS = {'slc5': ['rhel6'], 'slc6': ['rhel6'], 'slc7': ['rhel7']}
 
@@ -39,6 +41,32 @@ for arch, oses in ARCH_TO_OS.iteritems():
         if osName not in OS_TO_ARCH:
             OS_TO_ARCH[osName] = []
         OS_TO_ARCH[osName].append(arch)
+
+
+def getSingleScramArch(scramArch):
+    """
+    Figure out which scram arch is compatible with both the request and the release
+
+    Args:
+        scramArch: string or list of strings representing valid scram arches for the workflow
+
+    Returns:
+        a single scram arch
+    """
+    if isinstance(scramArch, list):
+        try:
+            ad = readAdValues(['glidein_required_os'], 'machine')
+            runningOS = ad['glidein_required_os'].strip('"')
+            validArches = sorted(OS_TO_ARCH[runningOS], reverse=True)
+            for requestedArch in sorted(scramArch, reverse=True):
+                for validArch in validArches:
+                    if requestedArch.startswith(validArch):
+                        return requestedArch
+        except KeyError:
+            return sorted(scramArch)[-1]  # Give the most recent release if lookup fails
+        return None
+    else:
+        return scramArch
 
 
 def testWriter(func, *args):
@@ -68,7 +96,7 @@ def testWriter(func, *args):
 procWriter = lambda s, l: s.stdin.write(l)
 
 
-class Scram:
+class Scram(object):
     """
     _Scram_
 
@@ -247,7 +275,7 @@ class Scram:
                                 stdout=logFile,
                                 stderr=logFile,
                                 stdin=subprocess.PIPE,
-                                )
+                               )
 
         # Passing the environment in to the subprocess call results in all of
         # the variables being quoted which causes problems for search paths.

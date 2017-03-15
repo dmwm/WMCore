@@ -14,12 +14,10 @@ import inspect
 import os
 import shutil
 import sys
-import tempfile
 import unittest
 
 import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
 
-from Utils.TemporaryEnvironment import tmpEnv
 from WMCore.DataStructs.Job import Job
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
@@ -138,44 +136,6 @@ class CMSSW_t(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.step.builder.workingDir, "BogusFile.txt")))
         except Exception as ex:
             self.fail("Failure encountered, %s" % str(ex))
-        finally:
-            os.chdir(self.oldCwd)
-        return
-
-    def testScramArchParsing(self):
-        """
-        Test the various modes f parsing for the scram arch
-        """
-
-        try:
-            os.chdir(self.step.builder.workingDir)
-            executor = CMSSWExecutor()
-            with tempfile.NamedTemporaryFile() as tf:
-                tf.write('GLIDEIN_REQUIRED_OS = "rhel6" \n')
-                tf.write('Memory = 2048\n')
-                tf.flush()
-                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
-                    self.assertEquals(executor.getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch('slc5_blah_blah'), 'slc5_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
-                                      'slc6_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']),
-                                      'slc6_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
-            with tempfile.NamedTemporaryFile() as tf:
-                tf.write('GLIDEIN_REQUIRED_OS = "rhel7" \n')
-                tf.write('Memory = 2048\n')
-                tf.flush()
-                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
-                    self.assertEquals(executor.getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch('slc7_blah_blah'), 'slc7_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
-                                      'slc7_blah_blah')
-                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']), None)
-                    self.assertEquals(executor.getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']),
-                                      'slc7_blah_blah')
-        except Exception:
-            raise
         finally:
             os.chdir(self.oldCwd)
         return

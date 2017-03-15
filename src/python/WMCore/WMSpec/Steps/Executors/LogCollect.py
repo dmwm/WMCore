@@ -14,21 +14,15 @@ import tarfile
 import datetime
 import socket
 
+from Utils.IteratorTools import grouper
+from WMCore.Algorithms.Alarm import Alarm, alarmHandler
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
-
 from WMCore.WMSpec.Steps.Executor import Executor
-
 from WMCore.Storage.StageOutMgr import StageOutMgr
 from WMCore.Storage.StageInMgr import StageInMgr
 from WMCore.Storage.DeleteMgr import DeleteMgr
-
 from WMCore.Storage.StageOutError import StageOutFailure
-
-from WMCore.Algorithms.Alarm import Alarm, alarmHandler
-
-from WMCore.WMRuntime.Tools.Scram import Scram
-
-from Utils.IteratorTools import grouper
+from WMCore.WMRuntime.Tools.Scram import Scram, getSingleScramArch
 
 
 class LogCollect(Executor):
@@ -39,7 +33,7 @@ class LogCollect(Executor):
 
     """
 
-    def pre(self, emulator = None):
+    def pre(self, emulator=None):
         """
         _pre_
 
@@ -47,13 +41,13 @@ class LogCollect(Executor):
 
         """
         # Are we using an emulator?
-        if (emulator != None):
-            return emulator.emulatePre( self.step )
+        if emulator is not None:
+            return emulator.emulatePre(self.step)
 
         print("Steps.Executors.LogCollect.pre called")
         return None
 
-    def execute(self, emulator = None):
+    def execute(self, emulator=None):
         """
         _execute_
 
@@ -62,9 +56,11 @@ class LogCollect(Executor):
         scramArch = self.step.application.setup.scramArch
         cmsswVersion = self.step.application.setup.cmsswVersion
 
+        scramArch = getSingleScramArch(scramArch)
+
         # Are we using emulators again?
-        if (emulator != None):
-            return emulator.emulate( self.step, self.job )
+        if emulator is not None:
+            return emulator.emulate(self.step, self.job)
 
         overrides = {}
         if hasattr(self.step, 'override'):
@@ -87,12 +83,6 @@ class LogCollect(Executor):
         eosStageOutParams['phedex-node'] = overrides.get('phedex-node', "T2_CH_CERN")
         eosStageOutParams['lfn-prefix'] = overrides.get('lfn-prefix', "root://eoscms.cern.ch//eos/cms")
 
-        # are we using the new stageout method ?
-        useNewStageOutCode = False
-        if getattr(self.step, 'newStageout', False) or \
-            ('newStageOut' in overrides and overrides.get('newStageOut')):
-            useNewStageOutCode = True
-
         try:
             castorStageOutMgr = StageOutMgr(**castorStageOutParams)
             eosStageOutMgr = StageOutMgr(**eosStageOutParams)
@@ -106,7 +96,7 @@ class LogCollect(Executor):
         # prepare output tar file
         taskName = self.report.getTaskName().split('/')[-1]
         host = socket.gethostname().split('.')[0]
-        tarName = '%s-%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, host , self.job["counter"])
+        tarName = '%s-%s-%s-%i-logs.tar' % (self.report.data.workload, taskName, host, self.job["counter"])
         tarLocation = os.path.join(self.stepSpace.location, tarName)
 
         # check if the cmsswVersion supports edmCopyUtil (min CMSSW_8_X)
@@ -127,7 +117,7 @@ class LogCollect(Executor):
                 initialise=self.step.application.setup.softwareEnvironment,
                 directory=self.step.builder.workingDir,
                 architecture=scramArch,
-                )
+            )
             logging.info("Running scram")
             try:
                 projectOutcome = scram.project()
@@ -195,7 +185,7 @@ class LogCollect(Executor):
                 for log in logs:
                     localLogs.append(os.path.join(self.step.builder.workingDir, os.path.basename(log['lfn'])))
                     deleteLogArchives.append(log)
-                    self.report.addInputFile(sourceName = "logArchives", lfn = log['lfn'])
+                    self.report.addInputFile(sourceName="logArchives", lfn=log['lfn'])
             else:
                 logging.error("Unable to copy logArchives to local disk")
                 if useEdmCopyUtil:
@@ -209,17 +199,16 @@ class LogCollect(Executor):
             tarFile = tarfile.open(tarLocation, 'w:')
             for log in localLogs:
                 path = log.split('/')
-                tarFile.add(name = log,
-                            arcname = os.path.join(path[-3],
-                                                   path[-2],
-                                                   path[-1]))
+                tarFile.add(name=log,
+                            arcname=os.path.join(path[-3],
+                                                 path[-2],
+                                                 path[-1]))
                 os.remove(log)
             tarFile.close()
         else:
             msg = "Unable to copy any logArchives to local disk"
             logging.error(msg)
             raise WMExecutionFailure(60312, "LogCollectError", msg)
-
 
         # now staging out the LogCollect tarfile
         logging.info("Staging out LogCollect tarfile to Castor and EOS")
@@ -228,10 +217,10 @@ class LogCollect(Executor):
                                                      self.report.data.workload,
                                                      os.path.basename(tarLocation))
 
-        tarInfo = {'LFN'    : lfn,
-                   'PFN'    : tarLocation,
-                   'PNN'    : None,
-                   'GUID'   : None}
+        tarInfo = {'LFN': lfn,
+                   'PFN': tarLocation,
+                   'PNN': None,
+                   'GUID': None}
 
         # perform mandatory stage out to CERN Castor
         signal.signal(signal.SIGALRM, alarmHandler)
@@ -250,17 +239,16 @@ class LogCollect(Executor):
         signal.alarm(0)
 
         # add to job report
-        self.report.addOutputFile(outputModule = "LogCollect", file = tarInfo)
+        self.report.addOutputFile(outputModule="LogCollect", file=tarInfo)
         outputRef = getattr(self.report.data, self.stepName)
         outputRef.output.pfn = tarInfo['PFN']
         outputRef.output.location = tarInfo['PNN']
         outputRef.output.lfn = tarInfo['LFN']
 
-
-        tarInfo = {'LFN'    : lfn,
-                   'PFN'    : tarLocation,
-                   'PNN'    : None,
-                   'GUID'   : None}
+        tarInfo = {'LFN': lfn,
+                   'PFN': tarLocation,
+                   'PNN': None,
+                   'GUID': None}
 
         # then, perform best effort stage out to CERN EOS
         signal.signal(signal.SIGALRM, alarmHandler)
@@ -270,7 +258,7 @@ class LogCollect(Executor):
         except Alarm:
             logging.error("Indefinite hang during stageOut of LogCollect to EOS")
         except Exception as ex:
-            logging.error("Unable to stageOut LogCollect to EOS:\n", ex)
+            logging.error("Unable to stageOut LogCollect to EOS: %s", ex)
         signal.alarm(0)
 
         # we got this far, delete input
@@ -284,7 +272,7 @@ class LogCollect(Executor):
                                 'PFN': None,
                                 'PNN': None,
                                 'StageOutCommand': None}
-                deleteMgr(fileToDelete = fileToDelete)
+                deleteMgr(fileToDelete=fileToDelete)
             except Alarm:
                 logging.error("Indefinite hang during delete of logArchive")
             except Exception as ex:
@@ -293,7 +281,7 @@ class LogCollect(Executor):
 
         return
 
-    def post(self, emulator = None):
+    def post(self, emulator=None):
         """
         _post_
 
@@ -301,8 +289,8 @@ class LogCollect(Executor):
 
         """
         # Another emulator check
-        if (emulator != None):
-            return emulator.emulatePost( self.step )
+        if emulator is not None:
+            return emulator.emulatePost(self.step)
 
         print("Steps.Executors.LogCollect.post called")
         return None

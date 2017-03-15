@@ -44,10 +44,10 @@ def loadRequestSchema(workload, requestSchema):
                         setattr(newSec, k, v)
                     except Exception as ex:
                         # this logging need to change to cherry py logging
-                        logging.error("Invalid Value: %s" % str(ex))
+                        logging.error("Invalid Value: %s", str(ex))
             else:
                 # this logging need to change to cherry py logging
-                logging.error("Invalid Value: %s" % str(ex))
+                logging.error("Invalid Value: %s", str(ex))
 
     schema.timeStamp = int(time.time())
     schema = workload.data.request.schema
@@ -100,12 +100,12 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
             args_without_status.update(request_args)
             del args_without_status["RequestStatus"]
         else:
-            #if state change doesn't allow other transition nothing else to validate
+            # if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
             args_only_status["RequestStatus"] = request_args["RequestStatus"]
             if 'cascade' in request_args:
                 args_only_status["cascade"] = request_args["cascade"]
-            return  workload, args_only_status
+            return workload, args_only_status
     else:
         args_without_status = request_args
 
@@ -135,7 +135,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     1. read data from body
     2. validate using spec validation
     3. convert data from body to arguments (spec instance, argument with default setting)
-    TODO: rasie right kind of error with clear message
+    TODO: raise right kind of error with clear message
     """
 
     initialize_request_args(request_args, config)
@@ -209,17 +209,20 @@ def get_request_template_from_type(request_type, loc="WMSpec.StdSpecs"):
 def validateOutputDatasets(outDsets, dbsUrl):
     """
     Validate output datasets after all the other arguments have been
-    locally update during assignment
+    locally update during assignment.
     """
+    if len(outDsets) != len(set(outDsets)):
+        msg = "Output dataset contains duplicates and it has to be fixed! %s" % outDsets
+        raise InvalidSpecParameterValue(msg)
+
     datatier = []
     for dataset in outDsets:
-        tokens = dataset.split("/")
-        procds = tokens[2]
-        datatier.append(tokens[3])
+        procds, tier = dataset.split("/")[2:]
+        datatier.append(tier)
         try:
             procdataset(procds)
         except AssertionError as ex:
-            msg = "Bad output dataset name, check the processed dataset.\n %s" % str(ex)
+            msg = "Bad output dataset name, check the processed dataset name.\n %s" % str(ex)
             raise InvalidSpecParameterValue(msg)
 
     # Verify whether the output datatiers are available in DBS
@@ -231,7 +234,7 @@ def _validateDatatier(datatier, dbsUrl):
     _validateDatatier_
 
     Provided a list of datatiers extracted from the outputDatasets, checks
-    whether they all exist in DBS already.
+    whether they all exist in DBS.
     """
     dbsTiers = DBSReader.listDatatiers(dbsUrl)
     badTiers = list(set(datatier) - set(dbsTiers))

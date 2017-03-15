@@ -652,7 +652,7 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 4,
+        self.assertEqual(len(outputDatasets), 5,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
 
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
@@ -855,7 +855,7 @@ class WMWorkloadTest(unittest.TestCase):
                                  "Error: Incorrect merged LFN %s" % outputModule.mergedLFNBase)
 
         outputDatasets = testWorkload.listOutputDatasets()
-        self.assertEqual(len(outputDatasets), 4,
+        self.assertEqual(len(outputDatasets), 5,
                          "Error: Wrong number of output datasets: %s" % testWorkload.listOutputDatasets())
         self.assertTrue("/bogusPrimary/TestAcqEra-Test-v2/DQM" in outputDatasets,
                         "Error: A dataset is missing")

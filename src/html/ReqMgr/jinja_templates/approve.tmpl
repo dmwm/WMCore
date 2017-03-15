@@ -84,7 +84,8 @@ function BuildList(tag, data) {
         html += '<b>Status:</b> <span style="color:'+genColor(item.RequestStatus)+';background-color:#fff;padding:3px;">'+item.RequestStatus+'</span>&nbsp;';
         html += '<b>Date:</b> <code>'+item.RequestDate+'</code>&nbsp;';
         html += '<b>User:</b> '+item.Requestor+'&nbsp;';
-        html += '<b>Group:</b> '+item.Group;
+        html += '<b>Group:</b> '+item.Group+'&nbsp;';
+        html += '<b>Campaign:</b> '+item.Campaign;
         html += '<div class="lift">'
         html += '<nav class="navbar navbar-left">';
         html += '<span></span>'
@@ -107,5 +108,5 @@ function BuildList(tag, data) {
     tag.className='menu-item underline';
 }
 // Put data into container
-BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(FilterPattern).sort(ByDate));
 </script>

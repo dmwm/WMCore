@@ -302,13 +302,36 @@ function ByName(a, b) {
     }
     return 0;
 }
+function ByCampaign(a, b) {
+    if (a.Campaign > b.Campaign) {
+        return 1;
+    }
+    if (a.Campaign < b.Campaign) {
+        return -1;
+    }
+    return 0;
+}
+function ByPattern(a, b) {
+    if (a.Pattern > b.Pattern) {
+        return 1;
+    }
+    if (a.Pattern < b.Pattern) {
+        return -1;
+    }
+    return 0;
+}
 function genColor(s) {
     var hash=md5(s);
     var color = '#'+hash.substr(0,6);
     return color;
 }
-function ByPattern(item) {
+function FilterPattern(item) {
     var input = $("#filter").val();
     var pat = new RegExp(input, "g");
     return pat.test(item.RequestName);
+}
+function FilterCampaign(item) {
+    var input = $("#filter_campaign").val();
+    var pat = new RegExp(input, "g");
+    return pat.test(item.Campaign);
 }

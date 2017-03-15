@@ -46,5 +46,5 @@ function BuildList(tag, data) {
     tag.className='menu-item underline';
 }
 // Put data into container
-BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(ByPattern).sort(ByDate));
+BuildList(document.getElementsByClassName('menu-item')[0], requests.filter(FilterPattern).sort(ByDate));
 </script>

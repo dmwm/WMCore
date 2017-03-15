@@ -10,21 +10,27 @@ Created by Dave Evans on 2010-03-15.
 Copyright (c) 2010 Fermilab. All rights reserved.
 """
 
-import unittest
-import sys, os, inspect
+import inspect
+import os
 import shutil
+import sys
+import tempfile
+import unittest
 
+import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
+
+from Utils.TemporaryEnvironment import tmpEnv
 from WMCore.DataStructs.Job import Job
 from WMCore.FwkJobReport.Report import Report
 from WMCore.WMBase import getTestBase
-from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
-from WMCore.WMSpec.Steps.Executors.CMSSW import CMSSW as CMSSWExecutor
-from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
-from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.Steps import StepFactory
+from WMCore.WMSpec.Steps.Executors.CMSSW import CMSSW as CMSSWExecutor
+from WMCore.WMSpec.Steps.Templates.CMSSW import CMSSW as CMSSWTemplate
+from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
+from WMCore.WMSpec.WMWorkload import newWorkload
 from WMQuality.TestInit import TestInit
-import WMCore_t.WMSpec_t.Steps_t as ModuleLocator
+
 
 class CMSSW_t(unittest.TestCase):
     def setUp(self):
@@ -51,12 +57,12 @@ class CMSSW_t(unittest.TestCase):
         self.step.application.setup.cmsswVersion = "CMSSW_X_Y_Z"
         self.step.application.setup.softwareEnvironment = "echo \"Software Setup...\";"
         self.step.output.jobReport = "FrameworkJobReport.xml"
-        self.helper.addOutputModule("outputRECORECO", primaryDataset = "Bogus",
-                                    processedDataset = "Test-Era-v1",
-                                    dataTier = "DATA")
-        self.helper.addOutputModule("outputALCARECORECO", primaryDataset = "Bogus",
-                                    processedDataset = "Test-Era-v1",
-                                    dataTier = "DATA")
+        self.helper.addOutputModule("outputRECORECO", primaryDataset="Bogus",
+                                    processedDataset="Test-Era-v1",
+                                    dataTier="DATA")
+        self.helper.addOutputModule("outputALCARECORECO", primaryDataset="Bogus",
+                                    processedDataset="Test-Era-v1",
+                                    dataTier="DATA")
         self.helper.setGlobalTag("Bogus")
         taskMaker = TaskMaker(self.workload, self.testDir)
         taskMaker.skipSubscription = True
@@ -76,7 +82,7 @@ class CMSSW_t(unittest.TestCase):
                     os.path.join(self.step.builder.workingDir, "FrameworkJobReport.xml"))
 
         # Create a job
-        self.job = Job(name = "/UnitTest/CMSSWExecutor/ExecutorTest-test-job")
+        self.job = Job(name="/UnitTest/CMSSWExecutor/ExecutorTest-test-job")
         self.job["id"] = 1
 
         # Set the PATH
@@ -97,12 +103,15 @@ class CMSSW_t(unittest.TestCase):
         self.testInit.delWorkDir()
         sys.path.remove(self.testDir)
         sys.path.remove(self.sandboxDir)
-        sys.modules.pop("WMTaskSpace")
-        sys.modules.pop("WMTaskSpace.ExecutorTest")
-        sys.modules.pop("WMTaskSpace.ExecutorTest.WMCore")
-        sys.modules.pop("WMSandbox")
-        sys.modules.pop("WMSandbox.CMSSWExecutor")
-        sys.modules.pop("WMSandbox.CMSSWExecutor.ExecutorTest")
+        try:
+            sys.modules.pop("WMTaskSpace")
+            sys.modules.pop("WMTaskSpace.ExecutorTest")
+            sys.modules.pop("WMTaskSpace.ExecutorTest.WMCore")
+            sys.modules.pop("WMSandbox")
+            sys.modules.pop("WMSandbox.CMSSWExecutor")
+            sys.modules.pop("WMSandbox.CMSSWExecutor.ExecutorTest")
+        except KeyError:
+            return
 
         return
 
@@ -133,6 +142,44 @@ class CMSSW_t(unittest.TestCase):
             os.chdir(self.oldCwd)
         return
 
+    def testScramArchParsing(self):
+        """
+        Test the various modes f parsing for the scram arch
+        """
+
+        try:
+            os.chdir(self.step.builder.workingDir)
+            executor = CMSSWExecutor()
+            with tempfile.NamedTemporaryFile() as tf:
+                tf.write('GLIDEIN_REQUIRED_OS = "rhel6" \n')
+                tf.write('Memory = 2048\n')
+                tf.flush()
+                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
+                    self.assertEquals(executor.getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch('slc5_blah_blah'), 'slc5_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                                      'slc6_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']),
+                                      'slc6_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']), None)
+            with tempfile.NamedTemporaryFile() as tf:
+                tf.write('GLIDEIN_REQUIRED_OS = "rhel7" \n')
+                tf.write('Memory = 2048\n')
+                tf.flush()
+                with tmpEnv(_CONDOR_MACHINE_AD=tf.name):
+                    self.assertEquals(executor.getSingleScramArch('slc6_blah_blah'), 'slc6_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch('slc7_blah_blah'), 'slc7_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc7_blah_blah']),
+                                      'slc7_blah_blah')
+                    self.assertEquals(executor.getSingleScramArch(['slc6_blah_blah', 'slc5_blah_blah']), None)
+                    self.assertEquals(executor.getSingleScramArch(['slc7_blah_blah', 'slc8_blah_blah']),
+                                      'slc7_blah_blah')
+        except Exception:
+            raise
+        finally:
+            os.chdir(self.oldCwd)
+        return
+
     def testB_ExecuteNonZeroExit(self):
         """
         _ExecuteNonZeroExit_
@@ -154,7 +201,7 @@ class CMSSW_t(unittest.TestCase):
                 executor.execute()
                 self.fail("An exception should have been raised")
             except WMExecutionFailure as ex:
-                executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
+                executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
                 self.assertEqual(8001, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
@@ -187,7 +234,7 @@ class CMSSW_t(unittest.TestCase):
                 executor.execute()
                 self.fail("An exception should have been raised")
             except WMExecutionFailure as ex:
-                executor.diagnostic(ex.code, executor, ExceptionInstance = ex)
+                executor.diagnostic(ex.code, executor, ExceptionInstance=ex)
                 self.assertEqual(134, executor.report.getExitCode())
                 report = Report()
                 report.load("Report.pkl")
@@ -223,6 +270,7 @@ class CMSSW_t(unittest.TestCase):
         finally:
             os.chdir(self.oldCwd)
         return
+
 
 if __name__ == '__main__':
     unittest.main()

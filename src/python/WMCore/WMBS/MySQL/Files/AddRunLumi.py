@@ -5,10 +5,6 @@ _AddRunLumi_
 MySQL implementation of AddRunLumi
 """
 
-import logging
-
-
-
 
 from WMCore.Database.DBFormatter import DBFormatter
 

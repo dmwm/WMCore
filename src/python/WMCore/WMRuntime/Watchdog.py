@@ -5,6 +5,8 @@ _Watchdog_
 
 This cleverly named object is the thread that handles the monitoring of individual jobs
 """
+from __future__ import division
+from __future__ import print_function
 
 import os
 import os.path
@@ -14,6 +16,7 @@ import traceback
 
 from WMCore.WMFactory   import WMFactory
 from WMCore.WMException import WMException
+from PSetTweaks.WMTweak import resizeResources
 
 class WatchdogException(WMException):
     """
@@ -78,6 +81,37 @@ class Watchdog(threading.Thread):
                 #This should be a config section
                 monitorArgs = getattr(task.data.watchdog, monitor)
                 args = monitorArgs.dictionary_()
+                # Scale resources according to the HTCondor runtime environment.
+                origCores = 1
+                for stepName in task.listAllStepNames():
+                    sh = task.getStepHelper(stepName)
+                    origCores = max(origCores, sh.getNumberOfCores())
+                resources = {'cores': origCores}
+                origMaxRSS = args.get('maxRSS')
+                if origMaxRSS:
+                    origMaxRSS = int(origMaxRSS / 1024.)  # HTCondor expects MB; we get KB.
+                    resources['memory'] = origMaxRSS
+                # Actually parses the HTCondor runtime
+                resizeResources(resources)
+                # We decided to only touch Watchdog settings if the number of cores changed.
+                # (even if this means the watchdog memory is wrong for a slot this size).
+                changedCores = origCores != resources['cores']
+                # HTCondor doesn't explicitly scale VSize; it's also not clear what
+                # resources this manages (as we already watch the memory use) or how
+                # it should relate to other resources (such as memory or cores used).
+                # Hence, we simply remove it if we change anything about the memory.
+                # If we did base maxRSS off the memory in the HTCondor slot, subtract a bit
+                # off the top so watchdog triggers before HTCondor does.
+                # Add the new number of cores to the args such that DashboardInterface can see it
+                if changedCores:
+                    args['cores'] = resources['cores']
+                    if origMaxRSS:
+                        args.pop('maxVSize', None)
+                        args['maxRSS'] = 1024 * (resources['memory'] - 50)  # Convert back to KB
+
+                logging.info("Watchdog modified: %s. Final settings:", changedCores)
+                for k, v in args.iteritems():
+                    logging.info("  %s: %r", k, v)
             # Actually initialize the monitor variables
             mon.initMonitor(task = task, job = wmbsJob,
                             logPath = self.logPath, args = args)

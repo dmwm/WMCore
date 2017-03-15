@@ -12,11 +12,13 @@ import subprocess
 import sys
 import socket
 
+from PSetTweaks.WMTweak import readAdValues
 from WMCore.FwkJobReport.Report import addAttributesToFile
 from WMCore.WMRuntime.Tools.Scram import Scram
 from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 from WMCore.WMSpec.WMStep import WMStepHelper
+from WMCore.WMRuntime.Tools.Scram import OS_TO_ARCH
 
 
 def analysisFileLFN(fileName, lfnBase, job):
@@ -94,6 +96,8 @@ class CMSSW(Executor):
         userFiles = ','.join(self.step.user.userFiles)
         logging.info('User files are %s', userFiles)
         logging.info('User sandboxes are %s', userTarball)
+
+        scramArch = self.getSingleScramArch(scramArch)
 
         multicoreSettings = self.step.application.multicore
         try:
@@ -229,7 +233,7 @@ class CMSSW(Executor):
 
         os.environ.update(envOverride)
 
-        returncode = subprocess.call(args, stdout = stdoutHandle, stderr = stderrHandle)
+        returncode = subprocess.call(args, stdout=stdoutHandle, stderr=stderrHandle)
 
         self.setCondorChirpAttrDelayed('Chirp_WMCore_cmsRun_ExitCode', returncode)
         self.setCondorChirpAttrDelayed('Chirp_WMCore_%s_ExitCode' % self.stepName, returncode)
@@ -324,6 +328,36 @@ class CMSSW(Executor):
 
         return None
 
+    @staticmethod
+    def getSingleScramArch(scramArch):
+        """
+        Figure out which scram arch is compatible with both the request and the release on the WN
+
+        Args:
+            scramArch: string or list of strings representing valid scram arches for the workflow
+
+        Returns:
+            a single scram arch
+        """
+
+        if isinstance(scramArch, list):
+            try:
+                ad = readAdValues(['glidein_required_os'], 'machine')
+                runningOS = ad['glidein_required_os'].strip('"')
+                validArches = sorted(OS_TO_ARCH[runningOS], reverse=True)
+                for requestedArch in sorted(scramArch, reverse=True):
+                    for validArch in validArches:
+                        if requestedArch.startswith(validArch):
+                            return requestedArch
+            except KeyError:
+                logging.error('OS: %s and scramArch %s do not match anything: %s', runningOS, scramArch, OS_TO_ARCH)
+                return sorted(scramArch)[-1]  # Give the most recent release if lookup fails
+
+            logging.error('scramArch %s does not match anything: %s', scramArch, OS_TO_ARCH)
+            return None
+        else:
+            return scramArch
+
 
 CONFIG_BLOB = """#!/bin/bash
 
@@ -401,3 +435,4 @@ echo "process id is $PROCID status is $EXIT_STATUS"
 exit $EXIT_STATUS
 
 """
+

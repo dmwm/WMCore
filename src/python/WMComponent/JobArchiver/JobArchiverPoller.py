@@ -11,7 +11,7 @@ import os.path
 import shutil
 import tarfile
 
-from Utils.IterTools import grouper
+from Utils.IteratorTools import grouper
 from WMComponent.TaskArchiver.CleanCouchPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState

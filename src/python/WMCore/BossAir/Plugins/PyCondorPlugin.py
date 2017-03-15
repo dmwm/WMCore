@@ -5,6 +5,8 @@ _PyCondorPlugin_
 Example of Condor plugin
 For glide-in use.
 """
+from __future__ import division
+
 import os
 import os.path
 import re
@@ -18,7 +20,6 @@ import multiprocessing
 import glob
 
 import WMCore.Algorithms.BasicAlgos as BasicAlgos
-
 from WMCore.Credential.Proxy import Proxy
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMException import WMException
@@ -26,7 +27,6 @@ from WMCore.WMInit import getWMBASE
 from WMCore.BossAir.Plugins.BasePlugin import BasePlugin, BossAirPluginException
 from WMCore.FwkJobReport.Report import Report
 from WMCore.Algorithms import SubprocessAlgos
-from Utils.IterTools import grouper
 
 ##  python-condor stuff
 import htcondor as condor
@@ -234,6 +234,7 @@ class PyCondorPlugin(BasePlugin):
         self.maxTaskPriority = getattr(config.BossAir, 'maxTaskPriority', 1e7)
         self.jobsPerWorker = getattr(config.JobSubmitter, 'jobsPerWorker', 200)
         self.deleteJDLFiles = getattr(config.JobSubmitter, 'deleteJDLFiles', True)
+        self.extraMem = getattr(config.JobSubmitter, 'extraMemoryPerCore', 500)
 
         # Required for global pool accounting
         self.acctGroup = getattr(config.BossAir, 'acctGroup', "production")
@@ -282,7 +283,9 @@ class PyCondorPlugin(BasePlugin):
             self.proxy = self.setupMyProxy()
 
         # Build a request string
-        self.reqStr = "(Memory >= 1 && OpSys == \"LINUX\" ) && (Arch == \"INTEL\" || Arch == \"X86_64\") && stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) && ((REQUIRED_OS==\"any\") || (GLIDEIN_REQUIRED_OS==REQUIRED_OS))"
+        self.reqStr = ('(OpSys == "LINUX" ) && (Arch == "INTEL" || Arch == "X86_64") '
+                       '&& stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) '
+                       '&& ((REQUIRED_OS=="any") || stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -486,7 +489,7 @@ class PyCondorPlugin(BasePlugin):
                 logging.error(msg)
                 continue
 
-            if not exitCode == 0:
+            if exitCode != 0:
                 logging.error("Condor returned non-zero.  Printing out command stderr")
                 logging.error(error)
                 errorCheck, errorMsg = parseError(error=error)
@@ -953,24 +956,60 @@ class PyCondorPlugin(BasePlugin):
         jdl.append('+Requestioslots = %d\n' % highio)
         jdl.append('+RequestRepackslots = %d\n' % repackjob)
 
-        # Performance and resource estimates
-        numberOfCores = job.get('numberOfCores', 1)
-        requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
-        requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20*1000*1000*numberOfCores
-        maxWallTimeMins = int(job['estimatedJobTime'])/60.0 if job.get('estimatedJobTime', None) else 12*60
-        jdl.append('request_memory = %d\n' % requestMemory)
-        jdl.append('request_disk = %d\n' % requestDisk)
-        jdl.append('+MaxWallTimeMins = %d\n' % maxWallTimeMins)
+        # Performance and resource estimates (including JDL magic tweaks)
+        origCores = job.get('numberOfCores', 1)
+        estimatedMins = int(job['estimatedJobTime']/60.0) if job.get('estimatedJobTime') else 12*60
+        estimatedMinsSingleCore = estimatedMins * origCores
+        # For now, assume a 15 minute job startup overhead -- condor will round this up further
+        jdl.append('+EstimatedSingleCoreMins = %d\n' % estimatedMinsSingleCore)
+        jdl.append('+OriginalMaxWallTimeMins = %d\n' % estimatedMins)
+        jdl.append('+MaxWallTimeMins = WMCore_ResizeJob ? (EstimatedSingleCoreMins/RequestCpus + 15) : OriginalMaxWallTimeMins\n')
 
-        # How many cores job is using
+        requestMemory = int(job['estimatedMemoryUsage']) if job.get('estimatedMemoryUsage', None) else 1000
+        jdl.append('+OriginalMemory = %d\n' % requestMemory)
+        jdl.append('+ExtraMemory = %d\n' % self.extraMem)
+        jdl.append('+RequestMemory = OriginalMemory + ExtraMemory * (WMCore_ResizeJob ? (RequestCpus-OriginalCpus) : 0)\n')
+
+        requestDisk = int(job['estimatedDiskUsage']) if job.get('estimatedDiskUsage', None) else 20*1000*1000*origCores
+        jdl.append('request_disk = %d\n' % requestDisk)
+
+        # Set up JDL for multithreaded jobs.
+        # By default, RequestCpus will evaluate to whatever CPU request was in the workflow.
+        # If the job is labelled as resizable, then the logic is more complex:
+        # - If the job is running in a slot with N cores, this should evaluate to N
+        # - If the job is being matched against a machine, match all available CPUs, provided
+        # they are between min and max CPUs.
+        # - Otherwise, just use the original CPU count.
         jdl.append('machine_count = 1\n')
-        jdl.append('request_cpus = %s\n' % numberOfCores)
+        minCores = int(job.get('minCores', max(1, origCores/2)))
+        maxCores = max(int(job.get('maxCores', origCores)), origCores)
+        jdl.append('+MinCores = %d\n' % minCores)
+        jdl.append('+MaxCores = %d\n' % maxCores)
+        # Advertise the original CPU setting, in case someone needs this for monitoring
+        jdl.append('+OriginalCpus = %d\n' % origCores)
+        # Prefer slots that are closest to our MaxCores without going over.
+        # If the slot size is _greater_ than our MaxCores, we prefer not to
+        # use it - we might unnecessarily fragment the slot.
+        jdl.append('rank = isUndefined(Cpus) ? 0 : ifThenElse(Cpus > MaxCores, -Cpus, Cpus)\n')
+        # Record the number of CPUs utilized at match time.  We'll use this later
+        # for monitoring and accounting.  Defaults to 0; once matched, it'll
+        # put an attribute in the job  MATCH_EXP_JOB_GLIDEIN_Cpus = 4
+        jdl.append('+JOB_GLIDEIN_Cpus = "$$(Cpus:0)"\n')
+        # Make sure the resize request stays within MinCores and MaxCores.
+        jdl.append('+RequestResizedCpus = (Cpus>MaxCores) ? MaxCores : ((Cpus < MinCores) ? MinCores : Cpus)\n')
+        # If the job is running, then we should report the matched CPUs in RequestCpus - but only if there are sane
+        # values.  Otherwise, we just report the original CPU request
+        jdl.append('+JobCpus = ((JobStatus =!= 1) && (JobStatus =!= 5) && !isUndefined(MATCH_EXP_JOB_GLIDEIN_Cpus) && (int(MATCH_EXP_JOB_GLIDEIN_Cpus) isnt error)) ? int(MATCH_EXP_JOB_GLIDEIN_Cpus) : OriginalCpus\n')
+
+        # Cpus is taken from the machine ad - hence it is only defined when we are doing negotiation.
+        # Otherwise, we use either the cores in the running job (if available) or the original cores.
+        jdl.append('+RequestCpus = WMCore_ResizeJob ? (!isUndefined(Cpus) ? RequestResizedCpus : JobCpus) : OriginalCpus\n')
+
+        jdl.append('+WMCore_ResizeJob = %s\n' % bool(job.get('resizeJob', False)))
 
         # Add OS requirements for jobs
-        if job.get('scramArch') is not None and job.get('scramArch').startswith("slc6_"):
-            jdl.append('+REQUIRED_OS = "rhel6"\n')
-        else:
-            jdl.append('+REQUIRED_OS = "any"\n')
+        requiredOSes = self.scramArchtoRequiredOS(job.get('scramArch'))
+        jdl.append('+REQUIRED_OS = "%s"\n' % requiredOSes)
 
         return jdl
 

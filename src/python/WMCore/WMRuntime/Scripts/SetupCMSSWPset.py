@@ -17,7 +17,7 @@ import json
 import FWCore.ParameterSet.Config as cms
 
 from PSetTweaks.PSetTweak import PSetTweak
-from PSetTweaks.WMTweak import applyTweak
+from PSetTweaks.WMTweak import applyTweak, resizeResources
 from PSetTweaks.WMTweak import makeOutputTweak, makeJobTweak, makeTaskTweak
 from WMCore.Storage.SiteLocalConfig import loadSiteLocalConfig
 from WMCore.Storage.TrivialFileCatalog import TrivialFileCatalog
@@ -657,7 +657,10 @@ class SetupCMSSWPset(ScriptInterface):
         self.fixupProcess()
 
         try:
-            numCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+            origCores = int(getattr(self.step.data.application.multicore, 'numberOfCores', 1))
+            resources = {'cores': origCores}
+            resizeResources(resources)
+            numCores = resources['cores']
             options = getattr(self.process, "options", None)
             if options is None:
                 self.process.options = cms.untracked.PSet()

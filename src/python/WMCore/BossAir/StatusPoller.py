@@ -13,7 +13,7 @@ import logging
 import threading
 from collections import defaultdict
 
-from Utils.IterTools import flattenList
+from Utils.IteratorTools import flattenList
 from WMCore.WMException                    import WMException
 from WMCore.WMExceptions                   import WM_JOB_ERROR_CODES
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread

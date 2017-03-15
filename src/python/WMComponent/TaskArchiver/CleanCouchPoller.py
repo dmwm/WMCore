@@ -292,7 +292,7 @@ class CleanCouchPoller(BaseWorkerThread):
                 if not self.useReqMgrForCompletionCheck:
                     #  only update tier0 case, for Prodcuction/Processing reqmgr will update status
                     self.centralRequestDBWriter.updateRequestStatus(workflowName, archiveState)
-                updated += 0
+                updated += 1
         return updated
 
     def archiveSummaryAndPublishToDashBoard(self, finishedwfsWithLogCollectAndCleanUp):

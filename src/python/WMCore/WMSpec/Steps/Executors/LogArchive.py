@@ -138,7 +138,7 @@ class LogArchive(Executor):
                           "location": fileInfo["PNN"], "module_label": "logArchive",
                           "events": 0, "size": 0, "merged": False,
                           "checksums": {'adler32': adler32, 'cksum' : cksum}}
-            self.report.addOutputFile(outputModule = "logArchive", file = reportFile)
+            self.report.addOutputFile(outputModule = "logArchive", aFile= reportFile)
         except Alarm:
             msg = "Indefinite hang during stageOut of logArchive"
             logging.error(msg)

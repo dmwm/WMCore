@@ -1,24 +1,22 @@
 #!/usr/bin/env python
-# pylint: disable=W0104
+
 """
 _Run_
 
 container representing a run, and its constituent lumi sections
-
 """
 
-
-
 from WMCore.DataStructs.WMObject import WMObject
+
 
 class Run(WMObject):
     """
     _Run_
 
     Run container, is a list of lumi sections
-
     """
-    def __init__(self, runNumber = None, *newLumis):
+
+    def __init__(self, runNumber=None, *newLumis):
         WMObject.__init__(self)
         self.run = runNumber
         self.lumis = []
@@ -26,7 +24,6 @@ class Run(WMObject):
 
     def __str__(self):
         return "Run%s:%s" % (self.run, list(self.lumis))
-
 
     def __lt__(self, rhs):
         if self.run != rhs.run:
@@ -38,21 +35,12 @@ class Run(WMObject):
             return self.run > rhs.run
         return list(self.lumis) > list(rhs.lumis)
 
-
     def extend(self, items):
         self.lumis.extend(items)
         return
 
     def __cmp__(self, rhs):
-        if self.run == rhs.run:
-            return cmp(list(self.lumis), list(rhs.lumis))
-        if self.run > rhs.run:
-            return 1
-        if self.run < rhs.run:
-            return -1
-
-        return cmp(self, rhs)
-
+        return (self > rhs) - (self < rhs)  # Python3 equivalent of cmp()
 
     def __add__(self, rhs):
         """
@@ -63,27 +51,32 @@ class Run(WMObject):
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError(msg)
 
-        #newRun = Run(self.run, *self)
-        #[ newRun.append(x) for x in rhs if x not in newRun ]
-        [ self.lumis.append(x) for x in rhs.lumis if x not in self.lumis ]
+        # newRun = Run(self.run, *self)
+        # [ newRun.append(x) for x in rhs if x not in newRun ]
+        [self.lumis.append(x) for x in rhs.lumis if x not in self.lumis]
 
         return self
+
     def __iter__(self):
         return self.lumis.__iter__()
 
     def __next__(self):
         return self.lumis.__next__()
+
     def __len__(self):
         return self.lumis.__len__()
-    def __getitem__(self,key):
+
+    def __getitem__(self, key):
         return self.lumis.__getitem__(key)
-    def __setitem__(self,key,value):
-        return self.lumis.__setitem__(key,value)
-    def __delitem__(self,key):
+
+    def __setitem__(self, key, value):
+        return self.lumis.__setitem__(key, value)
+
+    def __delitem__(self, key):
         return self.lumis.__delitem__(key)
 
     def __eq__(self, rhs):
-        if not isinstance(rhs, Run) :
+        if not isinstance(rhs, Run):
             return False
         if self.run != rhs.run:
             return False
@@ -107,10 +100,10 @@ class Run(WMObject):
         Convert to JSON friendly format.  Include some information for the
         thunker so that we can convert back.
         """
-        return {"Run" : self.run, "Lumis" : self.lumis,
+        return {"Run": self.run, "Lumis": self.lumis,
                 "thunker_encoded_json": True, "type": "WMCore.DataStructs.Run.Run"}
 
-    def __to_json__(self, thunker = None):
+    def __to_json__(self, thunker=None):
         """
         __to_json__
 

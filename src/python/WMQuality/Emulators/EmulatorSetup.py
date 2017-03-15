@@ -6,23 +6,25 @@ import tempfile
 
 from WMCore.Configuration import Configuration, saveConfigurationFile
 
+
 def deleteConfig(configFile):
     if os.path.exists(configFile):
         os.remove(configFile)
     else:
         pass
 
+
 def setupWMAgentConfig():
-    fd,configFile = tempfile.mkstemp(".py", "TESTAGENTConfig",)
+    _, configFile = tempfile.mkstemp(".py", "TESTAGENTConfig", )
     os.environ["WMAGENT_CONFIG"] = configFile
     _wmAgentConfig(configFile)
     return configFile
 
-def _wmAgentConfig(configFile):
 
+def _wmAgentConfig(configFile):
     config = Configuration()
     config.section_("JobStateMachine")
-    #Waring setting couchDB to None will cause the ERROR:
+    # Waring setting couchDB to None will cause the ERROR:
     # but that should be ignored, if you want to test couchDB
     # set the real couchDB information here
     config.JobStateMachine.couchurl = os.getenv("COUCHURL")
@@ -44,10 +46,10 @@ def _wmAgentConfig(configFile):
 
     # BossAir setup
     config.section_("BossAir")
-    config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
-    config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+    config.BossAir.pluginNames = ['TestPlugin', 'SimpleCondorPlugin']
+    config.BossAir.pluginDir = 'WMCore.BossAir.Plugins'
 
-    #TaskArchive setup (JobSubmitter needs this)
+    # TaskArchive setup (JobSubmitter needs this)
     config.component_("TaskArchiver")
     config.TaskArchiver.ReqMgr2ServiceURL = "https://cmsweb-dev.cern.ch/reqmgr2"
 

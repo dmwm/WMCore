@@ -83,7 +83,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeRECO": {"dataset": {"dataTier": "RECO", "filterName": "reco"}},
                     "writeAOD": {"dataset": {"dataTier": "AOD", "filterName": "AOD"}},
                     "writeALCA": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca"}},
-                    }
+                   }
     }
     alcaConfig = Document()
     alcaConfig["info"] = None
@@ -97,7 +97,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeALCA2": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca2"}},
                     "writeALCA3": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca3"}},
                     "writeALCA4": {"dataset": {"dataTier": "ALCARECO", "filterName": "alca4"}},
-                    }
+                   }
     }
 
     skimsConfig = Document()
@@ -113,7 +113,7 @@ def makeProcessingConfigs(couchDatabase):
                     "writeSkim3": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim3"}},
                     "writeSkim4": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim4"}},
                     "writeSkim5": {"dataset": {"dataTier": "RECO-AOD", "filterName": "skim5"}},
-                    }
+                   }
     }
     couchDatabase.queue(rawConfig)
     couchDatabase.queue(recoConfig)
@@ -402,9 +402,8 @@ class TaskChainTests(unittest.TestCase):
             unmerged.loadData()
 
             mergedset = task.getPathName() + "/" + task.name() + "Merge" + outputModule + "/merged-Merged"
-            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) \
-                    or outputModule in taskConf.get("TransientOutputModules", []) or outputModule in centralConf.get(
-                    "IgnoredOutputModules", []):
+            if outputModule == "logArchive" or not taskConf.get("KeepOutput", True) or outputModule in taskConf.get(
+                    "TransientOutputModules", []) or outputModule in centralConf.get("IgnoredOutputModules", []):
                 mergedset = task.getPathName() + "/unmerged-" + outputModule
             unmergedset = task.getPathName() + "/unmerged-" + outputModule
 
@@ -656,7 +655,7 @@ class TaskChainTests(unittest.TestCase):
                     self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 perfParams = taskObj.jobSplittingParameters()['performance']
                 self.assertEqual(perfParams['memoryRequirement'], 2300.0)
-            elif taskObj.taskType() in ('LogCollect'):
+            elif taskObj.taskType() == 'LogCollect':
                 stepHelper = taskObj.getStepHelper('logCollect1')
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
                 self.assertEqual(stepHelper.getNumberOfStreams(), 0)
@@ -679,7 +678,7 @@ class TaskChainTests(unittest.TestCase):
                         self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 perfParams = taskObj.jobSplittingParameters()['performance']
                 self.assertEqual(perfParams['memoryRequirement'], 2300.0)
-            elif taskObj.taskType() in ('LogCollect'):
+            elif taskObj.taskType() == 'LogCollect':
                 stepHelper = taskObj.getStepHelper('logCollect1')
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
                 self.assertEqual(stepHelper.getNumberOfStreams(), 0)
@@ -704,7 +703,7 @@ class TaskChainTests(unittest.TestCase):
                         self.assertEqual(stepHelper.getNumberOfStreams(), 0)
                 perfParams = taskObj.jobSplittingParameters()['performance']
                 self.assertEqual(perfParams['memoryRequirement'], 2300.0)
-            elif taskObj.taskType() in ('LogCollect'):
+            elif taskObj.taskType() == 'LogCollect':
                 stepHelper = taskObj.getStepHelper('logCollect1')
                 self.assertEqual(stepHelper.getNumberOfCores(), 1)
                 self.assertEqual(stepHelper.getNumberOfStreams(), 0)
@@ -718,12 +717,15 @@ class TaskChainTests(unittest.TestCase):
         arguments = self.buildMultithreadedTaskChain(self.differentNCores)
         arguments.pop('Multicore', None)
         arguments.pop('Memory', None)
+        arguments.pop('EventStreams', None)
         arguments['Task1'].pop('Multicore', None)
         arguments['Task1'].pop('Memory', None)
         arguments['Task2'].pop('Multicore', None)
         arguments['Task2'].pop('Memory', None)
+        arguments['Task2'].pop('EventStreams', None)
         arguments['Task3'].pop('Multicore', None)
         arguments['Task3'].pop('Memory', None)
+        arguments['Task3'].pop('EventStreams', None)
 
         factory = TaskChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("MultiChain", arguments)
@@ -788,9 +790,9 @@ class TaskChainTests(unittest.TestCase):
         self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Multicore'])
         self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task2']['Multicore'])
         self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfCores(), arguments['Task3']['Multicore'])
-        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
-        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
-        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), 0)
+        self.assertEqual(hlt.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['EventStreams'])
+        self.assertEqual(reco.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task2']['EventStreams'])
+        self.assertEqual(miniAOD.getStepHelper("cmsRun1").getNumberOfStreams(), arguments['Task3']['EventStreams'])
 
         self.assertEqual(hltMemory, arguments['Memory'])
         self.assertEqual(recoMemory, arguments['Task2']['Memory'])
@@ -916,7 +918,7 @@ class TaskChainTests(unittest.TestCase):
         arguments = testArguments
 
         # ... continuing with the request
-        for key in ['GlobalTag', 'ProcessingVersion', 'Multicore', 'Memory',
+        for key in ['GlobalTag', 'ProcessingVersion', 'Multicore', 'Memory', 'EventStreams',
                     'TaskChain', 'Task1', 'Task2', 'Task3']:
             arguments.update({key: request['createRequest'][key]})
 

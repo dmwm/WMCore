@@ -445,8 +445,8 @@ class TaskChainWorkloadFactory(StdBase):
         modulesToMerge = []
         unmergedModules = outputModules.keys()
         if keepOutput:
-            unmergedModules = filter(lambda x: x in transientOutputModules, outputModules.keys())
-            modulesToMerge = filter(lambda x: x not in transientOutputModules, outputModules.keys())
+            unmergedModules = [x for x in outputModules.keys() if x in transientOutputModules]
+            modulesToMerge = [x for x in outputModules.keys() if x not in transientOutputModules]
 
         procMergeTasks = {}
         for outputModuleName in modulesToMerge:
@@ -478,10 +478,6 @@ class TaskChainWorkloadFactory(StdBase):
                 taskConf[argument] = taskArguments[argument]["default"]
             else:
                 taskConf[argument] = taskArguments[argument]["type"](taskConf[argument])
-        baseArguments = self.getWorkloadArguments()
-        for argument in baseArguments:
-            if argument in taskConf:
-                taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
 
         if generator:
             taskConf["SplittingAlgo"] = "EventBased"
@@ -642,6 +638,7 @@ class TaskChainWorkloadFactory(StdBase):
                                "attr": "prepID", "null": True},
                     "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
+                    "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
                    }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

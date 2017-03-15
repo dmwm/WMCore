@@ -185,11 +185,22 @@ class RequestInfo(object):
             # It is used whether AgentJobInfo is deleted or not for announced status
             if value == "NO_KEY" and key not in self.data:
                 continue
-            if not isinstance(value, list):
+            elif value == "NO_KEY" and key in self.data:
+                return False
+
+            if isinstance(value, dict):
+                # TODO: need to handle dictionary comparison
+                # For now ignore
+                continue
+            elif not isinstance(value, list):
                 value = [value]
 
-            if key in self.data:
-                if self.data[key] not in value:
+            reqValue = self.get(key)
+            if reqValue is not None:
+                if isinstance(reqValue, list):
+                    if not set(reqValue).intersection(set(value)):
+                        return False
+                elif reqValue not in value:
                     return False
             else:
                 return False

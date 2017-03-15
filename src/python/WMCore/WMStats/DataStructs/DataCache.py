@@ -2,12 +2,12 @@ import time
 from WMCore.ReqMgr.DataStructs.Request import RequestInfo, protectedLFNs
 
 class DataCache(object):
-    # TODO: need to change to  store in  db instead of storing in the memory 
+    # TODO: need to change to  store in  db instead of storing in the memory
     # When mulitple server run for load balancing it could have different result
-    # from each server. 
-    _duration = 300 # 5 minitues
+    # from each server.
+    _duration = 300  # 5 minitues
     _lastedActiveDataFromAgent = {}
-    
+
     @staticmethod
     def getDuration():
         return DataCache._duration
@@ -46,13 +46,29 @@ class DataCache(object):
             if reqData.andFilterCheck(filterDict):
                 for prop in maskList:
                     result = reqData.get(prop, [])
-                    
+
                     if isinstance(result, list):
                         for value in result:
                             yield value
                     elif result is not None and result != "":
                         yield result
-                        
+
+    @staticmethod
+    def filterDataByRequest(filterDict, maskList):
+        reqData = DataCache.getlatestJobData()
+        if isinstance(maskList, basestring):
+            maskList = [maskList]
+        if "RequestName" not in maskList:
+            maskList.append("RequestName")
+
+        for _, reqInfo in reqData.iteritems():
+            reqData = RequestInfo(reqInfo)
+            if reqData.andFilterCheck(filterDict):
+                resultItem = {}
+                for prop in maskList:
+                    resultItem[prop] = reqData.get(prop, None)
+                yield resultItem
+
     @staticmethod
     def getProtectedLFNs():
         reqData = DataCache.getlatestJobData()

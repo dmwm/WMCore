@@ -99,22 +99,20 @@ def generateRequestName(request):
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
     # then validate the final request name
     identifier(request["RequestName"])
-    
-        
+
 def protectedLFNs(requestInfo):
-    
+
     reqData = RequestInfo(requestInfo)
     result = []
     if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
         outs = requestInfo.get('OutputDatasets', [])
-        base= requestInfo.get('UnmergedLFNBase','/store/unmerged')
+        base = requestInfo.get('UnmergedLFNBase', '/store/unmerged')
         for out in outs:
             dsn, ps, tier = out.split('/')[1:]
-            acq, rest = ps.split('-',1)
+            acq, rest = ps.split('-', 1)
             dirPath = '/'.join([ base, acq, dsn, tier, rest])
             result.append(dirPath)
     return result
-            
 
 class RequestInfo(object):
     """
@@ -122,7 +120,7 @@ class RequestInfo(object):
     """
     def __init__(self, requestData):
         self.data = requestData
-    
+
     def _maskTaskStepChain(self, prop, chain_name, default=None):
 
         propExist = False
@@ -131,9 +129,9 @@ class RequestInfo(object):
             if prop in self.data["%s%s" % (chain_name, i + 1)]:
                 propExist = True
                 break
-        
+
         defaultValue = self.data.get(prop, default)
-            
+
         if propExist:
             result = set()
             for i in range(numLoop):
@@ -146,7 +144,7 @@ class RequestInfo(object):
                         value = defaultValue.get(chain_key, None)
                     else:
                         value = defaultValue
-                    
+
                     if value is not None:
                         result.add(value)
             return list(result)
@@ -155,7 +153,7 @@ class RequestInfo(object):
                 return defaultValue.values()
             else:
                 return defaultValue
-            
+
         return
 
     def get(self, prop, default=None):
@@ -163,7 +161,7 @@ class RequestInfo(object):
         gets the value when prop exist as one of the properties in the request document.
         In case TaskChain, StepChain workflow it searches the property in Task/Step level
         """
-        
+
         if "TaskChain" in self.data:
             return self._maskTaskStepChain(prop, "Task")
         elif "StepChain" in self.data:
@@ -172,23 +170,30 @@ class RequestInfo(object):
             return self.data[prop]
         else:
             return default
-        
+
     def andFilterCheck(self, filterDict):
         """
         checks whether filterDict condition met.
         filterDict is the dict of key and value(list) format)
-        i.e. 
+        i.e.
         {"RequestStatus": ["running-closed", "completed"],}
         If this request's RequestStatus is either "running-closed", "completed",
         return True, otherwise False
         """
         for key, value in filterDict.iteritems():
+            # special case checks where key is not exist in Request's Doc.
+            # It is used whether AgentJobInfo is deleted or not for announced status
+            if value == "NO_KEY" and key not in self.data:
+                continue
+            if not isinstance(value, list):
+                value = [value]
+
             if key in self.data:
                 if self.data[key] not in value:
                     return False
             else:
-                return False  
+                return False
         return True
 
 
-    
+

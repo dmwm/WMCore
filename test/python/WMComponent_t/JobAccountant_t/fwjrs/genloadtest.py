@@ -12,7 +12,7 @@ outputModules = ["write_A_Calo_RAW", "write_A_Cosmics_RAW",
                  "write_HLTDEBUG_Monitor_RAW"]
 
 runInfo = Run(1)
-runInfo.lumis.extend([11, 12, 13, 14, 15])
+runInfo.extendLumis([11, 12, 13, 14, 15])
 
 for i in range(100):
     loadTestReport = Report.Report("cmsRun1")

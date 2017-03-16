@@ -237,8 +237,8 @@ def runHandler():
                          for lumi in subnode.children
                          if "ID" in lumi.attrs]
 
-                runInfo = Run(runNumber = runId)
-                runInfo.lumis.extend(lumis)
+                runInfo = Run(runNumber=runId)
+                runInfo.extendLumis(lumis)
 
                 Report.addRunInfoToFile(fileSection, runInfo)
 

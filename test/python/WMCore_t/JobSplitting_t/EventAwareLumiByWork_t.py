@@ -688,12 +688,12 @@ class EventAwareLumiByWorkTest(unittest.TestCase):
         for runObj in files[0]['runs']:
             if runObj.run == 0:
                 # continue
-                runObj.lumis.append(42)
+                runObj.appendLumi(42)
         for runObj in files[1]['runs']:
             if runObj.run == 1:
                 # continue
                 runObj.run = 0
-                runObj.lumis.append(42)
+                runObj.appendLumi(42)
         files[1]['locations'] = {'blenheim'}
         jobFactory = splitter(package="WMCore.DataStructs", subscription=testSubscription)
         jobGroups = jobFactory(events_per_job=50, halt_job_on_file_boundaries=True, performance=self.performanceParams)

@@ -19,24 +19,24 @@ class Run(WMObject):
     def __init__(self, runNumber=None, *newLumis):
         WMObject.__init__(self)
         self.run = runNumber
-        self.lumis = []
-        self.lumis.extend(newLumis)
+        self.eventsPerLumi = []
+        self.eventsPerLumi.extend(newLumis)
 
     def __str__(self):
-        return "Run%s:%s" % (self.run, list(self.lumis))
+        return "Run%s:%s" % (self.run, list(self.eventsPerLumi))
 
     def __lt__(self, rhs):
         if self.run != rhs.run:
             return self.run < rhs.run
-        return list(self.lumis) < list(rhs.lumis)
+        return list(self.eventsPerLumi) < list(rhs.eventsPerLumi)
 
     def __gt__(self, rhs):
         if self.run != rhs.run:
             return self.run > rhs.run
-        return list(self.lumis) > list(rhs.lumis)
+        return list(self.eventsPerLumi) > list(rhs.eventsPerLumi)
 
     def extend(self, items):
-        self.lumis.extend(items)
+        self.extendLumis(items)
         return
 
     def __cmp__(self, rhs):
@@ -53,34 +53,34 @@ class Run(WMObject):
 
         # newRun = Run(self.run, *self)
         # [ newRun.append(x) for x in rhs if x not in newRun ]
-        [self.lumis.append(x) for x in rhs.lumis if x not in self.lumis]
+        [self.eventsPerLumi.append(x) for x in rhs.lumis if x not in self.eventsPerLumi]
 
         return self
 
     def __iter__(self):
-        return self.lumis.__iter__()
+        return self.eventsPerLumi.__iter__()
 
     def __next__(self):
-        return self.lumis.__next__()
+        return self.eventsPerLumi.__next__()
 
     def __len__(self):
-        return self.lumis.__len__()
+        return self.eventsPerLumi.__len__()
 
     def __getitem__(self, key):
-        return self.lumis.__getitem__(key)
+        return self.eventsPerLumi.__getitem__(key)
 
     def __setitem__(self, key, value):
-        return self.lumis.__setitem__(key, value)
+        return self.eventsPerLumi.__setitem__(key, value)
 
     def __delitem__(self, key):
-        return self.lumis.__delitem__(key)
+        return self.eventsPerLumi.__delitem__(key)
 
     def __eq__(self, rhs):
         if not isinstance(rhs, Run):
             return False
         if self.run != rhs.run:
             return False
-        return list(self.lumis) == list(rhs.lumis)
+        return list(self.eventsPerLumi) == list(rhs.eventsPerLumi)
 
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
@@ -88,10 +88,24 @@ class Run(WMObject):
     def __hash__(self):
 
         value = self.run.__hash__()
-        self.lumis.sort()
-        for lumi in self.lumis:
+        self.eventsPerLumi.sort()
+        for lumi in self.eventsPerLumi:
             value += lumi.__hash__()
         return value
+
+    @property
+    def lumis(self):
+        return list(self.eventsPerLumi)
+
+    @lumis.setter
+    def lumis(self, lumiList):
+        self.eventsPerLumi = list(lumiList)
+
+    def extendLumis(self, lumiList):
+        self.eventsPerLumi.extend(lumiList)
+
+    def appendLumi(self, value):
+        self.eventsPerLumi.append(value)
 
     def json(self):
         """
@@ -100,7 +114,7 @@ class Run(WMObject):
         Convert to JSON friendly format.  Include some information for the
         thunker so that we can convert back.
         """
-        return {"Run": self.run, "Lumis": self.lumis,
+        return {"Run": self.run, "Lumis": self.eventsPerLumi,
                 "thunker_encoded_json": True, "type": "WMCore.DataStructs.Run.Run"}
 
     def __to_json__(self, thunker=None):
@@ -119,5 +133,5 @@ class Run(WMObject):
         Conver JSON data back into a Run object.
         """
         self.run = jsondata["Run"]
-        self.lumis = jsondata["Lumis"]
+        self.eventsPerLumi = jsondata["Lumis"]
         return self

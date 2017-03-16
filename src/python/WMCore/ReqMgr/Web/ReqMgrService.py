@@ -14,6 +14,7 @@ import json
 import time
 import pprint
 import collections
+from datetime import datetime
 
 # cherrypy modules
 import cherrypy
@@ -157,6 +158,64 @@ def check_scripts(scripts, resource, path):
                 resource.update({script: spath})
     return scripts
 
+def _map_configcache_url(tConfigs, baseURL, configIDName, configID, taskName=""):
+    if configIDName.endswith('ConfigCacheID') and configID is not None:
+        url = "%s/reqmgr_config_cache/%s/configFile" % (baseURL, configID)
+        prefix = "%s: " % taskName if taskName else ""
+        task = "%s%s: %s " % (prefix, configIDName, configID)
+        tConfigs.setdefault(task, url)
+    return
+
+def tasks_configs(docs, html=False):
+    "Helper function to provide mapping between tasks and configs"
+    if  not isinstance(docs, list):
+        docs = [docs]
+    tConfigs = {}
+    for doc in docs:
+        name = doc.get('RequestName', '')
+        rtype = doc.get("RequestType", '')
+        chainTypeFlag = rtype.endswith('Chain')
+        
+        curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch/couchdb')
+        if  curl == None or curl == "none":
+            curl = 'https://cmsweb.cern.ch/couchdb'
+        if  not name:
+            continue
+        for key, val in doc.items():
+            _map_configcache_url(tConfigs, curl, key, val)
+            if chainTypeFlag and key.startswith(rtype.rstrip("Chain")) and isinstance(val, dict):
+                for kkk in val.keys():
+                    # append task/step number and name
+                    keyStr = "%s: %s" % (key, val.get("%sName" % rtype.rstrip("Chain"), ''))
+                    _map_configcache_url(tConfigs, curl, kkk, val[kkk], keyStr)
+    if  html:
+        out = '<fieldset><legend>Config Files</legend><ul>'
+        for task in sorted(tConfigs):
+            out += '<li><a href="%s" target="config_page">%s</a></li>' % (tConfigs[task], task)
+        out += '</ul></fieldset>'
+        return out
+    return tConfigs
+
+def state_transition(docs):
+    "Helper function to provide mapping between tasks and configs"
+    if  not isinstance(docs, list):
+        docs = [docs]
+
+    out = '<fieldset><legend>State Transioin</legend><ul>'
+    multiDocFlag = True if len(docs) > 1 else False
+    for doc in docs:
+        name = doc.get('RequestName', '')
+        sTransition = doc.get('RequestTransition', '')
+
+        if not name:
+            continue
+        if multiDocFlag:
+            out += '%s<br />' % name
+        for sInfo in sTransition:
+            out += '<li><b>%s</b>: %s</li>' % (sInfo["Status"],
+                    datetime.utcfromtimestamp(sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'))
+    out += '</ul></fieldset>'
+    return out
 
 # code taken from
 # http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
@@ -496,11 +555,15 @@ class ReqMgrService(TemplatedPage):
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs, selected),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         doc=json.dumps(doc), time=time,
+                                        tasksConfigs=tasks_configs(doc, html=True),
+                                        sTransition=state_transition(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
                                         table="", jsondata=jsondata, time=time,
+                                        tasksConfigs=tasks_configs(doc, html=True),
+                                        sTransition=state_transition(doc),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid

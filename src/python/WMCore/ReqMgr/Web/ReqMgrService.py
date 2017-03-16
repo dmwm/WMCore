@@ -164,7 +164,9 @@ def tasks_configs(docs, html=False):
     tConfigs = {}
     for doc in docs:
         name = doc.get('RequestName', '')
-        curl = doc.get('ConfigCacheURL', '')
+        curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch/couchdb')
+        if  curl == None or curl == "none":
+            curl = 'https://cmsweb.cern.ch/couchdb'
         if  not name:
             continue
         for key, val in doc.items():

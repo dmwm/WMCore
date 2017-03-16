@@ -157,6 +157,30 @@ def check_scripts(scripts, resource, path):
                 resource.update({script: spath})
     return scripts
 
+def tasks_configs(docs, html=False):
+    "Helper function to provide mapping between tasks and configs"
+    if  not isinstance(docs, list):
+        docs = [docs]
+    tConfigs = {}
+    for doc in docs:
+        name = doc.get('RequestName', '')
+        curl = doc.get('ConfigCacheUrl', '')
+        if  not name:
+            continue
+        for key, val in doc.items():
+            if  isinstance(val, dict):
+                for kkk in val.keys():
+                    if  kkk.endswith('ConfigCacheID'):
+                        url = "%s/reqmgr_config_cache/%s/configFile" % (curl, val[kkk])
+                        task = '%s/%s' % (name, kkk)
+                        tConfigs.setdefault(task, []).append(url)
+    if  html:
+        out = '<div><h3>Config Files</h3><ul>'
+        for task, url in tConfigs.items():
+            out += '<li><a href="%s">%s</a></li>' % (url, task)
+        out += '</ul></div>'
+        return out
+    return tConfigs
 
 # code taken from
 # http://stackoverflow.com/questions/1254454/fastest-way-to-convert-a-dicts-keys-values-from-unicode-to-str
@@ -496,11 +520,13 @@ class ReqMgrService(TemplatedPage):
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs, selected),
                                         jsondata=json2form(doc, indent=2, keep_first_value=False),
                                         doc=json.dumps(doc), time=time,
+                                        tasksConfigs=tasks_configs(doc, html=True),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]
             content = self.templatepage('doc', title='Series of docs: %s' % rid,
                                         table="", jsondata=jsondata, time=time,
+                                        tasksConfigs=tasks_configs(doc, html=True),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         else:
             doc = 'No request found for name=%s' % rid

@@ -7,6 +7,7 @@ Perform general agent monitoring, like:
 """
 __all__ = []
 
+import os
 import threading
 import logging
 import time
@@ -200,6 +201,9 @@ class AgentStatusPoller(BaseWorkerThread):
             if float(disk['percent'].strip('%')) >= diskUseThreshold and \
                             disk['mounted'] not in self.config.AnalyticsDataCollector.ignoreDisk:
                 agentInfo['disk_warning'].append(disk)
+                agentInfo['drain_mode'] = True
+                self.config.WorkQueueManager.queueParams['DrainMode'] = True
+                os.system("$manage execute-agent wmcoreD --restart --components=WorkQueueManager,AnalyticsDataCollector,AgentStatusWatcher")
 
         # Couch process warning
         couchProc = numberCouchProcess()

@@ -141,6 +141,7 @@ config.WorkQueueManager.queueParams["ParentQueueCouchUrl"] = "https://cmsweb.cer
 # this has to be unique for different work queue. This is just place holder
 config.WorkQueueManager.queueParams["QueueURL"] = "http://%s:5984" % (config.Agent.hostName)
 config.WorkQueueManager.queueParams["WorkPerCycle"] = 100  # don't pull more than this number of elements per cycle
+config.WorkQueueManager.queueParams["DrainMode"] = False
 
 config.component_("DBS3Upload")
 config.DBS3Upload.namespace = "WMComponent.DBS3Buffer.DBS3Upload"

@@ -69,7 +69,7 @@ for workloadTask in workload.taskIterator():
                                         "srmcms.pic.es"]), merged = False)
 
     myRun = Run(runNumber = 1)
-    myRun.lumis.append(1)
+    myRun.appendLumi(1)
     virtualFile.addRun(myRun)
     virtualFile.create()
     inputFileset.addFile(virtualFile)

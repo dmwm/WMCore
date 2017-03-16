@@ -227,12 +227,12 @@ class LumiBasedTest(unittest.TestCase):
         for runObj in files[0]['runs']:
             if runObj.run != 0:
                 continue
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         for runObj in files[1]['runs']:
             if runObj.run != 1:
                 continue
             runObj.run = 0
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         files[1]['locations'] = set(['blenheim'])
 
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -286,7 +286,7 @@ class LumiBasedTest(unittest.TestCase):
         for runObj in files[0]['runs']:
             if runObj.run != 0:
                 continue
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         for runObj in files[1]['runs']:
             runObj.run = 0
             runObj.lumis = [42]

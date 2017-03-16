@@ -164,7 +164,7 @@ def tasks_configs(docs, html=False):
     tConfigs = {}
     for doc in docs:
         name = doc.get('RequestName', '')
-        curl = doc.get('ConfigCacheUrl', '')
+        curl = doc.get('ConfigCacheURL', '')
         if  not name:
             continue
         for key, val in doc.items():

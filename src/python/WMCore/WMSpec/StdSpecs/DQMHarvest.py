@@ -56,17 +56,14 @@ class DQMHarvestWorkloadFactory(StdBase):
             msg = "DQMConfigCacheID parameter has not been provided in the request"
             raise WMSpecFactoryException(message=msg)
 
-        couchUrl = schema.get("ConfigCacheUrl", None)
         self.validateConfigCacheExists(configID=schema["DQMConfigCacheID"],
-                                       couchURL=couchUrl,
+                                       configCacheUrl=schema['ConfigCacheUrl'],
                                        couchDBName=schema["CouchDBName"],
                                        getOutputModules=False)
 
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
-        baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType": {"default": "DQMHarvest"},
                     "InputDataset": {"default": None, "optional": False,
                                      "validate": dataset},
@@ -150,10 +147,7 @@ class DQMHarvestWorkloadFactory(StdBase):
                                           dqmHarvestUnit=dqmHarvestUnit)
 
         if self.dqmConfigCacheID is not None:
-            if getattr(self, "configCacheUrl", None) is not None:
-                harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
-            else:
-                harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
+            harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(self.inputDataset)
         else:
             scenarioArgs = {'globalTag': self.globalTag,

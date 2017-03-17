@@ -112,8 +112,7 @@ class StdBase(object):
         return skimMap
 
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
-                               configDoc=None, couchURL=None,
-                               couchDBName=None, configCacheUrl=None):
+                               configDoc=None, couchDBName=None, configCacheUrl=None):
         """
         _determineOutputModules_
 
@@ -125,12 +124,11 @@ class StdBase(object):
 
         outputModules = {}
         if configDoc != None and configDoc != "":
-            url = configCacheUrl or couchURL
-            if (url, couchDBName) in self.config_cache:
-                configCache = self.config_cache[(url, couchDBName)]
+            if (configCacheUrl, couchDBName) in self.config_cache:
+                configCache = self.config_cache[(configCacheUrl, couchDBName)]
             else:
-                configCache = ConfigCache(url, couchDBName, True)
-                self.config_cache[(url, couchDBName)] = configCache
+                configCache = ConfigCache(configCacheUrl, couchDBName, True)
+                self.config_cache[(configCacheUrl, couchDBName)] = configCache
             # TODO: need to change to DataCache
             # configCache.loadDocument(configDoc)
             configCache.loadByID(configDoc)
@@ -252,7 +250,7 @@ class StdBase(object):
 
     def setupProcessingTask(self, procTask, taskType, inputDataset=None, inputStep=None,
                             inputModule=None, scenarioName=None,
-                            scenarioFunc=None, scenarioArgs=None, couchURL=None,
+                            scenarioFunc=None, scenarioArgs=None,
                             couchDBName=None, configDoc=None, splitAlgo="LumiBased",
                             splitArgs=None, seeding=None,
                             totalEvents=None, eventsPerLumi=None,
@@ -275,12 +273,11 @@ class StdBase(object):
             that step (inputModule) must be specified.
 
         Processing config will be setup as follows:
-          configDoc not empty - Use a ConfigCache config, couchURL and
+          configDoc not empty - Use a ConfigCache config, configCacheUrl and
             couchDBName must not be empty.
           configDoc empty - Use a Configuration.DataProcessing config.  The
             scenarioName, scenarioFunc and scenarioArgs parameters must not be
             empty.
-          if configCacheUrl is not empty, use that plus couchDBName + configDoc if not empty
 
         The seeding and totalEvents parameters are only used for production jobs.
 
@@ -409,7 +406,7 @@ class StdBase(object):
         procTaskCmsswHelper.setEventsPerLumi(eventsPerLumi)
 
         configOutput = self.determineOutputModules(scenarioFunc, scenarioArgs,
-                                                   configDoc, couchURL, couchDBName,
+                                                   configDoc, couchDBName,
                                                    configCacheUrl=configCacheUrl)
         outputModules = {}
         for outputModuleName in configOutput.keys():
@@ -423,8 +420,7 @@ class StdBase(object):
             outputModules[outputModuleName] = outputModule
 
         if configDoc != None and configDoc != "":
-            url = configCacheUrl or couchURL
-            procTaskCmsswHelper.setConfigCache(url, configDoc, couchDBName)
+            procTaskCmsswHelper.setConfigCache(configCacheUrl, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
             if 'outputs' in scenarioArgs:
@@ -765,10 +761,7 @@ class StdBase(object):
                                      getattr(parentOutputModule, "dataTier"))
 
         if self.dqmConfigCacheID is not None:
-            if getattr(self, "configCacheUrl", None) is not None:
-                harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
-            else:
-                harvestTaskCmsswHelper.setConfigCache(self.couchURL, self.dqmConfigCacheID, self.couchDBName)
+            harvestTaskCmsswHelper.setConfigCache(self.configCacheUrl, self.dqmConfigCacheID, self.couchDBName)
             harvestTaskCmsswHelper.setDatasetName(datasetName)
         else:
             scenarioArgs = {'globalTag': self.globalTag,
@@ -853,13 +846,13 @@ class StdBase(object):
                 if key.endswith('ConfigCacheID'):
                     ids.add(val)
         ids = list(ids)
-        couchURL = docs[0]['CouchURL']
+        configCacheUrl = docs[0]['ConfigCacheUrl']
         couchDBName = docs[0]['CouchDBName']
-        if (couchURL, couchDBName) in self.config_cache:
-            configCache = self.config_cache[(couchURL, couchDBName)]
+        if (configCacheUrl, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(configCacheUrl, couchDBName)]
         else:
-            configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName)
-            self.config_cache[(couchURL, couchDBName)] = configCache
+            configCache = ConfigCache(dbURL=configCacheUrl, couchDBName=couchDBName)
+            self.config_cache[(configCacheUrl, couchDBName)] = configCache
         configCache.docs_cache.prefetch(ids)
         workloads = []
         for doc in docs:
@@ -919,7 +912,7 @@ class StdBase(object):
         logging.error("About to raise exception %s", msg)
         raise WMSpecFactoryException(message=msg)
 
-    def validateConfigCacheExists(self, configID, couchURL, couchDBName,
+    def validateConfigCacheExists(self, configID, configCacheUrl, couchDBName,
                                   getOutputModules=True):
         """
         _validateConfigCacheExists_
@@ -930,14 +923,14 @@ class StdBase(object):
         if configID == '' or configID == ' ':
             self.raiseValidationException(msg="ConfigCacheID is invalid and cannot be loaded")
 
-        if (couchURL, couchDBName) in self.config_cache:
-            configCache = self.config_cache[(couchURL, couchDBName)]
+        if (configCacheUrl, couchDBName) in self.config_cache:
+            configCache = self.config_cache[(configCacheUrl, couchDBName)]
         else:
-            configCache = ConfigCache(dbURL=couchURL, couchDBName=couchDBName, detail=getOutputModules)
-            self.config_cache[(couchURL, couchDBName)] = configCache
+            configCache = ConfigCache(dbURL=configCacheUrl, couchDBName=couchDBName, detail=getOutputModules)
+            self.config_cache[(configCacheUrl, couchDBName)] = configCache
 
         try:
-            # if dtail option is set return outputModules
+            # if detail option is set return outputModules
             return configCache.validate(configID)
         except ConfigCacheException as ex:
             self.raiseValidationException(str(ex))
@@ -995,9 +988,9 @@ class StdBase(object):
         # if key is not specified it is set by default value
 
         arguments = {"RequestType": {"optional": False},  # this need to be overwritten by inherited class
-                     "Requestor": {"default": "unknown", "attr": "owner"},
-                     "RequestorDN": {"default": "unknown", "attr": "owner_dn"},
-                     "Group": {"default": "unknown"},
+                     "Requestor": {"default": "unknown", "attr": "owner", "optional": False},
+                     "RequestorDN": {"default": "unknown", "attr": "owner_dn", "optional": False},
+                     "Group": {"default": "DATAOPS"},
                      "RequestPriority": {"default": 8000, "type": int,
                                          "validate": lambda x: (x >= 0 and x < 1e6),
                                          "attr": "priority"},
@@ -1104,32 +1097,19 @@ class StdBase(object):
                      # team name
                      "Team": {"default": "", "type": safeStr, "assign_optional": False},
                      "PrepID": {"default": None, "null": True},
-                     "RobustMerge": {"default": True, "type": strToBool}
+                     "RobustMerge": {"default": True, "type": strToBool},
+                     "ConfigCacheID": {"optional": False, "validate": None},
+                     "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                     # these 3 parameters are overwritten by the ReqMgr2 configuration
+                     "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                     "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
+                     "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
                     }
 
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
 
         return arguments
-
-    @staticmethod
-    def getWorkloadArgumentsWithReqMgr():
-        # arguments need to be defined all the workflows which uses reqmgr
-        reqMgrArguments = {"Requestor": {"optional": False, "attr": "owner"},
-                           "RequestorDN": {"default": None, "optional": False, "attr": "owner_dn"},
-                           "Group": {"default": "DATAOPS"},
-                           "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb",
-                                        "validate": couchurl},
-                           "CouchDBName": {"default": "reqmgr_config_cache", "type": str,
-                                           "validate": identifier},
-                           "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
-                           "ConfigCacheID": {"optional": False, "validate": None},
-                           "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
-                          }
-
-        # Set defaults for the argument specification
-        StdBase.setDefaultArgumentsProperty(reqMgrArguments)
-        return reqMgrArguments
 
     @staticmethod
     def setDefaultArgumentsProperty(arguments):
@@ -1161,9 +1141,9 @@ class StdBase(object):
             # Dashboard parameter must be re-defined for test purposes
             if arg == "DashboardHost":
                 schema[arg] = "127.0.0.1"
-            elif arg == "CouchURL" or arg == "ConfigCacheUrl":
-
+            elif arg == "ConfigCacheUrl":
                 import os
+                #schema[arg] = 'http://localhost:5984'
                 schema[arg] = os.environ["COUCHURL"]
             elif arg == "CouchDBName":
                 schema[arg] = "reqmgr_config_cache_t"

@@ -47,7 +47,6 @@ class ReRecoWorkloadFactory(DataProcessing):
 
         outputMods = self.setupProcessingTask(procTask, taskType,
                                               self.inputDataset,
-                                              couchURL = self.couchURL,
                                               couchDBName = self.couchDBName,
                                               configCacheUrl = self.configCacheUrl,
                                               forceUnmerged = forceUnmerged,
@@ -122,7 +121,6 @@ class ReRecoWorkloadFactory(DataProcessing):
             outputMods = self.setupProcessingTask(skimTask, "Skim",
                                                   inputStep = parentCmsswStep,
                                                   inputModule = inputModule,
-                                                  couchURL = self.couchURL,
                                                   couchDBName = self.couchDBName,
                                                   configCacheUrl = self.configCacheUrl,
                                                   configDoc = skimConfig["ConfigCacheID"],
@@ -237,9 +235,8 @@ class ReRecoWorkloadFactory(DataProcessing):
         Check for required fields, and some skim facts
         """
         DataProcessing.validateSchema(self, schema)
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         mainOutputModules = self.validateConfigCacheExists(configID = schema["ConfigCacheID"],
-                                                           couchURL = couchUrl,
+                                                           configCacheUrl = schema['ConfigCacheUrl'],
                                                            couchDBName = schema["CouchDBName"],
                                                            getOutputModules = True).keys()
 
@@ -257,7 +254,7 @@ class ReRecoWorkloadFactory(DataProcessing):
                 self.raiseValidationException(msg)
 
             self.validateConfigCacheExists(configID = schema["Skim%sConfigCacheID" % skimIndex],
-                                           couchURL = couchUrl,
+                                           configCacheUrl = schema['ConfigCacheUrl'],
                                            couchDBName = schema["CouchDBName"])
             if schema["SkimInput%s" % skimIndex] not in mainOutputModules:
                 error = "Processing config does not have the following output module: %s." % schema["SkimInput%s" % skimIndex]

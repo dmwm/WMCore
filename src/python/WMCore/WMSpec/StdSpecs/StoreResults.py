@@ -10,8 +10,6 @@ _StoreResults_
 Standard StoreResults workflow.
 """
 
-import os
-
 from Utils.Utilities import makeList
 from WMCore.Lexicon import dataset, block
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
@@ -96,8 +94,6 @@ class StoreResultsWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
-        baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : True,
                                       "attr" : "requestType"},
                     "InputDataset" : {"default" : None,

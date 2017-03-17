@@ -24,7 +24,7 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch2 -c HG1702f -t production -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch3 -c HG1702f -t production -p "7721" -n 2
 ### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch1 -c HG1702f -t testbed-cmssrv214 -p "7605" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
@@ -275,7 +275,6 @@ if [[ "$TEAMNAME" == relval ]]; then
   sed -i "s+'LogCollect': 1+'LogCollect': 2+" $MANAGE/config.py
   sed -i "s+config.TaskArchiver.archiveDelayHours = 24+config.TaskArchiver.archiveDelayHours = 336+" $MANAGE/config.py
   sed -i "s+failureExitCodes = \[50660, 50661, 50664, 71102+failureExitCodes = \[50660, 50661, 50664, 71102, 71304+" $MANAGE/config.py
-  sed -i "s+MinWallTimeSecs': 3600, 'MaxWallTimeSecs': 162000+MinWallTimeSecs': 132000, 'MaxWallTimeSecs': 132000+" $MANAGE/config.py
 elif [[ "$TEAMNAME" == hlt ]]; then
   sed -i "s+JobSubmitter.maxJobsPerPoll = 1000+JobSubmitter.maxJobsPerPoll = 3000+" $MANAGE/config.py
   sed -i "s+JobSubmitter.cacheRefreshSize = 30000+JobSubmitter.cacheRefreshSize = 1000+" $MANAGE/config.py

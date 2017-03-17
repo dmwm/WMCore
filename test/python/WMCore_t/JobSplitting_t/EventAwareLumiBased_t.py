@@ -197,7 +197,9 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -247,8 +249,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
+        self.assertEqual(len(jobs[2]['mask'].getRunAndLumis()), 1)  # All lumis from one run again
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -264,8 +268,10 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 3)
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
+        self.assertEqual(len(jobs[2]['mask'].getRunAndLumis()), 1)  # All lumis from one run again
 
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -281,9 +287,11 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         jobs = jobGroups[0].jobs
         self.assertEqual(len(jobs), 4)
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[5, 5]]})
-        self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[6, 8]]})
-        self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1: [[9, 9]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
+        self.assertEqual(len(jobs[2]['mask'].getRunAndLumis()), 1)  # All lumis from one run again
+        self.assertEqual(len(jobs[3]['mask'].getRunAndLumis()), 1)  # All lumis from one run again
 
         return
 
@@ -367,7 +375,7 @@ class EventAwareLumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[2, 2]]})
         self.assertEqual(jobs[2]['mask'].getRunAndLumis(), {1: [[3, 4]]})
         self.assertEqual(jobs[3]['mask'].getRunAndLumis(), {1: [[5, 5]]})
-        self.assertEqual(jobs[4]['mask'].getRunAndLumis(), {2: [[6, 7]]})
+        self.assertEqual(len(jobs[4]['mask'].getRunAndLumis()), 1)  # All lumis from one run
 
         return
 

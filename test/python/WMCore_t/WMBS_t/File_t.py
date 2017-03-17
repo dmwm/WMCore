@@ -188,8 +188,8 @@ class FileTest(unittest.TestCase):
         assert len(info[5]) == 2, \
                       "ERROR: File returned wrong runs"
 
-        assert info[5] == [Run(1, *[45]), Run(2, *[46, 47, 48])], \
-               "Error: Run hasn't been combined correctly"
+        self.assertItemsEqual(info[5], [Run(1, *[45]), Run(2, *[46, 47, 48])],
+                              "Error: Run hasn't been combined correctly")
 
         assert len(info[6]) == 2, \
                "ERROR: File returned wrong locations"

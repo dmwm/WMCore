@@ -12,7 +12,6 @@ import shutil
 import tarfile
 
 from Utils.IteratorTools import grouper
-from WMComponent.TaskArchiver.CleanCouchPoller import uploadPublishWorkflow
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.WorkQueue.WorkQueueExceptions import WorkQueueNoMatchingElements
@@ -22,7 +21,6 @@ from WMCore.WMBS.Job import Job
 from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Fileset import Fileset
 from WMCore.WMException import WMException
-from WMCore.WMBS.Workflow import Workflow
 
 
 class JobArchiverPollerException(WMException):
@@ -61,18 +59,14 @@ class JobArchiverPoller(BaseWorkerThread):
         self.initAlerts(compName="JobArchiver")
 
         try:
-            self.uploadPublishDir = getattr(self.config.JobArchiver, 'uploadPublishDir',
-                                            os.path.join(config.JobArchiver.componentDir, 'publishDir'))
             self.logDir = getattr(config.JobArchiver, 'logDir',
                                   os.path.join(config.JobArchiver.componentDir, 'logDir'))
             if not os.path.isdir(self.logDir):
                 os.makedirs(self.logDir)
-            if not os.path.isdir(self.uploadPublishDir):
-                os.makedirs(self.uploadPublishDir)
         except Exception as ex:
-            msg = "Unhandled exception while setting up logDir and/or uploadPublishDir!\n"
+            msg = "Unhandled exception while setting up logDir!\n"
             msg += str(ex)
-            logging.error(msg)
+            logging.exception(msg)
             raise JobArchiverPollerException(msg)
 
         try:
@@ -83,8 +77,6 @@ class JobArchiverPoller(BaseWorkerThread):
             logging.error(msg)
             # raise JobArchiverPollerException(msg)
 
-        self.uploadPublishInfo = getattr(self.config.JobArchiver, 'uploadPublishInfo', False)
-        self.userFileCacheURL = getattr(self.config.JobArchiver, 'userFileCacheURL', None)
         self.handleWorkflowInjection = getattr(self.config.JobArchiver,
                                                'handleInjected', True)
 
@@ -157,9 +149,6 @@ class JobArchiverPoller(BaseWorkerThread):
                     killList.append(job)
                 else:
                     failList.append(job)
-
-            if self.uploadPublishInfo:
-                self.createAndUploadPublish(successList)
 
             myThread = threading.currentThread()
             myThread.transaction.begin()
@@ -353,19 +342,3 @@ class JobArchiverPoller(BaseWorkerThread):
             openFileset.markOpen(False)
 
         myThread.transaction.commit()
-
-    def createAndUploadPublish(self, jobList):
-        taskList = {}
-        for job in jobList:
-            taskList[(job['workflow'], job['task'])] = job['cache_dir']
-
-        for (workflow, task) in taskList.keys():
-            wf = Workflow(name=workflow, task=task)
-            wf.load()
-            try:
-                uploadPublishWorkflow(self.config, wf, ufcEndpoint=self.userFileCacheURL, workDir=self.uploadPublishDir)
-            except Exception as ex:
-                logging.error('Upload failed for workflow, task: %s, %s', workflow, task)
-                logging.error(str(ex))
-
-        return

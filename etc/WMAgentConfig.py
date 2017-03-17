@@ -281,9 +281,6 @@ config.TaskArchiver.perfDashBoardMaxLumi = 9000
 #dqm address -'https://cmsweb.cern.ch/dqm/dev/'
 config.TaskArchiver.dqmUrl = "OVER_WRITE_BY_SECETES"
 config.TaskArchiver.requireCouch  = True
-config.TaskArchiver.uploadPublishInfo = False
-config.TaskArchiver.uploadPublishDir  = None
-config.TaskArchiver.userFileCacheURL = 'http://USERFILECACHEHOST:UFCPORT/userfilecache/'
 # set to False couch data if request mgr is not used (Tier0, PromptSkiming)
 config.TaskArchiver.useReqMgrForCompletionCheck = True
 config.TaskArchiver.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,  config.JobStateMachine.couchDBName)
@@ -291,7 +288,6 @@ config.TaskArchiver.localQueueURL = "%s/%s" % (config.WorkQueueManager.couchurl,
 config.TaskArchiver.localWMStatsURL = "%s/%s" % (config.JobStateMachine.couchurl, config.JobStateMachine.jobSummaryDBName)
 config.TaskArchiver.DataKeepDays = 0.125 # couhch history keeping days.
 config.TaskArchiver.cleanCouchInterval = 60 * 20 # 20 min
-config.TaskArchiver.ReqMgrServiceURL = "ReqMgr rest service"
 config.TaskArchiver.ReqMgr2ServiceURL = "ReqMgr2 rest service"
 config.TaskArchiver.archiveDelayHours = 24 # delay the archiving so monitor can still show. default 24 hours
 

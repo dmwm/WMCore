@@ -54,20 +54,26 @@ class DataCache(object):
                         yield result
 
     @staticmethod
-    def filterDataByRequest(filterDict, maskList):
+    def filterDataByRequest(filterDict, maskList=None):
         reqData = DataCache.getlatestJobData()
-        if isinstance(maskList, basestring):
-            maskList = [maskList]
-        if "RequestName" not in maskList:
-            maskList.append("RequestName")
 
-        for _, reqInfo in reqData.iteritems():
-            reqData = RequestInfo(reqInfo)
-            if reqData.andFilterCheck(filterDict):
-                resultItem = {}
-                for prop in maskList:
-                    resultItem[prop] = reqData.get(prop, None)
-                yield resultItem
+        if maskList is not None:
+            if isinstance(maskList, basestring):
+                maskList = [maskList]
+            if "RequestName" not in maskList:
+                maskList.append("RequestName")
+
+        for _, reqDict in reqData.iteritems():
+            reqInfo = RequestInfo(reqDict)
+            if reqInfo.andFilterCheck(filterDict):
+
+                if maskList is None:
+                    yield reqDict
+                else:
+                    resultItem = {}
+                    for prop in maskList:
+                        resultItem[prop] = reqInfo.get(prop, None)
+                    yield resultItem
 
     @staticmethod
     def getProtectedLFNs():

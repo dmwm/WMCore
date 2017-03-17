@@ -84,7 +84,7 @@ def moveToArchived(wmstatsSvc, reqmgrSvc, archiveDelayHours, logger):
                         "aborted-completed": "aborted-archived",
                         "rejected": "rejected-archived"}
 
-    outputMask = ["AgentJobInfo", "RequestTransition"]
+    outputMask = ["RequestTransition"]
 
     for status, nextStatus in statusTransition.items():
         inputConditon = {"RequestStatus": [status], "AgentJobInfo": "NO_KEY"}

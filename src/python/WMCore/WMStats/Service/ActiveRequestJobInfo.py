@@ -51,7 +51,7 @@ class FilteredActiveRequestJobInfo(RESTEntity):
 
     @restcall(formats=[('text/plain', PrettyJSONFormat()), ('application/json', JSONFormat())])
     @tools.expires(secs=-1)
-    def get(self, mask, **input_condition):
+    def get(self, mask=None, **input_condition):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         return rows(DataCache.filterDataByRequest(input_condition, mask))

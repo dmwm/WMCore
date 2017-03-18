@@ -45,7 +45,6 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
     wqDoc['agent_url'] = wqURL
     wqDoc['agent_team'] = ""
     wqDoc['timestamp'] = int(time.time())
-    wqDoc['down_components'] = []
     wqDoc['type'] = "agent_info"
     wqDoc.update(wqInfo)
 

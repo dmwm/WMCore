@@ -102,10 +102,6 @@ class AnalyticsDataCollector_t(unittest.TestCase):
         config.AnalyticsDataCollector.reqMonURL = "%s/%s" % (couchURL, self.reqmonDBName)
         config.AnalyticsDataCollector.summaryLevel = "task"
 
-        config.section_("WMBSService")
-        config.WMBSService.section_("Webtools")
-        config.WMBSService.Webtools.port = 9999
-
         return config
 
     def testAnalyticsPoller(self):

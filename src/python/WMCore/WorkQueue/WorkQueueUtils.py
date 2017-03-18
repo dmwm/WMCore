@@ -7,10 +7,6 @@ __all__ = ['get_remote_queue', 'get_dbs',
 import os
 import logging
 
-# Should probably import this but don't want to create the dependency
-WMBS_REST_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSRESTModel'
-WWBS_MONITOR_NAMESPACE = 'WMCore.HTTPFrontEnd.WMBS.WMBSMonitorPage'
-
 __queues = {}
 def get_remote_queue(queue, logger):
     """
@@ -121,35 +117,6 @@ def queueConfigFromConfigObject(config):
     # alert api needs full agent config
     if hasattr(config, 'Alert'):
         qConfig['Config'] = config.Alert
-
-    try:
-        monitorURL = ''
-        queueFlag = False
-        for webapp in config.listWebapps_():
-            webapp = config.webapp_(webapp)
-            for page in webapp.section_('views').section_('active'):
-
-                if not queueFlag and hasattr(page, "model") \
-                   and page.section_('model').object == WMBS_REST_NAMESPACE:
-                    qConfig['WMBSUrl'] = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
-                                                              webapp.Webtools.port,
-                                                              webapp._internal_name.lower(),
-                                                              page._internal_name)
-                    queueFlag = True
-
-                if page.object == WWBS_MONITOR_NAMESPACE:
-                    monitorURL = 'http://%s:%s/%s/%s' % (webapp.Webtools.host,
-                                                      webapp.Webtools.port,
-                                                      webapp._internal_name.lower(),
-                                                      page._internal_name)
-        #if not queueFlag:
-        #    raise RuntimeError
-
-    except RuntimeError:
-        msg = """Unable to determine WMBS monitor URL, Either:
-        Configure a WMBSRESTModel webapp_ section or,
-        Add a WorkQueueManager.queueParams.WMBSUrl setting."""
-        raise RuntimeError(msg)
 
     if 'Teams' not in qConfig and hasattr(config.Agent, 'teamName'):
         qConfig['Teams'] = config.Agent.teamName

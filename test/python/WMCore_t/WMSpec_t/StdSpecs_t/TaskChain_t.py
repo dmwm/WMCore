@@ -248,7 +248,7 @@ class TaskChainTests(unittest.TestCase):
             "ScramArch": "slc6_amd64_gcc530",
             "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
-            "CouchURL": self.testInit.couchUrl,
+            "ConfigCacheUrl": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist": ["T1_CH_CERN", "T1_US_FNAL"],
             "DashboardHost": "127.0.0.1",
@@ -497,7 +497,7 @@ class TaskChainTests(unittest.TestCase):
         processorDocs = makeProcessingConfigs(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         testArguments.update(createMultiGTArgs())
-        testArguments["CouchURL"] = self.testInit.couchUrl
+        testArguments["ConfigCacheUrl"] = self.testInit.couchUrl
         testArguments["CouchDBName"] = self.testInit.couchDbName
         testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
         testArguments["Task2"]["ConfigCacheID"] = processorDocs['Reco']
@@ -544,7 +544,7 @@ class TaskChainTests(unittest.TestCase):
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         testArguments.update(createMultiGTArgs())
         lumiDict = {"1": [[2, 4], [8, 50]], "2": [[100, 200], [210, 210]]}
-        testArguments["CouchURL"] = self.testInit.couchUrl
+        testArguments["ConfigCacheUrl"] = self.testInit.couchUrl
         testArguments["CouchDBName"] = self.testInit.couchDbName
         testArguments["Task1"]["LumiList"] = lumiDict
         testArguments["Task1"]["ConfigCacheID"] = processorDocs['DigiHLT']
@@ -624,7 +624,7 @@ class TaskChainTests(unittest.TestCase):
         generatorDoc = makeGeneratorConfig(self.configDatabase)
         testArguments = TaskChainWorkloadFactory.getTestArguments()
         arguments = {
-            "CouchURL": self.testInit.couchUrl,
+            "ConfigCacheUrl": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "TaskChain": 1,
             "Task1": {
@@ -846,7 +846,7 @@ class TaskChainTests(unittest.TestCase):
             "ScramArch": "slc6_amd64_gcc530",
             "ProcessingVersion": 1,
             "GlobalTag": "GR10_P_v4::All",
-            "CouchURL": self.testInit.couchUrl,
+            "ConfigCacheUrl": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
             "SiteWhitelist": ["T1_CH_CERN", "T1_US_FNAL"],
             "DashboardHost": "127.0.0.1",
@@ -926,9 +926,8 @@ class TaskChainTests(unittest.TestCase):
         arguments['CMSSWVersion'] = 'CMSSW_8_0_17'
         arguments['ScramArch'] = 'slc6_amd64_gcc530'
         del arguments['ConfigCacheID']
-        del arguments['ConfigCacheUrl']
         arguments.update({
-            "CouchURL": self.testInit.couchUrl,
+            "ConfigCacheUrl": self.testInit.couchUrl,
             "CouchDBName": self.testInit.couchDbName,
         })
 

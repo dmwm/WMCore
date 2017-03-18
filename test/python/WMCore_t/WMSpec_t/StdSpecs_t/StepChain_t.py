@@ -7,7 +7,6 @@ _StepChain_t_
 import os
 import unittest
 from copy import deepcopy
-from pprint import pprint
 from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -17,7 +16,7 @@ from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 REQUEST = {
     "AcquisitionEra": "AcquisitionEra_StepChain",
     "Campaign": "TaskForceUnitTest",
-    "CouchURL": os.environ["COUCHURL"],
+    "ConfigCacheUrl": os.environ["COUCHURL"],
     "CouchDBName": "stepchain_t",
     "GlobalTag": "MainGlobalTag",
     "Memory": 3500,
@@ -163,7 +162,7 @@ def injectStepChainConfigMC(couchDatabase):
 def getSingleStepOverride():
     " Return StepChain-specific dict for a single step "
     args = {
-        "CouchURL": os.environ["COUCHURL"],
+        "ConfigCacheUrl": os.environ["COUCHURL"],
         "CouchDBName": "stepchain_t",
         "Step1": {
             "GlobalTag": "PHYS14_25_V44",
@@ -177,7 +176,7 @@ def getSingleStepOverride():
 def getThreeStepsOverride():
     " Return StepChain-specific dict for a single step "
     args = {
-        "CouchURL": os.environ["COUCHURL"],
+        "ConfigCacheUrl": os.environ["COUCHURL"],
         "CouchDBName": "stepchain_t",
         "Step1": {
             "GlobalTag": "PHYS14_25_V44",
@@ -213,7 +212,7 @@ class StepChainTests(unittest.TestCase):
         """
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.testInit.setupCouch("stepchain_t", "ConfigCache")
         self.testInit.setSchema(customModules=["WMCore.WMBS"], useDefault=False)
 
@@ -240,12 +239,11 @@ class StepChainTests(unittest.TestCase):
         Build a StepChain with a single step and no input dataset
         """
         testArguments = StepChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST)
+        testArguments.update(deepcopy(REQUEST))
         testArguments.pop("Step2")
         testArguments.pop("Step3")
         testArguments['StepChain'] = 1
         testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
-
         factory = StepChainWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", testArguments)
 
@@ -297,7 +295,7 @@ class StepChainTests(unittest.TestCase):
         Build a StepChain workload starting from scratch
         """
         testArguments = StepChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST)
+        testArguments.update(deepcopy(REQUEST))
 
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
@@ -442,7 +440,7 @@ class StepChainTests(unittest.TestCase):
         Build a StepChain workload with input dataset in the first step
         """
         testArguments = StepChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST)
+        testArguments.update(deepcopy(REQUEST))
 
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
@@ -517,10 +515,8 @@ class StepChainTests(unittest.TestCase):
         outMods = set([elem['outputModule'] for elem in outModsAndDsets])
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
         self.assertEqual(outMods, set(['AODSIMoutput', 'RECOSIMoutput']), "Wrong output modules")
-        self.assertTrue(
-                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
-        self.assertTrue(
-                '/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
+        self.assertTrue('/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterD-ProcessingString_StepChain-v1/AODSIM' in outDsets)
+        self.assertTrue('/PrimaryDataset-StepChain/AcquisitionEra_StepChain-FilterC-ProcessingString_StepChain-v1/GEN-SIM-RECO' in outDsets)
         return
 
     def testStepChainOutput(self):
@@ -528,7 +524,7 @@ class StepChainTests(unittest.TestCase):
         Build a StepChain workload defining different processed dataset name among the steps
         """
         testArguments = StepChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST)
+        testArguments.update(deepcopy(REQUEST))
 
         configDocs = injectStepChainConfigMC(self.configDatabase)
         for s in ['Step1', 'Step2', 'Step3']:
@@ -536,7 +532,6 @@ class StepChainTests(unittest.TestCase):
             testArguments[s]['AcquisitionEra'] = 'AcqEra_' + s
             testArguments[s]['ProcessingString'] = 'ProcStr_' + s
         testArguments['Step2']['KeepOutput'] = False
-        #pprint(testArguments)
 
         factory = StepChainWorkloadFactory()
 
@@ -564,7 +559,6 @@ class StepChainTests(unittest.TestCase):
         # test workload and task output data stuff
         self.assertEqual(sorted(task.listAllStepNames()), ['cmsRun1', 'cmsRun2', 'cmsRun3', 'logArch1', 'stageOut1'])
         outModsAndDsets = task.listOutputDatasetsAndModules()
-        #pprint(outModsAndDsets)
         outMods = [elem['outputModule'] for elem in outModsAndDsets]
         outDsets = [elem['outputDataset'] for elem in outModsAndDsets]
         self.assertItemsEqual(outMods, ['RAWSIMoutput', 'AODSIMoutput', 'RECOSIMoutput'], "Wrong output modules")
@@ -575,7 +569,6 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun1")
         self.assertEqual(step.listOutputModules(), [u'RAWSIMoutput'])
         outputData = step.getOutputModule(u'RAWSIMoutput')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'GEN-SIM')
         self.assertTrue(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
@@ -584,7 +577,6 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun2")
         self.assertEqual(step.listOutputModules(), [u'RAWSIMoutput'])
         outputData = step.getOutputModule(u'RAWSIMoutput')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'GEN-SIM-RAW')
         self.assertTrue(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
@@ -593,13 +585,11 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun3")
         self.assertEqual(step.listOutputModules(), ['AODSIMoutput', 'RECOSIMoutput'])
         outputData = step.getOutputModule('AODSIMoutput')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'AODSIM')
         self.assertTrue(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
         self.assertEqual(outputData.processedDataset, 'AcqEra_Step3-FilterD-ProcStr_Step3-v1')
         outputData = step.getOutputModule('RECOSIMoutput')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'GEN-SIM-RECO')
         self.assertTrue(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/unmerged'))
@@ -611,7 +601,6 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun1")
         self.assertEqual(step.listOutputModules(), ['Merged'])
         outputData = step.getOutputModule('Merged')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'GEN-SIM')
         self.assertFalse(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/data'))
@@ -622,7 +611,6 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun1")
         self.assertEqual(step.listOutputModules(), ['Merged'])
         outputData = step.getOutputModule('Merged')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'AODSIM')
         self.assertFalse(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/data'))
@@ -633,7 +621,6 @@ class StepChainTests(unittest.TestCase):
         step = task.getStepHelper("cmsRun1")
         self.assertEqual(step.listOutputModules(), ['Merged'])
         outputData = step.getOutputModule('Merged')
-        #pprint(outputData.dictionary_())
         self.assertEqual(outputData.dataTier, 'GEN-SIM-RECO')
         self.assertFalse(outputData.transient)
         self.assertTrue(outputData.lfnBase.startswith('/store/data'))
@@ -647,7 +634,7 @@ class StepChainTests(unittest.TestCase):
         Build a mapping of steps, input and output modules
         """
         testArguments = StepChainWorkloadFactory.getTestArguments()
-        testArguments.update(REQUEST)
+        testArguments.update(deepcopy(REQUEST))
         testArguments['StepChain'] = 1
         testArguments['Step1']['ConfigCacheID'] = injectStepChainConfigSingle(self.configDatabase)
         testArguments.update({

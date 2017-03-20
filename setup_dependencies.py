@@ -83,7 +83,7 @@ dependencies = {'wmc-rest':{
                 'wmagent':{
                         'packages': ['WMCore.Agent+', 'WMCore.Algorithms+',
                                     'WMCore.JobStateMachine', 'WMComponent+',
-                                    'WMCore.HTTPFrontEnd+', 'WMCore.ThreadPool',
+                                    'WMCore.ThreadPool',
                                     'WMCore.BossAir+', 'WMCore.Credential',
                                     'WMCore.JobSplitting+', 'WMCore.ProcessPool',
                                     'WMCore.Services+', 'WMCore.WMSpec+',
@@ -112,7 +112,7 @@ dependencies = {'wmc-rest':{
                         },
                 'crabserver':{
                         'packages': ['WMCore.Credential', 'WMCore.Services+',
-                                     'WMCore.WMSpec+', 'WMCore.HTTPFrontEnd+', 'WMCore.ACDC'],
+                                     'WMCore.WMSpec+', 'WMCore.ACDC'],
                         'modules' : ['WMCore.DataStructs.LumiList'],
                         'systems' : ['wmc-rest', 'wmc-database'],
                         },

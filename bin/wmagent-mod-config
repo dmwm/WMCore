@@ -313,13 +313,6 @@ def modifyConfiguration(config, **args):
         config.WorkQueueManager.queueParams['central_logdb_url'] = config.General.central_logdb_url
         config.WorkQueueManager.queueParams['log_reporter'] = config.Agent.hostName
 
-    # custom wmbs service
-    if hasattr(config, "WMBSService"):
-        if args.get('wmbs_service_port'):
-            config.WMBSService.Webtools.port = int(args['wmbs_service_port'])
-        config.WMBSService.views.active.wmbs.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
-        config.WMBSService.views.active.wmagent.couchConfig.couchURL = sanitizeURL(args["couch_url"])['url']
-
     # custom AnalyticsDataCollector
     if hasattr(config, "AnalyticsDataCollector"):
         config.AnalyticsDataCollector.localCouchURL = "%s/%s" % (config.JobStateMachine.couchurl,
@@ -359,7 +352,7 @@ def main(argv=None):
                                         "working_dir=", "reqmgr_hostname=", "reqmgr_port=", "global_workqueue_url=",
                                         "workqueue_db_name=", "cs_hostname=", "cs_port=", "host_dn=", "couch_url=",
                                         "sb_hostname=", "sb_port=", "sb_basepath=", "ufc_hostname=", "ufc_port=",
-                                        "ufc_service_url=", "ufc_cachedir=", "client_mapping=", "wmbs_service_port=",
+                                        "ufc_service_url=", "ufc_cachedir=", "client_mapping=",
                                         "workload_summary_url=", "coredb_url=", "wmstats_url=", "ops_proxy=",
                                         "reqmgr_url=", "reqmgr2_url=",
                                         "acdc_url=", "amq_auth_file=", "dbs3_url=", "phedex_url=", "dqm_url=",
@@ -383,7 +376,7 @@ def main(argv=None):
                           '--cs_hostname', '--cs_port', '--host_dn', '--couch_url',
                           '--sb_hostname', '--sb_port', '--sb_basepath', '--ufc_hostname',
                           '--ufc_port', '--ufc_service_url', '--ufc_cachedir',
-                          '--client_mapping', '--wmbs_service_port', '--workload_summary_url',
+                          '--client_mapping', '--workload_summary_url',
                           '--wmstats_url', '--ops_proxy', '--reqmgr_url', '--reqmgr2_url', '--acdc_url',
                           '--amq_auth_file', '--dbs3_url', '--phedex_url', '--dqm_url', '--dashboard_url',
                           '--requestcouch_url', '--central_logdb_url', '--wmarchive_url'):

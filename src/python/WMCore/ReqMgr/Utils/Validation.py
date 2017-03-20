@@ -2,12 +2,13 @@
 ReqMgr request handling.
 
 """
+from __future__ import print_function
 import json
 import time
 import logging
 
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
-from WMCore.WMSpec.WMWorkloadTools import loadSpecByType, loadSpecClassByType, setArgumentsWithDefault
+from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
 from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
@@ -143,17 +144,27 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     permission = getWritePermission(request_args)
     authz_match(permission['role'], permission['group'])
 
-    # set default values for teh request_args
+    # load the correct class to in order to validate the arguments
     specClass = loadSpecClassByType(request_args["RequestType"])
-    setArgumentsWithDefault(request_args, specClass.getWorkloadArguments())
 
-    # get the spec type and validate arguments
-    spec = loadSpecByType(request_args["RequestType"])
     if request_args["RequestType"] == "Resubmission":
-        initialize_resubmission(request_args, config, reqmgr_db_service)
+        # do not set default values for Resubmission since it will be inherited from parent
+        # both create & assign args are accepted for Resubmission creation
+        acceptedArgs = specClass.getWorkloadCreateArgs()
+        assignArgs = specClass.getWorkloadAssignArgs()
+        acceptedArgs.update(assignArgs)
 
+        # Very basic validation done here, dumping all the arguments that are unknown
+        # Arguments not provided are overridden from the parent/original workflow
+        initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service)
+    else:
+        # set default values for the request_args
+        setArgumentsWithDefault(request_args, specClass.getWorkloadCreateArgs())
+
+    spec = specClass()
     workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
                                                 request_args)
+
     return workload, request_args
 
 
@@ -200,7 +211,7 @@ def get_request_template_from_type(request_type, loc="WMSpec.StdSpecs"):
     pluginFactory = WMFactory("specArgs", loc)
     alteredClassName = "%sWorkloadFactory" % request_type
     spec = pluginFactory.loadObject(classname=request_type, alteredClassName=alteredClassName)
-    specArgs = spec.getWorkloadArguments()
+    specArgs = spec.getWorkloadCreateArgs()
 
     result = create_json_template_spec(specArgs)
     return result

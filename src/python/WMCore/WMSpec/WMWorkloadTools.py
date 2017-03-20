@@ -106,10 +106,10 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     Check whether create or assign mandatory parameters were properly
     set in the request schema.
     """
-    for arg, argValue in argumentDefinition.iteritems():
-        optional = argValue.get(optionKey, True)
+    for arg, argDef in argumentDefinition.iteritems():
+        optional = argDef.get(optionKey, True)
         if not optional and arg not in arguments:
-            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argValue)
+            msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argDef)
             raise WMSpecFactoryException(msg)
         # TODO this need to be done earlier then this function
         # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
@@ -118,9 +118,9 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
         elif arg not in arguments:
             continue
         elif isinstance(arguments[arg], dict):
-            arguments[arg] = _validateArgumentDict(arg, arguments[arg], argValue)
+            arguments[arg] = _validateArgumentDict(arg, arguments[arg], argDef)
         else:
-            arguments[arg] = _validateArgument(arg, arguments[arg], argValue)
+            arguments[arg] = _validateArgument(arg, arguments[arg], argDef)
     return
 
 
@@ -142,7 +142,7 @@ def _validateInputDataset(arguments):
 def validateInputDatasSetAndParentFlag(arguments):
     inputdataset = arguments.get("InputDataset", None)
     if strToBool(arguments.get("IncludeParents", False)):
-        if inputdataset == None:
+        if inputdataset is None:
             msg = "IncludeParent flag is True but there is no inputdataset"
             raise WMSpecFactoryException(msg)
         else:
@@ -214,17 +214,15 @@ def validateArgumentsCreate(arguments, argumentDefinition):
     """
     _validateArguments_
 
-    Validate a set of arguments against and argument definition
-    as defined in StdBase.getWorkloadArguments. It returns
-    an error message if the validation went wrong,
-    otherwise returns None, this is used for spec creation
-    checks the whether argument is optional as well as validation
+    Validate a set of arguments - for spec creation - against their
+    definition in StdBase.getWorkloadCreateArgs.
+
+    It returns an error message if the validation went wrong,
+    otherwise returns None.
     """
-    validateAutoGenArgument(arguments)
+    validateUnknownArgs(arguments, argumentDefinition)
     _validateArgumentOptions(arguments, argumentDefinition, "optional")
     validateInputDatasSetAndParentFlag(arguments)
-    validatePhEDExSubscription(arguments)
-    validateSiteLists(arguments)
     return
 
 
@@ -232,55 +230,69 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     """
     _validateArgumentsUpdate_
 
-    Validate a set of arguments against and argument definition
-    as defined in StdBase.getWorkloadArguments. It returns
-    an error message if the validation went wrong,
-    otherwise returns None
+    Validate a set of arguments - for spec assignment/update - against
+    their definition in StdBase.getWorkloadAssignArgs.
+
+    It returns an error message if the validation went wrong,
+    otherwise returns None.
     """
+    validateUnknownArgs(arguments, argumentDefinition)
     _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
     validatePhEDExSubscription(arguments)
     validateSiteLists(arguments)
+    #validateAutoGenArgument(arguments)
+
     return
 
-
-def validateArgumentsNoOptionalCheck(arguments, argumentDefinition):
+def validateUnknownArgs(arguments, argumentDefinition):
     """
-    _validateArgumentsNoOptionalCheck_
+    Make sure user is sending only arguments that are known by
+    StdBase.getWorkloadCreateArgs, otherwise fail spec creation.
 
-    Validate a set of arguments against and argument definition
-    as defined in StdBase.getWorkloadArguments. But treats everything optional
-    This is used for TaskChain request if some argument need to be overwritten
     It returns an error message if the validation went wrong,
-    otherwise returns None
+    otherwise returns None.
     """
-    return _validateArgumentOptions(arguments, argumentDefinition)
+    unknownArgs = set(arguments) - set(argumentDefinition.keys())
+    if unknownArgs:
+        # now onto the exceptions...
+        if arguments.get("RequestType") == "ReReco":
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Skim")])
+        elif arguments.get("RequestType") == "StepChain":
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Step")])
+        elif arguments.get("RequestType") == "TaskChain":
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Task")])
 
-
-def setAssignArgumentsWithDefault(arguments, argumentDefinition, checkList):
-    """
-    sets the default value if arguments value is specified as None
-    """
-    for argument in checkList:
-        if not argument in arguments:
-            arguments[argument] = argumentDefinition[argument]["default"]
+        if unknownArgs:
+            msg = "There are unknown/unsupported arguments in your request spec: %s" % list(unknownArgs)
+            raise WMSpecFactoryException(msg)
     return
 
 
 def setArgumentsWithDefault(arguments, argumentDefinition):
     """
-    sets the default value if arguments value is specified as None
+    Set arguments not provided by the user with a default spec value
     """
     for argument in argumentDefinition:
-        if argument not in arguments and "default" in argumentDefinition[argument]:
+        if argument not in arguments:
             arguments[argument] = argumentDefinition[argument]["default"]
 
     # set the Campaign default value to the same as AcquisitionEra if Campaign is not specified
-    if not arguments.get("Campaign"):
-        if ("AcquisitionEra" in arguments) and isinstance(arguments["AcquisitionEra"], basestring):
+    if "Campaign" in argumentDefinition and not arguments.get("Campaign"):
+        if "AcquisitionEra" in arguments and isinstance(arguments["AcquisitionEra"], basestring):
             arguments["Campaign"] = arguments["AcquisitionEra"]
 
     return
 
+def setAssignArgumentsWithDefault(arguments, argumentDefinition):
+    """
+    Set arguments not provided by the user with a default assign spec value,
+    unless the default value is None (read don't set default).
+    """
+    for argument in argumentDefinition:
+        if argument not in arguments and argumentDefinition[argument]["default"] is not None:
+            arguments[argument] = argumentDefinition[argument]["default"]
+
+    return
 
 def loadSpecClassByType(specType):
     factoryName = "%sWorkloadFactory" % specType

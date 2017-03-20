@@ -6,12 +6,12 @@ Request level processing specification, acts as a container of a set
 of related tasks.
 """
 from __future__ import print_function
-
 from Utils.Utilities import strToBool
 from WMCore.Configuration import ConfigSection
 from WMCore.WMSpec.ConfigSectionTree import findTop
 from WMCore.WMSpec.Persistency import PersistencyHelper
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsUpdate, loadSpecClassByType, setAssignArgumentsWithDefault
+from WMCore.WMSpec.WMWorkloadTools import (validateArgumentsUpdate, loadSpecClassByType,
+                                           setArgumentsWithDefault, setAssignArgumentsWithDefault)
 from WMCore.WMSpec.WMTask import WMTask, WMTaskHelper
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WMException import WMException
@@ -719,7 +719,6 @@ class WMWorkloadHelper(PersistencyHelper):
     def setTaskProperties(self, requestArgs):
         if not 'TaskChain' in requestArgs:
             return
-
         numTasks = requestArgs['TaskChain']
         taskArgs = []
         for i in range(numTasks):
@@ -1627,123 +1626,79 @@ class WMWorkloadHelper(PersistencyHelper):
 
     def validateArgumentForAssignment(self, schema):
         specClass = loadSpecClassByType(self.requestType())
-        argumentDefinition = specClass.getWorkloadArguments()
+        argumentDefinition = specClass.getWorkloadAssignArgs()
         validateArgumentsUpdate(schema, argumentDefinition)
         return
-
-    def _checkKeys(self, kwargs, keys):
-        """
-        check whether list of keys exist in the kwargs
-        if no keys exist return False
-        if all keys exist return True
-        if partial keys exist raise Exception
-        """
-        if isinstance(keys, basestring):
-            keys = [keys]
-        validKey = 0
-        for key in keys:
-            if key in kwargs:
-                validKey += 1
-        if validKey == 0:
-            return False
-        elif validKey == len(keys):
-            return True
-        else:
-            # TODO raise proper exception
-            raise Exception("not all the key is specified %s" % keys)
 
     def updateArguments(self, kwargs):
         """
         set up all the argument related to assigning request.
         args are validated before update.
         assignment is common for all different types spec.
+
+        Input data should have been validated already using
+        validateArgumentForAssignment.
         """
-        siteParams = ["SiteWhitelist", "SiteBlacklist", "TrustSitelists", "TrustPUSitelists"]
-        lfnParams = ["MergedLFNBase", "UnmergedLFNBase"]
-        mergeParams = ["MinMergeSize", "MaxMergeSize", "MaxMergeEvents"]
-        performanceParams = ["MaxRSS", "MaxVSize", "SoftTimeout", "GracePeriod"]
-        phedexParams = ["CustodialSites", "NonCustodialSites",
-                        "AutoApproveSubscriptionSites",
-                        "CustodialSubType", "NonCustodialSubType",
-                        "CustodialGroup", "NonCustodialGroup",
-                        "SubscriptionPriority", "DeleteFromSource"]
-        blockCloseParams = ["BlockCloseMaxWaitTime", "BlockCloseMaxFiles",
-                            "BlockCloseMaxEvents", "BlockCloseMaxSize"]
-
-        assignParams = []
-        assignParams.extend(siteParams)
-        assignParams.extend(lfnParams)
-        assignParams.extend(mergeParams)
-        assignParams.extend(performanceParams)
-        assignParams.extend(phedexParams)
-        assignParams.extend(blockCloseParams)
-
         specClass = loadSpecClassByType(self.requestType())
-        argumentDefinition = specClass.getWorkloadArguments()
-        setAssignArgumentsWithDefault(kwargs, argumentDefinition, assignParams)
+        argumentDefinition = specClass.getWorkloadAssignArgs()
+        setAssignArgumentsWithDefault(kwargs, argumentDefinition)
 
-        if self._checkKeys(kwargs, siteParams):
-            self.setSiteWhitelist(kwargs["SiteWhitelist"])
-            self.setSiteBlacklist(kwargs["SiteBlacklist"])
-            self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
-                                      pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
+        self.setSiteWhitelist(kwargs["SiteWhitelist"])
+        self.setSiteBlacklist(kwargs["SiteBlacklist"])
+        self.setTrustLocationFlag(inputFlag=strToBool(kwargs["TrustSitelists"]),
+                                  pileupFlag=strToBool(kwargs["TrustPUSitelists"]))
 
         # FIXME not validated
-        if self._checkKeys(kwargs, lfnParams):
-            self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
+        self.setLFNBase(kwargs["MergedLFNBase"], kwargs["UnmergedLFNBase"])
 
-        if self._checkKeys(kwargs, mergeParams):
-            self.setMergeParameters(int(kwargs["MinMergeSize"]),
-                                    int(kwargs["MaxMergeSize"]),
-                                    int(kwargs["MaxMergeEvents"]))
+        self.setMergeParameters(int(kwargs["MinMergeSize"]),
+                                int(kwargs["MaxMergeSize"]),
+                                int(kwargs["MaxMergeEvents"]))
 
         # Set ProcessingVersion and AcquisitionEra, which could be json encoded dicts
         # it should be processed once LFNBase are set
-        if self._checkKeys(kwargs, "ProcessingVersion"):
-            self.setProcessingVersion(kwargs["ProcessingVersion"])
-        if self._checkKeys(kwargs, "AcquisitionEra"):
+        if kwargs.get("AcquisitionEra") is not None:
             self.setAcquisitionEra(kwargs["AcquisitionEra"])
-        if self._checkKeys(kwargs, "ProcessingString"):
+        if kwargs.get("ProcessingString") is not None:
             self.setProcessingString(kwargs["ProcessingString"])
+        if kwargs.get("ProcessingVersion") is not None:
+            self.setProcessingVersion(kwargs["ProcessingVersion"])
+
+        self.setupPerformanceMonitoring(kwargs["MaxRSS"],
+                                        kwargs["MaxVSize"],
+                                        kwargs["SoftTimeout"],
+                                        kwargs["GracePeriod"])
+
+        # Check whether we should check location for the data
+        self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
+
+        # Set phedex subscription information
+        self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
+                                        nonCustodialSites=kwargs["NonCustodialSites"],
+                                        autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
+                                        custodialSubType=kwargs["CustodialSubType"],
+                                        nonCustodialSubType=kwargs["NonCustodialSubType"],
+                                        custodialGroup=kwargs["CustodialGroup"],
+                                        nonCustodialGroup=kwargs["NonCustodialGroup"],
+                                        priority=kwargs["SubscriptionPriority"],
+                                        deleteFromSource=kwargs["DeleteFromSource"])
+
+        # Block closing information
+        self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
+                                   kwargs["BlockCloseMaxFiles"],
+                                   kwargs["BlockCloseMaxEvents"],
+                                   kwargs["BlockCloseMaxSize"])
+
+        self.setDashboardActivity(kwargs["Dashboard"])
+
+        if kwargs.get("Memory") is not None:
+            self.setMemory(kwargs.get("Memory"))
+        if kwargs.get("Multicore") is not None:
+            self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 
         # MUST be set after AcqEra/ProcStr/ProcVer
         if self.requestType() == "StepChain":
             self.setStepProperties(kwargs)
-
-        if self._checkKeys(kwargs, performanceParams):
-            self.setupPerformanceMonitoring(kwargs["MaxRSS"],
-                                            kwargs["MaxVSize"],
-                                            kwargs["SoftTimeout"],
-                                            kwargs["GracePeriod"])
-
-        # Check whether we should check location for the data
-        if self._checkKeys(kwargs, "AllowOpportunistic"):
-            self.setAllowOpportunistic(allowOpport=strToBool(kwargs["AllowOpportunistic"]))
-
-        # Set phedex subscription information
-        if self._checkKeys(kwargs, phedexParams):
-            self.setSubscriptionInformation(custodialSites=kwargs["CustodialSites"],
-                                            nonCustodialSites=kwargs["NonCustodialSites"],
-                                            autoApproveSites=kwargs["AutoApproveSubscriptionSites"],
-                                            custodialSubType=kwargs["CustodialSubType"],
-                                            nonCustodialSubType=kwargs["NonCustodialSubType"],
-                                            custodialGroup=kwargs["CustodialGroup"],
-                                            nonCustodialGroup=kwargs["NonCustodialGroup"],
-                                            priority=kwargs["SubscriptionPriority"],
-                                            deleteFromSource=kwargs["DeleteFromSource"])
-
-        # Block closing information
-        if self._checkKeys(kwargs, blockCloseParams):
-            self.setBlockCloseSettings(kwargs["BlockCloseMaxWaitTime"],
-                                       kwargs["BlockCloseMaxFiles"],
-                                       kwargs["BlockCloseMaxEvents"],
-                                       kwargs["BlockCloseMaxSize"])
-
-        if self._checkKeys(kwargs, "Dashboard"):
-            self.setDashboardActivity(kwargs["Dashboard"])
-
-        self.setMemory(kwargs.get("Memory"))
-        self.setCoresAndStreams(kwargs.get("Multicore"), kwargs.get("EventStreams"))
 
         # TODO: need to define proper task form maybe kwargs['Tasks']?
         self.setTaskProperties(kwargs)

@@ -30,7 +30,6 @@ class ReRecoWorkloadFactory(DataProcessing):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("reprocessing")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs,
                                          OpenRunningTimeout = self.openRunningTimeout)
@@ -56,11 +55,10 @@ class ReRecoWorkloadFactory(DataProcessing):
                                               stepType = cmsswStepType)
         self.addLogCollectTask(procTask)
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in outputMods:
             # Only merge the desired outputs
             if outputModuleName not in self.transientModules:
-                self.addMergeTask(procTask, self.procJobSplitAlgo,
-                                  outputModuleName)
+                self.addMergeTask(procTask, self.procJobSplitAlgo, outputModuleName)
             else:
                 self.addCleanupTask(procTask, outputModuleName)
 
@@ -73,6 +71,7 @@ class ReRecoWorkloadFactory(DataProcessing):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
@@ -132,9 +131,8 @@ class ReRecoWorkloadFactory(DataProcessing):
 
             self.addLogCollectTask(skimTask, taskName = "%sLogCollect" % skimConfig["SkimName"])
 
-            for outputModuleName in outputMods.keys():
-                self.addMergeTask(skimTask, skimJobSplitAlgo,
-                                  outputModuleName)
+            for outputModuleName in outputMods:
+                self.addMergeTask(skimTask, skimJobSplitAlgo, outputModuleName)
 
         return
 
@@ -173,13 +171,11 @@ class ReRecoWorkloadFactory(DataProcessing):
         return self.buildWorkload()
 
     @staticmethod
-    def getWorkloadArguments():
+    def getWorkloadCreateArgs():
 
-        baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "ReReco", "optional" : True,
-                                     "attr" : "requestType"},
+        baseArgs = DataProcessing.getWorkloadCreateArgs()
+        specArgs = {"RequestType" : {"default" : "ReReco", "optional" : False},
                     "TransientOutputModules" : {"default" : [], "type" : makeList,
-                                                "optional" : True, "validate" : None,
                                                 "attr" : "transientModules", "null" : False}
                     }
         baseArgs.update(specArgs)
@@ -193,7 +189,7 @@ class ReRecoWorkloadFactory(DataProcessing):
 
         Skim arguments can be many of the same, it depends on the number
         of defined skims. However we need to keep the same definition of its arguments
-        in a generic form. This method follows the same definition of getWorkloadArguments in StdBase.
+        in a generic form. This method follows the same definition of getWorkloadCreateArgs in StdBase.
         """
         skimArgs = {
                     "SkimName#N" : {"default" : None, "type" : str,
@@ -241,21 +237,24 @@ class ReRecoWorkloadFactory(DataProcessing):
                                                            getOutputModules = True).keys()
 
         # Skim facts have to be validated outside the usual master validation
+        skimSchema = {k: v for (k, v) in schema.iteritems() if k.startswith("Skim")}
         skimArguments = self.getSkimArguments()
         skimIndex = 1
         skimInputs = set()
         while "SkimName%s" % skimIndex in schema:
             instanceArguments = {}
-            for argument in skimArguments.keys():
+            for argument in skimArguments:
                 realArg = argument.replace("#N", str(skimIndex))
                 instanceArguments[realArg] = skimArguments[argument]
-            msg = validateArgumentsCreate(schema, instanceArguments)
-            if msg is not None:
-                self.raiseValidationException(msg)
+            try:
+                validateArgumentsCreate(skimSchema, instanceArguments)
+            except Exception as ex:
+                self.raiseValidationException(str(ex))
 
             self.validateConfigCacheExists(configID = schema["Skim%sConfigCacheID" % skimIndex],
                                            configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"])
+                                           couchDBName = schema["CouchDBName"],
+                                           getOutputModules=False)
             if schema["SkimInput%s" % skimIndex] not in mainOutputModules:
                 error = "Processing config does not have the following output module: %s." % schema["SkimInput%s" % skimIndex]
                 self.raiseValidationException(msg = error)

@@ -39,7 +39,6 @@ class MonteCarloWorkloadFactory(StdBase):
         """
         workload = self.createWorkload()
         workload.setDashboardActivity("production")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("MonteCarlo", self.prodJobSplitAlgo,
                                          self.prodJobSplitArgs)
         workload.setEndPolicy("SingleShot")
@@ -84,6 +83,7 @@ class MonteCarloWorkloadFactory(StdBase):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber=self.runNumber)
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
@@ -129,53 +129,41 @@ class MonteCarloWorkloadFactory(StdBase):
     def validateSchema(self, schema):
         self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
                                        configCacheUrl=schema['ConfigCacheUrl'],
-                                       couchDBName=schema["CouchDBName"])
+                                       couchDBName=schema["CouchDBName"],
+                                       getOutputModules=False)
         return
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType": {"default": "MonteCarlo", "optional": True,
-                                    "attr": "requestType"},
-                    "PrimaryDataset": {"default": "BlackHoleTest", "type": str,
-                                       "optional": False, "validate": primdataset,
+    def getWorkloadCreateArgs():
+        """
+        Some default values set for testing purposes
+        """
+        baseArgs = StdBase.getWorkloadCreateArgs()
+        specArgs = {"RequestType": {"default": "MonteCarlo", "optional": False},
+                    "PrimaryDataset": {"default": "BlackHoleTest", "optional": False, "validate": primdataset,
                                        "attr": "inputPrimaryDataset", "null": False},
-                    "Seeding": {"default": "AutomaticSeeding", "type": str,
-                                "optional": True, "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
-                                "attr": "seeding", "null": False},
-                    "GlobalTag": {"default": "GT_MC_V1:All", "type": str,
-                                  "optional": False, "validate": None,
-                                  "attr": "globalTag", "null": False},
-                    "FilterEfficiency": {"default": 1.0, "type": float,
-                                         "optional": True, "validate": lambda x: x > 0.0,
-                                         "attr": "filterEfficiency", "null": False},
-                    "RequestNumEvents": {"default": 1000, "type": int,
-                                         "optional": False, "validate": lambda x: x > 0,
-                                         "attr": "requestNumEvents", "null": False},
-                    "FirstEvent": {"default": 1, "type": int,
-                                   "optional": True, "validate": lambda x: x > 0,
-                                   "attr": "firstEvent", "null": False},
-                    "FirstLumi": {"default": 1, "type": int,
-                                  "optional": True, "validate": lambda x: x > 0,
-                                  "attr": "firstLumi", "null": False},
-                    "MCPileup": {"default": None, "type": str,
-                                 "optional": True, "validate": dataset,
+                    "Seeding": {"default": "AutomaticSeeding", "null": False,
+                                "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"]},
+                    "FilterEfficiency": {"default": 1.0, "type": float, "null": False,
+                                         "validate": lambda x: x > 0.0},
+                    "RequestNumEvents": {"default": 1000, "type": int, "null": False,
+                                         "optional": False, "validate": lambda x: x > 0},
+                    "FirstEvent": {"default": 1, "type": int, "validate": lambda x: x > 0,
+                                   "null": False},
+                    "FirstLumi": {"default": 1, "type": int, "validate": lambda x: x > 0,
+                                  "null": False},
+                    "MCPileup": {"default": None, "validate": dataset,
                                  "attr": "mcPileup", "null": True},
-                    "DataPileup": {"default": None, "type": str,
-                                   "optional": True, "validate": dataset,
+                    "DataPileup": {"default": None, "validate": dataset,
                                    "attr": "dataPileup", "null": True},
-                    "DeterministicPileup": {"default": False, "type": strToBool,
-                                            "optional": True, "validate": None,
-                                            "attr": "deterministicPileup", "null": False},
-                    "EventsPerJob": {"default": None, "type": int,
-                                     "optional": True, "validate": lambda x: x > 0,
-                                     "attr": "eventsPerJob", "null": True},
-                    "EventsPerLumi": {"default": None, "type": int,
-                                      "optional": True, "validate": lambda x: x > 0,
-                                      "attr": "eventsPerLumi", "null": True},
-                    "LheInputFiles": {"default": False, "type": strToBool,
-                                      "optional": True, "validate": None,
-                                      "attr": "lheInputFiles", "null": False}
+                    "SplittingAlgo" : {"default" : "EventBased", "null" : False,
+                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                    "EventAwareLumiBased", "FileBased"],
+                                       "attr" : "prodJobSplitAlgo"},
+                    "DeterministicPileup": {"default": False, "type": strToBool, "null": False},
+                    "EventsPerJob": {"type": int, "validate": lambda x: x > 0, "null": True},
+                    "EventsPerLumi": {"type": int, "validate": lambda x: x > 0, "null": True},
+                    "LheInputFiles": {"default": False, "type": strToBool, "null": False}
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

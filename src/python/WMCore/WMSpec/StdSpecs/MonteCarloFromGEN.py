@@ -37,7 +37,6 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("production")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs,
                                          OpenRunningTimeout=self.openRunningTimeout)
@@ -58,9 +57,8 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         if self.pileupConfig:
             self.setupPileup(procTask, self.pileupConfig)
 
-        for outputModuleName in outputMods.keys():
-            self.addMergeTask(procTask, self.procJobSplitAlgo,
-                              outputModuleName)
+        for outputModuleName in outputMods:
+            self.addMergeTask(procTask, self.procJobSplitAlgo, outputModuleName)
 
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
@@ -70,6 +68,7 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber=self.runNumber)
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
@@ -98,29 +97,22 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         DataProcessing.validateSchema(self, schema)
         self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
                                        configCacheUrl=schema['ConfigCacheUrl'],
-                                       couchDBName=schema["CouchDBName"])
+                                       couchDBName=schema["CouchDBName"],
+                                       getOutputModules=False)
+
         return
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"RequestType": {"default": "MonteCarloFromGEN", "optional": True,
-                                    "attr": "requestType"},
-                    "PrimaryDataset": {"default": None, "type": str,
-                                       "optional": True, "validate": primdataset,
+    def getWorkloadCreateArgs():
+        baseArgs = DataProcessing.getWorkloadCreateArgs()
+        specArgs = {"RequestType": {"default": "MonteCarloFromGEN", "optional": False},
+                    "PrimaryDataset": {"default": None, "optional": True, "validate": primdataset,
                                        "attr": "inputPrimaryDataset", "null": True},
-                    "ConfigCacheID": {"default": None, "type": str,
-                                      "optional": False, "validate": None,
-                                      "attr": "configCacheID", "null": True},
-                    "MCPileup": {"default": None, "type": str,
-                                 "optional": True, "validate": dataset,
-                                 "attr": "mcPileup", "null": True},
-                    "DataPileup": {"default": None, "type": str,
-                                   "optional": True, "validate": dataset,
-                                   "attr": "dataPileup", "null": True},
+                    "MCPileup": {"validate": dataset, "attr": "mcPileup", "null": True},
+                    "DataPileup": {"validate": dataset, "null": True},
                     "DeterministicPileup": {"default": False, "type": strToBool,
-                                            "optional": True, "validate": None,
-                                            "attr": "deterministicPileup", "null": False}}
+                                            "optional": True, "null": False}
+                   }
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

@@ -84,11 +84,10 @@ Example initial processing task
  },
 """
 from __future__ import division
-
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import identifier, block, primdataset, dataset
+from WMCore.Lexicon import primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, parsePileupConfig
 
 #
 # simple utils for data mining the request dictionary
@@ -113,11 +112,6 @@ class ParameterStorage(object):
 
         Stores the function and valid parameters to save/restore.
 
-        Supported parameters are:
-
-        Global tag, CMSSW version, Scram arch
-        Primary Dataset, Processing Version, Processing String, Acquisition Era
-
         The validParameters dictionary contains a mapping from the name of the attribute
         in StdBase to the argument key in the task dictionaries
         """
@@ -130,8 +124,7 @@ class ParameterStorage(object):
                                 'acquisitionEra': 'AcquisitionEra',
                                 'timePerEvent': 'TimePerEvent',
                                 'sizePerEvent': 'SizePerEvent',
-                                'memory': 'Memory',
-                                'dqmConfigCacheID': 'DQMConfigCacheID'
+                                'memory': 'Memory'
                                }
         return
 
@@ -178,9 +171,11 @@ class ParameterStorage(object):
         Alter the parameters with the specific task configuration
         """
         for param in self.validParameters:
-            if self.validParameters[param] in taskConf:
+            # if task arg is None or 0 or "", then reuse the global one
+            taskValue = getattr(self, param)
+            if taskConf.get(self.validParameters[param]):
                 taskValue = taskConf[self.validParameters[param]]
-                setattr(self.obj, param, taskValue)
+            setattr(self.obj, param, taskValue)
         return
 
     def restoreParameters(self):
@@ -274,13 +269,13 @@ class TaskChainWorkloadFactory(StdBase):
                                                           taskConf['SplittingArguments'],
                                                           blowupFactor=blowupFactor)
                     self.setupTask(task, taskConf)
-                self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
             else:
                 # all subsequent tasks have to be processing tasks
                 self.setupTask(task, taskConf)
             self.taskMapping[task.name()] = taskConf
 
         self.workload.ignoreOutputModules(self.ignoredOutputModules)
+        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         return self.workload
 
@@ -370,7 +365,7 @@ class TaskChainWorkloadFactory(StdBase):
 
         # in case the initial task is a processing task, we have an input dataset, otherwise
         # we look up the parent task and step
-        inputDataset = taskConf["InputDataset"]
+        inputDataset = taskConf.get("InputDataset")
         if inputDataset is not None:
             self.inputDataset = inputDataset
             (self.inputPrimaryDataset, self.inputProcessedDataset,
@@ -387,7 +382,7 @@ class TaskChainWorkloadFactory(StdBase):
                 inpMod = taskConf["InputFromOutputModule"]
                 # Check if the splitting has to be changed
                 if inputTaskConf["SplittingAlgo"] == 'EventBased' \
-                        and (inputTaskConf["InputDataset"] or inputTaskConf["InputTask"]):
+                        and (inputTaskConf.get("InputDataset") or inputTaskConf.get("InputTask")):
                     splitAlgorithm = 'WMBSMergeBySize'
                     splitArguments = {'max_merge_size': self.maxMergeSize,
                                       'min_merge_size': self.minMergeSize,
@@ -397,7 +392,7 @@ class TaskChainWorkloadFactory(StdBase):
                 inpMod = "Merged"
 
         currentPrimaryDataset = self.inputPrimaryDataset
-        if taskConf["PrimaryDataset"] is not None:
+        if taskConf.get("PrimaryDataset") is not None:
             self.inputPrimaryDataset = taskConf.get("PrimaryDataset")
 
         outputMods = self.setupProcessingTask(task, "Processing",
@@ -464,14 +459,15 @@ class TaskChainWorkloadFactory(StdBase):
         _modifyTaskConfiguration_
 
         Modify the TaskConfiguration according to the specifications
-        in getWorkloadArguments and getTaskArguments. It does
-        type casting and assigns default values.
+        in getWorkloadCreateArgs and getChainCreateArgs.
+        It does type casting and assigns default values if key is not
+        present, unless default value is None.
         """
-        taskArguments = self.getTaskArguments(firstTask, generator)
+        taskArguments = self.getChainCreateArgs(firstTask, generator)
         for argument in taskArguments:
-            if argument not in taskConf:
+            if argument not in taskConf and taskArguments[argument]["default"] is not None:
                 taskConf[argument] = taskArguments[argument]["default"]
-            else:
+            elif argument in taskConf:
                 taskConf[argument] = taskArguments[argument]["type"](taskConf[argument])
 
         if generator:
@@ -482,13 +478,12 @@ class TaskChainWorkloadFactory(StdBase):
             taskConf["SizePerEvent"] = taskConf.get("SizePerEvent", self.sizePerEvent) * \
                                        taskConf.get("FilterEfficiency")
 
-        if taskConf["EventsPerJob"] is None:
-            taskConf["EventsPerJob"] = int((8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
-        if taskConf["EventsPerLumi"] is None:
-            taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
-
         taskConf["SplittingArguments"] = {}
-        if taskConf["SplittingAlgo"] == "EventBased" or taskConf["SplittingAlgo"] == "EventAwareLumiBased":
+        if taskConf["SplittingAlgo"] in ["EventBased", "EventAwareLumiBased"]:
+            if taskConf.get("EventsPerJob") is None:
+                taskConf["EventsPerJob"] = int((8.0 * 3600.0) / taskConf.get("TimePerEvent", self.timePerEvent))
+            if taskConf.get("EventsPerLumi") is None:
+                taskConf["EventsPerLumi"] = taskConf["EventsPerJob"]
             taskConf["SplittingArguments"]["events_per_job"] = taskConf["EventsPerJob"]
             if taskConf["SplittingAlgo"] == "EventAwareLumiBased":
                 taskConf["SplittingArguments"]["max_events_per_lumi"] = 20000
@@ -500,25 +495,20 @@ class TaskChainWorkloadFactory(StdBase):
         elif taskConf["SplittingAlgo"] == "FileBased":
             taskConf["SplittingArguments"]["files_per_job"] = taskConf["FilesPerJob"]
 
-        taskConf["PileupConfig"] = parsePileupConfig(taskConf["MCPileup"], taskConf["DataPileup"])
+        taskConf["PileupConfig"] = parsePileupConfig(taskConf.get("MCPileup"),
+                                                     taskConf.get("DataPileup"))
         # Adjust the pileup splitting
         taskConf["SplittingArguments"].setdefault("deterministicPileup", taskConf['DeterministicPileup'])
 
         return
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType": {"default": "TaskChain", "optional": False,
-                                    "attr": "requestType"},
+    def getWorkloadCreateArgs():
+        baseArgs = StdBase.getWorkloadCreateArgs()
+        specArgs = {"RequestType": {"default": "TaskChain", "optional": False},
                     # ConfigCacheID is not used in the main dict for TaskChain
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "CouchDBName": {"default": "dp_configcache", "type": str,
-                                    "optional": False, "validate": identifier,
-                                    "attr": "couchDBName", "null": False},
-                    "IgnoredOutputModules": {"default": [], "type": makeList,
-                                             "optional": True, "validate": None,
-                                             "attr": "ignoredOutputModules", "null": False},
+                    "IgnoredOutputModules": {"default": [], "type": makeList, "null": False},
                     "TaskChain": {"default": 1, "type": int,
                                   "optional": False, "validate": lambda x: x > 0,
                                   "attr": "taskChain", "null": False},
@@ -534,96 +524,30 @@ class TaskChainWorkloadFactory(StdBase):
         return baseArgs
 
     @staticmethod
-    def getTaskArguments(firstTask=False, generator=False):
+    def getChainCreateArgs(firstTask=False, generator=False):
         """
-        _getTaskArguments_
+        _getChainCreateArgs_
 
         Each task dictionary specifies its own set of arguments
         that need to be validated as well, most of them are already
-        defined in StdBase.getWorkloadArguments and those do not appear here
+        defined in StdBase.getWorkloadCreateArgs and those do not appear here
         since they are all optional. Here only new arguments are listed.
         """
-        specArgs = {"TaskName": {"default": None, "type": str,
-                                 "optional": False, "validate": None,
-                                 "null": False},
-                    "ConfigCacheID": {"type": str, "optional": False},
-                    "KeepOutput": {"default": True, "type": strToBool,
-                                   "optional": True, "validate": None,
-                                   "null": False},
-                    "TransientOutputModules": {"default": [], "type": makeList,
-                                               "optional": True, "validate": None,
-                                               "null": False},
-                    "PrimaryDataset": {"default": None, "type": str,
-                                       "optional": not generator, "validate": primdataset,
-                                       "null": False},
-                    "Seeding": {"default": "AutomaticSeeding", "type": str,
-                                "optional": True,
-                                "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
-                                "null": False},
-                    "RequestNumEvents": {"default": 1000, "type": int,
-                                         "optional": not generator, "validate": lambda x: x > 0,
-                                         "null": False},
-                    "MCPileup": {"default": None, "type": str,
-                                 "optional": True, "validate": dataset,
-                                 "null": False},
-                    "DataPileup": {"default": None, "type": str,
-                                   "optional": True, "validate": dataset,
-                                   "null": False},
-                    "DeterministicPileup": {"default": False, "type": strToBool,
-                                            "optional": True, "validate": None,
-                                            "attr": "deterministicPileup", "null": False},
-                    "InputDataset": {"default": None, "type": str,
-                                     "optional": generator or not firstTask, "validate": dataset,
-                                     "null": False},
-                    "InputTask": {"default": None, "type": str,
-                                  "optional": firstTask, "validate": None,
-                                  "null": False},
-                    "InputFromOutputModule": {"default": None, "type": str,
-                                              "optional": firstTask, "validate": None,
-                                              "null": False},
-                    "BlockBlacklist": {"default": [], "type": makeList,
-                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
-                                       "null": False},
-                    "BlockWhitelist": {"default": [], "type": makeList,
-                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
-                                       "null": False},
-                    "RunBlacklist": {"default": [], "type": makeList,
-                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
-                                     "null": False},
-                    "RunWhitelist": {"default": [], "type": makeList,
-                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
-                                     "null": False},
-                    "SplittingAlgo": {"default": "EventAwareLumiBased", "type": str,
-                                      "optional": True, "validate": lambda x: x in ["EventBased", "LumiBased",
-                                                                                    "EventAwareLumiBased", "FileBased"],
-                                      "null": False},
-                    "EventsPerJob": {"default": None, "type": int,
-                                     "optional": True, "validate": lambda x: x > 0,
-                                     "null": True},
-                    "LumisPerJob": {"default": 8, "type": int,
-                                    "optional": True, "validate": lambda x: x > 0,
-                                    "null": False},
-                    "FilesPerJob": {"default": 1, "type": int,
-                                    "optional": True, "validate": lambda x: x > 0,
-                                    "null": False},
-                    "EventsPerLumi": {"default": None, "type": int,
-                                      "optional": True, "validate": lambda x: x > 0,
-                                      "attr": "eventsPerLumi", "null": True},
-                    "FilterEfficiency": {"default": 1.0, "type": float,
-                                         "optional": True, "validate": lambda x: x > 0.0,
-                                         "attr": "filterEfficiency", "null": False},
-                    "LheInputFiles": {"default": False, "type": strToBool,
-                                      "optional": True, "validate": None,
-                                      "attr": "lheInputFiles", "null": False},
-                    "PrepID": {"default": None, "type": str,
-                               "optional": True, "validate": None,
-                               "attr": "prepID", "null": True},
-                    "Multicore": {"default": 0, "type": int,
-                                  "validate": lambda x: x > 0},
-                    "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
-                   }
-        StdBase.setDefaultArgumentsProperty(specArgs)
-        return specArgs
+        baseArgs = StdBase.getChainCreateArgs(firstTask, generator)
+        arguments = {
+            "TaskName": {"optional": False, "null": False},
+            "InputTask": {"default": None, "optional": firstTask, "null": False},
+            "TransientOutputModules": {"default": [], "type": makeList, "optional": True, "null": False},
+            "DeterministicPileup": {"default": False, "type": strToBool, "optional": True, "null": False},
+            "GlobalTag": {"type": str, "optional": True},
+            "TimePerEvent": {"type": float, "optional": True, "validate": lambda x: x > 0},
+            "SizePerEvent": {"type": float, "optional": True, "validate": lambda x: x > 0},
+            'PrimaryDataset': {'default': None, 'optional': not generator, 'validate': primdataset,
+                               'null': False},
+                    }
+        baseArgs.update(arguments)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+        return baseArgs
 
     def validateSchema(self, schema):
         """
@@ -635,12 +559,12 @@ class TaskChainWorkloadFactory(StdBase):
         numTasks = schema['TaskChain']
         transientMapping = {}
         for i in xrange(1, numTasks + 1):
-            taskName = "Task%s" % i
-            if taskName not in schema:
+            taskNumber = "Task%s" % i
+            if taskNumber not in schema:
                 msg = "No Task%s entry present in request" % i
                 self.raiseValidationException(msg=msg)
 
-            task = schema[taskName]
+            task = schema[taskNumber]
             # We can't handle non-dictionary tasks
             if not isinstance(task, dict):
                 msg = "Non-dictionary input for task in TaskChain.\n"
@@ -648,14 +572,14 @@ class TaskChainWorkloadFactory(StdBase):
                 self.raiseValidationException(msg=msg)
 
             # Generic task parameter validation
-            self.validateTask(task, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in task))
+            self.validateTask(task, self.getChainCreateArgs(i == 1, i == 1 and 'InputDataset' not in task))
 
             # Validate the existence of the configCache
             if task["ConfigCacheID"]:
                 self.validateConfigCacheExists(configID=task['ConfigCacheID'],
                                                configCacheUrl=schema["ConfigCacheUrl"],
                                                couchDBName=schema["CouchDBName"],
-                                               getOutputModules=True)
+                                               getOutputModules=False)
 
             # Validate the chaining of transient output modules, need to make a copy of the lists
             transientMapping[task['TaskName']] = [x for x in task.get('TransientOutputModules', [])]
@@ -678,18 +602,9 @@ class TaskChainWorkloadFactory(StdBase):
         Validate the task information against the given
         argument description
         """
-        msg = validateArgumentsCreate(taskConf, taskArgumentDefinition)
-        if msg is not None:
-            self.raiseValidationException(msg)
+        try:
+            validateArgumentsCreate(taskConf, taskArgumentDefinition)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
 
-        # Also retrieve the "main" arguments which may be overriden in the task
-        # Change them all to optional for validation
-        baseArgs = self.getWorkloadArguments()
-        validateArgumentsNoOptionalCheck(taskConf, baseArgs)
-
-        for arg in baseArgs:
-            baseArgs[arg]["optional"] = True
-        msg = validateArgumentsCreate(taskConf, baseArgs)
-        if msg is not None:
-            self.raiseValidationException(msg)
         return

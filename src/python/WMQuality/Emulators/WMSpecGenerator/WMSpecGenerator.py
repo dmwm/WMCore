@@ -60,19 +60,20 @@ class WMSpecGenerator(object):
         return self._selectReturnType(spec, returnType, splitter)
 
     def createReRecoSpec(self, specName, returnType="spec", splitter = None,
-                         inputDataset = None, dbsUrl = None, **additionalArgs):
+                         assignKwargs={}, **additionalArgs):
         # update args, then reset them
         args = ReRecoWorkloadFactory.getTestArguments()
         args.update(additionalArgs)
         args["ConfigCacheID"] = createConfig(args["CouchDBName"])
         args["SiteWhitelist"] = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
         factory = ReRecoWorkloadFactory()
-        spec =  factory.factoryWorkloadConstruction(specName, args)
-        if inputDataset != None:
-            spec.taskIterator().next().data.input.dataset.primary = inputDataset
-        if dbsUrl != None:
-            print(dbsUrl)
-            spec.taskIterator().next().data.input.dataset.dbsurl = dbsUrl
+        spec = factory.factoryWorkloadConstruction(specName, args)
+
+        if assignKwargs:
+            args = ReRecoWorkloadFactory.getAssignTestArguments()
+            args.update(assignKwargs)
+            spec.updateArguments(args)
+
         return self._selectReturnType(spec, returnType, splitter)
 
     def createMCSpec(self, specName, returnType="spec", splitter = None):

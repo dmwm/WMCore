@@ -1,10 +1,13 @@
-from Utils.Utilities import makeList
-from WMCore.Lexicon import dataset, block
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
+#!/usr/bin/env python
+"""
+_DQMHarvest_
+
+Workflow for harvest an input dataset.
+"""
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 
 
-class DQMHarvestWorkloadFactory(StdBase):
+class DQMHarvestWorkloadFactory(DataProcessing):
     """
     _DQMHarvestWorkloadFactory_
 
@@ -16,12 +19,11 @@ class DQMHarvestWorkloadFactory(StdBase):
 
         Create a DQMHarvest workload with the given parameters.
         """
-        StdBase.__call__(self, workloadName, arguments)
+        DataProcessing.__call__(self, workloadName, arguments)
 
         self.workload = self.createWorkload()
 
         self.workload.setDashboardActivity("harvesting")
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         splitArgs = {"runs_per_job": 1}
         if self.dqmHarvestUnit == "multiRun":
@@ -37,6 +39,7 @@ class DQMHarvestWorkloadFactory(StdBase):
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         self.workload.setTaskPropertiesFromWorkload()
+        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         return self.workload
 
@@ -44,17 +47,9 @@ class DQMHarvestWorkloadFactory(StdBase):
         """
         _validateSchema_
 
-        Standard StdBase schema validation, plus verification
-        of the DQMConfigCacheID.
+        Standard DataProcessing schema validation.
         """
-        StdBase.validateSchema(self, schema)
-
-        if not schema.get("DQMUploadUrl", None):
-            msg = "DQMUploadUrl parameter has not been provided in the request"
-            raise WMSpecFactoryException(message=msg)
-        if not schema.get("DQMConfigCacheID", None):
-            msg = "DQMConfigCacheID parameter has not been provided in the request"
-            raise WMSpecFactoryException(message=msg)
+        DataProcessing.validateSchema(self, schema)
 
         self.validateConfigCacheExists(configID=schema["DQMConfigCacheID"],
                                        configCacheUrl=schema['ConfigCacheUrl'],
@@ -62,36 +57,21 @@ class DQMHarvestWorkloadFactory(StdBase):
                                        getOutputModules=False)
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType": {"default": "DQMHarvest"},
-                    "InputDataset": {"default": None, "optional": False,
-                                     "validate": dataset},
-                    "ConfigCacheID": {"optional": True, "validate": None, "null": True},
-                    "UnmergedLFNBase": {"default": "/store/unmerged"},
-                    "MergedLFNBase": {"default": "/store/data"},
-                    "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
-                                     "validate": lambda x: x > 0},
-                    "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,
-                                     "validate": lambda x: x > 0},
-                    "MaxMergeEvents": {"default": 100000, "type": int,
-                                       "validate": lambda x: x > 0},
-                    "BlockBlacklist": {"default": [], "type": makeList,
-                                       "validate": lambda x: all([block(y) for y in x])},
-                    "BlockWhitelist": {"default": [], "type": makeList,
-                                       "validate": lambda x: all([block(y) for y in x])},
-                    "RunBlacklist": {"default": [], "type": makeList,
-                                     "validate": lambda x: all([int(y) > 0 for y in x])},
-                    "RunWhitelist": {"default": [], "type": makeList,
-                                     "validate": lambda x: all([int(y) > 0 for y in x])}
+    def getWorkloadCreateArgs():
+        baseArgs = DataProcessing.getWorkloadCreateArgs()
+        specArgs = {"RequestType": {"default": "DQMHarvest", "optional": True},
+                    "ConfigCacheID": {"optional": True, "null": True},
+                    "DQMConfigCacheID": {"optional": False, "attr": "dqmConfigCacheID"},
+                    "DQMUploadUrl": {"optional": False, "attr": "dqmUploadUrl"},
                    }
         baseArgs.update(specArgs)
-        StdBase.setDefaultArgumentsProperty(baseArgs)
+        DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
-    def addDQMHarvestTask(self, uploadProxy=None, periodic_harvest_interval=0,
-                          periodic_harvest_sibling=False, parentStepName="cmsRun1",
-                          doLogCollect=True, dqmHarvestUnit="byRun"):
+    def addDQMHarvestTask(self, parentTask=None, parentOutputModuleName=None, uploadProxy=None,
+                          periodic_harvest_interval=0, periodic_harvest_sibling=False,
+                          parentStepName="cmsRun1", doLogCollect=True, dqmHarvestUnit="byRun",
+                          cmsswVersion=None, scramArch=None):
         """
         _addDQMHarvestTask_
 

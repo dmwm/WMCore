@@ -13,11 +13,11 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
-from Utils.Utilities import makeList, strToBool
+from Utils.Utilities import strToBool
 import WMCore.WMSpec.Steps.StepFactory as StepFactory
-from WMCore.Lexicon import block, primdataset, dataset
+from WMCore.Lexicon import primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
-from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
+from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, parsePileupConfig
 
 # simple utils for data mining the request dictionary
 isGenerator = lambda args: not args["Step1"].get("InputDataset", None)
@@ -67,7 +67,8 @@ class StepChainWorkloadFactory(StdBase):
         for k, v in arguments["Step1"].iteritems():
             taskConf[k] = v
         self.modifyTaskConfiguration(taskConf, True, 'InputDataset' not in taskConf)
-        self.inputPrimaryDataset = taskConf.get("PrimaryDataset", self.primaryDataset)
+
+        self.inputPrimaryDataset = self.getStepValue('PrimaryDataset', taskConf, self.primaryDataset)
         self.blockBlacklist = taskConf["BlockBlacklist"]
         self.blockWhitelist = taskConf["BlockWhitelist"]
         self.runBlacklist = taskConf["RunBlacklist"]
@@ -89,13 +90,13 @@ class StepChainWorkloadFactory(StdBase):
             self.workload.setWorkQueueSplitPolicy("Block", taskConf['SplittingAlgo'],
                                                   taskConf['SplittingArguments'])
             self.setupTask(firstTask, taskConf)
-        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         # Now modify this task to add the next steps
         if self.stepChain > 1:
             self.setupNextSteps(firstTask, arguments)
 
         self.workload.setStepMapping(self.stepMapping)
+        self.reportWorkflowToDashboard(self.workload.getDashboardActivity())
 
         return self.workload
 
@@ -185,9 +186,9 @@ class StepChainWorkloadFactory(StdBase):
 
             # Set default values for the task parameters
             self.modifyTaskConfiguration(taskConf, False, 'InputDataset' not in taskConf)
-            globalTag = taskConf.get("GlobalTag", self.globalTag)
-            frameworkVersion = taskConf.get("CMSSWVersion", self.frameworkVersion)
-            scramArch = taskConf.get("ScramArch", self.scramArch)
+            globalTag = self.getStepValue('GlobalTag', taskConf, self.globalTag)
+            frameworkVersion = self.getStepValue('CMSSWVersion', taskConf, self.frameworkVersion)
+            scramArch = self.getStepValue('ScramArch', taskConf, self.scramArch)
 
             childCmssw = parentCmsswStep.addTopStep(currentCmsRun)
             childCmssw.setStepType("CMSSW")
@@ -226,6 +227,16 @@ class StepChainWorkloadFactory(StdBase):
         childCmsswStepHelper.keepOutput(True)
 
         return
+
+    def getStepValue(self, keyName, stepDict, topLevelValue):
+        """
+        Utilitarian method to reliably get the value of a step key
+        or fallback to the top level one.
+        """
+        if keyName in stepDict and stepDict.get(keyName) is not None:
+            return stepDict.get(keyName)
+        else:
+            return topLevelValue
 
     def setupOutputModules(self, task, taskConf, stepCmsRun, keepOutput):
         """
@@ -275,15 +286,15 @@ class StepChainWorkloadFactory(StdBase):
         _modifyTaskConfiguration_
 
         Modify the TaskConfiguration according to the specifications
-        in getWorkloadArguments and getTaskArguments. It does type
+        in getWorkloadCreateArgs and getChainCreateArgs. It does type
         casting and assigns default values.
         """
-        baseArguments = self.getWorkloadArguments()
+        baseArguments = self.getWorkloadCreateArgs()
         for argument in baseArguments:
             if argument in taskConf:
                 taskConf[argument] = baseArguments[argument]["type"](taskConf[argument])
 
-        taskArguments = self.getTaskArguments(firstTask, generator)
+        taskArguments = self.getChainCreateArgs(firstTask, generator)
         for argument in taskArguments:
             if argument not in taskConf:
                 taskConf[argument] = taskArguments[argument]["default"]
@@ -332,108 +343,47 @@ class StepChainWorkloadFactory(StdBase):
         return
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
+    def getWorkloadCreateArgs():
+        baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "StepChain", "optional": False},
                     # ConfigCacheID is not used in the main dict for StepChain
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "GlobalTag": {"type": str, "optional": False},
-                    "PrimaryDataset": {"default": None, "type": str,
-                                       "validate": primdataset, "null": True},
-                    "StepChain": {"default": 1, "type": int,
-                                  "optional": False, "validate": lambda x: x > 0,
-                                  "attr": "stepChain", "null": False},
-                    "FirstEvent": {"default": 1, "type": int,
-                                   "optional": True, "validate": lambda x: x > 0,
-                                   "attr": "firstEvent", "null": False},
-                    "FirstLumi": {"default": 1, "type": int,
-                                  "optional": True, "validate": lambda x: x > 0,
-                                  "attr": "firstLumi", "null": False}
+                    "PrimaryDataset": {"null": True, "validate": primdataset},
+                    "StepChain": {"default": 1, "type": int, "null": False,
+                                  "optional": False, "validate": lambda x: x > 0},
+                    "FirstEvent": {"default": 1, "type": int, "validate": lambda x: x > 0,
+                                   "null": False},
+                    "FirstLumi": {"default": 1, "type": int, "validate": lambda x: x > 0,
+                                  "null": False}
                    }
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
     @staticmethod
-    def getTaskArguments(firstTask=False, generator=False):
+    def getChainCreateArgs(firstTask=False, generator=False):
         """
-        _getTaskArguments_
+        _getChainCreateArgs_
 
-        Each task dictionary specifies its own set of arguments
-        that need to be validated as well, most of them are already
-        defined in StdBase.getWorkloadArguments and those do not appear here
-        since they are all optional. Here only new arguments are listed.
+        This represents the authoritative list of request arguments that are
+        allowed in each chain (Step/Task) of chained request, during request creation.
+        Additional especific arguments must be defined inside each spec class.
+
+        For more information on how these arguments are built, please have a look
+        at the docstring for getWorkloadCreateArgs.
         """
-        specArgs = {"StepName": {"default": None, "type": str,
-                                 "optional": False, "validate": None,
-                                 "null": False},
-                    "ConfigCacheID": {"type": str, "optional": False},
-                    "Seeding": {"default": "AutomaticSeeding", "type": str, "optional": True,
-                                "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
-                                "null": False},
-                    "RequestNumEvents": {"default": 1000, "type": int,
-                                         "optional": not generator, "validate": lambda x: x > 0,
-                                         "null": False},
-                    "MCPileup": {"default": None, "type": str,
-                                 "optional": True, "validate": dataset,
-                                 "null": False},
-                    "DataPileup": {"default": None, "type": str,
-                                   "optional": True, "validate": dataset,
-                                   "null": False},
-                    "InputDataset": {"default": None, "type": str,
-                                     "optional": generator or not firstTask, "validate": dataset,
-                                     "null": False},
-                    "KeepOutput": {"default": True, "type": strToBool, "optional": True, "null": False,
-                                   "validate": None},
-                    "InputStep": {"default": None, "type": str,
-                                  "optional": firstTask, "validate": None,
-                                  "null": False},
-                    "InputFromOutputModule": {"default": None, "type": str,
-                                              "optional": firstTask, "validate": None,
-                                              "null": False},
-                    "BlockBlacklist": {"default": [], "type": makeList,
-                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
-                                       "null": False},
-                    "BlockWhitelist": {"default": [], "type": makeList,
-                                       "optional": True, "validate": lambda x: all([block(y) for y in x]),
-                                       "null": False},
-                    "RunBlacklist": {"default": [], "type": makeList,
-                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
-                                     "null": False},
-                    "RunWhitelist": {"default": [], "type": makeList,
-                                     "optional": True, "validate": lambda x: all([int(y) > 0 for y in x]),
-                                     "null": False},
-                    "SplittingAlgo": {"default": "EventAwareLumiBased", "type": str,
-                                      "optional": True, "null": False,
-                                      "validate": lambda x: x in ["EventBased", "LumiBased",
-                                                                  "EventAwareLumiBased", "FileBased"]},
-                    "EventsPerJob": {"default": None, "type": int,
-                                     "optional": True, "validate": lambda x: x > 0,
-                                     "null": True},
-                    "LumisPerJob": {"default": 8, "type": int,
-                                    "optional": True, "validate": lambda x: x > 0,
-                                    "null": False},
-                    "FilesPerJob": {"default": 1, "type": int,
-                                    "optional": True, "validate": lambda x: x > 0,
-                                    "null": False},
-                    "EventsPerLumi": {"default": None, "type": int,
-                                      "optional": True, "validate": lambda x: x > 0,
-                                      "attr": "eventsPerLumi", "null": True},
-                    "FilterEfficiency": {"default": 1.0, "type": float,
-                                         "optional": True, "validate": lambda x: x > 0.0,
-                                         "attr": "filterEfficiency", "null": False},
-                    "LheInputFiles": {"default": False, "type": strToBool,
-                                      "optional": True, "validate": None,
-                                      "attr": "lheInputFiles", "null": False},
-                    "PrepID": {"default": None, "type": str,
-                               "optional": True, "validate": None,
-                               "attr": "prepID", "null": True},
-                    "Multicore": {"default": 0, "type": int,
-                                  "validate": lambda x: x > 0},
-                    "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
-                   }
-        StdBase.setDefaultArgumentsProperty(specArgs)
-        return specArgs
+        baseArgs = StdBase.getChainCreateArgs(firstTask, generator)
+        arguments = {
+            'InputStep': {'default': None, 'null': False, 'optional': firstTask, 'type': str},
+            'StepName': {'null': False, 'optional': False},
+            'PrimaryDataset': {'default': None, 'optional': True,
+                               'validate': primdataset, 'null': False}
+            }
+
+        baseArgs.update(arguments)
+        StdBase.setDefaultArgumentsProperty(baseArgs)
+
+        return baseArgs
 
     def validateSchema(self, schema):
         """
@@ -444,12 +394,12 @@ class StepChainWorkloadFactory(StdBase):
         outputMods = []
         numSteps = schema['StepChain']
         for i in range(1, numSteps + 1):
-            stepName = "Step%s" % i
-            if stepName not in schema:
+            stepNumber = "Step%s" % i
+            if stepNumber not in schema:
                 msg = "No Step%s entry present in the request" % i
                 self.raiseValidationException(msg=msg)
 
-            step = schema[stepName]
+            step = schema[stepNumber]
             # We can't handle non-dictionary steps
             if not isinstance(step, dict):
                 msg = "Non-dictionary input for step in StepChain.\n"
@@ -457,14 +407,14 @@ class StepChainWorkloadFactory(StdBase):
                 self.raiseValidationException(msg=msg)
 
             # Generic step parameter validation
-            self.validateTask(step, self.getTaskArguments(i == 1, i == 1 and 'InputDataset' not in step))
+            self.validateStep(step, self.getChainCreateArgs(i == 1, i == 1 and 'InputDataset' not in step))
 
             # Validate the existence of the configCache
             if step["ConfigCacheID"]:
                 self.validateConfigCacheExists(configID=step['ConfigCacheID'],
                                                configCacheUrl=schema['ConfigCacheUrl'],
                                                couchDBName=schema["CouchDBName"],
-                                               getOutputModules=True)
+                                               getOutputModules=False)
 
             # keeping different outputs with the same output module is not allowed
             if strToBool(step.get("KeepOutput", True)):
@@ -474,35 +424,26 @@ class StepChainWorkloadFactory(StdBase):
                 for outputModuleName in configOutput.keys():
                     if outputModuleName in outputMods:
                         msg = "StepChain does not support KeepOutput sharing the same output module."
-                        msg += "\n%s re-using outputModule: %s" % (stepName, outputModuleName)
+                        msg += "\n%s re-using outputModule: %s" % (stepNumber, outputModuleName)
                         self.raiseValidationException(msg=msg)
                     else:
                         outputMods.append(outputModuleName)
 
-        if 'KeepOutput' in schema[stepName] and not strToBool(schema[stepName]['KeepOutput']):
+        if 'KeepOutput' in schema[stepNumber] and not strToBool(schema[stepNumber]['KeepOutput']):
             msg = "Dropping the output of the last step is prohibited.\n"
             msg += "Set the 'KeepOutput' value to True and try again."
             self.raiseValidationException(msg=msg)
 
-    def validateTask(self, taskConf, taskArgumentDefinition):
+    def validateStep(self, taskConf, taskArgumentDefinition):
         """
-        _validateTask_
+        _validateStep_
 
-        Validate the task information against the given
+        Validate the step information against the given
         argument description
         """
-        msg = validateArgumentsCreate(taskConf, taskArgumentDefinition)
-        if msg is not None:
-            self.raiseValidationException(msg)
+        try:
+            validateArgumentsCreate(taskConf, taskArgumentDefinition)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))
 
-        # Also retrieve the "main" arguments which may be overriden in the task
-        # Change them all to optional for validation
-        baseArgs = self.getWorkloadArguments()
-        validateArgumentsNoOptionalCheck(taskConf, baseArgs)
-
-        for arg in baseArgs:
-            baseArgs[arg]["optional"] = True
-        msg = validateArgumentsCreate(taskConf, baseArgs)
-        if msg is not None:
-            self.raiseValidationException(msg)
         return

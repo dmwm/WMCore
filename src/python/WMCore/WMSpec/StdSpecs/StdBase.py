@@ -9,13 +9,14 @@ import logging
 from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname
-from WMCore.Lexicon import couchurl, block, procstring, activity, procversion
+from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
+from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 from WMCore.WMSpec.WMWorkload import newWorkload
 from WMCore.WMSpec.WMWorkloadTools import (makeLumiList, checkDBSURL, validateArgumentsCreate)
-from WMCore.ReqMgr.Tools.cms import releases, architectures
 
 
 class StdBase(object):
@@ -38,7 +39,7 @@ class StdBase(object):
         These parameters can be changed after the workflow has been created by
         the methods in the WMWorkloadHelper class.
         """
-        argumentDefinition = self.getWorkloadArguments()
+        argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             setattr(self, argumentDefinition[arg]["attr"], None)
 
@@ -58,7 +59,7 @@ class StdBase(object):
         """
         self.workloadName = workloadName
         self.schema = {}
-        argumentDefinition = self.getWorkloadArguments()
+        argumentDefinition = self.getWorkloadCreateArgs()
         for arg in argumentDefinition:
             try:
                 if arg in arguments:
@@ -245,7 +246,6 @@ class StdBase(object):
         workload.setCampaign(self.campaign)
         workload.setRequestType(self.requestType)
         workload.setPrepID(self.prepID)
-        workload.setAllowOpportunistic(self.allowOpportunistic)
         return workload
 
     def setupProcessingTask(self, procTask, taskType, inputDataset=None, inputStep=None,
@@ -308,10 +308,11 @@ class StdBase(object):
 
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
-        if applySiteLists:
-            procTask.setSiteWhitelist(self.siteWhitelist)
-            procTask.setSiteBlacklist(self.siteBlacklist)
-            procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
+        # FIXME (Alan on 27/Mar/17): can we remove it? (I guess T0 needs it...?)
+        #if applySiteLists:
+        #    procTask.setSiteWhitelist(self.siteWhitelist)
+        #    procTask.setSiteBlacklist(self.siteBlacklist)
+        #    procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
 
         newSplitArgs = {}
         for argName in splitArgs.keys():
@@ -888,13 +889,18 @@ class StdBase(object):
         This is validation for global inputs that have to be implemented for
         multiple types of workflows in the exact same way.
 
-        This uses programatically the definitions in getWorkloadArguments
+        This uses programatically the definitions in getWorkloadCreateArgs
         for type-checking, existence, null tests and the specific validation functions.
 
         Any spec-specific extras are implemented in the overriden validateSchema
         """
+        # TODO: eventually perform a complete argument validation for Resubmission workflows
+        # For now, we mostly trust the inherited values and the few args provided by the user
+        if schema.get('RequestType') == 'Resubmission':
+            return
+
         # Validate the arguments according to the workload arguments definition
-        argumentDefinition = self.getWorkloadArguments()
+        argumentDefinition = self.getWorkloadCreateArgs()
         try:
             validateArgumentsCreate(schema, argumentDefinition)
         except Exception as ex:
@@ -939,17 +945,16 @@ class StdBase(object):
         return self.schema
 
     @staticmethod
-    def getWorkloadArguments():
+    def getWorkloadCreateArgs():
         """
-        _getWorkloadArguments_
+        _getWorkloadCreateArgs_
 
-        This represents the authorative list of request arguments that are
-        interpreted by the current spec class.
+        This represents the authoritative list of request arguments that are
+        allowed by the current spec class during request creation
         The list is formatted as a 2-level dictionary, the keys in the first level
         are the identifiers for the arguments processed by the current spec.
         The second level dictionary contains the information about that argument for
         validation:
-
         - default: Gives a default value if not provided,
                    this default value usually is good enough for a standard workflow. If the argument is not optional
                    and a default value is provided, this is only meant for test purposes.
@@ -957,14 +962,14 @@ class StdBase(object):
                 If the input is not compatible with the expected type, this method must throw an exception.
         - optional: This boolean value indicates if the value must be provided or not by user
                     or inherited class can overwrite with default value.
-        - assign_optional: This boolean value indicates if the value must be provided when workflow is assinged if False.
+        - assign_optional: This boolean value indicates if the value must be provided when workflow is assigned if False.
 
         - validate: A function which validates the input after type casting,
                     it returns True if the input is valid, it can throw exceptions on invalid input.
         - attr: This represents the name of the attribute corresponding to the argument in the WMSpec object.
         - null: This indicates if the argument can have None as its value.
 
-        If above is not specifyed, automatically set by following default value
+        If above is not specified, automatically set by following default value
         - default: None
         - type: str
         - optional: True
@@ -985,63 +990,43 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        # if key is not specified it is set by default value
+        # if key is not specified, then it gets the default value
+        arguments = {"RequestType": {"default": "StdBase", "optional": False},  # this need to be overwritten by inherited class
+                     "RequestPriority": {"default": 8000, "type": int, "attr": "priority",
+                                         "validate": lambda x: (x >= 0 and x < 1e6)},
+                     # arguments added/overwritten by ReqMgr2
+                     "Requestor": {"attr": "owner", "optional": False},
+                     "RequestorDN": {"attr": "owner_dn", "optional": False, "null": False},
+                     "RequestString": {"optional": False, "null": False},
+                     "RequestName": {"optional": False, "null": False, "validate": identifier},
+                     "RequestStatus": {"optional": False, "validate": lambda x: x == REQUEST_START_STATE},
+                     "RequestTransition": {"optional": False, "type": list},
+                     "RequestDate": {"optional": False, "type": list},
+                     "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                     "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
+                     "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
 
-        arguments = {"RequestType": {"optional": False},  # this need to be overwritten by inherited class
-                     "Requestor": {"default": "unknown", "attr": "owner", "optional": False},
-                     "RequestorDN": {"default": "unknown", "attr": "owner_dn", "optional": False},
                      "Group": {"default": "DATAOPS"},
-                     "RequestPriority": {"default": 8000, "type": int,
-                                         "validate": lambda x: (x >= 0 and x < 1e6),
-                                         "attr": "priority"},
-                     "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
-                     "VoRole": {"default": "unknown", "attr": "owner_vorole"},
+                     "PrepID": {"default": None, "null": True},
                      # default value will be AcquisitionEra except when AcquistionEra is dict
                      "Campaign": {"default": "", "optional": True},
-                     "AcquisitionEra": {"validate": acqname, "optional": False},
                      "CMSSWVersion": {"validate": lambda x: x in releases(),
                                       "optional": False, "attr": "frameworkVersion"},
                      "ScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
                                    "optional": False, "type": makeNonEmptyList},
+                     "OpenRunningTimeout": {"default": 0, "type": int, "null": False,
+                                            "validate": lambda x: x >= 0},
                      "GlobalTag": {"optional": False, "null": False},
                      "GlobalTagConnect": {"null": True},
-                     "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
-                     "ProcessingString": {"validate": procstring, "optional": False},
                      "LumiList": {"default": {}, "type": makeLumiList},
-                     "SiteBlacklist": {"default": [], "type": makeList,
-                                       "validate": lambda x: all([cmsname(y) for y in x])},
-                     "SiteWhitelist": {"default": [], "type": makeList,
-                                       "validate": lambda x: all([cmsname(y) for y in x])},
-                     "BlockBlacklist": {"default": [], "type": makeList,
-                                        "validate": lambda x: all([block(y) for y in x])},
-                     "BlockWhitelist": {"default": [], "type": makeList,
-                                        "validate": lambda x: all([block(y) for y in x])},
-                     "UnmergedLFNBase": {"default": "/store/unmerged"},
-                     "MergedLFNBase": {"default": "/store/data"},
-                     "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
-                                      "validate": lambda x: x > 0},
-                     "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,
-                                      "validate": lambda x: x > 0},
-                     "MaxWaitTime": {"default": 24 * 3600, "type": int,
-                                     "validate": lambda x: x > 0},
-                     "MaxMergeEvents": {"default": 100000000, "type": int,
-                                        "validate": lambda x: x > 0},
-                     "ValidStatus": {"default": "PRODUCTION"},
                      "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
                                 "null": True, "validate": checkDBSURL},
                      "DashboardHost": {"default": "cms-jobmon.cern.ch"},
                      "DashboardPort": {"default": 8884, "type": int,
                                        "validate": lambda x: x > 0},
-                     "OverrideCatalog": {"null": True},
-                     "RunNumber": {"default": 0, "type": int},
-                     "TimePerEvent": {"default": 12.0, "type": float,
-                                      "validate": lambda x: x > 0},
-                     "Memory": {"default": 2300.0, "type": float,
-                                "validate": lambda x: x > 0},
-                     "SizePerEvent": {"default": 512.0, "type": float,
-                                      "validate": lambda x: x > 0},
-                     "PeriodicHarvestInterval": {"default": 0, "type": int,
-                                                 "validate": lambda x: x >= 0},
+                     "TimePerEvent": {"default": 12.0, "type": float, "validate": lambda x: x > 0},
+                     "SizePerEvent": {"default": 512.0, "type": float, "validate": lambda x: x > 0},
+                     "PeriodicHarvestInterval": {"default": 0, "type": int, "validate": lambda x: x >= 0},
                      "DQMHarvestUnit": {"default": "byRun", "type": str, "attr": "dqmHarvestUnit"},
                      "DQMUploadProxy": {"null": True, "attr": "dqmUploadProxy"},
                      "DQMUploadUrl": {"default": "https://cmsweb.cern.ch/dqm/dev", "attr": "dqmUploadUrl"},
@@ -1050,9 +1035,102 @@ class StdBase(object):
                      "EnableHarvesting": {"default": False, "type": strToBool},
                      "EnableNewStageout": {"default": False, "type": strToBool},
                      "IncludeParents": {"default": False, "type": strToBool},
-                     "Multicore": {"default": 1, "type": int,
-                                   "validate": lambda x: x > 0},
+
+                     "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                     "ConfigCacheID": {"optional": False},
+
+                     "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
+                     "VoRole": {"default": "unknown", "attr": "owner_vorole"},
+                     "ValidStatus": {"default": "PRODUCTION"},
+                     "OverrideCatalog": {"null": True},
+                     "RunNumber": {"default": 0, "type": int},
+                     "RobustMerge": {"default": True, "type": strToBool},
+
+                     # FIXME (Alan on 27/Mar/017): maybe used by T0 during creation???
+                     "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxWaitTime": {"default": 24 * 3600, "type": int,
+                                     "validate": lambda x: x > 0},
+                     "MaxMergeEvents": {"default": 100000000, "type": int,
+                                        "validate": lambda x: x > 0},
+
+                     # parameters that can be overwritten during assignment
+                     "UnmergedLFNBase": {"default": "/store/unmerged"},
+                     "MergedLFNBase": {"default": "/store/data"},
+                     "AcquisitionEra": {"validate": acqname, "optional": False},
+                     "ProcessingString": {"validate": procstring, "optional": False},
+                     "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
+                     "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
+                     "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+                     "Comments": {"default": ""},
+                     "DeleteFromSource": {"default": False, "type": strToBool},
+                     "SubRequestType": {"default": ""}
+                    }
+        # Set defaults for the argument specification
+        StdBase.setDefaultArgumentsProperty(arguments)
+
+        return arguments
+
+    @staticmethod
+    def getWorkloadAssignArgs():
+        """
+        _getWorkloadAssignArgs_
+
+        This represents the authoritative list of request arguments that are
+        allowed by the current spec class during request assignment.
+
+        For more information on how these arguments are built, please have a look
+        at the docstring for getWorkloadCreateArgs.
+        """
+        # if key is not specified, then it gets the default value
+        arguments = {"RequestPriority": {"type": int, "attr": "priority",
+                                         "validate": lambda x: (x >= 0 and x < 1e6)},
+                     "RequestStatus": {"assign_optional": True, "validate": lambda x: x == 'assigned'},
+                     "UnmergedLFNBase": {"default": "/store/unmerged"},
+                     "MergedLFNBase": {"default": "/store/data"},
+                     "AcquisitionEra": {"validate": acqname, "assign_optional": True},
+                     "ProcessingString": {"validate": procstring, "assign_optional": True},
+                     "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
+                     "Memory": {"type": float, "validate": lambda x: x > 0},
+                     "Multicore": {"type": int, "validate": lambda x: x > 0},
+                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
+
+                     # Set phedex subscription information
+                     "SiteBlacklist": {"default": [], "type": makeList,
+                                       "validate": lambda x: all([cmsname(y) for y in x])},
+                     "SiteWhitelist": {"default": [], "type": makeNonEmptyList, "assign_optional": False,
+                                       "validate": lambda x: all([cmsname(y) for y in x])},
+                     "CustodialSites": {"default": [], "type": makeList, "assign_optional": True,
+                                        "validate": lambda x: all([cmsname(y) for y in x])},
+                     "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
+                                           "validate": lambda x: all([cmsname(y) for y in x])},
+                     "AutoApproveSubscriptionSites": {"default": [], "type": makeList, "assign_optional": True,
+                                                      "validate": lambda x: all([cmsname(y) for y in x])},
+                     "CustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
+                                          "validate": lambda x: x in ["Move", "Replica"]},
+                     "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
+                                             "validate": lambda x: x in ["Move", "Replica"]},
+                     "DeleteFromSource": {"default": False, "type": strToBool},
+                     # should be a valid PhEDEx group
+                     "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
+                     "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
+                     # should be Low, Normal or High
+                     "SubscriptionPriority": {"default": "Low", "assign_optional": True,
+                                              "validate": lambda x: x in ["Low", "Normal", "High"]},
+
+                     "Team": {"type": safeStr, "assign_optional": False,
+                              "validate": lambda x: len(x) > 0},
+                     "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,
+                                      "validate": lambda x: x > 0},
+                     "MaxWaitTime": {"default": 24 * 3600, "type": int,
+                                     "validate": lambda x: x > 0},
+                     "MaxMergeEvents": {"default": 100000000, "type": int,
+                                        "validate": lambda x: x > 0},
                      # data location management
                      "TrustSitelists": {"default": False, "type": strToBool},
                      "TrustPUSitelists": {"default": False, "type": strToBool},
@@ -1062,49 +1140,78 @@ class StdBase(object):
                      "MaxVSize": {"default": 20411724, "type": int, "validate": lambda x: x > 0},
                      "SoftTimeout": {"default": 129600, "type": int, "validate": lambda x: x > 0},
                      "GracePeriod": {"default": 300, "type": int, "validate": lambda x: x > 0},
-
-                     # Set phedex subscription information
-                     "CustodialSites": {"default": [], "type": makeList, "assign_optional": True,
-                                        "validate": lambda x: all([cmsname(y) for y in x])},
-                     "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
-                                           "validate": lambda x: all([cmsname(y) for y in x])},
-                     "AutoApproveSubscriptionSites": {"default": [], "type": makeList, "assign_optional": True,
-                                                      "validate": lambda x: all([cmsname(y) for y in x])},
-                     # should be Low, Normal or High
-                     "SubscriptionPriority": {"default": "Low", "assign_optional": True,
-                                              "validate": lambda x: x in ["Low", "Normal", "High"]},
-                     # should be Move Replica
-                     "CustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                          "validate": lambda x: x in ["Move", "Replica"]},
-                     "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
-                                             "validate": lambda x: x in ["Move", "Replica"]},
-
-                     # should be a valid PhEDEx group
-                     "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
-                     "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
-
-                     # should be True or False
-                     "DeleteFromSource": {"default": False, "type": strToBool},
-
                      # Block closing information
                      "BlockCloseMaxWaitTime": {"default": 66400, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxFiles": {"default": 500, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxEvents": {"default": 25000000, "type": int, "validate": lambda x: x > 0},
                      "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
-
                      # dashboard activity
-                     "Dashboard": {"default": "production", "type": str, "validate": activity},
-                     # team name
-                     "Team": {"default": "", "type": safeStr, "assign_optional": False},
-                     "PrepID": {"default": None, "null": True},
-                     "RobustMerge": {"default": True, "type": strToBool},
-                     "ConfigCacheID": {"optional": False, "validate": None},
-                     "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
-                     # these 3 parameters are overwritten by the ReqMgr2 configuration
-                     "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
-                     "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
-                     "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
+                     "Dashboard": {"default": "production", "type": str, "validate": activity}
                     }
+        # Set defaults for the argument specification
+        StdBase.setDefaultArgumentsProperty(arguments)
+
+        return arguments
+
+    @staticmethod
+    def getChainCreateArgs(firstTask=False, generator=False):
+        """
+        _getChainCreateArgs_
+
+        This represents the authoritative list of request arguments that are
+        allowed in each chain (Step/Task) of chained request, during request creation.
+        Additional especific arguments must be defined inside each spec class.
+
+        For more information on how these arguments are built, please have a look
+        at the docstring for getWorkloadCreateArgs.
+        """
+        arguments = {'AcquisitionEra': {'optional': True, 'validate': acqname},
+                     'BlockBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
+                                        'validate': lambda x: all([block(y) for y in x])},
+                     'BlockWhitelist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
+                                        'validate': lambda x: all([block(y) for y in x])},
+                     'CMSSWVersion': {'attr': 'frameworkVersion', 'null': True, 'optional': True,
+                                      'validate': lambda x: x in releases()},
+                     'ConfigCacheID': {'optional': False, 'type': str},
+                     'DataPileup': {'default': None, 'null': False, 'optional': True, 'type': str,
+                                    'validate': dataset},
+                     'EventStreams': {'null': True, 'type': int, 'validate': lambda x: x >= 0},
+                     'EventsPerJob': {'null': True, 'type': int, 'validate': lambda x: x > 0},
+                     'EventsPerLumi': {'default': None, 'null': True, 'optional': True, 'type': int,
+                                       'validate': lambda x: x > 0},
+                     'FilesPerJob': {'default': 1, 'null': False, 'optional': True, 'type': int,
+                                     'validate': lambda x: x > 0},
+                     'FilterEfficiency': {'default': 1.0, 'null': False, 'optional': True, 'type': float,
+                                          'validate': lambda x: x > 0.0},
+                     'GlobalTag': {'optional': False, 'type': str},
+                     'InputDataset': {'null': False, 'optional': generator or not firstTask, 'validate': dataset},
+                     'InputFromOutputModule': {'default': None, 'null': False, 'optional': firstTask},
+                     'KeepOutput': {'default': True, 'null': False, 'optional': True, 'type': strToBool},
+                     'LheInputFiles': {'default': False, 'null': False, 'optional': True, 'type': strToBool},
+                     'LumiList': {'default': {}, 'type': makeLumiList},
+                     'LumisPerJob': {'default': 8, 'null': False, 'optional': True, 'type': int,
+                                     'validate': lambda x: x > 0},
+                     'MCPileup': {'default': None, 'null': False, 'optional': True, 'type': str,
+                                  'validate': dataset},
+                     'Memory': {'default': None, 'null': True, 'type': float, 'validate': lambda x: x > 0},
+                     'Multicore': {'default': 0, 'type': int, 'validate': lambda x: x > 0},
+                     'PrepID': {'default': None, 'null': True, 'optional': True, 'type': str},
+                     'PrimaryDataset': {'null': True, 'validate': primdataset, 'attr': 'inputPrimaryDataset'},
+                     'ProcessingString': {'optional': True, 'validate': procstring},
+                     'ProcessingVersion': {'default': 0, 'type': int, 'validate': procversion},
+                     'RequestNumEvents': {'default': 1000, 'null': False, 'optional': not generator, 'type': int,
+                                          'validate': lambda x: x > 0},
+                     'RunBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
+                                      'validate': lambda x: all([int(y) > 0 for y in x])},
+                     'RunWhitelist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
+                                      'validate': lambda x: all([int(y) > 0 for y in x])},
+                     'ScramArch': {'null': True, 'optional': True, 'type': makeNonEmptyList,
+                                   'validate': lambda x: all([y in architectures() for y in x])},
+                     'Seeding': {'default': 'AutomaticSeeding', 'null': False, 'optional': True, 'type': str,
+                                 'validate': lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"]},
+                     'SplittingAlgo': {'default': 'EventAwareLumiBased', 'null': False, 'optional': True,
+                                       'validate': lambda x: x in ["EventBased", "LumiBased",
+                                                                   "EventAwareLumiBased", "FileBased"]}}
 
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
@@ -1128,40 +1235,86 @@ class StdBase(object):
         """
         _getTestArguments_
 
-        Using the getWorkloadArguments definition, build a request schema
+        Using the getWorkloadCreateArgs definition, build a request schema
         that may pass basic validation and create successfully a workload
         of the current spec. Only for testing purposes! Any use of this function
         outside of unit tests and integration tests may put your life in danger.
         Note that in some cases like ConfigCacheID, there is no default that will work
         and tests should specifically provide one.
         """
-        workloadDefinition = cls.getWorkloadArguments()
+        workloadDefinition = cls.getWorkloadCreateArgs()
         schema = {}
         for arg in workloadDefinition:
             # Dashboard parameter must be re-defined for test purposes
             if arg == "DashboardHost":
                 schema[arg] = "127.0.0.1"
             elif arg == "ConfigCacheUrl":
-                import os
-                #schema[arg] = 'http://localhost:5984'
-                schema[arg] = os.environ["COUCHURL"]
+                from os import environ
+                schema[arg] = environ["COUCHURL"]
+            elif arg == "RequestDate":
+                from time import gmtime
+                schema[arg] = gmtime()[:6]
+            elif arg == "RequestTransition":
+                from time import time
+                schema[arg] = [{"Status": REQUEST_START_STATE, "UpdateTime": int(time()), "DN": "Fake_DN"}]
+            elif arg == "RequestStatus":
+                schema[arg] = REQUEST_START_STATE
             elif arg == "CouchDBName":
                 schema[arg] = "reqmgr_config_cache_t"
             elif arg == "ScramArch":
                 schema[arg] = "slc6_amd64_gcc491"
             elif arg == "SiteWhitelist":
                 schema[arg] = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
+            elif arg == "GlobalTag":
+                schema[arg] = "GT_DP_V1"
+            elif arg == "InputDataset":
+                schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":
                         schema[arg] = "/MinimumBias/ComissioningHI-v1/RAW"
                     elif arg == "CMSSWVersion":
                         schema[arg] = "CMSSW_7_6_2"
+                    elif arg == "RequestType":
+                        schema[arg] = workloadDefinition[arg]['default']
                     else:
                         schema[arg] = "FAKE"
                 elif workloadDefinition[arg]["type"] == int or workloadDefinition[arg]["type"] == float:
                     schema[arg] = 1
                 else:  # A non-optional list or similar. Just copy.
+                    schema[arg] = workloadDefinition[arg]['default']
+            else:
+                schema[arg] = workloadDefinition[arg]['default']
+        return schema
+
+    @classmethod
+    def getAssignTestArguments(cls):
+        """
+        _getAssignTestArguments_
+
+        Using the getWorkloadAssignArgs definition, build a request schema
+        that may pass basic validation and successfully assign a workload
+        of the current spec.
+
+        Only for testing purposes! Any use of this function outside of unit
+        tests and integration tests may put your life in danger.
+        """
+        workloadDefinition = cls.getWorkloadAssignArgs()
+        schema = {}
+        for arg in workloadDefinition:
+            if arg == "SiteWhitelist":
+                schema[arg] = ["T2_US_TEST_Site"]
+            elif arg == "RequestStatus":
+                schema[arg] = 'assigned'
+            elif not workloadDefinition[arg]["assign_optional"]:
+                if workloadDefinition[arg]["type"] == str:
+                    if arg == "Team":
+                        schema[arg] = "Test-Team"
+                    else:
+                        schema[arg] = "FAKE"
+                elif workloadDefinition[arg]["type"] in (int, float):
+                    schema[arg] = 1
+                else:
                     schema[arg] = workloadDefinition[arg]['default']
             else:
                 schema[arg] = workloadDefinition[arg]['default']

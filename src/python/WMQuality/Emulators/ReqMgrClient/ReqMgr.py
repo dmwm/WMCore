@@ -30,8 +30,8 @@ class ReqMgr(dict):
                 specName = "ReRecoTest_v%sEmulator" % self.count
                 specUrl =self.specGenerator.createReRecoSpec(specName, "file",
                                                              self.splitter,
-                                                             self.inputDataset,
-                                                             self.dbsUrl,
+                                                             InputDataset=self.inputDataset,
+                                                             DbsUrl=self.dbsUrl,
                                                              OpenRunningTimeout = self.openRunningTimeout)
             elif self.type == 'MonteCarlo':
                 specName = "MCTest_v%sEmulator" % self.count

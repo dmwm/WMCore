@@ -35,7 +35,6 @@ class StoreResultsWorkloadFactory(StdBase):
 
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase)
         workload.setDashboardActivity("StoreResults")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         mergeTask = workload.newTask("StoreResults")
         self.addDashboardMonitoring(mergeTask)
@@ -48,8 +47,6 @@ class StoreResultsWorkloadFactory(StdBase):
         mergeTaskLogArch = mergeTaskCmssw.addStep("logArch1")
         mergeTaskLogArch.setStepType("LogArchive")
 
-        mergeTask.setSiteWhitelist(self.siteWhitelist)
-        mergeTask.setSiteBlacklist(self.siteBlacklist)
 
         self.addLogCollectTask(mergeTask, taskName = "StoreResultsLogCollect")
 
@@ -88,42 +85,24 @@ class StoreResultsWorkloadFactory(StdBase):
         # setting the parameters which need to be set for all the tasks
         # sets acquisitionEra, processingVersion, processingString
         workload.setTaskPropertiesFromWorkload()
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : True,
-                                      "attr" : "requestType"},
-                    "InputDataset" : {"default" : None,
-                                      "type" : str, "optional" : False,
-                                      "validate" : dataset, "attr" : "inputDataset",
-                                      "null" : False},
-                    "GlobalTag" : {"default" : "GT_SR_V1:All", "type" : str,
-                                   "optional" : False, "validate" : None,
-                                   "attr" : "globalTag", "null" : False},
+    def getWorkloadCreateArgs():
+        baseArgs = StdBase.getWorkloadCreateArgs()
+        specArgs = {"RequestType" : {"default" : "StoreResults", "optional" : False},
+                    "InputDataset" : {"optional" : False, "validate" : dataset, "null" : False},
                     "CmsPath" : {"default" : "/tmp", "type" : str,
                                  "optional" : False, "validate" : None,
                                  "attr" : "cmsPath", "null" : False},
                     "DataTier" : {"default" : "USER", "type" : str,
                                   "optional" : True, "validate" : None,
                                   "attr" : "dataTier", "null" : False},
-                    "UnmergedLFNBase" : {"default" : "/store/unmerged", "type" : str,
-                                         "optional" : True, "validate" : None,
-                                         "attr" : "unmergedLFNBase", "null" : False},
                     "MergedLFNBase" : {"default" : "/store/results", "type" : str,
                                        "optional" : True, "validate" : None,
                                        "attr" : "mergedLFNBase", "null" : False},
-                    "MinMergeSize" : {"default" : 2 * 1024 * 1024 * 1024, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "minMergeSize", "null" : False},
-                    "MaxMergeSize" : {"default" : 4 * 1024 * 1024 * 1024, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "maxMergeSize", "null" : False},
-                    "MaxMergeEvents" : {"default" : 100000, "type" : int,
-                                        "optional" : True, "validate" : lambda x : x > 0,
-                                        "attr" : "maxMergeEvents", "null" : False},
                     "BlockBlacklist" : {"default" : [], "type" : makeList,
                                         "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
                                         "attr" : "blockBlacklist", "null" : False},

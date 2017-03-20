@@ -214,7 +214,6 @@ class ReDigiWorkloadFactory(DataProcessing):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("reprocessing")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo, self.procJobSplitArgs,
                                          OpenRunningTimeout = self.openRunningTimeout)
         stepOneTask = workload.newTask("StepOneProc")
@@ -250,6 +249,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
@@ -285,43 +285,32 @@ class ReDigiWorkloadFactory(DataProcessing):
         return self.buildWorkload()
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = DataProcessing.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "ReDigi", "optional" : True},
-                    "StepOneOutputModuleName" : {"default" : None, "type" : str,
-                                                 "optional" : True, "null" : True},
-                    "StepTwoOutputModuleName" : {"default" : None, "type" : str,
-                                                 "optional" : True, "null" : True},
-                    "ConfigCacheID": {"default" : None, "optional": True, "null": True},
-                    "StepOneConfigCacheID" : {"default" : None, "type" : str,
-                                              "optional" : False, "null" : True},
-                    "StepTwoConfigCacheID" : {"default" : None, "type" : str,
-                                              "optional" : True, "null" : True},
-                    "StepThreeConfigCacheID" : {"default" : None, "type" : str,
-                                                "optional" : True, "null" : True},
-                    "KeepStepOneOutput" : {"default" : True, "type" : strToBool,
-                                           "optional" : True, "null" : False},
-                    "KeepStepTwoOutput" : {"default" : True, "type" : strToBool,
-                                           "optional" : True, "null" : False},
-                    "StepTwoTimePerEvent" : {"type" : float, "optional" : True, "null" : True,
+    def getWorkloadCreateArgs():
+        baseArgs = DataProcessing.getWorkloadCreateArgs()
+        specArgs = {"RequestType" : {"default" : "ReDigi", "optional" : False},
+                    "StepOneOutputModuleName" : {"null" : True},
+                    "StepTwoOutputModuleName" : {"null" : True},
+                    "ConfigCacheID": {"optional": True, "null": True},
+                    "StepOneConfigCacheID" : {"optional" : False, "null" : True},
+                    "StepTwoConfigCacheID" : {"null" : True},
+                    "StepThreeConfigCacheID" : {"null" : True},
+                    "KeepStepOneOutput" : {"default" : True, "type" : strToBool, "null" : False},
+                    "KeepStepTwoOutput" : {"default" : True, "type" : strToBool, "null" : False},
+                    "StepTwoTimePerEvent" : {"type" : float, "null" : True,
                                              "validate" : lambda x : x > 0},
-                    "StepThreeTimePerEvent" : {"type" : float, "optional" : True, "null" : True,
+                    "StepThreeTimePerEvent" : {"type" : float, "null" : True,
                                                "validate" : lambda x : x > 0},
-                    "StepTwoSizePerEvent" : {"default" : None, "type" : float, "null" : True,
-                                             "optional" : True, "validate" : lambda x : x > 0},
-                    "StepThreeSizePerEvent" : {"default" : None, "type" : float, "null" : True,
-                                               "optional" : True, "validate" : lambda x : x > 0},
-                    "StepTwoMemory" : {"default" : None, "type" : float, "null" : True,
-                                       "optional" : True, "validate" : lambda x : x > 0},
-                    "StepThreeMemory" : {"default" : None, "type" : float, "null" : True,
-                                         "optional" : True, "validate" : lambda x : x > 0},
-                    "MCPileup" : {"default" : None, "type" : str, "null" : True,
-                                  "optional" : True, "validate" : dataset,
-                                  "attr" : "mcPileup", "null" : True},
-                    "DataPileup" : {"default" : None, "type" : str, "null" : True,
-                                    "optional" : True, "validate" : dataset},
-                    "DeterministicPileup" : {"default" : False, "type" : strToBool,
-                                             "optional" : True, "null" : False}}
+                    "StepTwoSizePerEvent" : {"type" : float, "null" : True,
+                                             "validate" : lambda x : x > 0},
+                    "StepThreeSizePerEvent" : {"type" : float, "null" : True,
+                                               "validate" : lambda x : x > 0},
+                    "StepTwoMemory" : {"type" : float, "null" : True,
+                                       "validate" : lambda x : x > 0},
+                    "StepThreeMemory" : {"type" : float, "null" : True,
+                                         "validate" : lambda x : x > 0},
+                    "MCPileup" : {"validate" : dataset, "attr" : "mcPileup", "null" : True},
+                    "DataPileup" : {"null" : True, "validate" : dataset},
+                    "DeterministicPileup" : {"default" : False, "type" : strToBool, "null" : False}}
         baseArgs.update(specArgs)
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
@@ -329,17 +318,20 @@ class ReDigiWorkloadFactory(DataProcessing):
     def validateSchema(self, schema):
         self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
                                        configCacheUrl = schema['ConfigCacheUrl'],
-                                       couchDBName = schema["CouchDBName"])
+                                       couchDBName = schema["CouchDBName"],
+                                       getOutputModules=False)
         if schema.get("StepTwoConfigCacheID") is not None:
             self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
                                            configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"])
+                                           couchDBName = schema["CouchDBName"],
+                                           getOutputModules=False)
             if schema.get("StepOneOutputModuleName") is None:
                 self.raiseValidationException("StepTwoConfigCacheID is specified but StepOneOutputModuleName isn't")
         if schema.get("StepThreeConfigCacheID") is not None:
             self.validateConfigCacheExists(configID = schema["StepThreeConfigCacheID"],
                                            configCacheUrl = schema['ConfigCacheUrl'],
-                                           couchDBName = schema["CouchDBName"])
+                                           couchDBName = schema["CouchDBName"],
+                                           getOutputModules=False)
             if schema.get("StepTwoOutputModuleName") is None:
                 self.raiseValidationException("StepThreeConfigCacheID is specified but StepTwoOutputModuleName isn't")
         return

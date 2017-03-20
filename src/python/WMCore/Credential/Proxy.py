@@ -266,6 +266,39 @@ class Proxy(Credential):
 
         return subject
 
+    def getDatesFromCert(self, certFile = None):
+        """
+        Get the dates from cert file.
+        """
+        dates = {}
+
+        if not certFile:
+            certFile = self.getProxyFilename()
+
+        datesFromCertCmd = 'openssl x509 -in '+certFile+' -dates -noout'
+        datesResult, _, retcode = execute_command(self.setEnv(datesFromCertCmd), self.logger, self.commandTimeout)
+
+        if retcode == 0:
+            dates["notBefore"] = re.search("(?<=notBefore=).*", datesResult).group(0)
+            dates["notAfter"] = re.search("(?<=notAfter=).*", datesResult).group(0)
+
+            possibleFormats = ['%b  %d  %H:%M:%S %Y %Z', '%b %d %H:%M:%S %Y %Z']
+            exptime = None
+            for frmt in possibleFormats:
+                try:
+                    exptime = datetime.strptime(dates["notAfter"], frmt)
+                except ValueError:
+                    pass #try next format
+                if not exptime:
+                    #If we cannot decode the output in any way print a message
+                    self.logger.warning('Cannot decode "openssl x509 -noout -in %s -dates" date format.' % certLocation)
+                else:
+                    #if everything is fine then calculate hours left
+                    timeLeft = (exptime - datetime.utcnow())
+                    dates["timeLeft"] = timeLeft.days * 24 + timeLeft.seconds / 3600
+
+        return dates
+
     def getUserName(self, proxy = None ):
         """
         Get the user name from a proxy file.

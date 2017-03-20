@@ -239,9 +239,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
         baseArgs.update(specArgs)
         # add more optional arguments in case it is created using ReqMgr (not T0 case but should support both)
-        reqMgrArguments = {"CouchURL" : {"default" : "https://cmsweb.cern.ch/couchdb",
-                                         "validate" : couchurl},
-                           "CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
+        reqMgrArguments = {"CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
                                             "validate" : identifier},
                            "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
                            "ConfigCacheID" : {"optional": True, "null": True},

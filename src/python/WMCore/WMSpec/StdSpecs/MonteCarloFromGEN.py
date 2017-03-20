@@ -45,7 +45,6 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
 
         outputMods = self.setupProcessingTask(procTask, "Processing",
                                               self.inputDataset,
-                                              couchURL=self.couchURL,
                                               couchDBName=self.couchDBName,
                                               configCacheUrl=self.configCacheUrl,
                                               configDoc=self.configCacheID,
@@ -97,9 +96,8 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
         of the ConfigCacheID
         """
         DataProcessing.validateSchema(self, schema)
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
-                                       couchURL=couchUrl,
+                                       configCacheUrl=schema['ConfigCacheUrl'],
                                        couchDBName=schema["CouchDBName"])
         return
 
@@ -111,9 +109,6 @@ class MonteCarloFromGENWorkloadFactory(DataProcessing):
                     "PrimaryDataset": {"default": None, "type": str,
                                        "optional": True, "validate": primdataset,
                                        "attr": "inputPrimaryDataset", "null": True},
-                    "ConfigCacheUrl": {"default": None, "type": str,
-                                       "optional": True, "validate": None,
-                                       "attr": "configCacheUrl", "null": False},
                     "ConfigCacheID": {"default": None, "type": str,
                                       "optional": False, "validate": None,
                                       "attr": "configCacheID", "null": True},

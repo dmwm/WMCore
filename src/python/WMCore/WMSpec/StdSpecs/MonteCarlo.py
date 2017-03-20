@@ -46,7 +46,6 @@ class MonteCarloWorkloadFactory(StdBase):
         prodTask = workload.newTask("Production")
 
         outputMods = self.setupProcessingTask(prodTask, "Production", None,
-                                              couchURL=self.couchURL,
                                               couchDBName=self.couchDBName,
                                               configDoc=self.configCacheID,
                                               splitAlgo=self.prodJobSplitAlgo,
@@ -61,7 +60,7 @@ class MonteCarloWorkloadFactory(StdBase):
         if self.pileupConfig:
             self.setupPileup(prodTask, self.pileupConfig)
 
-        for outputModuleName in outputMods.keys():
+        for outputModuleName in outputMods:
             self.addMergeTask(prodTask, self.prodJobSplitAlgo,
                               outputModuleName,
                               lfn_counter=self.previousJobCount)
@@ -128,17 +127,14 @@ class MonteCarloWorkloadFactory(StdBase):
         return self.buildWorkload()
 
     def validateSchema(self, schema):
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         self.validateConfigCacheExists(configID=schema["ConfigCacheID"],
-                                       couchURL=couchUrl,
+                                       configCacheUrl=schema['ConfigCacheUrl'],
                                        couchDBName=schema["CouchDBName"])
         return
 
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
-        baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType": {"default": "MonteCarlo", "optional": True,
                                     "attr": "requestType"},
                     "PrimaryDataset": {"default": "BlackHoleTest", "type": str,

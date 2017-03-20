@@ -13,9 +13,9 @@ It also assumes all the intermediate steps output are transient and do not need
 to be staged out and registered in DBS/PhEDEx. Only the last step output will be
 made available.
 """
-import WMCore.WMSpec.Steps.StepFactory as StepFactory
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
+import WMCore.WMSpec.Steps.StepFactory as StepFactory
+from WMCore.Lexicon import block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
@@ -38,8 +38,6 @@ class StepChainWorkloadFactory(StdBase):
         otherwise pylint will complain about them.
         """
         StdBase.__init__(self)
-        self.couchURL = None
-        self.couchDBName = None
         self.configCacheUrl = None
         self.globalTag = None
         self.frameworkVersion = None
@@ -110,11 +108,10 @@ class StepChainWorkloadFactory(StdBase):
         configCacheID = taskConf['ConfigCacheID']
         splitAlgorithm = taskConf["SplittingAlgo"]
         splitArguments = taskConf["SplittingArguments"]
-        outMods = self.setupProcessingTask(task, "Production",
-                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                           configCacheUrl=self.configCacheUrl,
-                                           splitArgs=splitArguments, seeding=taskConf['Seeding'],
+        outMods = self.setupProcessingTask(task, "Production", couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, configCacheUrl=self.configCacheUrl,
+                                           splitAlgo=splitAlgorithm, splitArgs=splitArguments,
+                                           seeding=taskConf['Seeding'],
                                            totalEvents=taskConf['RequestNumEvents'],
                                            cmsswVersion=taskConf.get("CMSSWVersion", None),
                                            scramArch=taskConf.get("ScramArch", None),
@@ -143,11 +140,9 @@ class StepChainWorkloadFactory(StdBase):
             self.inputPrimaryDataset = self.inputDataset[1:].split("/")[0]
 
         outMods = self.setupProcessingTask(task, "Processing",
-                                           inputDataset=self.inputDataset,
-                                           couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                           configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                           configCacheUrl=self.configCacheUrl,
-                                           splitArgs=splitArguments,
+                                           inputDataset=self.inputDataset, couchDBName=self.couchDBName,
+                                           configDoc=configCacheID, configCacheUrl=self.configCacheUrl,
+                                           splitAlgo=splitAlgorithm, splitArgs=splitArguments,
                                            cmsswVersion=taskConf.get("CMSSWVersion", None),
                                            scramArch=taskConf.get("ScramArch", None),
                                            globalTag=taskConf.get("GlobalTag", None),
@@ -173,7 +168,6 @@ class StepChainWorkloadFactory(StdBase):
         Modify the step one task to include N more CMSSW steps and
         chain the output between all three steps.
         """
-        configCacheUrl = self.configCacheUrl or self.couchURL
         self.stepMapping.setdefault(origArgs['Step1']['StepName'], ('Step1', 'cmsRun1'))
 
         for i in range(2, self.stepChain + 1):
@@ -204,7 +198,7 @@ class StepChainWorkloadFactory(StdBase):
             childCmsswStepHelper.setGlobalTag(globalTag)
             childCmsswStepHelper.setupChainedProcessing(parentCmsRun, taskConf['InputFromOutputModule'])
             childCmsswStepHelper.cmsswSetup(frameworkVersion, softwareEnvironment="", scramArch=scramArch)
-            childCmsswStepHelper.setConfigCache(configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
+            childCmsswStepHelper.setConfigCache(self.configCacheUrl, taskConf['ConfigCacheID'], self.couchDBName)
 
             # multicore settings
             multicore = self.multicore
@@ -242,11 +236,10 @@ class StepChainWorkloadFactory(StdBase):
         """
         taskConf = taskConf or {}
 
-        configCacheUrl = self.configCacheUrl or self.couchURL
         outputMods = {}
 
         configOutput = self.determineOutputModules(configDoc=taskConf["ConfigCacheID"],
-                                                   couchURL=configCacheUrl,
+                                                   configCacheUrl=self.configCacheUrl,
                                                    couchDBName=self.couchDBName)
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(task, outputModuleName,
@@ -342,13 +335,11 @@ class StepChainWorkloadFactory(StdBase):
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
         specArgs = {"RequestType": {"default": "StepChain", "optional": False},
+                    # ConfigCacheID is not used in the main dict for StepChain
+                    "ConfigCacheID": {"optional": True, "null": True},
                     "GlobalTag": {"type": str, "optional": False},
-                    "CouchURL": {"type": str, "optional": False, "validate": couchurl},
                     "PrimaryDataset": {"default": None, "type": str,
                                        "validate": primdataset, "null": True},
-                    "CouchDBName": {"type": str, "optional": False,
-                                    "validate": identifier},
-                    "ConfigCacheUrl": {"type": str, "optional": True, "null": True},
                     "StepChain": {"default": 1, "type": int,
                                   "optional": False, "validate": lambda x: x > 0,
                                   "attr": "stepChain", "null": False},
@@ -376,8 +367,7 @@ class StepChainWorkloadFactory(StdBase):
         specArgs = {"StepName": {"default": None, "type": str,
                                  "optional": False, "validate": None,
                                  "null": False},
-                    "ConfigCacheID": {"default": None, "type": str,
-                                      "optional": False, "validate": None, "null": True},
+                    "ConfigCacheID": {"type": str, "optional": False},
                     "Seeding": {"default": "AutomaticSeeding", "type": str, "optional": True,
                                 "validate": lambda x: x in ["ReproducibleSeeding", "AutomaticSeeding"],
                                 "null": False},
@@ -441,7 +431,7 @@ class StepChainWorkloadFactory(StdBase):
                     "Multicore": {"default": 0, "type": int,
                                   "validate": lambda x: x > 0},
                     "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
-                    }
+                   }
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs
 
@@ -453,7 +443,6 @@ class StepChainWorkloadFactory(StdBase):
         """
         outputMods = []
         numSteps = schema['StepChain']
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         for i in range(1, numSteps + 1):
             stepName = "Step%s" % i
             if stepName not in schema:
@@ -473,14 +462,14 @@ class StepChainWorkloadFactory(StdBase):
             # Validate the existence of the configCache
             if step["ConfigCacheID"]:
                 self.validateConfigCacheExists(configID=step['ConfigCacheID'],
-                                               couchURL=couchUrl,
+                                               configCacheUrl=schema['ConfigCacheUrl'],
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=True)
 
             # keeping different outputs with the same output module is not allowed
             if strToBool(step.get("KeepOutput", True)):
                 configOutput = self.determineOutputModules(configDoc=step["ConfigCacheID"],
-                                                           couchURL=couchUrl,
+                                                           configCacheUrl=schema['ConfigCacheUrl'],
                                                            couchDBName=schema["CouchDBName"])
                 for outputModuleName in configOutput.keys():
                     if outputModuleName in outputMods:

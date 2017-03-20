@@ -38,8 +38,6 @@ class DataProcessing(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
-        baseArgs.update(reqMgrArgs)
         specArgs = {"InputDataset" : {"default" : "/MinimumBias/ComissioningHI-v1/RAW", "type" : str,
                                       "optional" : False, "validate" : dataset,
                                       "attr" : "inputDataset", "null" : False},

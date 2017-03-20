@@ -41,8 +41,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         parentCmsswStep = parentMergeTask.getStep("cmsRun1")
         newTask = parentMergeTask.addTask(taskName)
         outputMods = self.setupProcessingTask(newTask, "Processing", inputStep = parentCmsswStep,
-                                              inputModule = "Merged", couchURL = self.couchURL,
-                                              couchDBName = self.couchDBName,
+                                              inputModule = "Merged", couchDBName = self.couchDBName,
                                               configDoc = configCacheID,
                                               configCacheUrl = self.configCacheUrl,
                                               splitAlgo = self.procJobSplitAlgo,
@@ -61,7 +60,6 @@ class ReDigiWorkloadFactory(DataProcessing):
         output between all three steps.
 
         """
-        configCacheUrl = self.configCacheUrl or self.couchURL
         parentCmsswStep = stepOneTask.getStep("cmsRun1")
         parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
         parentCmsswStepHelper.keepOutput(False)
@@ -77,7 +75,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                       scramArch = self.scramArch)
 
-        stepTwoCmsswHelper.setConfigCache(configCacheUrl, self.stepTwoConfigCacheID,
+        stepTwoCmsswHelper.setConfigCache(self.configCacheUrl, self.stepTwoConfigCacheID,
                                           self.couchDBName)
         stepTwoCmsswHelper.keepOutput(False)
 
@@ -89,11 +87,11 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepThreeCmsswHelper.setupChainedProcessing("cmsRun2", self.stepTwoOutputModuleName)
         stepThreeCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                         scramArch = self.scramArch)
-        stepThreeCmsswHelper.setConfigCache(configCacheUrl, self.stepThreeConfigCacheID,
+        stepThreeCmsswHelper.setConfigCache(self.configCacheUrl, self.stepThreeConfigCacheID,
                                             self.couchDBName)
 
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
-                                                   configCacheUrl, self.couchDBName)
+                                                   self.couchDBName, self.configCacheUrl)
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(stepOneTask,
                                                 outputModuleName,
@@ -103,7 +101,7 @@ class ReDigiWorkloadFactory(DataProcessing):
                                                 stepName = "cmsRun2")
 
         configOutput = self.determineOutputModules(None, None, self.stepThreeConfigCacheID,
-                                                   configCacheUrl, self.couchDBName)
+                                                   self.couchDBName, self.configCacheUrl)
         outputMods = {}
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(stepOneTask,
@@ -159,7 +157,6 @@ class ReDigiWorkloadFactory(DataProcessing):
         do RECO on the RAW.
 
         """
-        configCacheUrl = self.configCacheUrl or self.couchURL
         parentCmsswStep = stepOneTask.getStep("cmsRun1")
         parentCmsswStepHelper = parentCmsswStep.getTypeHelper()
         parentCmsswStepHelper.keepOutput(False)
@@ -174,10 +171,10 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepTwoCmsswHelper.setupChainedProcessing("cmsRun1", self.stepOneOutputModuleName)
         stepTwoCmsswHelper.cmsswSetup(self.frameworkVersion, softwareEnvironment = "",
                                       scramArch = self.scramArch)
-        stepTwoCmsswHelper.setConfigCache(configCacheUrl, self.stepTwoConfigCacheID,
+        stepTwoCmsswHelper.setConfigCache(self.configCacheUrl, self.stepTwoConfigCacheID,
                                           self.couchDBName)
         configOutput = self.determineOutputModules(None, None, self.stepTwoConfigCacheID,
-                                                   configCacheUrl, self.couchDBName)
+                                                   self.couchDBName, self.configCacheUrl)
         outputMods = {}
         for outputModuleName in configOutput.keys():
             outputModule = self.addOutputModule(stepOneTask,
@@ -223,7 +220,7 @@ class ReDigiWorkloadFactory(DataProcessing):
         stepOneTask = workload.newTask("StepOneProc")
 
         outputMods = self.setupProcessingTask(stepOneTask, "Processing", self.inputDataset,
-                                              couchURL = self.couchURL, couchDBName = self.couchDBName,
+                                              couchDBName = self.couchDBName,
                                               configCacheUrl = self.configCacheUrl,
                                               configDoc = self.stepOneConfigCacheID,
                                               splitAlgo = self.procJobSplitAlgo,
@@ -330,19 +327,18 @@ class ReDigiWorkloadFactory(DataProcessing):
         return baseArgs
 
     def validateSchema(self, schema):
-        couchUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
         self.validateConfigCacheExists(configID = schema["StepOneConfigCacheID"],
-                                       couchURL = couchUrl,
+                                       configCacheUrl = schema['ConfigCacheUrl'],
                                        couchDBName = schema["CouchDBName"])
         if schema.get("StepTwoConfigCacheID") is not None:
             self.validateConfigCacheExists(configID = schema["StepTwoConfigCacheID"],
-                                           couchURL = couchUrl,
+                                           configCacheUrl = schema['ConfigCacheUrl'],
                                            couchDBName = schema["CouchDBName"])
             if schema.get("StepOneOutputModuleName") is None:
                 self.raiseValidationException("StepTwoConfigCacheID is specified but StepOneOutputModuleName isn't")
         if schema.get("StepThreeConfigCacheID") is not None:
             self.validateConfigCacheExists(configID = schema["StepThreeConfigCacheID"],
-                                           couchURL = couchUrl,
+                                           configCacheUrl = schema['ConfigCacheUrl'],
                                            couchDBName = schema["CouchDBName"])
             if schema.get("StepTwoOutputModuleName") is None:
                 self.raiseValidationException("StepThreeConfigCacheID is specified but StepTwoOutputModuleName isn't")

@@ -24,8 +24,7 @@ CouchDB parameters the main request parameters are:
     "ScramArch": "slc5_ia32_gcc434",                  Scram Arch
     "Requestor": "sfoulkes@fnal.gov",                 Person responsible
     "GlobalTag": "GR10_P_v4::All",                    Global Tag
-    "CouchURL": "http://couchserver.cern.ch",         URL of CouchDB containing ConfigCache (Used for all sub-tasks)
-    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of an alternative CouchDB server containing Config documents
+    "ConfigCacheUrl": https://cmsweb-testbed.cern.ch/couchdb URL of CouchDB containing ConfigCache docs for all tasks
     "CouchDBName": "config_cache",                    Name of Couch Database containing config cache (Used for all sub-tasks)
     "TaskChain" : 4,                                  Define number of tasks in chain.
 }
@@ -87,7 +86,7 @@ Example initial processing task
 from __future__ import division
 
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import identifier, couchurl, block, primdataset, dataset
+from WMCore.Lexicon import identifier, block, primdataset, dataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkloadTools import validateArgumentsCreate, validateArgumentsNoOptionalCheck, parsePileupConfig
 
@@ -294,7 +293,7 @@ class TaskChainWorkloadFactory(StdBase):
         the workload, else the task will be created as a child of the parent Task
 
         """
-        if parentTask == None:
+        if parentTask is None:
             task = self.workload.newTask(taskConf['TaskName'])
         else:
             task = parentTask.addTask(taskConf['TaskName'])
@@ -330,12 +329,11 @@ class TaskChainWorkloadFactory(StdBase):
         forceUnmerged = (not keepOutput) or (len(transientModules) > 0)
 
         self.inputPrimaryDataset = taskConf['PrimaryDataset']
-        outputMods = self.setupProcessingTask(task, "Production",
-                                              couchURL=self.couchURL, couchDBName=self.couchDBName,
-                                              configDoc=configCacheID, splitAlgo=splitAlgorithm,
-                                              configCacheUrl=self.configCacheUrl,
-                                              splitArgs=splitArguments, stepType=cmsswStepType,
-                                              seeding=taskConf['Seeding'], totalEvents=taskConf['RequestNumEvents'],
+        outputMods = self.setupProcessingTask(task, "Production", couchDBName=self.couchDBName,
+                                              configDoc=configCacheID, configCacheUrl=self.configCacheUrl,
+                                              splitAlgo=splitAlgorithm, splitArgs=splitArguments,
+                                              stepType=cmsswStepType, seeding=taskConf['Seeding'],
+                                              totalEvents=taskConf['RequestNumEvents'],
                                               forceUnmerged=forceUnmerged,
                                               timePerEvent=taskConf.get('TimePerEvent', None),
                                               sizePerEvent=taskConf.get('SizePerEvent', None),
@@ -402,14 +400,11 @@ class TaskChainWorkloadFactory(StdBase):
         if taskConf["PrimaryDataset"] is not None:
             self.inputPrimaryDataset = taskConf.get("PrimaryDataset")
 
-        couchUrl = self.couchURL
-        couchDB = self.couchDBName
         outputMods = self.setupProcessingTask(task, "Processing",
                                               inputDataset,
                                               inputStep=inpStep,
                                               inputModule=inpMod,
-                                              couchURL=couchUrl,
-                                              couchDBName=couchDB,
+                                              couchDBName=self.couchDBName,
                                               configCacheUrl=self.configCacheUrl,
                                               configDoc=configCacheID,
                                               splitAlgo=taskConf["SplittingAlgo"],
@@ -514,21 +509,13 @@ class TaskChainWorkloadFactory(StdBase):
     @staticmethod
     def getWorkloadArguments():
         baseArgs = StdBase.getWorkloadArguments()
-        reqMgrArgs = StdBase.getWorkloadArgumentsWithReqMgr()
-        baseArgs.update(reqMgrArgs)
         specArgs = {"RequestType": {"default": "TaskChain", "optional": False,
                                     "attr": "requestType"},
-                    # ConfigCacheID is not mandatory in the main dict for TaskChain
+                    # ConfigCacheID is not used in the main dict for TaskChain
                     "ConfigCacheID": {"optional": True, "null": True},
-                    "CouchURL": {"default": "http://localhost:5984", "type": str,
-                                 "optional": False, "validate": couchurl,
-                                 "attr": "couchURL", "null": False},
                     "CouchDBName": {"default": "dp_configcache", "type": str,
                                     "optional": False, "validate": identifier,
                                     "attr": "couchDBName", "null": False},
-                    "ConfigCacheUrl": {"default": None, "type": str,
-                                       "optional": True, "validate": None,
-                                       "attr": "configCacheUrl", "null": True},
                     "IgnoredOutputModules": {"default": [], "type": makeList,
                                              "optional": True, "validate": None,
                                              "attr": "ignoredOutputModules", "null": False},
@@ -559,12 +546,7 @@ class TaskChainWorkloadFactory(StdBase):
         specArgs = {"TaskName": {"default": None, "type": str,
                                  "optional": False, "validate": None,
                                  "null": False},
-                    "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "type": str,
-                                       "optional": True, "validate": None,
-                                       "attr": "configCacheUrl", "null": False},
-                    "ConfigCacheID": {"default": None, "type": str,
-                                      "optional": False, "validate": None,
-                                      "null": True},
+                    "ConfigCacheID": {"type": str, "optional": False},
                     "KeepOutput": {"default": True, "type": strToBool,
                                    "optional": True, "validate": None,
                                    "null": False},
@@ -670,9 +652,8 @@ class TaskChainWorkloadFactory(StdBase):
 
             # Validate the existence of the configCache
             if task["ConfigCacheID"]:
-                configCacheUrl = schema.get("ConfigCacheUrl", None) or schema["CouchURL"]
                 self.validateConfigCacheExists(configID=task['ConfigCacheID'],
-                                               couchURL=configCacheUrl,
+                                               configCacheUrl=schema["ConfigCacheUrl"],
                                                couchDBName=schema["CouchDBName"],
                                                getOutputModules=True)
 

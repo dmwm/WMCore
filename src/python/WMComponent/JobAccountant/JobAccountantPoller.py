@@ -9,8 +9,10 @@ import time
 import threading
 import logging
 
+from Utils.IteratorTools import grouper
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Agent.Harness import Harness
+from WMCore.Database.CouchUtils import CouchConnectionError
 from WMCore.DAOFactory import DAOFactory
 from WMComponent.JobAccountant.AccountantWorker import AccountantWorker
 from WMCore.WMException import WMException
@@ -66,22 +68,26 @@ class JobAccountantPoller(BaseWorkerThread):
             logging.debug("No work to do; exiting")
             return
 
-        while len(completeJobs) > 0:
+        for jobsSlice in grouper(completeJobs, self.accountantWorkSize):
             try:
-                jobsSlice = completeJobs[:self.accountantWorkSize]
-                completeJobs = completeJobs[self.accountantWorkSize:]
                 self.accountantWorker(jobsSlice)
-                logging.info("Remaining completed jobs to process: %d" % len(completeJobs))
             except WMException:
                 myThread = threading.currentThread()
-                if getattr(myThread, 'transaction', None) != None:
+                if getattr(myThread, 'transaction', None) is not None:
                     myThread.transaction.rollback()
                 raise
+            except CouchConnectionError as ex:
+                msg = "Caught CouchConnectionError exception. Waiting until the next polling cycle.\n"
+                msg += str(ex)
+                logging.exception(msg)
+                myThread = threading.currentThread()
+                if getattr(myThread, 'transaction', None) is not None:
+                    myThread.transaction.rollback()
             except Exception as ex:
                 myThread = threading.currentThread()
-                if getattr(myThread, 'transaction', None) != None:
+                if getattr(myThread, 'transaction', None) is not None:
                     myThread.transaction.rollback()
-                msg =  "Hit general exception in JobAccountantPoller while using worker.\n"
+                msg = "Hit general exception in JobAccountantPoller while using worker.\n"
                 msg += str(ex)
                 logging.error(msg)
                 self.sendAlert(6, msg = msg)

@@ -10,32 +10,32 @@ import threading
 import unittest
 import getpass
 import subprocess
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
+from nose.plugins.attrib import attr
+
 import WMCore.WMInit
-from WMQuality.TestInitCouchApp             import TestInitCouchApp as TestInit
-from WMCore.DAOFactory                      import DAOFactory
-from WMCore.Services.UUIDLib                   import makeUUID
-from WMCore.WMSpec.Makers.TaskMaker         import TaskMaker
-from WMCore.JobStateMachine.ChangeState     import ChangeState
+from WMCore.DAOFactory import DAOFactory
+from WMCore.Services.UUIDLib import makeUUID
+from WMCore.WMSpec.Makers.TaskMaker import TaskMaker
+from WMCore.JobStateMachine.ChangeState import ChangeState
 from WMCore.ResourceControl.ResourceControl import ResourceControl
-from WMCore.Agent.HeartbeatAPI              import HeartbeatAPI
-
-from WMCore.WMBS.File         import File
-from WMCore.WMBS.Fileset      import Fileset
-from WMCore.WMBS.Workflow     import Workflow
+from WMCore.Agent.HeartbeatAPI import HeartbeatAPI
+from WMCore.WMBS.File import File
+from WMCore.WMBS.Fileset import Fileset
+from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMBS.Subscription import Subscription
-from WMCore.WMBS.JobGroup     import JobGroup
-from WMCore.WMBS.Job          import Job
-
-from WMCore.BossAir.BossAirAPI   import BossAirAPI, BossAirException
+from WMCore.WMBS.JobGroup import JobGroup
+from WMCore.WMBS.Job import Job
+from WMCore.BossAir.BossAirAPI import BossAirAPI, BossAirException
 
 from WMCore_t.WMSpec_t.TestSpec import testWorkload
+from WMQuality.TestInitCouchApp import TestInitCouchApp as TestInit
 
-from nose.plugins.attrib import attr
 
 def getNArcJobs():
     """
@@ -44,9 +44,9 @@ def getNArcJobs():
     """
 
     cmd = "wc -l ~/.ngjobs"
-    pipe = subprocess.Popen(cmd, stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE, shell = True)
-    stdout, error = pipe.communicate()
+    pipe = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell=True)
+    stdout, _ = pipe.communicate()
     nJobs = int(stdout.split()[0])
     return nJobs
 
@@ -58,20 +58,16 @@ def getCondorRunningJobs(user):
     Return the number of jobs currently running for a user
     """
 
-
     command = ['condor_q', user]
-    pipe = subprocess.Popen(command, stdout = subprocess.PIPE,
-                            stderr = subprocess.PIPE, shell = False)
-    stdout, error = pipe.communicate()
+    pipe = subprocess.Popen(command, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, shell=False)
+    stdout, _ = pipe.communicate()
 
     output = stdout.split('\n')[-2]
 
     nJobs = int(output.split(';')[0].split()[0])
 
     return nJobs
-
-
-
 
 
 class BossAirTest(unittest.TestCase):
@@ -91,45 +87,37 @@ class BossAirTest(unittest.TestCase):
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-        self.testInit.setDatabaseConnection()
+        self.testInit.setDatabaseConnection(destroyAllDatabase=True)
         self.tearDown()
-        self.testInit.setSchema(customModules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
-                                useDefault = False)
+        self.testInit.setSchema(
+            customModules=["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"],
+            useDefault=False)
         self.testInit.setupCouch("bossair_t/jobs", "JobDump")
         self.testInit.setupCouch("bossair_t/fwjrs", "FWJRDump")
 
-        self.daoFactory = DAOFactory(package = "WMCore.WMBS",
-                                     logger = myThread.logger,
-                                     dbinterface = myThread.dbi)
-        self.getJobs = self.daoFactory(classname = "Jobs.GetAllJobs")
+        self.daoFactory = DAOFactory(package="WMCore.WMBS",
+                                     logger=myThread.logger,
+                                     dbinterface=myThread.dbi)
+        self.getJobs = self.daoFactory(classname="Jobs.GetAllJobs")
 
-        #Create sites in resourceControl
+        # Create sites in resourceControl
         resourceControl = ResourceControl()
         for site in self.sites:
-            resourceControl.insertSite(siteName = site, pnn = 'se.%s' % (site), cmsName = site,
-                                       ceName = site, plugin = "CondorPlugin", pendingSlots = 1000,
-                                       runningSlots = 2000)
-            resourceControl.insertThreshold(siteName = site, taskType = 'Processing', \
-                                            maxSlots = 1000, pendingSlots = 1000)
-        resourceControl.insertSite(siteName = 'Xanadu', pnn = 'se.Xanadu',cmsName = site,
-                                   ceName = 'Xanadu', plugin = "TestPlugin")
-        resourceControl.insertThreshold(siteName = 'Xanadu', taskType = 'Processing', \
-                                        maxSlots = 10000, pendingSlots = 10000)
+            resourceControl.insertSite(siteName=site, pnn='%s_PNN' % site, cmsName=site,
+                                       ceName=site, plugin="SimpleCondorPlugin", pendingSlots=1000,
+                                       runningSlots=2000)
+            resourceControl.insertThreshold(siteName=site, taskType='Processing',
+                                            maxSlots=1000, pendingSlots=1000)
 
-        resourceControl.insertSite(siteName = 'jade-cms.hip.fi', pnn = 'madhatter.csc.fi', cmsName = site,
-                                   ceName = 'jade-cms.hip.fi', plugin = "ARCPlugin")
-        resourceControl.insertThreshold(siteName = 'jade-cms.hip.fi', taskType = 'Processing', \
-                                        maxSlots = 100, pendingSlots = 100)
-        # using this for glite submissions
-        resourceControl.insertSite(siteName = 'grid-ce-01.ba.infn.it', pnn = 'storm-se-01.ba.infn.it', cmsName = site,
-                                   ceName = 'grid-ce-01.ba.infn.it', plugin = 'gLitePlugin')
-        resourceControl.insertThreshold(siteName = 'grid-ce-01.ba.infn.it', taskType = 'Processing', \
-                                        maxSlots = 50, pendingSlots = 50)
+        site = 'T3_US_Xanadu'
+        resourceControl.insertSite(siteName=site, pnn='%s_PNN' % site, cmsName=site,
+                                   ceName=site, plugin="TestPlugin")
+        resourceControl.insertThreshold(siteName=site, taskType='Processing',
+                                        maxSlots=10000, pendingSlots=10000)
 
         # Create user
-        newuser = self.daoFactory(classname = "Users.New")
-        newuser.execute(dn = "tapas", group_name = "phgroup", role_name = "cmsrole")
-
+        newuser = self.daoFactory(classname="Users.New")
+        newuser.execute(dn="tapas", group_name="phgroup", role_name="cmsrole")
 
         # We actually need the user name
         self.user = getpass.getuser()
@@ -139,10 +127,10 @@ class BossAirTest(unittest.TestCase):
 
         # Set heartbeat
         componentName = 'test'
-        self.heartbeatAPI  = HeartbeatAPI(componentName)
+        self.heartbeatAPI = HeartbeatAPI(componentName)
         self.heartbeatAPI.registerComponent()
         componentName = 'JobTracker'
-        self.heartbeatAPI2  = HeartbeatAPI(componentName)
+        self.heartbeatAPI2 = HeartbeatAPI(componentName)
         self.heartbeatAPI2.registerComponent()
 
         return
@@ -151,15 +139,13 @@ class BossAirTest(unittest.TestCase):
         """
         Database deletion
         """
-        #self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
+        # self.testInit.clearDatabase(modules = ["WMCore.WMBS", "WMCore.BossAir", "WMCore.ResourceControl", "WMCore.Agent.Database"])
 
         self.testInit.delWorkDir()
 
         self.testInit.tearDownCouch()
 
         return
-
-
 
     def getConfig(self):
         """
@@ -171,47 +157,43 @@ class BossAirTest(unittest.TestCase):
         config = self.testInit.getConfiguration()
 
         config.section_("Agent")
-        config.Agent.agentName  = 'testAgent'
+        config.Agent.agentName = 'testAgent'
         config.Agent.componentName = 'test'
         config.Agent.useHeartbeat = False
 
         config.section_("CoreDatabase")
         config.CoreDatabase.connectUrl = os.getenv("DATABASE")
-        config.CoreDatabase.socket     = os.getenv("DBSOCK")
-
+        config.CoreDatabase.socket = os.getenv("DBSOCK")
 
         config.section_("BossAir")
-        config.BossAir.pluginNames = ['TestPlugin', 'CondorPlugin']
-        config.BossAir.pluginDir   = 'WMCore.BossAir.Plugins'
+        config.BossAir.pluginNames = ['TestPlugin', 'SimpleCondorPlugin']
+        config.BossAir.pluginDir = 'WMCore.BossAir.Plugins'
         config.BossAir.UISetupScript = '/afs/cern.ch/cms/LCG/LCG-2/UI/cms_ui_env.sh'
 
         config.component_("JobSubmitter")
-        config.JobSubmitter.logLevel      = 'INFO'
-        config.JobSubmitter.pollInterval  = 1
-        config.JobSubmitter.pluginName    = 'AirPlugin'
-        config.JobSubmitter.pluginDir     = 'JobSubmitter.Plugins'
-        config.JobSubmitter.submitDir     = os.path.join(self.testDir, 'submit')
-        config.JobSubmitter.submitNode    = os.getenv("HOSTNAME", 'stevia.hep.wisc.edu')
-        config.JobSubmitter.submitScript  = os.path.join(WMCore.WMInit.getWMBASE(),
-                                                         'test/python/WMComponent_t/JobSubmitter_t',
-                                                         'submit.sh')
-        config.JobSubmitter.componentDir  = os.path.join(os.getcwd(), 'Components')
+        config.JobSubmitter.logLevel = 'INFO'
+        config.JobSubmitter.pollInterval = 1
+        config.JobSubmitter.pluginName = 'SimpleCondorPlugin'
+        config.JobSubmitter.pluginDir = 'JobSubmitter.Plugins'
+        config.JobSubmitter.submitDir = os.path.join(self.testDir, 'submit')
+        config.JobSubmitter.submitNode = os.getenv("HOSTNAME", 'stevia.hep.wisc.edu')
+        config.JobSubmitter.submitScript = os.path.join(WMCore.WMInit.getWMBASE(),
+                                                        'test/python/WMComponent_t/JobSubmitter_t',
+                                                        'submit.sh')
+        config.JobSubmitter.componentDir = os.path.join(os.getcwd(), 'Components')
         config.JobSubmitter.workerThreads = 2
         config.JobSubmitter.jobsPerWorker = 200
-        config.JobSubmitter.gLiteConf     = os.path.join(os.getcwd(), 'config.cfg')
-
-
+        config.JobSubmitter.gLiteConf = os.path.join(os.getcwd(), 'config.cfg')
 
         # JobTracker
         config.component_("JobTracker")
-        config.JobTracker.logLevel      = 'INFO'
-        config.JobTracker.pollInterval  = 1
-
+        config.JobTracker.logLevel = 'INFO'
+        config.JobTracker.pollInterval = 1
 
         # JobStateMachine
         config.component_('JobStateMachine')
-        config.JobStateMachine.couchurl        = os.getenv('COUCHURL')
-        config.JobStateMachine.couchDBName     = "bossair_t"
+        config.JobStateMachine.couchurl = os.getenv('COUCHURL')
+        config.JobStateMachine.couchDBName = "bossair_t"
 
         # JobStatusLite
         config.component_('JobStatusLite')
@@ -219,21 +201,17 @@ class BossAirTest(unittest.TestCase):
         config.JobStatusLite.stateTimeouts = {'Pending': 10, 'Running': 86400}
         config.JobStatusLite.pollInterval = 1
 
-
         return config
 
-
-    def createTestWorkload(self, workloadName = 'Test', emulator = True):
+    def createTestWorkload(self, workloadName='Test', emulator=True):
         """
         _createTestWorkload_
 
         Creates a test workload for us to run on, hold the basic necessities.
         """
 
-
         workload = testWorkload("Tier1ReReco")
         rereco = workload.getTask("ReReco")
-
 
         taskMaker = TaskMaker(workload, os.path.join(self.testDir, 'workloadTest'))
         taskMaker.skipSubscription = True
@@ -243,9 +221,7 @@ class BossAirTest(unittest.TestCase):
 
         return workload
 
-
-
-    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site = None, bl = [], wl = []):
+    def createJobGroups(self, nSubs, nJobs, task, workloadSpec, site=None, bl=[], wl=[]):
         """
         Creates a series of jobGroups for submissions
 
@@ -253,38 +229,34 @@ class BossAirTest(unittest.TestCase):
 
         jobGroupList = []
 
-        testWorkflow = Workflow(spec = workloadSpec, owner = "tapas",
-                                name = makeUUID(), task="basicWorkload/Production",
-                                owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
+        testWorkflow = Workflow(spec=workloadSpec, owner="tapas",
+                                name=makeUUID(), task="basicWorkload/Production",
+                                owner_vogroup='phgroup', owner_vorole='cmsrole')
         testWorkflow.create()
 
         # Create subscriptions
         for i in range(nSubs):
-
             name = makeUUID()
 
             # Create Fileset, Subscription, jobGroup
-            testFileset = Fileset(name = name)
+            testFileset = Fileset(name=name)
             testFileset.create()
-            testSubscription = Subscription(fileset = testFileset,
-                                            workflow = testWorkflow,
-                                            type = "Processing",
-                                            split_algo = "FileBased")
+            testSubscription = Subscription(fileset=testFileset,
+                                            workflow=testWorkflow,
+                                            type="Processing",
+                                            split_algo="FileBased")
             testSubscription.create()
 
-            testJobGroup = JobGroup(subscription = testSubscription)
+            testJobGroup = JobGroup(subscription=testSubscription)
             testJobGroup.create()
 
-
             # Create jobs
-            self.makeNJobs(name = name, task = task,
-                           nJobs = nJobs,
-                           jobGroup = testJobGroup,
-                           fileset = testFileset,
-                           sub = testSubscription.exists(),
-                           site = site, bl = bl, wl = wl)
-
-
+            self.makeNJobs(name=name, task=task,
+                           nJobs=nJobs,
+                           jobGroup=testJobGroup,
+                           fileset=testFileset,
+                           sub=testSubscription.exists(),
+                           site=site, bl=bl, wl=wl)
 
             testFileset.commit()
             testJobGroup.commit()
@@ -292,9 +264,7 @@ class BossAirTest(unittest.TestCase):
 
         return jobGroupList
 
-
-
-    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site = None, bl = [], wl = []):
+    def makeNJobs(self, name, task, nJobs, jobGroup, fileset, sub, site=None, bl=[], wl=[]):
         """
         _makeNJobs_
 
@@ -307,9 +277,9 @@ class BossAirTest(unittest.TestCase):
 
         for n in range(nJobs):
             # First make a file
-            #site = self.sites[0]
-            testFile = File(lfn = "/singleLfn/%s/%s" %(name, n),
-                            size = 1024, events = 10)
+            # site = self.sites[0]
+            testFile = File(lfn="/singleLfn/%s/%s" % (name, n),
+                            size=1024, events=10)
             if site:
                 testFile.setLocation(site)
             else:
@@ -318,21 +288,20 @@ class BossAirTest(unittest.TestCase):
             testFile.create()
             fileset.addFile(testFile)
 
-
         fileset.commit()
 
         index = 0
         for f in fileset.files:
             index += 1
-            testJob = Job(name = '%s-%i' %(name, index))
+            testJob = Job(name='%s-%i' % (name, index))
             testJob.addFile(f)
-            testJob["location"]  = f.getLocations()[0]
+            testJob["location"] = f.getLocations()[0]
             testJob['custom']['location'] = f.getLocations()[0]
-            testJob['task']    = task.getPathName()
+            testJob['task'] = task.getPathName()
             testJob['sandbox'] = task.data.input.sandbox
-            testJob['spec']    = os.path.join(self.testDir, 'basicWorkload.pcl')
+            testJob['spec'] = os.path.join(self.testDir, 'basicWorkload.pcl')
             testJob['mask']['FirstEvent'] = 101
-            testJob['owner']   = 'tapas'
+            testJob['owner'] = 'tapas'
             testJob["siteBlacklist"] = bl
             testJob["siteWhitelist"] = wl
             testJob['ownerDN'] = 'tapas'
@@ -345,15 +314,13 @@ class BossAirTest(unittest.TestCase):
             testJob['cache_dir'] = jobCache
             testJob.save()
             jobGroup.add(testJob)
-            output = open(os.path.join(jobCache, 'job.pkl'),'w')
+            output = open(os.path.join(jobCache, 'job.pkl'), 'w')
             pickle.dump(testJob, output)
             output.close()
 
         return testJob, testFile
 
-
-
-    def createDummyJobs(self, nJobs, location = None):
+    def createDummyJobs(self, nJobs, location=None):
         """
         _createDummyJobs_
 
@@ -365,31 +332,31 @@ class BossAirTest(unittest.TestCase):
 
         nameStr = makeUUID()
 
-        testWorkflow = Workflow(spec = nameStr, owner = "tapas",
-                                name = nameStr, task="basicWorkload/Production",
-                                owner_vogroup = 'phgroup', owner_vorole = 'cmsrole')
+        testWorkflow = Workflow(spec=nameStr, owner="tapas",
+                                name=nameStr, task="basicWorkload/Production",
+                                owner_vogroup='phgroup', owner_vorole='cmsrole')
         testWorkflow.create()
 
-        testFileset = Fileset(name = nameStr)
+        testFileset = Fileset(name=nameStr)
         testFileset.create()
 
-        testSubscription = Subscription(fileset = testFileset,
-                                            workflow = testWorkflow,
-                                            type = "Processing",
-                                            split_algo = "FileBased")
+        testSubscription = Subscription(fileset=testFileset,
+                                        workflow=testWorkflow,
+                                        type="Processing",
+                                        split_algo="FileBased")
         testSubscription.create()
 
-        testJobGroup = JobGroup(subscription = testSubscription)
+        testJobGroup = JobGroup(subscription=testSubscription)
         testJobGroup.create()
 
         jobList = []
 
         for i in range(nJobs):
-            testJob = Job(name = '%s-%i' % (nameStr, i))
+            testJob = Job(name='%s-%i' % (nameStr, i))
             testJob['location'] = location
             testJob['custom']['location'] = location
-            testJob['userdn']   = 'tapas'
-            testJob['owner']    = 'tapas'
+            testJob['userdn'] = 'tapas'
+            testJob['owner'] = 'tapas'
             testJob['userrole'] = 'cmsrole'
             testJob['usergroup'] = 'phgroup'
 
@@ -397,7 +364,6 @@ class BossAirTest(unittest.TestCase):
             jobList.append(testJob)
 
         return jobList
-
 
     @attr('integration')
     def testA_APITest(self):
@@ -407,13 +373,11 @@ class BossAirTest(unittest.TestCase):
         This is a commissioning test that has very little to do
         with anything except loading the code.
         """
-        #return
-
         myThread = threading.currentThread()
 
         config = self.getConfig()
 
-        baAPI  = BossAirAPI(config = config)
+        baAPI = BossAirAPI(config=config)
 
         # We should have loaded a plugin
         self.assertTrue('TestPlugin' in baAPI.plugins.keys())
@@ -429,60 +393,54 @@ class BossAirTest(unittest.TestCase):
         # Create some jobs
         nJobs = 10
 
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
+        jobDummies = self.createDummyJobs(nJobs=nJobs)
         print(jobDummies)
 
-        baAPI.createNewJobs(wmbsJobs = jobDummies)
+        baAPI.createNewJobs(wmbsJobs=jobDummies)
 
         runningJobs = baAPI._listRunJobs()
 
         self.assertEqual(len(runningJobs), nJobs)
 
-        newJobs = baAPI._loadByStatus(status = 'New')
+        newJobs = baAPI._loadByStatus(status='New')
         self.assertEqual(len(newJobs), nJobs)
-        deadJobs = baAPI._loadByStatus(status = 'Dead')
+        deadJobs = baAPI._loadByStatus(status='Dead')
         self.assertEqual(len(deadJobs), 0)
         raisesException = False
 
         self.assertRaises(BossAirException,
-                          baAPI._loadByStatus, status = 'FalseStatus')
+                          baAPI._loadByStatus, status='FalseStatus')
 
         # Change the job status and update it
         for job in newJobs:
             job['status'] = 'Dead'
 
-        baAPI._updateJobs(jobs = newJobs)
-
+        baAPI._updateJobs(jobs=newJobs)
 
         # Test whether we see the job status as updated
-        newJobs = baAPI._loadByStatus(status = 'New')
+        newJobs = baAPI._loadByStatus(status='New')
         self.assertEqual(len(newJobs), 0)
-        deadJobs = baAPI._loadByStatus(status = 'Dead')
+        deadJobs = baAPI._loadByStatus(status='Dead')
         self.assertEqual(len(deadJobs), nJobs)
 
         # Can we load by BossAir ID?
-        loadedJobs = baAPI._loadByID(jobs = deadJobs)
+        loadedJobs = baAPI._loadByID(jobs=deadJobs)
         self.assertEqual(len(loadedJobs), nJobs)
 
         # Can we load via WMBS?
-        loadedJobs = baAPI.loadByWMBS(wmbsJobs = jobDummies)
+        loadedJobs = baAPI.loadByWMBS(wmbsJobs=jobDummies)
         self.assertEqual(len(loadedJobs), nJobs)
 
-
         # See if we can delete jobs
-        baAPI._deleteJobs(jobs = deadJobs)
+        baAPI._deleteJobs(jobs=deadJobs)
 
         # Confirm that they're gone
-        deadJobs = baAPI._loadByStatus(status = 'Dead')
+        deadJobs = baAPI._loadByStatus(status='Dead')
         self.assertEqual(len(deadJobs), 0)
-
 
         self.assertEqual(len(baAPI.jobs), 0)
 
-
-
         return
-
 
     @attr('integration')
     def testB_PluginTest(self):
@@ -495,19 +453,16 @@ class BossAirTest(unittest.TestCase):
 
         There are only three plugin
         """
-        #return
-
         myThread = threading.currentThread()
 
         config = self.getConfig()
 
-        baAPI  = BossAirAPI(config = config)
-
+        baAPI = BossAirAPI(config=config)
 
         # Create some jobs
         nJobs = 10
 
-        jobDummies = self.createDummyJobs(nJobs = nJobs, location = 'Xanadu')
+        jobDummies = self.createDummyJobs(nJobs=nJobs, location='T3_US_Xanadu')
         changeState = ChangeState(config)
         changeState.propagate(jobDummies, 'created', 'new')
         changeState.propagate(jobDummies, 'executing', 'created')
@@ -515,19 +470,17 @@ class BossAirTest(unittest.TestCase):
         # Prior to building the job, each job must have a plugin
         # and user assigned
         for job in jobDummies:
-            job['plugin']   = 'TestPlugin'
-            job['owner']    = 'tapas'
+            job['plugin'] = 'TestPlugin'
+            job['owner'] = 'tapas'
 
-        baAPI.submit(jobs = jobDummies)
+        baAPI.submit(jobs=jobDummies)
 
-
-        newJobs = baAPI._loadByStatus(status = 'New')
+        newJobs = baAPI._loadByStatus(status='New')
         self.assertEqual(len(newJobs), nJobs)
 
         # Should be no more running jobs
         runningJobs = baAPI._listRunJobs()
         self.assertEqual(len(runningJobs), nJobs)
-
 
         # Test Plugin should complete all jobs
         baAPI.track()
@@ -536,24 +489,19 @@ class BossAirTest(unittest.TestCase):
         runningJobs = baAPI._listRunJobs()
         self.assertEqual(len(runningJobs), 0)
 
-
         # Check if they're complete
         completeJobs = baAPI.getComplete()
         self.assertEqual(len(completeJobs), nJobs)
-
 
         # Do this test because BossAir is specifically built
         # to keep it from finding completed jobs
         result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
         self.assertEqual(len(result), nJobs)
 
-
-        baAPI.removeComplete(jobs = jobDummies)
-
+        baAPI.removeComplete(jobs=jobDummies)
 
         result = myThread.dbi.processData("SELECT id FROM bl_runjob")[0].fetchall()
         self.assertEqual(len(result), 0)
-
 
         return
 
@@ -563,42 +511,32 @@ class BossAirTest(unittest.TestCase):
 
         Because I need a test for the monitoring DAO
         """
-
-        return
-
         myThread = threading.currentThread()
 
         config = self.getConfig()
 
-        changeState = ChangeState(config)
-
-        baAPI  = BossAirAPI(config = config)
-
+        baAPI = BossAirAPI(config=config)
 
         # Create some jobs
         nJobs = 10
 
-        jobDummies = self.createDummyJobs(nJobs = nJobs)
+        jobDummies = self.createDummyJobs(nJobs=nJobs)
 
         # Prior to building the job, each job must have a plugin
         # and user assigned
         for job in jobDummies:
-            job['plugin']   = 'TestPlugin'
-            job['owner']    = 'tapas'
+            job['plugin'] = 'TestPlugin'
+            job['owner'] = 'tapas'
             job['location'] = 'T2_US_UCSD'
             job.save()
 
-        baAPI.submit(jobs = jobDummies)
-
+        baAPI.submit(jobs=jobDummies)
 
         results = baAPI.monitor()
-
-        self.assertEqual(len(results), nJobs)
-        for job in results:
-            self.assertEqual(job['plugin'], 'CondorPlugin')
-
+        self.assertEqual(results[0]['Pending'], nJobs)
 
         return
+
 
 if __name__ == '__main__':
     unittest.main()

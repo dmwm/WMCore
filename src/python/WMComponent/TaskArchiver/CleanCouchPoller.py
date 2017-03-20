@@ -6,31 +6,27 @@ import json
 import logging
 import os.path
 import shutil
-import tarfile
 import httplib
 import urllib2
 import threading
 import traceback
 import time
 
+from WMCore.Lexicon import sanitizeURL
+from WMCore.Algorithms import MathAlgos
+from WMCore.DAOFactory import DAOFactory
+from WMCore.WMException import WMException
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMCore.Services.RequestDB.RequestDBReader import RequestDBReader
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.FWJRDB.FWJRDBAPI import FWJRDBAPI
-from WMCore.Services.UserFileCache.UserFileCache import UserFileCache
 from WMCore.Database.CMSCouch import CouchServer, CouchNotFoundError
-from WMCore.Lexicon import sanitizeURL
 from WMCore.DataStructs.LumiList import LumiList
 from WMCore.DataStructs.MathStructs.DiscreteSummaryHistogram import DiscreteSummaryHistogram
-from WMCore.Algorithms import MathAlgos
-from WMCore.DAOFactory import DAOFactory
 from WMCore.WMBS.Subscription import Subscription
 from WMCore.WMBS.Workflow import Workflow
-from WMCore.BossAir.Plugins.gLitePlugin import getDefaultDelegation
-from WMCore.Credential.Proxy import Proxy
-from WMCore.WMException import WMException
 from WMComponent.JobCreator.CreateWorkArea import getMasterName
 from WMComponent.JobCreator.JobCreatorPoller import retrieveWMSpec
 from WMComponent.TaskArchiver.DataCache import DataCache
@@ -50,85 +46,6 @@ class FileEncoder(json.JSONEncoder):
         elif isinstance(obj, set):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
-
-
-def getProxy(config, userdn, group, role):
-    """
-    _getProxy_
-    """
-    defaultDelegation = getDefaultDelegation(config, "cms", "myproxy.cern.ch", threading.currentThread().logger)
-    defaultDelegation['userDN'] = userdn
-    defaultDelegation['group'] = group
-    defaultDelegation['role'] = role
-
-    logging.debug("Retrieving proxy for %s", userdn)
-    proxy = Proxy(defaultDelegation)
-    proxyPath = proxy.getProxyFilename(True)
-    timeleft = proxy.getTimeLeft(proxyPath)
-    if timeleft is not None and timeleft > 3600:
-        return (True, proxyPath)
-    proxyPath = proxy.logonRenewMyProxy()
-    timeleft = proxy.getTimeLeft(proxyPath)
-    if timeleft is not None and timeleft > 0:
-        return (True, proxyPath)
-    return (False, None)
-
-
-def uploadPublishWorkflow(config, workflow, ufcEndpoint, workDir):
-    """
-    Write out and upload to the UFC a JSON file
-    with all the info needed to publish this dataset later
-    """
-    retok, proxyfile = getProxy(config, workflow.dn, workflow.vogroup, workflow.vorole)
-    if not retok:
-        logging.info("Cannot get the user's proxy")
-        return False
-
-    ufc = UserFileCache({'endpoint': ufcEndpoint, 'cert': proxyfile, 'key': proxyfile})
-
-    # Skip tasks ending in LogCollect, they have nothing interesting.
-    taskNameParts = workflow.task.split('/')
-    if taskNameParts.pop() in ['LogCollect']:
-        logging.info('Skipping LogCollect task')
-        return False
-    logging.info('Generating JSON for publication of %s of type %s', workflow.name, workflow.wfType)
-
-    myThread = threading.currentThread()
-
-    dbsDaoFactory = DAOFactory(package="WMComponent.DBS3Buffer",
-                               logger=myThread.logger,
-                               dbinterface=myThread.dbi)
-
-    findFiles = dbsDaoFactory(classname="LoadFilesByWorkflow")
-
-    # Fetch and filter the files to the ones we actually need
-    uploadDatasets = {}
-    uploadFiles = findFiles.execute(workflowName=workflow.name)
-    for lfn in uploadFiles:
-        datasetName = lfn['datasetPath']
-        if datasetName not in uploadDatasets:
-            uploadDatasets[datasetName] = []
-        uploadDatasets[datasetName].append(lfn)
-
-    if not uploadDatasets:
-        logging.info('No datasets found to upload.')
-        return False
-
-    # Write JSON file and then create tarball with it
-    baseName = '%s_publish.tgz' % workflow.name
-    jsonName = os.path.join(workDir, '%s_publish.json' % workflow.name)
-    tgzName = os.path.join(workDir, baseName)
-    with open(jsonName, 'w') as jsonFile:
-        json.dump(uploadDatasets, fp=jsonFile, cls=FileEncoder, indent=2)
-
-    with tarfile.open(name=tgzName, mode='w:gz') as tgzFile:
-        tgzFile.add(jsonName)
-
-    result = ufc.upload(fileName=tgzName)
-    logging.debug('Upload result %s', result)
-    # If this doesn't work, exception will propogate up and block archiving the task
-    logging.info('Uploaded with name %s and hashkey %s', result['name'], result['hashkey'])
-    return
 
 
 class CleanCouchPollerException(WMException):
@@ -173,9 +90,6 @@ class CleanCouchPoller(BaseWorkerThread):
         self.maxProcessSize = getattr(self.config.TaskArchiver, 'maxProcessSize', 250)
         self.timeout = getattr(self.config.TaskArchiver, "timeOut", None)
         self.nOffenders = getattr(self.config.TaskArchiver, 'nOffenders', 3)
-        self.uploadPublishInfo = getattr(self.config.TaskArchiver, 'uploadPublishInfo', False)
-        self.uploadPublishDir = getattr(self.config.TaskArchiver, 'uploadPublishDir', None)
-        self.userFileCacheURL = getattr(self.config.TaskArchiver, 'userFileCacheURL', None)
 
         # Set up optional histograms
         self.histogramKeys = getattr(self.config.TaskArchiver, "histogramKeys", [])
@@ -535,9 +449,6 @@ class CleanCouchPoller(BaseWorkerThread):
 
                 # Time to shoot one by one
                 for wmbsWorkflow in wmbsWorkflows:
-                    if self.uploadPublishInfo:
-                        self.createAndUploadPublish(wmbsWorkflow)
-
                     # Load all the associated subscriptions and shoot them one by one
                     subIDs = workflows[workflow]["workflows"][wmbsWorkflow.id]
                     for subID in subIDs:
@@ -1142,20 +1053,3 @@ class CleanCouchPoller(BaseWorkerThread):
 
         logging.debug("Uploaded it successfully, apparently")
         return True
-
-    def createAndUploadPublish(self, workflow):
-        """
-        Upload to the UFC a JSON file with all the info needed to publish this dataset later
-        """
-
-        if self.uploadPublishDir:
-            workDir = self.uploadPublishDir
-        else:
-            workDir, dummyTaskDir = getMasterName(startDir=self.jobCacheDir, workflow=workflow)
-
-        try:
-            return uploadPublishWorkflow(self.config, workflow, ufcEndpoint=self.userFileCacheURL, workDir=workDir)
-        except Exception as ex:
-            logging.error('Upload failed for workflow: %s', workflow)
-            logging.exception(ex)  # Let's print the stacktrace with generic Exception
-            return False

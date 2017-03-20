@@ -86,9 +86,9 @@ def addRunInfoToFile(fileSection, runInfo):
     """
     if not isinstance(runInfo, Run):
         for singleRun in runInfo:
-            setattr(fileSection.runs, str(singleRun.run), singleRun.lumis)
+            setattr(fileSection.runs, str(singleRun.run), singleRun.eventsPerLumi)
     else:
-        setattr(fileSection.runs, str(runInfo.run), runInfo.lumis)
+        setattr(fileSection.runs, str(runInfo.run), runInfo.eventsPerLumi)
     return
 
 
@@ -742,7 +742,10 @@ class Report:
         runList = fileRef.runs.listSections_()
         for run in runList:
             lumis = getattr(fileRef.runs, run)
-            newRun = Run(int(run), *lumis)
+            if isinstance(lumis, dict):
+                newRun = Run(int(run), *lumis.items())
+            else:
+                newRun = Run(int(run), *lumis)
             newFile.addRun(newRun)
 
         newFile["lfn"] = getattr(fileRef, "lfn", None)

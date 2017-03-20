@@ -94,7 +94,7 @@ class ReportTest(unittest.TestCase):
 
         return
 
-    def verifyRecoOutput(self, report):
+    def verifyRecoOutput(self, report, hasEventCounts=False):
         """
         _verifyRecoOutput_
 
@@ -119,6 +119,12 @@ class ReportTest(unittest.TestCase):
         assert 215 in outputRun[0].lumis, \
                "Error: Output file is missing lumis."
 
+        self.assertIsInstance(outputRun[0].eventsPerLumi, dict)
+        if hasEventCounts:
+            self.assertEqual(outputRun[0].eventsPerLumi[215], 2)
+        else:
+            self.assertIsNone(outputRun[0].eventsPerLumi[215])
+
         assert outputFiles[0]["events"] == 2, \
                "Error: Wrong number of events in output file."
         assert outputFiles[0]["size"] == 0, \
@@ -142,7 +148,7 @@ class ReportTest(unittest.TestCase):
 
         return
 
-    def verifyAlcaOutput(self, report):
+    def verifyAlcaOutput(self, report, hasEventCounts=False):
         """
         _verifyAlcaOutput_
 
@@ -166,6 +172,12 @@ class ReportTest(unittest.TestCase):
                "Error: Wrong number of lumis in output file."
         assert 215 in outputRun[0].lumis, \
                "Error: Output file is missing lumis."
+
+        self.assertIsInstance(outputRun[0].eventsPerLumi, dict)
+        if hasEventCounts:
+            self.assertIsNone(outputRun[0].eventsPerLumi[215])
+        else:
+            self.assertIsNone(outputRun[0].eventsPerLumi[215])
 
         assert outputFiles[0]["events"] == 2, \
                "Error: Wrong number of events in output file."
@@ -215,8 +227,8 @@ class ReportTest(unittest.TestCase):
         myReport.parse(self.withEventsXmlPath)
 
         self.verifyInputData(myReport)
-        self.verifyRecoOutput(myReport)
-        self.verifyAlcaOutput(myReport)
+        self.verifyRecoOutput(myReport, hasEventCounts=True)
+        self.verifyAlcaOutput(myReport, hasEventCounts=True)
 
         return
 
@@ -472,7 +484,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(perf.memory.PeakValueRss, '492.293')
         self.assertEqual(perf.cpu.TotalJobCPU, '9.16361')
         self.assertEqual(perf.storage.writeTotalMB, 5.22226)
-        self.assertEqual(perf.storage.writeTotalSecs, 0) #actual value is 0.06
+        self.assertAlmostEqual(perf.storage.writeTotalSecs, 0, places=0)  # actual value is 0.06
         self.assertEqual(perf.storage.readPercentageOps, 0.98585512216030857)
 
         return

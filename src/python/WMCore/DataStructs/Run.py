@@ -157,12 +157,13 @@ class Run(WMObject):
         Method to replace myRun.lumis.extend() which does not work with the property
         """
         for lumi in lumiList:
-            if isinstance(lumi, (list, tuple)) and self.eventsPerLumi[lumi[0]]:  # Already exists, add events
-                self.eventsPerLumi[lumi[0]] += lumi[1]
+            if isinstance(lumi, (list, tuple)) and lumi[0] in self.eventsPerLumi and self.eventsPerLumi[lumi[0]]:
+                self.eventsPerLumi[lumi[0]] += lumi[1]  # Already exists, add events
             elif isinstance(lumi, (list, tuple)):  # Doesn't exist or is 0 or None
                 self.eventsPerLumi[lumi[0]] = lumi[1]
             else:  # Just given lumis, not events
-                self.eventsPerLumi[lumi] = None
+                if lumi not in self.eventsPerLumi:  # Don't overwrite existing events
+                    self.eventsPerLumi[lumi] = None
 
     def appendLumi(self, lumi):
         """
@@ -173,7 +174,8 @@ class Run(WMObject):
         elif isinstance(lumi, (list, tuple)):  # Doesn't exist or is 0 or None
             self.eventsPerLumi[lumi[0]] = lumi[1]
         else:  # Just given lumis, not events
-            self.eventsPerLumi[lumi] = None
+            if lumi not in self.eventsPerLumi:  # Don't overwrite existing events
+                self.eventsPerLumi[lumi] = None
 
     def json(self):
         """

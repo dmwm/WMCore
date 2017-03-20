@@ -472,7 +472,7 @@ cms::Exception caught in EventProcessor and rethrown
         self.assertEqual(perf.memory.PeakValueRss, '492.293')
         self.assertEqual(perf.cpu.TotalJobCPU, '9.16361')
         self.assertEqual(perf.storage.writeTotalMB, 5.22226)
-        self.assertEqual(perf.storage.writeTotalSecs, 0) #actual value is 0.06
+        self.assertAlmostEqual(perf.storage.writeTotalSecs, 0, places=0)  # actual value is 0.06
         self.assertEqual(perf.storage.readPercentageOps, 0.98585512216030857)
 
         return

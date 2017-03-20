@@ -213,8 +213,8 @@ def runHandler():
     Sink to add run information to a file.  Given the following XML:
       <Runs>
       <Run ID="122023">
-        <LumiSection ID="215"/>
-        <LumiSection ID="216"/>
+        <LumiSection NEvents="100" ID="215"/>
+        <LumiSection NEvents="100" ID="216"/>
       </Run>
       <Run ID="122024">
         <LumiSection ID="1"/>
@@ -231,12 +231,17 @@ def runHandler():
         for subnode in node.children:
             if subnode.name == "Run":
                 runId = subnode.attrs.get("ID", None)
-                if runId == None: continue
+                if runId is None:
+                    continue
 
-                lumis = [int(lumi.attrs['ID'])
-                         for lumi in subnode.children
-                         if "ID" in lumi.attrs]
-
+                lumis = []
+                for lumi in subnode.children:
+                    if "ID" in lumi.attrs:
+                        lumiNumber = int(lumi.attrs['ID'])
+                        nEvents = lumi.attrs.get("NEvents", None)
+                        if nEvents is not None:
+                            nEvents = int(nEvents)
+                        lumis.append((lumiNumber, nEvents))
                 runInfo = Run(runNumber=runId)
                 runInfo.extendLumis(lumis)
 

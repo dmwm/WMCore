@@ -113,6 +113,7 @@ class SimpleCondorPlugin(BasePlugin):
         proxy = Proxy({'logger': myThread.logger})
         self.x509userproxy = proxy.getProxyFilename()
         self.x509userproxysubject = proxy.getSubject()
+        self.x509userproxyfqan = proxy.getAttributeFromProxy(self.x509userproxy)
 
         return
 
@@ -466,6 +467,7 @@ class SimpleCondorPlugin(BasePlugin):
 
         ad['x509userproxy'] = self.x509userproxy
         ad['x509userproxysubject'] = self.x509userproxysubject
+        ad['x509userproxyfirstfqan'] = self.x509userproxyfqan
 
         ad['Rank'] = 0.0
         ad['TransferIn'] = False

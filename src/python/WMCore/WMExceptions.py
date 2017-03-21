@@ -157,6 +157,7 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
                       60311: "Local Stage Out Failure using site specific plugin.", # (WMA, CRAB3)
                       60312: "Failure in staging in log files during log collection (WMAgent).", # (WMA)
                       60315: "StageOut initialisation error (Due to TFC, SITECONF etc).", # (WMA)
+                      60317: "Forced timeout for stuck stage out.", # (To be used in CRAB3/ASO)
                       60318: "Internal error in Crab cmscp.py stageout script.", # (CRAB3)
                       60319: "Failed to do AlcaHarvest stageout.", # (WMA)
                       60320: "Failure to communicate with ASO server.", # (CRAB3)
@@ -234,7 +235,6 @@ WM_JOB_ERROR_CODES = {-1: "Error return without specification.",
 # 60313: "Failed to delete the output from the previous run via lcg-del command.", # Mh.. only lcg-del? Not used
 # 60314: "Failed to invoke ProdAgent StageOut Script.", Not used
 # 60316: "Failed to create a directory on the SE.", Not used
-# 60317: "Forced timeout for stuck stage out.", Not used
 # 60406: "Failure in staging in log files during log collection (WMAgent).", Not used
 # 60410: "Failure in deleting log files in log collection (WMAgent).", # Not used
 # 60411: "Timeout in deleting log files in log collection (WMAgent).", # Not used

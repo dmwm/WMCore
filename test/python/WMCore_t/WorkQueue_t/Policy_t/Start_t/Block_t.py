@@ -15,16 +15,27 @@ from WMCore.WMSpec.StdSpecs.ReReco import ReRecoWorkloadFactory
 from WMCore.WorkQueue.Policy.Start.Block import Block
 from WMCore.WorkQueue.WorkQueueExceptions import (WorkQueueWMSpecError, WorkQueueNoWorkError)
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
-from WMQuality.Emulators.PhEDExClient.MockPhEDExApi import NOT_EXIST_DATASET
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import createConfig
 
 rerecoArgs = ReRecoWorkloadFactory.getTestArguments()
 rerecoArgs["SplittingAlgo"] = "LumiBased"
 rerecoArgs["LumisPerJob"] = 8
+rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
+
 parentProcArgs = ReRecoWorkloadFactory.getTestArguments()
 parentProcArgs.update(IncludeParents="True")
 parentProcArgs["SplittingAlgo"] = "LumiBased"
 parentProcArgs["LumisPerJob"] = 8
+
+
+def rerecoWorkload(workloadName, arguments, assignArgs=None):
+    factory = ReRecoWorkloadFactory()
+    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
+    if assignArgs:
+        args = factory.getAssignTestArguments()
+        args.update(assignArgs)
+        wmspec.updateArguments(args)
+    return wmspec
 
 
 class BlockTestCase(EmulatedUnitTestCase):
@@ -38,9 +49,8 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def testTier1ReRecoWorkload(self):
         """Tier1 Re-reco workflow"""
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.data.request.priority = 69
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
@@ -88,16 +98,16 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def testWhiteBlackLists(self):
         """Block/Run White/Black lists"""
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary, inputDataset.processed, inputDataset.tier)
 
         # No white/black lists
         newArgs = {}
         newArgs.update(rerecoArgs)
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -108,7 +118,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs = {}
         newArgs.update(rerecoArgs)
         newArgs.update({'BlockBlacklist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -120,7 +131,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs = {}
         newArgs.update(rerecoArgs)
         newArgs.update({'BlockWhitelist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -133,7 +145,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs.update(rerecoArgs)
         newArgs.update({'BlockWhitelist': [dataset + '#04be2fcc-0b8f-11e1-b764-003048caaace'],
                         'BlockBlacklist': [dataset + '#03fe83c2-0c23-11e1-b764-003048caaace']})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -145,7 +158,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs = {}
         newArgs.update(rerecoArgs)
         newArgs.update({'RunWhitelist': [181367]})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -157,7 +171,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs = {}
         newArgs.update(rerecoArgs)
         newArgs.update({'RunBlacklist': [180899, 180992, 1]})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -169,7 +184,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         newArgs = {}
         newArgs.update(rerecoArgs)
         newArgs.update({'RunBlacklist': [180899], 'RunWhitelist': [180992]})
-        workload = factory.factoryWorkloadConstruction('ReRecoWorkload', newArgs)
+        workload = rerecoWorkload('ReRecoWorkload', newArgs,
+                                  assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         task = getFirstTask(workload)
         units, rejectedWork = Block(**self.splitArgs)(workload, task)
@@ -182,11 +198,12 @@ class BlockTestCase(EmulatedUnitTestCase):
         rerecoArgs2 = {}
         rerecoArgs2.update(rerecoArgs)
         rerecoArgs2["ConfigCacheID"] = createConfig(rerecoArgs2["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        dummyWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
+        dummyWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs2,
+                                       assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
 
         # Block blacklist
-        lumiWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs2)
+        lumiWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs2,
+                                       assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         task = getFirstTask(lumiWorkload)
         #task.data.input.splitting.runs = ['1']
         task.data.input.splitting.runs = ['180992']
@@ -197,9 +214,8 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def testDataDirectiveFromQueue(self):
         """Test data directive from queue"""
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
                                  inputDataset.processed,
@@ -220,9 +236,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         """Tier1 Re-reco workflow"""
         splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
 
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
 
         for task in Tier1ReRecoWorkload.taskIterator():
@@ -240,9 +255,8 @@ class BlockTestCase(EmulatedUnitTestCase):
 
         splitArgs = dict(SliceType='NumberOfLumis', SliceSize=1)
 
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.setStartPolicy('Block', **splitArgs)
         Tier1ReRecoWorkload.setRunWhitelist([180899, 180992])
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
@@ -270,27 +284,29 @@ class BlockTestCase(EmulatedUnitTestCase):
     def testInvalidSpecs(self):
         """Specs with no work"""
         # no dataset
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                        assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         getFirstTask(processingSpec).data.input.dataset = None
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, Block(), processingSpec, task)
 
         # invalid dbs url
-        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                        assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
         # dataset non existent
-        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                        assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         getFirstTask(processingSpec).data.input.dataset.name = "/MinimumBias/FAKE-Filter-v1/RECO"
         for task in processingSpec.taskIterator():
             self.assertRaises(DBSReaderError, Block(), processingSpec, task)
 
         # invalid run whitelist
-        processingSpec = factory.factoryWorkloadConstruction('testProcessingInvalid', rerecoArgs)
+        processingSpec = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                        assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         processingSpec.setRunWhitelist([666])  # not in this dataset
         for task in processingSpec.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Block(), processingSpec, task)
@@ -326,9 +342,8 @@ class BlockTestCase(EmulatedUnitTestCase):
 
     def testIgnore0SizeBlocks(self):
         """Ignore blocks with 0 files"""
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.setRunWhitelist([2, 3])
 
         for task in Tier1ReRecoWorkload.taskIterator():
@@ -338,9 +353,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         """Can modify successfully policies for continuous splitting"""
         policyInstance = Block(**self.splitArgs)
         self.assertTrue(policyInstance.supportsWorkAddition(), "Block instance should support continuous splitting")
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.data.request.priority = 69
         inputDataset = getFirstTask(Tier1ReRecoWorkload).inputDataset()
         dataset = "/%s/%s/%s" % (inputDataset.primary,
@@ -388,9 +402,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         """
         policyInstance = Block(**self.splitArgs)
         # The policy instance must be called first to initialize the values
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         for task in Tier1ReRecoWorkload.taskIterator():
             policyInstance(Tier1ReRecoWorkload, task)
             outputs = policyInstance.getDatasetLocations(
@@ -422,10 +435,8 @@ class BlockTestCase(EmulatedUnitTestCase):
         Test job splitting with masked blocks
         """
 
-        rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         Tier1ReRecoWorkload.data.request.priority = 69
         task = getFirstTask(Tier1ReRecoWorkload)
         dummyDataset = task.inputDataset()

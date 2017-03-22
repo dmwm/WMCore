@@ -237,6 +237,7 @@ class MonteCarloTestCase(EmulatedUnitTestCase):
     def testInvalidSpecs(self):
         """Specs with no work"""
         mcspec = monteCarloWorkload('testProcessingInvalid', mcArgs)
+        mcspec.setSiteWhitelist(["T2_XX_SiteA"])
         # 0 events
         getFirstTask(mcspec).addProduction(totalEvents=0)
         for task in mcspec.taskIterator():

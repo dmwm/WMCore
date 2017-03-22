@@ -7,6 +7,7 @@ _StepChain_t_
 import os
 import unittest
 from copy import deepcopy
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.WMSpec.StdSpecs.StepChain import StepChainWorkloadFactory
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 from WMCore.Database.CMSCouch import CouchServer, Document
@@ -43,7 +44,7 @@ REQUEST = {
         "GlobalTag": "GT-Step2",
         "InputFromOutputModule": "RAWSIMoutput",
         "InputStep": "GENSIM",
-        "MCPileup": "/MinBias_TuneCUETP8M1_13TeV-pythia8/RunIIWinter15GS-MCRUN2_71_V1-v1/GEN-SIM",
+        "MCPileup": "/HighPileUp/Run2011A-v1/RAW",
         "PrepID": "PREP-Step2",
         "ScramArch": "slc6_amd64_gcc530",
         "SplittingAlgo": "EventAwareLumiBased",
@@ -197,7 +198,7 @@ def getThreeStepsOverride():
     return args
 
 
-class StepChainTests(unittest.TestCase):
+class StepChainTests(EmulatedUnitTestCase):
     """
     _StepChainTests_
 
@@ -210,6 +211,7 @@ class StepChainTests(unittest.TestCase):
 
         Initialize the database and couch.
         """
+        super(StepChainTests, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection(destroyAllDatabase=True)
@@ -232,6 +234,7 @@ class StepChainTests(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        super(StepChainTests, self).tearDown()
         return
 
     def testStepChainSingleStep(self):

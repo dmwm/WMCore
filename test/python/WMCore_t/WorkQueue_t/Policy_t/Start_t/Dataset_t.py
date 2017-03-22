@@ -31,6 +31,16 @@ def getReRecoArgs(parent=False):
     return rerecoArgs
 
 
+def rerecoWorkload(workloadName, arguments, assignArgs=None):
+    factory = ReRecoWorkloadFactory()
+    wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
+    if assignArgs:
+        args = factory.getAssignTestArguments()
+        args.update(assignArgs)
+        wmspec.updateArguments(args)
+    return wmspec
+
+
 class DatasetTestCase(EmulatedUnitTestCase):
     def __init__(self, methodName='runTest'):
         super(DatasetTestCase, self).__init__(methodName=methodName)
@@ -145,8 +155,9 @@ class DatasetTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumberOfFiles', SliceSize=5)
         rerecoArgs = getReRecoArgs()
         rerecoArgs["ConfigCacheID"] = createConfig(rerecoArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-        Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
+        Tier1ReRecoWorkload = rerecoWorkload('ReRecoWorkload', rerecoArgs,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
+
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(Tier1ReRecoWorkload).getInputDatasetPath()
         for task in Tier1ReRecoWorkload.taskIterator():
@@ -204,14 +215,13 @@ class DatasetTestCase(EmulatedUnitTestCase):
         splitArgs = dict(SliceType='NumberOfLumis', SliceSize=2)
         parentProcArgs = getReRecoArgs(parent=True)
         parentProcArgs["ConfigCacheID"] = createConfig(parentProcArgs["CouchDBName"])
-        factory = ReRecoWorkloadFactory()
-
         # This dataset does have parents. Adding it here to keep the test going.
         # It seems like "dbs" below is never used
         parentProcArgs2 = {}
         parentProcArgs2.update(parentProcArgs)
         parentProcArgs2.update({'InputDataset': '/SingleMu/CMSSW_6_2_0_pre4-PRE_61_V1_RelVal_mu2012A-v1/RECO'})
-        parentProcSpec = factory.factoryWorkloadConstruction('testParentProcessing', parentProcArgs2)
+        parentProcSpec = rerecoWorkload('ReRecoWorkload', parentProcArgs2,
+                                             assignArgs={'SiteWhitelist': ['T2_XX_SiteA']})
         parentProcSpec.setStartPolicy('Dataset', **splitArgs)
         inputDataset = getFirstTask(parentProcSpec).getInputDatasetPath()
         for task in parentProcSpec.taskIterator():

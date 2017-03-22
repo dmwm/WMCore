@@ -7,8 +7,9 @@ _DQMHarvest_t_
 import os
 import unittest
 
-from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMCore.WMSpec.StdSpecs.DQMHarvest import DQMHarvestWorkloadFactory
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WMSpec.WMSpecErrors import WMSpecFactoryException
 
@@ -23,7 +24,7 @@ REQUEST = {
     "DQMConfigCacheID": "253c586d672c6c7a88c048d8c7b62135",
     "DQMHarvestUnit": "byRun",
     "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev",
-    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/",
+    "DbsUrl": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader/",
     "GlobalTag": "80X_dataRun2_2016SeptRepro_v3",
     "InputDataset": "/NoBPTX/Run2016F-23Sep2016-v1/DQMIO",
     "Memory": 1000,
@@ -41,7 +42,7 @@ REQUEST = {
 }
 
 
-class DQMHarvestTests(unittest.TestCase):
+class DQMHarvestTests(EmulatedUnitTestCase):
     """
     _DQMHarvestTests_
 
@@ -54,6 +55,7 @@ class DQMHarvestTests(unittest.TestCase):
 
         Initialize the database and couch.
         """
+        super(DQMHarvestTests, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -76,6 +78,7 @@ class DQMHarvestTests(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        super(DQMHarvestTests, self).tearDown()
         return
 
     def injectDQMHarvestConfig(self):
@@ -154,7 +157,8 @@ class DQMHarvestTests(unittest.TestCase):
         testArguments.pop("DQMConfigCacheID", None)
 
         factory = DQMHarvestWorkloadFactory()
-        self.assertRaises(WMSpecFactoryException, factory.validateSchema, testArguments)
+        with self.assertRaises(WMSpecFactoryException):
+            factory.factoryWorkloadConstruction("TestBadWorkload", testArguments)
         return
 
 

@@ -65,7 +65,6 @@ class WMSpecGenerator(object):
         args = ReRecoWorkloadFactory.getTestArguments()
         args.update(additionalArgs)
         args["ConfigCacheID"] = createConfig(args["CouchDBName"])
-        args["SiteWhitelist"] = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
         factory = ReRecoWorkloadFactory()
         spec = factory.factoryWorkloadConstruction(specName, args)
 

@@ -135,7 +135,7 @@ tr.mouseclickRow {
 }
 
 /* property for message board */
-.stable, .warning, .error {
+.stable, .warning, .error, .drain {
     border: 1px solid;
     opacity: 1;
     font: 10px verdana;
@@ -149,6 +149,10 @@ tr.mouseclickRow {
 .stable {
     color: #4F8A10;
     background: #DFF2BF url('../css/images/badge-circle-check-16.png') no-repeat 10px center;
+}
+.drain {
+    color: #9F6000;
+    background: #33F0FF url('../css/images/warning-16.png') no-repeat 10px center;
 }
 .warning {
     color: #9F6000;

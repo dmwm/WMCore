@@ -201,7 +201,7 @@ def state_transition(docs):
     if  not isinstance(docs, list):
         docs = [docs]
 
-    out = '<fieldset><legend>State Transioin</legend><ul>'
+    out = '<fieldset><legend>State Transition</legend><ul>'
     multiDocFlag = True if len(docs) > 1 else False
     for doc in docs:
         name = doc.get('RequestName', '')
@@ -212,7 +212,7 @@ def state_transition(docs):
         if multiDocFlag:
             out += '%s<br />' % name
         for sInfo in sTransition:
-            out += '<li><b>%s</b>: %s</li>' % (sInfo["Status"],
+            out += '<li><b>%s</b>: %s UTC</li>' % (sInfo["Status"],
                     datetime.utcfromtimestamp(sInfo["UpdateTime"]).strftime('%Y-%m-%d %H:%M:%S'))
     out += '</ul></fieldset>'
     return out

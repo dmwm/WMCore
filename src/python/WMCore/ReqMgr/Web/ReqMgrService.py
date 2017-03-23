@@ -173,8 +173,15 @@ def tasks_configs(docs, html=False):
     tConfigs = {}
     for doc in docs:
         name = doc.get('RequestName', '')
-        rtype = doc.get("RequestType", '')
-        chainTypeFlag = rtype.endswith('Chain')
+        if "TaskChain" in doc: 
+            chainTypeFlag = True
+            ctype = "Task"
+        elif "StepChain" in doc:
+            chainTypeFlag = True
+            ctype = "Step"
+        else:
+            chainTypeFlag = False
+            ctype = None
         
         curl = doc.get('ConfigCacheUrl', 'https://cmsweb.cern.ch/couchdb')
         if  curl == None or curl == "none":
@@ -183,13 +190,13 @@ def tasks_configs(docs, html=False):
             continue
         for key, val in doc.items():
             _map_configcache_url(tConfigs, curl, key, val)
-            if chainTypeFlag and key.startswith(rtype.rstrip("Chain")) and isinstance(val, dict):
+            if chainTypeFlag and key.startswith(ctype) and isinstance(val, dict):
                 for kkk in val.keys():
                     # append task/step number and name
-                    keyStr = "%s: %s" % (key, val.get("%sName" % rtype.rstrip("Chain"), ''))
+                    keyStr = "%s: %s" % (key, val.get("%sName" % ctype, ''))
                     _map_configcache_url(tConfigs, curl, kkk, val[kkk], keyStr)
     if  html:
-        out = '<fieldset><legend>Config Files</legend><ul>'
+        out = '<fieldset><legend>Config Cache List</legend><ul>'
         for task in sorted(tConfigs):
             out += '<li><a href="%s" target="config_page">%s</a></li>' % (tConfigs[task], task)
         out += '</ul></fieldset>'

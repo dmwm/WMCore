@@ -101,6 +101,7 @@ pluginLookup = {'test-win': 'TestWinImpl',
                 "xrdcp": 'XRDCPImpl',
                 "vandy": 'VandyImpl',
                 "gfal2": 'GFAL2Impl',
+                "awss3": 'AWS3Impl',
                 # NOTE NOTE NOTE:
                 # do NOT implement this
                 "testFallbackToOldBackend" : 'TestBackendForFallbacksDontImplement'}

@@ -123,6 +123,7 @@ class MockDbsApi(object):
             if mockData[self.url][signature] == 'Raises HTTPError':
                 raise HTTPError('http:/dbs.mock.fail', 400, 'MockDBS is raising an exception in place of DBS', 'Dummy header', 'Dummy body')
             else:
+                print("Returning mock DBS data with signature %s" % signature)
                 return mockData[self.url][signature]
         except KeyError:
             raise KeyError("DBS mock API could not return data for method %s, args=%s, and kwargs=%s (URL %s)." %

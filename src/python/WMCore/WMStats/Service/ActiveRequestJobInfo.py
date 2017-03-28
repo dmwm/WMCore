@@ -112,4 +112,4 @@ class GlobalLockList(RESTEntity):
         # This assumes DataCahe is periodically updated.
         # If data is not updated, need to check, dataCacheUpdate log
         return rows(DataCache.filterData(ACTIVE_NO_CLOSEOUT_FILTER,
-                                         ["InputDatasets", "OutputDatasets", "MCPileup", "DataPileup"]))
+                                         ["InputDataset", "OutputDatasets", "MCPileup", "DataPileup"]))

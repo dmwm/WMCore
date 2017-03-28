@@ -69,15 +69,15 @@ def initialize_request_args(request, config, clone=False):
         request["CouchWorkloadDBName"] = config.couch_reqmgr_db
         request["CouchDBName"] = config.couch_config_cache_db
 
-        request.setdefault("SoftwareVersions", [])
-        if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
-            request["SoftwareVersions"].append(request["CMSSWVersion"])
+        #request.setdefault("SoftwareVersions", [])
+        #if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
+        #    request["SoftwareVersions"].append(request["CMSSWVersion"])
 
         # TODO
         # do we need InputDataset and InputDatasets? when one is just a list
         # containing the other? ; could be related to #3743 problem
-        if "InputDataset" in request:
-            request["InputDatasets"] = [request["InputDataset"]]
+        #if "InputDataset" in request:
+        #    request["InputDatasets"] = [request["InputDataset"]]
 
 
 def initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service):

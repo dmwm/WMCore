@@ -57,6 +57,9 @@ class StartPolicyInterface(PolicyInterface):
             except Exception as ex:  # can throw many errors e.g. AttributeError, AssertionError etc.
                 error = WorkQueueWMSpecError(self.wmspec, "Site whitelist validation error: %s" % str(ex))
                 raise error
+        else:
+            error = WorkQueueWMSpecError(self.wmspec, "Site whitelist validation error: Empty site whitelist")
+            raise error
 
         if self.initialTask.siteBlacklist():
             if isinstance(self.initialTask.siteBlacklist(), basestring):
@@ -121,6 +124,7 @@ class StartPolicyInterface(PolicyInterface):
         for data, sites in ele['Inputs'].items():
             if not sites:
                 raise WorkQueueWMSpecError(self.wmspec, 'Input data has no locations "%s"' % data)
+
         # catch infinite splitting loops
         if len(self.workQueueElements) > self.args.get('maxRequestSize', 1e8):
             raise WorkQueueWMSpecError(self.wmspec, 'Too many elements (%d)' % self.args.get('MaxRequestElements', 1e8))

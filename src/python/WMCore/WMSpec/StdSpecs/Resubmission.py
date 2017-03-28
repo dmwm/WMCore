@@ -63,6 +63,8 @@ class ResubmissionWorkloadFactory(StdBase):
                     "ACDCDatabase" : {"default" : "acdcserver", "validate" : identifier,
                                       "attr" : "acdcDatabase"},
                     "CollectionName" : {"default" : None, "null" : True},
-                    "IgnoredOutputModules" : {"default" : [], "type" : makeList}}
+                    "IgnoredOutputModules" : {"default" : [], "type" : makeList},
+                    "SiteWhitelist": {"default": [], "type": makeList,
+                                      "validate": lambda x: all([cmsname(y) for y in x])}}
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

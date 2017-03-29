@@ -343,6 +343,7 @@ class WorkQueueTest(WorkQueueTestCase):
         self.redigiSpec = redigiWorkload('reDigiSpec', self.redigiArgs)
         self.redigiSpec.setSpecUrl(os.path.join(self.workDir,
                                                 'reDigiSpec.spec'))
+        getFirstTask(self.redigiSpec).setSiteWhitelist(['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC'])
         self.redigiSpec.save(self.redigiSpec.specUrl())
 
     def createResubmitSpec(self, serverUrl, couchDB, parentage=False):
@@ -1006,16 +1007,18 @@ class WorkQueueTest(WorkQueueTestCase):
         mcspec.setSpecUrl(os.path.join(self.workDir, 'testProductionInvalid.spec'))
         mcspec.save(mcspec.specUrl())
         self.assertRaises(WorkQueueWMSpecError, self.queue.queueWork, mcspec.specUrl())
-        getFirstTask(mcspec).setSiteWhitelist([])
+        getFirstTask(mcspec).setSiteWhitelist(['T2_XX_SiteB'])
         self.queue.deleteWorkflows(mcspec.name())
 
         # 0 events
         getFirstTask(mcspec).addProduction(totalEvents=0)
+        getFirstTask(mcspec).setSiteWhitelist(['T2_XX_SiteB'])
         mcspec.save(mcspec.specUrl())
         self.assertRaises(WorkQueueNoWorkError, self.queue.queueWork, mcspec.specUrl())
 
         # no dataset
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
+        getFirstTask(processingSpec).setSiteWhitelist(['T2_XX_SiteB'])
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                'testProcessingInvalid.spec'))
         processingSpec.save(processingSpec.specUrl())
@@ -1025,6 +1028,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # invalid dbs url
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
+        getFirstTask(processingSpec).setSiteWhitelist(['T2_XX_SiteB'])
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.dbsurl = 'wrongprot://dbs.example.com'
@@ -1034,6 +1038,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # invalid dataset name
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
+        getFirstTask(processingSpec).setSiteWhitelist(['T2_XX_SiteB'])
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                'testProcessingInvalid.spec'))
         getFirstTask(processingSpec).data.input.dataset.name = '/MinimumBias/FAKE-Filter-v1/RECO'
@@ -1049,6 +1054,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # dataset splitting with invalid run whitelist
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
+        getFirstTask(processingSpec).setSiteWhitelist(['T2_XX_SiteB'])
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                'testProcessingInvalid.spec'))
         processingSpec.setStartPolicy('Dataset')
@@ -1059,6 +1065,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
         # block splitting with invalid run whitelist
         processingSpec = rerecoWorkload('testProcessingInvalid', self.rerecoArgs)
+        getFirstTask(processingSpec).setSiteWhitelist(['T2_XX_SiteB'])
         processingSpec.setSpecUrl(os.path.join(self.workDir,
                                                'testProcessingInvalid.spec'))
         processingSpec.setStartPolicy('Block')

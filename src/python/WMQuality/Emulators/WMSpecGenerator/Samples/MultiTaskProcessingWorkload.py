@@ -5,10 +5,8 @@ _Tier1ReRecoWorkload_
 
 
 """
-import os, pickle, sys, shutil
 from WMCore.WMSpec.WMWorkload import newWorkload
-from WMCore.WMSpec.WMStep import makeWMStep
-from WMCore.WMSpec.Steps.StepFactory import getStepTypeHelper
+
 
 DBSURL = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
 
@@ -63,8 +61,8 @@ def createWorkload(name="MultiTaskProcessing"):
         dataTier = "RECO")
 
     #Add a stageOut step
-    skimStageOutHelper = skimStageOut.getTypeHelper()
-    skimLogArchHelper  = skimLogArch.getTypeHelper()
+    #skimStageOutHelper = skimStageOut.getTypeHelper()
+    #skimLogArchHelper  = skimLogArch.getTypeHelper()
 
 
     rereco.addGenerator("BasicNaming")
@@ -81,6 +79,7 @@ def createWorkload(name="MultiTaskProcessing"):
     skimLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
     rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
+    rereco.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
     rereco.addInputDataset(
         primary = "Cosmics",
         processed = "ComissioningHI-PromptReco-v1",
@@ -111,9 +110,10 @@ def createWorkload(name="MultiTaskProcessing"):
         dataTier = "RECO")
 
     #Add a stageOut step
-    skimStageOutHelper = skimStageOut.getTypeHelper()
-    skimLogArchHelper  = skimLogArch.getTypeHelper()
+    #skimStageOutHelper = skimStageOut.getTypeHelper()
+    #skimLogArchHelper  = skimLogArch.getTypeHelper()
 
 
     rereco.addGenerator("BasicNaming")
+    workload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
     return workload

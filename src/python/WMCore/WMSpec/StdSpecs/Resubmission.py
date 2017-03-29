@@ -7,7 +7,7 @@ with limited input for error recovery.
 """
 
 from Utils.Utilities import makeList
-from WMCore.Lexicon import couchurl, identifier
+from WMCore.Lexicon import couchurl, identifier, cmsname
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
@@ -63,6 +63,8 @@ class ResubmissionWorkloadFactory(StdBase):
                     "ACDCDatabase" : {"default" : "acdcserver", "validate" : identifier,
                                       "attr" : "acdcDatabase"},
                     "CollectionName" : {"default" : None, "null" : True},
-                    "IgnoredOutputModules" : {"default" : [], "type" : makeList}}
+                    "IgnoredOutputModules" : {"default" : [], "type" : makeList},
+                    "SiteWhitelist": {"default": [], "type": makeList,
+                                      "validate": lambda x: all([cmsname(y) for y in x])}}
         StdBase.setDefaultArgumentsProperty(specArgs)
         return specArgs

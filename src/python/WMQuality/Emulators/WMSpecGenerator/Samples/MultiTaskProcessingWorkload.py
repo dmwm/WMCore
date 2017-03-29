@@ -81,6 +81,7 @@ def createWorkload(name="MultiTaskProcessing"):
     skimLogArch.setStepType("LogArchive")
     rereco.applyTemplates()
     rereco.setSplittingAlgorithm("FileBased", files_per_job = 1)
+    rereco.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
     rereco.addInputDataset(
         primary = "Cosmics",
         processed = "ComissioningHI-PromptReco-v1",
@@ -116,4 +117,5 @@ def createWorkload(name="MultiTaskProcessing"):
 
 
     rereco.addGenerator("BasicNaming")
+    workload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
     return workload

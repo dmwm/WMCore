@@ -20,6 +20,7 @@ workload = newWorkload("MultiOutputs")
 workload.setOwner("WMTest")
 workload.setStartPolicy('MonteCarlo')
 workload.setEndPolicy('SingleShot')
+workload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
 
 #  //
 # // set up the production task

@@ -19,6 +19,7 @@ workload = newWorkload("BasicProduction")
 workload.setOwner("WMTest")
 workload.setStartPolicy('MonteCarlo', **{'SliceType': 'NumberOfEvents', 'SliceSize': 100})
 workload.setEndPolicy('SingleShot')
+workload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
 #  //
 # // set up the production task
 #//
@@ -27,6 +28,7 @@ production.addProduction(totalevents = 1000)
 #WARNING: this is arbitrary task type (wmbs schema only supprot "Processing", "Merge", "Harvest") - maybe add "MCProduction"
 production.setTaskType("Merge")
 production.setSplittingAlgorithm("EventBased", events_per_job = 100)
+production.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
 prodCmssw = production.makeStep("cmsRun1")
 prodCmssw.setStepType("CMSSW")
 prodStageOut = prodCmssw.addStep("stageOut1")

@@ -271,6 +271,7 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         """
         self.stuffACDCDatabase()
         acdcWorkload = self.getMergeACDCSpec('ParentlessMergeBySize', {})
+        acdcWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         acdcWorkload.data.request.priority = 10000
         for task in acdcWorkload.taskIterator():
             policy = ResubmitBlock()

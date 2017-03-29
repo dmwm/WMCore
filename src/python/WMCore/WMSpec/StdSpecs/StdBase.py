@@ -1149,6 +1149,8 @@ class StdBase(object):
                 schema[arg] = "reqmgr_config_cache_t"
             elif arg == "ScramArch":
                 schema[arg] = "slc6_amd64_gcc491"
+            elif arg == "SiteWhitelist":
+                schema[arg] = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
             elif not workloadDefinition[arg]["optional"]:
                 if workloadDefinition[arg]["type"] == str:
                     if arg == "InputDataset":

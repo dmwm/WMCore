@@ -88,7 +88,6 @@ rereco.addInputDataset(
     processed = "ComissioningHI-PromptReco-v1",
     tier = "RECO",
     dbsurl = DBSURL)
-
 #  //
 # // rereco cmssw step
 #//
@@ -118,3 +117,5 @@ skimLogArchHelper  = skimLogArch.getTypeHelper()
 
 
 rereco.addGenerator("BasicNaming")
+
+workload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])

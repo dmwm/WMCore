@@ -49,6 +49,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["DQMConfigCacheID"] = createConfig(dqmHarvArgs["CouchDBName"])
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('DQMHarvestTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         splitArgs = DQMHarvWorkload.startPolicyParameters()
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
@@ -73,6 +74,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["RunWhitelist"] = [181358, 181417, 180992, 181151]
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('DQMHarvestTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         splitArgs = DQMHarvWorkload.startPolicyParameters()
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
@@ -97,6 +99,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["LumiList"] = {"181358": [[71, 80], [95, 110]], "181151": [[1, 20]]}
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('DQMHarvestTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         splitArgs = DQMHarvWorkload.startPolicyParameters()
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
@@ -121,6 +124,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["DQMHarvestUnit"] = 'multiRun'
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('DQMHarvestTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         splitArgs = DQMHarvWorkload.startPolicyParameters()
         inputDataset = getFirstTask(DQMHarvWorkload).getInputDatasetPath()
 
@@ -185,6 +189,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         factory = ReRecoWorkloadFactory()
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction('ReRecoWorkload', rerecoArgs)
         Tier1ReRecoWorkload.setStartPolicy('Dataset', **splitArgs)
+        Tier1ReRecoWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         for task in Tier1ReRecoWorkload.taskIterator():
             units, _ = Dataset(**splitArgs)(Tier1ReRecoWorkload, task)
             self.assertEqual(1, len(units))
@@ -227,7 +232,7 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["DQMConfigCacheID"] = createConfig(dqmHarvArgs["CouchDBName"])
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('DQMHarvestTest', dqmHarvArgs)
-
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         splitArgs = DQMHarvWorkload.startPolicyParameters()
 
         for task in DQMHarvWorkload.taskIterator():
@@ -240,18 +245,21 @@ class DatasetTestCase(EmulatedUnitTestCase):
         dqmHarvArgs["DQMConfigCacheID"] = createConfig(dqmHarvArgs["CouchDBName"])
         factory = DQMHarvestWorkloadFactory()
         DQMHarvWorkload = factory.factoryWorkloadConstruction('NoInputDatasetTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         getFirstTask(DQMHarvWorkload).data.input.dataset = None
         for task in DQMHarvWorkload.taskIterator():
             self.assertRaises(WorkQueueWMSpecError, Dataset(), DQMHarvWorkload, task)
 
         # invalid dataset name
         DQMHarvWorkload = factory.factoryWorkloadConstruction('InvalidInputDatasetTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         getFirstTask(DQMHarvWorkload).data.input.dataset.name = '/MinimumBias/FAKE-Filter-v1/RECO'
         for task in DQMHarvWorkload.taskIterator():
             self.assertRaises(DBSReaderError, Dataset(), DQMHarvWorkload, task)
 
         # invalid run whitelist
         DQMHarvWorkload = factory.factoryWorkloadConstruction('InvalidRunNumberTest', dqmHarvArgs)
+        DQMHarvWorkload.setSiteWhitelist(["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
         DQMHarvWorkload.setRunWhitelist([666])  # not in this dataset
         for task in DQMHarvWorkload.taskIterator():
             self.assertRaises(WorkQueueNoWorkError, Dataset(), DQMHarvWorkload, task)

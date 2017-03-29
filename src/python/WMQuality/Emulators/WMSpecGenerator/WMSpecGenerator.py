@@ -17,8 +17,7 @@ from .Samples.BasicProcessingWorkload \
     import createWorkload as BasicProcessingWorkload
 from WMCore.Cache.WMConfigCache import ConfigCache
 
-#from Samples.MultiTaskProcessingWorkload import createWorkload as MultiTaskProcessingWorkload
-#from Samples.MultiTaskProductionWorkload import createWorkload as MultiTaskProductionWorkload
+
 mcArgs = getMCArgs()
 
 class WMSpecGenerator(object):
@@ -66,6 +65,7 @@ class WMSpecGenerator(object):
         args = ReRecoWorkloadFactory.getTestArguments()
         args.update(additionalArgs)
         args["ConfigCacheID"] = createConfig(args["CouchDBName"])
+        args["SiteWhitelist"] = ['T2_XX_SiteA', 'T2_XX_SiteB', 'T2_XX_SiteC']
         factory = ReRecoWorkloadFactory()
         spec =  factory.factoryWorkloadConstruction(specName, args)
         if inputDataset != None:
@@ -84,7 +84,7 @@ class WMSpecGenerator(object):
         specs = {}
         for i in range(size):
             specName = specNameBase + "_%s" % i
-            sepc, specUrl = self.createProductionSpec(specName)
+            _, specUrl = self.createProductionSpec(specName)
             specs[specName] = specUrl
         return specs
 

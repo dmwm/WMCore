@@ -1,104 +1,179 @@
 #!/usr/bin/env python
-# pylint: disable=W0104
+
 """
 _Run_
 
-container representing a run, and its constituent lumi sections
-
+container representing a run, and its constituent lumi sections and event counts
 """
 
-
+from __future__ import print_function
 
 from WMCore.DataStructs.WMObject import WMObject
+
 
 class Run(WMObject):
     """
     _Run_
 
-    Run container, is a list of lumi sections
-
+    Run container, is a list of lumi sections with associate event counts
     """
-    def __init__(self, runNumber = None, *newLumis):
+
+    def __init__(self, runNumber=None, *newLumis):
         WMObject.__init__(self)
         self.run = runNumber
-        self.lumis = []
-        self.lumis.extend(newLumis)
+        self.eventsPerLumi = {}
+        self.extendLumis(newLumis)
 
     def __str__(self):
-        return "Run%s:%s" % (self.run, list(self.lumis))
-
+        return "Run%s:%s" % (self.run, self.eventsPerLumi)
 
     def __lt__(self, rhs):
+        """
+        Compare on run # first, then by lumis as a list is compared
+        """
         if self.run != rhs.run:
             return self.run < rhs.run
-        return list(self.lumis) < list(rhs.lumis)
+        if sorted(self.eventsPerLumi.keys()) != sorted(rhs.eventsPerLumi.keys()):
+            return sorted(self.eventsPerLumi.keys()) < sorted(rhs.eventsPerLumi.keys())
+        return self.eventsPerLumi < rhs.eventsPerLumi
 
     def __gt__(self, rhs):
+        """
+        Compare on run # first, then by lumis as a list is compared
+        """
         if self.run != rhs.run:
             return self.run > rhs.run
-        return list(self.lumis) > list(rhs.lumis)
-
+        if sorted(self.eventsPerLumi.keys()) != sorted(rhs.eventsPerLumi.keys()):
+            return sorted(self.eventsPerLumi.keys()) > sorted(rhs.eventsPerLumi.keys())
+        return self.eventsPerLumi > rhs.eventsPerLumi
 
     def extend(self, items):
-        self.lumis.extend(items)
+        """
+        Redirect to the function that already does this
+        """
+        self.extendLumis(items)
         return
 
     def __cmp__(self, rhs):
-        if self.run == rhs.run:
-            return cmp(list(self.lumis), list(rhs.lumis))
-        if self.run > rhs.run:
-            return 1
-        if self.run < rhs.run:
-            return -1
-
-        return cmp(self, rhs)
-
+        return (self > rhs) - (self < rhs)  # Python3 equivalent of cmp()
 
     def __add__(self, rhs):
         """
-        combine two runs
+        Combine two runs
         """
         if self.run != rhs.run:
             msg = "Adding together two different runs"
             msg += "Run %s does not equal Run %s" % (self.run, rhs.run)
             raise RuntimeError(msg)
 
-        #newRun = Run(self.run, *self)
-        #[ newRun.append(x) for x in rhs if x not in newRun ]
-        [ self.lumis.append(x) for x in rhs.lumis if x not in self.lumis ]
-
+        for lumi, events in rhs.eventsPerLumi.iteritems():
+            if lumi not in self.eventsPerLumi or not self.eventsPerLumi[lumi]:  # Either doesn't exist, 0, or None
+                self.eventsPerLumi[lumi] = events
+            else:
+                self.eventsPerLumi[lumi] += events
         return self
+
     def __iter__(self):
-        return self.lumis.__iter__()
+        return self.eventsPerLumi.__iter__()
 
     def __next__(self):
-        return self.lumis.__next__()
+        """
+        __next__ no longer needed
+        """
+        raise NotImplementedError
+
     def __len__(self):
-        return self.lumis.__len__()
-    def __getitem__(self,key):
-        return self.lumis.__getitem__(key)
-    def __setitem__(self,key,value):
-        return self.lumis.__setitem__(key,value)
-    def __delitem__(self,key):
-        return self.lumis.__delitem__(key)
+        """
+        Number of lumis
+        """
+        return self.eventsPerLumi.__len__()
+
+    def __getitem__(self, key):
+        """
+        Get the nth lumi from the list (no event count)
+        """
+        return sorted(self.eventsPerLumi.keys()).__getitem__(key)
+
+    def __setitem__(self, key, lumi):
+        """
+        Replace the nth lumi from the list (no event count)
+        """
+        try:
+            oldLumi = sorted(self.eventsPerLumi.keys())[key]  # Extract the lumi from the sorted list
+            del self.eventsPerLumi[oldLumi]  # Delete it and add the new one
+        except IndexError:
+            pass
+        self.appendLumi(lumi)
+
+    def __delitem__(self, key):
+        try:
+            oldLumi = sorted(self.eventsPerLumi.keys())[key]  # Extract the lumi from the sorted list
+            del self.eventsPerLumi[oldLumi]  # Delete it
+        except IndexError:
+            pass
 
     def __eq__(self, rhs):
-        if not isinstance(rhs, Run) :
+        """
+        Check equality of run numbers and then underlying lumi/event dicts
+        """
+        if not isinstance(rhs, Run):
             return False
         if self.run != rhs.run:
             return False
-        return list(self.lumis) == list(rhs.lumis)
+        return self.eventsPerLumi == rhs.eventsPerLumi
 
     def __ne__(self, rhs):
         return not self.__eq__(rhs)
 
     def __hash__(self):
-
+        """
+        Calculate the value of the hash
+        """
         value = self.run.__hash__()
-        self.lumis.sort()
-        for lumi in self.lumis:
-            value += lumi.__hash__()
+        value += hash(frozenset(self.eventsPerLumi.items()))  # Hash that represents the dictionary
         return value
+
+    @property
+    def lumis(self):
+        """
+        Property that makes existing uses of myRun.lumis function by returning a list
+        """
+        return sorted(self.eventsPerLumi.keys())
+
+    @lumis.setter
+    def lumis(self, lumiList):
+        """
+        Setter to allow for replacement of the lumis with a list or list of tuples
+        """
+        self.eventsPerLumi = {}  # Remove existing dictionary
+        for lumi in lumiList:
+            if isinstance(lumi, (list, tuple)):
+                self.eventsPerLumi[lumi[0]] = lumi[1]
+            else:
+                self.eventsPerLumi[lumi] = None
+
+    def extendLumis(self, lumiList):
+        """
+        Method to replace myRun.lumis.extend() which does not work with the property
+        """
+        for lumi in lumiList:
+            if isinstance(lumi, (list, tuple)) and lumi[0] in self.eventsPerLumi and self.eventsPerLumi[lumi[0]]:
+                self.eventsPerLumi[lumi[0]] += lumi[1]  # Already exists, add events
+            elif isinstance(lumi, (list, tuple)):  # Doesn't exist or is 0 or None
+                self.eventsPerLumi[lumi[0]] = lumi[1]
+            else:  # Just given lumis, not events
+                self.eventsPerLumi[lumi] = None
+
+    def appendLumi(self, lumi):
+        """
+        Method to replace myRun.lumis.append() which does not work with the property
+        """
+        if isinstance(lumi, (list, tuple)) and self.eventsPerLumi[lumi[0]]:  # Already exists, add events
+            self.eventsPerLumi[lumi[0]] += lumi[1]
+        elif isinstance(lumi, (list, tuple)):  # Doesn't exist or is 0 or None
+            self.eventsPerLumi[lumi[0]] = lumi[1]
+        else:  # Just given lumis, not events
+            self.eventsPerLumi[lumi] = None
 
     def json(self):
         """
@@ -107,14 +182,14 @@ class Run(WMObject):
         Convert to JSON friendly format.  Include some information for the
         thunker so that we can convert back.
         """
-        return {"Run" : self.run, "Lumis" : self.lumis,
+        return {"Run": self.run, "Lumis": self.eventsPerLumi,
                 "thunker_encoded_json": True, "type": "WMCore.DataStructs.Run.Run"}
 
-    def __to_json__(self, thunker = None):
+    def __to_json__(self, thunker=None):
         """
         __to_json__
 
-        This is the standard way we jsonize other objects.
+        This is the standard way we JSONize other objects.
         Included here so we have a uniform method.
         """
         return self.json()
@@ -123,8 +198,11 @@ class Run(WMObject):
         """
         __from_json__
 
-        Conver JSON data back into a Run object.
+        Convert JSON data back into a Run object with integer lumi numbers
         """
         self.run = jsondata["Run"]
-        self.lumis = jsondata["Lumis"]
+        self.eventsPerLumi = {}
+        for lumi, events in jsondata["Lumis"].iteritems():
+            self.eventsPerLumi[int(lumi)] = events  # Make the keys integers again
+
         return self

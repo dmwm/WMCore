@@ -91,7 +91,7 @@ def injectFilesFromDBS(inputFileset, datasetPath):
                       locations = "cmssrm.fnal.gov", merged = True)
         myRun = Run(runNumber = dbsResult["LumiList"][0]["RunNumber"])
         for lumi in dbsResult["LumiList"]:
-            myRun.lumis.append(lumi["LumiSectionNumber"])
+            myRun.appendLumi(lumi["LumiSectionNumber"])
         myFile.addRun(myRun)
         myFile.create()
         inputFileset.addFile(myFile)

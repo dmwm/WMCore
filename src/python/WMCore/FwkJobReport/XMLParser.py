@@ -4,19 +4,15 @@ _XMLParser_
 
 Read the raw XML output from the cmsRun executable.
 """
-from __future__ import print_function, division
+from __future__ import division, print_function
 
-
-
-
-import os
-import re
 import logging
-import xml.parsers.expat
+import re
 
-from WMCore.FwkJobReport import Report
+from WMCore.Algorithms.ParseXMLFile import coroutine, xmlFileToNode
 from WMCore.DataStructs.Run import Run
-from WMCore.Algorithms.ParseXMLFile import Node, xmlFileToNode, coroutine
+from WMCore.FwkJobReport import Report
+
 
 def reportBuilder(nodeStruct, report, target):
     """
@@ -27,6 +23,7 @@ def reportBuilder(nodeStruct, report, target):
     """
     for node in nodeStruct.children:
         target.send((report, node))
+
 
 @coroutine
 def reportDispatcher(targets):
@@ -40,28 +37,29 @@ def reportDispatcher(targets):
         report, node = (yield)
         if node.name != "FrameworkJobReport":
             print("Not Handling: ", node.name)
-            #TODO: throw
+            # TODO: throw
             continue
 
         for subnode in node.children:
             if subnode.name == "File":
-                targets['File'].send( (report, subnode) )
+                targets['File'].send((report, subnode))
             elif subnode.name == "InputFile":
-                targets['InputFile'].send( (report, subnode) )
+                targets['InputFile'].send((report, subnode))
             elif subnode.name == "AnalysisFile":
-                targets['AnalysisFile'].send( (report, subnode) )
+                targets['AnalysisFile'].send((report, subnode))
             elif subnode.name == "PerformanceReport":
-                targets['PerformanceReport'].send( (report, subnode))
+                targets['PerformanceReport'].send((report, subnode))
             elif subnode.name == "FrameworkError":
-                targets['FrameworkError'].send( (report, subnode) )
+                targets['FrameworkError'].send((report, subnode))
             elif subnode.name == "SkippedFile":
-                targets['SkippedFile'].send( (report, subnode) )
+                targets['SkippedFile'].send((report, subnode))
             elif subnode.name == "FallbackAttempt":
-                targets['FallbackAttempt'].send( (report, subnode) )
+                targets['FallbackAttempt'].send((report, subnode))
             elif subnode.name == "SkippedEvent":
-                targets['SkippedEvent'].send( (report, subnode) )
+                targets['SkippedEvent'].send((report, subnode))
             else:
                 setattr(report.report.parameters, subnode.name, subnode.text)
+
 
 @coroutine
 def fileHandler(targets):
@@ -75,7 +73,7 @@ def fileHandler(targets):
     while True:
         report, node = (yield)
         moduleName = None
-        moduleNode = [ x for x in node.children if x.name == "ModuleLabel"][0]
+        moduleNode = [x for x in node.children if x.name == "ModuleLabel"][0]
         moduleName = moduleNode.text
 
         moduleRef = report.addOutputModule(moduleName)
@@ -83,23 +81,24 @@ def fileHandler(targets):
         fileAttrs = {}
         for subnode in node.children:
             if subnode.name == "Inputs":
-                targets['Inputs'].send( (fileRef, subnode) )
+                targets['Inputs'].send((fileRef, subnode))
             elif subnode.name == "Runs":
-                targets['Runs'].send( (fileRef, subnode) )
+                targets['Runs'].send((fileRef, subnode))
             elif subnode.name == "Branches":
-                targets['Branches'].send( (fileRef, subnode) )
+                targets['Branches'].send((fileRef, subnode))
             else:
                 fileAttrs[subnode.name] = subnode.text
 
-        Report.addAttributesToFile(fileRef, lfn = fileAttrs["LFN"],
-                                   pfn = fileAttrs["PFN"], catalog = fileAttrs["Catalog"],
-                                   module_label = fileAttrs["ModuleLabel"],
-                                   guid = fileAttrs["GUID"],
-                                   ouput_module_class = fileAttrs["OutputModuleClass"],
-                                   events = int(fileAttrs["TotalEvents"]),
-                                   branch_hash = fileAttrs["BranchHash"])
+        Report.addAttributesToFile(fileRef, lfn=fileAttrs["LFN"],
+                                   pfn=fileAttrs["PFN"], catalog=fileAttrs["Catalog"],
+                                   module_label=fileAttrs["ModuleLabel"],
+                                   guid=fileAttrs["GUID"],
+                                   ouput_module_class=fileAttrs["OutputModuleClass"],
+                                   events=int(fileAttrs["TotalEvents"]),
+                                   branch_hash=fileAttrs["BranchHash"])
 
         [fileRef]
+
 
 @coroutine
 def inputFileHandler(targets):
@@ -113,7 +112,7 @@ def inputFileHandler(targets):
     while True:
         report, node = (yield)
         moduleName = None
-        moduleNode = [ x for x in node.children if x.name == "ModuleLabel"][0]
+        moduleNode = [x for x in node.children if x.name == "ModuleLabel"][0]
         moduleName = moduleNode.text
 
         moduleRef = report.addInputSource(moduleName)
@@ -121,20 +120,21 @@ def inputFileHandler(targets):
         fileAttrs = {}
         for subnode in node.children:
             if subnode.name == "Runs":
-                targets['Runs'].send( (fileRef, subnode) )
+                targets['Runs'].send((fileRef, subnode))
             elif subnode.name == "Branches":
-                targets['Branches'].send( (fileRef, subnode) )
+                targets['Branches'].send((fileRef, subnode))
             else:
                 fileAttrs[subnode.name] = subnode.text
 
-        Report.addAttributesToFile(fileRef, lfn = fileAttrs["LFN"],
-                                   pfn = fileAttrs["PFN"], catalog = fileAttrs["Catalog"],
-                                   module_label = fileAttrs["ModuleLabel"],
-                                   guid = fileAttrs["GUID"], input_type = fileAttrs["InputType"],
-                                   input_source_class = fileAttrs["InputSourceClass"],
-                                   events = int(fileAttrs["EventsRead"]))
+        Report.addAttributesToFile(fileRef, lfn=fileAttrs["LFN"],
+                                   pfn=fileAttrs["PFN"], catalog=fileAttrs["Catalog"],
+                                   module_label=fileAttrs["ModuleLabel"],
+                                   guid=fileAttrs["GUID"], input_type=fileAttrs["InputType"],
+                                   input_source_class=fileAttrs["InputSourceClass"],
+                                   events=int(fileAttrs["EventsRead"]))
 
         [fileRef]
+
 
 @coroutine
 def analysisFileHandler(targets):
@@ -175,6 +175,7 @@ def errorHandler():
         else:
             report.addError(report.listSteps()[0], excepcode, exceptype, node.text)
 
+
 @coroutine
 def skippedFileHandler():
     while True:
@@ -183,6 +184,7 @@ def skippedFileHandler():
         pfn = node.attrs.get("Pfn", None)
         report.addSkippedFile(lfn, pfn)
 
+
 @coroutine
 def fallbackAttemptHandler():
     while True:
@@ -190,6 +192,7 @@ def fallbackAttemptHandler():
         lfn = node.attrs.get("Lfn", None)
         pfn = node.attrs.get("Pfn", None)
         report.addFallbackFile(lfn, pfn)
+
 
 @coroutine
 def skippedEventHandler():
@@ -201,6 +204,7 @@ def skippedEventHandler():
         if event == None: continue
         report.addSkippedEvent(run, event)
 
+
 @coroutine
 def runHandler():
     """
@@ -209,8 +213,8 @@ def runHandler():
     Sink to add run information to a file.  Given the following XML:
       <Runs>
       <Run ID="122023">
-        <LumiSection ID="215"/>
-        <LumiSection ID="216"/>
+        <LumiSection NEvents="100" ID="215"/>
+        <LumiSection NEvents="100" ID="216"/>
       </Run>
       <Run ID="122024">
         <LumiSection ID="1"/>
@@ -227,16 +231,22 @@ def runHandler():
         for subnode in node.children:
             if subnode.name == "Run":
                 runId = subnode.attrs.get("ID", None)
-                if runId == None: continue
+                if runId is None:
+                    continue
 
-                lumis = [ int(lumi.attrs['ID'])
-                          for lumi in subnode.children
-                          if "ID" in lumi.attrs]
-
-                runInfo = Run(runNumber = runId)
-                runInfo.lumis.extend(lumis)
+                lumis = []
+                for lumi in subnode.children:
+                    if "ID" in lumi.attrs:
+                        lumiNumber = int(lumi.attrs['ID'])
+                        nEvents = lumi.attrs.get("NEvents", None)
+                        if nEvents is not None:
+                            nEvents = int(nEvents)
+                        lumis.append((lumiNumber, nEvents))
+                runInfo = Run(runNumber=runId)
+                runInfo.extendLumis(lumis)
 
                 Report.addRunInfoToFile(fileSection, runInfo)
+
 
 @coroutine
 def branchHandler():
@@ -258,9 +268,10 @@ def branchHandler():
     while True:
         fileSection, node = (yield)
         pass
-        #branches = [ subnode.text for subnode in node.children
+        # branches = [ subnode.text for subnode in node.children
         #             if subnode.name == "Branch" ]
-        #Report.addBranchNamesToFile(fileSection, branches)
+        # Report.addBranchNamesToFile(fileSection, branches)
+
 
 @coroutine
 def inputAssocHandler():
@@ -281,9 +292,10 @@ def inputAssocHandler():
         fileSection, node = (yield)
         for inputnode in node.children:
             data = {}
-            [ data.__setitem__(subnode.name, subnode.text)
-              for subnode in inputnode.children]
+            [data.__setitem__(subnode.name, subnode.text)
+             for subnode in inputnode.children]
             Report.addInputToFile(fileSection, data["LFN"], data['PFN'])
+
 
 @coroutine
 def perfRepHandler(targets):
@@ -303,15 +315,14 @@ def perfRepHandler(targets):
         for subnode in node.children:
             metric = subnode.attrs.get('Metric', None)
             if metric == "Timing":
-                targets['CPU'].send( (perfRep.cpu, subnode) )
+                targets['CPU'].send((perfRep.cpu, subnode))
             elif metric == "SystemMemory" or metric == "ApplicationMemory":
-                targets['Memory'].send( (perfRep.memory, subnode) )
+                targets['Memory'].send((perfRep.memory, subnode))
             elif metric == "StorageStatistics":
-                targets['Storage'].send( (perfRep.storage, subnode) )
+                targets['Storage'].send((perfRep.storage, subnode))
             else:
-                targets['PerformanceSummary'].send( (perfRep.summaries,
-                                                     subnode) )
-
+                targets['PerformanceSummary'].send((perfRep.summaries,
+                                                    subnode))
 
 
 @coroutine
@@ -349,6 +360,7 @@ def perfCPUHandler():
         for subnode in node.children:
             setattr(report, subnode.attrs['Name'], subnode.attrs['Value'])
 
+
 @coroutine
 def perfMemHandler():
     """
@@ -368,6 +380,7 @@ def perfMemHandler():
                     setattr(report, 'PeakValuePss', prop.attrs['Value'])
                 else:
                     setattr(report, prop.attrs['Name'], prop.attrs['Value'])
+
 
 def checkRegEx(regexp, candidate):
     if re.compile(regexp).match(candidate) == None:
@@ -407,10 +420,10 @@ def perfStoreHandler():
             for statName in goodStatistics:
                 if checkRegEx(statName, name):
                     storageValues[name] = float(prop.attrs['Value'])
-                    #setattr(report, name, prop.attrs['Value'])
+                    # setattr(report, name, prop.attrs['Value'])
 
         writeMethod = None
-        readMethod  = None
+        readMethod = None
         # Figure out read method
         for key in storageValues.keys():
             if checkRegEx('Timing-([a-z]{4})-read(v?)-numOperations', key):
@@ -433,31 +446,30 @@ def perfStoreHandler():
         try:
             readTotalMB = storageValues.get("Timing-%s-read-totalMegabytes" % readMethod, 0) \
                           + storageValues.get("Timing-%s-readv-totalMegabytes" % readMethod, 0)
-            readMSecs   = storageValues.get("Timing-%s-read-totalMsecs" % readMethod, 0) \
-                           + storageValues.get("Timing-%s-readv-totalMsecs" % readMethod, 0)
-            totalReads  = storageValues.get("Timing-%s-read-numOperations" % readMethod, 0) \
-                          + storageValues.get("Timing-%s-readv-numOperations" % readMethod, 0)
+            readMSecs = storageValues.get("Timing-%s-read-totalMsecs" % readMethod, 0) \
+                        + storageValues.get("Timing-%s-readv-totalMsecs" % readMethod, 0)
+            totalReads = storageValues.get("Timing-%s-read-numOperations" % readMethod, 0) \
+                         + storageValues.get("Timing-%s-readv-numOperations" % readMethod, 0)
             readMaxMSec = max(storageValues.get("Timing-%s-read-maxMsecs" % readMethod, 0),
                               storageValues.get("Timing-%s-readv-maxMsecs" % readMethod, 0))
-            readPercOps = storageValues.get("Timing-tstoragefile-readActual-numOperations", 0)/\
+            readPercOps = storageValues.get("Timing-tstoragefile-readActual-numOperations", 0) / \
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0)/\
+            readCachOps = storageValues.get("Timing-tstoragefile-readViaCache-numSuccessfulOperations", 0) / \
                           storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            readTotalT  = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) / 1000
-            readNOps    = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
-            writeTime   = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) / 1000
-            writeTotMB  = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
-                          + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
+            readTotalT = storageValues.get("Timing-tstoragefile-read-totalMSecs", 0) / 1000
+            readNOps = storageValues.get("Timing-tstoragefile-read-numOperations", 0)
+            writeTime = storageValues.get("Timing-tstoragefile-write-totalMsecs", 0) / 1000
+            writeTotMB = storageValues.get("Timing-%s-write-totalMegabytes" % writeMethod, 0) \
+                         + storageValues.get("Timing-%s-writev-totalMegabytes" % writeMethod, 0)
 
             if readMSecs > 0:
-                readMBSec = readTotalMB/readMSecs * 1000
+                readMBSec = readTotalMB / readMSecs * 1000
             else:
                 readMBSec = 0
             if totalReads > 0:
-                readAveragekB = 1024* readTotalMB/totalReads
+                readAveragekB = 1024 * readTotalMB / totalReads
             else:
                 readAveragekB = 0
-
 
             # Attach them to the report
             setattr(report, 'readTotalMB', readTotalMB)
@@ -476,13 +488,6 @@ def perfStoreHandler():
             logging.error("Not adding any storage performance info to report.")
 
 
-
-
-
-
-
-
-
 def xmlToJobReport(reportInstance, xmlFile):
     """
     _xmlToJobReport_
@@ -496,38 +501,40 @@ def xmlToJobReport(reportInstance, xmlFile):
 
     #  //
     # // Set up coroutine pipeline
-    #//
+    # //
     fileDispatchers = {
-        "Runs" : runHandler(),
-        "Branches" : branchHandler(),
-        "Inputs" : inputAssocHandler(),
-        }
+        "Runs": runHandler(),
+        "Branches": branchHandler(),
+        "Inputs": inputAssocHandler(),
+    }
 
     perfRepDispatchers = {
-        "PerformanceSummary" : perfSummaryHandler(),
-        "CPU" : perfCPUHandler(),
-        "Memory" : perfMemHandler(),
+        "PerformanceSummary": perfSummaryHandler(),
+        "CPU": perfCPUHandler(),
+        "Memory": perfMemHandler(),
         "Storage": perfStoreHandler(),
-        }
+    }
 
-    dispatchers  = {
-        "File" : fileHandler(fileDispatchers),
+    dispatchers = {
+        "File": fileHandler(fileDispatchers),
         "InputFile": inputFileHandler(fileDispatchers),
-        "PerformanceReport" : perfRepHandler(perfRepDispatchers),
-        "AnalysisFile" : analysisFileHandler(fileDispatchers),
-        "FrameworkError" : errorHandler(),
-        "SkippedFile" : skippedFileHandler(),
-        "FallbackAttempt" : fallbackAttemptHandler(),
-        "SkippedEvent" : skippedEventHandler(),
-        }
+        "PerformanceReport": perfRepHandler(perfRepDispatchers),
+        "AnalysisFile": analysisFileHandler(fileDispatchers),
+        "FrameworkError": errorHandler(),
+        "SkippedFile": skippedFileHandler(),
+        "FallbackAttempt": fallbackAttemptHandler(),
+        "SkippedEvent": skippedEventHandler(),
+    }
 
     #  //
     # // Feed pipeline with node structure and report result instance
-    #//
+    # //
     reportBuilder(
         node, reportInstance,
         reportDispatcher(dispatchers)
-        )
+    )
 
     return
+
+
 childrenMatching = lambda node, nname: [x for x in node.children if x.name == nname]

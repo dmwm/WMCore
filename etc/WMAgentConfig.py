@@ -132,6 +132,7 @@ config.WorkQueueManager.namespace = "WMComponent.WorkQueueManager.WorkQueueManag
 config.WorkQueueManager.componentDir = config.General.workDir + "/WorkQueueManager"
 config.WorkQueueManager.level = 'LocalQueue'
 config.WorkQueueManager.logLevel = globalLogLevel
+config.WorkQueueManager.pollInterval = 180  # 3 min
 config.WorkQueueManager.couchurl = couchURL
 config.WorkQueueManager.dbname = workqueueDBName
 config.WorkQueueManager.inboxDatabase = workqueueInboxDbName

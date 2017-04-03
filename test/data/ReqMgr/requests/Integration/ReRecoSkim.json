@@ -27,7 +27,6 @@
     "InputDataset": "/BTag/Run2012A-v1/RAW",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
     "Scenario": "pp",	  
-    "nskims": 1,
     "SkimName1": "skim_2012A_BTag",
     "SkimInput1": "RECOoutput",
     "Skim1ConfigCacheID": "2f7942d681da6a0f0f7cbc8eb21fcec9",

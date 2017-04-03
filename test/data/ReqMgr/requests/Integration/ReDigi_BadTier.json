@@ -10,7 +10,6 @@
     "RequestPriority": 900000,
     "ScramArch": "slc6_amd64_gcc530",
     "RequestType": "ReDigi",
-    "RequestNumEvents": 528571,
     "RunWhitelist": [],
     "RunBlacklist": [],
     "BlockWhitelist": [

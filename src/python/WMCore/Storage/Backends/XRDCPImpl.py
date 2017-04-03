@@ -132,7 +132,7 @@ class XRDCPImpl(StageOutImpl):
         if self.stageIn:
             removeCommand = ""
         else:
-            removeCommand = "xrdfs %s rm %s" % (host, path)
+            removeCommand = "xrdfs '%s' rm %s ;" % (host, path)
 
         copyCommand += "REMOTE_SIZE=`xrdfs '%s' stat '%s' | grep Size | sed -r 's/.*Size:[ ]*([0-9]+).*/\\1/'`\n" % (host, path)
         copyCommand += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
@@ -144,12 +144,12 @@ class XRDCPImpl(StageOutImpl):
             copyCommand += "echo \"Remote File Checksum is: $REMOTE_XS\"\n"
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % checksums['adler32']
-            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
         else:
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
-            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
 
         return copyCommand
 

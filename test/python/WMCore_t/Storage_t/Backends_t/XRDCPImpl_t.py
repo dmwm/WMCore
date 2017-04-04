@@ -99,7 +99,7 @@ class XRDCPImplTest(unittest.TestCase):
             copyCommand += "echo \"Local File Size is: $LOCAL_SIZE\"\n"
             removeCommand = ""
         else:
-            removeCommand = "xrdfs %s rm %s" % (host, path)
+            removeCommand = "xrdfs '%s' rm %s ;" % (host, path)
         copyCommand += "REMOTE_SIZE=`xrdfs '%s' stat '%s' | grep Size | sed -r 's/.*Size:[ ]*([0-9]+).*/\\1/'`\n" % (
             host, path)
         copyCommand += "echo \"Remote File Size is: $REMOTE_SIZE\"\n"
@@ -111,10 +111,10 @@ class XRDCPImplTest(unittest.TestCase):
 
             copyCommand += "if [ $REMOTE_SIZE ] && [ $REMOTE_XS ] && [ $LOCAL_SIZE == $REMOTE_SIZE ] && [ '%s' == $REMOTE_XS ]; then exit 0; " % \
                            checksums
-            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"Error: Size or Checksum Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
         else:
             copyCommand += "if [ $REMOTE_SIZE ] && [ $LOCAL_SIZE == $REMOTE_SIZE ]; then exit 0; "
-            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s ; exit 60311 ; fi" % removeCommand
+            copyCommand += "else echo \"Error: Size Mismatch between local and SE\"; %s exit 60311 ; fi" % removeCommand
         return copyCommand
 
     @mock.patch('WMCore.Storage.Backends.XRDCPImpl.execute')

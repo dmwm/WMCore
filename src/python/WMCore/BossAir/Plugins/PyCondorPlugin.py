@@ -270,10 +270,10 @@ class PyCondorPlugin(BasePlugin):
         if self.serverCert and self.serverKey and self.myproxySrv:
             self.proxy = self.setupMyProxy()
 
-        # Build a request string
-        self.reqStr = ('(OpSys == "LINUX" ) && (Arch == "INTEL" || Arch == "X86_64") '
-                       '&& stringListMember(GLIDEIN_CMSSite, DESIRED_Sites) '
-                       '&& ((REQUIRED_OS=="any") || stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS))')
+        # See notes about this in SimpleCondorPlugin.  TODO(bbockelm): remove once HLT is upgraded.
+        self.reqStr = ('(REQUIRED_OS=?="any") || '
+                       '(GLIDEIN_REQUIRED_OS=?="any") || '
+                       'stringListMember(GLIDEIN_REQUIRED_OS, REQUIRED_OS)')
         if hasattr(config.BossAir, 'condorRequirementsString'):
             self.reqStr = config.BossAir.condorRequirementsString
 
@@ -769,7 +769,8 @@ class PyCondorPlugin(BasePlugin):
         #    avoid condorg submission errors from > 256 character pathnames
 
         jdl.append("universe = vanilla\n")
-        jdl.append("requirements = %s\n" % self.reqStr)
+        if self.reqStr:
+            jdl.append("requirements = %s\n" % self.reqStr)
 
         jdl.append("should_transfer_files = YES\n")
         jdl.append("when_to_transfer_output = ON_EXIT\n")

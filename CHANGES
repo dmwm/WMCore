@@ -1,3 +1,108 @@
+1.1.1 to 1.1.2:
+  - 1.1.2.pre5
+  - Merge pull request #7758 from amaltaro/mc-sitewhitelist
+  - fix unittest
+  - validate MC site whitelist
+  - 1.1.2.pre5
+  - 1.1.2.pre4
+  - Merge pull request #7740 from amaltaro/proxy-fqan
+  - Merge pull request #7752 from ticoann/change_config_label
+  - Just change the label of config cache
+  - Merge pull request #7747 from ticoann/wmstats_warning
+  - Merge pull request #6793 from nikmagini/master
+  - change drain status warning
+  - Merge pull request #7749 from amaltaro/transition-typo
+  - Merge pull request #7744 from ticoann/clone_acdc
+  - Typo in ReqMgr State Transition table
+  - Update UnstableTests.txt
+  - fixes acdc clone assignment overwrite
+  - Merge pull request #7741 from belforte/master
+  - bring back exit code 60317: for use in CRAB3
+  - Explicitly add FQAN for X509 user proxy for job submission
+  - 1.1.2.pre3
+  - Merge pull request #7734 from amaltaro/configCacheUrl
+  - Merge pull request #7073 from amaltaro/glite-dead
+  - Merge pull request #7736 from amaltaro/jobAcc-CouchError
+  - Merge pull request #7660 from alexanderrichards/stageout_fix
+  - Fix unit tests and pylint
+  - Completely replace CouchURL by ConfigCacheUrl
+  - Merge pull request #7735 from ticoann/remove_wmbsservice
+  - Remove alert system code; pylint fixes
+  - Nicely handle CouchConnectionError exception in JobAccountant
+  - remove WMBSService from WMCore and WMAgent
+  - Fix the unit tests
+  - Remove CRAB3 UserFileCache code from components
+  - Remove gLite submission plugin
+  - Merge pull request #7733 from ticoann/add_configid_link
+  - Merge pull request #7727 from ticoann/wmstatsserver_api
+  - Fixes for issue 7681
+  - Merge pull request #7730 from amaltaro/relval-walltime
+  - Remove some tweaks for the relval agent deployment
+  - add api to handle input conditon and mask
+  - 1.1.2.pre2
+  - Merge pull request #7719 from vkuznet/issue7704
+  - Add new filter by campaign; re-factor code to match common name patterns for sorting/filter functions; add changes to templates
+  - Merge pull request #7698 from ericvaandering/py3_compat_thunker
+  - Merge pull request #7644 from amaltaro/taskchain-streamstests
+  - Merge pull request #7682 from amaltaro/fail-dupOutput
+  - Merge pull request #7725 from ticoann/fix_typo
+  - typo in update count
+  - Merge pull request #7693 from ticoann/normal_archive_change
+  - Merge pull request #7718 from amaltaro/logcollect-listScram
+  - Merge pull request #7716 from amaltaro/submitter-plugins
+  - fix taskchain multicore/streams tests
+  - Validate EventStreams at task level in TaskChain
+  - Fix Emulator config; fix other tests relying on Condor plugin
+  - Remove unit tests for old submitter plugins
+  - Remove old/unused submitter plugins
+  - pylint fix
+  - Merge pull request #7709 from ticoann/clean_state_transition
+  - update unit tests; pylint fixes
+  - Merge pull request #7717 from ericvaandering/check_new_fwjr
+  - Handle multi-scramArch in LogCollect
+  - Add new test to make sure we don't crash on old format
+  - unit tests and pylint fixes
+  - Fail request assignment if there are dup output datasets
+  - WMAgent update
+  - Change the way to move to normal archived status.
+  - Added RequestStateTransition.png
+  - Delete RequestStateTransition.png
+  - Added RequestStateTransition.xml
+  - Update RequestStateTransition.xml
+  - Added RequestStateTransition.png
+  - Delete RequestStateTransition.png
+  - Update RequestStateTransition.xml
+  - clean up state transition
+  - Added RequestStateTransition.png
+  - Added RequestStateTransition.xml
+  - Some cleanups of the code and clean up type checking
+  - Prepare JSONThunker for Py3 and Move JSONThunker tests
+  - 1.1.2.pre1
+  - Merge pull request #7696 from ericvaandering/py3_requests
+  - Merge pull request #7664 from ticoann/campaign_prepid
+  - fix unittest
+  - add campaign and prepid
+  - Pylint
+  - Make Request compatible with Python3 after futurize and reverting commented change
+  - Merge pull request #7691 from amaltaro/typo-filesetTable
+  - Merge pull request #7654 from PerilousApricot/feature/pypi
+  - Merge pull request #7673 from amaltaro/runjob-nullStatus
+  - Merge pull request #7689 from ericvaandering/py3_basestr
+  - Merge pull request #7690 from ericvaandering/rearrange_imports
+  - Merge pull request #7694 from emaszs/patch-2
+  - Don't sort list each iteration in FileBased splitting
+  - Typo fixed in wmbs_fileset_seq creation
+  - pylint fixes
+  - Disallow sched_status to be null in the db schema
+  - Reorganize imports
+  - Pylint fixes
+  - Prepare this type checking code for python 3 compatibility. This does not work as is with the str from builtins
+  - Add MANIFEST to packaging
+  - Ignore distutils paths
+  - Check pnn and command exist in SiteConfig fallback.
+  - Update setup.py for use with pypi
+  - Initial version of AWS S3 stageout plugin
+
 1.1.1 to 1.1.2.pre5:
   - Merge pull request #7758 from amaltaro/mc-sitewhitelist
   - fix unittest

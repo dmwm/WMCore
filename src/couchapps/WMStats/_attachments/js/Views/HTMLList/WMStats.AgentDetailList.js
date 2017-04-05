@@ -52,7 +52,11 @@ WMStats.namespace("AgentDetailList");
             htmlstr += diskFullFormat(diskInfo);
             htmlstr +="</li>";
            };
-           
+
+        if (agentInfo.proxy_warning) {
+            htmlstr += "<li><b>proxy warning:</b> " + agentInfo.proxy_warning + "</li>";
+           };
+
         var dataError = agentInfo.data_error;
         if (dataError && dataError !== 'ok') {
             htmlstr += "<li><b>data collect error:</b> ";

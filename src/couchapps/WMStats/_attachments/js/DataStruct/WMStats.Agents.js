@@ -35,9 +35,17 @@ WMStats.Agents = function (couchData) {
                 report.status = "drain";
                 report.message += "Draining Agent; ";
             }
+
+            if (agentInfo.proxy_warning && agentInfo.status === "warning") {
+                report.status = agentInfo.status;
+                report.message += "Proxy expiration warning; ";
+            } else if (agentInfo.proxy_warning && agentInfo.status === "error") {
+                agentData.agentNumber.error += 1;
+                report.status = agentInfo.status;
+                report.message += "Proxy expiration error; ";
+            }
             
             // warning case
-            
             if (agentInfo.couch_process_warning) {
                 agentData.agentNumber.error += 1;
                 report.status = "error";

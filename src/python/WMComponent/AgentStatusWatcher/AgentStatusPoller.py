@@ -14,6 +14,7 @@ import logging
 import time
 import traceback
 import json
+from WMCore.Credential.Proxy import Proxy
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
@@ -38,6 +39,10 @@ class AgentStatusPoller(BaseWorkerThread):
         self.agentInfo = initAgentInfo(self.config)
         self.summaryLevel = config.AnalyticsDataCollector.summaryLevel
         self.jsonFile = config.AgentStatusWatcher.jsonFile
+
+        proxyArgs = {'logger': logging.getLogger()}
+        self.proxy = Proxy(proxyArgs)
+        self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
 
     def setUpCouchDBReplication(self):
 
@@ -97,6 +102,7 @@ class AgentStatusPoller(BaseWorkerThread):
         """
         try:
             agentInfo = self.collectAgentInfo()
+            self.checkProxyLifetime(agentInfo)
             #set the uploadTime - should be the same for all docs
             wmbsInfo = self.collectWMBSInfo()
             logging.info("finished collecting agent/wmbs info")
@@ -235,3 +241,30 @@ class AgentStatusPoller(BaseWorkerThread):
         logging.debug("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])
 
         return results
+
+    def checkProxyLifetime(self, agInfo):
+        """
+        Check the proxy lifetime (usually X509_USER_CERT) and raise either
+        a warning or an error if the proxy validity is about to expire.
+        :param agInfo: dictionary with plenty of agent monitoring information in place.
+        :return: same dictionary object plus additional keys/values if needed.
+        """
+        secsLeft = self.proxy.getTimeLeft(proxy=self.proxyFile)
+        logging.debug("Proxy '%s' lifetime is %d secs", self.proxyFile, secsLeft)
+
+        status = "ok"
+        if secsLeft <= 86400 * 5:  # 5 days
+            status = "warning"
+        elif secsLeft <= 86400 * 3:  # 3 days
+            status = "error"
+
+        if status != "ok":
+            warnMsg = "Agent proxy '%s' must be renewed ASAP. " % self.proxyFile
+            warnMsg += "Its time left is: %.2f hours." % (secsLeft / 3600.)
+            agInfo['proxy_warning'] = warnMsg
+
+            if status == "warning" and agInfo['status'] == "ok":
+                agInfo['status'] = status
+            elif status == "error" and agInfo['status'] in ['ok', 'warning']:
+                agInfo['status'] = status
+        return

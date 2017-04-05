@@ -57,7 +57,7 @@ class DBS3Reader(object):
         try:
             self.dbsURL = url
             self.dbs = DbsApi(url, **contact)
-        except dbsClientException as ex:
+        except dbsClientException, ex:
             msg = "Error in DBSReader with DbsApi\n"
             msg += "%s\n" % formatEx3(ex)
             raise DBSReaderError(msg)

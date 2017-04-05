@@ -198,7 +198,9 @@ class DBSBufferUtil(WMConnectionBase):
     def getCompletedWorkflows(self):
         """
         _getCompletedWorkflows_
-
+        get list of the workflows which are completed.
+        completed here is not request manager completed status.
+        It indicates all the tasks belongs to this workflow within the agent are completed
         """
         wfCompletedDAO = self.daoFactory(classname = "GetCompletedWorkflows")
         result = wfCompletedDAO.execute(transaction = False)
@@ -208,34 +210,33 @@ class DBSBufferUtil(WMConnectionBase):
     def getPhEDExDBSStatusForCompletedWorkflows(self, summary=False):
         
         """
-        _gettPhEDxDBSStatuForCompletedWorkflows_
-
+        _getPhEDxDBSStatuForCompletedWorkflows_
+        Check the PhEDEx and DBS upload status for the completed workflow
         """
         wfCompletedStatusDAO = self.daoFactory(classname = "CheckStatusForCompletedWorkflows")
         result = wfCompletedStatusDAO.execute(transaction = False)
         if summary:
             result = self.summaryPhEDExDBSStatus(result)
-            
+
         return result
 
     def summaryPhEDExDBSStatus(self, data):
         """
+        data contains only workflows with completed (in agent not in reqmgr) status
+        returns dictionary with kew as workflow and containing dbs/phedex upload status
         """
         summary = defaultdict(dict)
         for workflow, value in data.iteritems():
             # only getting completed workflows
             summary[workflow]["Completed"] = True
-            
-            if value["NotInPhEDEx"] == 0 and value["InPhEDEx"] > 0:
+
+            if value["NotInPhEDEx"] == 0 and value["InPhEDEx"] >= 0:
                 summary[workflow]["PhEDExInjected"] = True
             else:
                 summary[workflow]["PhEDExInjected"] = False
-            
-            if value["NotInDBS"] == 0 and value["InDBS"] > 0:
+
+            if value["NotInDBS"] == 0 and value["InDBS"] >= 0:
                 summary[workflow]["DBSUploaded"] = True
             else:
                 summary[workflow]["DBSUploaded"] = False
         return summary
-                
-            
-        

@@ -131,9 +131,9 @@ class AlcaHarvest(Executor):
 
                 # add fake output file to job report
                 stepReport.addOutputFile(self.step.condition.outLabel,
-                                         file = { 'lfn' : targetLFN,
+                                         aFile= {'lfn' : targetLFN,
                                                   'pfn' : targetPFN,
-                                                  'module_label' : self.step.condition.outLabel })
+                                                  'module_label' : self.step.condition.outLabel})
 
             if len(files2copy) == 0:
 
@@ -144,9 +144,9 @@ class AlcaHarvest(Executor):
                 # add fake placeholder output file to job report
                 logging.info("==> no sqlite files from AlcaHarvest job, creating placeholder file record")
                 stepReport.addOutputFile(self.step.condition.outLabel,
-                                         file = { 'lfn' : "/no/output",
+                                         aFile= {'lfn' : "/no/output",
                                                   'pfn' : "/no/output",
-                                                  'module_label' : self.step.condition.outLabel })
+                                                  'module_label' : self.step.condition.outLabel})
 
             # Am DONE with report
             # Persist it

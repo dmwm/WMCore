@@ -188,11 +188,9 @@ class LumiBasedTest(unittest.TestCase):
         # The first job should have three lumis from one run
         # The second three lumis from two different runs
         self.assertEqual(jobs[0]['mask'].getRunAndLumis(), {0: [[0, 2]]})
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
-
-
-        # And it should still be the same when you load it out of the database
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
 
         # Assert that this works differently with file splitting on and run splitting on
         testSubscription = self.createSubscription(nFiles = 5, lumisPerFile = 5, twoSites = False)
@@ -227,12 +225,12 @@ class LumiBasedTest(unittest.TestCase):
         for runObj in files[0]['runs']:
             if runObj.run != 0:
                 continue
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         for runObj in files[1]['runs']:
             if runObj.run != 1:
                 continue
             runObj.run = 0
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         files[1]['locations'] = set(['blenheim'])
 
         jobFactory = splitter(package = "WMCore.DataStructs",
@@ -286,7 +284,7 @@ class LumiBasedTest(unittest.TestCase):
         for runObj in files[0]['runs']:
             if runObj.run != 0:
                 continue
-            runObj.lumis.append(42)
+            runObj.appendLumi(42)
         for runObj in files[1]['runs']:
             runObj.run = 0
             runObj.lumis = [42]

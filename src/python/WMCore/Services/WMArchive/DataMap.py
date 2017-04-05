@@ -125,7 +125,18 @@ def combineDataset(dataset):
     return dataset
 
 def changeRunStruct(runDict):
-    return [{"runNumber": int(run), "lumis": lumis}  for run, lumis in runDict.items()]
+    runList = []
+    for run, lumis in runDict.iteritems():
+        singleRun = {"runNumber": int(run)}
+        if isinstance(lumis, dict):
+            # In this case, lumis is a dictionary with lumi numbers as the key, event counts as the value
+            singleRun.update({'lumis': [int(lumi) for lumi in lumis.keys()],
+                              'eventsPerLumi': lumis.values()})
+        elif isinstance(lumis, list):
+            singleRun.update({'lumis': lumis})
+        runList.append(singleRun)
+
+    return runList
 
 def _changeToFloat(value):
     if value in ["-nan", "nan", "inf", ""]:
@@ -324,8 +335,7 @@ def createFileArray(fwjr, fArray, fArrayRef):
                             fArray[fileType].add(fileName)
                     else: # this should be string
                         fArray[fileType].add(value)
-            else:
-                createFileArray(value, fArray, fArrayRef)
+            createFileArray(value, fArray, fArrayRef)
     elif isinstance(fwjr, list):
         for item in fwjr:
             createFileArray(item, fArray, fArrayRef)
@@ -346,8 +356,7 @@ def changeToFileRef(fwjr, fArray, fArrayRef):
                     else: # this should be string
                         newRef = fArray[fileType].index(value)
                     fwjr[key] = newRef
-            else:
-                changeToFileRef(value, fArray, fArrayRef)
+            changeToFileRef(value, fArray, fArrayRef)
     elif isinstance(fwjr, list):
         for item in fwjr:
             changeToFileRef(item, fArray, fArrayRef)

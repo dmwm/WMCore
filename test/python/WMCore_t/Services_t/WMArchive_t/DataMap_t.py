@@ -52,8 +52,7 @@ SAMPLE_FWJR = {'fallbackFiles': [],
                                                              'prep_id': 'None',
                                                              'processingStr': 'RECOCOSD_TaskChain_Data_pile_up_test',
                                                              'processingVer': 1,
-                                                             'runs': {'160960': [164,
-                                                                                 165]},
+                                                             'runs': {'160960': {'164': 100, '165': 150}},
                                                              'size': 647376,
                                                              'user_dn': None,
                                                              'user_vogroup': 'DEFAULT',
@@ -185,6 +184,8 @@ class DataMap_t(unittest.TestCase):
             if step['name'] == 'cmsRun1':
                 runInfo = step['output'][0]['runs'][0]
         self.assertEqual((run[str(runInfo['runNumber'])]), runInfo['lumis'])
+        # Make sure the first file events per lumis is carried through
+        self.assertEqual(runInfo['eventsPerLumi'], [100, 150])
         fwjrSamples = ["ErrorCodeFail.json",
                        "FailedByAgent.json",
                        "HarvestSuccessFwjr.json",

@@ -7,6 +7,7 @@ import time
 import subprocess
 import logging
 
+import WMCore
 from WMCore.Agent.Daemon.Details import Details
 from WMCore.Database.CMSCouch import CouchServer
 from WMCore.DAOFactory import DAOFactory
@@ -443,6 +444,7 @@ def isDrainMode(config):
 def initAgentInfo(config):
     agentInfo = {}
     agentInfo['agent_team'] = config.Agent.teamName
+    agentInfo['agent_version'] = WMCore.__version__
     agentInfo['agent'] = config.Agent.agentName
     # temporarly add port for the split test
     agentInfo['agent_url'] = "%s" % config.Agent.hostName

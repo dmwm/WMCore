@@ -32,8 +32,9 @@ WMStats.namespace("AgentDetailList");
         htmlstr += "<div class='" + msgType + " agent_detail_box'>";
         htmlstr += "<ul>";
         if (agentInfo) {
-            htmlstr += "<li><b>agent:</b> " + agentInfo.agent_url + "</li>";
-            htmlstr += "<li><b>agent last updated:</b> " + WMStats.Utils.utcClock(new Date(agentInfo.timestamp * 1000)) +" : " + 
+            agentVersion = '  (' + agentInfo.agent_version + ')'
+            htmlstr += "<li><b>agent:</b> " + agentInfo.agent_url + agentVersion + "</li>";
+            htmlstr += "<li><b>agent last updated:</b> " + WMStats.Utils.utcClock(new Date(agentInfo.timestamp * 1000)) +" : " +
                               agentInfo.alert.agent_update  + "</li>";
             htmlstr += "<li><b>data last updated:</b> " + agentInfo.alert.data_update  + "</li>";
             htmlstr += "<li><b>status:</b> " + agentInfo.alert.message + "</li>";

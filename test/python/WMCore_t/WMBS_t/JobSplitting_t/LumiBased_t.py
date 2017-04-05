@@ -240,7 +240,9 @@ class LumiBasedTest(unittest.TestCase):
         self.assertEqual(jobs[0]['estimatedJobTime'], 60 * 12)
         self.assertEqual(jobs[0]['estimatedDiskUsage'], 60 * 400)
         self.assertEqual(jobs[0]['estimatedMemoryUsage'], 2300)
-        self.assertEqual(jobs[1]['mask'].getRunAndLumis(), {0: [[3, 4]], 1: [[100, 100]]})
+        job1runLumi = jobs[1]['mask'].getRunAndLumis()
+        self.assertEqual(job1runLumi[0][0][0] + 1, job1runLumi[0][0][1])  # Run 0, startLumi+1 == endLumi
+        self.assertEqual(job1runLumi[1][0][0], job1runLumi[1][0][1])  # Run 1, startLumi == endLumi
         self.assertEqual(jobs[1]['estimatedJobTime'], 60 * 12)
         self.assertEqual(jobs[1]['estimatedDiskUsage'], 60 * 400)
         self.assertEqual(jobs[1]['estimatedMemoryUsage'], 2300)

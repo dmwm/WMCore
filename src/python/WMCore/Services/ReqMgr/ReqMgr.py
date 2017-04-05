@@ -211,6 +211,6 @@ class ReqMgr(Service):
         # imports here to avoid the dependency not using this function
         from WMCore.Cache.GenericDataCache import MemoryCacheStruct
 
-        maskStates = ["aborted", "force-complete"]
+        maskStates = ["aborted", "aborted-completed", "force-complete"]
         return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, initCacheValue=[],
                                  kwargs={'statusList': maskStates, "detail": False})

@@ -4,8 +4,10 @@ _DBSBufferUtil_
 
 APIs related to using the DBSBuffer.
 """
+from __future__ import print_function
 
 import threading
+from collections import defaultdict
 
 from WMCore.DAOFactory import DAOFactory
 from WMComponent.DBS3Buffer.DBSBufferFile import DBSBufferFile
@@ -202,3 +204,38 @@ class DBSBufferUtil(WMConnectionBase):
         result = wfCompletedDAO.execute(transaction = False)
 
         return result
+    
+    def getPhEDExDBSStatusForCompletedWorkflows(self, summary=False):
+        
+        """
+        _gettPhEDxDBSStatuForCompletedWorkflows_
+
+        """
+        wfCompletedStatusDAO = self.daoFactory(classname = "CheckStatusForCompletedWorkflows")
+        result = wfCompletedStatusDAO.execute(transaction = False)
+        if summary:
+            result = self.summaryPhEDExDBSStatus(result)
+            
+        return result
+
+    def summaryPhEDExDBSStatus(self, data):
+        """
+        """
+        summary = defaultdict(dict)
+        for workflow, value in data.iteritems():
+            # only getting completed workflows
+            summary[workflow]["Completed"] = True
+            
+            if value["NotInPhEDEx"] == 0 and value["InPhEDEx"] > 0:
+                summary[workflow]["PhEDExInjected"] = True
+            else:
+                summary[workflow]["PhEDExInjected"] = False
+            
+            if value["NotInDBS"] == 0 and value["InDBS"] > 0:
+                summary[workflow]["DBSUploaded"] = True
+            else:
+                summary[workflow]["DBSUploaded"] = False
+        return summary
+                
+            
+        

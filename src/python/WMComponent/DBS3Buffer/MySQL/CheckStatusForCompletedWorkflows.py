@@ -3,7 +3,7 @@ from WMCore.Database.DBFormatter import DBFormatter
 
 class CheckStatusForCompletedWorkflows(DBFormatter):
     """
-    _CheckStatusForCompletedWorkflow_
+    _CheckStatusForCompletedWorkflows_
 
     Retrieve information about the workflow which checks the status of PhEDEx and DBS injection.
     There is case task is completed but no file is associated to it. (EmptyBlock flag) 
@@ -26,6 +26,7 @@ class CheckStatusForCompletedWorkflows(DBFormatter):
             resultByWorkflow[workflow].setdefault("InPhEDEx", 0)
             resultByWorkflow[workflow].setdefault("NotInPhEDEx", 0)
             resultByWorkflow[workflow].setdefault("EmptyTasks", 0)
+            resultByWorkflow[workflow].setdefault("NoNeedToUpload", 0)
 
             count = info["count"]
 

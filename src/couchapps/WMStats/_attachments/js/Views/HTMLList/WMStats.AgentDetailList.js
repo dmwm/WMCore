@@ -58,6 +58,23 @@ WMStats.namespace("AgentDetailList");
             htmlstr += "<li><b>proxy warning:</b> " + agentInfo.proxy_warning + "</li>";
            };
 
+        if (agentInfo.drain_stats) {
+            htmlstr += "<li><b>drain statistics:</b></li><ul>";
+            htmlstr += "<li>workflows completed (" + agentInfo.drain_stats.workflows_completed + ")</li>";
+            if (agentInfo.drain_stats.workflows_completed) {
+                htmlstr += "<li>condor running (" + agentInfo.drain_stats.condor_status.condor_running + ")</li>";
+                htmlstr += "<li>condor idle (" + agentInfo.drain_stats.condor_status.condor_idle + ")</li>";
+                htmlstr += "<li>dbs open blocks (" + agentInfo.drain_stats.upload_status.dbs_open_blocks + ")</li>";
+                htmlstr += "<li>dbs not uploaded (" + agentInfo.drain_stats.upload_status.dbs_notuploaded + ")</li>";
+                htmlstr += "<li>phedex not uploaded (" + agentInfo.drain_stats.upload_status.phedex_notuploaded + ")</li>";
+                for (var key in agentInfo.WMBS_INFO.wmbsCountByState) {
+                    htmlstr += "<li>jobs in '" + key + "' state (" + agentInfo.WMBS_INFO.wmbsCountByState[key] + ")</li>";
+                }
+            }
+            htmlstr += "</ul>"
+        }
+
+
         var dataError = agentInfo.data_error;
         if (dataError && dataError !== 'ok') {
             htmlstr += "<li><b>data collect error:</b> ";

@@ -14,6 +14,7 @@ import logging
 import time
 import traceback
 import json
+from Utils.Utilities import timeit
 from WMCore.Credential.Proxy import Proxy
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
@@ -22,6 +23,9 @@ from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
      convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
      diskUse, numberCouchProcess
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
+
 
 class AgentStatusPoller(BaseWorkerThread):
     """
@@ -43,6 +47,9 @@ class AgentStatusPoller(BaseWorkerThread):
         proxyArgs = {'logger': logging.getLogger()}
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
+
+        localWQUrl = config.AnalyticsDataCollector.localQueueURL
+        self.workqueueDS = WorkQueueDS(localWQUrl)
 
     def setUpCouchDBReplication(self):
 
@@ -103,10 +110,17 @@ class AgentStatusPoller(BaseWorkerThread):
         try:
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
-            #set the uploadTime - should be the same for all docs
-            wmbsInfo = self.collectWMBSInfo()
-            logging.info("finished collecting agent/wmbs info")
+
+            timeSpent, wmbsInfo, _ = self.collectWMBSInfo()
+            wmbsInfo['total_query_time'] = int(timeSpent)
             agentInfo["WMBS_INFO"] = wmbsInfo
+            logging.info("WMBS data collected in: %d secs", timeSpent)
+
+            timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
+            localWQInfo['total_query_time'] = int(timeSpent)
+            agentInfo["LocalWQ_INFO"] = localWQInfo
+            logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
+
             uploadTime = int(time.time())
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
 
@@ -119,6 +133,23 @@ class AgentStatusPoller(BaseWorkerThread):
             logging.error(str(ex))
             logging.error("Trace back: \n%s" % traceback.format_exc())
 
+    @timeit
+    def collectWorkQueueInfo(self):
+        """
+        Collect information from local workqueue database
+        :return:
+        """
+        results = {}
+
+        results['workByStatus'] = self.workqueueDS.getJobsByStatus()
+        results['workByStatusAndPriority'] = self.workqueueDS.getJobsByStatusAndPriority()
+
+        elements = self.workqueueDS.getElementsByStatus(['Available', 'Acquired'])
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, dataLocality=True)
+        results['uniqueJobsPerSite'] = uniSites
+        results['possibleJobsPerSite'] = posSites
+
+        return results
 
     def collectCouchDBInfo(self):
 
@@ -209,6 +240,7 @@ class AgentStatusPoller(BaseWorkerThread):
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
         self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
 
+    @timeit
     def collectWMBSInfo(self):
         """
         Fetches WMBS job information.
@@ -218,7 +250,6 @@ class AgentStatusPoller(BaseWorkerThread):
         logging.info("Getting wmbs job info ...")
         results = {}
 
-        start = int(time.time())
         # first retrieve the site thresholds
         results['thresholds'] = self.wmagentDB.getJobSlotInfo()
         logging.debug("Running and pending site thresholds: %s", results['thresholds'])
@@ -226,9 +257,6 @@ class AgentStatusPoller(BaseWorkerThread):
         # now fetch the amount of jobs in each state and the amount of created
         # jobs grouped by task
         results.update(self.wmagentDB.getAgentMonitoring())
-        end = int(time.time())
-        #adding total query time
-        results["total_query_time"] = end - start
 
         logging.debug("Total number of jobs in WMBS sorted by status: %s", results['wmbsCountByState'])
         logging.debug("Total number of 'created' jobs in WMBS sorted by type: %s", results['wmbsCreatedTypeCount'])

@@ -594,10 +594,11 @@ class ReqMgrService(TemplatedPage):
         if 'status' not in kwds:
             kwds.update({'status': 'acquired'})
         dataResult = self.reqmgr.getRequestByStatus(kwds['status'])
+        attrs = ['RequestName', 'RequestDate', 'Group', 'Requestor', 'RequestStatus', 'Campaign']
         docs = []
         for data in dataResult:
             for doc in data.values():
-                docs.append(request_attr(doc))
+                docs.append(request_attr(doc, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
         filter_sort = self.templatepage('filter_sort')

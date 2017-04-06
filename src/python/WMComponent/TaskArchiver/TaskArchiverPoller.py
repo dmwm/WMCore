@@ -186,6 +186,15 @@ class TaskArchiverPoller(BaseWorkerThread):
                 finishedwfsWithLogCollectAndCleanUp[wf] = finishedwfs[wf]
         return (finishedwfs, finishedwfsWithLogCollectAndCleanUp)
         
+    def killCondorJobsByWFStatus(self, statusList):
+        if isinstance(statusList, basestring):
+            statusList = [statusList]
+        reqNames = self.centralCouchDBWriter.getRequestByStatus(statusList)
+        logging.info("There are %d requests in 'aborted' status in central couch.", len(reqNames))
+        for wf in reqNames:
+            self.workQueue.killWMBSWorkflow(wf)
+        return reqNames
+
     def completeTasks(self, finishedwfs):
         """
         _completeTasks_
@@ -208,8 +217,8 @@ class TaskArchiverPoller(BaseWorkerThread):
         
         centralCouchAlive = True
         try:
-            abortedWorkflows = self.centralCouchDBWriter.getRequestByStatus(["aborted"])
-            logging.info("There are %d requests in 'aborted' status in central couch.", len(abortedWorkflows))
+            abortedWorkflows = self.killCondorJobsByWFStatus(["aborted"])
+            self.killCondorJobsByWFStatus(["force-complete"])
                         
         except Exception as ex:
             centralCouchAlive = False

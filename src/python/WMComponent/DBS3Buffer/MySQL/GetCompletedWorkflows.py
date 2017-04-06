@@ -10,15 +10,17 @@ class GetCompletedWorkflows(DBFormatter):
     """
     _GetCompletedWorkflows_
     """
-    sql = """SELECT distinct(name) FROM dbsbuffer_workflow
-               WHERE completed = 1"""
+    sql = """SELECT name, count(name), sum(completed)
+                FROM dbsbuffer_workflow
+                GROUP BY name"""
 
-    def execute(self, conn = None, transaction = False):
+    def execute(self, conn=None, transaction=False):
         """
         """
         result = self.dbi.processData(self.sql, conn = conn,
                                           transaction = transaction)
         workflowList = []
         for row in self.format(result):
-            workflowList.append(row[0])
+            if row[1] == row[2]:
+                workflowList.append(row[0])
         return workflowList

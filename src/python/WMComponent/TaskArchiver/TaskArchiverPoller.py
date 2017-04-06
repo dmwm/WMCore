@@ -217,8 +217,8 @@ class TaskArchiverPoller(BaseWorkerThread):
 
         centralCouchAlive = True
         try:
-            abortedWorkflows = self.killCondorJobsByWFStatus("aborted")
-            self.killCondorJobsByWFStatus("force-complete")
+            abortedWorkflows = self.killCondorJobsByWFStatus(["aborted"])
+            self.killCondorJobsByWFStatus(["force-complete"])
         except Exception as ex:
             centralCouchAlive = False
             logging.error("we will try again when remote couch server comes back\n%s", str(ex))

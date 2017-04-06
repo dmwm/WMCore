@@ -6,8 +6,8 @@ class CheckStatusForCompletedWorkflows(DBFormatter):
     _CheckStatusForCompletedWorkflows_
 
     Retrieve information about the workflow which checks the status of PhEDEx and DBS injection.
-    There is case task is completed but no file is associated to it. (EmptyBlock flag) 
-    Not sure how that happens
+    There is case task is completed but no file is associated to it.(EmptyBlock flag)
+    Not sure how that happens - It could be all failed case, or task is not related to producing files
     """
     sql = """SELECT dw.name, df.in_phedex, df.status, count(*) as count
                 FROM dbsbuffer_workflow dw  
@@ -25,7 +25,6 @@ class CheckStatusForCompletedWorkflows(DBFormatter):
             resultByWorkflow[workflow].setdefault("NotInDBS", 0)
             resultByWorkflow[workflow].setdefault("InPhEDEx", 0)
             resultByWorkflow[workflow].setdefault("NotInPhEDEx", 0)
-            resultByWorkflow[workflow].setdefault("EmptyTasks", 0)
             resultByWorkflow[workflow].setdefault("NoNeedToUpload", 0)
 
             count = info["count"]
@@ -40,9 +39,10 @@ class CheckStatusForCompletedWorkflows(DBFormatter):
                     resultByWorkflow[workflow]["InPhEDEx"] += count
                 elif info['in_phedex'] == 0:
                     resultByWorkflow[workflow]["NotInPhEDEx"] += count
-                elif info['in_phedex'] is None:
-                    resultByWorkflow[workflow]["EmptyTasks"] += count
             else:
+                # This contains the case
+                # info['status'] == GLOBAL - which means all the files are input files which already in DBS
+                # info['status'] is None -- which means there is no associate file for the task. Maybe all are failed
                 resultByWorkflow[workflow]["NoNeedToUpload"] += count
 
         return resultByWorkflow

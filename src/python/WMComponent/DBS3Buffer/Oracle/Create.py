@@ -117,7 +117,8 @@ class Create(DBCreator):
             """CREATE TABLE dbsbuffer_file_runlumi_map (
                  filename  INTEGER NOT NULL,
                  run       INTEGER NOT NULL,
-                 lumi      INTEGER NOT NULL
+                 lumi      INTEGER NOT NULL,
+                 num_events    INTEGER
                )"""
 
         self.create[len(self.create)] = \

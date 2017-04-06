@@ -137,7 +137,8 @@ class Create(CreateWMBSBase):
             """CREATE TABLE wmbs_file_runlumi_map (
                  fileid INTEGER NOT NULL,
                  run    INTEGER NOT NULL,
-                 lumi   INTEGER NOT NULL
+                 lumi   INTEGER NOT NULL,
+                 num_events INTEGER
                  ) %s""" % tablespaceTable
 
         self.constraints["01_fk_wmbs_file_runlumi_map"] = \

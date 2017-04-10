@@ -95,4 +95,4 @@ class TagCollector(Service):
             for item in row['project']:
                 releases.add(item['label'])
             arch_dict[row['name']].extend(list(releases))
-        return arch_dict
+        return dict(arch_dict)

@@ -11,9 +11,10 @@ from WMCore.Configuration import Configuration
 from WMCore.REST.Server import RESTApi
 
 from WMCore.ReqMgr.ReqMgrCouch import ReqMgrCouch
-from WMCore.ReqMgr.Service.Auxiliary import Info, ReqMgrConfigData, Software
-from WMCore.ReqMgr.Service.RequestAdditionalInfo import RequestSpec, \
-    WorkloadConfig, WorkloadSplitting
+from WMCore.ReqMgr.Service.Auxiliary import (Info, ReqMgrConfigData,
+                                CMSSWVersions, WMAgentConfig, PermissionsConig)
+from WMCore.ReqMgr.Service.RequestAdditionalInfo import (RequestSpec,
+    WorkloadConfig, WorkloadSplitting)
 from WMCore.ReqMgr.Service.Request import Request, RequestStatus, RequestType
 from WMCore.ReqMgr.Service.WMStatsInfo import WMStatsInfo
 
@@ -50,7 +51,9 @@ class RestApiHub(RESTApi):
                    "info": Info(app, IndividualCouchManager(config), config, mount),
                    "app_config": ReqMgrConfigData(app, IndividualCouchManager(config), config, mount),
                    "request": Request(app, IndividualCouchManager(config), config, mount),
-                   "software": Software(app, IndividualCouchManager(config), config, mount),
+                   "cmsswversions": CMSSWVersions(app, IndividualCouchManager(config), config, mount),
+                   "wmagentconfig": WMAgentConfig(app, IndividualCouchManager(config), config, mount),
+                   "permissions": PermissionsConig(app, IndividualCouchManager(config), config, mount),
                    "status": RequestStatus(app, IndividualCouchManager(config), config, mount),
                    "type": RequestType(app, IndividualCouchManager(config), config, mount),
                    "spec_template": RequestSpec(IndividualCouchManager(config), app, config, mount),

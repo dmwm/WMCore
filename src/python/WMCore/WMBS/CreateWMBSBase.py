@@ -99,6 +99,7 @@ class CreateWMBSBase(DBCreator):
                fileid  INTEGER NOT NULL,
                run     INTEGER NOT NULL,
                lumi    INTEGER NOT NULL,
+               num_events  INTEGER,
                FOREIGN KEY (fileid) references wmbs_file_details(id)
                  ON DELETE CASCADE)"""
 

@@ -58,12 +58,15 @@ class ResubmitBlock(StartPolicyInterface):
         self.sites = makeLocationsList(siteWhitelist, siteBlacklist)
 
         for block in self.validBlocks(self.initialTask):
+            parentList = {}
+            parentFlag = False
             if self.initialTask.parentProcessingFlag():
                 parentFlag = True
-            else:
-                parentFlag = False
+                parentList[block["Name"]] = block['Sites']
+
             self.newQueueElement(Inputs={block['Name']: block['Sites']},
                                  ParentFlag=parentFlag,
+                                 ParentData=parentList,
                                  NumberOfLumis=block[self.lumiType],
                                  NumberOfFiles=block['NumberOfFiles'],
                                  NumberOfEvents=block['NumberOfEvents'],
@@ -163,4 +166,5 @@ class ResubmitBlock(StartPolicyInterface):
         dbsBlock['ACDC'] = acdcInfo
         if dbsBlock['NumberOfFiles']:
             result.append(dbsBlock)
+
         return result

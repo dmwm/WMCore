@@ -158,22 +158,36 @@ class PhEDExInjectorPoller(BaseWorkerThread):
         PhEDEx.
         """
         logging.info("Running PhEDEx injector poller algorithm...")
-
         self.pollCounter += 1
 
-        if self.blocksToRecover:
-            logging.info("""PhEDExInjector Recovery:
-                            previous injection call failed,
-                            checking if files were injected to PhEDEx anyway""")
-            self.recoverInjectedFiles()
+        try:
+            if self.blocksToRecover:
+                logging.info("""PhEDExInjector Recovery:
+                                previous injection call failed,
+                                checking if files were injected to PhEDEx anyway""")
+                self.recoverInjectedFiles()
 
-        self.injectFiles()
-        self.closeBlocks()
+            self.injectFiles()
+            self.closeBlocks()
 
-        if self.pollCounter == self.subFrequency:
-            self.pollCounter = 0
-            self.deleteBlocks()
-            self.subscribeDatasets()
+            if self.pollCounter == self.subFrequency:
+                self.pollCounter = 0
+                self.deleteBlocks()
+                self.subscribeDatasets()
+        except HTTPException as ex:
+            if hasattr(ex, "status") and ex.status == 503:
+                # then service is unavailable
+                msg = "Caught HTTPException in PhEDExInjector. Retrying in the next cycle.\n"
+                msg += str(ex)
+                logging.error(msg)
+            else:
+                msg = "Caught unexpected HTTPException in PhEDExInjector.\n%s" % str(ex)
+                logging.exception(msg)
+                raise
+        except Exception as ex:
+            msg = "Caught unexpected exception in PhEDExInjector. Details:\n%s" % str(ex)
+            logging.exception(msg)
+            raise PhEDExInjectorException(msg)
 
         return
 

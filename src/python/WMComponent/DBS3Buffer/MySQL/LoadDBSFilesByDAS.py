@@ -60,7 +60,7 @@ class LoadDBSFilesByDAS(DBFormatter):
                            WHERE fcs.fileid = :fileid"""
 
 
-    getRunLumiSQL = """SELECT flr.run AS run, flr.lumi AS lumi, dbsbuffer_file.id AS id
+    getRunLumiSQL = """SELECT flr.run AS run, flr.lumi AS lumi, flr.num_events AS num_events, dbsbuffer_file.id AS id
                           FROM dbsbuffer_file_runlumi_map flr
                           INNER JOIN dbsbuffer_file ON dbsbuffer_file.id = flr.filename
                           WHERE dbsbuffer_file.id = :fileid"""
@@ -181,8 +181,7 @@ class LoadDBSFilesByDAS(DBFormatter):
                 interimDictionary[entry['id']] = {}
             if entry['run'] not in interimDictionary[entry['id']].keys():
                 interimDictionary[entry['id']][entry['run']] = []
-            interimDictionary[entry['id']][entry['run']].append(entry['lumi'])
-
+            interimDictionary[entry['id']][entry['run']].append((entry['lumi'], entry["num_events"]))
 
         finalList = []
         for entry in interimDictionary.keys():

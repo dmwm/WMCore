@@ -147,7 +147,7 @@ class DBSBufferUtil(WMConnectionBase):
                 # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
                     run = Run(runNumber = r)
-                    run.extend(dbsfile['runInfo'][r])
+                    run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
             if 'parentLFNs' in dbsfile.keys():
@@ -182,7 +182,7 @@ class DBSBufferUtil(WMConnectionBase):
                 # Then we have to replace it with a real run
                 for r in dbsfile['runInfo'].keys():
                     run = Run(runNumber = r)
-                    run.extend(dbsfile['runInfo'][r])
+                    run.extendLumis(dbsfile['runInfo'][r])
                     dbsfile.addRun(run)
                 del dbsfile['runInfo']
             if 'parentLFNs' in dbsfile.keys():

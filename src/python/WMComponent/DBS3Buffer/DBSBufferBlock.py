@@ -141,7 +141,11 @@ class DBSBufferBlock:
         lumiList = []
         for run in dbsFile.getRuns():
             for lumi in run.lumis:
-                lumiList.append({'lumi_section_num': lumi, 'run_num': run.run})
+                dbsLumiDict = {'lumi_section_num': lumi, 'run_num': run.run}
+                if run.getEventsByLumi(lumi) is not None:
+                    # if events is not None update event for dbs upload
+                    dbsLumiDict['event_count'] = run.getEventsByLumi(lumi)
+                lumiList.append(dbsLumiDict)
         fileDict['file_lumi_list'] = lumiList
 
         # Append to the files list
@@ -461,6 +465,7 @@ class DBSBufferBlock:
     def convertToDBSBlock(self):
         """
         convert to DBSBlock structure to upload to dbs
+        TODO: check file lumi event and validate event is not null
         """
         block = {}
 

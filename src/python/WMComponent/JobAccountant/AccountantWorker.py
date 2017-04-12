@@ -369,12 +369,7 @@ class AccountantWorker(WMConnectionBase):
         #TODO need to find where to get the prep id
         dbsFile.setPrepID(prep_id = jobReportFile.get('prep_id', None))
         dbsFile['task'] = task
-
-        for run in jobReportFile["runs"]:
-            newRun = Run(runNumber = run.run)
-            newRun.extend(run.lumis)
-            dbsFile.addRun(newRun)
-
+        dbsFile['runs'] = jobReportFile['runs']
 
         dbsFile.setLocation(pnn = list(jobReportFile["locations"])[0], immediateSave = False)
         self.dbsFilesToCreate.append(dbsFile)

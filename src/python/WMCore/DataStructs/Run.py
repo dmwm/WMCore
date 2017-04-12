@@ -176,6 +176,12 @@ class Run(WMObject):
         else:  # Just given lumis, not events
             if lumi not in self.eventsPerLumi:  # Don't overwrite existing events
                 self.eventsPerLumi[lumi] = None
+    
+    def getEventsByLumi(self, lumi):
+        """
+        getter to select event counts by given lumi
+        """
+        return self.eventsPerLumi.get(lumi)
 
     def json(self):
         """

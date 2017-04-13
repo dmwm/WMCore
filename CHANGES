@@ -1,3 +1,38 @@
+1.1.2 to 1.1.2.crab1:
+  - 1.1.3.pre1
+  - Merge pull request #7774 from ticoann/add_comments
+  - 7763
+  - fixes what Alan suggested
+  - Merge pull request #7773 from amaltaro/proxy-warning
+  - Merge pull request #7772 from ericvaandering/pylint_worst4
+  - Publish agent version in wmstats
+  - Fix WMStats couchapps to show proxy warnings
+  - Merge pull request #7771 from ericvaandering/fix_lumi_unit
+  - Fetch proxy validity in AgentStatusPoller and send this info to wmstats
+  - Let PyCharm fix our worst 4 files
+  - Fix the unit test broken by #7728
+  - Merge pull request #7769 from ticoann/fix_drain_dao
+  - fix completed status DAO
+  - Merge pull request #7757 from goughes/unittest_dbs_phedex_check
+  - Merge pull request #7748 from ericvaandering/wmarchive_evt_per_lumi
+  - Merge pull request #7728 from ericvaandering/read_new_fwjr
+  - Merge pull request #7763 from ticoann/aborted-kill
+  - Merge pull request #7726 from bbockelm/fix_reqs
+  - Merge pull request #7766 from amaltaro/xrdcp-syntaxerror
+  - Update unit tests
+  - Fix a shell syntax error in the xrdcp/xrdfs command
+  - fix killing the jobs when race condition happens
+  - Remove duplicate logic.
+  - Add DBSBufferUtil unittest
+  - add DAO and method to check DBS and PhEDEx complete status
+  - Remove for-else
+  - Generate WMArchive report with new key eventsPerLumi
+  - Pylint for report_t
+  - Fill FWJR with event count data Change python version of report to have dict instead of list Update tests to check report format for event counts
+  - Turn eventsPerLumi into a dict to store event counts Fix JSON representation Fix some unit tests that relied on lumi ordering
+  - Add property to Run, no change to internal structure Add methods for extending/appending to lumis since it can't quite written to as a list
+  - Pylint for Report.py, Run.py, and XMLParser.py
+
 1.1.2 to 1.1.3.pre1:
   - Merge pull request #7774 from ticoann/add_comments
   - 7763

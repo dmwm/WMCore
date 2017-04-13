@@ -119,15 +119,15 @@ echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ======
 
 
 echo "======== WMAgent Python boostrap starting at $(TZ=GMT date) ========"
-if [ -e "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+if [ -e "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh ]
 then
-    . "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
-elif [ -e "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+    . "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh
+elif [ -e "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh ]
 then
-    . "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
-elif [ -e "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+    . "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh
+elif [ -e "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh ]
 then
-    . "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
+    . "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh
 else
     echo "WMAgent bootstrap: Error: OSG_APP, VO_CMS_SW_DIR, CVMFS, /cvmfs/cms.cern.ch environment does not contain init.sh" >&2
     echo "WMAgent bootstrap: Error: Because of this, we can't load CMSSW. Not good." >&2

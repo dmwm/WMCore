@@ -7,27 +7,29 @@ Perform general agent monitoring, like:
 """
 __all__ = []
 
-
-
 import threading
 import logging
 import time
-import traceback
 import json
+from Utils.Utilities import timeit
 from WMCore.Credential.Proxy import Proxy
 from WMCore.Lexicon import sanitizeURL
 from WMCore.WorkerThreads.BaseWorkerThread import BaseWorkerThread
 from WMCore.Database.CMSCouch import CouchMonitor
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
 from WMComponent.AnalyticsDataCollector.DataCollectAPI import WMAgentDBData, \
-     convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
-     diskUse, numberCouchProcess
+    convertToAgentCouchDoc, isDrainMode, initAgentInfo, DataUploadTime, \
+    diskUse, numberCouchProcess
+from WMCore.Services.WorkQueue.WorkQueue import WorkQueue as WorkQueueDS
+from WMCore.WorkQueue.DataStructs.WorkQueueElementsSummary import getGlobalSiteStatusSummary
+
 
 class AgentStatusPoller(BaseWorkerThread):
     """
     Gether the summary data for request (workflow) from local queue,
     local job couchdb, wmbs/boss air and populate summary db for monitoring
     """
+
     def __init__(self, config):
         """
         initialize properties specified from config
@@ -44,6 +46,9 @@ class AgentStatusPoller(BaseWorkerThread):
         self.proxy = Proxy(proxyArgs)
         self.proxyFile = self.proxy.getProxyFilename()  # X509_USER_PROXY
 
+        localWQUrl = config.AnalyticsDataCollector.localQueueURL
+        self.workqueueDS = WorkQueueDS(localWQUrl)
+
     def setUpCouchDBReplication(self):
 
         self.replicatorDocs = []
@@ -52,18 +57,18 @@ class AgentStatusPoller(BaseWorkerThread):
         wmstatsTarget = self.config.AnalyticsDataCollector.centralWMStatsURL
 
         self.replicatorDocs.append({'source': wmstatsSource, 'target': wmstatsTarget,
-                                    'filter':  "WMStatsAgent/repfilter"})
-        #TODO: tier0 specific code - need to make it generic
+                                    'filter': "WMStatsAgent/repfilter"})
+        # TODO: tier0 specific code - need to make it generic
         if hasattr(self.config, "Tier0Feeder"):
             t0Source = self.config.Tier0Feeder.requestDBName
             t0Target = self.config.AnalyticsDataCollector.centralRequestDBURL
             self.replicatorDocs.append({'source': t0Source, 'target': t0Target,
                                         'filter': "T0Request/repfilter"})
-        else: # set up workqueue replication
+        else:  # set up workqueue replication
             wqfilter = 'WorkQueue/queueFilter'
             parentQURL = self.config.WorkQueueManager.queueParams["ParentQueueCouchUrl"]
             childURL = self.config.WorkQueueManager.queueParams["QueueURL"]
-            query_params = {'childUrl' : childURL, 'parentUrl' : sanitizeURL(parentQURL)['url']}
+            query_params = {'childUrl': childURL, 'parentUrl': sanitizeURL(parentQURL)['url']}
             localQInboxURL = "%s_inbox" % self.config.AnalyticsDataCollector.localQueueURL
             self.replicatorDocs.append({'source': sanitizeURL(parentQURL)['url'], 'target': localQInboxURL,
                                         'filter': wqfilter, 'query_params': query_params})
@@ -75,9 +80,9 @@ class AgentStatusPoller(BaseWorkerThread):
 
         for rp in self.replicatorDocs:
             self.localCouchMonitor.couchServer.replicate(
-                                           rp['source'], rp['target'], filter = rp['filter'],
-                                           query_params = rp.get('query_params', False),
-                                           continuous = True)
+                rp['source'], rp['target'], filter=rp['filter'],
+                query_params=rp.get('query_params', False),
+                continuous=True)
         # First cicle need to be skipped since document is not updated that fast
         self.skipReplicationCheck = True
 
@@ -103,22 +108,44 @@ class AgentStatusPoller(BaseWorkerThread):
         try:
             agentInfo = self.collectAgentInfo()
             self.checkProxyLifetime(agentInfo)
-            #set the uploadTime - should be the same for all docs
-            wmbsInfo = self.collectWMBSInfo()
-            logging.info("finished collecting agent/wmbs info")
+
+            timeSpent, wmbsInfo, _ = self.collectWMBSInfo()
+            wmbsInfo['total_query_time'] = int(timeSpent)
             agentInfo["WMBS_INFO"] = wmbsInfo
+            logging.info("WMBS data collected in: %d secs", timeSpent)
+
+            timeSpent, localWQInfo, _ = self.collectWorkQueueInfo()
+            localWQInfo['total_query_time'] = int(timeSpent)
+            agentInfo["LocalWQ_INFO"] = localWQInfo
+            logging.info("Local WorkQueue data collected in: %d secs", timeSpent)
+
             uploadTime = int(time.time())
             self.uploadAgentInfoToCentralWMStats(agentInfo, uploadTime)
 
-            #save locally json file as well
+            # save locally json file as well
             with open(self.jsonFile, 'w') as outFile:
                 json.dump(agentInfo, outFile, indent=2)
 
         except Exception as ex:
-            logging.error("Error occurred, will retry later:")
-            logging.error(str(ex))
-            logging.error("Trace back: \n%s" % traceback.format_exc())
+            logging.exception("Error occurred, will retry later.\nDetails: %s", str(ex))
 
+    @timeit
+    def collectWorkQueueInfo(self):
+        """
+        Collect information from local workqueue database
+        :return:
+        """
+        results = {}
+
+        results['workByStatus'] = self.workqueueDS.getJobsByStatus()
+        results['workByStatusAndPriority'] = self.workqueueDS.getJobsByStatusAndPriority()
+
+        elements = self.workqueueDS.getElementsByStatus(['Available', 'Acquired'])
+        uniSites, posSites = getGlobalSiteStatusSummary(elements, dataLocality=True)
+        results['uniqueJobsPerSite'] = uniSites
+        results['possibleJobsPerSite'] = posSites
+
+        return results
 
     def collectCouchDBInfo(self):
 
@@ -131,7 +158,7 @@ class AgentStatusPoller(BaseWorkerThread):
 
         for rp in self.replicatorDocs:
             cInfo = self.localCouchMonitor.checkCouchServerStatus(rp['source'],
-                                                        rp['target'], checkUpdateSeq = False)
+                                                                  rp['target'], checkUpdateSeq=False)
             if cInfo['status'] != 'ok':
                 couchInfo['status'] = 'error'
                 couchInfo['error_message'] = cInfo['error_message']
@@ -164,7 +191,6 @@ class AgentStatusPoller(BaseWorkerThread):
             agentInfo['down_components'].append(couchInfo['name'])
             agentInfo['status'] = couchInfo['status']
             agentInfo['down_component_detail'].append(couchInfo)
-
 
         # Disk space warning
         diskUseList = diskUse()
@@ -200,15 +226,16 @@ class AgentStatusPoller(BaseWorkerThread):
                 agentInfo['status'] = "error"
 
         if agentInfo['down_components']:
-            logging.info("List of agent components down: %s" % agentInfo['down_components'])
+            logging.info("List of agent components down: %s", agentInfo['down_components'])
 
         return agentInfo
 
     def uploadAgentInfoToCentralWMStats(self, agentInfo, uploadTime):
-        #direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
+        # direct data upload to the remote to prevent data conflict when agent is cleaned up and redeployed
         agentDocs = convertToAgentCouchDoc(agentInfo, self.config.ACDC, uploadTime)
         self.centralWMStatsCouchDB.updateAgentInfo(agentDocs)
 
+    @timeit
     def collectWMBSInfo(self):
         """
         Fetches WMBS job information.
@@ -218,7 +245,6 @@ class AgentStatusPoller(BaseWorkerThread):
         logging.info("Getting wmbs job info ...")
         results = {}
 
-        start = int(time.time())
         # first retrieve the site thresholds
         results['thresholds'] = self.wmagentDB.getJobSlotInfo()
         logging.debug("Running and pending site thresholds: %s", results['thresholds'])
@@ -226,16 +252,14 @@ class AgentStatusPoller(BaseWorkerThread):
         # now fetch the amount of jobs in each state and the amount of created
         # jobs grouped by task
         results.update(self.wmagentDB.getAgentMonitoring())
-        end = int(time.time())
-        #adding total query time
-        results["total_query_time"] = end - start
 
         logging.debug("Total number of jobs in WMBS sorted by status: %s", results['wmbsCountByState'])
         logging.debug("Total number of 'created' jobs in WMBS sorted by type: %s", results['wmbsCreatedTypeCount'])
         logging.debug("Total number of 'executing' jobs in WMBS sorted by type: %s", results['wmbsExecutingTypeCount'])
 
         logging.debug("Total number of active jobs in BossAir sorted by status: %s", results['activeRunJobByStatus'])
-        logging.debug("Total number of complete jobs in BossAir sorted by status: %s", results['completeRunJobByStatus'])
+        logging.debug("Total number of complete jobs in BossAir sorted by status: %s",
+                      results['completeRunJobByStatus'])
 
         logging.debug("Available slots thresholds to pull work from GQ to LQ: %s", results['thresholdsGQ2LQ'])
         logging.debug("List of jobs pending for each site, sorted by priority: %s", results['sitePendCountByPrio'])

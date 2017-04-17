@@ -252,7 +252,7 @@ class DataCollectionService(CouchService):
                            locations=set(fileInfo["locations"]), merged=fileInfo["merged"])
             for run in fileInfo["runs"]:
                 newRun = Run(run["run_number"])
-                newRun.extend(run["lumis"])
+                newRun.extendLumis(run["lumis"])
                 newFile.addRun(newRun)
 
             chunkFiles.append(newFile)

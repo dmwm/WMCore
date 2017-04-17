@@ -53,7 +53,7 @@ class LoadForErrorHandler(DBFormatter):
                      INNER JOIN wmbs_file_details parent ON parent.id = wfp.parent
                      WHERE wfp.child = :fileid """
 
-    runLumiSQL = """SELECT fileid, run, lumi FROM wmbs_file_runlumi_map
+    runLumiSQL = """SELECT fileid, run, lumi, num_events FROM wmbs_file_runlumi_map
                      WHERE fileid = :fileid"""
 
 
@@ -136,11 +136,9 @@ class LoadForErrorHandler(DBFormatter):
                     for l in lumiDict[f['id']]:
                         run  = l['run']
                         lumi = l['lumi']
-                        try:
-                            fileRuns[run].append(lumi)
-                        except KeyError:
-                            fileRuns[run] = []
-                            fileRuns[run].append(lumi)
+                        numEvents = l['num_events']
+                        fileRuns.setdefault(run, [])
+                        fileRuns[run].append((lumi, numEvents))
 
                 for r in fileRuns.keys():
                     newRun = Run(runNumber = r)

@@ -22,7 +22,6 @@
     "SizePerEvent": 512,
     "InputDataset": "/Cosmics/Commissioning2015-PromptReco-v1/RECO",
     "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
-    "inputMode": "couchDB",
     "OpenRunningTimeout" : 28800
 },
 "assignRequest":

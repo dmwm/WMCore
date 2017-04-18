@@ -26,7 +26,6 @@
         "CouchDBName": "reqmgr_config_cache", 
         "DQMUploadUrl": "https://cmsweb-testbed.cern.ch/dqm/dev", 
         "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader/", 
-        "FilterEfficiency": "1.0", 
         "GlobalTag": "MCRUN2_71_V1::All",
         "Group": "DATAOPS",
         "IncludeParents": false, 

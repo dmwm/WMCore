@@ -129,7 +129,7 @@ class FileBasedTest(unittest.TestCase):
         """
         testFileset = Fileset(name = "TestFilesetX")
         testFileset.create()
-        for i in range(5000):
+        for _ in range(5000):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
@@ -217,8 +217,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 2)
             self.assertEqual(job["estimatedJobTime"], 12 * 100 * 2)
@@ -247,8 +247,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             assert len(job.getFiles()) in [3, 1], "ERROR: Job contains incorrect number of files"
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
             if len(job.getFiles()) == 3:
                 self.assertEqual(job["estimatedMemoryUsage"], 2300)
                 self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 3)
@@ -479,8 +479,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
         self.assertEqual(len(fileList), 10)
 
         for j in jobGroups[0].jobs:
@@ -503,7 +503,7 @@ class FileBasedTest(unittest.TestCase):
 
         a = self.crazyAssFunction(jobFactory=jobFactory, file_load_limit=2)
 
-        for x in range(7):
+        for _ in range(7):
             try:
                 res = next(a)
                 jobGroups.extend(res)

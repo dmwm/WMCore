@@ -10,6 +10,7 @@ Created on Jun 13, 2013
 """
 import json
 import logging
+import re
 
 from Utils.Utilities import makeList, strToBool
 from WMCore.DataStructs.LumiList import LumiList
@@ -111,9 +112,6 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
         if not optional and arg not in arguments:
             msg = "Validation failed: %s parameter is mandatory. Definition: %s" % (arg, argDef)
             raise WMSpecFactoryException(msg)
-        # TODO this need to be done earlier then this function
-        # elif optionKey == "optional" and not argumentDefinition[argument].get("assign_optional", True):
-        #    del arguments[argument]
         # specific case when user GUI returns empty string for optional arguments
         elif arg not in arguments:
             continue
@@ -124,39 +122,73 @@ def _validateArgumentOptions(arguments, argumentDefinition, optionKey=None):
     return
 
 
-def _validateInputDataset(arguments):
-    inputdataset = arguments.get("InputDataset", None)
-    dbsURL = arguments.get("DbsUrl", None)
-    if inputdataset != None and dbsURL != None:
-        # import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client
+def validateInputDatasSetAndParentFlag(arguments):
+    """
+    Check if the InputDataset value provided corresponds to an actual dataset in DBS.
+    If parent flag is provided, then check whether the input dataset has a parent.
+    the InputDataset existence in DBS and its parent, if needed.
+    """
+    inputdataset = _getChainKey(arguments, "InputDataset")
+    mcpileup = _getChainKey(arguments, "MCPileup")
+    datapileup = _getChainKey(arguments, "DataPileup")
+    includeParents = strToBool(arguments.get("IncludeParents", False))
+    dbsURL = arguments.get("DbsUrl")
+
+    if includeParents and not inputdataset:
+        msg = "IncludeParents flag is True but InputDataset value has not been provided"
+        raise WMSpecFactoryException(msg)
+
+    if dbsURL and inputdataset or mcpileup or datapileup:
+        # import DBS3Reader here, since Runtime code import this module and worker
+        # node doesn't have dbs3 client
         from WMCore.Services.DBS.DBS3Reader import DBS3Reader
         from WMCore.Services.DBS.DBSErrors import DBSReaderError
+        dbsInst = DBS3Reader(dbsURL)
+
         try:
-            DBS3Reader(dbsURL).checkDatasetPath(inputdataset)
+            _datasetExists(dbsInst, inputdataset)
+            _datasetExists(dbsInst, mcpileup)
+            _datasetExists(dbsInst, datapileup)
         except DBSReaderError as ex:
             # we need to Wrap the exception to WMSpecFactoryException to be caught in reqmgr validation
             raise WMSpecFactoryException(str(ex))
-    return
 
-
-def validateInputDatasSetAndParentFlag(arguments):
-    inputdataset = arguments.get("InputDataset", None)
-    if strToBool(arguments.get("IncludeParents", False)):
-        if inputdataset is None:
-            msg = "IncludeParent flag is True but there is no inputdataset"
-            raise WMSpecFactoryException(msg)
-        else:
-            dbsURL = arguments.get("DbsUrl", None)
-            if dbsURL != None:
-                # import DBS3Reader here, since Runtime code import this module and worker node doesn't have dbs3 client
-                from WMCore.Services.DBS.DBS3Reader import DBS3Reader
-                result = DBS3Reader(dbsURL).listDatasetParents(inputdataset)
+        if includeParents:
+            try:
+                result = dbsInst.listDatasetParents(inputdataset)
                 if len(result) == 0:
-                    msg = "IncludeParent flag is True but inputdataset %s doesn't have parents" % (inputdataset)
-                    raise WMSpecFactoryException(msg)
-    else:
-        _validateInputDataset(arguments)
+                    msg = "IncludeParents flag is True but the input dataset %s has no parents" % inputdataset
+                    raise DBSReaderError(msg)
+            except DBSReaderError as ex:
+                raise WMSpecFactoryException(str(ex))
+
     return
+
+
+def _datasetExists(dbsInst, inputData):
+    """
+    __datasetExists_
+
+    Check if dataset exists in DBS. Exception is raised in case it does not exist.
+    """
+    if inputData is None:
+        return
+    dbsInst.checkDatasetPath(inputData)
+    return
+
+
+def _getChainKey(arguments, keyName):
+    """
+    Given a request arguments dictionary and a key name, properly returns its
+    value regardless of the request type.
+    """
+    if "TaskChain" in arguments:
+        inputDataset = arguments['Task1'].get(keyName)
+    elif "StepChain" in arguments:
+        inputDataset = arguments['Step1'].get(keyName)
+    else:
+        inputDataset = arguments.get(keyName)
+    return inputDataset
 
 
 def validatePhEDExSubscription(arguments):
@@ -176,14 +208,22 @@ def validatePhEDExSubscription(arguments):
     if arguments.get("NonCustodialSubType", "Replica") not in ["Move", "Replica"]:
         raise WMSpecFactoryException("Invalid non custodial subscription type: %s" % arguments["NonCustodialSubType"])
 
-    if 'CustodialGroup' in arguments and not isinstance(arguments["CustodialGroup"], basestring):
-        raise WMSpecFactoryException("Invalid custodial PhEDEx group: %s" % arguments["CustodialGroup"])
-    if 'NonCustodialGroup' in arguments and not isinstance(arguments["NonCustodialGroup"], basestring):
-        raise WMSpecFactoryException("Invalid non custodial PhEDEx group: %s" % arguments["NonCustodialGroup"])
-    if 'DeleteFromSource' in arguments and not isinstance(arguments["DeleteFromSource"], bool):
-        raise WMSpecFactoryException("Invalid DeleteFromSource type, it must be boolean")
+    if arguments.get("CustodialSubType") == "Move":
+        _validateMoveSubscription("CustodialSubType", arguments.get('CustodialSites', []))
+    if arguments.get("NonCustodialSubType") == "Move":
+        _validateMoveSubscription("NonCustodialSubType", arguments.get('NonCustodialSites', []))
 
     return
+
+
+def _validateMoveSubscription(subType, sites):
+    """
+    Move subscriptions are only allowed to T0 or T1s, see #7760
+    """
+    invalidSites = [site for site in sites if re.match("^T[2-3]", site)]
+    if invalidSites:
+        msg = "Move subscription (%s) not allowed to T2/T3 sites: %s" % (subType, invalidSites)
+        raise WMSpecFactoryException(msg)
 
 
 def validateSiteLists(arguments):
@@ -201,28 +241,23 @@ def validateSiteLists(arguments):
     return
 
 
-def validateAutoGenArgument(arguments):
-    autoGenArgs = ["TotalInputEvents", "TotalInputFiles", "TotalInputLumis", "TotalEstimatedJobs"]
-    protectedArgs = set(autoGenArgs).intersection(set(arguments.keys()))
-
-    if len(protectedArgs) > 0:
-        raise WMSpecFactoryException("Shouldn't set auto generated params %s: remove it" % list(protectedArgs))
-    return
-
-
-def validateArgumentsCreate(arguments, argumentDefinition):
+def validateArgumentsCreate(arguments, argumentDefinition, checkInputDset=True):
     """
     _validateArguments_
 
     Validate a set of arguments - for spec creation - against their
     definition in StdBase.getWorkloadCreateArgs.
 
+    When validating Step/Task dictionary, checkInputDset should be usually
+    false since the input dataset validation already happened at top level.
+
     It returns an error message if the validation went wrong,
     otherwise returns None.
     """
     validateUnknownArgs(arguments, argumentDefinition)
     _validateArgumentOptions(arguments, argumentDefinition, "optional")
-    validateInputDatasSetAndParentFlag(arguments)
+    if checkInputDset:
+        validateInputDatasSetAndParentFlag(arguments)
     return
 
 
@@ -240,7 +275,6 @@ def validateArgumentsUpdate(arguments, argumentDefinition):
     _validateArgumentOptions(arguments, argumentDefinition, "assign_optional")
     validatePhEDExSubscription(arguments)
     validateSiteLists(arguments)
-    #validateAutoGenArgument(arguments)
 
     return
 
@@ -255,11 +289,11 @@ def validateUnknownArgs(arguments, argumentDefinition):
     unknownArgs = set(arguments) - set(argumentDefinition.keys())
     if unknownArgs:
         # now onto the exceptions...
-        if arguments.get("RequestType") == "ReReco":
+        if arguments.get("RequestType") in ["ReReco", "Resubmission"]:
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Skim")])
-        elif arguments.get("RequestType") == "StepChain":
+        elif arguments.get("RequestType") in ["StepChain", "Resubmission"]:
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Step")])
-        elif arguments.get("RequestType") == "TaskChain":
+        elif arguments.get("RequestType") in ["TaskChain", "Resubmission"]:
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Task")])
 
         if unknownArgs:

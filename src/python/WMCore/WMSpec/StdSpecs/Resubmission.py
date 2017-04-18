@@ -8,8 +8,10 @@ with limited input for error recovery.
 
 from Utils.Utilities import makeList
 from WMCore.Lexicon import couchurl, identifier, cmsname
-from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
+from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, validateArgumentsCreate
+
 
 class ResubmissionWorkloadFactory(DataProcessing):
     """
@@ -58,6 +60,7 @@ class ResubmissionWorkloadFactory(DataProcessing):
     def getWorkloadCreateArgs():
         baseArgs = DataProcessing.getWorkloadCreateArgs()
         specArgs = {"RequestType" : {"default" : "Resubmission"},
+                    "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
                     "InitialTaskPath" : {"default" : "/SomeRequest/Task1", "optional": False,
                                          "validate": lambda x: len(x.split('/')) > 2},
@@ -74,3 +77,24 @@ class ResubmissionWorkloadFactory(DataProcessing):
         DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs
 
+    def validateSchema(self, schema):
+        """
+        Since we skip the master validation for Resubmission specs, we better have
+        some specific validation
+        """
+        argumentDefinition = {}
+        if 'OriginalRequestType' in schema:
+            parentSpecClass = loadSpecClassByType(schema['OriginalRequestType'])
+            argumentDefinition = parentSpecClass.getWorkloadCreateArgs()
+
+        argumentDefinition.update(self.getWorkloadCreateArgs())
+        # RequestStatus has different validate function, at this point we must use
+        # the creation one. Thus just save it to update the final arg definition
+        createStatus = {'RequestStatus': dict(argumentDefinition['RequestStatus'])}
+        argumentDefinition.update(self.getWorkloadAssignArgs())
+        argumentDefinition.update(createStatus)
+
+        try:
+            validateArgumentsCreate(schema, argumentDefinition)
+        except Exception as ex:
+            self.raiseValidationException(str(ex))

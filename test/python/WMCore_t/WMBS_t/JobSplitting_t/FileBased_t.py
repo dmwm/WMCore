@@ -490,36 +490,18 @@ class FileBasedTest(unittest.TestCase):
 
         return
 
-
-
-    def testZ_randomCrapForGenerators(self):
+    def testRandomCrap1(self):
         """
-        Either this works, and all other tests are obsolete, or it doesn't and they aren't.
-        Either way, don't screw around with this.
+        First part of what used to be testRandomCrapForGenerators
         """
-
-        def runCode(self, jobFactory):
-
-            func = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 500)
-
-            goFlag    = True
-            while goFlag:
-                try:
-                    res = next(func)
-                    self.jobGroups.extend(res)
-                except StopIteration:
-                    goFlag = False
-
-            return jobGroups
-
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.multipleSiteSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.multipleSiteSubscription)
 
         jobFactory.open()
         jobGroups = []
 
-        a = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 2)
+        a = self.crazyAssFunction(jobFactory=jobFactory, file_load_limit=2)
 
         for x in range(7):
             try:
@@ -534,21 +516,38 @@ class FileBasedTest(unittest.TestCase):
         for group in jobGroups:
             self.assertTrue(len(group.jobs) in [1, 2])
             for job in group.jobs:
-                self.assertTrue(job["possiblePSN"] in [set(["T1_US_FNAL"]),
-                                                       set(['T2_CH_CERN', 'T1_US_FNAL'])])
-                self.assertTrue(len(job['input_files']) in (1,2))
+                self.assertTrue(job["possiblePSN"] in [{"T1_US_FNAL"}, {'T2_CH_CERN', 'T1_US_FNAL'}])
+                self.assertTrue(len(job['input_files']) in (1, 2))
+
+    def testRandomCrapForGenerators2(self):
+        """
+        Either this works, and all other tests are obsolete, or it doesn't and they aren't.
+        Either way, don't screw around with this.
+        """
+
+        def runCode(self, jobFactory):
+
+            func = self.crazyAssFunction(jobFactory=jobFactory, file_load_limit=500)
+
+            goFlag = True
+            while goFlag:
+                try:
+                    res = next(func)
+                    self.jobGroups.extend(res)
+                except StopIteration:
+                    goFlag = False
+
+            return self.jobGroups
 
         self.jobGroups = []
-
         subscript = self.createLargeFileBlock()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = subscript)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=subscript)
 
         jobFactory.open()
 
         runCode(self, jobFactory)
-        #cProfile.runctx("runCode(self, jobFactory)", globals(), locals(), "coroutine.stats")
 
         jobGroups = self.jobGroups
 
@@ -557,16 +556,16 @@ class FileBasedTest(unittest.TestCase):
             self.assertEqual(len(group.jobs), 500)
             self.assertTrue(group.exists() > 0)
 
-
         jobFactory.close()
         return
 
-    def crazyAssFunction(self, jobFactory, file_load_limit = 1):
+    def crazyAssFunction(self, jobFactory, file_load_limit=1):
         groups = ['test']
-        while groups != []:
-            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit,
-                                performance = self.performanceParams)
+        while groups:
+            groups = jobFactory(files_per_job=1, file_load_limit=file_load_limit,
+                                performance=self.performanceParams)
             yield groups
+
 
 if __name__ == '__main__':
     unittest.main()

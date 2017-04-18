@@ -11,7 +11,6 @@ from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
-
 class WorkQueueTest(EmulatedUnitTestCase):
     """
     Test WorkQueue Service client
@@ -58,7 +57,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
     def testWorkQueueService(self):
         # test getWork
         specName = "RerecoSpec"
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
+                                                      assignKwargs={'SiteWhitelist': ['T2_XX_SiteA']})
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
                               UnittestFlag=True)
@@ -89,7 +89,8 @@ class WorkQueueTest(EmulatedUnitTestCase):
         check the available workflows feature
         """
         specName = "RerecoSpec"
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file", SiteWhitelist=["T2_XX_SiteA"])
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
+                                                      assignKwargs={'SiteWhitelist':["T2_XX_SiteA"]})
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
                               UnittestFlag=True)
@@ -139,7 +140,9 @@ class WorkQueueTest(EmulatedUnitTestCase):
     def testCompletedWorkflow(self):
         # test getWork
         specName = "RerecoSpec"
-        specUrl = self.specGenerator.createReRecoSpec(specName, "file")
+        specUrl = self.specGenerator.createReRecoSpec(specName, "file",
+                                                      assignKwargs={'SiteWhitelist':['T2_XX_SiteA']})
+
         globalQ = globalQueue(DbName='workqueue_t',
                               QueueURL=self.testInit.couchUrl,
                               UnittestFlag=True)

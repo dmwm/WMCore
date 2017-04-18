@@ -14,8 +14,9 @@ from WMCore.DataStructs.Job import Job
 
 from WMCore.FwkJobReport.ReportEmu import ReportEmu
 from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
-class ReportEmuTest(unittest.TestCase):
+class ReportEmuTest(EmulatedUnitTestCase):
     """
     _ReportEmuTest_
 
@@ -26,6 +27,8 @@ class ReportEmuTest(unittest.TestCase):
 
         Setup some reasonable defaults for the ReReco workflow.
         """
+        super(ReportEmuTest, self).setUp()
+
         self.unmergedLFNBase = "/store/backfill/2/unmerged"
         self.mergedLFNBase = "/store/backfill/2"
         self.processingVersion = "v1"
@@ -36,6 +39,12 @@ class ReportEmuTest(unittest.TestCase):
         self.workload = WMSpecGenerator().createReRecoSpec("Tier1ReReco")
         print(self.workload.data)
         return
+
+    def tearDown(self):
+        """
+        _tearDown_
+        """
+        super(ReportEmuTest, self).tearDown()
 
     def verifyOutputMetaData(self, outputFile, job):
         """

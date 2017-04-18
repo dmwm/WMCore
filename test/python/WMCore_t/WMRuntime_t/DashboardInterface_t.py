@@ -10,7 +10,10 @@ import socket
 import os
 import os.path
 
+from nose.plugins.attrib import attr
 from WMQuality.TestInit import TestInit
+from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 
 from WMCore.DataStructs.Job  import Job
 from WMCore.DataStructs.File import File
@@ -19,11 +22,8 @@ from WMCore.FwkJobReport.Report     import Report
 from WMCore.WMRuntime.DashboardInterface import DashboardInfo, getUserProxyDN
 from WMCore.WMBase import getTestBase
 
-from WMQuality.Emulators.WMSpecGenerator.WMSpecGenerator import WMSpecGenerator
 
-from nose.plugins.attrib import attr
-
-class DashboardInterfaceTest(unittest.TestCase):
+class DashboardInterfaceTest(EmulatedUnitTestCase):
     """
     Test for the dashboard interface and its monitoring interaction
 
@@ -36,10 +36,10 @@ class DashboardInterfaceTest(unittest.TestCase):
         Basically, do nothing
 
         """
+        super(DashboardInterfaceTest, self).setUp()
 
         self.testInit = TestInit(__file__)
         self.testInit.setLogging()
-
 
         self.testDir = self.testInit.generateWorkDir()
 
@@ -51,8 +51,8 @@ class DashboardInterfaceTest(unittest.TestCase):
         Clean up the test directory
 
         """
-
         self.testInit.delWorkDir()
+        super(DashboardInterfaceTest, self).tearDown()
 
         return
 

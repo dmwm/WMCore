@@ -5,7 +5,7 @@ _DataProcessing_
 Base module for workflows with input.
 """
 from Utils.Utilities import makeList
-from WMCore.Lexicon import dataset, block
+from WMCore.Lexicon import dataset, block, primdataset
 from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
@@ -36,43 +36,30 @@ class DataProcessing(StdBase):
         return
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"InputDataset" : {"default" : "/MinimumBias/ComissioningHI-v1/RAW", "type" : str,
-                                      "optional" : False, "validate" : dataset,
-                                      "attr" : "inputDataset", "null" : False},
-                    "GlobalTag" : {"default" : "GT_DP_V1", "type" : str,
-                                   "optional" : False, "validate" : None,
-                                   "attr" : "globalTag", "null" : False},
-                    "OpenRunningTimeout" : {"default" : 0, "type" : int,
-                                            "optional" : True, "validate" : lambda x : x >= 0,
-                                            "attr" : "openRunningTimeout", "null" : False},
-                    "BlockBlacklist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockBlacklist", "null" : False},
-                    "BlockWhitelist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockWhitelist", "null" : False},
-                    "RunBlacklist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runBlacklist", "null" : False},
-                    "RunWhitelist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runWhitelist", "null" : False},
-                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "type" : str,
-                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                                       "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "procJobSplitAlgo", "null" : False},
-                    "EventsPerJob" : {"default" : None, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "eventsPerJob", "null" : True},
-                    "LumisPerJob" : {"default" : 8, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "attr" : "lumisPerJob", "null" : False},
-                    "FilesPerJob" : {"default" : 1, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "attr" : "filesPerJob", "null" : False}
-                    }
+    def getWorkloadCreateArgs():
+        baseArgs = StdBase.getWorkloadCreateArgs()
+        specArgs = {"InputDataset" : {"optional": False, "validate" : dataset, "null" : False},
+                    "Scenario" : {"optional": True, "null": True, "attr": "procScenario"},
+                    "PrimaryDataset": {"optional": True, "validate": primdataset,
+                                       "attr": "inputPrimaryDataset", "null": True},
+                    "RunBlacklist" : {"default" : [], "type" : makeList, "null" : False,
+                                      "validate" : lambda x: all([int(y) > 0 for y in x])},
+                    "RunWhitelist" : {"default" : [], "type" : makeList, "null" : False,
+                                      "validate" : lambda x: all([int(y) > 0 for y in x])},
+                    "BlockBlacklist": {"default": [], "type": makeList,
+                                       "validate": lambda x: all([block(y) for y in x])},
+                    "BlockWhitelist": {"default": [], "type": makeList,
+                                       "validate": lambda x: all([block(y) for y in x])},
+                    "SplittingAlgo" : {"default" : "EventAwareLumiBased", "null" : False,
+                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                    "EventAwareLumiBased", "FileBased"],
+                                       "attr" : "procJobSplitAlgo"},
+                    "EventsPerJob" : {"type" : int, "validate" : lambda x : x > 0, "null" : True},
+                    "LumisPerJob" : {"default" : 8, "type" : int, "null" : False,
+                                     "validate" : lambda x : x > 0},
+                    "FilesPerJob" : {"default" : 1, "type" : int, "null" : False,
+                                     "validate" : lambda x : x > 0}
+                   }
 
         baseArgs.update(specArgs)
         StdBase.setDefaultArgumentsProperty(baseArgs)

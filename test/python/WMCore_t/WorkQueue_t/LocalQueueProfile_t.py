@@ -54,7 +54,8 @@ class LocalWorkQueueProfileTest(WorkQueueTestCase):
         specs = []
         for i in range(numOfSpec):
             specName = "MinBiasProcessingSpec_Test_%s" % (i+1)
-            specs.append(self.specGenerator.createReRecoSpec(specName, kind))
+            specs.append(self.specGenerator.createReRecoSpec(specName, kind,
+                                                             assignKwargs={'SiteWhitelist': ['T2_XX_SiteA']}))
         return specs
 
     def createProfile(self, name, function):

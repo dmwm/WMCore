@@ -13,9 +13,11 @@ from json import JSONDecoder
 import WMCore.WMSpec.WMStep as WMStep
 import WMCore.WMSpec.WMTask as WMTask
 from WMCore.Database.CMSCouch import CouchServer, Document
-from WMCore.Services.DBS.DBSReader import DBSReader
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader
+from WMCore.Services.PhEDEx.PhEDEx import PhEDEx
 from WMCore.WMRuntime.SandboxCreator import SandboxCreator
 from WMCore.WMSpec.StdSpecs.MonteCarlo import MonteCarloWorkloadFactory
+from WMCore.WMSpec.WMWorkloadTools import parsePileupConfig
 from WMCore.WMSpec.Steps.Fetchers.PileupFetcher import PileupFetcher
 from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMQuality.TestInitCouchApp import TestInitCouchApp
@@ -76,10 +78,8 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         and compare values.
 
         """
-        args = {}
-        args["version"] = "DBS_2_0_9"
-        args["mode"] = "GET"
-        reader = DBSReader(dbsUrl, **args)
+        reader = DBS3Reader(dbsUrl)
+        phedex = PhEDEx()
 
         inputArgs = defaultArguments["PileupConfig"]
 
@@ -94,34 +94,32 @@ class PileupFetcherTest(EmulatedUnitTestCase):
         # pileup type and dataset and location (storage element names)
         # pileupDict is saved in the file and now comparing items of this
         # configuration with actual DBS results, the structure of pileupDict:
-        #    {"pileupTypeA": {"BlockA": {"FileList": [], "StorageElementNames": []},
-        #                     "BlockB": {"FileList": [], "StorageElementName": []}, ....}
+        #    {"pileupTypeA": {"BlockA": {"FileList": [], "PhEDExNodeNames": []},
+        #                     "BlockB": {"FileList": [], "PhEDExNodeNames": []}, ....}
         for pileupType, datasets in inputArgs.items():
             # this is from the pileup configuration produced by PileupFetcher
             blockDict = pileupDict[pileupType]
 
             for dataset in datasets:
                 dbsFileBlocks = reader.listFileBlocks(dataset=dataset)
+                blocksLocation = phedex.getReplicaPhEDExNodesForBlocks(dataset=dataset, complete='y')
                 for dbsFileBlockName in dbsFileBlocks:
-                    fileList = []  # list of files in the block (dbsFile["LogicalFileName"])
-                    storageElemNames = set()  # list of StorageElementName
-                    # each DBS block has a list under 'StorageElementList', iterate over
-                    storageElements = reader.listFileBlockLocation(dbsFileBlockName)
-                    for storElem in storageElements:
-                        storageElemNames.add(storElem)
+                    fileList = []
+                    pnns = set()
+                    for pnn in blocksLocation[dbsFileBlockName]:
+                        pnns.add(pnn)
                     # now get list of files in the block
                     dbsFiles = reader.listFilesInBlock(dbsFileBlockName)
                     for dbsFile in dbsFiles:
                         fileList.append(dbsFile["LogicalFileName"])
                     # now compare the sets:
-                    m = ("StorageElementNames don't agree for pileup type '%s', "
+                    m = ("PNNs don't agree for pileup type '%s', "
                          "dataset '%s' in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    self.assertEqual(set(blockDict[dbsFileBlockName]["StorageElementNames"]), storageElemNames, m)
+                    self.assertEqual(set(blockDict[dbsFileBlockName]["PhEDExNodeNames"]), pnns, m)
                     m = ("FileList don't agree for pileup type '%s', dataset '%s' "
                          " in configuration: '%s'" % (pileupType, dataset, pileupDict))
-                    print(fileList)
-                    print(blockDict[dbsFileBlockName]["FileList"])
-                    self.assertEqual(sorted(blockDict[dbsFileBlockName]["FileList"]), sorted(fileList))
+                    storedFileList = [item['logical_file_name'] for item in blockDict[dbsFileBlockName]["FileList"]]
+                    self.assertItemsEqual(storedFileList, fileList, m)
 
     def _queryPileUpConfigFile(self, defaultArguments, task, taskPath):
         """
@@ -150,16 +148,17 @@ class PileupFetcherTest(EmulatedUnitTestCase):
 
     def testPileupFetcherOnMC(self):
         pileupMcArgs = MonteCarloWorkloadFactory.getTestArguments()
-        pileupMcArgs["PileupConfig"] = {"cosmics": [
-            "/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"],
-                                        "minbias": [
-                                            "/Mu/PenguinsPenguinsEverywhere-SingleMu-HorriblyJaundicedYellowEyedPenginsSearchingForCarrots-v31/RECO"]}
+        pileupMcArgs["MCPileup"] = "/Cosmics/ComissioningHI-PromptReco-v1/RECO"
+        pileupMcArgs["DataPileup"] = "/HighPileUp/Run2011A-v1/RAW"
         pileupMcArgs["CouchURL"] = os.environ["COUCHURL"]
         pileupMcArgs["CouchDBName"] = "pileupfetcher_t"
         pileupMcArgs["ConfigCacheID"] = self.injectGenerationConfig()
 
         factory = MonteCarloWorkloadFactory()
         testWorkload = factory.factoryWorkloadConstruction("TestWorkload", pileupMcArgs)
+
+        # now that the workload was created and args validated, we can add this PileupConfig
+        pileupMcArgs["PileupConfig"] = parsePileupConfig(pileupMcArgs["MCPileup"], pileupMcArgs["DataPileup"])
 
         # Since this is test of the fetcher - The loading from WMBS isn't
         # really necessary because the fetching happens before the workflow

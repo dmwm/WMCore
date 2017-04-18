@@ -71,9 +71,9 @@ function(doc, req) {
                 key == "SiteWhitelist" ||
                 key == "SiteBlacklist" ||
                 key == "BlockWhitelist" ||
-                key == "SoftwareVersions" ||
+                key == "CMSSWVersion" ||
                 key == "InputDatasetTypes" ||
-                key == "InputDatasets" ||
+                key == "InputDataset" ||
                 key == "OutputDatasets" ||
                 key == "CustodialSites" ||
                 key == "NonCustodialSites" ||

@@ -488,7 +488,6 @@ class ReqMgrClient(RESTClient):
         fields = """RequestStatus
             RequestSizeFiles
             AcquisitionEra
-            SoftwareVersions
             TimePerEvent
             CMSSWVersion
             Campaign
@@ -498,7 +497,6 @@ class ReqMgrClient(RESTClient):
             CouchWorkloadDBName
             GlobalTag
             Group
-            InputDatasets
             Memory
             ProcessingVersion
             RequestDate

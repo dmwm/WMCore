@@ -96,9 +96,10 @@ class ResubmitBlockTest(EmulatedUnitTestCase):
         Tier1ReRecoWorkload = factory.factoryWorkloadConstruction(self.workflowName, rerecoArgs)
         Tier1ReRecoWorkload.truncate('ACDC_%s' % self.workflowName, '/%s/DataProcessing' % self.workflowName, self.couchUrl, self.acdcDBName)
         Tier1ReRecoWorkload.setJobSplittingParameters('/ACDC_%s/DataProcessing' % self.workflowName, splittingAlgo, splittingArgs)
+        Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         if setLocationFlag:
             Tier1ReRecoWorkload.setTrustLocationFlag(setLocationFlag)
-            Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
+#            Tier1ReRecoWorkload.setSiteWhitelist(self.siteWhitelist)
         return Tier1ReRecoWorkload
 
     def getMergeACDCSpec(self, splittingAlgo='ParentlessMergeBySize', splittingArgs=None):

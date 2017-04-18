@@ -12,9 +12,7 @@ class RequestDBWriter(RequestDBReader):
                                          "SiteWhitelist",
                                          "SiteBlacklist",
                                          "BlockWhitelist",
-                                         "SoftwareVersions",
                                          "InputDatasetTypes",
-                                         "InputDatasets",
                                          "OutputDatasets",
                                          "Teams"]
 

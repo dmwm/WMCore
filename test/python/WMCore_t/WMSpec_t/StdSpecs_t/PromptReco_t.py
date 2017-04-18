@@ -410,7 +410,7 @@ class PromptRecoTest(unittest.TestCase):
         """
         self.setupPromptSkimConfigObject()
         testArguments = PromptRecoWorkloadFactory.getTestArguments()
-        testArguments["PromptSkims"] = [self.promptSkim]
+        #testArguments["PromptSkims"] = [self.promptSkim]
         testArguments["CouchURL"] = os.environ["COUCHURL"]
         testArguments["CouchDBName"] = "promptreco_t"
         testArguments["EnvPath"] = os.environ.get("EnvPath", None)

@@ -19,16 +19,17 @@ from __future__ import print_function, division
 import time
 import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.Lexicon import identifier
 
+# TODO: I wish we can, one day, remove this stuff and have a decent resubmission handling... :)
 ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
-    ["_id", "_rev", "Requestor", "ReqMgr2Only", "RequestTransition", "RequestStatus",
-     "RequestorDN", "MaxRSS", "MaxVSize", "IgnoredOutputModules", "TrustSitelists",
-     "TrustPUSitelists", "HardTimeout", "GracePeriod", "SoftTimeout", "MaxWaitTime", "Team",
-     "Teams", "SiteWhitelist", "SiteBlacklist", "EnableNewStageout", "DeleteFromSource",
-     "OutputDatasets", "Dashboard", "SoftwareVersions", "VoRole", "DN", "TotalEstimatedJobs",
-     "TotalInputEvents", "TotalInputLumis", "TotalInputFiles"]
+    ['DN', 'Dashboard', 'DeleteFromSource', 'EnableNewStageout', 'GracePeriod',
+     'HardTimeout', 'IgnoredOutputModules', 'InitialPriority', 'MaxRSS', 'MaxVSize',
+     'MaxWaitTime', 'OutputDatasets', 'OutputModulesLFNBases', 'ReqMgr2Only',
+     'RequestStatus', 'RequestTransition', 'RequestWorkflow', 'Requestor', 'RequestorDN',
+     'SiteBlacklist', 'SiteWhitelist', 'SoftTimeout', 'SoftwareVersions', 'Team',
+     'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
+     'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
+
 
 def initialize_request_args(request, config, clone=False):
     """
@@ -54,51 +55,51 @@ def initialize_request_args(request, config, clone=False):
                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
 
-    if clone:
-        # if it is clone parameter should contain requestName
-        request["OriginalRequestName"] = request["RequestName"]
     # TODO: generate this automatically from the spec
     # generate request name using request
     generateRequestName(request)
 
-    if not clone:
+    if clone:
+        # if it is clone parameter should contain requestName
+        request["OriginalRequestName"] = request["RequestName"]
+        request["OriginalRequestType"] = request["RequestType"]
+    else:
         # update the information from config
         request["CouchURL"] = config.couch_host
         request["CouchWorkloadDBName"] = config.couch_reqmgr_db
         request["CouchDBName"] = config.couch_config_cache_db
 
-        request.setdefault("SoftwareVersions", [])
-        if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
-            request["SoftwareVersions"].append(request["CMSSWVersion"])
+        #request.setdefault("SoftwareVersions", [])
+        #if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
+        #    request["SoftwareVersions"].append(request["CMSSWVersion"])
 
         # TODO
         # do we need InputDataset and InputDatasets? when one is just a list
         # containing the other? ; could be related to #3743 problem
-        if "InputDataset" in request:
-            request["InputDatasets"] = [request["InputDataset"]]
+        #if "InputDataset" in request:
+        #    request["InputDatasets"] = [request["InputDataset"]]
 
-def initialize_resubmission(request_args, config, reqmgr_db_service):
-    request_args["OriginalRequestCouchURL"] = '%s/%s' % (config.couch_host,
-                                                         config.couch_reqmgr_db)
+
+def initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service):
+    """
+    Initialize a Resubmission request by inheriting the original/parent information
+    from couch, unless the user has overwritten that argument in the resubmission request.
+    """
     requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    resubmission_args = requests.values()[0]
-    for arg in resubmission_args:
-        if (arg not in request_args) and (arg not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST):
-            request_args[arg] = resubmission_args[arg]
-    return request_args
+    parent_args = requests.values()[0]
+    parent_args = {k: v for k, v in parent_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
+
+    for arg in parent_args:
+        if arg not in request_args and arg in acceptedArgs:
+            request_args[arg] = parent_args[arg]
+
 
 def generateRequestName(request):
     currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
     seconds = int(10000 * (time.time() % 1.0))
 
-    if "RequestString" not in request:
-        raise InvalidSpecParameterValue("RequestString need to be specified")
-
-    request["RequestName"] = "%s_%s" % (request["Requestor"], request["RequestString"])
-    # add time info
+    request["RequestName"] = "%s_%s" % (request["Requestor"], request.get("RequestString"))
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
-    # then validate the final request name
-    identifier(request["RequestName"])
 
 def protectedLFNs(requestInfo):
 

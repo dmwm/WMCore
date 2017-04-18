@@ -3,6 +3,10 @@
 MakeDBSMockFiles
 
 Program to create mock DBS JSON files used by the DBS mock-based emulator
+
+If there are either dataset or dbs calls removal, then you need to create
+new files from scratch (i.e., you need to delete the previous DBS json
+mocked data).
 """
 
 from __future__ import (division, print_function)
@@ -34,7 +38,7 @@ for endpoint, outFile, calls, datasets in INSTANCES:
         pass
 
     dbs = DBSReader(endpoint)
-    realDBS = dbs.wrapped.dbs
+    realDBS = dbs.dbs
 
     for dataset in datasets:
         print("Building call list for", dataset)
@@ -44,8 +48,7 @@ for endpoint, outFile, calls, datasets in INSTANCES:
         calls.append(['listBlocks', {'detail': False, 'dataset': dataset}])
         calls.append(['listBlocks', {'detail': True, 'dataset': dataset}])
         calls.append(['listFileSummaries', {'validFileOnly': 1, 'dataset': dataset}])
-        calls.append(['listFileArray',
-                      {'dataset': '/Cosmics/ComissioningHI-v1/RAW', 'detail': True, 'validFileOnly': 1}])
+        calls.append(['listFileArray', {'dataset': dataset, 'detail': True, 'validFileOnly': 1}])
         calls.append(['listRuns', {'dataset': unicode(dataset)}])
         blocks = realDBS.listBlocks(dataset=dataset)
         for block in blocks:
@@ -89,5 +92,6 @@ for endpoint, outFile, calls, datasets in INSTANCES:
 
         lookup.update({signature: result})
 
+    print("Writing out %s file" % outFilename)
     with open(outFilename, 'w') as mockData:
         json.dump(lookup, mockData, indent=1, separators=(',', ': '), sort_keys=True)

@@ -61,10 +61,13 @@ def monteCarloWorkload(workloadName, arguments):
     return wmspec
 
 
-def rerecoWorkload(workloadName, arguments):
+def rerecoWorkload(workloadName, arguments, assignArgs=None):
     factory = ReRecoWorkloadFactory()
     wmspec = factory.factoryWorkloadConstruction(workloadName, arguments)
-    # wmspec.setStartPolicy("DatasetBlock")
+    if assignArgs:
+        args = factory.getAssignTestArguments()
+        args.update(assignArgs)
+        wmspec.updateArguments(args)
     return wmspec
 
 
@@ -268,34 +271,26 @@ class WorkQueueTest(WorkQueueTestCase):
             addLocation = daofactory(classname="Locations.New")
             addLocation.execute(siteName=site, pnn=se)
 
-    def setupReReco(self, **kwargs):
+    def setupReReco(self, assignArgs=None, **kwargs):
         # Sample Tier1 ReReco spec
         self.rerecoArgs.update(kwargs)
-        processingSpec = rerecoWorkload('testProcessing', self.rerecoArgs)
+        processingSpec = rerecoWorkload('testProcessing', self.rerecoArgs, assignArgs=assignArgs)
         processingSpec.setSpecUrl(os.path.join(self.workDir, 'testProcessing.spec'))
         processingSpec.save(processingSpec.specUrl())
         return processingSpec
 
-    def setupParentProcSpec(self, **kwargs):
+    def setupParentProcSpec(self, assignArgs=None, **kwargs):
         # Sample Tier1 ReReco spec with parent
         self.parentProcArgs.update(kwargs)
-        parentProcSpec = rerecoWorkload('testParentProcessing', self.parentProcArgs)
+        parentProcSpec = rerecoWorkload('testParentProcessing', self.parentProcArgs, assignArgs=assignArgs)
         parentProcSpec.setSpecUrl(os.path.join(self.workDir, 'testParentProcessing.spec'))
         parentProcSpec.save(parentProcSpec.specUrl())
         return parentProcSpec
 
-    def setupBlacklistSpec(self, **kwargs):
-        # ReReco spec with blacklist
-        self.rerecoArgs.update(kwargs)
-        blacklistSpec = rerecoWorkload('blacklistSpec', self.rerecoArgs)
-        blacklistSpec.setSpecUrl(os.path.join(self.workDir, 'testBlacklist.spec'))
-        blacklistSpec.save(blacklistSpec.specUrl())
-        return blacklistSpec
-
-    def setupHighPrioReReco(self, **kwargs):
+    def setupHighPrioReReco(self, assignArgs=None, **kwargs):
         # High priority ReReco spec
         self.rerecoArgs.update(kwargs)
-        highPrioReReco = rerecoWorkload('highPrioSpec', self.rerecoArgs)
+        highPrioReReco = rerecoWorkload('highPrioSpec', self.rerecoArgs, assignArgs=assignArgs)
         highPrioReReco.data.request.priority = 100000000
         highPrioReReco.setSpecUrl(os.path.join(self.workDir, 'highPrioSpec.spec'))
         highPrioReReco.save(highPrioReReco.specUrl())
@@ -474,7 +469,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a processing WMSpec.
         """
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"]})
         specfile = processingSpec.specUrl()
 
         # Queue Work & check accepted
@@ -531,7 +526,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Black list functionality
         """
-        blacklistSpec = self.setupBlacklistSpec(SiteWhitelist=["T2_XX_SiteB"], SiteBlacklist=["T2_XX_SiteA"])
+        blacklistSpec = self.setupReReco(assignArgs={'SiteWhitelist':["T2_XX_SiteB"], 'SiteBlacklist': ["T2_XX_SiteA"]})
         specfile = blacklistSpec.specUrl()
 
         # Queue Work & check accepted
@@ -576,7 +571,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # check no work in local queue
         self.assertEqual(0, len(self.localQueue.getWork({'T2_XX_SiteA': 1000}, {})))
         # Add work to top most queue
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteD"]).specUrl())
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteD"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
         # check work isn't passed down to site without subscription
@@ -616,7 +612,8 @@ class WorkQueueTest(WorkQueueTestCase):
         self.assertEqual(0, len(self.localQueue.getWork({'T2_XX_SiteA': 1000}, {})))
 
         # Add work to top most queue
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteD"]).specUrl())
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteD"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
         self.globalQueue.processInboundWork()
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
 
@@ -750,8 +747,8 @@ class WorkQueueTest(WorkQueueTestCase):
         """Multiple teams"""
         slots = {'T2_XX_SiteA': 1000, 'T2_XX_SiteB': 1000}
         self.globalQueue.queueWork(self.spec.specUrl(), team='The B-Team')
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"]).specUrl(),
-                                   team='The C-Team')
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
+        self.globalQueue.queueWork(processingSpec.specUrl(), team='The C-Team')
         self.globalQueue.processInboundWork()
         self.globalQueue.updateLocationInfo()
 
@@ -767,7 +764,7 @@ class WorkQueueTest(WorkQueueTestCase):
         Check that we can split large inputs and store the processed inputs
         in the inbox element correctly.
         """
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
         self.globalQueue.queueWork(processingSpec.specUrl())
         inboxElement = self.globalQueue.backend.getInboxElements(elementIDs=[processingSpec.name()])
         self.assertEqual(len(inboxElement[0]['ProcessedInputs']), NBLOCKS_HICOMM)
@@ -785,7 +782,8 @@ class WorkQueueTest(WorkQueueTestCase):
         totalBlocks = totalSpec * NBLOCKS_HICOMM
         self.assertEqual(0, len(self.globalQueue))
         for _ in range(totalSpec):
-            self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"]).specUrl())
+            processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
+            self.globalQueue.queueWork(processingSpec.specUrl())
         self.globalQueue.processInboundWork()
         self.assertEqual(totalBlocks, len(self.globalQueue))
         # both blocks in global belong to same parent, but have different inputs
@@ -863,7 +861,8 @@ class WorkQueueTest(WorkQueueTestCase):
         # TODO: This test sometimes fails - i suspect a race condition (maybe conflict in couch)
         # Cancel code needs reworking so this will hopefully be fixed then
         totalBlocks = NBLOCKS_HICOMM
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"]).specUrl())
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
         self.globalQueue.updateLocationInfo()
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1000}),
                          totalBlocks)
@@ -928,7 +927,7 @@ class WorkQueueTest(WorkQueueTestCase):
     def testCancelWorkGlobal(self):
         """Cancel work in global queue"""
         # queue to global & pull an element to local
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"])
+        processingSpec = self.setupReReco(assignArgs= {'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
         self.globalQueue.queueWork(processingSpec.specUrl())
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 1)
         syncQueues(self.localQueue)
@@ -1195,7 +1194,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testThrottling(self):
         """Pull work only if all previous work processed in child"""
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
 
         self.globalQueue.queueWork(processingSpec.specUrl())
         self.assertEqual(NBLOCKS_HICOMM, len(self.globalQueue))
@@ -1224,7 +1223,7 @@ class WorkQueueTest(WorkQueueTestCase):
         """
         Enqueue and get work for a processing WMSpec.
         """
-        parentProcSpec = self.setupParentProcSpec(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"])
+        parentProcSpec = self.setupParentProcSpec(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
         specfile = parentProcSpec.specUrl()
 
         # Queue Work & check accepted
@@ -1265,7 +1264,8 @@ class WorkQueueTest(WorkQueueTestCase):
     def testWMBSInjectionStatus(self):
 
         self.globalQueue.queueWork(self.spec.specUrl())
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA"]).specUrl())
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
         # test globalqueue status (no parent queue case)
         self.assertEqual(self.globalQueue.getWMBSInjectionStatus(),
                          [{'testProcessing': False}, {'testProduction': False}])
@@ -1311,7 +1311,8 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testEndPolicyNegotiating(self):
         """Test end policy processing of request before splitting"""
-        work = self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA"]).specUrl())
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
+        work = self.globalQueue.queueWork(processingSpec.specUrl())
         self.assertEqual(work, NBLOCKS_HICOMM)
         self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 1)
         self.localQueue.backend.pullFromParent()  # pull work into inbox (Negotiating state)
@@ -1326,7 +1327,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testSiteStatus(self):
         """Check that we only pull work on sites in Normal status"""
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB"]})
         self.globalQueue.queueWork(processingSpec.specUrl())
         self.globalQueue.queueWork(self.spec.specUrl())
         # acquire 1 element of a wf and then mark site as draining.
@@ -1369,7 +1370,7 @@ class WorkQueueTest(WorkQueueTestCase):
         # FIXME: This does not work currently because we don't actually have 0 event blocks.
 
         Globals.GlobalParams.setNumOfEventsPerFile(0)
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
         processingSpec.setStartPolicy('Block', SliceType='NumberOfEvents')
         processingSpec.save(processingSpec.specUrl())
         self.globalQueue.queueWork(processingSpec.specUrl())
@@ -1395,7 +1396,7 @@ class WorkQueueTest(WorkQueueTestCase):
     def testProcessingWithContinuousSplitting(self):
         """Test the open request handling in the WorkQueue"""
         # Put normal work in
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"])
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA", "T2_XX_SiteB", "T2_XX_SiteC"]})
         specfile = processingSpec.specUrl()
 
         # Queue work with initial block count
@@ -1482,8 +1483,9 @@ class WorkQueueTest(WorkQueueTestCase):
         """Test how the priorities and current jobs in the queue affect the workqueue behavior
            for acquiring and injecting work"""
         # Queue a low prio workflow and a high prio workflow
-        highPrioReReco = self.setupHighPrioReReco(SiteWhitelist=["T2_XX_SiteA"])
-        self.globalQueue.queueWork(self.setupReReco(SiteWhitelist=["T2_XX_SiteA"]).specUrl())
+        highPrioReReco = self.setupHighPrioReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
+        processingSpec = self.setupReReco(assignArgs={'SiteWhitelist': ["T2_XX_SiteA"]})
+        self.globalQueue.queueWork(processingSpec.specUrl())
         self.globalQueue.queueWork(highPrioReReco.specUrl())
 
         # Pull all into local queue

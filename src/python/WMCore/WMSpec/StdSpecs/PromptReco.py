@@ -6,11 +6,11 @@ Standard PromptReco workflow.
 """
 
 from Utils.Utilities import makeList, strToBool
-from WMCore.Lexicon import dataset, couchurl, identifier, block, procstringT0
-from WMCore.WMSpec.StdSpecs.StdBase import StdBase
+from WMCore.Lexicon import procstringT0
+from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
 
 
-class PromptRecoWorkloadFactory(StdBase):
+class PromptRecoWorkloadFactory(DataProcessing):
     """
     _PromptRecoWorkloadFactory_
 
@@ -32,7 +32,6 @@ class PromptRecoWorkloadFactory(StdBase):
 
         workload = self.createWorkload()
         workload.setDashboardActivity("tier0")
-        self.reportWorkflowToDashboard(workload.getDashboardActivity())
         workload.setWorkQueueSplitPolicy("Block", self.procJobSplitAlgo,
                                          self.procJobSplitArgs)
 
@@ -98,7 +97,7 @@ class PromptRecoWorkloadFactory(StdBase):
                     self.addLogCollectTask(alcaTask, taskName = "AlcaSkimLogCollect")
                 self.addCleanupTask(recoTask, recoOutLabel)
 
-                for alcaOutLabel in alcaOutMods.keys():
+                for alcaOutLabel in alcaOutMods:
                     self.addMergeTask(alcaTask, self.procJobSplitAlgo, alcaOutLabel,
                                       doLogCollect = self.doLogCollect)
 
@@ -115,6 +114,7 @@ class PromptRecoWorkloadFactory(StdBase):
         # also pass runNumber (workload evaluates it)
         workload.setLFNBase(self.mergedLFNBase, self.unmergedLFNBase,
                             runNumber = self.runNumber)
+        self.reportWorkflowToDashboard(workload.getDashboardActivity())
 
         return workload
 
@@ -124,7 +124,7 @@ class PromptRecoWorkloadFactory(StdBase):
 
         Create a ReReco workload with the given parameters.
         """
-        StdBase.__call__(self, workloadName, arguments)
+        DataProcessing.__call__(self, workloadName, arguments)
 
         # These are mostly place holders because the job splitting algo and
         # parameters will be updated after the workflow has been created.
@@ -157,94 +157,44 @@ class PromptRecoWorkloadFactory(StdBase):
         return self.buildWorkload()
 
     @staticmethod
-    def getWorkloadArguments():
-        baseArgs = StdBase.getWorkloadArguments()
-        specArgs = {"RequestType" : {"default" : "PromptReco", "optional" : True,
-                                      "attr" : "requestType"},
-                    "Scenario" : {"default" : None, "type" : str,
-                                  "optional" : False, "validate" : None,
+    def getWorkloadCreateArgs():
+        baseArgs = DataProcessing.getWorkloadCreateArgs()
+        specArgs = {"RequestType" : {"default" : "PromptReco", "optional" : True},
+                    "ConfigCacheID": {"optional": True, "null": True},
+                    "Scenario" : {"default" : None, "optional" : False,
                                   "attr" : "procScenario", "null" : False},
-                    "GlobalTag" : {"default" : None, "type" : str,
-                                   "optional" : False, "validate" : None,
-                                   "attr" : "globalTag", "null" : False},
                     "ProcessingString": {"default": "", "validate": procstringT0},
                     "WriteTiers" : {"default" : ["RECO", "AOD", "DQM", "ALCARECO"],
-                                    "type" : makeList, "optional" : False,
-                                    "validate" : None,
-                                    "attr" : "writeTiers", "null" : False},
+                                    "type" : makeList, "optional" : False, "null" : False},
                     "AlcaSkims" : {"default" : ["TkAlCosmics0T","MuAlGlobalCosmics","HcalCalHOCosmics"],
-                                   "type" : makeList, "optional" : False,
-                                   "validate" : None,
-                                   "attr" : "alcaSkims", "null" : False},
-                    "InputDataset" : {"default" : "/Cosmics/Run2012A-v1/RAW", "type" : str,
-                                      "optional" : False, "validate" : dataset,
-                                      "attr" : "inputDataset", "null" : False},
+                                   "type" : makeList, "optional" : False, "null" : False},
                     "PhysicsSkims" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : None,
-                                      "attr" : "physicsSkims", "null" : False},
-                    "InitCommand" : {"default" : None, "type" : str,
-                                     "optional" : True, "validate" : None,
-                                     "attr" : "initCommand", "null" : True},
-                    "EnvPath" : {"default" : None, "type" : str,
-                                 "optional" : True, "validate" : None,
-                                 "attr" : "envPath", "null" : True},
-                    "BinPath" : {"default" : None, "type" : str,
-                                 "optional" : True, "validate" : None,
-                                 "attr" : "binPath", "null" : True},
+                                      "optional" : True, "null" : False},
+                    "InitCommand" : {"default" : None, "optional" : True, "null" : True},
+                    "EnvPath" : {"default" : None, "optional" : True, "null" : True},
+                    "BinPath" : {"default" : None, "optional" : True,  "null" : True},
                     "DoLogCollect" : {"default" : True, "type" : strToBool,
-                                      "optional" : True, "validate" : None,
-                                      "attr" : "doLogCollect", "null" : False},
-                    "BlockBlacklist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockBlacklist", "null" : False},
-                    "BlockWhitelist" : {"default" : [], "type" : makeList,
-                                        "optional" : True, "validate" : lambda x: all([block(y) for y in x]),
-                                        "attr" : "blockWhitelist", "null" : False},
-                    "RunBlacklist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runBlacklist", "null" : False},
-                    "RunWhitelist" : {"default" : [], "type" : makeList,
-                                      "optional" : True, "validate" : lambda x: all([int(y) > 0 for y in x]),
-                                      "attr" : "runWhitelist", "null" : False},
-                    "SplittingAlgo" : {"default" : "EventBased", "type" : str,
-                                       "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                                       "EventAwareLumiBased", "FileBased"],
-                                       "attr" : "procJobSplitAlgo", "null" : False},
-                    "EventsPerJob" : {"default" : 500, "type" : int,
-                                      "optional" : True, "validate" : lambda x : x > 0,
-                                      "attr" : "eventsPerJob", "null" : False},
-                    "LumisPerJob" : {"default" : 8, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "attr" : "lumisPerJob", "null" : False},
-                    "FilesPerJob" : {"default" : 1, "type" : int,
-                                     "optional" : True, "validate" : lambda x : x > 0,
-                                     "attr" : "filesPerJob", "null" : False},
-                    "SkimSplittingAlgo" : {"default" : "FileBased", "type" : str,
-                                           "optional" : True, "validate" : lambda x: x in ["EventBased", "LumiBased",
-                                                                                           "EventAwareLumiBased", "FileBased"],
-                                           "attr" : "skimJobSplitAlgo", "null" : False},
-                    "SkimEventsPerJob" : {"default" : 500, "type" : int,
-                                          "optional" : True, "validate" : lambda x : x > 0,
-                                          "attr" : "skimEventsPerJob", "null" : False},
-                    "SkimLumisPerJob" : {"default" : 8, "type" : int,
-                                         "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "skimLumisPerJob", "null" : False},
-                    "SkimFilesPerJob" : {"default" : 1, "type" : int,
-                                         "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "skimFilesPerJob", "null" : False},
-                    "BlockCloseDelay" : {"default" : 86400, "type" : int,
-                                         "optional" : True, "validate" : lambda x : x > 0,
-                                         "attr" : "blockCloseDelay", "null" : False}
+                                      "optional" : True, "null" : False},
+                    "SplittingAlgo" : {"default" : "EventBased", "null" : False,
+                                       "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                    "EventAwareLumiBased", "FileBased"],
+                                       "attr" : "procJobSplitAlgo"},
+                    "EventsPerJob" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0,
+                                      "null" : False},
+                    "SkimSplittingAlgo" : {"default" : "FileBased", "null" : False,
+                                           "validate" : lambda x: x in ["EventBased", "LumiBased",
+                                                                        "EventAwareLumiBased", "FileBased"],
+                                           "attr" : "skimJobSplitAlgo"},
+                    "SkimEventsPerJob" : {"default" : 500, "type" : int, "validate" : lambda x : x > 0,
+                                          "null" : False},
+                    "SkimLumisPerJob" : {"default" : 8, "type" : int, "validate" : lambda x : x > 0,
+                                         "null" : False},
+                    "SkimFilesPerJob" : {"default" : 1, "type" : int, "validate" : lambda x : x > 0,
+                                         "null" : False},
+                    "BlockCloseDelay" : {"default" : 86400, "type" : int, "validate" : lambda x : x > 0,
+                                         "null" : False}
                     }
 
         baseArgs.update(specArgs)
-        # add more optional arguments in case it is created using ReqMgr (not T0 case but should support both)
-        reqMgrArguments = {"CouchDBName" : {"default" : "reqmgr_config_cache", "type" : str,
-                                            "validate" : identifier},
-                           "ConfigCacheUrl" : {"default" :"https://cmsweb.cern.ch/couchdb", "validate" : couchurl},
-                           "ConfigCacheID" : {"optional": True, "null": True},
-                           "CouchWorkloadDBName" : {"default" : "reqmgr_workload_cache", "validate" : identifier},
-                         }
-        baseArgs.update(reqMgrArguments)
-        StdBase.setDefaultArgumentsProperty(baseArgs)
+        DataProcessing.setDefaultArgumentsProperty(baseArgs)
         return baseArgs

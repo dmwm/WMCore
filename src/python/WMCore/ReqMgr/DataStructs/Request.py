@@ -150,7 +150,9 @@ class RequestInfo(object):
                         result.add(value)
             return list(result)
         else:
-            if isinstance(defaultValue, dict):
+            # property which can't be task or stepchain property but in dictionary format
+            exculdePropWithDictFormat = ["LumiList", "AgentJobInfo"]
+            if prop not in exculdePropWithDictFormat and isinstance(defaultValue, dict):
                 return defaultValue.values()
             else:
                 return defaultValue
@@ -184,10 +186,11 @@ class RequestInfo(object):
         for key, value in filterDict.iteritems():
             # special case checks where key is not exist in Request's Doc.
             # It is used whether AgentJobInfo is deleted or not for announced status
-            if value == "NO_KEY" and key not in self.data:
-                continue
-            elif value == "NO_KEY" and key in self.data:
-                return False
+            if value == "CLEANED" and key == "AgentJobInfo":
+                if self.isWorkflowCleaned():
+                    continue
+                else:
+                    return False
 
             if isinstance(value, dict):
                 # TODO: need to handle dictionary comparison
@@ -207,5 +210,19 @@ class RequestInfo(object):
                 return False
         return True
 
-
+    def isWorkflowCleaned(self):
+        """
+        check whether workflow data is cleaned up from agent only checks the couchdb
+        Since dbsbuffer data is not clean up we can't just check 'AgentJobInfo' key existence
+        This all is only meaningfull if request status is right befor end status.
+        ["aborted-completed", "rejected", "announced"]
+        DO NOT check if workflow status isn't among those status
+        """
+        if 'AgentJobInfo' in self.data:
+            for agentRequestInfo in self.data['AgentJobInfo'].values():
+                if agentRequestInfo.get("status", {}):
+                    return False
+        # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
+        # Maybe JobInformation is not included but since it requested by above status assumed it returns True
+        return True
 

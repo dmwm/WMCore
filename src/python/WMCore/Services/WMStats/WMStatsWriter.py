@@ -43,6 +43,7 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
     wqDoc = {}
     wqDoc['_id'] = wqURL
     wqDoc['agent_url'] = wqURL
+    wqDoc['agent_team'] = ""
     wqDoc['agent_version'] = WMCore.__version__
     wqDoc['timestamp'] = int(time.time())
     wqDoc['down_components'] = []

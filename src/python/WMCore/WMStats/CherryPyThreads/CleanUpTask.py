@@ -3,6 +3,8 @@ from __future__ import (division, print_function)
 import traceback
 from WMCore.REST.CherryPyPeriodicTask import CherryPyPeriodicTask
 from WMCore.Services.WMStats.WMStatsWriter import WMStatsWriter
+from WMCore.Services.WMStats.DataStruct.RequestInfoCollection import RequestInfo
+from WMCore.WMStats.DataStructs.DataCache import DataCache
 
 class CleanUpTask(CherryPyPeriodicTask):
     """
@@ -16,12 +18,26 @@ class CleanUpTask(CherryPyPeriodicTask):
         self.wmstatsDB = WMStatsWriter(config.wmstats_url, reqdbURL=config.reqmgrdb_url,
                               reqdbCouchApp=config.reqdb_couch_app)
 
+    def _deleteWMStatsDocsByRequest(self, req):
+        self.logger.info("deleting %s data", req)
+        try:
+            result = self.wmstatsDB.deleteDocsByWorkflow(req)
+        except Exception as ex:
+            self.logger.error("deleting %s failed: %s", req, str(ex))
+            for line in traceback.format_exc().rstrip().split("\n"):
+                self.logger.error(" " + line)
+        else:
+            self.logger.info("%s deleted", len(result))
+
+        return
+    
     def setConcurrentTasks(self, config):
         """
         sets the list of functions which runs concurrently
         """
         self.concurrentTasks = [{'func': self.cleanUpOldRequests, 'duration': (config.DataKeepDays * 24 * 60 * 60)},
-                                {'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration}]
+                                {'func': self.cleanUpArchivedRequests, 'duration': config.archivedCleanUpDuration},
+                                {'func': self.cleauUpAgentDocs, 'duration': config.archivedCleanUpDuration}]
 
     def cleanUpOldRequests(self, config):
         """
@@ -41,13 +57,18 @@ class CleanUpTask(CherryPyPeriodicTask):
         self.logger.info("archived list %s", requestNames)
 
         for req in requestNames:
-            self.logger.info("deleting %s data", req)
-            try:
-                result = self.wmstatsDB.deleteDocsByWorkflow(req)
-            except Exception as ex:
-                self.logger.error("deleting %s failed: %s", req, str(ex))
-                for line in traceback.format_exc().rstrip().split("\n"):
-                    self.logger.error(" " + line)
-            else:
-                self.logger.info("%s deleted", len(result))
+            self._deleteWMStatsDocsByRequest(self, req)
         return
+
+    def cleauUpAgentDocs(self, config):
+        """
+        delete wmstats document if all the job is finished including logCollect and Clean up
+        It won't be completely sync with agent deletion, hence there is always chance for race conditoin
+        which cause move to archive status before agent clean up everything
+        """
+        statusFilter = {"RequestStatus": ["aborted-completed", "rejected", "announced"]}
+        mask = ["AgentJobInfo"]
+        for requestData in DataCache.filterDataByRequest(statusFilter, mask):
+            reqInfo = RequestInfo(requestData)
+            if reqInfo.isWorkflowFinished():
+                self._deleteWMStatsDocsByRequest(self, requestData["RequestName"])

@@ -167,7 +167,7 @@ def getSingleStepOverride():
         "CouchDBName": "stepchain_t",
         "Step1": {
             "GlobalTag": "PHYS14_25_V44",
-            "InputDataset": "/RSGravToGG_kMpl-01_M-5000_TuneCUEP8M1_13TeV-pythia8/RunIISpring15DR74-Asympt50ns_MCRUN2_74_V9A-v1/AODSIM",
+            "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
             "StepName": "StepOne"},
         "StepChain": 1
     }
@@ -181,7 +181,7 @@ def getThreeStepsOverride():
         "CouchDBName": "stepchain_t",
         "Step1": {
             "GlobalTag": "PHYS14_25_V44",
-            "InputDataset": "/RSGravToGG_kMpl-01_M-5000_TuneCUEP8M1_13TeV-pythia8/RunIISpring15DR74-Asympt50ns_MCRUN2_74_V9A-v1/AODSIM",
+            "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
             "StepName": "StepOne"},
         "Step2": {
             "GlobalTag": "PHYS14_25_V44",

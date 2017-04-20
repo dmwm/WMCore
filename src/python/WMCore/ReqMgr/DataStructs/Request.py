@@ -184,10 +184,8 @@ class RequestInfo(object):
         for key, value in filterDict.iteritems():
             # special case checks where key is not exist in Request's Doc.
             # It is used whether AgentJobInfo is deleted or not for announced status
-            if value == "NO_KEY" and key not in self.data:
+            if value == "NO_KEY":
                 continue
-            elif value == "NO_KEY" and key in self.data:
-                return False
 
             if isinstance(value, dict):
                 # TODO: need to handle dictionary comparison

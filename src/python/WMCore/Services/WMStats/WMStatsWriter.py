@@ -1,8 +1,8 @@
+import WMCore
 import time
 from json import JSONEncoder
-
+from WMCore.Database.CMSCouch import CouchNotFoundError
 from WMCore.Services.WMStats.WMStatsReader import WMStatsReader
-
 
 def monitorDocFromRequestSchema(schema):
     """
@@ -43,7 +43,7 @@ def convertToServiceCouchDoc(wqInfo, wqURL):
     wqDoc = {}
     wqDoc['_id'] = wqURL
     wqDoc['agent_url'] = wqURL
-    wqDoc['agent_team'] = ""
+    wqDoc['agent_version'] = WMCore.__version__
     wqDoc['timestamp'] = int(time.time())
     wqDoc['down_components'] = []
     wqDoc['type'] = "agent_info"
@@ -126,10 +126,18 @@ class WMStatsWriter(WMStatsReader):
                                         fields={'general_fields': JSONEncoder().encode(doc)})
 
     def updateAgentInfo(self, agentInfo):
-        return self.couchDB.updateDocument(agentInfo['_id'], self.couchapp,
-                                           'agentInfo',
-                                           {'agent_info': JSONEncoder().encode(agentInfo)},
-                                           useBody=True)
+        """
+        replace the agentInfo document with new one.
+        """
+        try:
+            exist_doc = self.couchDB.document(agentInfo["_id"])
+            agentInfo["_rev"] = exist_doc["_rev"]
+        except CouchNotFoundError:
+            # this means document is not exist so we will just insert
+            pass
+        finally:
+            result = self.couchDB.commitOne(agentInfo)
+        return result
 
     def updateLogArchiveLFN(self, jobNames, logArchiveLFN):
         for jobName in jobNames:

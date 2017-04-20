@@ -129,7 +129,7 @@ class FileBasedTest(unittest.TestCase):
         """
         testFileset = Fileset(name = "TestFilesetX")
         testFileset.create()
-        for i in range(5000):
+        for _ in range(5000):
             newFile = File(makeUUID(), size = 1000, events = 100,
                            locations = set(["T1_US_FNAL_Disk"]))
             newFile.create()
@@ -217,8 +217,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
             self.assertEqual(job["estimatedMemoryUsage"], 2300)
             self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 2)
             self.assertEqual(job["estimatedJobTime"], 12 * 100 * 2)
@@ -247,8 +247,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             assert len(job.getFiles()) in [3, 1], "ERROR: Job contains incorrect number of files"
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
             if len(job.getFiles()) == 3:
                 self.assertEqual(job["estimatedMemoryUsage"], 2300)
                 self.assertEqual(job["estimatedDiskUsage"], 400 * 100 * 3)
@@ -479,8 +479,8 @@ class FileBasedTest(unittest.TestCase):
         fileList = []
         for job in jobGroups[0].jobs:
             self.assertEqual(len(job.getFiles()), 2)
-            for file in job.getFiles(type = "lfn"):
-                fileList.append(file)
+            for lfn in job.getFiles(type = "lfn"):
+                fileList.append(lfn)
         self.assertEqual(len(fileList), 10)
 
         for j in jobGroups[0].jobs:
@@ -490,38 +490,20 @@ class FileBasedTest(unittest.TestCase):
 
         return
 
-
-
-    def testZ_randomCrapForGenerators(self):
+    def testRandomCrap1(self):
         """
-        Either this works, and all other tests are obsolete, or it doesn't and they aren't.
-        Either way, don't screw around with this.
+        First part of what used to be testRandomCrapForGenerators
         """
-
-        def runCode(self, jobFactory):
-
-            func = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 500)
-
-            goFlag    = True
-            while goFlag:
-                try:
-                    res = next(func)
-                    self.jobGroups.extend(res)
-                except StopIteration:
-                    goFlag = False
-
-            return jobGroups
-
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS",
-                              subscription = self.multipleSiteSubscription)
+        jobFactory = splitter(package="WMCore.WMBS",
+                              subscription=self.multipleSiteSubscription)
 
         jobFactory.open()
         jobGroups = []
 
-        a = self.crazyAssFunction(jobFactory = jobFactory, file_load_limit = 2)
+        a = self.crazyAssFunction(jobFactory=jobFactory, file_load_limit=2)
 
-        for x in range(7):
+        for _ in range(7):
             try:
                 res = next(a)
                 jobGroups.extend(res)
@@ -534,21 +516,38 @@ class FileBasedTest(unittest.TestCase):
         for group in jobGroups:
             self.assertTrue(len(group.jobs) in [1, 2])
             for job in group.jobs:
-                self.assertTrue(job["possiblePSN"] in [set(["T1_US_FNAL"]),
-                                                       set(['T2_CH_CERN', 'T1_US_FNAL'])])
-                self.assertTrue(len(job['input_files']) in (1,2))
+                self.assertTrue(job["possiblePSN"] in [{"T1_US_FNAL"}, {'T2_CH_CERN', 'T1_US_FNAL'}])
+                self.assertTrue(len(job['input_files']) in (1, 2))
+
+    def testRandomCrapForGenerators2(self):
+        """
+        Either this works, and all other tests are obsolete, or it doesn't and they aren't.
+        Either way, don't screw around with this.
+        """
+
+        def runCode(self, jobFactory):
+
+            func = self.crazyAssFunction(jobFactory=jobFactory, file_load_limit=500)
+
+            goFlag = True
+            while goFlag:
+                try:
+                    res = next(func)
+                    self.jobGroups.extend(res)
+                except StopIteration:
+                    goFlag = False
+
+            return self.jobGroups
 
         self.jobGroups = []
-
         subscript = self.createLargeFileBlock()
 
         splitter = SplitterFactory()
-        jobFactory = splitter(package = "WMCore.WMBS", subscription = subscript)
+        jobFactory = splitter(package="WMCore.WMBS", subscription=subscript)
 
         jobFactory.open()
 
         runCode(self, jobFactory)
-        #cProfile.runctx("runCode(self, jobFactory)", globals(), locals(), "coroutine.stats")
 
         jobGroups = self.jobGroups
 
@@ -557,16 +556,16 @@ class FileBasedTest(unittest.TestCase):
             self.assertEqual(len(group.jobs), 500)
             self.assertTrue(group.exists() > 0)
 
-
         jobFactory.close()
         return
 
-    def crazyAssFunction(self, jobFactory, file_load_limit = 1):
+    def crazyAssFunction(self, jobFactory, file_load_limit=1):
         groups = ['test']
-        while groups != []:
-            groups = jobFactory(files_per_job = 1, file_load_limit = file_load_limit,
-                                performance = self.performanceParams)
+        while groups:
+            groups = jobFactory(files_per_job=1, file_load_limit=file_load_limit,
+                                performance=self.performanceParams)
             yield groups
+
 
 if __name__ == '__main__':
     unittest.main()

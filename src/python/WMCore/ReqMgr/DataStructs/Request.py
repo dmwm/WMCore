@@ -69,21 +69,13 @@ def initialize_request_args(request, config, clone=False):
         request["CouchWorkloadDBName"] = config.couch_reqmgr_db
         request["CouchDBName"] = config.couch_config_cache_db
 
-        #request.setdefault("SoftwareVersions", [])
-        #if "CMSSWVersion" in request and request["CMSSWVersion"] not in request["SoftwareVersions"]:
-        #    request["SoftwareVersions"].append(request["CMSSWVersion"])
-
-        # TODO
-        # do we need InputDataset and InputDatasets? when one is just a list
-        # containing the other? ; could be related to #3743 problem
-        #if "InputDataset" in request:
-        #    request["InputDatasets"] = [request["InputDataset"]]
-
 
 def initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service):
     """
     Initialize a Resubmission request by inheriting the original/parent information
     from couch, unless the user has overwritten that argument in the resubmission request.
+    Any arguments that are not expected either at creation or assignment level, will get
+    removed.
     """
     requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
     parent_args = requests.values()[0]

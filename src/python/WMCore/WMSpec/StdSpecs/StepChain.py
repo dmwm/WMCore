@@ -442,7 +442,7 @@ class StepChainWorkloadFactory(StdBase):
         argument description
         """
         try:
-            validateArgumentsCreate(taskConf, taskArgumentDefinition)
+            validateArgumentsCreate(taskConf, taskArgumentDefinition, checkInputDset=False)
         except Exception as ex:
             self.raiseValidationException(str(ex))
 

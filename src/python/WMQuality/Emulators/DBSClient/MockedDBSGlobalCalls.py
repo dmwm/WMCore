@@ -54,6 +54,8 @@ calls = [['listDataTiers'],
          ['listDatasets', {'primary_ds_name': 'Jet', 'data_tier_name': 'blah'}],
          ['listDatasets', {'primary_ds_name': 'blah', 'data_tier_name': 'RAW'}],
          ['listDatasets', {'dataset_access_type': '*', 'dataset': '/MET/Run2015B-05Aug2015-v1/DQMIO'}],
+         ['listDatasets', {'dataset': '/NoBPTX/Run2016F-23Sep2016-v1/DQMIO', 'dataset_access_type': '*'}],
+         ['listDatasets', {'dataset': '/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM', 'dataset_access_type': '*'}],
          ['listFileLumiArray', {'logical_file_name': [
              u'/store/data/Commissioning2015/Cosmics/RAW/v1/000/238/545/00000/C47FDF25-2ECF-E411-A8E2-02163E011839.root']}],
          ['listFileLumiArray', {'logical_file_name': [
@@ -81,8 +83,6 @@ calls = [['listDataTiers'],
           {'block_name': '/Cosmics/Commissioning2015-PromptReco-v1/RECO#004ac3ba-d09e-11e4-afad-001e67ac06a0'}],
          ['listBlockParents',
           {'block_name': '/Cosmics/Commissioning2015-v1/RAW#942d76fe-cf0e-11e4-afad-001e67ac06a0'}],
-         ['listDatasets',
-          {'dataset': '/NoBPTX/Run2016F-23Sep2016-v1/DQMIO', 'dataset_access_type': '*'}],
 
          # Exception throwing calls
 

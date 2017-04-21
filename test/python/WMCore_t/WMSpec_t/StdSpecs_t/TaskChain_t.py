@@ -10,9 +10,9 @@ Copyright (c) 2011 Fermilab. All rights reserved.
 import json
 import os
 import unittest
-
 from WMCore.WMSpec.StdSpecs.TaskChain import TaskChainWorkloadFactory
 from WMQuality.TestInitCouchApp import TestInitCouchApp
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase
 from WMCore.Database.CMSCouch import CouchServer, Document
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 from WMCore.WMBS.Fileset import Fileset
@@ -160,7 +160,7 @@ def createMultiGTArgs():
         "TaskChain": 4,
         "Task1": {
             "TaskName": "DigiHLT",
-            "InputDataset": "/MinimumBias/Commissioning10-v4/GEN-SIM",
+            "InputDataset": "/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/Fall13-POSTLS162_V1-v1/GEN-SIM",
             "SplittingAlgo": "EventAwareLumiBased",
         },
         "Task2": {
@@ -192,7 +192,7 @@ def createMultiGTArgs():
     return arguments
 
 
-class TaskChainTests(unittest.TestCase):
+class TaskChainTests(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
@@ -200,6 +200,7 @@ class TaskChainTests(unittest.TestCase):
         Initialize the database and couch.
 
         """
+        super(TaskChainTests, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -225,6 +226,7 @@ class TaskChainTests(unittest.TestCase):
         self.testInit.tearDownCouch()
         self.testInit.clearDatabase()
         self.testInit.delWorkDir()
+        super(TaskChainTests, self).tearDown()
         return
 
     def testGeneratorWorkflow(self):
@@ -600,15 +602,15 @@ class TaskChainTests(unittest.TestCase):
         # Verify the output datasets
         outputDatasets = self.workload.listOutputDatasets()
         self.assertEqual(len(outputDatasets), 14, "Number of output datasets doesn't match")
-        self.assertTrue("/MinimumBias/ReleaseValidation-RawDigiFilter-FAKE-v1/RAW-DIGI" in outputDatasets)
-        self.assertTrue("/MinimumBias/ReleaseValidation-RawDebugDigiFilter-FAKE-v1/RAW-DEBUG-DIGI" in outputDatasets)
+        self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDigiFilter-FAKE-v1/RAW-DIGI" in outputDatasets)
+        self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-RawDebugDigiFilter-FAKE-v1/RAW-DEBUG-DIGI" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-reco-FAKE-v1/RECO" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-AOD-FAKE-v1/AOD" in outputDatasets)
         self.assertTrue("/ZeroBias/ReleaseValidation-alca-FAKE-v1/ALCARECO" in outputDatasets)
         for i in range(1, 5):
-            self.assertTrue("/MinimumBias/ReleaseValidation-alca%d-FAKE-v1/ALCARECO" % i in outputDatasets)
+            self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-alca%d-FAKE-v1/ALCARECO" % i in outputDatasets)
         for i in range(1, 6):
-            self.assertTrue("/MinimumBias/ReleaseValidation-skim%d-FAKE-v1/RECO-AOD" % i in outputDatasets)
+            self.assertTrue("/BprimeJetToBZ_M800GeV_Tune4C_13TeV-madgraph-tauola/ReleaseValidation-skim%d-FAKE-v1/RECO-AOD" % i in outputDatasets)
 
         return
 
@@ -850,12 +852,12 @@ class TaskChainTests(unittest.TestCase):
             "DashboardPort": 8884,
             "TaskChain": 2,
             "Task1": {
-                "InputDataset": "/cosmics/whatever-input-v1/GEN-SIM",
+                "InputDataset": "/Cosmics/ComissioningHI-v1/RAW",
                 "TaskName": "DIGI",
                 "ConfigCacheID": processorDocs['DigiHLT'],
                 "SplittingAlgo": "LumiBased",
                 "LumisPerJob": 4,
-                "MCPileup": "/some/cosmics-mc-v1/GEN-SIM",
+                "MCPileup": "/Cosmics/ComissioningHI-PromptReco-v1/RECO",
                 "DeterministicPileup": True,
                 "CMSSWVersion": "CMSSW_8_0_1",
                 "ScramArch": "slc6_amd64_gcc493",
@@ -888,7 +890,7 @@ class TaskChainTests(unittest.TestCase):
         cmsRunStep = firstTask.getStep("cmsRun1").getTypeHelper()
         pileupData = cmsRunStep.getPileup()
         self.assertFalse(hasattr(pileupData, "data"))
-        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics-mc-v1/GEN-SIM"])
+        self.assertEqual(pileupData.mc.dataset, [arguments['Task1']['MCPileup']])
         splitting = firstTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])
 
@@ -928,6 +930,9 @@ class TaskChainTests(unittest.TestCase):
             "CouchDBName": self.testInit.couchDbName,
         })
 
+        # then mocked data
+        arguments['Task1']['InputDataset'] = '/HighPileUp/Run2011A-v1/RAW'
+
         # ... now fill in the ConfigCache documents created and override the inputs to link them up
 
         arguments['Task1']['ConfigCacheID'] = processorDocs['DigiHLT']
@@ -937,7 +942,6 @@ class TaskChainTests(unittest.TestCase):
 
         arguments['Task3']['ConfigCacheID'] = processorDocs['ALCAReco']
         arguments['Task3']['InputFromOutputModule'] = 'writeALCA'
-
         return arguments
 
 

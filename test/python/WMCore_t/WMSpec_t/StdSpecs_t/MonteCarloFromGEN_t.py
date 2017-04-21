@@ -15,16 +15,18 @@ from WMCore.WMBS.Workflow import Workflow
 from WMCore.WMSpec.StdSpecs.MonteCarloFromGEN import MonteCarloFromGENWorkloadFactory
 from WMCore.WorkQueue.WMBSHelper import WMBSHelper
 
+from WMQuality.Emulators.EmulatedUnitTestCase import EmulatedUnitTestCase 
 from WMQuality.TestInitCouchApp import TestInitCouchApp
 
 
-class MonteCarloFromGENTest(unittest.TestCase):
+class MonteCarloFromGENTest(EmulatedUnitTestCase):
     def setUp(self):
         """
         _setUp_
 
         Initialize the database.
         """
+        super(MonteCarloFromGENTest, self).setUp()
         self.testInit = TestInitCouchApp(__file__)
         self.testInit.setLogging()
         self.testInit.setDatabaseConnection()
@@ -46,6 +48,7 @@ class MonteCarloFromGENTest(unittest.TestCase):
         self.testInit.clearDatabase()
         self.testInit.tearDownCouch()
         self.testInit.delWorkDir()
+        super(MonteCarloFromGENTest, self).tearDown()
         return
 
     def injectConfig(self):
@@ -270,8 +273,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         arguments["PrimaryDataset"] = "WaitThisIsNotMinimumBias"
 
         # Add pileup inputs
-        arguments["MCPileup"] = "/some/cosmics-procstringwhatever-v1/RAW"
-        arguments["DataPileup"] = "/some/minbias-procstringwhatever-v1/LHE"
+        arguments["MCPileup"] = "/HighPileUp/Run2011A-v1/RAW"
+        arguments["DataPileup"] = "/Cosmics/ComissioningHI-v1/RAW"
         arguments["DeterministicPileup"] = True
 
         factory = MonteCarloFromGENWorkloadFactory()
@@ -280,8 +283,8 @@ class MonteCarloFromGENTest(unittest.TestCase):
         productionTask = testWorkload.getTaskByPath('/TestWorkload/MonteCarloFromGEN')
         cmsRunStep = productionTask.getStep("cmsRun1").getTypeHelper()
         pileupData = cmsRunStep.getPileup()
-        self.assertEqual(pileupData.data.dataset, ["/some/minbias-procstringwhatever-v1/LHE"])
-        self.assertEqual(pileupData.mc.dataset, ["/some/cosmics-procstringwhatever-v1/RAW"])
+        self.assertEqual(pileupData.mc.dataset, [arguments["MCPileup"]])
+        self.assertEqual(pileupData.data.dataset, [arguments["DataPileup"]])
 
         splitting = productionTask.jobSplittingParameters()
         self.assertTrue(splitting["deterministicPileup"])

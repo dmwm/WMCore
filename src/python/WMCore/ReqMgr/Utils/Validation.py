@@ -134,16 +134,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
-        acceptedArgs = {}
-        if 'OriginalRequestType' in request_args:
-            parentSpecClass = loadSpecClassByType(request_args['OriginalRequestType'])
-            acceptedArgs = parentSpecClass.getWorkloadCreateArgs()
-
-        acceptedArgs.update(specClass.getWorkloadCreateArgs())
-        assignArgs = specClass.getWorkloadAssignArgs()
-        acceptedArgs.update(assignArgs)
-
-        initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service)
+        initialize_resubmission(request_args, reqmgr_db_service)
     else:
         # set default values for the request_args
         setArgumentsWithDefault(request_args, specClass.getWorkloadCreateArgs())

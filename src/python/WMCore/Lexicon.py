@@ -270,6 +270,14 @@ def acqname(candidate):
     else:
         return check(r'[a-zA-Z][a-zA-Z0-9_]*$', candidate)
 
+def campaign(candidate):
+    """
+    Check for Campaign name.
+    letters, numbers, underscores and dashes are allowed, up to 60 chars.
+    """
+    if not candidate:
+        return True
+    return check(r'^[a-zA-Z0-9-_]{1,60}$', candidate)
 
 def primdataset(candidate):
     """

@@ -10,7 +10,7 @@ from Utils.Utilities import makeList, makeNonEmptyList, strToBool, safeStr
 from WMCore.Cache.WMConfigCache import ConfigCache, ConfigCacheException
 from WMCore.Configuration import ConfigSection
 from WMCore.Lexicon import couchurl, procstring, activity, procversion, primdataset
-from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block
+from WMCore.Lexicon import lfnBase, identifier, acqname, cmsname, dataset, block, campaign
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE
 from WMCore.ReqMgr.Tools.cms import releases, architectures
 from WMCore.Services.Dashboard.DashboardReporter import DashboardReporter
@@ -994,7 +994,7 @@ class StdBase(object):
         arguments = {"RequestType": {"default": "StdBase", "optional": False},
                      "RequestString": {"optional": False, "null": False},
                      # default value will be AcquisitionEra except when AcquistionEra is dict
-                     "Campaign": {"default": "", "optional": True},
+                     "Campaign": {"default": "", "optional": True, "validate": campaign},
                      "CMSSWVersion": {"validate": lambda x: x in releases(),
                                       "optional": False, "attr": "frameworkVersion"},
                      "ScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
@@ -1166,6 +1166,8 @@ class StdBase(object):
         at the docstring for getWorkloadCreateArgs.
         """
         arguments = {'AcquisitionEra': {'optional': True, 'validate': acqname},
+                     # Campaign at chain level has no meaning but for CompOps/McM bookkeeping
+                     "Campaign": {"optional": True, "validate": campaign},
                      'BlockBlacklist': {'default': [], 'null': False, 'optional': True, 'type': makeList,
                                         'validate': lambda x: all([block(y) for y in x])},
                      'BlockWhitelist': {'default': [], 'null': False, 'optional': True, 'type': makeList,

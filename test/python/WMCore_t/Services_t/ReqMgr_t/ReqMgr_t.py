@@ -80,7 +80,7 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.setFakeDN()
 
         requestPath = os.path.join(getWMBASE(), "test", "data", "ReqMgr", "requests", "DMWM")
-        rerecoFile = open(os.path.join(requestPath, "ReReco.json"), 'r')
+        rerecoFile = open(os.path.join(requestPath, "ReReco_RunBlockWhite.json"), 'r')
 
         rerecoArgs = json.load(rerecoFile)
         self.rerecoCreateArgs = rerecoArgs["createRequest"]
@@ -108,18 +108,15 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 1)
         requestName = response[0]['request']
 
-
         ## test get method
         # get by name
         response = self.reqSvc.getRequestByNames(requestName)
-        self.assertEqual(response[requestName]['RequestPriority'], 10000)
+        self.assertEqual(response[0][requestName]['RequestPriority'], 190000)
         self.assertEqual(len(response), 1)
 
         # get by status
         response = self.reqSvc.getRequestByStatus('new')
         self.assertEqual(len(response), 1)
-        print(response)
-
 
         self.reqSvc.updateRequestStatus(requestName, 'assignment-approved')
         response = self.reqSvc.getRequestByStatus('assignment-approved')
@@ -134,12 +131,22 @@ class ReqMgrTest(RESTBaseUnitTestWithDBBackend):
         self.assertEqual(len(response), 0)
         response = self.reqSvc.getRequestByStatus('assigned')
         self.assertEqual(len(response), 1)
-        self.assertEqual(response.values()[0]["SiteWhitelist"], ["T1_US_CBS"])
+        self.assertEqual(response[0].values()[0]["SiteWhitelist"], ["T1_US_CBS"])
 
         self.reqSvc.updateRequestStats(requestName, {'total_jobs': 100, 'input_lumis': 100,
                                'input_events': 100, 'input_num_files': 100})
 
+        response = self.reqSvc.cloneRequest(requestName)
+        self.assertEqual(len(response), 1)
+        clonedName = response[0]['request']
+        response = self.reqSvc.getRequestByNames(clonedName)
+        self.assertEqual(response[0][clonedName]['TimePerEvent'], 15)
 
+        response = self.reqSvc.cloneRequest(requestName, {'TimePerEvent': 20})
+        self.assertEqual(len(response), 1)
+        clonedName = response[0]['request']
+        response = self.reqSvc.getRequestByNames(clonedName)
+        self.assertEqual(response[0][clonedName]['TimePerEvent'], 20)
 
 if __name__ == '__main__':
     unittest.main()

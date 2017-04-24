@@ -88,7 +88,7 @@ if [ ! -e $JOB_SANDBOX ]; then
     exit 1
 fi
 
- . $VO_CMS_SW_DIR/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
+ . $VO_CMS_SW_DIR/COMP/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh
 #
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/openssl/1.0.1p/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VO_CMS_SW_DIR/COMP/$SCRAM_ARCH/external/bz2lib/1.0.6/lib

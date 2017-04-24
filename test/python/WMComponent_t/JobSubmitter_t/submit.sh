@@ -5,7 +5,7 @@ SANDBOX=$1
 INDEX=$2
 
 ls
-. /uscmst1/prod/sw/cms/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh 
+. /uscmst1/prod/sw/cms/slc6_amd64_gcc493/external/python/2.7.13/etc/profile.d/init.sh 
 . /uscmst1/prod/sw/cms/setup/shrc prod
 # BADPYTHON
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/uscmst1/prod/sw/cms/slc6_amd64_gcc493/external/openssl/1.0.1p/lib:/uscmst1/prod/sw/cms/slc6_amd64_gcc493/external/bz2lib/1.0.6/lib

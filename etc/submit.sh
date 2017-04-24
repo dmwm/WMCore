@@ -1,4 +1,38 @@
 #!/bin/bash
+# Function to check the exit code of this bootstrap script and the job/python
+# wrapper exit code.
+# 1) If the bootstrap exit code is not 0, then something is wrong with the worker
+#    node and this script will sleep for WMA_MIN_JOB_RUNTIMESECS before it exits.
+# 2) If the job exit code is not 0, then again sleep for WMA_MIN_JOB_RUNTIMESECS
+# 3) If all exit codes are 0, then just quit
+finish() {
+  exitCode=$?
+  echo "======== WMAgent final job runtime checks STARTING at $(TZ=GMT date) ========"
+  END_TIME=$(date +%s)
+  DIFF_TIME=$((END_TIME-START_TIME))
+  echo "$(TZ=GMT date): Job Runtime in seconds: " $DIFF_TIME
+  echo "$(TZ=GMT date): Job bootstrap script exited: " $exitCode
+  echo "$(TZ=GMT date): Job execution exited: " $jobrc
+
+  if [ $exitCode -ne 0 ];
+  then
+    WMA_MIN_JOB_RUNTIMESECS=300
+  elif [ $jobrc -eq 0 ];
+  then
+    WMA_MIN_JOB_RUNTIMESECS=0
+  fi
+  if [ $DIFF_TIME -lt $WMA_MIN_JOB_RUNTIMESECS ];
+  then
+    SLEEP_TIME=$((WMA_MIN_JOB_RUNTIMESECS - DIFF_TIME))
+    echo "$(TZ=GMT date): Job runtime is less than $WMA_MIN_JOB_RUNTIMESECS seconds. Sleeping " $SLEEP_TIME
+    sleep $SLEEP_TIME
+  fi
+  echo -e "======== WMAgent final job runtime checks FINISHED at $(TZ=GMT date) ========\n"
+}
+
+# Trap all exits and execute finish function
+trap finish EXIT
+
 # should be a bit nicer than before
 echo "======== WMAgent bootstrap STARTING at $(TZ=GMT date) ========"
 echo "User id:    $(id)"
@@ -7,6 +41,7 @@ echo "Hostname:   $(hostname -f)"
 echo "System:     $(uname -a)"
 echo "Arguments:  $@"
 
+WMA_SCRAM_ARCH=slc6_amd64_gcc493
 # Saving START_TIME and when job finishes END_TIME.
 WMA_MIN_JOB_RUNTIMESECS=300
 START_TIME=$(date +%s)
@@ -20,43 +55,6 @@ set > startup_environment.sh
 sed -e 's/^/export /' startup_environment.sh > tmp_env.sh
 mv tmp_env.sh startup_environment.sh
 export JOBSTARTDIR=$PWD
-
-
-# Multiple checks are done:
-# 1) Check submit.sh bootstrap exit code.
-#    If it is not 0 sleep WMA_MIN_JOB_RUNTIMESECS and in case it is 0, force to sleep 5 mins total runtime
-#    If this bootstrap script is exiting non 0 exit code, something is wrong on this WN...
-# 2) If Job exited 0, do not sleep any timeout
-# 3) Otherwise, sleep up to WMA_MIN_JOB_RUNTIMESECS seconds of runtime.
-function finish {
-  exitCode=$?
-  echo "======== WMAgent final job runtime checks STARTING at $(TZ=GMT date) ========"
-  if [ $exitCode -ne 0 ];
-  then
-      if [ $WMA_MIN_JOB_RUNTIMESECS -eq 0 ];
-      then
-          WMA_MIN_JOB_RUNTIMESECS=300
-      fi
-  elif [ $jobrc -eq 0 ];
-  then
-      WMA_MIN_JOB_RUNTIMESECS=0
-  fi
-  END_TIME=$(date +%s)
-  DIFF_TIME=$((END_TIME-START_TIME))
-  echo "$(TZ=GMT date): Job Runtime in seconds: " $DIFF_TIME
-  echo "$(TZ=GMT date): Job bootstrap script exited: " $exitCode
-  echo "$(TZ=GMT date): Job execution exited: " $jobrc
-  if [ $DIFF_TIME -lt $WMA_MIN_JOB_RUNTIMESECS ];
-  then
-    SLEEP_TIME=$((WMA_MIN_JOB_RUNTIMESECS - DIFF_TIME))
-    echo "$(TZ=GMT date): Job runtime is less than $WMA_MIN_JOB_RUNTIMESECS seconds. Sleeping " $SLEEP_TIME
-    sleep $SLEEP_TIME
-  fi
-  echo -e "======== WMAgent final job runtime checks FINISHED at $(TZ=GMT date) ========\n"
-}
-# Trap all exits and execute finish function
-trap finish EXIT
-
 
 if [ "X$_CONDOR_JOB_AD" != "X" ];
 then
@@ -119,37 +117,45 @@ echo -e "======== WMAgent CMS environment load finished at $(TZ=GMT date) ======
 
 
 echo "======== WMAgent Python boostrap starting at $(TZ=GMT date) ========"
-if [ -e "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+suffix=etc/profile.d/init.sh
+if [ -d "$VO_CMS_SW_DIR"/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
-    . "$VO_CMS_SW_DIR"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
-elif [ -e "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+    prefix="$VO_CMS_SW_DIR"/COMP/"$WMA_SCRAM_ARCH"/external/python
+elif [ -d "$OSG_APP"/cmssoft/cms/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
-    . "$OSG_APP"/cmssoft/cms/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
-elif [ -e "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh ]
+    prefix="$OSG_APP"/cmssoft/cms/COMP/"$WMA_SCRAM_ARCH"/external/python
+elif [ -d "$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python ]
 then
-    . "$CVMFS"/COMP/slc6_amd64_gcc493/external/python/2.7.6/etc/profile.d/init.sh
+    prefix="$CVMFS"/COMP/"$WMA_SCRAM_ARCH"/external/python
 else
     echo "WMAgent bootstrap: Error: OSG_APP, VO_CMS_SW_DIR, CVMFS, /cvmfs/cms.cern.ch environment does not contain init.sh" >&2
     echo "WMAgent bootstrap: Error: Because of this, we can't load CMSSW. Not good." >&2
     exit 4
 fi
-command -v python2 > /dev/null
+
+latestPythonVersion=`ls -t "$prefix"/*/"$suffix" | head -n1 | sed 's|.*/external/python/||' | cut -d '/' -f1`
+pythonMajorVersion=`echo $latestPythonVersion | cut -d '.' -f1`
+pythonCommand="python"${pythonMajorVersion}
+echo "WMAgent bootstrap: latest python release is: $latestPythonVersion"
+source "$prefix"/"$latestPythonVersion"/"$suffix"
+
+command -v $pythonCommand > /dev/null
 rc=$?
 if [[ $rc != 0 ]]
 then
-    echo "WMAgent bootstrap: Error: python2 isn't available on this worker node." >&2
-    echo "WMAgent bootstrap: Error: WMCore/WMAgent REQUIRES python2" >&2
+    echo "WMAgent bootstrap: Error: python isn't available on this worker node." >&2
+    echo "WMAgent bootstrap: Error: WMCore/WMAgent REQUIRES at least python2" >&2
     exit 3	
 else
-    echo "WMAgent bootstrap: found python2 at.."
-    echo `which python2`
+    echo "WMAgent bootstrap: found $pythonCommand at.."
+    echo `which $pythonCommand`
 fi
 echo -e "======== WMAgent Python boostrap finished at $(TZ=GMT date) ========\n"
 
 
 echo "======== WMAgent Unpack the job starting at $(TZ=GMT date) ========"
 # Should be ready to unpack and run this
-python2 Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
+$pythonCommand Unpacker.py --sandbox=$SANDBOX --package=JobPackage.pkl --index=$INDEX
 
 cd job
 export WMAGENTJOBDIR=$PWD
@@ -163,7 +169,7 @@ done
 echo -e "======== Current environment dump finished ========\n"
 
 echo "======== WMAgent Run the job starting at $(TZ=GMT date) ========"
-python2 Startup.py
+$pythonCommand Startup.py
 jobrc=$?
 echo -e "======== WMAgent Run the job FINISH at $(TZ=GMT date) ========\n"
 

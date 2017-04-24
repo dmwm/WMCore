@@ -1,4 +1,5 @@
 #!/bin/bash
+export USER=`whoami`
 export BASE_DIR=$PWD
 export TEST_DIR=$BASE_DIR/wmcore_unittest
 export TEST_SRC=$TEST_DIR/WMCore/src

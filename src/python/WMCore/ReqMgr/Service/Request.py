@@ -15,17 +15,14 @@ from WMCore.REST.Format import JSONFormat, PrettyJSONFormat
 from WMCore.REST.Server import RESTEntity, restcall, rows
 from WMCore.REST.Validation import validate_str
 from WMCore.ReqMgr.DataStructs.ReqMgrConfigDataCache import ReqMgrConfigDataCache
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidSpecParameterValue
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_LIST, \
-    REQUEST_STATE_TRANSITION, ACTIVE_STATUS
+from WMCore.ReqMgr.DataStructs.RequestStatus import (REQUEST_STATE_LIST, 
+                                       REQUEST_STATE_TRANSITION, ACTIVE_STATUS)
 from WMCore.ReqMgr.DataStructs.RequestType import REQUEST_TYPES
-from WMCore.ReqMgr.Utils.Validation import validate_request_create_args, \
-    validate_request_update_args, loadRequestSchema, validateOutputDatasets
+from WMCore.ReqMgr.Utils.Validation import (validate_request_create_args, validate_request_update_args,
+        validate_clone_create_args, loadRequestSchema, validateOutputDatasets)
 from WMCore.Services.RequestDB.RequestDBWriter import RequestDBWriter
 from WMCore.Services.WorkQueue.WorkQueue import WorkQueue
-from WMCore.WMSpec.WMWorkloadTools import loadSpecByType
-
 
 class Request(RESTEntity):
     def __init__(self, app, api, config, mount):
@@ -62,37 +59,27 @@ class Request(RESTEntity):
                         """Can't retrieve bulk archived status requests with detail option True,
                            set detail=false or use other search arguments""")
 
-        for prop in param.kwargs:
-            safe.kwargs[prop] = param.kwargs[prop]
-
-        for prop in safe.kwargs:
-            del param.kwargs[prop]
-
+        for prop in param.kwargs.keys():
+            safe.kwargs[prop] = param.kwargs.pop(prop)
         return
 
     def _validateRequestBase(self, param, safe, valFunc, requestName=None):
         data = cherrypy.request.body.read()
         if data:
             request_args = json.loads(data)
-            if requestName:
-                request_args["RequestName"] = requestName
-
         else:
-            # actually this is error case
-            # cherrypy.log(str(param.kwargs))
             request_args = {}
-            for prop in param.kwargs:
-                request_args[prop] = param.kwargs[prop]
+        # In case key args are also passed and request body also exists.
+        # If the request.body is dictionally update the key args value as well
+        if isinstance(request_args, dict):
+            for prop in param.kwargs.keys():
+                request_args[prop] = param.kwargs.pop(prop)
 
-            for prop in request_args:
-                del param.kwargs[prop]
             if requestName:
                 request_args["RequestName"] = requestName
             request_args = [request_args]
 
         safe.kwargs['workload_pair_list'] = []
-        if isinstance(request_args, dict):
-            request_args = [request_args]
         for args in request_args:
             workload, r_args = valFunc(args, self.config, self.reqmgr_db_service, param)
             safe.kwargs['workload_pair_list'].append((workload, r_args))
@@ -148,13 +135,6 @@ class Request(RESTEntity):
 
             del param.kwargs["ids"]
 
-            # remove this
-            # tmp = []
-            # for prop in param.kwargs:
-            #    tmp.append(prop)
-            # for prop in tmp:
-            #    del param.kwargs[prop]
-
         safe.kwargs['workload_pair_list'] = []
 
         for request_name in request_names:
@@ -181,22 +161,23 @@ class Request(RESTEntity):
 
             if method == 'PUT':
                 args_length = len(param.args)
+                
                 if args_length == 1:
                     requestName = param.args[0]
                     param.args.pop()
                 else:
                     requestName = None
                 self._validateRequestBase(param, safe, validate_request_update_args, requestName)
-                # TO: handle multiple clone
-            #                 if len(param.args) == 2:
-            #                     #validate clone case
-            #                     if param.args[0] == "clone":
-            #                         param.args.pop()
-            #                         return None, request_args
 
             if method == 'POST':
                 args_length = len(param.args)
-                if args_length == 1 and param.args[0] == "multi_update":
+                if args_length == 2 and param.args[0] == "clone":
+                    # handles clone workflow.- don't validtate args here
+                    param.kwargs['OriginalRequestName'] = param.args[1]
+                    param.args.pop()
+                    param.args.pop()
+                    self._validateRequestBase(param, safe, validate_clone_create_args)
+                elif args_length == 1 and param.args[0] == "multi_update":
                     # special case for multi update from browser.
                     param.args.pop()
                     self._validateMultiRequests(param, safe, validate_request_update_args)
@@ -220,18 +201,6 @@ class Request(RESTEntity):
             else:
                 msg = str(ex)
             raise InvalidSpecParameterValue(msg)
-
-    def initialize_clone(self, request_name):
-        requests = self.reqmgr_db_service.getRequestByNames(request_name)
-        clone_args = requests.values()[0]
-        # overwrite the name and time stamp.
-        initialize_request_args(clone_args, self.config, clone=True)
-        # timestamp status update
-
-        spec = loadSpecByType(clone_args["RequestType"])
-        workload = spec.factoryWorkloadConstruction(clone_args["RequestName"],
-                                                    clone_args)
-        return (workload, clone_args)
 
     def _maskTaskStepChain(self, masked_dict, req_dict, chain_name, mask_key):
 
@@ -477,10 +446,6 @@ class Request(RESTEntity):
 
     def _updateRequest(self, workload, request_args):
         dn = cherrypy.request.user.get("dn", "unknown")
-
-        if workload is None:
-            (workload, request_args) = self.initialize_clone(request_args["OriginalRequestName"])
-            return self.post([workload, request_args])
 
         if "RequestStatus" not in request_args:
             report = self._handleNoStatusUpdate(workload, request_args)

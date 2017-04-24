@@ -5,8 +5,8 @@ from WMCore.REST.Auth import authz_canonical
 from WMCore.Configuration import Configuration
 
 def fake_authz_headers(hmac_key, method = 'HNLogin',
-                       login = 'test', name = 'Test User',
-                       dn = None, roles = {}, format = "list"):
+                       login='testuser', name='Test User',
+                       dn="/test/dn", roles={}, format="list"):
     """Create fake authentication and authorisation headers compatible
     with the CMSWEB front-ends. Assumes you have the HMAC signing key
     the back-end will use to validate the headers.

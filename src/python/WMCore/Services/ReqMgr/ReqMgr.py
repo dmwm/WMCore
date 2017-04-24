@@ -214,3 +214,17 @@ class ReqMgr(Service):
         maskStates = ["aborted", "aborted-completed", "force-complete"]
         return MemoryCacheStruct(expire=0, func=self.getRequestByStatus, initCacheValue=[],
                                  kwargs={'statusList': maskStates, "detail": False})
+
+    def cloneRequest(self, requestName, overwrittenParams=None):
+        """
+        _cloneRequest_
+
+        :param requestName: request name which need to be cloned
+        :type reqeust: str
+        :param overwrittenParams: status of workflow to update (i.e. 'assigned')
+        :type overwrittenParams: dict (dictionary format of parameters need to be overwritten)
+        :returns list of dict [{'request': cloned_request_name}]
+        """
+        params = overwrittenParams or {}
+        uri = 'request/clone/%s' % requestName
+        return self["requests"].post(uri, params)[0]['result']

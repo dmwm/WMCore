@@ -213,6 +213,34 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, acqname, 'Run2016B-Terrible')
         return
 
+    def testGoodCampaign(self):
+        """
+        _testGoodCampaign_
+
+        Test some valid Campaign names
+        """
+        self.assertTrue(campaign(''))
+        self.assertTrue(campaign(None))
+        self.assertTrue(campaign('a22'))
+        self.assertTrue(campaign('aForReals'))
+        self.assertTrue(campaign('Run1016B'))
+        self.assertTrue(campaign('CMSSW_9_1_0_pre2__UPSG_Tracker_PU200-1492810586'))
+        return
+
+    def testBadCampaign(self):
+        """
+        _testBadCampaign_
+
+        Test some invalid Campaign names
+        """
+        self.assertRaises(AssertionError, campaign, '*Nothing')
+        self.assertRaises(AssertionError, campaign, 'B@dCampaign')
+        self.assertRaises(AssertionError, campaign, '\version')
+        self.assertRaises(AssertionError, campaign, '/bad-campaign')
+        self.assertRaises(AssertionError, campaign, 'spaced campaign')
+        self.assertRaises(AssertionError, campaign, 'a_very_very_very__very__very__very_long_campaign_with_62_chars')
+        return
+
     def testGoodSearchstr(self):
         # Check that valid searchstr work
         assert searchstr('/store/mc/Fall08/BBJets250to500-madgraph/*'), 'valid search string not validated'

@@ -990,33 +990,24 @@ class StdBase(object):
 
         self.priority = arguments.get("RequestPriority", 0)
         """
-        # if key is not specified, then it gets the default value
-        arguments = {"RequestType": {"default": "StdBase", "optional": False},  # this need to be overwritten by inherited class
-                     "RequestPriority": {"default": 8000, "type": int, "attr": "priority",
-                                         "validate": lambda x: (x >= 0 and x < 1e6)},
-                     # arguments added/overwritten by ReqMgr2
-                     "Requestor": {"attr": "owner", "optional": False},
-                     "RequestorDN": {"attr": "owner_dn", "optional": False, "null": False},
+        # if key is not specified (and argument is optional), then it's set to the default value
+        arguments = {"RequestType": {"default": "StdBase", "optional": False},
                      "RequestString": {"optional": False, "null": False},
-                     "RequestName": {"optional": False, "null": False, "validate": identifier},
-                     "RequestStatus": {"optional": False, "validate": lambda x: x == REQUEST_START_STATE},
-                     "RequestTransition": {"optional": False, "type": list},
-                     "RequestDate": {"optional": False, "type": list},
-                     "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
-                     "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
-                     "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier},
-
-                     "Group": {"default": "DATAOPS"},
-                     "PrepID": {"default": None, "null": True},
                      # default value will be AcquisitionEra except when AcquistionEra is dict
                      "Campaign": {"default": "", "optional": True},
                      "CMSSWVersion": {"validate": lambda x: x in releases(),
                                       "optional": False, "attr": "frameworkVersion"},
                      "ScramArch": {"validate": lambda x: all([y in architectures() for y in x]),
                                    "optional": False, "type": makeNonEmptyList},
+                     "GlobalTag": {"optional": False, "null": False},
+                     "ConfigCacheID": {"optional": False},
+
+                     "RequestPriority": {"default": 8000, "type": int, "attr": "priority",
+                                         "validate": lambda x: (x >= 0 and x < 1e6)},
+                     "Group": {"default": "DATAOPS"},
+                     "PrepID": {"default": None, "null": True},
                      "OpenRunningTimeout": {"default": 0, "type": int, "null": False,
                                             "validate": lambda x: x >= 0},
-                     "GlobalTag": {"optional": False, "null": False},
                      "GlobalTagConnect": {"null": True},
                      "LumiList": {"default": {}, "type": makeLumiList},
                      "DbsUrl": {"default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader",
@@ -1035,16 +1026,15 @@ class StdBase(object):
                      "EnableHarvesting": {"default": False, "type": strToBool},
                      "EnableNewStageout": {"default": False, "type": strToBool},
                      "IncludeParents": {"default": False, "type": strToBool},
-
                      "ConfigCacheUrl": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
-                     "ConfigCacheID": {"optional": False},
-
                      "VoGroup": {"default": "unknown", "attr": "owner_vogroup"},
                      "VoRole": {"default": "unknown", "attr": "owner_vorole"},
                      "ValidStatus": {"default": "PRODUCTION"},
                      "OverrideCatalog": {"null": True},
                      "RunNumber": {"default": 0, "type": int},
                      "RobustMerge": {"default": True, "type": strToBool},
+                     "Comments": {"default": ""},
+                     "SubRequestType": {"default": ""},  # used only(?) for RelVals
 
                      # FIXME (Alan on 27/Mar/017): maybe used by T0 during creation???
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
@@ -1057,18 +1047,30 @@ class StdBase(object):
                                         "validate": lambda x: x > 0},
 
                      # parameters that can be overwritten during assignment
-                     "UnmergedLFNBase": {"default": "/store/unmerged"},
-                     "MergedLFNBase": {"default": "/store/data"},
                      "AcquisitionEra": {"validate": acqname, "optional": False},
                      "ProcessingString": {"validate": procstring, "optional": False},
                      "ProcessingVersion": {"default": 1, "type": int, "validate": procversion},
                      "Memory": {"default": 2300.0, "type": float, "validate": lambda x: x > 0},
                      "Multicore": {"default": 1, "type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
-                     "Comments": {"default": ""},
+                     "MergedLFNBase": {"default": "/store/data"},
+                     "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
-                     "SubRequestType": {"default": ""}
                     }
+
+        # these arguments are internally set by ReqMgr2 and should not be provided by the user
+        reqmgrArgs = {"Requestor": {"attr": "owner", "optional": False},
+                      "RequestorDN": {"attr": "owner_dn", "optional": False, "null": False},
+                      "RequestName": {"optional": False, "null": False, "validate": identifier},
+                      "RequestStatus": {"optional": False, "validate": lambda x: x == REQUEST_START_STATE},
+                      "RequestTransition": {"optional": False, "type": list},
+                      "RequestDate": {"optional": False, "type": list},
+                      "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
+                      "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
+                      "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
+                     }
+
+        arguments.update(reqmgrArgs)
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
 
@@ -1085,12 +1087,12 @@ class StdBase(object):
         For more information on how these arguments are built, please have a look
         at the docstring for getWorkloadCreateArgs.
         """
-        # if key is not specified, then it gets the default value
+        # if key is not specified (and argument is optional), then it's set to the default value
         arguments = {"RequestPriority": {"type": int, "attr": "priority",
                                          "validate": lambda x: (x >= 0 and x < 1e6)},
-                     "RequestStatus": {"assign_optional": True, "validate": lambda x: x == 'assigned'},
-                     "UnmergedLFNBase": {"default": "/store/unmerged"},
-                     "MergedLFNBase": {"default": "/store/data"},
+                     "RequestStatus": {"assign_optional": False, "validate": lambda x: x == 'assigned'},
+                     "Team": {"type": safeStr, "assign_optional": False,
+                              "validate": lambda x: len(x) > 0},
                      "AcquisitionEra": {"validate": acqname, "assign_optional": True},
                      "ProcessingString": {"validate": procstring, "assign_optional": True},
                      "ProcessingVersion": {"type": int, "validate": procversion, "assign_optional": True},
@@ -1098,11 +1100,11 @@ class StdBase(object):
                      "Multicore": {"type": int, "validate": lambda x: x > 0},
                      "EventStreams": {"type": int, "validate": lambda x: x >= 0, "null": True},
 
-                     # Set phedex subscription information
                      "SiteBlacklist": {"default": [], "type": makeList,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
                      "SiteWhitelist": {"default": [], "type": makeNonEmptyList, "assign_optional": False,
                                        "validate": lambda x: all([cmsname(y) for y in x])},
+                     # PhEDEx subscription information
                      "CustodialSites": {"default": [], "type": makeList, "assign_optional": True,
                                         "validate": lambda x: all([cmsname(y) for y in x])},
                      "NonCustodialSites": {"default": [], "type": makeList, "assign_optional": True,
@@ -1113,16 +1115,14 @@ class StdBase(object):
                                           "validate": lambda x: x in ["Move", "Replica"]},
                      "NonCustodialSubType": {"default": "Replica", "type": str, "assign_optional": True,
                                              "validate": lambda x: x in ["Move", "Replica"]},
-                     "DeleteFromSource": {"default": False, "type": strToBool},
-                     # should be a valid PhEDEx group
                      "CustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
                      "NonCustodialGroup": {"default": "DataOps", "type": str, "assign_optional": True},
-                     # should be Low, Normal or High
                      "SubscriptionPriority": {"default": "Low", "assign_optional": True,
                                               "validate": lambda x: x in ["Low", "Normal", "High"]},
-
-                     "Team": {"type": safeStr, "assign_optional": False,
-                              "validate": lambda x: len(x) > 0},
+                     "DeleteFromSource": {"default": False, "type": strToBool},
+                     # merge settings
+                     "UnmergedLFNBase": {"default": "/store/unmerged"},
+                     "MergedLFNBase": {"default": "/store/data"},
                      "MinMergeSize": {"default": 2 * 1024 * 1024 * 1024, "type": int,
                                       "validate": lambda x: x > 0},
                      "MaxMergeSize": {"default": 4 * 1024 * 1024 * 1024, "type": int,

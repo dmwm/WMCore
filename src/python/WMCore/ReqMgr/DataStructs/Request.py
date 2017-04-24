@@ -55,22 +55,19 @@ def initialize_request_args(request, config, clone=False):
                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
 
-    # TODO: generate this automatically from the spec
-    # generate request name using request
-    generateRequestName(request)
-
     if clone:
         # if it is clone parameter should contain requestName
         request["OriginalRequestName"] = request["RequestName"]
-        request["OriginalRequestType"] = request["RequestType"]
     else:
         # update the information from config
         request["CouchURL"] = config.couch_host
         request["CouchWorkloadDBName"] = config.couch_reqmgr_db
         request["CouchDBName"] = config.couch_config_cache_db
 
+    generateRequestName(request)
 
-def initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service):
+
+def initialize_resubmission(request_args, reqmgr_db_service):
     """
     Initialize a Resubmission request by inheriting the original/parent information
     from couch, unless the user has overwritten that argument in the resubmission request.
@@ -82,8 +79,10 @@ def initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service):
     parent_args = {k: v for k, v in parent_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
 
     for arg in parent_args:
-        if arg not in request_args and arg in acceptedArgs:
+        if arg not in request_args:
             request_args[arg] = parent_args[arg]
+    # to be used later on for spec validation
+    request_args["OriginalRequestType"] = parent_args["RequestType"]
 
 
 def generateRequestName(request):

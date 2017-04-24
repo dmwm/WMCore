@@ -289,11 +289,16 @@ def validateUnknownArgs(arguments, argumentDefinition):
     unknownArgs = set(arguments) - set(argumentDefinition.keys())
     if unknownArgs:
         # now onto the exceptions...
-        if arguments.get("RequestType") in ["ReReco", "Resubmission"]:
+        if arguments.get("RequestType") == "ReReco":
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Skim")])
-        elif arguments.get("RequestType") in ["StepChain", "Resubmission"]:
+        elif arguments.get("RequestType") == "StepChain":
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Step")])
-        elif arguments.get("RequestType") in ["TaskChain", "Resubmission"]:
+        elif arguments.get("RequestType") == "TaskChain":
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Task")])
+        elif arguments.get("RequestType") == "Resubmission":
+            # oh well, then we have to skip all possible obscure arguments
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Skim")])
+            unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Step")])
             unknownArgs = unknownArgs - set([x for x in unknownArgs if x.startswith("Task")])
 
         if unknownArgs:

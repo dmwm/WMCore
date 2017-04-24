@@ -7,13 +7,13 @@ with limited input for error recovery.
 """
 
 from Utils.Utilities import makeList
-from WMCore.Lexicon import couchurl, identifier, cmsname
-from WMCore.WMSpec.StdSpecs.DataProcessing import DataProcessing
+from WMCore.Lexicon import couchurl, identifier, cmsname, dataset
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, validateArgumentsCreate
 
 
-class ResubmissionWorkloadFactory(DataProcessing):
+class ResubmissionWorkloadFactory(StdBase):
     """
     _ResubmissionWorkloadFactory_
 
@@ -52,13 +52,12 @@ class ResubmissionWorkloadFactory(DataProcessing):
         return helper
 
     def __call__(self, workloadName, arguments):
-        DataProcessing.__call__(self, workloadName, arguments)
+        StdBase.__call__(self, workloadName, arguments)
         self.originalRequestName = self.initialTaskPath.split('/')[1]
         return self.buildWorkload(arguments)
 
     @staticmethod
     def getWorkloadCreateArgs():
-        baseArgs = DataProcessing.getWorkloadCreateArgs()
         specArgs = {"RequestType" : {"default" : "Resubmission"},
                     "OriginalRequestType": {"null": False},
                     "OriginalRequestName": {"null": False},
@@ -71,11 +70,12 @@ class ResubmissionWorkloadFactory(DataProcessing):
                     "CollectionName": {"default" : None, "null" : True},
                     "IgnoredOutputModules": {"default": [], "type": makeList},
                     "SiteWhitelist": {"default": [], "type": makeList,
-                                      "validate": lambda x: all([cmsname(y) for y in x])}}
+                                      "validate": lambda x: all([cmsname(y) for y in x])},
+                    # it can be Chained or MC requests, so lets make it optional
+                    "InputDataset" : {"optional": True, "validate" : dataset, "null" : True}}
 
-        baseArgs.update(specArgs)
-        DataProcessing.setDefaultArgumentsProperty(baseArgs)
-        return baseArgs
+        StdBase.setDefaultArgumentsProperty(specArgs)
+        return specArgs
 
     def validateSchema(self, schema):
         """

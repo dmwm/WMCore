@@ -95,37 +95,21 @@ def validate_request_update_args(request_args, config, reqmgr_db_service, param)
     # validate the status
     if "RequestStatus" in request_args:
         validate_state_transition(reqmgr_db_service, request_name, request_args["RequestStatus"])
-        # delete request_args since it is not part of spec argument and validation
-        if request_args["RequestStatus"] not in STATES_ALLOW_ONLY_STATE_TRANSITION:
-            args_without_status = {}
-            args_without_status.update(request_args)
-            del args_without_status["RequestStatus"]
-        else:
+        if request_args["RequestStatus"] in STATES_ALLOW_ONLY_STATE_TRANSITION:
             # if state change doesn't allow other transition nothing else to validate
             args_only_status = {}
             args_only_status["RequestStatus"] = request_args["RequestStatus"]
-            if 'cascade' in request_args:
-                args_only_status["cascade"] = request_args["cascade"]
+            args_only_status["cascade"] = request_args.get("cascade", False)
             return workload, args_only_status
-    else:
-        args_without_status = request_args
+        elif request_args["RequestStatus"] == 'assigned':
+            workload.validateArgumentForAssignment(request_args)
 
-    if len(args_without_status) == 1:
-        if 'RequestPriority' in args_without_status:
-            args_without_status['RequestPriority'] = int(args_without_status['RequestPriority'])
-            if (lambda x: (x >= 0 and x < 1e6))(args_without_status['RequestPriority']) is False:
-                raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
-            if "RequestStatus" in request_args:
-                return workload, request_args
-            else:
-                return workload, args_without_status
-    elif len(args_without_status) > 0 and not workqueue_stat_validation(args_without_status):
-        # validate the arguments against the spec argumentSpecdefinition
-        # TODO: currently only assigned status allows any update other then Status update
-        workload.validateArgumentForAssignment(args_without_status)
+    # TODO: fetch it from the assignment arg definition
+    if 'RequestPriority' in request_args:
+        request_args['RequestPriority'] = int(request_args['RequestPriority'])
+        if (lambda x: (x >= 0 and x < 1e6))(request_args['RequestPriority']) is False:
+            raise InvalidSpecParameterValue("RequestPriority must be an integer between 0 and 1e6")
 
-    # to update request_args with type conversion
-    request_args.update(args_without_status)
     return workload, request_args
 
 
@@ -150,16 +134,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
-        acceptedArgs = {}
-        if 'OriginalRequestType' in request_args:
-            parentSpecClass = loadSpecClassByType(request_args['OriginalRequestType'])
-            acceptedArgs = parentSpecClass.getWorkloadCreateArgs()
-
-        acceptedArgs.update(specClass.getWorkloadCreateArgs())
-        assignArgs = specClass.getWorkloadAssignArgs()
-        acceptedArgs.update(assignArgs)
-
-        initialize_resubmission(request_args, acceptedArgs, reqmgr_db_service)
+        initialize_resubmission(request_args, reqmgr_db_service)
     else:
         # set default values for the request_args
         setArgumentsWithDefault(request_args, specClass.getWorkloadCreateArgs())

@@ -30,8 +30,7 @@ ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
      'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
      'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
 
-
-def initialize_request_args(request, config, clone=False):
+def initialize_request_args(request, config):
     """
     Request data class request is a dictionary representing
     a being injected / created request. This method initializes
@@ -55,14 +54,10 @@ def initialize_request_args(request, config, clone=False):
                                      "UpdateTime": int(time.time()), "DN": request["RequestorDN"]}]
     request["RequestDate"] = list(time.gmtime()[:6])
 
-    if clone:
-        # if it is clone parameter should contain requestName
-        request["OriginalRequestName"] = request["RequestName"]
-    else:
-        # update the information from config
-        request["CouchURL"] = config.couch_host
-        request["CouchWorkloadDBName"] = config.couch_reqmgr_db
-        request["CouchDBName"] = config.couch_config_cache_db
+    # update the information from config
+    request["CouchURL"] = config.couch_host
+    request["CouchWorkloadDBName"] = config.couch_reqmgr_db
+    request["CouchDBName"] = config.couch_config_cache_db
 
     generateRequestName(request)
 
@@ -84,6 +79,30 @@ def initialize_resubmission(request_args, reqmgr_db_service):
     # to be used later on for spec validation
     request_args["OriginalRequestType"] = parent_args["RequestType"]
 
+def _replace_cloned_args(clone_args, user_args):
+    """
+    replace original arguments with user argument.
+    If the value is dictionary format, overwrite only with specified arguments.
+    If the original arguemnt has simple value and user passes dictionary, completely replace to dictionary
+    """
+    for prop in user_args:
+        if isinstance(user_args[prop], dict) and isinstance(clone_args.get(prop), dict):
+            _replace_cloned_args(clone_args.get(prop, {}), user_args[prop])
+        else:     
+            clone_args[prop] = user_args[prop]
+    return
+    
+def initialize_clone(request_args, reqmgr_db_service):
+    """
+    Initialize a Clone arguments by inheriting and overwriting argument from OriginalRequest
+    """
+    requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
+    clone_args = requests.values()[0]
+    # TODO: need to validate new overwrite request_args here since it will skip the clone_args validtaiton
+    _replace_cloned_args(clone_args, request_args)
+    clone_args = {k: v for k, v in clone_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
+
+    return clone_args
 
 def generateRequestName(request):
     currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))

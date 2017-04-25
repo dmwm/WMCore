@@ -13,7 +13,7 @@ from WMCore.REST.Auth import authz_match
 from WMCore.WMFactory import WMFactory
 from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
 from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_resubmission
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_resubmission, initialize_clone
 from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
 from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
 from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
@@ -144,6 +144,30 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
                                                 request_args)
 
     return workload, request_args
+
+def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
+    """
+    *arg and **kwargs are only for the interface
+    validate post request
+    1. read data from body
+    2. validate using spec validation
+    3. convert data from body to arguments (spec instance, argument with default setting)
+    TODO: raise right kind of error with clear message
+    """
+    cloned_args = initialize_clone(request_args, reqmgr_db_service)
+    initialize_request_args(cloned_args, config)
+    # check the permission for creating the request
+    permission = getWritePermission(cloned_args)
+    authz_match(permission['role'], permission['group'])
+
+    # TODO: Do validation only one request_args
+
+    spec = loadSpecClassByType(cloned_args["RequestType"])()
+    # for clone validation will be skiped in factoryWorkloadConstruction
+    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"],
+                                                    cloned_args)
+
+    return workload, cloned_args
 
 
 def validate_state_transition(reqmgr_db_service, request_name, new_state):

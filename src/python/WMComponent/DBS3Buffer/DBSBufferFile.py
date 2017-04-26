@@ -13,13 +13,17 @@ from WMCore.WMBS.WMBSBase import WMBSBase
 
 
 class DBSBufferFile(WMBSBase, WMFile):
-    def __init__(self, lfn = None, id = -1, size = None,
-                 events = None, checksums = {}, parents = None, locations = None,
-                 status = "NOTUPLOADED", workflowId = None, prep_id = None):
+
+    def __init__(self, lfn=None, id=-1, size=None,
+                 events=None, checksums=None, parents=None, locations=None,
+                 status="NOTUPLOADED", inPhedex=0, workflowId=None, prep_id=None):
+
+        checksums = checksums or {}
         WMBSBase.__init__(self)
         WMFile.__init__(self, lfn = lfn, size = size, events = events,
                         checksums = checksums, parents = parents, merged = True)
         self.setdefault("status", status)
+        self.setdefault("in_phedex", inPhedex)
         self.setdefault("id", id)
         self.setdefault("workflowId", workflowId)
 

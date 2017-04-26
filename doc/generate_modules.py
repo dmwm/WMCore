@@ -103,7 +103,7 @@ def create_package_file(root, master_package, subroot, py_files, opts, subs):
             continue
         headpart, tocpart = create_submodule_file(master_package, subroot, package, py_file, opts)
         if headpart:
-	    text += headpart
+            text += headpart
         if tocpart:
             if not toc:
                 toc = format_heading(2, ':mod:`%s` Modules' % package)

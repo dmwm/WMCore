@@ -315,7 +315,8 @@ class InstallCommand(install):
         docroot = "%s/doc/build/html" % get_path_to_wmcore_root()
         for dirpath, dirs, files in os.walk(docroot):
             self.distribution.data_files.append(("doc%s" % dirpath[len(docroot):],
-	                       ["%s/%s" % (dirpath, fname) for fname in files if fname != '.buildinfo']))
+                                                 ["%s/%s" % (dirpath, fname) for fname in files if
+                                                  fname != '.buildinfo']))
         # Mangle data paths if patching.
         if self.patch:
             self.distribution.data_files = [('x' + dir, files) for dir, files in self.distribution.data_files]
@@ -327,7 +328,7 @@ class InstallCommand(install):
 
         install.finalize_options(self)
 
-	# Convert to patch install if so requested
+        # Convert to patch install if so requested
         if self.patch:
             self.install_lib = re.sub(r'(.*)/lib/python(.*)', r'\1/xlib/python\2', self.install_lib)
             self.install_scripts = re.sub(r'(.*)/bin$', r'\1/xbin', self.install_scripts)

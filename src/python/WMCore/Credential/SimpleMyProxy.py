@@ -19,15 +19,14 @@ from OpenSSL import crypto, SSL
 
 from WMCore.Credential.Credential import Credential
 
-
 # we don't require password as we only want to allow x509 authentication
-CMD_GET="""VERSION=MYPROXYv2
+CMD_GET = """VERSION=MYPROXYv2
 COMMAND=0
 USERNAME=%s
 PASSPHRASE=
 LIFETIME=%d\0"""
 
-CMD_INFO="""VERSION=MYPROXYv2
+CMD_INFO = """VERSION=MYPROXYv2
 COMMAND=2
 USERNAME=%s
 PASSPHRASE=PASSPHRASE
@@ -35,6 +34,7 @@ LIFETIME=0\0"""
 
 
 class MyProxyException(Exception): pass
+
 
 def myproxy_ctx(certfile, keyfile):
     ctx = SSL.Context(SSL.SSLv3_METHOD)
@@ -49,9 +49,9 @@ def myproxy_ctx(certfile, keyfile):
     return ctx
 
 
-def create_cert_req(keyType = crypto.TYPE_RSA,
-                    bits = 1024,
-                    messageDigest = "md5"):
+def create_cert_req(keyType=crypto.TYPE_RSA,
+                    bits=1024,
+                    messageDigest="md5"):
     """
     Create certificate request.
 
@@ -68,14 +68,16 @@ def create_cert_req(keyType = crypto.TYPE_RSA,
     req.set_pubkey(pkey)
     req.sign(pkey, messageDigest)
 
-    return (crypto.dump_certificate_request(crypto.FILETYPE_ASN1,req),
-           crypto.dump_privatekey(crypto.FILETYPE_PEM,pkey))
+    return (crypto.dump_certificate_request(crypto.FILETYPE_ASN1, req),
+            crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey))
 
 
 def deserialize_response(msg):
     m = re.search('RESPONSE=(\d)\n', msg)
-    if m: resp = int(m.group(1))
-    else: resp = 1 # set error if response not found
+    if m:
+        resp = int(m.group(1))
+    else:
+        resp = 1  # set error if response not found
 
     errors = ", ".join(re.findall('^ERROR=(.*?)\n', msg, re.MULTILINE))
     data = "".join(re.findall('^(?!VERSION|RESPONSE|ERROR)(.*?\n)', msg, re.MULTILINE))
@@ -83,7 +85,6 @@ def deserialize_response(msg):
 
 
 def deserialize_certs(inp_dat):
-
     pem_certs = []
 
     dat = inp_dat
@@ -96,12 +97,12 @@ def deserialize_certs(inp_dat):
         if ind < 0:
             break
 
-        len = 256*ord(dat[ind+2]) + ord(dat[ind+3])
+        len = 256 * ord(dat[ind + 2]) + ord(dat[ind + 3])
 
         # extract der-format cert, and convert to pem
-        c = dat[ind:ind+len+4]
-        x509 = crypto.load_certificate(crypto.FILETYPE_ASN1,c)
-        pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM,x509)
+        c = dat[ind:ind + len + 4]
+        x509 = crypto.load_certificate(crypto.FILETYPE_ASN1, c)
+        pem_cert = crypto.dump_certificate(crypto.FILETYPE_PEM, x509)
         pem_certs.append(pem_cert)
 
         # trim cert from data
@@ -119,15 +120,17 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
     if op not in ['info', 'get']: raise MyProxyException('Wrong operation. Select "info" or "get".')
 
     logger.debug("debug: connect to myproxy server")
-    conn = SSL.Connection(sslctx,socket.socket())
-    conn.connect((host,port))
+    conn = SSL.Connection(sslctx, socket.socket())
+    conn.connect((host, port))
 
     logger.debug("debug: send globus compat byte")
     conn.write('0')
 
     logger.debug("debug: send the operation command")
-    if op == 'info':  cmd = CMD_INFO % username
-    else:             cmd = CMD_GET % (username, lifetime)
+    if op == 'info':
+        cmd = CMD_INFO % username
+    else:
+        cmd = CMD_GET % (username, lifetime)
     conn.write(cmd)
 
     logger.debug("debug: process server response")
@@ -139,42 +142,41 @@ def myproxy_client(sslctx, op, username, logger, lifetime=43200, host="myproxy.c
     logger.debug("debug: server response ok")
 
     if op == 'get':
-      # The client will generate a public/private key pair and send a
-      # NULL-terminated PKCS#10 certificate request to the server.
-      logger.debug("debug: generate and send certificate request")
-      certreq, privkey = create_cert_req()
-      conn.send(certreq)
+        # The client will generate a public/private key pair and send a
+        # NULL-terminated PKCS#10 certificate request to the server.
+        logger.debug("debug: generate and send certificate request")
+        certreq, privkey = create_cert_req()
+        conn.send(certreq)
 
-      logger.debug("debug: receive the number of certs")
-      d = conn.recv(1)
-      numcerts = ord(d[0])
+        logger.debug("debug: receive the number of certs")
+        d = conn.recv(1)
+        numcerts = ord(d[0])
 
-      logger.debug("debug: receive %d certs" % numcerts)
-      d = conn.recv(8192)
+        logger.debug("debug: receive %d certs" % numcerts)
+        d = conn.recv(8192)
 
-      logger.debug("debug: process server response")
-      r = conn.recv(8192)
-      resp, error, data = deserialize_response(r)
-      if resp: raise RetrieveProxyException(error)
-      logger.debug("debug: server response ok")
+        logger.debug("debug: process server response")
+        r = conn.recv(8192)
+        resp, error, data = deserialize_response(r)
+        if resp: raise RetrieveProxyException(error)
+        logger.debug("debug: server response ok")
 
-      # deserialize certs from received cert data
-      pem_certs = deserialize_certs(d)
-      if len(pem_certs) != numcerts:
-          raise MyProxyException("%d certs expected, %d received" % (numcerts,len(pem_certs)))
-      logger.debug("debug: certs deserialized successfuly")
+        # deserialize certs from received cert data
+        pem_certs = deserialize_certs(d)
+        if len(pem_certs) != numcerts:
+            raise MyProxyException("%d certs expected, %d received" % (numcerts, len(pem_certs)))
+        logger.debug("debug: certs deserialized successfuly")
 
-      # return proxy, the corresponding privkey, and then the rest of cert chain
-      data = pem_certs[0] + privkey
-      for c in pem_certs[1:]: data += c
+        # return proxy, the corresponding privkey, and then the rest of cert chain
+        data = pem_certs[0] + privkey
+        for c in pem_certs[1:]: data += c
 
     return data
 
 
 class SimpleMyProxy(Credential):
-
     def __init__(self, args):
-        Credential.__init__( self, args )
+        Credential.__init__(self, args)
         self.logger = args['logger'] if 'logger' in args else logging.getLogger(type(self).__name__)
 
     def checkMyProxy(self, username, certfile=None, keyfile=None, myproxyserver='myproxy.cern.ch', myproxyport=7512):
@@ -187,18 +189,19 @@ class SimpleMyProxy(Credential):
                                  host=myproxyserver, port=myproxyport)
         myproxystatus = {}
         for line in myproxy.split('\n'):
-           if line:
-               if 'CRED_START_TIME' in line:
-                   myproxystatus['start'] = line.split('CRED_START_TIME=')[1]
-               elif 'CRED_END_TIME' in line:
-                   myproxystatus['end'] = line.split('CRED_END_TIME=')[1]
-               elif 'CRED_OWNER' in line:
-                   myproxystatus['owner'] = line.split('CRED_OWNER=')[1]
-               elif 'CRED_RETRIEVER_TRUSTED' in line:
-                   myproxystatus['retriever'] = line.split('CRED_RETRIEVER_TRUSTED=')[1]
+            if line:
+                if 'CRED_START_TIME' in line:
+                    myproxystatus['start'] = line.split('CRED_START_TIME=')[1]
+                elif 'CRED_END_TIME' in line:
+                    myproxystatus['end'] = line.split('CRED_END_TIME=')[1]
+                elif 'CRED_OWNER' in line:
+                    myproxystatus['owner'] = line.split('CRED_OWNER=')[1]
+                elif 'CRED_RETRIEVER_TRUSTED' in line:
+                    myproxystatus['retriever'] = line.split('CRED_RETRIEVER_TRUSTED=')[1]
         return myproxystatus
 
-    def logonRenewMyProxy(self, username, lifetime=43200, certfile=None, keyfile=None, myproxyserver='myproxy.cern.ch', myproxyport=7512):
+    def logonRenewMyProxy(self, username, lifetime=43200, certfile=None, keyfile=None, myproxyserver='myproxy.cern.ch',
+                          myproxyport=7512):
         """
         Retrieves a proxy from an existing myproxy server already delegated.
         """
@@ -214,22 +217,23 @@ if __name__ == '__main__':
 
     parser = optparse.OptionParser()
     parser.add_option("-o", "--op", dest="op",
-                       help="Operation: info|get")
+                      help="Operation: info|get")
     parser.add_option("-s", "--pshost", dest="host", default="myproxy.cern.ch",
-                       help="The hostname of the MyProxy server to contact")
+                      help="The hostname of the MyProxy server to contact")
     parser.add_option("-p", "--psport", dest="port", default=7512,
-                       help="The port of the MyProxy server to contact")
+                      help="The port of the MyProxy server to contact")
     parser.add_option("-l", "--username", dest="username",
-                       help="The username with which the credential is stored on the MyProxy server")
+                      help="The username with which the credential is stored on the MyProxy server")
     parser.add_option("-C", "--certfile", dest="cert",
-                       help="Certificate PEM filename to use with myproxy authentication")
+                      help="Certificate PEM filename to use with myproxy authentication")
     parser.add_option("-y", "--keyfile", dest="key",
-                       help="Certkey PEM filename to use with myproxy authentication")
+                      help="Certkey PEM filename to use with myproxy authentication")
     parser.add_option("-t", "--proxy_lifetime", dest="lifetime", default=43200,
-                       help="The lifetime validity for the fetched proxy.")
+                      help="The lifetime validity for the fetched proxy.")
     parser.add_option("-v", "--verbose", action="store_true", dest="debug", default=False,
-                       help="Print debug information to stdout.")
-    (opt,args) = parser.parse_args()
+                      help="Print debug information to stdout.")
+    (opt, args) = parser.parse_args()
+
 
     def getLogging(debug):
         """Retrieves a logger and set the proper level
@@ -241,8 +245,10 @@ if __name__ == '__main__':
             loglevel = logging.DEBUG
         logging.basicConfig(level=loglevel)
         logger = logging.getLogger(__name__)
-        logger.debug("Logging level initialized to %s." %loglevel)
+        logger.debug("Logging level initialized to %s." % loglevel)
         return logger
+
+
     logger = getLogging(debug=opt.debug)
 
     # process options
@@ -255,7 +261,7 @@ if __name__ == '__main__':
     if not opt.cert or not opt.key:
         logger.error("Error: certificate/key not specified, use --certfile and --keyfile (see -h for help)")
         sys.exit(1)
-    dbgfunc = lambda x: sys.stdout.write(x+'\n') if opt.debug else 0
+    dbgfunc = lambda x: sys.stdout.write(x + '\n') if opt.debug else 0
 
     # Do the operation
     try:
@@ -266,6 +272,7 @@ if __name__ == '__main__':
     except Exception as e:
         if opt.debug:
             import traceback
+
             traceback.print_exc()
         logger.error("Error:" + str(e))
         sys.exit(1)

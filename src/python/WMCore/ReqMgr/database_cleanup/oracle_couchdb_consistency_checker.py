@@ -29,7 +29,6 @@ from __future__ import print_function
 couch_url = "https://cmsweb.cern.ch/couchdb"
 couchdb_name = "reqmgr_workload_cache"
 
-
 import sys
 import re
 
@@ -37,130 +36,130 @@ import cx_Oracle
 
 from WMCore.Database.CMSCouch import CouchServer, Database, Document
 
-
 # do not consider consistency of these, to be removed from Couch later
 COUCH_TO_IGNORE = (
-                   "ReqMgrGroupID",
-                   "ReqMgrRequestID",
-                   "ReqMgrRequestBasePriority",
-                   "ReqMgrRequestorID",
-                   "Workflowspec",
-                   "RequestSizeEvents",
-                   "RequestEventSize",
-                   )
+    "ReqMgrGroupID",
+    "ReqMgrRequestID",
+    "ReqMgrRequestBasePriority",
+    "ReqMgrRequestorID",
+    "Workflowspec",
+    "RequestSizeEvents",
+    "RequestEventSize",
+)
 
 # columns in the Oracle SQL statement,
 # the order and number of items here have to agree with select columns ...
-MAPPING=(
-         {"oracle": "REQUEST_NAME", "couch": "RequestName"},
-         {"oracle": "TYPE_NAME", "couch": "RequestType"},
-         {"oracle": "STATUS_NAME", "couch": "RequestStatus"},
-         {"oracle": "REQUEST_PRIORITY", "couch": "RequestPriority"},
-         {"oracle": "REQUESTOR_GROUP_ID", "couch": "ReqMgrGroupID"},
-         {"oracle": "WORKFLOW", "couch": "RequestWorkflow"},
-         {"oracle": "REQUEST_EVENT_SIZE", "couch": "RequestEventSize"},
-         {"oracle": "REQUEST_SIZE_FILES", "couch": "RequestSizeFiles"},
-         {"oracle": "PREP_ID", "couch": "PrepID"},
-         {"oracle": "REQUEST_NUM_EVENTS", "couch": "RequestNumEvents"},
-         {"oracle": "GROUP_NAME", "couch": "Group"},
-         {"oracle": "REQUESTOR_HN_NAME", "couch": "Requestor"},
-         {"oracle": "REQUESTOR_DN_NAME", "couch": "RequestorDN"},
+MAPPING = (
+    {"oracle": "REQUEST_NAME", "couch": "RequestName"},
+    {"oracle": "TYPE_NAME", "couch": "RequestType"},
+    {"oracle": "STATUS_NAME", "couch": "RequestStatus"},
+    {"oracle": "REQUEST_PRIORITY", "couch": "RequestPriority"},
+    {"oracle": "REQUESTOR_GROUP_ID", "couch": "ReqMgrGroupID"},
+    {"oracle": "WORKFLOW", "couch": "RequestWorkflow"},
+    {"oracle": "REQUEST_EVENT_SIZE", "couch": "RequestEventSize"},
+    {"oracle": "REQUEST_SIZE_FILES", "couch": "RequestSizeFiles"},
+    {"oracle": "PREP_ID", "couch": "PrepID"},
+    {"oracle": "REQUEST_NUM_EVENTS", "couch": "RequestNumEvents"},
+    {"oracle": "GROUP_NAME", "couch": "Group"},
+    {"oracle": "REQUESTOR_HN_NAME", "couch": "Requestor"},
+    {"oracle": "REQUESTOR_DN_NAME", "couch": "RequestorDN"},
 
-         # team
-         # applies only to requests which reached assignment status
-         # WARNING:
-         # by including teams, not all requests will be returned in
-         # the query to compare/update the above data fields
-         # {"oracle": "TEAM_NAME", "couch": "Team"},
+    # team
+    # applies only to requests which reached assignment status
+    # WARNING:
+    # by including teams, not all requests will be returned in
+    # the query to compare/update the above data fields
+    # {"oracle": "TEAM_NAME", "couch": "Team"},
 
-         # reqmgr_input_dataset
-         # WARNING:
-         # only some requests have InputDataset assigned, so not
-         # all requests are returned
-         #{"oracle": "DATASET_NAME", "couch": "InputDataset"},
-         #{"oracle": "DATASET_TYPE", "couch": "InputDatasetTypes"},
+    # reqmgr_input_dataset
+    # WARNING:
+    # only some requests have InputDataset assigned, so not
+    # all requests are returned
+    # {"oracle": "DATASET_NAME", "couch": "InputDataset"},
+    # {"oracle": "DATASET_TYPE", "couch": "InputDatasetTypes"},
 
-         # reqmgr_output_dataset
-         #{"oracle": "DATASET_NAME", "couch": "OutputDatasets"},
-         #{"oracle": "SIZE_PER_EVENT", "couch": "SizePerEvent"},
+    # reqmgr_output_dataset
+    # {"oracle": "DATASET_NAME", "couch": "OutputDatasets"},
+    # {"oracle": "SIZE_PER_EVENT", "couch": "SizePerEvent"},
 
-         # reqmgr_software reqmgr_software_dependency
-         {"oracle": "SOFTWARE_NAME", "couch": "CMSSWVersion"},
-         {"oracle": "SCRAM_ARCH", "couch": "ScramArch"},
-        )
+    # reqmgr_software reqmgr_software_dependency
+    {"oracle": "SOFTWARE_NAME", "couch": "CMSSWVersion"},
+    {"oracle": "SCRAM_ARCH", "couch": "ScramArch"},
+)
 
 ORACLE_FIELDS = [item["oracle"] for item in MAPPING]
 COUCH_FIELDS = [item["couch"] for item in MAPPING]
 
+SQL = ("select "
+       "reqmgr_request.REQUEST_NAME, "
+       "reqmgr_request_type.TYPE_NAME, "
+       "reqmgr_request_status.STATUS_NAME, "
+       "reqmgr_request.REQUEST_PRIORITY, "
+       "reqmgr_request.REQUESTOR_GROUP_ID, "
+       "reqmgr_request.WORKFLOW, "
+       "reqmgr_request.REQUEST_EVENT_SIZE, "
+       "reqmgr_request.REQUEST_SIZE_FILES, "
+       "reqmgr_request.PREP_ID, "
+       "reqmgr_request.REQUEST_NUM_EVENTS, "
+       "reqmgr_group.GROUP_NAME, "
+       "reqmgr_requestor.REQUESTOR_HN_NAME, "
+       "reqmgr_requestor.REQUESTOR_DN_NAME, "
 
-SQL=("select "
-     "reqmgr_request.REQUEST_NAME, "
-     "reqmgr_request_type.TYPE_NAME, "
-     "reqmgr_request_status.STATUS_NAME, "
-     "reqmgr_request.REQUEST_PRIORITY, "
-     "reqmgr_request.REQUESTOR_GROUP_ID, "
-     "reqmgr_request.WORKFLOW, "
-     "reqmgr_request.REQUEST_EVENT_SIZE, "
-     "reqmgr_request.REQUEST_SIZE_FILES, "
-     "reqmgr_request.PREP_ID, "
-     "reqmgr_request.REQUEST_NUM_EVENTS, "
-     "reqmgr_group.GROUP_NAME, "
-     "reqmgr_requestor.REQUESTOR_HN_NAME, "
-     "reqmgr_requestor.REQUESTOR_DN_NAME, "
+       # team
+       # "reqmgr_teams.TEAM_NAME "
 
-     # team
-     #"reqmgr_teams.TEAM_NAME "
+       # reqmgr_input_dataset
+       # "reqmgr_input_dataset.DATASET_NAME, "
+       # "reqmgr_input_dataset.DATASET_TYPE "
 
-     # reqmgr_input_dataset
-     #"reqmgr_input_dataset.DATASET_NAME, "
-     #"reqmgr_input_dataset.DATASET_TYPE "
+       # reqmgr_output_dataset
+       # "reqmgr_output_dataset.DATASET_NAME, "
+       # "reqmgr_output_dataset.SIZE_PER_EVENT "
 
-     # reqmgr_output_dataset
-     #"reqmgr_output_dataset.DATASET_NAME, "
-     #"reqmgr_output_dataset.SIZE_PER_EVENT "
+       # reqmgr_software reqmgr_software_dependency
+       "reqmgr_software.SOFTWARE_NAME, "
+       "reqmgr_software.SCRAM_ARCH "
 
-     # reqmgr_software reqmgr_software_dependency
-     "reqmgr_software.SOFTWARE_NAME, "
-     "reqmgr_software.SCRAM_ARCH "
+       "from reqmgr_request, reqmgr_request_type, reqmgr_request_status, "
+       "reqmgr_group, reqmgr_group_association, reqmgr_requestor, "
 
-     "from reqmgr_request, reqmgr_request_type, reqmgr_request_status, "
-     "reqmgr_group, reqmgr_group_association, reqmgr_requestor, "
+       # team
+       # "reqmgr_teams, reqmgr_assignment "
 
-     # team
-     #"reqmgr_teams, reqmgr_assignment "
+       # reqmgr_input_dataset
+       # "reqmgr_input_dataset "
 
-     # reqmgr_input_dataset
-     # "reqmgr_input_dataset "
+       # reqmgr_output_dataset
+       # "reqmgr_output_dataset "
 
-     # reqmgr_output_dataset
-     # "reqmgr_output_dataset "
+       # reqmgr_software reqmgr_software_dependency
+       "reqmgr_software, reqmgr_software_dependency "
 
-     # reqmgr_software reqmgr_software_dependency
-     "reqmgr_software, reqmgr_software_dependency "
+       "where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE "
+       "and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS "
+       "and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID "
+       "and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID "
+       "and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID "
+       "and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID "
+       # team
+       # "and reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID "
+       # "and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID "
 
-     "where reqmgr_request_type.TYPE_ID=reqmgr_request.REQUEST_TYPE "
-     "and reqmgr_request_status.STATUS_ID=reqmgr_request.REQUEST_STATUS "
-     "and reqmgr_group.GROUP_ID=reqmgr_group_association.GROUP_ID "
-     "and reqmgr_group_association.ASSOCIATION_ID=reqmgr_request.REQUESTOR_GROUP_ID "
-     "and reqmgr_request.REQUESTOR_GROUP_ID=reqmgr_group_association.ASSOCIATION_ID "
-     "and reqmgr_group_association.REQUESTOR_ID=reqmgr_requestor.REQUESTOR_ID "
-     # team
-     #"and reqmgr_request.REQUEST_ID=reqmgr_assignment.REQUEST_ID "
-     #"and reqmgr_assignment.TEAM_ID=reqmgr_teams.TEAM_ID "
+       # reqmgr_input_dataset
+       # "and reqmgr_request.REQUEST_ID=reqmgr_input_dataset.REQUEST_ID"
 
-     # reqmgr_input_dataset
-     #"and reqmgr_request.REQUEST_ID=reqmgr_input_dataset.REQUEST_ID"
+       # reqmgr_output_dataset
+       # "and reqmgr_request.REQUEST_ID=reqmgr_output_dataset.REQUEST_ID"
 
-     # reqmgr_output_dataset
-     #"and reqmgr_request.REQUEST_ID=reqmgr_output_dataset.REQUEST_ID"
+       # reqmgr_software reqmgr_software_dependency
+       "and reqmgr_request.REQUEST_ID=reqmgr_software_dependency.REQUEST_ID "
+       "and reqmgr_software_dependency.SOFTWARE_ID=reqmgr_software.SOFTWARE_ID"
 
-     # reqmgr_software reqmgr_software_dependency
-     "and reqmgr_request.REQUEST_ID=reqmgr_software_dependency.REQUEST_ID "
-     "and reqmgr_software_dependency.SOFTWARE_ID=reqmgr_software.SOFTWARE_ID"
+       # limit the number of rows returned by oracle
+       #     "and rownum < 5"
+       )
 
-# limit the number of rows returned by oracle
-#     "and rownum < 5"
-    )
+
 # END OF SQL
 
 # ; semi-colon at the end nicely yields
@@ -193,7 +192,7 @@ def get_oracle_data(oradb):
     request = {}
     for row in ora_cursor.fetchall():
         for k, v in zip(ORACLE_FIELDS, row):
-             request[k] = v
+            request[k] = v
         yield request
     ora_cursor.close()
 
@@ -233,7 +232,6 @@ def main():
     else:
         print("Database cross-check (Oracle request names vs CouchDB): DONE, THE SAME.")
 
-
     def get_couch_value(couch_req, mapping):
         try:
             c = couch_req[mapping["couch"]]
@@ -245,7 +243,6 @@ def main():
             couch_missing = False
         return str(c), couch_missing
 
-
     def check_oracle_worflow_value(oracle_value, mapping, req_name):
         # check Oracle WORKFLOW value
         if mapping["oracle"] == "WORKFLOW":
@@ -255,7 +252,6 @@ def main():
                 print("Workflow URL mismatch: %s" % o)
                 sys.exit(1)
 
-
     counter = 0
     for oracle_req in get_oracle_data(oradb):
         req_name = oracle_req["REQUEST_NAME"]
@@ -264,7 +260,7 @@ def main():
         # check only requests injected approx. after last deployment (a lot of
         # stuff should have already been fixed in ReqMgr)
         # _13041._*$ (ending of request name with date/time)
-        #if not re.match(".*_1304[0-3][0-9]_.*$", req_name): # all April 2013
+        # if not re.match(".*_1304[0-3][0-9]_.*$", req_name): # all April 2013
         #    continue
 
         counter += 1
@@ -307,7 +303,7 @@ def main():
             print "%s: %s: %s" % (req_name, removable, val)
         """
 
-    # // for for oracle_req in ...
+        # // for for oracle_req in ...
 
 
 if __name__ == "__main__":

@@ -30,6 +30,11 @@ ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
      'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
      'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
 
+ARGS_TO_REMOVE_FOR_CLONE = \
+    ['DN', 'RequestStatus', 'RequestTransition', 'RequestWorkflow', 'Requestor', 'RequestorDN',
+     'Team', 'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
+     'VoRole', '_id', '_rev']
+
 def initialize_request_args(request, config):
     """
     Request data class request is a dictionary representing
@@ -100,7 +105,7 @@ def initialize_clone(request_args, reqmgr_db_service):
     clone_args = requests.values()[0]
     # TODO: need to validate new overwrite request_args here since it will skip the clone_args validtaiton
     _replace_cloned_args(clone_args, request_args)
-    clone_args = {k: v for k, v in clone_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
+    clone_args = {k: v for k, v in clone_args.iteritems() if k not in ARGS_TO_REMOVE_FOR_CLONE}
 
     return clone_args
 

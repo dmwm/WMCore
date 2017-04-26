@@ -942,9 +942,9 @@ class ApMon(object):
         """
         Try to generate a more random instance id. It takes the process ID and
         combines it with the last digit from the IP addess and a random number
-
-	Notice the random number generated must be represented by a signed int
-	of 32 bits, otherwise it breaks xdr library.
+        
+        Notice the random number generated must be represented by a signed int
+        of 32 bits, otherwise it breaks xdr library.
         """
         pid = os.getpid()
         try:

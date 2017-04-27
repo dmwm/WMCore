@@ -1500,11 +1500,10 @@ class DBConnectionPool(Thread):
         trace and cherrypy.log("%s instantiating a new connection" % trace)
         ret = {"pool": self, "trace": trace, "type": s["type"]}
         if s['type'].__name__ == 'MySQLdb':
-            ret.update({"connection": s["type"].connect(s['host'], s["user"],
-                                                        s["password"], s["db"], int(s["port"]))})
+            ret.update({"connection": s["type"].connect(s['host'], s["user"], s["password"], s["db"], int(s["port"]))})
         else:
-            ret.update({"connection": s["type"].connect(s["user"], s["password"],
-                                                        s["dsn"], threaded=True)})
+            ret.update({"connection": s["type"].connect(s["user"], s["password"], s["dsn"], threaded=True)})
+
         return ret
 
     def _test(self, s, prevtrace, trace, req, dbh):

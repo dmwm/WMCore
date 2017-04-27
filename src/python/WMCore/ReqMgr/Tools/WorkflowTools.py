@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#pylint: disable=
+# -*- coding: utf-8 -*-
+# pylint: disable=
 """
 File       : WorkflowManager.py
 Author     : Valentin Kuznetsov <vkuznet AT gmail dot com>
@@ -23,11 +23,14 @@ from dbs.apis.dbsClient import DbsApi
 
 # DBS3 helper functions
 DBS3 = r'https://cmsweb.cern.ch/dbs/prod/global/DBSReader'
+
+
 def getDatasets(dataset_pattern):
     "Return list of dataset for given dataset pattern"
     dbsapi = DbsApi(url=DBS3, verifypeer=False)
     reply = dbsapi.listDatasets(dataset=dataset_pattern, dataset_access_type='*')
     return reply
+
 
 def getDatasetStatus(dataset):
     "Return dataset status"
@@ -35,15 +38,17 @@ def getDatasetStatus(dataset):
     reply = dbsapi.listDatasets(dataset=dataset, dataset_access_type='*', detail=True)
     return reply[0]['dataset_access_type']
 
+
 def getWorkload(url, workflow):
     "Return workload list"
     conn = httplib.HTTPSConnection(url,
-            cert_file = os.getenv('X509_USER_PROXY'),
-            key_file = os.getenv('X509_USER_PROXY'))
-    r1=conn.request("GET",'/reqmgr/view/showWorkload?requestName='+workflow)
-    r2=conn.getresponse()
-    workload=r2.read()
+                                   cert_file=os.getenv('X509_USER_PROXY'),
+                                   key_file=os.getenv('X509_USER_PROXY'))
+    r1 = conn.request("GET", '/reqmgr/view/showWorkload?requestName=' + workflow)
+    r2 = conn.getresponse()
+    workload = r2.read()
     return workload.split('\n')
+
 
 class WorkflowDataOpsMgr(WorkflowManager):
     def __init__(self, workflow, **kwds):
@@ -83,23 +88,23 @@ class WorkflowDataOpsMgr(WorkflowManager):
         # custom settings
         # Construct processed dataset version
         if self.pileup_scenario:
-            self.pileup_scenario = self.pileup_scenario+'_'
+            self.pileup_scenario = self.pileup_scenario + '_'
 
         specialprocstring = kwds.get('specialName', '')
-        if  specialprocstring:
+        if specialprocstring:
             self.special_name = specialprocstring + '_'
 
         # ProcessingString
         inprocstring = kwds.get('procstring', '')
-        if  inprocstring:
+        if inprocstring:
             self.procstring = inprocstring
         else:
-            self.procstring = self.special_name + self.pileup_scenario +\
-                    self.global_tag + self.ext_tag
+            self.procstring = self.special_name + self.pileup_scenario + \
+                              self.global_tag + self.ext_tag
 
         # ProcessingVersion
         inprocversion = kwds.get('procversion', '')
-        if  inprocversion:
+        if inprocversion:
             self.procversion = inprocversion
         else:
             self.procversion = self.dataset_version(self.era, self.procstring)
@@ -108,17 +113,17 @@ class WorkflowDataOpsMgr(WorkflowManager):
         versionNum = 1
         outputs = self.output_datasets
         for output in outputs:
-           bits = output.split('/')
-           outputCheck = '/'+bits[1]+'/'+era+'-'+partialProcVersion+'*/'+bits[len(bits)-1]
+            bits = output.split('/')
+            outputCheck = '/' + bits[1] + '/' + era + '-' + partialProcVersion + '*/' + bits[len(bits) - 1]
 
-           datasets = getDatasets(outputCheck)
-           for dataset in datasets:
-              datasetName = dataset['dataset']
-              matchObj = re.match(r".*-v(\d+)/.*", datasetName)
-              if matchObj:
-                 currentVersionNum = int(matchObj.group(1))
-                 if versionNum <= currentVersionNum:
-                    versionNum=versionNum+1
+            datasets = getDatasets(outputCheck)
+            for dataset in datasets:
+                datasetName = dataset['dataset']
+                matchObj = re.match(r".*-v(\d+)/.*", datasetName)
+                if matchObj:
+                    currentVersionNum = int(matchObj.group(1))
+                    if versionNum <= currentVersionNum:
+                        versionNum = versionNum + 1
 
         return versionNum
 
@@ -139,7 +144,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         # Checks attributes
         checklist = [(self.era, ''), (self.lfn, ''), (self.pileup_scenario, 'Unknown')]
         for att, val in checklist:
-            if  att == val:
+            if att == val:
                 raise Exception('ERROR: %s == "%s"' % (att, val))
 
         # Check status of input dataset
@@ -150,13 +155,13 @@ class WorkflowDataOpsMgr(WorkflowManager):
     def get(self, key, default=''):
         "Get extension tag"
         val = self.kwds.get(key)
-        if  not val:
+        if not val:
             val = default
         return val
 
     def _ext_tag(self):
         "Get extension tag"
-        if  self.ext_tag:
+        if self.ext_tag:
             ext_tag = '_ext' + self.ext_tag
         else:
             ext_tag = ''
@@ -174,7 +179,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
         "Return maxRSS"
         max_rss = self.max_rss
         if ('HiFall11' in self.workflow or 'HiFall13DR53X' in self.workflow) and \
-                'IN2P3' in self.site_use:
+                        'IN2P3' in self.site_use:
             max_rss = 4000000
         return max_rss
 
@@ -187,7 +192,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
     def _input_dataset(self):
         "Return input dataset of workflow"
         dataset = self.winfo.get('InputDataset', '')
-        if  not dataset:
+        if not dataset:
             raise Exception("Error: no input dataset found for %s" % self.workflow)
         return dataset
 
@@ -216,7 +221,7 @@ class WorkflowDataOpsMgr(WorkflowManager):
             era = 'Summer12_DR53X'
             lfn = '/store/mc'
 
-        #this is incorrect for HiFall11 workflows, but is changed further down
+        # this is incorrect for HiFall11 workflows, but is changed further down
         if 'Fall11_R' in workflow or 'Fall11R' in workflow:
             era = 'Fall11'
             lfn = '/store/mc'
@@ -315,9 +320,9 @@ class WorkflowDataOpsMgr(WorkflowManager):
             lfn = '/store/mc'
             specialName = campaign + '_'
 
-        #change back to old campaign names for UpgradePhase1
+        # change back to old campaign names for UpgradePhase1
         if 'UpgradePhase1Age' in campaign and 'dr61SLHCx' in specialName:
-            specialName = specialName.replace("dr61SLHCx","_DR61SLHCx")
+            specialName = specialName.replace("dr61SLHCx", "_DR61SLHCx")
         if 'dr61SLHCx' in specialName:
             print('WARNING: using new campaign name format')
 
@@ -403,24 +408,23 @@ class WorkflowDataOpsMgr(WorkflowManager):
         if 'HiWinter13' in workflow and 'DR53X' in workflow:
             pileupScenario = ''
         if 'pAWinter13' in workflow and 'DR53X' in workflow:
-            pileupScenario = 'pa' # not actually the pileup scenario of course
+            pileupScenario = 'pa'  # not actually the pileup scenario of course
         if 'ppWinter13' in workflow and 'DR53X' in workflow:
-            pileupScenario = 'pp' # not actually the pileup scenario of course
+            pileupScenario = 'pp'  # not actually the pileup scenario of course
         return pileupScenario
 
     def _pileup_dataset(self):
         pileupDataset = 'None'
         for line in self.workload:
-           if 'request.schema.MCPileup' in line:
-              pileupDataset = line[line.find("'")+1:line.find("'",line.find("'")+1)]
+            if 'request.schema.MCPileup' in line:
+                pileupDataset = line[line.find("'") + 1:line.find("'", line.find("'") + 1)]
         return pileupDataset
-
 
     def _priority(self):
         priority = -1
         for line in self.workload:
-           if 'request.schema.RequestPriority' in line:
-              priority = line[line.find("=")+1:line.find("<br/")]
+            if 'request.schema.RequestPriority' in line:
+                priority = line[line.find("=") + 1:line.find("<br/")]
         priority = priority.strip()
         priority = re.sub(r'\'', '', priority)
         return int(priority)
@@ -455,14 +459,14 @@ class WorkflowDataOpsMgr(WorkflowManager):
             self.team = 'hlt'
         else:
             # Determine site where workflow should be run
-            count=0
+            count = 0
             for site in sites:
                 if site in workflow:
-                    count=count+1
+                    count = count + 1
                     siteUse = site
 
             # Find custodial location of input dataset if workflow name contains no T1 site or multiple T1 sites
-            if count==0 or count>1:
+            if count == 0 or count > 1:
                 siteUse = findCustodialLocation(self.url, self.input_dataset)
                 if siteUse == 'None':
                     raise Exception('ERROR: No custodial site found for dataset=%s' % self.input_dataset)
@@ -481,13 +485,13 @@ class WorkflowDataOpsMgr(WorkflowManager):
         else:
             siteSE = siteUse + '_Disk'
         subscribedOurSite, subscribedOtherSite = \
-                checkAcceptedSubscriptionRequest(self.url, self.input_dataset, siteSE)
+            checkAcceptedSubscriptionRequest(self.url, self.input_dataset, siteSE)
         if not subscribedOurSite and not self.xrootd and 'Fall11R2' not in workflow:
             raise Exception('ERROR: input dataset not subscribed/approved to required Disk endpoint')
         if self.xrootd and not subscribedOtherSite:
             raise Exception('ERROR: input dataset not subscribed/approved to any Disk endpoint')
         if siteUse not in sites and options.site != 'T2_US' and \
-                siteUse != ['T2_CH_CERN_AI', 'T2_CH_CERN_HLT', 'T2_CH_CERN']:
+                        siteUse != ['T2_CH_CERN_AI', 'T2_CH_CERN_HLT', 'T2_CH_CERN']:
             raise Exception('ERROR: invalid site=%s' % siteUse)
 
         if not siteCust:
@@ -495,33 +499,35 @@ class WorkflowDataOpsMgr(WorkflowManager):
 
         return siteUse, siteCust
 
+
 def getScenario(ps):
     pss = 'Unknown'
 
     if ps == 'SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi':
-       pss = 'PU140Bx25'
+        pss = 'PU140Bx25'
     if ps == 'SimGeneral.MixingModule.mix_2012_Summer_50ns_PoissonOOTPU_cfi':
-       pss = 'PU_S10'
+        pss = 'PU_S10'
     if ps == 'SimGeneral.MixingModule.mix_E7TeV_Fall2011_Reprocess_50ns_PoissonOOTPU_cfi':
-       pss = 'PU_S6'
+        pss = 'PU_S6'
     if ps == 'SimGeneral.MixingModule.mix_E8TeV_AVE_10_BX_25ns_300ns_spread_cfi':
-       pss = 'PU10bx25'
+        pss = 'PU10bx25'
     if ps == 'SimGeneral.MixingModule.mix_E8TeV_AVE_10_BX_50ns_300ns_spread_cfi':
-       pss = 'PU10bx50'
+        pss = 'PU10bx50'
     if ps == 'SimGeneral.MixingModule.mix_2011_FinalDist_OOTPU_cfi':
-       pss = 'PU_S13'
+        pss = 'PU_S13'
     if ps == 'SimGeneral.MixingModule.mix_fromDB_cfi':
-       pss = 'PU_RD1'
+        pss = 'PU_RD1'
     if ps == 'SimGeneral.MixingModule.mix_2012C_Profile_PoissonOOTPU_cfi':
-       pss = 'PU2012CExt'
+        pss = 'PU2012CExt'
     if ps == 'SimGeneral.MixingModule.mixNoPU_cfi':
-       pss = 'NoPileUp'
+        pss = 'NoPileUp'
     if ps == 'SimGeneral.MixingModule.mix_POISSON_average_cfi':
-       pss = 'PU'
+        pss = 'PU'
     if ps == 'SimGeneral.MixingModule.mix_CSA14_50ns_PoissonOOTPU_cfi':
-       pss = 'PU_S14'
+        pss = 'PU_S14'
 
     return pss
+
 
 def getPileupScenario(winfo, config):
     "Get pileup scanario for given workflow dict and configuration"
@@ -529,18 +535,19 @@ def getPileupScenario(winfo, config):
     pileup, meanPileUp, bunchSpacing, cmdLineOptions = getPileup(config)
     scenario = getScenario(pileup)
     if scenario == 'PU140Bx25' and meanPileUp != 'Unknown':
-       scenario = 'PU' + meanPileUp + 'bx25'
+        scenario = 'PU' + meanPileUp + 'bx25'
     if scenario == 'PU140bx25' and 'Upgrade' in workflow:
-       scenario = 'PU140Bx25'
+        scenario = 'PU140Bx25'
     if scenario == 'PU':
-       scenario = 'PU' + meanPileUp + 'bx' + bunchSpacing
-       if meanPileUp == 'None' or bunchSpacing == 'None':
-          print('ERROR: unexpected pileup settings in config')
-          sys.exit(0)
+        scenario = 'PU' + meanPileUp + 'bx' + bunchSpacing
+        if meanPileUp == 'None' or bunchSpacing == 'None':
+            print('ERROR: unexpected pileup settings in config')
+            sys.exit(0)
     if scenario == 'PU_RD1' and cmdLineOptions != 'None':
-       if '--runsAndWeightsForMC [(190482,0.924) , (194270,4.811), (200466,7.21), (207214,7.631)]' in cmdLineOptions:
-          scenario = 'PU_RD2'
+        if '--runsAndWeightsForMC [(190482,0.924) , (194270,4.811), (200466,7.21), (207214,7.631)]' in cmdLineOptions:
+            scenario = 'PU_RD2'
     return scenario
+
 
 def getPileup(config):
     "Helper function used in getPileupScenario"
@@ -550,60 +557,62 @@ def getPileup(config):
     cmdLineOptions = 'None'
     lines = config.split('\n')
     for line in lines:
-       if 'process.load' and 'MixingModule' in line:
-          pu = line[line.find("'")+1:line.find("'",line.find("'")+1)]
-       if 'process.mix.input.nbPileupEvents.averageNumber' in line:
-          meanpu = line[line.find("(")+1:line.find(")")].split('.', 1)
-          vmeanpu = meanpu[0]
-       if 'process.mix.bunchspace' in line:
-          bx = line[line.find("(")+1:line.find(")")]
-       if 'with command line options' in line:
-          cmdLineOptions = line
+        if 'process.load' and 'MixingModule' in line:
+            pu = line[line.find("'") + 1:line.find("'", line.find("'") + 1)]
+        if 'process.mix.input.nbPileupEvents.averageNumber' in line:
+            meanpu = line[line.find("(") + 1:line.find(")")].split('.', 1)
+            vmeanpu = meanpu[0]
+        if 'process.mix.bunchspace' in line:
+            bx = line[line.find("(") + 1:line.find(")")]
+        if 'with command line options' in line:
+            cmdLineOptions = line
     return pu, vmeanpu, bx, cmdLineOptions
+
 
 def getConfig(url, cacheID):
     "Helper function to get configuration for given cacheID"
     conn = httplib.HTTPSConnection(url,
-            cert_file = os.getenv('X509_USER_PROXY'),
-            key_file = os.getenv('X509_USER_PROXY'))
-    conn.request("GET",'/couchdb/reqmgr_config_cache/'+cacheID+'/configFile')
+                                   cert_file=os.getenv('X509_USER_PROXY'),
+                                   key_file=os.getenv('X509_USER_PROXY'))
+    conn.request("GET", '/couchdb/reqmgr_config_cache/' + cacheID + '/configFile')
     config = conn.getresponse().read()
     return config
 
+
 def findCustodialLocation(url, dataset):
     "Helper function to find custodial location for given dataset"
-    conn  =  httplib.HTTPSConnection(url, cert_file = os.getenv('X509_USER_PROXY'), key_file = os.getenv('X509_USER_PROXY'))
-    r1=conn.request("GET",'/phedex/datasvc/json/prod/blockreplicas?dataset='+dataset)
-    r2=conn.getresponse()
+    conn = httplib.HTTPSConnection(url, cert_file=os.getenv('X509_USER_PROXY'), key_file=os.getenv('X509_USER_PROXY'))
+    r1 = conn.request("GET", '/phedex/datasvc/json/prod/blockreplicas?dataset=' + dataset)
+    r2 = conn.getresponse()
     result = json.loads(r2.read())
-    request=result['phedex']
+    request = result['phedex']
     if 'block' not in request.keys():
-            return "No Site"
-    if len(request['block'])==0:
-            return "No Site"
+        return "No Site"
+    if len(request['block']) == 0:
+        return "No Site"
     for replica in request['block'][0]['replica']:
-            if replica['custodial']=="y" and replica['node']!="T0_CH_CERN_MSS":
-                    return replica['node']
+        if replica['custodial'] == "y" and replica['node'] != "T0_CH_CERN_MSS":
+            return replica['node']
     return "None"
+
 
 def checkAcceptedSubscriptionRequest(url, dataset, site):
     "Helper function"
     conn = httplib.HTTPSConnection(url,
-            cert_file = os.getenv('X509_USER_PROXY'),
-            key_file = os.getenv('X509_USER_PROXY'))
-    conn.request("GET",'/phedex/datasvc/json/prod/requestlist?dataset='+dataset+'&type=xfer')
+                                   cert_file=os.getenv('X509_USER_PROXY'),
+                                   key_file=os.getenv('X509_USER_PROXY'))
+    conn.request("GET", '/phedex/datasvc/json/prod/requestlist?dataset=' + dataset + '&type=xfer')
     resp = conn.getresponse()
     result = json.load(resp)
-    requests=result['phedex']
+    requests = result['phedex']
     if 'request' not in requests.keys():
         return [False, False]
     ourNode = False
     otherNode = False
     for request in result['phedex']['request']:
         for node in request['node']:
-            if node['name']==site and node['decision']=='approved':
+            if node['name'] == site and node['decision'] == 'approved':
                 ourNode = True
-            elif 'Disk' in node['name'] and node['decision']=='approved':
+            elif 'Disk' in node['name'] and node['decision'] == 'approved':
                 otherNode = True
     return ourNode, otherNode
-

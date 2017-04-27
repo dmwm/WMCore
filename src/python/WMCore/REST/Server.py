@@ -16,9 +16,9 @@ from WMCore.REST.Format import *
 from WMCore.REST.Validation import validate_no_more_input
 
 try:
-  from cherrypy.lib import httputil
+    from cherrypy.lib import httputil
 except:
-  from cherrypy.lib import http as httputil
+    from cherrypy.lib import http as httputil
 
 #: List of HTTP methods for which it's possible to register a REST handler.
 _METHODS = ('GET', 'HEAD', 'POST', 'PUT', 'DELETE')
@@ -27,15 +27,16 @@ _METHODS = ('GET', 'HEAD', 'POST', 'PUT', 'DELETE')
 _RX_CENSOR = re.compile(r"(identified by) \S+", re.I)
 
 #: MIME types which are compressible.
-_COMPRESSIBLE = [ 'text/html',       'text/html; charset=utf-8',
-                  'text/plain',      'text/plain; charset=utf-8',
-                  'text/css',        'text/css; charset=utf-8',
-                  'text/javascript', 'text/javascript; charset=utf-8' ]
+_COMPRESSIBLE = ['text/html', 'text/html; charset=utf-8',
+                 'text/plain', 'text/plain; charset=utf-8',
+                 'text/css', 'text/css; charset=utf-8',
+                 'text/javascript', 'text/javascript; charset=utf-8']
 
 #: Type alias for arguments passed to REST validation methods, consisting
 #: of `args`, the additional path arguments, and `kwargs`, the query
 #: arguments either from the query string or body (but not both).
 RESTArgs = namedtuple("RESTArgs", ["args", "kwargs"])
+
 
 ######################################################################
 ######################################################################
@@ -125,8 +126,8 @@ class RESTFrontPage:
     """
 
     def __init__(self, app, config, mount, frontpage, roots,
-                 substitutions = None, embeddings = None,
-                 instances = None, preamble = None, debug_mode = None):
+                 substitutions=None, embeddings=None,
+                 instances=None, preamble=None, debug_mode=None):
         """.. rubric:: Constructor
 
         :arg app:                Reference to the :class:`~.RESTMain` application.
@@ -158,7 +159,7 @@ class RESTFrontPage:
                 raise ValueError("%s 'root' must end in a slash" % origin)
 
         # Add preamble pseudo-root.
-        roots["rest"] = { "root": None, "rx": re.compile(r"^preamble(?:-min)?\.js$") }
+        roots["rest"] = {"root": None, "rx": re.compile(r"^preamble(?:-min)?\.js$")}
 
         # Save various things.
         self._start = time.time()
@@ -261,9 +262,9 @@ class RESTFrontPage:
                 raise HTTPError(404, "No such file")
 
             # Concatenate contents and set content type based on name suffix.
-            ctypemap = { "js": "text/javascript; charset=utf-8",
-                         "css": "text/css; charset=utf-8",
-                         "html": "text/html; charset=utf-8" }
+            ctypemap = {"js": "text/javascript; charset=utf-8",
+                        "css": "text/css; charset=utf-8",
+                        "html": "text/html; charset=utf-8"}
             suffix = path.rsplit(".", 1)[-1]
             if suffix in ctypemap:
                 if not ctype:
@@ -352,6 +353,7 @@ class RESTFrontPage:
         JavaScript will actually work out what to do with the rest of the
         URL arguments; they are not used here."""
         return self._serve([self._frontpage])
+
 
 ######################################################################
 ######################################################################
@@ -628,6 +630,7 @@ class MiniRESTApi:
     :arg config: The :class:`~.WMCore.ConfigSection` for this object.
     :arg str mount: The CherryPy URL tree mount point for this object.
     """
+
     def __init__(self, app, config, mount):
         self.app = app
         self.config = config
@@ -635,8 +638,8 @@ class MiniRESTApi:
         self.compression_level = 9
         self.compression_chunk = 64 * 1024
         self.compression = ['deflate']
-        self.formats = [ ('application/json', JSONFormat()),
-                         ('application/xml', XMLFormat(self.app.appname)) ]
+        self.formats = [('application/json', JSONFormat()),
+                        ('application/xml', XMLFormat(self.app.appname))]
         self.methods = {}
         self.default_expires = 3600
         self.default_expires_opts = []
@@ -682,7 +685,7 @@ class MiniRESTApi:
         if args and not validation:
             raise ValueError("non-empty validation required for api taking arguments")
 
-        apiobj = { "args": args, "validation": validation, "call": callable }
+        apiobj = {"args": args, "validation": validation, "call": callable}
         apiobj.update(**kwargs)
         self.methods[method][api] = apiobj
 
@@ -713,8 +716,9 @@ class MiniRESTApi:
         finally:
             if getattr(request, 'start_time', None):
                 response.headers["X-REST-Time"] = "%.3f us" % \
-                  (1e6 * (time.time() - request.start_time))
-    default._cp_config = { 'response.stream': True }
+                                                  (1e6 * (time.time() - request.start_time))
+
+    default._cp_config = {'response.stream': True}
 
     def _call(self, param):
         """The real HTTP request handler.
@@ -738,7 +742,7 @@ class MiniRESTApi:
         # separate, but that's not how cherrypy works - it mixes everything
         # into one big happy kwargs.
         if (request.method != 'GET' and request.method != 'HEAD') \
-           and request.query_string:
+                and request.query_string:
             response.headers['Allow'] = 'GET HEAD'
             raise MethodWithoutQueryString()
 
@@ -752,7 +756,7 @@ class MiniRESTApi:
         api = param.args.pop(0)
         if api not in self.methods[request.method]:
             response.headers['Allow'] = \
-              " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
+                " ".join(sorted([m for m, d in self.methods.iteritems() if api in d]))
             raise APIMethodMismatch()
         apiobj = self.methods[request.method][api]
 
@@ -831,6 +835,7 @@ class MiniRESTApi:
         :returns: Nothing."""
         pass
 
+
 ######################################################################
 ######################################################################
 class RESTApi(MiniRESTApi):
@@ -856,7 +861,7 @@ class RESTApi(MiniRESTApi):
     cannot reasonably represent the needs, raw RPC-like methods can still
     be added using :meth:`_addAPI`."""
 
-    def _addEntities(self, entities, entry, wrapper = None):
+    def _addEntities(self, entities, entry, wrapper=None):
         """Private interface for adding APIs for entities.
 
         :arg dict entities: See :meth:`_add` documentation.
@@ -874,7 +879,7 @@ class RESTApi(MiniRESTApi):
                     if wrapper: handler = wrapper(handler)
                     self._addAPI(method, label, handler, rest_args,
                                  [entity.validate, entry],
-                                 entity = entity, **rest_params)
+                                 entity=entity, **rest_params)
 
     def _add(self, entities):
         """Add entities.
@@ -939,6 +944,7 @@ class RESTApi(MiniRESTApi):
         cols = apiobj.get("columns", None)
         if cols:
             request.rest_generate_preamble["columns"] = cols
+
 
 ######################################################################
 ######################################################################
@@ -1315,8 +1321,8 @@ class DBConnectionPool(Thread):
                   the stack trace returned by `format_exc()` for it."""
 
         sigready = random.choice(self.sigready)
-        arg = { "error": None, "handle": None, "signal": sigready,
-                "abandoned": False, "id": id, "module": module }
+        arg = {"error": None, "handle": None, "signal": sigready,
+               "abandoned": False, "id": id, "module": module}
 
         self.sigqueue.acquire()
         self.queue.append((self._connect, arg))
@@ -1492,11 +1498,12 @@ class DBConnectionPool(Thread):
     def _new(self, s, trace):
         """Helper function to create a new connection with `trace` identifier."""
         trace and cherrypy.log("%s instantiating a new connection" % trace)
-        ret = { "pool": self, "trace": trace, "type": s["type"] }
+        ret = {"pool": self, "trace": trace, "type": s["type"]}
         if s['type'].__name__ == 'MySQLdb':
             ret.update({"connection": s["type"].connect(s['host'], s["user"], s["password"], s["db"], int(s["port"]))})
         else:
             ret.update({"connection": s["type"].connect(s["user"], s["password"], s["dsn"], threaded=True)})
+
         return ret
 
     def _test(self, s, prevtrace, trace, req, dbh):
@@ -1592,11 +1599,15 @@ class DBConnectionPool(Thread):
             # Something went wrong, nuke the connection from orbit.
             self._error("RELEASE", " failed to release connection", e, format_exc())
 
-            try: self.inuse.remove(dbh)
-            except ValueError: pass
+            try:
+                self.inuse.remove(dbh)
+            except ValueError:
+                pass
 
-            try: self.idle.remove(dbh)
-            except ValueError: pass
+            try:
+                self.idle.remove(dbh)
+            except ValueError:
+                pass
 
             self._disconnect(dbh)
 
@@ -1607,8 +1618,10 @@ class DBConnectionPool(Thread):
             # marked for use in case it's discarded with put(..., True).
             assert dbh not in self.idle
 
-            try: self.inuse.remove(dbh)
-            except ValueError: pass
+            try:
+                self.inuse.remove(dbh)
+            except ValueError:
+                pass
 
             # Close the connection.
             s = self.dbspec
@@ -1626,6 +1639,7 @@ class DBConnectionPool(Thread):
                                       len(self.inuse), len(self.idle)))
         except Exception as e:
             self._error("DISCONNECT", " (ignored)", e, format_exc())
+
 
 ######################################################################
 ######################################################################
@@ -1731,12 +1745,14 @@ class DatabaseRESTApi(RESTApi):
         """Internal helper function to wrap calls to `handler` inside a
         database exception filter. Any exceptions raised will be passed to
         :meth:`_dberror`."""
+
         @wraps(handler)
         def dbapi_wrapper(*xargs, **xkwargs):
             try:
                 return handler(*xargs, **xkwargs)
             except Exception as e:
                 self._dberror(e, format_exc(), False)
+
         return dbapi_wrapper
 
     def _dberror(self, errobj, trace, inconnect):
@@ -1783,26 +1799,26 @@ class DatabaseRESTApi(RESTApi):
         del db
 
         # Raise an error of appropriate type.
-        errinfo = { "errobj": errobj, "trace": trace }
-        dberrinfo = { "errobj": errobj, "trace": trace,
-                      "lastsql": sql, "instance": instance }
+        errinfo = {"errobj": errobj, "trace": trace}
+        dberrinfo = {"errobj": errobj, "trace": trace,
+                     "lastsql": sql, "instance": instance}
         if inconnect:
             raise DatabaseUnavailable(**dberrinfo)
         elif isinstance(errobj, type.IntegrityError):
             errorcode = errobj[0] if DB_BACKEND == 'MySQLdb' else errobj.args[0].code
-            if errorcode in {'cx_Oracle' : (1, 2292), 'MySQLdb' : (1062,)}[DB_BACKEND]:
+            if errorcode in {'cx_Oracle': (1, 2292), 'MySQLdb': (1062,)}[DB_BACKEND]:
                 # ORA-00001: unique constraint (x) violated
                 # ORA-02292: integrity constraint (x) violated - child record found
                 # MySQL: 1062, Duplicate entry 'x' for key 'y'
                 # MySQL: Both unique and integrity constraint falls into 1062 error
                 raise ObjectAlreadyExists(**errinfo)
-            elif errorcode in {'cx_Oracle' : (1400, 2290), 'MySQLdb' : (1048,)}[DB_BACKEND]:
+            elif errorcode in {'cx_Oracle': (1400, 2290), 'MySQLdb': (1048,)}[DB_BACKEND]:
                 # ORA-01400: cannot insert null into (x)
                 # ORA-02290: check constraint (x) violated
                 # MySQL: 1048, Column (x) cannot be null
                 # There are no check constraint in MySQL. Oracle 2290 equivalent does not exist
                 raise InvalidParameter(**errinfo)
-            elif errorcode == {'cx_Oracle' : 2291, 'MySQLdb' : 1452}[DB_BACKEND]:
+            elif errorcode == {'cx_Oracle': 2291, 'MySQLdb': 1452}[DB_BACKEND]:
                 # ORA-02291: integrity constraint (x) violated - parent key not found
                 # MySQL: 1452, Cannot add or update a child row: a foreign key constraint fails
                 raise MissingObject(**errinfo)
@@ -1886,8 +1902,8 @@ class DatabaseRESTApi(RESTApi):
             raise DatabaseUnavailable()
 
         # Remember database instance choice, but don't do anything about it yet.
-        request.db = { "instance": instance, "type": db["type"], "pool": db["pool"],
-                       "handle": None, "last_sql": None, "last_bind": (None, None) }
+        request.db = {"instance": instance, "type": db["type"], "pool": db["pool"],
+                      "handle": None, "last_sql": None, "last_bind": (None, None)}
 
     def _dbenter(self, apiobj, method, api, param, safe):
         """Acquire database connection just before invoking the entity.
@@ -1943,7 +1959,7 @@ class DatabaseRESTApi(RESTApi):
         else:
             request.db["handle"] = dbh
             request.rest_generate_data = apiobj.get("generate", None)
-            request.hooks.attach('on_end_request', self._dbexit, failsafe = True)
+            request.hooks.attach('on_end_request', self._dbexit, failsafe=True)
 
     def _dbexit(self):
         """CherryPy request clean-up handler to dispose the database connection.
@@ -2016,7 +2032,7 @@ class DatabaseRESTApi(RESTApi):
         :returns: Cursor on which statement was prepared."""
 
         assert request.db["handle"], "DB connection missing"
-        sql = self.sqlformat(None, sql) # FIXME: schema prefix?
+        sql = self.sqlformat(None, sql)  # FIXME: schema prefix?
         trace = request.db["handle"]["trace"]
         logsql = re.sub(_RX_CENSOR, r"\1 <censored>", sql)
         request.db["last_bind"] = None, None
@@ -2120,7 +2136,7 @@ class DatabaseRESTApi(RESTApi):
 
         c, _ = self.execute(sql, *binds, **kwbinds)
         request.rest_generate_preamble["columns"] = \
-          [x[0].lower() for x in c.description]
+            [x[0].lower() for x in c.description]
         if match:
             return rxfilter(match, select, c)
         else:
@@ -2219,10 +2235,10 @@ class DatabaseRESTApi(RESTApi):
         :returns: See description above."""
 
         if c.rowcount < expected:
-            raise MissingObject(info = "%d vs. %d expected" % (c.rowcount, expected))
+            raise MissingObject(info="%d vs. %d expected" % (c.rowcount, expected))
         elif c.rowcount > expected:
-            raise TooManyObjects(info = "%d vs. %d expected" % (c.rowcount, expected))
-        return rows([{ "modified": c.rowcount }])
+            raise TooManyObjects(info="%d vs. %d expected" % (c.rowcount, expected))
+        return rows([{"modified": c.rowcount}])
 
     def bindmap(self, **kwargs):
         """Given `kwargs` of equal length list keyword arguments, returns the
@@ -2237,6 +2253,7 @@ class DatabaseRESTApi(RESTApi):
 
         keys = kwargs.keys()
         return [dict(list(zip(keys, vals))) for vals in zip(*kwargs.values())]
+
 
 ######################################################################
 ######################################################################
@@ -2281,6 +2298,7 @@ class RESTEntity:
         self.api = api
         self.config = config
         self.mount = mount
+
 
 ######################################################################
 ######################################################################
@@ -2335,17 +2353,20 @@ def restcall(func=None, args=None, generate="result", **kwargs):
             args = [a for a in inspect.getargspec(func).args if a != 'self']
         if args == None or not isinstance(args, list):
             raise ValueError("'args' must be defined")
-        kwargs.update(generate = generate)
+        kwargs.update(generate=generate)
         setattr(func, 'rest.exposed', True)
         setattr(func, 'rest.args', args or [])
         setattr(func, 'rest.params', kwargs)
         return func
+
     return (func and apply_restcall_opts(func)) or apply_restcall_opts
+
 
 def rows(cursor):
     """Utility function to convert a sequence `cursor` to a generator."""
     for row in cursor:
         yield row
+
 
 def rxfilter(rx, select, cursor):
     """Utility function to convert a sequence `cursor` to a generator, but

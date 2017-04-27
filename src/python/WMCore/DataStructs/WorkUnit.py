@@ -23,8 +23,8 @@ class WorkUnit(WMObject, dict):
     corresponding to tables workunit and frl_workunit_assoc
     """
 
-    fieldsToCopy = ['taskid', 'retry_count', 'last_unit_count', 'last_submit_time', 'status', 'first_event',
-                    'last_event', 'fileid']
+    fieldsToCopy = ['taskid', 'retry_count', 'last_unit_count', 'last_submit_time', 'status', 'firstevent',
+                    'lastevent', 'fileid']
     fieldsForInfo = fieldsToCopy + ['run_lumi']
 
     def __init__(self, taskID=None, retryCount=0, lastUnitCount=None, lastSubmitTime=int(time.time()),
@@ -36,8 +36,8 @@ class WorkUnit(WMObject, dict):
         self.setdefault('last_submit_time', lastSubmitTime)
         self.setdefault('status', status)
 
-        self.setdefault('first_event', firstEvent)
-        self.setdefault('last_event', lastEvent)
+        self.setdefault('firstevent', firstEvent)
+        self.setdefault('lastevent', lastEvent)
         self.setdefault('fileid', fileid)
         self.setdefault('run_lumi', runLumi)
 
@@ -62,8 +62,8 @@ class WorkUnit(WMObject, dict):
         """
 
         return (self['taskid'] == rhs['taskid'] and self['run_lumi'].run == self['run_lumi'].run and
-                self['run_lumi'].lumis == self['run_lumi'].lumis and self['first_event'] == rhs['first_event'] and
-                self['last_event'] == rhs['last_event'])
+                self['run_lumi'].lumis == self['run_lumi'].lumis and self['firstevent'] == rhs['firstevent'] and
+                self['lastevent'] == rhs['lastevent'])
 
     def __hash__(self):
         """

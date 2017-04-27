@@ -350,7 +350,8 @@ class WorkQueueTest(WorkQueueTestCase):
         workload = WMWorkloadHelper(WMWorkload("TestWorkload"))
         reco = workload.newTask("reco")
         workload.setOwnerDetails(name="evansde77", group="DMWM")
-
+        workload.setSiteWhitelist(site)
+        workload.setTrustLocationFlag(inputFlag=True, pileupFlag=True)
         # first task uses the input dataset
         reco.addInputDataset(primary="PRIMARY", processed="processed-v1", tier="TIERONE")
         reco.data.input.splitting.algorithm = "File"
@@ -379,10 +380,10 @@ class WorkQueueTest(WorkQueueTestCase):
             return job
 
         testFileA = WMFile(lfn=makeUUID(), size=1024, events=1024, parents=['parent1'])
-        testFileA.setLocation([site])
+        testFileA.setLocation(site)
         testFileA.addRun(Run(1, 1, 2))
         testFileB = WMFile(lfn=makeUUID(), size=1024, events=1024, parents=['parent2'])
-        testFileB.setLocation([site])
+        testFileB.setLocation(site)
         testFileB.addRun(Run(1, 3, 4))
         testJobA = getJob(workload)
         testJobA.addFile(testFileA)
@@ -897,7 +898,7 @@ class WorkQueueTest(WorkQueueTestCase):
 
     def testCancelWork(self):
         """Cancel work"""
-        processingSpec = self.setupReReco(SiteWhitelist=["T2_XX_SiteA", "T2_XX_SiteB"])
+        processingSpec = self.setupReReco(assignArgs={"SiteWhitelist":["T2_XX_SiteA", "T2_XX_SiteB"]})
         self.queue.queueWork(processingSpec.specUrl())
         elements = len(self.queue)
         self.queue.updateLocationInfo()
@@ -1152,6 +1153,7 @@ class WorkQueueTest(WorkQueueTestCase):
         spec = self.createResubmitSpec(self.testInit.couchUrl,
                                        acdcCouchDB)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
+        spec.setSiteWhitelist('T1_US_FNAL')
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team="cmsdataops")
@@ -1167,6 +1169,7 @@ class WorkQueueTest(WorkQueueTestCase):
         spec = self.createResubmitSpec(self.testInit.couchUrl,
                                        acdcCouchDB, parentage=True)
         spec.setSpecUrl(os.path.join(self.workDir, 'resubmissionWorkflow.spec'))
+        spec.setSiteWhitelist('T1_US_FNAL')
         spec.save(spec.specUrl())
         self.localQueue.params['Teams'] = ['cmsdataops']
         self.globalQueue.queueWork(spec.specUrl(), "Resubmit_TestWorkload", team="cmsdataops")
@@ -1375,7 +1378,7 @@ class WorkQueueTest(WorkQueueTestCase):
         processingSpec.save(processingSpec.specUrl())
         self.globalQueue.queueWork(processingSpec.specUrl())
         # all blocks pulled as each has 0 jobs
-        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 2)
+        self.assertEqual(self.localQueue.pullWork({'T2_XX_SiteA': 1}), 1)
         syncQueues(self.localQueue)
         self.assertEqual(len(self.localQueue.status()), 2)
         self.assertEqual(len(self.localQueue.getWork({'T2_XX_SiteA': 1},

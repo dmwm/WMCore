@@ -840,7 +840,12 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
-        if 'OriginalRequestName' not in arguments:
+        if arguments.get("RequestType") == "Resubmission":
+            # We're skipping the Resubmission validation for now
+            # clone is already validated, the user args only, so skip it too
+            # self.validateSchema(schema=arguments)
+            pass
+        else:
             self.masterValidation(schema=arguments)
             self.validateSchema(schema=arguments)
 

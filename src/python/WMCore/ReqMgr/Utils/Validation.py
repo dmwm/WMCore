@@ -147,25 +147,29 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
 
 def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
     """
+    Load the spec arguments definition (and chain definition, if needed) and inherit
+    all arguments defined in the specs.
     *arg and **kwargs are only for the interface
-    validate post request
-    1. read data from body
-    2. validate using spec validation
-    3. convert data from body to arguments (spec instance, argument with default setting)
-    TODO: raise right kind of error with clear message
     """
-    cloned_args = initialize_clone(request_args, reqmgr_db_service)
+    response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
+    originalArgs = response.values()[0]
+
+    # load arguments definition from the proper spec factory
+    specClass = loadSpecClassByType(originalArgs["RequestType"])
+    if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
+        chainArgs = specClass.getChainCreateArgs()
+    else:
+        chainArgs = None
+    cloned_args = initialize_clone(request_args, originalArgs,
+                                   specClass.getWorkloadCreateArgs(), chainArgs)
+
     initialize_request_args(cloned_args, config)
-    # check the permission for creating the request
+
     permission = getWritePermission(cloned_args)
     authz_match(permission['role'], permission['group'])
 
-    # TODO: Do validation only one request_args
-
-    spec = loadSpecClassByType(cloned_args["RequestType"])()
-    # for clone validation will be skiped in factoryWorkloadConstruction
-    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"],
-                                                    cloned_args)
+    spec = specClass()
+    workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
 
     return workload, cloned_args
 

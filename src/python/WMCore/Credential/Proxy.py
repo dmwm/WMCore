@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# pylint: disable=C0103,W0613,C0321
 """
 _Proxy_
 Wrap gLite proxy commands.
@@ -7,11 +6,13 @@ Wrap gLite proxy commands.
 
 import contextlib
 import copy
-import os, subprocess
+import os
 import re
+import subprocess
 import time
-from hashlib import sha1
 from datetime import datetime
+from hashlib import sha1
+
 from WMCore.Credential.Credential import Credential
 from WMCore.WMException import WMException
 
@@ -19,7 +20,7 @@ from WMCore.WMException import WMException
 def execute_command(command, logger, timeout, redirect=True):
     """
     _execute_command_
-    Funtion to manage commands.
+    Function to manage commands.
     """
 
     stdout, stderr, rc = None, None, 99999
@@ -246,7 +247,8 @@ class Proxy(Credential):
         """
         subject = None
 
-        if proxy == None: proxy = self.getProxyFilename()
+        if proxy is None:
+            proxy = self.getProxyFilename()
         getSubjectCmd = "voms-proxy-info -file " + proxy + " -identity"
         subject, _, retcode = execute_command(self.setEnv(getSubjectCmd), self.logger, self.commandTimeout)
 
@@ -292,7 +294,7 @@ class Proxy(Credential):
         """
         valid = True
 
-        if proxy == None:
+        if proxy is None:
             proxy = self.getProxyFilename()
 
         checkAttCmd = 'voms-proxy-info -fqan -file ' + proxy
@@ -310,7 +312,7 @@ class Proxy(Credential):
         Proxy creation.
         """
         createCmd = 'voms-proxy-init -voms %s:%s -valid %s %s' % (
-        self.vo, self.getProxyDetails(), self.proxyValidity, '-rfc' if self.rfcCompliant else '')
+            self.vo, self.getProxyDetails(), self.proxyValidity, '-rfc' if self.rfcCompliant else '')
         execute_command(self.setEnv(createCmd), self.logger, self.commandTimeout, redirect=False)
 
         return
@@ -346,7 +348,7 @@ class Proxy(Credential):
 
         if self.myproxyServer:
             myproxyDelegCmd = 'export GT_PROXY_MODE=%s ; myproxy-init -d -n -s %s' % (
-            'rfc' if self.rfcCompliant else 'old', self.myproxyServer)
+                'rfc' if self.rfcCompliant else 'old', self.myproxyServer)
 
             if nokey is True:
                 self.logger.debug(
@@ -557,7 +559,8 @@ class Proxy(Credential):
         tmpProxyFilename = proxyFilename + '.' + str(os.getpid())
         cmdList.append('myproxy-logon -d -n -s %s -o %s -l \"%s\" -t 168:00'
                        % (
-                       self.myproxyServer, tmpProxyFilename, sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()))
+                           self.myproxyServer, tmpProxyFilename,
+                           sha1(self.userDN + "_" + self.myproxyAccount).hexdigest()))
         logonCmd = ' '.join(cmdList)
         msg, _, retcode = execute_command(self.setEnv(logonCmd), self.logger, self.commandTimeout)
 
@@ -657,35 +660,13 @@ class Proxy(Credential):
 
         if checkVomsLife and timeLeft > 0:
             ACTimeLeftLocal = self.getVomsLife(proxy)
-            if ACTimeLeftLocal > 0:
-                timeLeft = self.checkLifeTimes(timeLeft, ACTimeLeftLocal, proxy)
-            else:
-                timeLeft = 0
+            if timeLeft != ACTimeLeftLocal:
+                msg = "Proxy lifetime %s secs is different from " % timeLeft
+                msg += "voms extension lifetime %s secs for proxy: %s" % (ACTimeLeftLocal, proxy)
+                self.logger.debug(msg)
+            timeLeft = min(timeLeft, ACTimeLeftLocal)
 
         return timeLeft
-
-    def checkLifeTimes(self, ProxyLife, VomsLife, proxy):
-        """
-        Evaluate the proxy validity comparing it with voms
-        validity.
-        """
-        # TODO: make the minimum value between proxyLife and vomsLife configurable
-        if abs(ProxyLife - VomsLife) > 900:
-            hours = int(ProxyLife) / 3600
-            minutes = (int(ProxyLife) - hours * 3600) / 60
-            proxyLife = "%d:%02d" % (hours, minutes)
-            hours = int(VomsLife) / 3600
-            minutes = (int(VomsLife) - hours * 3600) / 60
-            vomsLife = "%d:%02d" % (hours, minutes)
-            msg = "Proxy lifetime %s is different from \
-                   voms extension lifetime %s for proxy %s" \
-                  % (proxyLife, vomsLife, proxy)
-            self.logger.debug(msg)
-            result = 0
-        else:
-            result = ProxyLife
-
-        return result
 
     def getVomsLife(self, proxy):
         """

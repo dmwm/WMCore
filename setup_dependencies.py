@@ -35,7 +35,8 @@ dependencies = {'wmc-rest':{
                         'systems':['wmc-base']
                         },
                 'wmc-runtime':{
-                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks', 'WMCore.FwkJobReport', 'WMCore.Storage+'],
+                        'packages': ['WMCore.WMRuntime+', 'WMCore.WMSpec+', 'PSetTweaks',
+                                     'WMCore.FwkJobReport', 'WMCore.Storage+', 'WMCore.Services.HTTPS'],
                         'modules' : ['WMCore.Algorithms.ParseXMLFile'],
                         'systems':['wmc-base']
                         },

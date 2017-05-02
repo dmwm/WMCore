@@ -175,8 +175,8 @@ class PhEDExInjectorPoller(BaseWorkerThread):
                 self.deleteBlocks()
                 self.subscribeDatasets()
         except HTTPException as ex:
-            if hasattr(ex, "status") and ex.status == 503:
-                # then service is unavailable
+            if hasattr(ex, "status") and ex.status in [502, 503]:
+                # then either proxy error or service is unavailable
                 msg = "Caught HTTPException in PhEDExInjector. Retrying in the next cycle.\n"
                 msg += str(ex)
                 logging.error(msg)

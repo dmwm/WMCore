@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# pylint: disable=C0103,W0613,C0321
+# pylint: disable=C0103,C0321
 """
 _Proxy_
 Wrap gLite proxy commands.
@@ -657,35 +657,13 @@ class Proxy(Credential):
 
         if checkVomsLife and timeLeft > 0:
             ACTimeLeftLocal = self.getVomsLife(proxy)
-            if ACTimeLeftLocal > 0:
-                timeLeft = self.checkLifeTimes(timeLeft, ACTimeLeftLocal, proxy)
-            else:
-                timeLeft = 0
+            if timeLeft != ACTimeLeftLocal:
+                msg = "Proxy lifetime %s secs is different from " % timeLeft
+                msg += "voms extension lifetime %s secs for proxy: %s" % (ACTimeLeftLocal, proxy)
+                self.logger.debug(msg)
+            timeLeft = min(timeLeft, ACTimeLeftLocal)
 
         return timeLeft
-
-    def checkLifeTimes(self, ProxyLife, VomsLife, proxy):
-        """
-        Evaluate the proxy validity comparing it with voms
-        validity.
-        """
-        # TODO: make the minimum value between proxyLife and vomsLife configurable
-        if abs(ProxyLife - VomsLife) > 900:
-            hours = int(ProxyLife) / 3600
-            minutes = (int(ProxyLife) - hours * 3600) / 60
-            proxyLife = "%d:%02d" % (hours, minutes)
-            hours = int(VomsLife) / 3600
-            minutes = (int(VomsLife) - hours * 3600) / 60
-            vomsLife = "%d:%02d" % (hours, minutes)
-            msg = "Proxy lifetime %s is different from \
-                   voms extension lifetime %s for proxy %s" \
-                  % (proxyLife, vomsLife, proxy)
-            self.logger.debug(msg)
-            result = 0
-        else:
-            result = ProxyLife
-
-        return result
 
     def getVomsLife(self, proxy):
         """

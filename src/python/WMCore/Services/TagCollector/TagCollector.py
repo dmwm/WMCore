@@ -11,7 +11,7 @@ class TagCollector(Service):
     Provides non-deprecated CMSSW releases in all their ScramArchs (not only prod)
     """
 
-    def __init__(self, url=None, **kwargs):
+    def __init__(self, url=None, logger=None, **kwargs):
         """
         responseType will be either xml or json
         """
@@ -25,6 +25,8 @@ class TagCollector(Service):
         params["timeout"] = 300
         params['endpoint'] = url or defaultURL
         params.setdefault('cacheduration', 3600)
+        if logger:
+            params["logger"] = logger
         Service.__init__(self, params)
 
     def _getResult(self, callname="", clearCache=False,

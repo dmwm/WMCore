@@ -1,3 +1,7 @@
+1.1.3 to 1.1.3_cmsweb.patch1:
+  - Merge pull request #7837 from ticoann/1.1.3_cmsweb_resubmission
+  - Don't validate Resubmission specs
+
 1.1.2 to 1.1.3:
   - Merge pull request #7819 from amaltaro/vomstime-proxytime
   - pylint fixes

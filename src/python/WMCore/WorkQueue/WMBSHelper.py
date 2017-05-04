@@ -183,7 +183,6 @@ class WMBSHelper(WMConnectionBase):
 
         # DAOs from WMBS for file commit
         self.setParentage = self.daofactory(classname="Files.SetParentage")
-        self.setFileRunLumi = self.daofactory(classname="Files.AddRunLumi")
         self.setFileLocation = self.daofactory(classname="Files.SetLocationForWorkQueue")
         self.setFileAddChecksum = self.daofactory(classname="Files.AddChecksumByLFN")
         self.addFileAction = self.daofactory(classname="Files.Add")
@@ -612,6 +611,7 @@ class WMBSHelper(WMConnectionBase):
            This is not True in general case, but workquue should only select work only
            where child and parent files are in the same location
         """
+        # TODO get dbsFile with lumi event information
         wmbsParents = []
         dbsFile.setdefault("ParentList", [])
         for parent in dbsFile["ParentList"]:
@@ -634,9 +634,13 @@ class WMBSHelper(WMConnectionBase):
 
         for lumi in dbsFile['LumiList']:
             if isinstance(lumi['LumiSectionNumber'], list):
-                run = Run(lumi['RunNumber'], *lumi['LumiSectionNumber'])
+                lumiSecList = (list(zip(lumi['LumiSectionNumber'], lumi['EventCount']))
+                               if 'EventCount' in lumi else lumi['LumiSectionNumber'])
+                run = Run(lumi['RunNumber'], lumiSecList)
             else:
-                run = Run(lumi['RunNumber'], lumi['LumiSectionNumber'])
+                lumiSecTuple = ((lumi['LumiSectionNumber'], lumi['EventCount'])
+                               if 'EventCount' in lumi else lumi['LumiSectionNumber'])
+                run = Run(lumi['RunNumber'], lumiSecTuple)
             wmbsFile.addRun(run)
 
         self._addToDBSBuffer(dbsFile, checksums, storageElements)

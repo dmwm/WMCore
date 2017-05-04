@@ -200,7 +200,7 @@ class Mask(dict):
         runDict = {}
         for r in runs:
             if r.run in runDict:
-                runDict[r.run].lumis.extend(r.lumis)
+                runDict[r.run].extendLumis(r.lumis)
             else:
                 runDict[r.run] = r
 
@@ -219,6 +219,7 @@ class Mask(dict):
 
             filteredLumis = set(runDict[runNumber].lumis).intersection(maskLumis)
             if len(filteredLumis) > 0:
-                newRuns.add(Run(runNumber, *list(filteredLumis)))
+                filteredLumiEvents = [(lumi, runDict[runNumber].getEventsByLumi(lumi)) for lumi in filteredLumis]
+                newRuns.add(Run(runNumber, *filteredLumiEvents))
 
         return newRuns

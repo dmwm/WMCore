@@ -57,7 +57,11 @@ class CreateWMBSBase(DBCreator):
                                "17wmbs_job_mask",
                                "18wmbs_checksum_type",
                                "19wmbs_file_checksums",
-                               "20wmbs_location_pnns", ]
+                               "20wmbs_location_pnns",
+                               "21wmbs_workunit",
+                               "22wmbs_job_workunit_assoc",
+                               "23wmbs_frl_workunit_assoc",
+                               ]
 
         self.create["01wmbs_fileset"] = \
             """CREATE TABLE wmbs_fileset (
@@ -100,6 +104,7 @@ class CreateWMBSBase(DBCreator):
                run     INTEGER NOT NULL,
                lumi    INTEGER NOT NULL,
                num_events  INTEGER,
+               PRIMARY KEY (fileid, run, lumi),
                FOREIGN KEY (fileid) references wmbs_file_details(id)
                  ON DELETE CASCADE)"""
 
@@ -338,6 +343,55 @@ class CreateWMBSBase(DBCreator):
                  FOREIGN KEY (location) REFERENCES wmbs_location(id)
                    ON DELETE CASCADE)"""
 
+        # Workunit table for tracking individual lumis
+        self.create["21wmbs_workunit"] = (
+            'CREATE TABLE wmbs_workunit('
+            ' id INTEGER PRIMARY KEY AUTO_INCREMENT,'
+            ' taskid INTEGER NOT NULL,'
+            ' retry_count INTEGER DEFAULT 0,'
+            ' last_unit_count INTEGER NOT NULL,'
+            ' last_submit_time INTEGER NOT NULL,'
+            ' status INT(1) DEFAULT 0,'
+            ' FOREIGN KEY(taskid) REFERENCES wmbs_workflow(id) ON DELETE CASCADE)'
+        )
+        self.constraints["01_idx_wmbs_workunit"] = ('CREATE INDEX idx_wmbs_workunit_task'
+                                                    ' ON wmbs_workunit(taskid) %s' % tablespaceIndex)
+        self.constraints["02_idx_wmbs_workunit"] = ('CREATE INDEX idx_wmbs_workunit_status'
+                                                    ' ON wmbs_workunit(status) %s' % tablespaceIndex)
+
+        # Association table between jobs and workunits
+        self.create["22wmbs_job_workunit_assoc"] = (
+            'CREATE TABLE wmbs_job_workunit_assoc ('
+            ' job    INTEGER NOT NULL,'
+            ' workunit INTEGER NOT NULL,'
+            ' FOREIGN KEY (job)  REFERENCES wmbs_job(id) ON DELETE CASCADE,'
+            ' FOREIGN KEY (workunit) REFERENCES wmbs_workunit(id) ON DELETE CASCADE)'
+        )
+        self.constraints["01_idx_wmbs_job_workunit_assoc"] = ('CREATE INDEX idx_wmbs_job_wu_assoc_job'
+                                                              ' ON wmbs_job_workunit_assoc(job) %s' % tablespaceIndex)
+        self.constraints["02_idx_wmbs_job_workunit_assoc"] = ('CREATE INDEX idx_wmbs_job_wu_assoc_wu'
+                                                              ' ON wmbs_job_workunit_assoc(workunit) %s' % tablespaceIndex)
+
+        # Association table between work units and file/run/lumi triplets
+        self.create["23wmbs_frl_workunit_assoc"] = (
+            'CREATE TABLE wmbs_frl_workunit_assoc ('
+            ' workunit INTEGER NOT NULL,'
+            ' firstevent INTEGER DEFAULT 0,'
+            ' lastevent INTEGER DEFAULT 0,'
+            ' fileid  INTEGER NOT NULL,'
+            ' run     INTEGER NOT NULL,'
+            ' lumi    INTEGER NOT NULL,'
+            ' PRIMARY KEY (workunit, fileid, run, lumi),'
+            ' FOREIGN KEY (workunit) REFERENCES wmbs_workunit(id) ON DELETE CASCADE,'
+            ' FOREIGN KEY (fileid, run, lumi) REFERENCES wmbs_file_runlumi_map(fileid, run, lumi) ON DELETE CASCADE '
+            ')'
+        )
+        self.constraints["01_idx_wmbs_frl_workunit_assoc"] = ('CREATE INDEX idx_wmbs_frl_wu_assoc_wu'
+                                                              ' ON wmbs_frl_workunit_assoc(workunit) %s' % tablespaceIndex)
+        self.constraints["02_idx_wmbs_frl_workunit_assoc"] = ('CREATE INDEX idx_wmbs_frl_wu_assoc_frl'
+                                                              ' ON wmbs_frl_workunit_assoc(fileid, run, lumi) %s' % tablespaceIndex)
+
+        # Back to other indices and constraints for tables 1-20
         self.constraints["01_idx_wmbs_fileset_files"] = \
             """CREATE INDEX wmbs_fileset_files_idx_fileset ON wmbs_fileset_files(fileset) %s""" % tablespaceIndex
 

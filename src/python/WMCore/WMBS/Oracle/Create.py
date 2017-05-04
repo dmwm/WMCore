@@ -30,6 +30,7 @@ class Create(CreateWMBSBase):
         'wmbs_checksum_type',
         'wmbs_sub_types',
         'wmbs_users',
+        'wmbs_workunit',
     ]
 
     def __init__(self, logger=None, dbi=None, params=None):
@@ -140,6 +141,10 @@ class Create(CreateWMBSBase):
                  lumi   INTEGER NOT NULL,
                  num_events INTEGER
                  ) %s""" % tablespaceTable
+
+        self.indexes["01_pk_wmbs_file_runlumi_map"] = \
+            """ALTER TABLE wmbs_file_runlumi_map ADD
+                 (CONSTRAINT wmbs_file_runlumi_map_pk PRIMARY KEY (fileid, run, lumi) %s)""" % tablespaceIndex
 
         self.constraints["01_fk_wmbs_file_runlumi_map"] = \
             """ALTER TABLE wmbs_file_runlumi_map ADD
@@ -650,6 +655,62 @@ class Create(CreateWMBSBase):
                  (CONSTRAINT wmbs_location_se_fk FOREIGN KEY (location)
                    REFERENCES wmbs_location(id) ON DELETE CASCADE)"""
 
+        # Workunit table for tracking individual lumis, indices come from CreateWMBSBase.py
+
+        self.create["21wmbs_workunit"] = (
+            'CREATE TABLE wmbs_workunit('
+            ' id INTEGER NOT NULL,'
+            ' taskid INTEGER NOT NULL,'
+            ' retry_count INTEGER DEFAULT 0,'
+            ' last_unit_count INTEGER NOT NULL,'
+            ' last_submit_time INTEGER NOT NULL,'
+            ' status INTEGER DEFAULT 0,'
+            ' PRIMARY KEY(id)'
+            ') %s' % tablespaceTable
+        )
+        self.constraints['01_fk_wmbs_workunit'] = ('ALTER TABLE wmbs_workunit ADD '
+                                                   '(CONSTRAINT wmbs_workunit_fk_taskid'
+                                                   ' FOREIGN KEY(taskid) REFERENCES wmbs_workflow(id)'
+                                                   ' ON DELETE CASCADE)')
+
+        # Association table between jobs and workunits, indices come from CreateWMBSBase.py
+        self.create["22wmbs_job_workunit_assoc"] = (
+            'CREATE TABLE wmbs_job_workunit_assoc ('
+            ' job    INTEGER NOT NULL,'
+            ' workunit INTEGER NOT NULL'
+            ') %s' % tablespaceTable
+
+        )
+        self.constraints['01_fk_wmbs_job_workunit_assoc'] = ('ALTER TABLE wmbs_job_workunit_assoc ADD '
+                                                             '(CONSTRAINT wmbs_job_wu_assoc_fk_job'
+                                                             ' FOREIGN KEY(job) REFERENCES wmbs_job(id)'
+                                                             ' ON DELETE CASCADE)')
+        self.constraints['02_fk_wmbs_job_workunit_assoc'] = ('ALTER TABLE wmbs_job_workunit_assoc ADD '
+                                                             '(CONSTRAINT wmbs_job_wu_assoc_fk_wu'
+                                                             ' FOREIGN KEY(workunit) REFERENCES wmbs_workunit(id)'
+                                                             ' ON DELETE CASCADE)')
+
+        # Association table between workunits and file/run/lumi, indices come from CreateWMBSBase.py
+        self.create["23wmbs_frl_workunit_assoc"] = (
+            'CREATE TABLE wmbs_frl_workunit_assoc ('
+            ' workunit INTEGER NOT NULL,'
+            ' firstevent INTEGER DEFAULT 0,'
+            ' lastevent INTEGER DEFAULT 0,'
+            ' fileid  INTEGER NOT NULL,'
+            ' run     INTEGER NOT NULL,'
+            ' lumi    INTEGER NOT NULL,'
+            ' PRIMARY KEY(workunit, fileid, run, lumi)'
+            ') %s' % tablespaceTable
+        )
+        self.constraints['01_fk_wmbs_frl_workunit_assoc'] = ('ALTER TABLE wmbs_frl_workunit_assoc ADD '
+                                                             '(CONSTRAINT wmbs_frl_wu_assoc_fk_wu'
+                                                             ' FOREIGN KEY(workunit) REFERENCES wmbs_workunit(id)'
+                                                             ' ON DELETE CASCADE)')
+        self.constraints['02_fk_wmbs_frl_workunit_assoc'] = ('ALTER TABLE wmbs_frl_workunit_assoc ADD '
+                                                             '(CONSTRAINT wmbs_frl_wu_assoc_fk_frl'
+                                                             ' FOREIGN KEY(fileid, run, lumi) '
+                                                             ' REFERENCES wmbs_file_runlumi_map(fileid, run, lumi)'
+                                                             ' ON DELETE CASCADE)')
         for jobState in Transitions().states():
             jobStateQuery = """INSERT INTO wmbs_job_state(id, name) VALUES
                                (wmbs_job_state_SEQ.nextval, '%s')""" % jobState

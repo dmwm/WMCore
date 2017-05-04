@@ -843,11 +843,7 @@ class StdBase(object):
         if 'OriginalRequestName' not in arguments:
             self.masterValidation(schema=arguments)
             self.validateSchema(schema=arguments)
-        elif arguments.get("RequestType") == "Resubmission":
-            # Don't validate schema for cloned workflow
-            # But Resubmission workflow has to be validated
-            self.validateSchema(schema=arguments)
-        
+
         workload = self.__call__(workloadName=workloadName, arguments=arguments)
         self.validateWorkload(workload)
 

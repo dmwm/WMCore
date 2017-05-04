@@ -277,7 +277,7 @@ def campaign(candidate):
     """
     if not candidate:
         return True
-    return check(r'^[a-zA-Z0-9-_]{1,60}$', candidate)
+    return check(r'^[a-zA-Z0-9-_]{1,80}$', candidate)
 
 def primdataset(candidate):
     """

@@ -238,7 +238,7 @@ class LexiconTest(unittest.TestCase):
         self.assertRaises(AssertionError, campaign, '\version')
         self.assertRaises(AssertionError, campaign, '/bad-campaign')
         self.assertRaises(AssertionError, campaign, 'spaced campaign')
-        self.assertRaises(AssertionError, campaign, 'a_very_very_very__very__very__very_long_campaign_with_62_chars')
+        self.assertRaises(AssertionError, campaign, 'a_very_very_very__very__very__very__long_long_long_long_invalid_campaign_with_81_chars')
         return
 
     def testGoodSearchstr(self):

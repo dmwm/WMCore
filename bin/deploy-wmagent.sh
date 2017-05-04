@@ -24,8 +24,8 @@
 ### Usage:               -n <agent_number> Agent number to be set when more than 1 agent connected to the same team (defaults to 0)
 ### Usage:
 ### Usage: deploy-wmagent.sh -w <wma_version> -c <cmsweb_tag> -t <team_name> [-s <scram_arch>] [-r <repository>] [-n <agent_number>]
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch3 -c HG1702f -t production -p "7721" -n 2
-### Usage: Example: sh deploy-wmagent.sh -w 1.1.0.patch1 -c HG1702f -t testbed-cmssrv214 -p "7605" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.2.patch3 -c HG1705e -t production -p "7824" -n 2
+### Usage: Example: sh deploy-wmagent.sh -w 1.1.2.patch3 -c HG1705e -t testbed-cmssrv214 -p "7824" -s slc6_amd64_gcc493 -r comp=comp.amaltaro
 ### Usage:
  
 BASE_DIR=/data/srv 

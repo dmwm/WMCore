@@ -31,6 +31,7 @@ ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
      'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
      'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
 
+
 def initialize_request_args(request, config):
     """
     Request data class request is a dictionary representing
@@ -80,6 +81,7 @@ def initialize_resubmission(request_args, reqmgr_db_service):
     # to be used later on for spec validation
     request_args["OriginalRequestType"] = parent_args["RequestType"]
 
+
 def _replace_cloned_args(clone_args, user_args):
     """
     replace original arguments with user argument.
@@ -127,6 +129,7 @@ def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=
 
     return cloneArgs
 
+
 def generateRequestName(request):
     currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
     seconds = int(10000 * (time.time() % 1.0))
@@ -134,8 +137,8 @@ def generateRequestName(request):
     request["RequestName"] = "%s_%s" % (request["Requestor"], request.get("RequestString"))
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
 
-def protectedLFNs(requestInfo):
 
+def protectedLFNs(requestInfo):
     reqData = RequestInfo(requestInfo)
     result = []
     if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
@@ -144,14 +147,16 @@ def protectedLFNs(requestInfo):
         for out in outs:
             dsn, ps, tier = out.split('/')[1:]
             acq, rest = ps.split('-', 1)
-            dirPath = '/'.join([ base, acq, dsn, tier, rest])
+            dirPath = '/'.join([base, acq, dsn, tier, rest])
             result.append(dirPath)
     return result
+
 
 class RequestInfo(object):
     """
     Wrapper class for Request data
     """
+
     def __init__(self, requestData):
         self.data = requestData
 
@@ -258,4 +263,3 @@ class RequestInfo(object):
         # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
         # Maybe JobInformation is not included but since it requested by above status assumed it returns True
         return True
-

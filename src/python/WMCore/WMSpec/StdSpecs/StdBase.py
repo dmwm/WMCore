@@ -109,7 +109,7 @@ class StdBase(object):
                    'PAMinBias': 'RAW-RECO',
                    'PAZEE': 'RAW-RECO',
                    'PAZMM': 'RAW-RECO'
-                  }
+                   }
         return skimMap
 
     def determineOutputModules(self, scenarioFunc=None, scenarioArgs=None,
@@ -124,7 +124,7 @@ class StdBase(object):
         scenarioArgs = scenarioArgs or {}
 
         outputModules = {}
-        if configDoc != None and configDoc != "":
+        if configDoc is not None and configDoc != "":
             if (configCacheUrl, couchDBName) in self.config_cache:
                 configCache = self.config_cache[(configCacheUrl, couchDBName)]
             else:
@@ -309,7 +309,7 @@ class StdBase(object):
         procTask.setTaskLogBaseLFN(self.unmergedLFNBase)
 
         # FIXME (Alan on 27/Mar/17): can we remove it? (I guess T0 needs it...?)
-        #if applySiteLists:
+        # if applySiteLists:
         #    procTask.setSiteWhitelist(self.siteWhitelist)
         #    procTask.setSiteBlacklist(self.siteBlacklist)
         #    procTask.setTrustSitelists(self.trustSitelists, self.trustPUSitelists)
@@ -352,13 +352,13 @@ class StdBase(object):
                                        taskConf.get("SoftTimeout", None),
                                        taskConf.get("GracePeriod", None))
 
-        if taskType in ["Production", 'PrivateMC'] and totalEvents != None:
+        if taskType in ["Production", 'PrivateMC'] and totalEvents is not None:
             procTask.addGenerator(seeding)
             procTask.addProduction(totalEvents=totalEvents)
             procTask.setFirstEventAndLumi(firstEvent=self.firstEvent,
                                           firstLumi=self.firstLumi)
         else:
-            if inputDataset != None:
+            if inputDataset is not None:
                 (primary, processed, tier) = self.inputDataset[1:].split("/")
                 procTask.addInputDataset(name=self.inputDataset, primary=primary,
                                          processed=processed, tier=tier, dbsurl=self.dbsUrl,
@@ -366,7 +366,7 @@ class StdBase(object):
                                          block_whitelist=self.blockWhitelist,
                                          run_blacklist=self.runBlacklist,
                                          run_whitelist=self.runWhitelist)
-            elif inputStep != None and inputModule != None:
+            elif inputStep is not None and inputModule is not None:
                 procTask.setInputReference(inputStep, outputModule=inputModule)
 
         if primarySubType:
@@ -420,7 +420,7 @@ class StdBase(object):
                                                 forceMerged=forceMerged, forceUnmerged=forceUnmerged, taskConf=taskConf)
             outputModules[outputModuleName] = outputModule
 
-        if configDoc != None and configDoc != "":
+        if configDoc is not None and configDoc != "":
             procTaskCmsswHelper.setConfigCache(configCacheUrl, configDoc, couchDBName)
         else:
             # delete dataset information from scenarioArgs
@@ -462,16 +462,16 @@ class StdBase(object):
         dataset name is desired
         """
         taskConf = taskConf or {}
-        haveFilterName = (filterName != None and filterName != "")
-        haveProcString = (self.processingString != None and self.processingString != "")
-        haveRunNumber = (self.runNumber != None and self.runNumber > 0)
+        haveFilterName = (filterName is not None and filterName != "")
+        haveProcString = (self.processingString is not None and self.processingString != "")
+        haveRunNumber = (self.runNumber is not None and self.runNumber > 0)
 
         taskName = parentTask.name()
         if self.requestType == "StepChain" and "StepName" in taskConf:
             taskName = taskConf["StepName"]
         acqEra = taskConf.get('AcquisitionEra') or self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = taskConf.get('ProcessingString') or self._getDictionaryParams(self.processingString, taskName)
-        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion, taskName, 1)
+        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion, taskName,1)
 
         processedDataset = "%s-" % acqEra
         if haveFilterName:
@@ -1023,7 +1023,7 @@ class StdBase(object):
                      "MergedLFNBase": {"default": "/store/data"},
                      "UnmergedLFNBase": {"default": "/store/unmerged"},
                      "DeleteFromSource": {"default": False, "type": strToBool},
-                    }
+                     }
 
         # these arguments are internally set by ReqMgr2 and should not be provided by the user
         reqmgrArgs = {"Requestor": {"attr": "owner", "optional": False},
@@ -1035,7 +1035,7 @@ class StdBase(object):
                       "CouchURL": {"default": "https://cmsweb.cern.ch/couchdb", "validate": couchurl},
                       "CouchDBName": {"default": "reqmgr_config_cache", "type": str, "validate": identifier},
                       "CouchWorkloadDBName": {"default": "reqmgr_workload_cache", "validate": identifier}
-                     }
+                      }
 
         arguments.update(reqmgrArgs)
         # Set defaults for the argument specification
@@ -1114,7 +1114,7 @@ class StdBase(object):
                      "BlockCloseMaxSize": {"default": 5000000000000, "type": int, "validate": lambda x: x > 0},
                      # dashboard activity
                      "Dashboard": {"default": "production", "type": str, "validate": activity}
-                    }
+                     }
         # Set defaults for the argument specification
         StdBase.setDefaultArgumentsProperty(arguments)
 

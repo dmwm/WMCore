@@ -145,6 +145,7 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
 
     return workload, request_args
 
+
 def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, **kwargs):
     """
     Load the spec arguments definition (and chain definition, if needed) and inherit

@@ -36,6 +36,7 @@ from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
 from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
 from WMCore.Services.LogDB.LogDB import LogDB
 from WMCore.ReqMgr.Web.utils import gen_color
+from WMCore.WMSpec.StdSpecs import StdBase
 # import WMCore itself to determine path of modules
 import WMCore
 
@@ -318,6 +319,9 @@ class ReqMgrService(TemplatedPage):
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
         self.team_cache = []
 
+        # fetch StdBase spec
+        self.std_base = StdBase().getWorkloadAssignArgs()
+
     def getTeams(self):
         "Helper function to get teams from wmstats or local cache"
         teams = self.team_cache
@@ -557,13 +561,19 @@ class ReqMgrService(TemplatedPage):
                 if prop in filteredDoc:
                     filteredDoc[prop], selected[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
 
+            # use std spec as a base for request arguments
+            args = dict(self.std_base)
+            for key, val in doc.items():
+                if  val:
+                    args[key] = val
+
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),
                                         table=json2table(filteredDoc, web_ui_names(), visible_attrs, selected),
-                                        jsondata=json2form(doc, indent=2, keep_first_value=False),
-                                        doc=json.dumps(doc), time=time,
-                                        tasksConfigs=tasks_configs(doc, html=True),
-                                        sTransition=state_transition(doc),
+                                        jsondata=json2form(args, indent=2, keep_first_value=False),
+                                        doc=json.dumps(args), time=time,
+                                        tasksConfigs=tasks_configs(args, html=True),
+                                        sTransition=state_transition(args),
                                         transitions=transitions, ts=tst, user=user(), userdn=user_dn())
         elif len(doc) > 1:
             jsondata = [pprint.pformat(d) for d in doc]

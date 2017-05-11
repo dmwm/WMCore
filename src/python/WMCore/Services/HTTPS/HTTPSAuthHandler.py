@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 """
-Basic interface to HTTPS requests using ssl object managers, for python > 2.7.9.
+Basic interface to HTTPS requests using ssl object managers, for python >= 2.7.9.
 See usage example in:
 src/python/WMCore/WMSpec/Steps/Executors/DQMUpload.py
 """
-from __future__ import print_function
+from __future__ import print_function, division
 import logging
 import urllib2
 import httplib
@@ -26,9 +26,9 @@ class HTTPSAuthHandler(urllib2.HTTPSHandler):
 
             self.logger.info("Found %d default trusted CA certificates.", len(self.ctx.get_ca_certs()))
             ### DEBUG start ###
-            for ca in self.ctx.get_ca_certs():
-                if 'CERN' in str(ca['subject']):
-                    print("  %s" % str(ca['subject']))
+            #for ca in self.ctx.get_ca_certs():
+            #    if 'CERN' in str(ca['subject']):
+            #        print("  %s" % str(ca['subject']))
             ### DEBUG end ###
             self.logger.info("SSL context manager created with the following settings:")
             self.logger.info("  check_hostname : %s", self.ctx.check_hostname)  # default to True

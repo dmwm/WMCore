@@ -38,8 +38,8 @@ class DQMUpload(Executor):
         Pre execution checks
 
         """
-        #Are we using an emulator?
-        if emulator != None:
+        # Are we using an emulator?
+        if emulator is not None:
             return emulator.emulatePre(self.step)
 
         logging.info("Steps.Executors.DQMUpload.pre called")
@@ -50,22 +50,22 @@ class DQMUpload(Executor):
         _execute_
 
         """
-        #Are we using emulators again?
-        if emulator != None:
+        # Are we using emulators again?
+        if emulator is not None:
             return emulator.emulate(self.step, self.job)
 
         if self.step.upload.proxy:
             try:
                 self.stepSpace.getFromSandbox(self.step.upload.proxy)
             except Exception as ex:
-                #Let it go, it wasn't in the sandbox. Then it must be
-                #somewhere else
+                # Let it go, it wasn't in the sandbox. Then it must be
+                # somewhere else
                 del ex
 
         # Search through steps for analysis files
         for step in self.stepSpace.taskSpace.stepSpaces():
             if step == self.stepName:
-                #Don't try to parse your own report; it's not there yet
+                # Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
             logging.info("Beginning report processing for step %s", step)
@@ -107,12 +107,11 @@ class DQMUpload(Executor):
 
         """
         # Another emulator check
-        if emulator != None:
+        if emulator is not None:
             return emulator.emulatePost(self.step)
 
         logging.info("Steps.Executors.DQMUpload.post called")
         return None
-
 
     #
     # for the latest DQM upload code see https://github.com/rovere/dqmgui/blob/master/bin/visDQMUpload
@@ -129,9 +128,11 @@ class DQMUpload(Executor):
 
         # Preparing a checksum
         blockSize = 0x10000
+
         def upd(m, data):
             m.update(data)
             return m
+
         fd = open(filename, 'rb')
         try:
             contents = iter(lambda: fd.read(blockSize), '')
@@ -140,7 +141,7 @@ class DQMUpload(Executor):
             fd.close()
 
         args['checksum'] = 'md5:%s' % m.hexdigest()
-        #args['checksum'] = 'md5:%s' % md5.new(filename).read()).hexdigest()
+        # args['checksum'] = 'md5:%s' % md5.new(filename).read()).hexdigest()
         args['size'] = os.path.getsize(filename)
 
         msg = "HTTP Upload is about to start:\n"
@@ -238,7 +239,7 @@ class DQMUpload(Executor):
         datareq = urllib2.Request(url + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
-        self.marshall(args, {'file' : filename}, datareq)
+        self.marshall(args, {'file': filename}, datareq)
 
         if 'https://' in url:
             result = opener.open(datareq)

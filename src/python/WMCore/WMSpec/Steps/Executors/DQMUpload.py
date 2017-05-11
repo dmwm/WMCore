@@ -6,28 +6,20 @@ Implementation of an Executor for a DQMUpload step
 
 """
 from __future__ import print_function
+
 import os
 import sys
-import httplib
-import urllib2
 import logging
-import traceback
-
+import urllib2
 from cStringIO import StringIO
-from mimetypes import guess_type
-from gzip import GzipFile
 from functools import reduce
-
-# Compatibility with python2.3 or earlier
-HTTPS = httplib.HTTPS
-if sys.version_info[:3] >= (2, 4, 0):
-    HTTPS = httplib.HTTPSConnection
-
+from gzip import GzipFile
 from hashlib import md5
+from mimetypes import guess_type
 
-from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.FwkJobReport.Report import Report
-
+from WMCore.Services.HTTPS.HTTPSAuthHandler import HTTPSAuthHandler
+from WMCore.WMSpec.Steps.Executor import Executor
 from WMCore.WMSpec.Steps.WMExecutionFailure import WMExecutionFailure
 
 
@@ -46,11 +38,11 @@ class DQMUpload(Executor):
         Pre execution checks
 
         """
-        #Are we using an emulator?
-        if emulator != None:
+        # Are we using an emulator?
+        if emulator is not None:
             return emulator.emulatePre(self.step)
 
-        print("Steps.Executors.DQMUpload.pre called")
+        logging.info("Steps.Executors.DQMUpload.pre called")
         return None
 
     def execute(self, emulator=None):
@@ -58,22 +50,22 @@ class DQMUpload(Executor):
         _execute_
 
         """
-        #Are we using emulators again?
-        if emulator != None:
+        # Are we using emulators again?
+        if emulator is not None:
             return emulator.emulate(self.step, self.job)
 
         if self.step.upload.proxy:
             try:
                 self.stepSpace.getFromSandbox(self.step.upload.proxy)
             except Exception as ex:
-                #Let it go, it wasn't in the sandbox. Then it must be
-                #somewhere else
+                # Let it go, it wasn't in the sandbox. Then it must be
+                # somewhere else
                 del ex
 
         # Search through steps for analysis files
         for step in self.stepSpace.taskSpace.stepSpaces():
             if step == self.stepName:
-                #Don't try to parse your own report; it's not there yet
+                # Don't try to parse your own report; it's not there yet
                 continue
             stepLocation = os.path.join(self.stepSpace.taskSpace.location, step)
             logging.info("Beginning report processing for step %s", step)
@@ -115,12 +107,11 @@ class DQMUpload(Executor):
 
         """
         # Another emulator check
-        if emulator != None:
+        if emulator is not None:
             return emulator.emulatePost(self.step)
 
-        print("Steps.Executors.DQMUpload.post called")
+        logging.info("Steps.Executors.DQMUpload.post called")
         return None
-
 
     #
     # for the latest DQM upload code see https://github.com/rovere/dqmgui/blob/master/bin/visDQMUpload
@@ -137,9 +128,11 @@ class DQMUpload(Executor):
 
         # Preparing a checksum
         blockSize = 0x10000
+
         def upd(m, data):
             m.update(data)
             return m
+
         fd = open(filename, 'rb')
         try:
             contents = iter(lambda: fd.read(blockSize), '')
@@ -148,7 +141,7 @@ class DQMUpload(Executor):
             fd.close()
 
         args['checksum'] = 'md5:%s' % m.hexdigest()
-        #args['checksum'] = 'md5:%s' % md5.new(filename).read()).hexdigest()
+        # args['checksum'] = 'md5:%s' % md5.new(filename).read()).hexdigest()
         args['size'] = os.path.getsize(filename)
 
         msg = "HTTP Upload is about to start:\n"
@@ -171,14 +164,13 @@ class DQMUpload(Executor):
             msg += 'Message: %s\n' % ex.hdrs.get("Dqm-Status-Message", None)
             msg += 'Detail: %s\n' % ex.hdrs.get("Dqm-Status-Detail", None)
             msg += 'Error: %s\n' % str(ex)
-            logging.error(msg)
+            logging.exception(msg)
             raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
         except Exception as ex:
             msg = 'HTTP upload failed with response:\n'
             msg += 'Problem unknown.\n'
             msg += 'Error: %s\n' % str(ex)
-            msg += 'Traceback: %s\n' % traceback.format_exc()
-            logging.error(msg)
+            logging.exception(msg)
             raise WMExecutionFailure(70318, "DQMUploadFailure", msg)
 
         return
@@ -228,33 +220,32 @@ class DQMUpload(Executor):
 
         Perform a file upload to the dqm server using HTTPS auth with the
         service proxy provided
-
         """
-        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
-
-        class HTTPSCertAuth(HTTPS):
-            def __init__(self, host, *args, **kwargs):
-                HTTPS.__init__(self, host, key_file=uploadProxy, cert_file=uploadProxy, **kwargs)
-
-        class HTTPSCertAuthenticate(urllib2.AbstractHTTPHandler):
-            def default_open(self, req):
-                return self.do_open(HTTPSCertAuth, req)
-
         ident = "WMAgent python/%d.%d.%d" % sys.version_info[:3]
+        uploadProxy = self.step.upload.proxy or os.environ.get('X509_USER_PROXY', None)
+        logging.info("Using proxy file: %s", uploadProxy)
+        logging.info("Using CA certificate path: %s", os.environ.get('X509_CERT_DIR'))
 
         msg = "HTTP POST upload arguments:\n"
         for arg in args:
             msg += "  ==> %s: %s\n" % (arg, args[arg])
         logging.info(msg)
 
+        handler = HTTPSAuthHandler(key=uploadProxy, cert=uploadProxy)
+        opener = urllib2.OpenerDirector()
+        opener.add_handler(handler)
+
+        # setup the request object
         datareq = urllib2.Request(url + '/data/put')
         datareq.add_header('Accept-encoding', 'gzip')
         datareq.add_header('User-agent', ident)
-        self.marshall(args, {'file' : filename}, datareq)
+        self.marshall(args, {'file': filename}, datareq)
+
         if 'https://' in url:
-            result = urllib2.build_opener(HTTPSCertAuthenticate()).open(datareq)
+            result = opener.open(datareq)
         else:
-            result = urllib2.build_opener(urllib2.ProxyHandler({})).open(datareq)
+            opener.add_handler(urllib2.ProxyHandler({}))
+            result = opener.open(datareq)
 
         data = result.read()
         if result.headers.get('Content-encoding', '') == 'gzip':

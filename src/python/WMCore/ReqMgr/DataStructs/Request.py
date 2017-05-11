@@ -17,6 +17,7 @@ TODO/NOTE:
 """
 from __future__ import print_function, division
 import time
+import re
 import cherrypy
 from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_START_STATE, ACTIVE_STATUS_FILTER
 
@@ -29,6 +30,7 @@ ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST = \
      'SiteBlacklist', 'SiteWhitelist', 'SoftTimeout', 'SoftwareVersions', 'Team',
      'Teams', 'TotalEstimatedJobs', 'TotalInputEvents', 'TotalInputFiles', 'TotalInputLumis',
      'TransientOutputModules', 'TrustPUSitelists', 'TrustSitelists', 'VoRole', '_id', '_rev']
+
 
 def initialize_request_args(request, config):
     """
@@ -79,30 +81,54 @@ def initialize_resubmission(request_args, reqmgr_db_service):
     # to be used later on for spec validation
     request_args["OriginalRequestType"] = parent_args["RequestType"]
 
+
 def _replace_cloned_args(clone_args, user_args):
     """
     replace original arguments with user argument.
     If the value is dictionary format, overwrite only with specified arguments.
-    If the original arguemnt has simple value and user passes dictionary, completely replace to dictionary
+    If the original argument has simple value and user passes dictionary, completely replace to dictionary
+    XXX this means LumiList won't remove other runs, only updates runs overwritten
     """
     for prop in user_args:
         if isinstance(user_args[prop], dict) and isinstance(clone_args.get(prop), dict):
             _replace_cloned_args(clone_args.get(prop, {}), user_args[prop])
-        else:     
+        else:
             clone_args[prop] = user_args[prop]
     return
-    
-def initialize_clone(request_args, reqmgr_db_service):
-    """
-    Initialize a Clone arguments by inheriting and overwriting argument from OriginalRequest
-    """
-    requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    clone_args = requests.values()[0]
-    # TODO: need to validate new overwrite request_args here since it will skip the clone_args validtaiton
-    _replace_cloned_args(clone_args, request_args)
-    clone_args = {k: v for k, v in clone_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
 
-    return clone_args
+
+def initialize_clone(requestArgs, originalArgs, argsDefinition, chainDefinition=None):
+    """
+    Initialize arguments for a clone request by inheriting and overwriting argument
+    from OriginalRequest.
+
+    :param requestArgs: user-provided dictionary with override arguments
+    :param originalArgs: original arguments retrieved for the workflow being cloned
+    :param argsDefinition: arguments definition according to the workflow type being cloned
+    :param chainDefinition: a dictionary containing the chain argument definition, for
+    StepChain and TaskChain
+    :return: dictionary with original args filtered out, as per the spec definition. And on
+     top of that, user arguments added/replaced in the dictionary.
+    """
+    chainPattern = r'(Task|Step)\d{1,2}'
+    cloneArgs = {}
+    for topKey, topValue in originalArgs.iteritems():
+        if topKey in argsDefinition:
+            cloneArgs[topKey] = topValue
+        elif topKey.startswith(("Skim", "Step", "Task")):
+            # accept floating args from ReReco, StepChain and TaskChain
+            if re.match(chainPattern, topKey):
+                for innerKey in topValue:
+                    if innerKey not in chainDefinition:
+                        # remove internal keys that are not in the spec
+                        topValue.pop(innerKey, None)
+            cloneArgs[topKey] = topValue
+
+    # apply user override arguments at the end, such that it's validated at spec level
+    _replace_cloned_args(cloneArgs, requestArgs)
+
+    return cloneArgs
+
 
 def generateRequestName(request):
     currentTime = time.strftime('%y%m%d_%H%M%S', time.localtime(time.time()))
@@ -111,8 +137,8 @@ def generateRequestName(request):
     request["RequestName"] = "%s_%s" % (request["Requestor"], request.get("RequestString"))
     request["RequestName"] += "_%s_%s" % (currentTime, seconds)
 
-def protectedLFNs(requestInfo):
 
+def protectedLFNs(requestInfo):
     reqData = RequestInfo(requestInfo)
     result = []
     if reqData.andFilterCheck(ACTIVE_STATUS_FILTER):
@@ -121,14 +147,16 @@ def protectedLFNs(requestInfo):
         for out in outs:
             dsn, ps, tier = out.split('/')[1:]
             acq, rest = ps.split('-', 1)
-            dirPath = '/'.join([ base, acq, dsn, tier, rest])
+            dirPath = '/'.join([base, acq, dsn, tier, rest])
             result.append(dirPath)
     return result
+
 
 class RequestInfo(object):
     """
     Wrapper class for Request data
     """
+
     def __init__(self, requestData):
         self.data = requestData
 
@@ -235,4 +263,3 @@ class RequestInfo(object):
         # cannot determin whether AgentJobInfo is cleaned or not when 'AgentJobInfo' Key doesn't exist
         # Maybe JobInformation is not included but since it requested by above status assumed it returns True
         return True
-

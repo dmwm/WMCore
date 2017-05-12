@@ -113,6 +113,11 @@ class StatusPoller(BaseWorkerThread):
             if statusTime == 0:
                 logging.error("Not killing job %i, the status time was zero", job['id'])
                 continue
+            # FIXME: temporary fix to get held/removed jobs out of condor
+            if globalState == 'Error' and statusTime is None:
+                logging.info("Killing job %i in '%s' state because it has no status_time value", job['id'], globalState)
+                job['status'] = 'Timeout'
+                jobsToKill[globalState].append(job)
             if timeout and statusTime:
                 if time.time() - float(statusTime) > float(timeout):
                     # Timeout status is used by JobTracker to fail jobs in WMBS database

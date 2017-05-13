@@ -7,42 +7,42 @@ __author__ = "Valentin Kuznetsov"
 """
 from __future__ import print_function
 
+import collections
+import json
 # system modules
 import os
-import sys
-import json
-import time
 import pprint
-import collections
+import sys
+import time
 from datetime import datetime
+from copy import deepcopy
 
 # cherrypy modules
 import cherrypy
+from cherrypy import config as cherryconf
 from cherrypy import expose, response, tools
 from cherrypy.lib.static import serve_file
-from cherrypy import config as cherryconf
 
-# ReqMgrSrv modules
-from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
-from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
-from WMCore.ReqMgr.Utils.url_utils import getdata
-from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
-from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
-from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
-from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
-
-# WMCore modules
-from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
-from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
-from WMCore.Services.LogDB.LogDB import LogDB
-from WMCore.ReqMgr.Web.utils import gen_color
 # import WMCore itself to determine path of modules
 import WMCore
-
+from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
+from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
+from WMCore.ReqMgr.DataStructs.RequestStatus import get_modifiable_properties, get_protected_properties
+from WMCore.ReqMgr.Tools.cms import lfn_bases, lfn_unmerged_bases
+from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
+from WMCore.ReqMgr.Tools.cms import site_white_list, site_black_list
+from WMCore.ReqMgr.Tools.cms import web_ui_names, SITE_CACHE, PNN_CACHE
+# WMCore modules
+from WMCore.ReqMgr.Utils.Validation import get_request_template_from_type
+from WMCore.ReqMgr.Utils.url_utils import getdata
+# ReqMgrSrv modules
+from WMCore.ReqMgr.Web.tools import exposecss, exposejs, TemplatedPage
+from WMCore.ReqMgr.Web.utils import gen_color
+from WMCore.ReqMgr.Web.utils import json2table, json2form, genid, checkargs, tstamp, sort, reorder_list
+from WMCore.Services.LogDB.LogDB import LogDB
 # new reqmgr2 APIs
 from WMCore.Services.ReqMgr.ReqMgr import ReqMgr
-from WMCore.ReqMgr.DataStructs.RequestStatus import REQUEST_STATE_TRANSITION
-from WMCore.ReqMgr.DataStructs.RequestStatus import ACTIVE_STATUS
+from WMCore.WMSpec.StdSpecs.StdBase import StdBase
 
 
 def sort_bold(docs):
@@ -237,6 +237,27 @@ def toString(data):
         return data
 
 
+def getPropValueMap():
+    """
+    Return all possible values for some assignment arguments
+    """
+    prop_value_map = {'CMSSWVersion': releases(),
+                      'SiteWhitelist': SITE_CACHE.getData(),
+                      'SiteBlacklist': SITE_CACHE.getData(),
+                      'SubscriptionPriority': ['Low', 'Normal', 'High'],
+                      'CustodialSites': PNN_CACHE.getData(),
+                      'CustodialSubType': ['Move', 'Replica'],
+                      'NonCustodialSites': PNN_CACHE.getData(),
+                      'NonCustodialSubType': ['Move', 'Replica'],
+                      'AutoApproveSubscriptionSites': PNN_CACHE.getData(),
+                      'MergedLFNBase': lfn_bases(),
+                      'UnmergedLFNBase': lfn_unmerged_bases(),
+                      'TrustPUSitelists': [True, False],
+                      'TrustSitelists': [True, False],
+                      'Dashboard': dashboardActivities()}
+    return prop_value_map
+
+
 class ReqMgrService(TemplatedPage):
     """
     Request Manager web service class
@@ -318,6 +339,11 @@ class ReqMgrService(TemplatedPage):
             raise Exception('ReqMgr2 configuration file does not provide wmstats url')
         self.team_cache = []
 
+        # fetch assignment arguments specification from StdBase
+        self.assignArgs = StdBase().getWorkloadAssignArgs()
+        self.assignArgs = {key: val['default'] for key, val in self.assignArgs.items()}
+
+
     def getTeams(self):
         "Helper function to get teams from wmstats or local cache"
         teams = self.team_cache
@@ -391,32 +417,9 @@ class ReqMgrService(TemplatedPage):
                 docs.append(request_attr(val, attrs))
         sortby = kwds.get('sort', 'status')
         docs = [r for r in sort(docs, sortby)]
-        misc_json = {'RequestPriority': 5000,
-                     'CMSSWVersion': releases(),
-                     'ScramArch': architectures(),
-                     'SiteWhitelist': SITE_CACHE.getData(),
-                     'SiteBlacklist': SITE_CACHE.getData(),
-                     'SubscriptionPriority': ['Low', 'Normal', 'High'],
-                     'CustodialSubType': ['Move', 'Replica'],
-                     'NonCustodialSubType': ['Move', 'Replica'],
-                     'MinMergeSize': 2147483648,
-                     'MaxMergeSize': 4294967296,
-                     'MaxMergeEvents': 50000,
-                     'MaxRSS': 20411724,
-                     'MaxVSize': 20411724,
-                     'SoftTimeout': 129600,
-                     'GracePeriod': 300,
-                     'BlockCloseMaxWaitTime': 66400,
-                     'BlockCloseMaxFiles': 500,
-                     'BlockCloseMaxEvents': 250000000,
-                     'BlockCloseMaxSize': 5000000000000,
-                     'AcquisitionEra': '',
-                     'ProcessingVersion': 1,
-                     'ProcessingString': '',
-                     'MergedLFNBase': lfn_bases(),
-                     'UnmergedLFNBase': lfn_unmerged_bases(),
-                     'Dashboard': dashboardActivities(),
-                     'Team': self.getTeams()}
+        assignDict = deepcopy(self.assignArgs)
+        assignDict.update(getPropValueMap())
+        assignDict['Team'] = self.getTeams()
         filter_sort = self.templatepage('filter_sort')
         content = self.templatepage('assign', sort=sortby,
                                     filter_sort_table=filter_sort,
@@ -424,8 +427,8 @@ class ReqMgrService(TemplatedPage):
                                     site_white_list=site_white_list(),
                                     site_black_list=site_black_list(),
                                     user=user(), user_dn=user_dn(), requests=toString(docs),
-                                    misc_table=json2table(misc_json, web_ui_names(), "all_attributes"),
-                                    misc_json=json2form(misc_json, indent=2, keep_first_value=True))
+                                    misc_table=json2table(assignDict, web_ui_names(), "all_attributes"),
+                                    misc_json=json2form(assignDict, indent=2, keep_first_value=True))
         return self.abs_page('assign', content)
 
     @expose
@@ -521,9 +524,12 @@ class ReqMgrService(TemplatedPage):
                 transitions.remove(status)
             visible_attrs = get_modifiable_properties(status)
             filterout_attrs = get_protected_properties()
-
             # extend filterout list with "RequestStatus" since it is passed separately
             filterout_attrs.append("RequestStatus")
+
+            for key, val in self.assignArgs.items():
+                if not doc.get(key):
+                    doc[key] = val
 
             if visible_attrs == "all_attributes":
                 filteredDoc = doc
@@ -535,27 +541,13 @@ class ReqMgrService(TemplatedPage):
                 for prop in visible_attrs:
                     filteredDoc[prop] = doc.get(prop, "")
 
-            listPNNs = PNN_CACHE.getData()
-            prop_value_map = {'CMSSWVersion': releases(),
-                              'SiteWhitelist': SITE_CACHE.getData(),
-                              'SiteBlacklist': SITE_CACHE.getData(),
-                              'SubscriptionPriority': ['Low', 'Normal', 'High'],
-                              'CustodialSites': listPNNs,
-                              'CustodialSubType': ['Move', 'Replica'],
-                              'NonCustodialSites': listPNNs,
-                              'NonCustodialSubType': ['Move', 'Replica'],
-                              'AutoApproveSubscriptionSites': listPNNs,
-                              'MergedLFNBase': lfn_bases(),
-                              'UnmergedLFNBase': lfn_unmerged_bases(),
-                              'TrustPUSitelists': [True, False],
-                              'TrustSitelists': [True, False],
-                              'Dashboard': dashboardActivities(),
-                              'Team': self.getTeams()}
+            propValueMap = getPropValueMap()
+            propValueMap['Team'] = self.getTeams()
 
             selected = {}
-            for prop in prop_value_map:
+            for prop in propValueMap:
                 if prop in filteredDoc:
-                    filteredDoc[prop], selected[prop] = reorder_list(prop_value_map[prop], filteredDoc[prop])
+                    filteredDoc[prop], selected[prop] = reorder_list(propValueMap[prop], filteredDoc[prop])
 
             content = self.templatepage('doc', title=title, status=status, name=name, rid=rid,
                                         tasks=json2form(tasks, indent=2, keep_first_value=False),

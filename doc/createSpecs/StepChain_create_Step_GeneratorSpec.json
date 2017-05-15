@@ -1,0 +1,172 @@
+{
+    "AcquisitionEra": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "BlockBlacklist": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "BlockWhitelist": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "CMSSWVersion": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "Campaign": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ConfigCacheID": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "DataPileup": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "EventStreams": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "EventsPerJob": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "EventsPerLumi": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "FilesPerJob": {
+        "default": 1, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "FilterEfficiency": {
+        "default": 1.0, 
+        "optional": true, 
+        "type": "<type 'float'>"
+    }, 
+    "GlobalTag": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "InputDataset": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "InputFromOutputModule": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "InputStep": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "KeepOutput": {
+        "default": true, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "LheInputFiles": {
+        "default": false, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "LumiList": {
+        "default": {}, 
+        "optional": true, 
+        "type": "<function makeLumiList at 0x7f65d9b55410>"
+    }, 
+    "LumisPerJob": {
+        "default": 8, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "MCPileup": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "Memory": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'float'>"
+    }, 
+    "Multicore": {
+        "default": 0, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "PrepID": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "PrimaryDataset": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ProcessingString": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ProcessingVersion": {
+        "default": 0, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "RequestNumEvents": {
+        "default": 1000, 
+        "optional": false, 
+        "type": "<type 'int'>"
+    }, 
+    "RunBlacklist": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "RunWhitelist": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "ScramArch": {
+        "default": null, 
+        "optional": true, 
+        "type": "<function makeNonEmptyList at 0x7f65da26a9b0>"
+    }, 
+    "Seeding": {
+        "default": "AutomaticSeeding", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "SplittingAlgo": {
+        "default": "EventAwareLumiBased", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "StepName": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }
+}

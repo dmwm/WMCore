@@ -1,0 +1,272 @@
+{
+    "AcquisitionEra": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "CMSSWVersion": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "Campaign": {
+        "default": "", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "Comments": {
+        "default": "", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ConfigCacheID": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ConfigCacheUrl": {
+        "default": "https://cmsweb.cern.ch/couchdb", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DQMConfigCacheID": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DQMHarvestUnit": {
+        "default": "byRun", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DQMSequences": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "DQMUploadProxy": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DQMUploadUrl": {
+        "default": "https://cmsweb.cern.ch/dqm/dev", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DashboardHost": {
+        "default": "cms-jobmon.cern.ch", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DashboardPort": {
+        "default": 8884, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "DbsUrl": {
+        "default": "https://cmsweb.cern.ch/dbs/prod/global/DBSReader", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "DeleteFromSource": {
+        "default": false, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "EnableHarvesting": {
+        "default": false, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "EnableNewStageout": {
+        "default": false, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "EventStreams": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "FirstEvent": {
+        "default": 1, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "FirstLumi": {
+        "default": 1, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "GlobalTag": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "GlobalTagConnect": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "Group": {
+        "default": "DATAOPS", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "IgnoredOutputModules": {
+        "default": [], 
+        "optional": true, 
+        "type": "<function makeList at 0x7f65da26a938>"
+    }, 
+    "IncludeParents": {
+        "default": false, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "LumiList": {
+        "default": {}, 
+        "optional": true, 
+        "type": "<function makeLumiList at 0x7f65d9b55410>"
+    }, 
+    "MaxMergeEvents": {
+        "default": 100000000, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "MaxMergeSize": {
+        "default": 4294967296, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "MaxWaitTime": {
+        "default": 86400, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "Memory": {
+        "default": 2300.0, 
+        "optional": true, 
+        "type": "<type 'float'>"
+    }, 
+    "MergedLFNBase": {
+        "default": "/store/data", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "MinMergeSize": {
+        "default": 2147483648, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "Multicore": {
+        "default": 1, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "OpenRunningTimeout": {
+        "default": 0, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "OverrideCatalog": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "PeriodicHarvestInterval": {
+        "default": 0, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "PrepID": {
+        "default": null, 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ProcessingString": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "ProcessingVersion": {
+        "default": 1, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "RequestPriority": {
+        "default": 8000, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "RequestString": {
+        "default": null, 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "RequestType": {
+        "default": "TaskChain", 
+        "optional": false, 
+        "type": "<type 'str'>"
+    }, 
+    "RobustMerge": {
+        "default": true, 
+        "optional": true, 
+        "type": "<function strToBool at 0x7f65da26aa28>"
+    }, 
+    "RunNumber": {
+        "default": 0, 
+        "optional": true, 
+        "type": "<type 'int'>"
+    }, 
+    "ScramArch": {
+        "default": null, 
+        "optional": false, 
+        "type": "<function makeNonEmptyList at 0x7f65da26a9b0>"
+    }, 
+    "SizePerEvent": {
+        "default": 512.0, 
+        "optional": true, 
+        "type": "<type 'float'>"
+    }, 
+    "SubRequestType": {
+        "default": "", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "Task1": {
+        "default": {}, 
+        "optional": false, 
+        "type": "<type 'dict'>"
+    }, 
+    "TaskChain": {
+        "default": 1, 
+        "optional": false, 
+        "type": "<type 'int'>"
+    }, 
+    "TimePerEvent": {
+        "default": 12.0, 
+        "optional": true, 
+        "type": "<type 'float'>"
+    }, 
+    "UnmergedLFNBase": {
+        "default": "/store/unmerged", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "ValidStatus": {
+        "default": "PRODUCTION", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "VoGroup": {
+        "default": "unknown", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }, 
+    "VoRole": {
+        "default": "unknown", 
+        "optional": true, 
+        "type": "<type 'str'>"
+    }
+}

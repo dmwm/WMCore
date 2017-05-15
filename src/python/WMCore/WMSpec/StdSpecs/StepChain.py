@@ -346,6 +346,7 @@ class StepChainWorkloadFactory(StdBase):
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "StepChain", "optional": False},
+                    "Step1": {"default": {}, "optional": False, "type": dict},
                     # ConfigCacheID is not used in the main dict for StepChain
                     "ConfigCacheID": {"optional": True, "null": True},
                     "PrimaryDataset": {"null": True, "validate": primdataset},

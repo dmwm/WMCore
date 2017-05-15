@@ -1058,7 +1058,7 @@ class StdBase(object):
         arguments = {"RequestPriority": {"type": int, "attr": "priority",
                                          "validate": lambda x: (x >= 0 and x < 1e6)},
                      "RequestStatus": {"assign_optional": False, "validate": lambda x: x == 'assigned'},
-                     "Team": {"type": safeStr, "assign_optional": False,
+                     "Team": {"default": "", "type": safeStr, "assign_optional": False,
                               "validate": lambda x: len(x) > 0},
                      "AcquisitionEra": {"validate": acqname, "assign_optional": True},
                      "ProcessingString": {"validate": procstring, "assign_optional": True},

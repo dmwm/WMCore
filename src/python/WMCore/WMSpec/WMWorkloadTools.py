@@ -74,8 +74,9 @@ def _validateArgumentDict(argument, argValue, argumentDefinition):
 
     for val in argValue.values():
         try:
-            # sigh.. LumiList has a peculiar type validation
-            if argument == 'LumiList':
+            # sigh.. LumiList has a peculiar type validation.
+            # Task/Step is validated later in the schema
+            if argument in ['LumiList', 'Step1', 'Task1']:
                 val = argumentDefinition["type"](argValue)
                 break
             val = argumentDefinition["type"](val)

@@ -506,6 +506,7 @@ class TaskChainWorkloadFactory(StdBase):
     def getWorkloadCreateArgs():
         baseArgs = StdBase.getWorkloadCreateArgs()
         specArgs = {"RequestType": {"default": "TaskChain", "optional": False},
+                    "Task1": {"default": {}, "optional": False, "type": dict},
                     # ConfigCacheID is not used in the main dict for TaskChain
                     "ConfigCacheID": {"optional": True, "null": True},
                     "IgnoredOutputModules": {"default": [], "type": makeList, "null": False},

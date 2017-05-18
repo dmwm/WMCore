@@ -64,24 +64,6 @@ def initialize_request_args(request, config):
     generateRequestName(request)
 
 
-def initialize_resubmission(request_args, reqmgr_db_service):
-    """
-    Initialize a Resubmission request by inheriting the original/parent information
-    from couch, unless the user has overwritten that argument in the resubmission request.
-    Any arguments that are not expected either at creation or assignment level, will get
-    removed.
-    """
-    requests = reqmgr_db_service.getRequestByNames(request_args["OriginalRequestName"])
-    parent_args = requests.values()[0]
-    parent_args = {k: v for k, v in parent_args.iteritems() if k not in ARGS_TO_REMOVE_FROM_ORIGINAL_REQUEST}
-
-    for arg in parent_args:
-        if arg not in request_args:
-            request_args[arg] = parent_args[arg]
-    # to be used later on for spec validation
-    request_args["OriginalRequestType"] = parent_args["RequestType"]
-
-
 def _replace_cloned_args(clone_args, user_args):
     """
     replace original arguments with user argument.

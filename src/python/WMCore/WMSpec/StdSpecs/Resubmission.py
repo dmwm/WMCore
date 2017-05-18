@@ -82,17 +82,15 @@ class ResubmissionWorkloadFactory(StdBase):
         Since we skip the master validation for Resubmission specs, we better have
         some specific validation
         """
-        argumentDefinition = {}
-        if 'OriginalRequestType' in schema:
-            parentSpecClass = loadSpecClassByType(schema['OriginalRequestType'])
-            argumentDefinition = parentSpecClass.getWorkloadCreateArgs()
+        if schema.get('OriginalRequestType') == 'Resubmission':
+            # we cannot validate such schema
+            return
 
+        # load assignment + creation + resubmission creation args definition
+        argumentDefinition = self.getWorkloadAssignArgs()
+        parentSpecClass = loadSpecClassByType(schema['OriginalRequestType'])
+        argumentDefinition.update(parentSpecClass.getWorkloadCreateArgs())
         argumentDefinition.update(self.getWorkloadCreateArgs())
-        # RequestStatus has different validate function, at this point we must use
-        # the creation one. Thus just save it to update the final arg definition
-        createStatus = {'RequestStatus': dict(argumentDefinition['RequestStatus'])}
-        argumentDefinition.update(self.getWorkloadAssignArgs())
-        argumentDefinition.update(createStatus)
 
         try:
             validateArgumentsCreate(schema, argumentDefinition)

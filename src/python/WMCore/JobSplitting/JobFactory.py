@@ -192,6 +192,12 @@ class JobFactory(WMObject):
                         fileLocations = locSet
                         if len(self.siteWhitelist) > 0:
                             locSet = locSet & set(self.siteWhitelist)
+                            if len(locSet) == 0:
+                                # if there is no matching location in site whitelist,
+                                # select the current input file location
+                                # this allows overflowed jobs to be run again
+                                locSet = fileLocations
+                                
                         if len(self.siteBlacklist) > 0:
                             locSet = locSet - set(self.siteBlacklist)
 

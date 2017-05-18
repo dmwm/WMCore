@@ -420,7 +420,11 @@ class Request(RESTEntity):
         # legacy update schema to support ops script
         loadRequestSchema(workload, request_args)
 
-        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), request_args, dn)
+        # Do not update dict values to reqmgr2 workload cache, it's not properly formated.
+        # More info in the PR: #7343
+        reqArgsNoDict = {k: v for k, v in request_args.iteritems() if not isinstance(v, dict)}
+
+        report = self.reqmgr_db_service.updateRequestProperty(workload.name(), reqArgsNoDict, dn)
         workload.saveCouch(self.config.couch_host, self.config.couch_reqmgr_db)
         return report
 

@@ -515,7 +515,6 @@ class WMBSHelper(WMConnectionBase):
         dbsFileLoc = []
         dbsCksumBinds = []
         locationsToAdd = []
-        selfChecksums = None
 
         # The first thing we need to do is add the datasetAlgo
         # Assume all files in a pass come from one datasetAlgo?
@@ -529,10 +528,11 @@ class WMBSHelper(WMConnectionBase):
             lfn = dbsFile['lfn']
             selfChecksums = dbsFile['checksums']
 
-            newTuple = (lfn, dbsFile['size'],
-                        dbsFile['events'], self.insertedBogusDataset,
-                        dbsFile['status'], self.topLevelTaskDBSBufferId)
+            newTuple = (lfn, dbsFile['size'], dbsFile['events'],
+                        self.insertedBogusDataset, dbsFile['status'],
+                        self.topLevelTaskDBSBufferId, dbsFile['in_phedex'])
 
+            # TODO: we can probably optmize it
             if newTuple not in dbsFileTuples:
                 dbsFileTuples.append(newTuple)
 
@@ -590,7 +590,8 @@ class WMBSHelper(WMConnectionBase):
                                   events=dbsFile["NumberOfEvents"],
                                   checksums=checksums,
                                   locations=locations,
-                                  status="GLOBAL")
+                                  status="GLOBAL",
+                                  inPhedex=1)
         dbsBuffer.setDatasetPath('bogus')
         dbsBuffer.setAlgorithm(appName="cmsRun", appVer="Unknown",
                                appFam="Unknown", psetHash="Unknown",

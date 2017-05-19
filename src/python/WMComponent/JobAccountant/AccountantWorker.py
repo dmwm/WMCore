@@ -346,7 +346,8 @@ class AccountantWorker(WMConnectionBase):
                                 size = jobReportFile["size"],
                                 events = jobReportFile["events"],
                                 checksums = jobReportFile["checksums"],
-                                status = "NOTUPLOADED")
+                                status = "NOTUPLOADED",
+                                inPhedex=0)
         dbsFile.setAlgorithm(appName = datasetInfo["applicationName"],
                              appVer = datasetInfo["applicationVersion"],
                              appFam = jobReportFile["module_label"],
@@ -648,7 +649,6 @@ class AccountantWorker(WMConnectionBase):
         dbsFileLoc    = []
         dbsCksumBinds = []
         runLumiBinds  = []
-        selfChecksums = None
         jobLocations  = set()
 
         for dbsFile in self.dbsFilesToCreate:
@@ -714,7 +714,7 @@ class AccountantWorker(WMConnectionBase):
             jobLocations.add(jobLocation)
             dbsFileTuples.append((lfn, dbsFile['size'],
                                   dbsFile['events'], assocID,
-                                  dbsFile['status'], workflowID))
+                                  dbsFile['status'], workflowID, dbsFile['in_phedex']))
 
             dbsFileLoc.append({'lfn': lfn, 'pnn' : jobLocation})
             if dbsFile['runs']:

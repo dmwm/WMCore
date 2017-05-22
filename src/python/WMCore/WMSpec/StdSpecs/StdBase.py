@@ -471,7 +471,8 @@ class StdBase(object):
             taskName = taskConf["StepName"]
         acqEra = taskConf.get('AcquisitionEra') or self._getDictionaryParams(self.acquisitionEra, taskName)
         procString = taskConf.get('ProcessingString') or self._getDictionaryParams(self.processingString, taskName)
-        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion, taskName,1)
+        procVersion = taskConf.get('ProcessingVersion') or self._getDictionaryParams(self.processingVersion,
+                                                                                     taskName, 1)
 
         processedDataset = "%s-" % acqEra
         if haveFilterName:
@@ -840,11 +841,8 @@ class StdBase(object):
 
         Named this way so that nobody else will try to use this name.
         """
-        if arguments.get("RequestType") == "Resubmission":
-            # We're skipping the Resubmission validation for now
-            # clone is already validated, the user args only, so skip it too
-            # self.validateSchema(schema=arguments)
-            pass
+        if arguments.get('RequestType') == 'Resubmission':
+            self.validateSchema(schema=arguments)
         else:
             self.masterValidation(schema=arguments)
             self.validateSchema(schema=arguments)

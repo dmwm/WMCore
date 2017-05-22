@@ -3,21 +3,22 @@ ReqMgr request handling.
 
 """
 from __future__ import print_function
-import json
-import time
-import logging
 
+import json
+import logging
+import time
+
+from WMCore.Lexicon import procdataset
+from WMCore.REST.Auth import authz_match
+from WMCore.ReqMgr.Auth import getWritePermission
+from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_clone
+from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
+from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
+from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
+from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
+from WMCore.WMFactory import WMFactory
 from WMCore.WMSpec.WMWorkload import WMWorkloadHelper
 from WMCore.WMSpec.WMWorkloadTools import loadSpecClassByType, setArgumentsWithDefault
-from WMCore.REST.Auth import authz_match
-from WMCore.WMFactory import WMFactory
-from WMCore.Services.DBS.DBS3Reader import DBS3Reader as DBSReader
-from WMCore.ReqMgr.Auth import getWritePermission
-from WMCore.ReqMgr.DataStructs.Request import initialize_request_args, initialize_resubmission, initialize_clone
-from WMCore.ReqMgr.DataStructs.RequestStatus import check_allowed_transition, STATES_ALLOW_ONLY_STATE_TRANSITION
-from WMCore.ReqMgr.DataStructs.RequestError import InvalidStateTransition, InvalidSpecParameterValue
-from WMCore.ReqMgr.Tools.cms import releases, architectures, dashboardActivities
-from WMCore.Lexicon import procdataset
 
 
 def loadRequestSchema(workload, requestSchema):
@@ -122,26 +123,23 @@ def validate_request_create_args(request_args, config, reqmgr_db_service, *args,
     3. convert data from body to arguments (spec instance, argument with default setting)
     TODO: raise right kind of error with clear message
     """
-
-    initialize_request_args(request_args, config)
-    # check the permission for creating the request
-    permission = getWritePermission(request_args)
-    authz_match(permission['role'], permission['group'])
-
-    # load the correct class to in order to validate the arguments
-    specClass = loadSpecClassByType(request_args["RequestType"])
-
     if request_args["RequestType"] == "Resubmission":
         # do not set default values for Resubmission since it will be inherited from parent
         # both create & assign args are accepted for Resubmission creation
-        initialize_resubmission(request_args, reqmgr_db_service)
+        workload, request_args = validate_clone_create_args(request_args, config, reqmgr_db_service)
     else:
+        initialize_request_args(request_args, config)
+        # check the permission for creating the request
+        permission = getWritePermission(request_args)
+        authz_match(permission['role'], permission['group'])
+
+        # load the correct class in order to validate the arguments
+        specClass = loadSpecClassByType(request_args["RequestType"])
         # set default values for the request_args
         setArgumentsWithDefault(request_args, specClass.getWorkloadCreateArgs())
-
-    spec = specClass()
-    workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
-                                                request_args)
+        spec = specClass()
+        workload = spec.factoryWorkloadConstruction(request_args["RequestName"],
+                                                    request_args)
 
     return workload, request_args
 
@@ -150,25 +148,41 @@ def validate_clone_create_args(request_args, config, reqmgr_db_service, *args, *
     """
     Load the spec arguments definition (and chain definition, if needed) and inherit
     all arguments defined in the specs.
+    Special handle if a Resubmission request is being cloned or resubmitted, since we
+    cannot validate such request because we don't know its real origin
     *arg and **kwargs are only for the interface
     """
     response = reqmgr_db_service.getRequestByNames(request_args.pop("OriginalRequestName"))
     originalArgs = response.values()[0]
 
-    # load arguments definition from the proper spec factory
-    specClass = loadSpecClassByType(originalArgs["RequestType"])
-    if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
-        chainArgs = specClass.getChainCreateArgs()
+    chainArgs = None
+    createArgs = {}
+    # load arguments definition from the proper/original spec factory
+    parentClass = loadSpecClassByType(originalArgs["RequestType"])
+    if originalArgs["RequestType"] == 'Resubmission':
+        # then we are cloning/resubmitting an ACDC. We cannot validate it,
+        # simply copy the whole original dictionary over and we accept all args
+        request_args['OriginalRequestType'] = originalArgs["RequestType"]
+        createArgs = originalArgs
     else:
-        chainArgs = None
+        # are we cloning or resubmitting another request type?
+        if request_args.get('RequestType') == 'Resubmission':
+            request_args['OriginalRequestType'] = originalArgs["RequestType"]
+            # then load assignment arguments as well
+            createArgs = parentClass.getWorkloadAssignArgs()
+        if originalArgs["RequestType"] in ('StepChain', 'TaskChain'):
+            chainArgs = parentClass.getChainCreateArgs()
+        createArgs.update(parentClass.getWorkloadCreateArgs())
+
     cloned_args = initialize_clone(request_args, originalArgs,
-                                   specClass.getWorkloadCreateArgs(), chainArgs)
+                                   createArgs, chainArgs)
 
     initialize_request_args(cloned_args, config)
 
     permission = getWritePermission(cloned_args)
     authz_match(permission['role'], permission['group'])
 
+    specClass = loadSpecClassByType(request_args["RequestType"])
     spec = specClass()
     workload = spec.factoryWorkloadConstruction(cloned_args["RequestName"], cloned_args)
 
